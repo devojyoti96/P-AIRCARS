@@ -140,6 +140,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		mspath=mspath[:-1] 
 
 	if mspath!=working_dir:
+		if os.path.isdir(working_dir+'/'+os.path.basename(msname)):
+			os.system('rm -rf '+working_dir+'/'+os.path.basename(msname))
 		os.system('mv '+msname+' '+working_dir)
 		msname=working_dir+'/'+os.path.basename(msname)
 
@@ -170,9 +172,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	else:
 		start_fresh=True
 		if os.path.isfile(msname+'/.usedby_paircars'):
+			tb=table()
+			tb.open(msname,nomodify=False)
 			try:
-				tb=table()
-				tb.open(msname,nomodify=False)
 				flag=tb.getcol('FLAG')
 				flag*=False
 				tb.putcol('FLAG',flag)
@@ -180,6 +182,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				tb.close()
 				os.system('rm -rf '+msname+'.flagversions')	
 			except:
+				tb.close()
 				pass		
 
 	if msname[-1]=='/':
@@ -192,7 +195,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	os.system('cp -r '+msname+' Backup.ms') # Keeping backup of the ms
 
 	if __name__!='__main__' and inputs.send_notification==True:
-		OBSID=get_OBSID(metafits
+		OBSID=get_OBSID(metafits)
+
 	if 'ref' in msname:
 		msname_str=splited_ms_rename(msname,ref_time_chan=True,change_msname=False)
 	else:
@@ -421,13 +425,16 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		elif done_qucor==True and num_iter_after_qucor<1:
 			do_pbcor=True
 			gaincal_count+=1
-		tb=table()
-		tb.open(msname,nomodify=False)
-		cor_data=tb.getcol('CORRECTED_DATA')
-		tb.putcol('DATA',cor_data)
-		tb.putcol('CORRECTED_DATA',cor_data)
-		tb.flush()
-		tb.close()		
+		try:
+			tb=table()
+			tb.open(msname,nomodify=False)
+			cor_data=tb.getcol('CORRECTED_DATA')
+			tb.putcol('DATA',cor_data)
+			tb.putcol('CORRECTED_DATA',cor_data)
+			tb.flush()
+			tb.close()
+		except:
+			pass		
 
 		if (do_pbcor==True and gaincal_count==1) or (do_pbcor==True and os.path.isfile(msname+'/.single_beamcorrected')==False):
 			if verbose==False:
@@ -520,7 +527,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,do_solarqu_cor=do_solarqu_cor)  		
 			elif inputs.maskstr!='': # If mask user defined string is given
-				mask_str=inputs.mask_str
+				mask_str=inputs.maskstr
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,do_solarqu_cor=do_solarqu_cor)
@@ -1169,39 +1176,39 @@ if __name__=='__main__':
 
 	OBSID=get_OBSID(options.metafits)
 	msbasename=os.path.basename(options.chantime_msname)
-	#try:
-	print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
-	print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
-			',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+')\n')
-	msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
-			start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)))
-	if msg>100:
-		msg1=msg-100
-		msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-		if options.verbose==False:
-			print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-		logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-	else:
-		msg_str='Message : '+error_msgs(msg)+'\n'
-		if options.verbose==False:
-			print ('Message : '+error_msgs(msg)+'\n')
-		logger.error('Message : '+error_msgs(msg)+'\n')
-	touch_file=inputs.basedir+'/.Finished_pcal_'+msbasename+'_'+str(msg)
-	end_time=time.time()
-	run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-	logger.info('Total runtime : '+str(run_time))
-	msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
-	msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
-	if inputs.send_notification==True:
-		attachments=glob.glob(options.workdir+'/quick_image_*.png')
-		send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-		os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-	os.system('touch '+touch_file)
-	if inputs.keep_logger==False:
-		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
-	file_str=msbasename.split('.ms')[0]
-	os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-	'''except:
+	try:
+		print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
+		print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
+				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+')\n')
+		msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
+				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)))
+		if msg>100:
+			msg1=msg-100
+			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+			if options.verbose==False:
+				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+		else:
+			msg_str='Message : '+error_msgs(msg)+'\n'
+			if options.verbose==False:
+				print ('Message : '+error_msgs(msg)+'\n')
+			logger.info('Message : '+error_msgs(msg)+'\n')
+		touch_file=inputs.basedir+'/.Finished_pcal_'+msbasename+'_'+str(msg)
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('Total runtime : '+str(run_time))
+		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			attachments=glob.glob(options.workdir+'/quick_image_*.png')
+			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+		os.system('touch '+touch_file)
+		if inputs.keep_logger==False:
+			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
+	except:
 		touch_file=inputs.basedir+'/.Finished_pcal_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -1218,7 +1225,7 @@ if __name__=='__main__':
 			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-'''
+		pass
 
 
 

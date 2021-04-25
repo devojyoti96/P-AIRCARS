@@ -29,17 +29,20 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 	Splited measurement set
 	'''
 	cwd=os.getcwd()
+	md=msmetadata()
 	md.open(msname)
 	mjd_timestamps=md.timesforfield(0)
 	freqlist=md.chanfreqs(0)
 	md.close()
-	if '~' in channel:
-		ch0=int(channel.split('~')[0])
-		ch1=int(channel.split('~')[1])
-		ch=int((ch0+ch1)/2.0)
-		spw='0:'+channel
+	if type(channel)==str:
+		if '~' in channel:
+			ch0=int(channel.split('~')[0])
+			ch1=int(channel.split('~')[1])
+			ch=int((ch0+ch1)/2.0)
+			spw='0:'+channel
 	else:
 		spw='0:'+str(channel)
+		ch=channel
 	if ref_timechan==True:
 		mainlog.info('Reference channel : '+str(channel)+' at '+str(freqlist[ch]/10**6)+' MHz and reference time : '+str(timestamp))
 		# Spliting ref time chan ms
@@ -50,12 +53,12 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 		split(vis=msname,outputvis='reftimechan.ms',datacolumn=datacolumn,spw=spw,timerange=timestamp)
 		mainlog.info('split(vis=\''+msname+'\',outputvis=\'reftimechan.ms\',datacolumn=\''+datacolumn+'\',spw=\''+spw+'\',timerange=\''+timestamp+'\')')
 		ref_timechan_ms=splited_ms_rename('reftimechan.ms',ref_time_chan=True,change_msname=True)
-		ref_timechan_dir=cwd+'/'+ref_timechan_ms.split('.ms')[0]+'_'+caltype
+		ref_timechan_dir=cwd+'/'+os.path.basename(ref_timechan_ms).split('.ms')[0]+'_'+caltype
 		if os.path.isdir(ref_timechan_dir)==False:
 			os.makedirs(ref_timechan_dir) # Making ref time chan directory
 		os.system('cp -r '+input_file+' '+ref_timechan_dir)
-		os.system('mv '+ref_timechan_ms+' '+ref_timechan_dir+'/')
-		return ref_timechan_dir+'/'+ref_timechan_ms,ref_timechan_dir
+		os.system('mv '+ref_timechan_ms+' '+ref_timechan_dir+'/'+os.path.basename(ref_timechan_ms))
+		return ref_timechan_dir+'/'+os.path.basename(ref_timechan_ms),ref_timechan_dir
 	else:
 		# Spliting specific time chan ms
 		################################
@@ -65,12 +68,12 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 		split(vis=msname,outputvis='timechan.ms',datacolumn=datacolumn,spw=spw,timerange=timestamp)
 		mainlog.info('split(vis=\''+msname+'\',outputvis=\'timechan.ms\',datacolumn=\''+datacolumn+'\',spw=\''+spw+'\',timerange=\''+timestamp+'\')')
 		timechan_ms=splited_ms_rename('timechan.ms',ref_time_chan=False,change_msname=True)
-		timechan_dir=cwd+'/'+stimechan_ms.split('.ms')[0]+'_'+caltype
+		timechan_dir=cwd+'/'+os.path.basename(timechan_ms).split('.ms')[0]+'_'+caltype
 		if os.path.isdir(timechan_dir)==False:
 			os.makedirs(timechan_dir) # Making ref time chan directory
 		os.system('cp -r '+input_file+' '+timechan_dir)
-		os.system('mv '+timechan_ms+' '+timechan_dir+'/')
-		return timechan_dir+'/'+timechan_ms,timechan_dir
+		os.system('mv '+timechan_ms+' '+timechan_dir+'/'+os.path.basename(timechan_ms))
+		return timechan_dir+'/'+os.path.basename(timechan_ms),timechan_dir
 
 def casa_instance_runner(cmd,screen_name):
 	'''
@@ -85,6 +88,7 @@ def casa_instance_runner(cmd,screen_name):
 	os.system('screen -mdS '+screen_name)
 	mainlog.info('########################\n')
 	mainlog.info('Made Screen :',screen_name)
+	mainlog.info('Command : '+cmd+'\n')
 	os.system('screen -S '+screen_name+' -X stuff \"'+cmd+'\n"')	
 	return screen_name
 
@@ -271,32 +275,26 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 
 	# Flagging coarse channel edges and center
 	mainlog.info('Flagging edges and center of coarese chnnels\n')
-	good_channels,channel_per_coarse=flag_MWA_coarse(msname,do_flag=True)
-	good_channels=good_channels.split(':')[-1].split(';')
-	chans=new_chan_list.split(',')  # User defined channel ranges for imaging
-	unflagged_chan_list=[]
-	for i in good_channels:
-		ch0=int(i.split('~')[0])
-		ch1=int(i.split('~')[-1])
-		for k in range(ch0,ch1):
-			unflagged_chan_list.append(k)
-	if len(new_chan_list)!=0:
-		final_imaging_chanlist=np.intersect1d(new_chan_list,unflagged_chan_list)
-	else:
-		final_imaging_chanlist=unflagged_chan_list
+	mainlog.info('flag_MWA_coarse(\''+msname+'\',edgewidth=160,do_flag=True,logger_name=\'paircars_main_log\')\n')
+	good_channels,channel_per_coarse=flag_MWA_coarse(msname,edgewidth=160,do_flag=True,logger_name='paircars_main_log')
+	unflag_channels=np.array(AM.get_unflag_chan(flagfrac=1))
+	new_chan_list=np.array(new_chan_list.split(','),dtype='int')
+	new_unflag_chan_list=np.intersect1d(unflag_channels,new_chan_list)
+	start_chan=np.min(new_unflag_chan_list)
+	end_chan=np.max(new_unflag_chan_list)
 
-	os.system('rm -rf casa-*.log')
+	# Spliting chan and timeranges
+	##############################
+	mainlog.info('Spliting channel range : '+str(start_chan)+'~'+str(end_chan)+' and timerange : '+str(new_timerange)+'\n')	
+	if os.path.isdir(workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_chantimesliced.ms')==True:
+		os.system('rm -rf '+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_chantimesliced.ms')
+	mainlog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_chantimesliced.ms\',timerange=\''+new_timerange+\
+						',spw=\'0:'+str(start_chan)+'~'+str(end_chan)+'\',datacolumn=\'data\')\n')
+	split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_chantimesliced.ms',timerange=new_timerange,\
+						spw='0:'+str(start_chan)+'~'+str(end_chan),datacolumn='data')
+	timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_chantimesliced.ms'
+	os.system('rm -rf casa*.log')	# Time slices list
 	
-	# Spliting timeranges
-	######################
-	mainlog.info('Spliting timeslices\n')
-	if os.path.isdir(workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms')==True:
-		os.system('rm -rf '+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms')
-	mainlog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms\',timerange=\''+new_timerange+'\',datacolumn=\'data\')\n')
-	split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms',timerange=new_timerange,datacolumn='data')
-	timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms'
-
-	# Time slices list
 	##################
 	md=msmetadata()
 	md.open(timesliced_measurement_set)
@@ -314,8 +312,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 	
 	# In this while loop we are checking whether the present time and frequency averaging is enough to start the self calibration. If it has it will leave the loop and go for selfcal
 	while os.path.isfile('.ref_timechan_done')==False and ref_time_freq==True:  	
-		mainlog.info('Choosing averaging frequency width :'+str(freq_avg)+' kHz, averaging temporal width :'+str(time_avg)+' s, Skip frequency :'\
-				+str(skip_freq)+' kHz, Skip time :'+str(skip_time)+' s\n')
+		mainlog.info('Choosing averaging frequency width : '+str(freq_avg)+' kHz, averaging temporal width : '+str(time_avg)+' s, Skip frequency : '\
+				+str(skip_freq)+' kHz, Skip time : '+str(skip_time)+' s\n')
 
 		# Averaging measurement set
 		###########################
@@ -337,15 +335,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 		AM=AccessMS(averaged_msname)
 		# Making reference time and channel and time frequency grid
 		##########################################################
-		good_avg_channels,channel_per_coarse=flag_MWA_coarse(averaged_msname,do_flag=False)
-		good_avg_channels=good_avg_channels.split(':')[-1].split(';')
-		good_channel_list=[]
-		for chan_block in good_avg_channels:
-			start_chan=int(chan_block.split('~')[0])
-			end_chan=int(chan_block.split('~')[-1])
-			for i in range(start_chan,end_chan):
-				good_channel_list.append(i)
-
+		unflagged_channels=AM.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
 		timestamps=[mjdsec_to_timestamp(mjdsec,includedate=True,format=0) for mjdsec in mjd_timestamps]
 
 		skip_channel=int(skip_freq/AM.calc_freqres())
@@ -354,27 +344,29 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 		channel_grid=[]
 		time_grid=[]
 
-		chan_width=int(freq_avg/AM.calc_freqres())
-
-		chan_list_avg=[int(i/chan_width) for i in chan_list]
-		for i in range(0,len(good_channel_list),skip_channel):
-			if good_channel_list[i] in chan_list_avg:
-				channel_grid.append(good_channel_list[i])
-		for i in range(0,len(timestamps),skip_timestamp):
-			time_grid.append(timestamps[i])
+		if skip_channel>len(unflagged_channels):
+			for i in range(0,len(unflagged_channels),skip_channel):
+				channel_grid.append(unflagged_channels[i])
+		else:
+			channels_grid=unflagged_channels
+		if skip_timestamp>len(timestamps):
+			for i in range(0,len(timestamps),skip_timestamp):
+				time_grid.append(timestamps[i])
+		else:
+			time_grid=timestamps
 
 		channel_grid_copy=copy.deepcopy(channel_grid)
 		time_grid_copy=copy.deepcopy(time_grid)
 
-		mainlog.info('Channel grid list :'+str(channel_grid)+'\n')
-		mainlog.info('Timestamp grid list :'+str(time_grid)+'\n')
+		mainlog.info('Channel grid list : '+str(channel_grid)+'\n')
+		mainlog.info('Timestamp grid list : '+str(time_grid)+'\n')
 		
 		ref_chan=channel_grid[int(len(channel_grid)/2)]
 		ref_time=time_grid[int(len(time_grid)/2)]
 
 		# Spliting ref time chan ms
 		###########################
-		ref_timechan_ms,ref_timechan_dir=spliting_timechan(averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workfir+'/selfcal_inputs.py',datacolumn='data')
+		ref_timechan_ms,ref_timechan_dir=spliting_timechan(averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 		cur_workdir=ref_timechan_dir
 		# Run selfcal
 		while True:
@@ -387,7 +379,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 					calstring=','.join(calibrator_caltable)
 				else:
 					calstring='None'
-				run_cmd='python3 run_intensity_selfcal.py --msname '+ref_timechan_ms+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
+				cmd='run_intensity_selfcal.py --msname '+ref_timechan_ms+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
 						+' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring 
 				screen_name=os.path.basename(ref_timechan_ms).split('.ms')[0]+'_screen_refG'
 				result=casa_instance_runner(cmd,screen_name)
@@ -474,7 +466,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 	if ref_time_freq==False: 
 		# Making time and channel and time frequency grid
 		##########################################################
-		good_avg_channels,channel_per_coarse=flag_MWA_coarse(averaged_msname,do_flag=False)
+		good_avg_channels,channel_per_coarse=flag_MWA_coarse(averaged_msname,edgewidth=160,do_flag=False,logger_name='paircars_main_log')
 		good_avg_channels=good_avg_channel.split(':')[-1].split(';')
 		good_channel_list=[]
 		for chan_block in good_avg_channels:
@@ -509,7 +501,9 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 
 	#Deciding bandpass selfcal conditions
 	#####################################
-	if quality_factor==0:
+	if len(unflagged_channels)<=1:
+		mainlog.info('Only 1 unflagged channel is present. No bandpass is required.\n')
+	elif quality_factor==0:
 		mainlog.info('Quality factor is 0. Skipping bandpass self calibration.\n')
 		do_bandpass==False
 	elif len(calibrator_cal)!=0 and do_bandpass==True:
@@ -645,7 +639,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 	# Spliting gain calibrated reference time channnel measurement set for polarisation calibration
 	###############################################################################################
 	if do_polcal==True and ((do_bandpass==True and finished_bandpass==True) or do_bandpass==False):
-		good_avg_channels,channel_per_coarse=flag_MWA_coarse(averaged_msname,do_flag=False)
+		good_avg_channels,channel_per_coarse=flag_MWA_coarse(averaged_msname,edgewidth=160,do_flag=False,logger_name='paircars_main_log')
 		polcal_channels=channel_per_coarse.values()
 		mainlog.info('Spliting data for performing polarisation calibration.\n')
 		polcal_cmd_list=[]
@@ -802,6 +796,15 @@ os.chdir(basedir)
 sys.path.append(basedir)
 import selfcal_inputs as inputs
 
+
+# MPI check
+###########
+if os.path.isfile('.mpi_enabled'):
+	os.system('rm -rf .mpi_enabled')
+os.system('echo "import os\nos.system(\'touch .mpi_enabled\')" > test_mpi.py')
+os.system('mpirun -np 1 -x OMP_NUM_THREADS=3 python3 test_mpi.py')
+os.system('rm -rf test_mpi.py') 
+
 # Logger initiating
 ###################
 formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
@@ -867,6 +870,10 @@ msfreqs=[float(a.split('.ms')[0].split('_')[-1]) for a in measurement_set_list]
 mstimes=[float(timestamp_to_mjdsec('/'.join(a.split('.ms')[0].split('_')[1:4])+'/'+':'.join(a.split('.ms')[0].split('_')[4:7]))) for a in measurement_set_list]
 mstimes_iso=[('-'.join(a.split('.ms')[0].split('_')[1:4])+' '+':'.join(a.split('.ms')[0].split('_')[4:7])) for a in measurement_set_list]
 ms_OBSIDs=[]
+metafits_obsids_msdir=glob.glob(inputs.msdir+'/*.metafits')
+if len(metafits_obsids_msdir)!=0:
+	for metafits in metafits_obsids_msdir:
+		os.system('cp -r '+metafits+' '+inputs.basedir+'/data/'+os.path.basename(metafits))
 metafits_obsids=[int(os.path.basename(x).split('.metafits')[0]) for x in glob.glob(inputs.basedir+'/data/*.metafits')]
 for i in range(len(measurement_set_list)):
 	msname=measurement_set_list[i]
@@ -902,10 +909,10 @@ for i in range(len(measurement_set_list)):
 	metafits=str(ms_OBSIDs[i])+'.metafits'
 	if os.path.isfile(inputs.basedir+'/data/'+metafits)==False: 
 		metafits=download_metafits(msname,inputs.basedir+'/data')
-		mainlog.info('Metafits file downloaded at : '+inputs.basedir+'/data/'+metafits)	
+		mainlog.info('Metafits file downloaded at : '+inputs.basedir+'/data/'+metafits+'\n')	
 		metafits_list.append(inputs.basedir+'/data/'+metafits)
 	else:
-		mainlog.info('Metafits file found at : '+inputs.basedir+'/data/'+metafits)
+		mainlog.info('Metafits file found at : '+inputs.basedir+'/data/'+metafits+'\n')
 		metafits_list.append(inputs.basedir+'/data/'+metafits)
 
 ref_freq=str(msfreqs[int(len(msfreqs)/2)])
@@ -917,7 +924,8 @@ for i in range(len(measurement_set_list)):
 	msname=measurement_set_list[i]
 	metafits=metafits_list[i]
 	AM=AccessMS(msname)
-	AM.move_phasecenter_to_sun()  # Moving the phasecenter to the Sun
+	output=AM.move_phasecenter_to_sun()  # Moving the phasecenter to the Sun
+	mainlog.info(output)
 	if inputs.do_decor_correction: # Performing decorrelation correction and IAU convention change
 		mainlog.info('Performing de-correlation correction and IAU convention correction for ms : '+msname+'\n')
 		decor(msname,metafits,10,False)
@@ -948,13 +956,16 @@ mainlog.info('######################\n')
 
 
 
-calibrator_found=True
+calibrator_found=False
 gaincal_list=[]
 # Self calibration for reference time frequency ms
 ################################################## 
 reftimefreq_ms_OBSID=get_OBSID(ref_freq_time_msname)
 AM=AccessMS(ref_freq_time_msname)
 workdir=inputs.basedir+'/'+os.path.basename(ref_freq_time_msname).split('.ms')[0]
+if os.path.isdir(workdir)==False:
+	os.makedirs(workdir)
+
 spawned_ms_jobs={}
 finished_ms=[]
 if calibrator_found==True and len(gaincal_list)!=0: # If calibration found from paircars database or calibrator
@@ -965,7 +976,6 @@ if calibrator_found==True and len(gaincal_list)!=0: # If calibration found from 
 	else:
 		ref_time_freq=False
 	os.system('cp -r selfcal_inputs.py '+workdir)
-	#os.system('cp -r *.py '+workdir) #TODO : remove after packaging
 	ref_time,ref_chan,spawned_casa_instances=run_paircars_ms(ref_freq_time_msname,ref_time_freq_metafits,workdir,\
 			ref_time_freq=ref_time_freq,do_bandpass=inputs.do_bandpass,do_polcal=inputs.do_polcal,calibrator_caltable=caltable_list)
 	spawned_ms_jobs[ref_freq_time_msname]=[ref_time,ref_chan,spawned_casa_instances]
@@ -978,7 +988,6 @@ if calibrator_found==True and len(gaincal_list)!=0: # If calibration found from 
 			time.sleep(2.0)
 else:
 	os.system('cp -r selfcal_inputs.py '+workdir)
-	#os.system('cp -r *.py '+workdir) #TODO : remove after packaging
 	ref_time,ref_chan,spawned_casa_instances=run_paircars_ms(ref_freq_time_msname,ref_time_freq_metafits,workdir,\
 			ref_time_freq=True,do_bandpass=inputs.do_bandpass,do_polcal=inputs.do_polcal,calibrator_caltable=[])
 	spawned_ms_jobs[ref_freq_time_msname]=[ref_time,ref_chan,spawned_casa_instances]

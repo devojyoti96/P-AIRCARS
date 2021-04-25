@@ -120,8 +120,11 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		mspath=mspath[:-1] 
 
 	if mspath!=working_dir:
+		if os.path.isdir(working_dir+'/'+os.path.basename(msname)):
+			os.system('rm -rf '+working_dir+'/'+os.path.basename(msname))
 		os.system('mv '+msname+' '+working_dir)
 		msname=working_dir+'/'+os.path.basename(msname)
+
 
 	os.chdir(working_dir)
 
@@ -1177,7 +1180,7 @@ if __name__=='__main__':
 			msg_str='Message : '+error_msgs(msg)+'\n'
 			if options.verbose==False:
 				print ('Message : '+error_msgs(msg)+'\n')
-			logger.error('Message : '+error_msgs(msg)+'\n')
+			logger.info('Message : '+error_msgs(msg)+'\n')
 		touch_file=inputs.basedir+'/.Finished_gcal_'+msbasename+'_'+str(msg)
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))

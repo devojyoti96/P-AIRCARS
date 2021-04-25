@@ -9,7 +9,7 @@ from CALIBRATE.access_calibrate import *
 from numpy.linalg import inv,det
 from scipy.linalg import polar
 from mwa_pb.mwapb import *
-from paircars_casatasks.poltclean import poltclean
+from paircars_casatasks.poltclean import *
 import matplotlib,matplotlib.pyplot as plt
 matplotlib.use('Agg')
 '''
@@ -1023,7 +1023,6 @@ class PolSelfcal:
 		self.pollog_verbose.info('==============================\n')
 		self.pollog_verbose.info('Iteration number : '+str(num_iter)+'\n')
 		self.pollog_verbose.info('==============================\n')
-		poltclean=poltclean.poltclean
 		# Making image
 		if maskfile!='':
 			self.pollog_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''\

@@ -140,9 +140,12 @@ if __name__=='__main__':
 	elif os.path.isfile(basedir+'/.paircars_failed'):
 		mainlog.error('PAIRCARS have failed in this base directory. Cleaning the base directory for fresh start up.\n')
 		os.system('mv '+basedir+'/PAIRCARS_mainlog.log temp.log')
-		os.system('rm -rf '+basedir+'/*')
-		os.system('rm -rf '+basedir+'.paircars_failed')
+		file_list=glob.glob(basedir+'/*')
 		loglist=len(glob.glob(basedir+'/PAIRCARS_mainlog*.log'))
+		for f in file_list:
+			if f!=msdir or f!=nasedir+'/data':
+				os.system('rm -rf '+f)
+		os.system('rm -rf '+basedir+'.paircars_failed')
 		os.system('mv temp.log '+basedir+'/PAIRCARS_mainlog_'+str(loglist)+'.log')
 		filehandle=logging.FileHandler(basedir+'/PAIRCARS_mainlog.log')
 		filehandle.setFormatter(formatter)
@@ -163,7 +166,7 @@ if __name__=='__main__':
 	# Organising measurement sets
 	#############################
 	mainlog.info('Searching for measurmenet sets......\n')
-	file_list=glob.glob(msdir+'/*')
+	file_list=glob.glob(msdir+'/*.ms')
 	measurement_set_list=[]
 	for f in file_list:
 		if os.path.isdir(f)==True:

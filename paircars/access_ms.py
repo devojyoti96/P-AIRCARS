@@ -185,6 +185,27 @@ class AccessMS:
 		self.md.close()
 		return freqs
 
+	def get_unflag_chan(self,flagfrac=1):
+		'''
+		Function to get the unflagged channels if flag fraction is less than certain value
+		Parameter:
+		flagfrac = Flag fraction per channel (default : 1)
+		Return:
+		List of unflagged channels
+		'''
+		self.tb.open(self.msname)
+		flag=self.tb.getcol('FLAG')
+		self.tb.close()
+		nchan=self.get_num_channels()
+		unflagged_chan=[]
+		for chan in range(nchan):
+			flagged_data=flag[:,chan,:]
+			total_data=float(len(flagged_data.flatten()))
+			flagged_data=float(np.sum(flagged_data.flatten()))
+			if (flagged_data/total_data)<flagfrac:
+				unflagged_chan.append(chan)
+		return unflagged_chan	
+
 	def calc_meanfreq(self):
 		'''
 		Function to return central frequency of the measurement set (Only MS with single SPW)
@@ -238,14 +259,13 @@ class AccessMS:
 		psfsize=IB.calc_psf()
 		diff=(sunra_deg-ra)**2+(sundec_deg-dec)**2
 		if diff<(psfsize/3600.0)**2:
-			print ('Phasecenter shift is less than PSF size. No shift is required.\n')
 			os.system('touch '+self.msname+'/.fixvis_sun')
+			return 'Phasecenter shift is less than PSF size. No shift is required.\n' 
 		elif os.path.isfile(self.msname+'/.fixvis_sun')==False:
-			print ('Phasecenter of the observation is moved to Sun center at :'+sun_radec_string)
 			fixvis(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
+			return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
 		else:
-			print ('Phasecenter is already shifted to the Sun')
-		return
+			return 'Phasecenter is already shifted to the Sun.\n'
 
 	def move_phasecenter_to_source(self,radec=''):
 		'''
@@ -256,7 +276,7 @@ class AccessMS:
 		Phasecenter of the measurement set is moved to the new phasecenter
 		'''
 		if radec=='':
-			print ('No RA-DEC is given')
+			return 'No RA-DEC is given'
 		else:
 			radec_string='_'.join(radec.split(' ')[1:])
 			if os.path.isfile(self.msname+'/.fixvis_'+radec_string)==False:
@@ -265,9 +285,9 @@ class AccessMS:
 				os.system('rm -rf '+old_fixvis)
 				fixvis(vis=self.msname,outputvis=self.msname,phasecenter=radec)
 				os.system('touch '+self.msname+'/.fixvis_'+radec_string)
-				print ('Move phasecenter to :'+radec)
+				return 'Move phasecenter to :'+radec+'.\n'
 			else:
-				print ('Phasecenter is already at :'+radec)
+				return 'Phasecenter is already at :'+radec+'.\n'
 		return
 			
 	def get_max_baseline(self):

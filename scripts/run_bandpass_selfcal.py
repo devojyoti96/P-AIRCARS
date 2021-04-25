@@ -119,8 +119,11 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		mspath=mspath[:-1] 
 
 	if mspath!=working_dir:
+		if os.path.isdir(working_dir+'/'+os.path.basename(msname)):
+			os.system('rm -rf '+working_dir+'/'+os.path.basename(msname))
 		os.system('mv '+msname+' '+working_dir)
 		msname=working_dir+'/'+os.path.basename(msname)
+
 
 	os.chdir(working_dir)
 	if __name__!='__main__':
@@ -760,42 +763,42 @@ if __name__=='__main__':
 
 	OBSID=get_OBSID(options.metafits)
 	msbasename=os.path.basename(options.chantime_msname)
-	#try:
-	print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
-	print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
-			+'\',interactive=\''+str(options.interactive)+'\',start_fresh=\''+str(options.fresh)+'\')\n')
-	msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
-			interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)))
-	if msg>100:
-		msg1=msg-100
-		msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-		if options.verbose==False:
-			print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-		logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-	else:
-		msg_str='Message : '+error_msgs(msg)+'\n'
-		if options.verbose==False:
-			print ('Message : '+error_msgs(msg)+'\n')
-		logger.error('Message : '+error_msgs(msg)+'\n')
-	touch_file=inputs.basedir+'/.Finished_bcal_'+msbasename+'_'+str(msg)
-	end_time=time.time()
-	run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-	logger.info('#############################\n')
-	logger.info('Bandpass selfcal finished for ms : '+options.chantime_msname+'\n')
-	logger.info('Total runtime : '+str(run_time)+'\n')
-	logger.info('##############################\n')
-	msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
-	msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-	if inputs.send_notification==True:
-		attachments=glob.glob(options.workdir+'/quick_image_*.png')
-		send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-		os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-	os.system('touch '+touch_file)
-	if inputs.keep_logger==False:
-		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
-	file_str=msbasename.split('.ms')[0]
-	os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-'''	except:
+	try:
+		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
+		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
+				+'\',interactive=\''+str(options.interactive)+'\',start_fresh=\''+str(options.fresh)+'\')\n')
+		msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
+				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)))
+		if msg>100:
+			msg1=msg-100
+			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+			if options.verbose==False:
+				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+		else:
+			msg_str='Message : '+error_msgs(msg)+'\n'
+			if options.verbose==False:
+				print ('Message : '+error_msgs(msg)+'\n')
+			logger.info('Message : '+error_msgs(msg)+'\n')
+		touch_file=inputs.basedir+'/.Finished_bcal_'+msbasename+'_'+str(msg)
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Bandpass selfcal finished for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			attachments=glob.glob(options.workdir+'/quick_image_*.png')
+			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+		os.system('touch '+touch_file)
+		if inputs.keep_logger==False:
+			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
+	except:
 		touch_file=inputs.basedir+'/.Finished_bcal_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -816,7 +819,7 @@ if __name__=='__main__':
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		pass
-'''
+
 
 
 
