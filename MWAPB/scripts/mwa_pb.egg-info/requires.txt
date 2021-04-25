@@ -1,0 +1,10 @@
+numpy
+astropy
+skyfield
+matplotlib
+scipy>=0.15.1
+h5py
+
+[skymap]
+ephem
+Pillow
