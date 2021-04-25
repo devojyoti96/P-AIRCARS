@@ -1,0 +1,631 @@
+
+Flagmode	= 1	Antennas	= 128
+
+
+Maximum channels	= 1	Records	= 166
+
+
+Baseline	0 0		taken by thread	0
+
+
+Baseline	8 0		taken by thread	16
+
+
+Baseline	2 0		taken by thread	4
+
+
+Baseline	3 0		taken by thread	6
+
+
+Baseline	8 5		taken by thread	17
+
+
+Baseline	0 5		taken by thread	1
+
+
+Baseline	7 0		taken by thread	14
+
+
+Baseline	3 5		taken by thread	7
+
+
+Baseline	4 5		taken by thread	9
+
+
+Baseline	1 0		taken by thread	2
+
+
+Baseline	2 5		taken by thread	5
+
+
+Baseline	7 5		taken by thread	15
+
+
+Baseline	6 0		taken by thread	12
+
+
+Baseline	4 0		taken by thread	8
+
+
+Baseline	5 5		taken by thread	11
+
+
+Baseline	5 0		taken by thread	10
+
+Baseline	5 5		Flagged off......
+
+Baseline	9 5		taken by thread	19
+
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+
+Baseline	6 5		taken by thread	13
+
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+
+Baseline	9 0		taken by thread	18
+
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+
+Baseline	1 5		taken by thread	3
+
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+Baseline	5 5		Flagged off......
+
+Baseline	8 0	Fractions	0.687 0.687	0.687 0.687	0.687 0.687	0.687 0.687	
+Baseline	0 0	Fractions	0.916 0.916	0.976 0.976	0.916 0.916	
+
+0.976 0.976	
+
+
+Baseline	1 0	Fractions	0.928 0.928	0.952 0.952	0.964 0.964	0.952 0.952	
+
+
+Baseline	8 1		taken by thread	16
+
+
+Baseline	0 1		taken by thread	0
+
+
+Baseline	5 5	Fractions	1.000 1.000	1.000 1.000	1.000 1.000	1.000 1.000	
+
+
+Baseline	1 1		taken by thread	2
+
+
+Baseline	5 6		taken by thread	11
+
+
+Baseline	9 0	Fractions	0.891 0.891	0.891 0.891	0.891 0.891	0.891 0.891	
+
+
+Baseline	0 1	Fractions	0.783 0.783	0.819 0.819	0.783 0.783	0.819 0.819	
+
+
+Baseline	9 1		taken by thread	18
+
+
+Baseline	0 2		taken by thread	0
+
+
+Baseline	6 0	Fractions	0.602 0.602	0.602 0.602	0.602 0.602	0.602 0.602	
+
+
+Baseline	0 5	Fractions	0.410 0.410	0.494 0.494	0.410 0.410	0.494 0.494	
+
+
+Baseline	6 1		taken by thread	12
+
+
+Baseline	2 0	Fractions	0.289 0.289	0.289 0.289	0.289 0.289	0.289 0.289	
+
+
+Baseline	0 6		taken by thread	1
+
+
+Baseline	0 2	Fractions	0.831 0.831	0.855 0.855	0.831 0.831	0.855 0.855	
+
+
+Baseline	0 3		taken by thread	0
+
+
+Baseline	2 1		taken by thread	4
+
+
+Baseline	3 5	Fractions	0.096 0.096	0.723 0.723	0.000 0.000	0.000 0.000	
+
+
+Baseline	8 1	Fractions	0.072 0.072	0.072 0.072	0.072 0.072	0.072 0.072	
+
+
+Baseline	7 0	Fractions	0.181 0.181	0.181 0.181	0.181 0.181	0.181 0.181	
+
+
+Baseline	8 2		taken by thread	16
+
+
+Baseline	3 0	Fractions	0.133 0.133	0.133 0.133	0.133 0.133	0.133 0.133	
+
+
+Baseline	3 6		taken by thread	7
+
+
+Baseline	7 1		taken by thread	14
+
+
+Baseline	8 5	Fractions	0.036 0.036	0.060 0.060	0.060 0.060	0.036 0.036	
+
+
+Baseline	3 1		taken by thread	6
+
+
+Baseline	4 5	Fractions	0.036 0.036	0.024 0.024	0.000 0.000	0.000 0.000	
+
+
+Baseline	9 1	Fractions	0.600 0.600	0.600 0.600	0.600 0.600	0.600 0.600	
+
+
+Baseline	8 6		taken by thread	17
+
+
+Baseline	5 6	Fractions	0.367 0.367	0.361 0.361	0.361 0.361	0.361 0.361	
+
+
+Baseline	1 1	Fractions	0.337 0.337	0.386 0.386	0.337 0.337	0.386 0.386	
+
+
+Baseline	4 6		taken by thread	9
+
+
+Baseline	9 2		taken by thread	18
+
+
+Baseline	5 7		taken by thread	11
+
+
+Baseline	9 5	Fractions	0.048 0.048	0.267 0.267	0.267 0.267	0.048 0.048	
+
+
+Baseline	1 2		taken by thread	2
+
+
+Baseline	6 5	Fractions	0.066 0.066	0.030 0.030	0.000 0.000	0.018 0.018	
+
+
+Baseline	9 6		taken by thread	19
+
+
+Baseline	5 0	Fractions	0.108 0.108	0.108 0.108	0.108 0.108	0.108 0.108	
+
+
+Baseline	4 0	Fractions	0.084 0.084	0.084 0.084	0.084 0.084	0.084 0.084	
+
+
+Baseline	6 6		taken by thread	13
+
+
+Baseline	5 1		taken by thread	10
+
+
+Baseline	7 5	Fractions	0.006 0.006	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	0 3	Fractions	0.614 0.614	0.639 0.639	0.614 0.614	0.639 0.639	
+
+
+Baseline	4 1		taken by thread	8
+
+
+Baseline	2 5	Fractions	0.000 0.000	0.012 0.012	0.000 0.000	0.012 0.012	
+
+
+Baseline	0 4		taken by thread	0
+
+
+Baseline	7 6		taken by thread	15
+
+
+Baseline	0 6	Fractions	0.639 0.639	0.651 0.651	0.639 0.639	0.651 0.651	
+
+
+Baseline	2 6		taken by thread	5
+
+
+Baseline	1 5	Fractions	0.012 0.012	0.024 0.024	0.012 0.012	0.024 0.024	
+
+
+Baseline	0 7		taken by thread	1
+
+
+Baseline	9 2	Fractions	0.636 0.636	0.648 0.648	0.648 0.648	0.636 0.636	
+
+
+Baseline	8 2	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	1 6		taken by thread	3
+
+
+Baseline	0 4	Fractions	0.627 0.627	0.675 0.675	0.627 0.627	0.675 0.675	
+
+
+Baseline	6 1	Fractions	0.084 0.084	0.084 0.084	0.084 0.084	0.084 0.084	
+
+
+Baseline	8 3		taken by thread	16
+
+
+Baseline	9 3		taken by thread	18
+
+
+Baseline	6 2		taken by thread	12
+
+
+Baseline	2 1	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	0 7	Fractions	0.699 0.699	0.699 0.699	0.699 0.699	0.699 0.699	
+
+
+Baseline	2 2		taken by thread	4
+
+
+Baseline	3 6	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	7 1	Fractions	0.024 0.024	0.024 0.024	0.024 0.024	0.024 0.024	
+
+
+Baseline	0 8		taken by thread	1
+
+
+Baseline	9 6	Fractions	0.085 0.085	0.485 0.485	0.485 0.485	0.085 0.085	
+
+
+Baseline	3 7		taken by thread	7
+
+
+Baseline	3 1	Fractions	0.024 0.024	0.024 0.024	0.024 0.024	0.024 0.024	
+
+
+Baseline	7 2		taken by thread	14
+
+
+Baseline	8 6	Fractions	0.036 0.036	0.036 0.036	0.036 0.036	0.036 0.036	
+
+
+Baseline	9 7		taken by thread	19
+
+
+Baseline	4 6	Fractions	0.048 0.048	0.042 0.042	0.006 0.006	0.006 0.006	
+
+
+Baseline	3 2		taken by thread	6
+
+
+Baseline	1 2	Fractions	0.084 0.084	0.084 0.084	0.084 0.084	0.084 0.084	
+
+
+Baseline	8 7		taken by thread	17
+
+
+Baseline	5 7	Fractions	0.066 0.066	0.006 0.006	0.000 0.000	0.000 0.000	
+
+
+Baseline	4 7		taken by thread	9
+
+
+Baseline	0 8	Fractions	0.952 0.952	0.952 0.952	0.952 0.952	0.952 0.952	
+
+
+Baseline	1 3		taken by thread	2
+
+
+Baseline	6 6	Fractions	0.078 0.078	0.084 0.084	0.036 0.036	0.036 0.036	
+
+
+Baseline	5 8		taken by thread	11
+
+
+Baseline	0 9		taken by thread	1
+
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+
+Baseline	5 1	Fractions	0.012 0.012	0.024 0.024	0.006 0.006	0.012 0.012	
+
+Baseline	0 9		Flagged off......
+
+Baseline	8 3	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+Baseline	0 9		Flagged off......
+
+Baseline	6 7		taken by thread	13
+
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+Baseline	0 9		Flagged off......
+
+Baseline	9 3	Fractions	0.285 0.285	0.358 0.358	0.358 0.358	0.285 0.285	
+
+
+Baseline	8 4		taken by thread	16
+
+
+Baseline	5 2		taken by thread	10
+
+
+Baseline	4 1	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	2 6	Fractions	0.036 0.036	0.036 0.036	0.036 0.036	0.036 0.036	
+
+
+Baseline	9 4		taken by thread	18
+
+
+Baseline	7 6	Fractions	0.012 0.012	0.018 0.018	0.012 0.012	0.012 0.012	
+
+
+Baseline	4 2		taken by thread	8
+
+
+Baseline	0 9	Fractions	1.000 1.000	1.000 1.000	1.000 1.000	1.000 1.000	
+
+
+Baseline	2 7		taken by thread	5
+
+
+Baseline	1 6	Fractions	0.012 0.012	0.024 0.024	0.012 0.012	0.024 0.024	
+
+
+Baseline	7 7		taken by thread	15
+
+
+Baseline	1 7		taken by thread	3
+
+
+Baseline	6 2	Fractions	0.000 0.000	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	9 7	Fractions	0.376 0.376	0.461 0.461	0.461 0.461	0.376 0.376	
+
+
+Baseline	6 3		taken by thread	12
+
+
+Baseline	9 8		taken by thread	19
+
+
+Baseline	2 2	Fractions	0.000 0.000	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	2 3		taken by thread	4
+
+
+Baseline	3 7	Fractions	0.024 0.024	0.024 0.024	0.024 0.024	0.024 0.024	
+
+
+Baseline	7 2	Fractions	0.036 0.036	0.036 0.036	0.036 0.036	0.036 0.036	
+
+
+Baseline	3 8		taken by thread	7
+
+
+Baseline	8 4	Fractions	0.012 0.012	0.024 0.024	0.024 0.024	0.012 0.012	
+
+
+Baseline	7 3		taken by thread	14
+
+
+Baseline	3 2	Fractions	0.000 0.000	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	8 7	Fractions	0.012 0.012	0.024 0.024	0.024 0.024	0.012 0.012	
+
+
+Baseline	4 7	Fractions	0.084 0.084	0.054 0.054	0.000 0.000	0.000 0.000	
+
+
+Baseline	3 3		taken by thread	6
+
+
+Baseline	5 8	Fractions	0.054 0.054	0.024 0.024	0.000 0.000	0.000 0.000	
+
+
+Baseline	8 8		taken by thread	17
+
+
+Baseline	1 3	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	4 8		taken by thread	9
+
+
+Baseline	9 8	Fractions	0.636 0.636	0.636 0.636	0.636 0.636	0.636 0.636	
+
+
+Baseline	5 9		taken by thread	11
+
+
+Baseline	5 2	Fractions	0.024 0.024	0.042 0.042	0.012 0.012	0.018 0.018	
+
+
+Baseline	1 4		taken by thread	2
+
+
+Baseline	9 4	Fractions	0.158 0.158	0.255 0.255	0.255 0.255	0.158 0.158	
+
+
+Baseline	9 9		taken by thread	19
+
+
+Baseline	6 7	Fractions	0.024 0.024	0.030 0.030	0.000 0.000	0.000 0.000	
+
+
+Baseline	5 3		taken by thread	10
+
+
+Baseline	6 8		taken by thread	13
+
+
+Baseline	4 2	Fractions	0.000 0.000	0.000 0.000	0.006 0.006	0.000 0.000	
+
+
+Baseline	7 7	Fractions	0.048 0.048	0.048 0.048	0.048 0.048	0.048 0.048	
+
+
+Baseline	2 7	Fractions	0.000 0.000	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	4 3		taken by thread	8
+
+
+Baseline	7 8		taken by thread	15
+
+
+Baseline	1 7	Fractions	0.024 0.024	0.024 0.024	0.024 0.024	0.024 0.024	
+
+
+Baseline	9 9	Fractions	0.874 0.874	0.874 0.874	0.874 0.874	0.874 0.874	
+
+
+Baseline	2 8		taken by thread	5
+
+
+Baseline	1 8		taken by thread	3
+
+
+Baseline	8 8	Fractions	0.614 0.614	0.627 0.627	0.627 0.627	0.614 0.614	
+
+
+Baseline	6 3	Fractions	0.030 0.030	0.018 0.018	0.012 0.012	0.012 0.012	
+
+
+Baseline	8 9		taken by thread	17
+
+
+Baseline	6 4		taken by thread	12
+
+
+Baseline	2 3	Fractions	0.000 0.000	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	3 8	Fractions	0.048 0.048	0.048 0.048	0.048 0.048	0.048 0.048	
+
+
+Baseline	2 4		taken by thread	4
+
+
+Baseline	8 9	Fractions	0.797 0.797	0.797 0.797	0.797 0.797	0.797 0.797	
+
+
+Baseline	7 3	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	5 9	Fractions	0.152 0.152	0.152 0.152	0.152 0.152	0.152 0.152	
+
+
+Baseline	3 9		taken by thread	7
+
+
+Baseline	5 3	Fractions	0.042 0.042	0.042 0.042	0.012 0.012	0.018 0.018	
+
+
+Baseline	7 4		taken by thread	14
+
+
+Baseline	3 3	Fractions	0.000 0.000	0.000 0.000	0.000 0.000	0.000 0.000	
+
+
+Baseline	5 4		taken by thread	10
+
+
+Baseline	4 8	Fractions	0.012 0.012	0.012 0.012	0.012 0.012	0.012 0.012	
+
+
+Baseline	1 8	Fractions	0.470 0.470	0.470 0.470	0.470 0.470	0.470 0.470	
+
+
+Baseline	3 4		taken by thread	6
+
+
+Baseline	7 8	Fractions	0.337 0.337	0.337 0.337	0.337 0.337	0.337 0.337	
+
+
+Baseline	4 9		taken by thread	9
+
+
+Baseline	1 4	Fractions	0.024 0.024	0.024 0.024	0.024 0.024	0.024 0.024	
+
+
+Baseline	1 9		taken by thread	3
+
+
+Baseline	7 9		taken by thread	15
+
+
+Baseline	6 8	Fractions	0.030 0.030	0.024 0.024	0.024 0.024	0.024 0.024	
+
+
+Baseline	6 9		taken by thread	13
+
+
+Baseline	4 3	Fractions	0.000 0.000	0.012 0.012	0.000 0.000	0.000 0.000	
+
+
+Baseline	2 8	Fractions	0.060 0.060	0.060 0.060	0.060 0.060	0.060 0.060	
+
+
+Baseline	7 9	Fractions	0.899 0.899	0.899 0.899	0.899 0.899	0.899 0.899	
+
+
+Baseline	4 4		taken by thread	8
+
+
+Baseline	1 9	Fractions	0.759 0.759	0.759 0.759	0.759 0.759	0.759 0.759	
+
+
+Baseline	2 9		taken by thread	5
+
+
+Baseline	3 9	Fractions	0.430 0.430	0.430 0.430	0.437 0.437	0.430 0.430	
+
+
+Baseline	6 4	Fractions	0.018 0.018	0.012 0.012	0.000 0.000	0.000 0.000	
+
+
+Baseline	5 4	Fractions	0.217 0.217	0.217 0.217	0.193 0.193	0.193 0.193	
+
+
+Baseline	4 9	Fractions	0.354 0.354	0.354 0.354	0.354 0.354	0.354 0.354	
+
+
+Baseline	2 4	Fractions	0.036 0.036	0.048 0.048	0.036 0.036	0.048 0.048	
+
+
+Baseline	6 9	Fractions	0.494 0.494	0.494 0.494	0.494 0.494	0.494 0.494	
+
+
+Baseline	7 4	Fractions	0.024 0.024	0.024 0.024	0.030 0.030	0.024 0.024	
+
+
+Baseline	3 4	Fractions	0.024 0.024	0.036 0.036	0.000 0.000	0.000 0.000	
+
+
+Baseline	2 9	Fractions	0.354 0.354	0.354 0.354	0.354 0.354	0.354 0.354	
+
+
+Baseline	4 4	Fractions	0.030 0.030	0.060 0.060	0.006 0.006	0.012 0.012	
+
+Total baselines / uvbins		100

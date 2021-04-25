@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -ggdb -Wvla -Wall -DNDEBUG -march=native -std=c++0x -pthread  -rdynamic CMakeFiles/vo2model.dir/vo2model.cpp.o CMakeFiles/vo2model.dir/model/model.cpp.o CMakeFiles/vo2model.dir/nlplfitter.cpp.o CMakeFiles/vo2model.dir/parser/votableparser.cpp.o  -o vo2model -lpthread -lxml2 -lgsl -lgslcblas 

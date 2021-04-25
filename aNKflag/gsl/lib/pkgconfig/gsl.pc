@@ -1,0 +1,11 @@
+prefix=/data1/devojyoti/PhD/ankflag/gsl
+exec_prefix=/data1/devojyoti/PhD/ankflag/gsl
+libdir=/data1/devojyoti/PhD/ankflag/gsl/lib
+includedir=/data1/devojyoti/PhD/ankflag/gsl/include
+GSL_CBLAS_LIB=-lgslcblas
+
+Name: GSL
+Description: GNU Scientific Library
+Version: 2.6
+Libs: -L/data1/devojyoti/PhD/ankflag/gsl/lib -lgsl ${GSL_CBLAS_LIB} -lm -lm 
+Cflags: -I/data1/devojyoti/PhD/ankflag/gsl/include

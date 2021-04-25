@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -ggdb -Wvla -Wall -DNDEBUG -march=native -std=c++0x -pthread  -rdynamic CMakeFiles/bbs2model.dir/bbs2model.cpp.o CMakeFiles/bbs2model.dir/model/model.cpp.o CMakeFiles/bbs2model.dir/nlplfitter.cpp.o  -o bbs2model -lpthread -lgsl -lgslcblas 
