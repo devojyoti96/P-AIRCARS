@@ -12,14 +12,15 @@ from CALIBRATE.access_calibrate import *
 from mwa_pb.mwapb import *
 matplotlib.use('Agg')
 
-cwd=os.getcwd()
-sys.path.append(cwd)
-if os.path.isfile(cwd+'/selfcal_inputs.py')==False:
-	print ('Input file does not exist.\n')
-	os._exit(0)
-else:
-	import selfcal_inputs as inputs
-	from selfcal_inputs import *
+if __name__!='__main__':
+	cwd=os.getcwd()
+	sys.path.append(cwd)
+	if os.path.isfile(cwd+'/selfcal_inputs.py')==False:
+		print ('Input file does not exist.\n')
+		os._exit(0)
+	else:
+		import selfcal_inputs as inputs
+		from selfcal_inputs import *	
 
 '''
 Code is written by Devojyoti Kansabanik, March 6, 2021
@@ -1162,6 +1163,15 @@ if __name__=='__main__':
 	filehandle.setFormatter(formatter)
 	logger.addHandler(filehandle)
 	logger.propagate = False
+
+	cwd=os.getcwd()
+	sys.path.append(cwd)
+	if os.path.isfile(cwd+'/selfcal_inputs.py')==False:
+		print ('Input file does not exist.\n')
+		os._exit(0)
+	else:
+		import selfcal_inputs as inputs
+		from selfcal_inputs import *
 
 	if options.chantime_msname[-1]=='/':
 		options.chantime_msname=options.chantime_msname[:-1]

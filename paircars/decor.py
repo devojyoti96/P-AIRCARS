@@ -137,7 +137,6 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 		elen = np.array(elen, dtype=np.float64)
 		hl.close()
 
-			
 
 		#raise  SystemExit
 
@@ -191,7 +190,7 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 					       uvw, cwid, fout)
 
 			rec['data'][:,:,:] = cdat
-			print ('%5d, time = %.2f' % (0, tims[0]))  # Only one single time
+			print ('Time = %.2f' % (tims[0]))  # Only one single time
 
 			if os.path.isfile(msname+'/.iau')==False:
 				rec_copy=copy.deepcopy(rec)
@@ -273,7 +272,7 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 					
 					tymd = qa.time(qa.quantity(tim, 's'), form='ymd', prec=8)[0]
 
-					print ('%5d, Time = %s' % (tim, tymd))
+					print ('Time = %s' % (tymd))
 
 				print ('Block %d-%d done.' % (it0,it1-1))
 				if do_iau_con==True:

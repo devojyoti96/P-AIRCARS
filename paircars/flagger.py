@@ -11,7 +11,7 @@ from casatasks import *
 Code is written by Devojyoti Kansabanik, 26 Jan ,2021
 '''
 
-def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,logger_name=''):
+def flag_MWA_coarse(msname,edgewidth=80,do_flag=True):
 	'''
 	A function to generate the list of coarse-channels edges + the 
 	central channel in each coarse channel to be flagged.
@@ -19,20 +19,11 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,logger_name=''):
 	msname= Name of the masurement set
 	edgewidth = Flag edge channels width in kHz
 	do_flag = True, If true flag tedge channels, otherwise return only the good channels list
-	logger_name= Name of the logger to log the outputs
 	Return:
 	Unflagged channels, One central channel per coarse channel
 	'''
 	# Function is written by Divya Oberoi, 07 Apr, 2016
 	# Modified by Devojyoti Kansabanik, 23 Jan, 2021
-	if logger_name!='':
-		try:
-			do_print=False
-			mainlog = logging.getLogger(logger_name)
-		except:
-			do_print=True
-	else:
-		do_print=True
 	AM=am.AccessMS(msname)
 	ncoarse_chan=AM.calc_ncoarse()
 	freqres=AM.calc_freqres()
@@ -64,27 +55,18 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,logger_name=''):
 			ch1 = ch1 + minchan
 			i = i + 1
 		if os.path.isfile(msname+'/.coarse_chan_flagged_'+str(edgewidth))==False and do_flag==True:
-			if do_print:
-				print ('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
-			else:
-				mainlog.info('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
+			print ('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
 			flagdata(vis=msname,spw=CHAN_FLAG_STR,mode='manual',flagbackup=False)
 			os.system('touch '+msname+'/.coarse_chan_flagged_'+str(edgewidth))
 	else:
 		if ncoarse_chan==0:
-			if do_print:
-				print ('Number of coarse channel is less than 1. No coarse channel flagging is required.\n')
-			else:
-				mainlog.info('Number of coarse channel is less than 1. No coarse channel flagging is required.\n')
+			print ('Number of coarse channel is less than 1. No coarse channel flagging is required.\n')
 		else:
-			if do_print:
-				print ('Coarse channel edges are already flagged.\n')
-			else:
-				mainlog.info('Coarse channel edges are already flagged.\n')
+			print ('Coarse channel edges are already flagged.\n')
 	return CHAN_UNFLAG_STR,channels_per_coarse
 
 
-def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True,logger_name=''): 
+def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True): 
 	'''
 	Perform flagging on uv sub data using aNKflagger
 	Parameters:
@@ -93,18 +75,9 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True,log
 	nthread = Number of CPU threads to be used by aNKflag. If 0, it will use 25% of the total available CPU threads.
 	verbose = False, If True keep all records
 	flagbackup = True, Keep flagbackup
-	logger_name = Name of the logger to log the outputs
 	Return:
 	Flagged measurement set name
 	'''
-	if logger_name!='':
-		try:
-			do_print=False
-			mainlog = logging.getLogger(logger_name)
-		except:
-			do_print=True
-	else:
-		do_print=True
 	mdflag=msmetadata()
 	tbflag=table()
 	mdflag.open(msname)
@@ -125,11 +98,7 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True,log
 		ft(vis=msname,model=model,usescratch=True)
 	uvsub(vis=msname,reverse=False)
 	ankflagger=runank.ANKFLAG()
-	if do_print==True:
-			print ('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\',out_fileformat=\'ms\','+\
-			'automode=True,datacolumn=\'corrected\',verbose=verbose,flagbackup=True)\n')
-	else:
-		mainlog.info('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\',out_fileformat=\'ms\','+\
+	print ('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\',out_fileformat=\'ms\','+\
 			'automode=True,datacolumn=\'corrected\',verbose=verbose,flagbackup=True)\n')
 	outfile=ankflagger.runankflag(msname,nants,available_cpus,nchan,ntimes,npols,inp_fileformat='ms',out_fileformat='ms',automode=True,datacolumn='corrected',\
 			verbose=verbose,flagbackup=True)

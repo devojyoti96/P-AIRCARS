@@ -192,7 +192,7 @@ class CalcParams:
 				max_DR			=	100
 				min_selfcal_snr	=	3
 				skip_time		=	240
-				skip_freq		=	1280
+				skip_freq		=	2560
 			elif self.safety_factor==1:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
@@ -205,7 +205,7 @@ class CalcParams:
 				max_DR			=	500
 				min_selfcal_snr	=	3.5
 				skip_time		=	120
-				skip_freq		=	1280
+				skip_freq		=	2560
 			else:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
@@ -218,7 +218,7 @@ class CalcParams:
 				max_DR			=	1000
 				min_selfcal_snr	=	4
 				skip_time		=	80
-				skip_freq		=	1280
+				skip_freq		=	2560
 		elif self.quality_factor==1:
 			if self.safety_factor==0:
 				start_sigma		=	10.0
@@ -232,7 +232,7 @@ class CalcParams:
 				max_DR			=	1000
 				min_selfcal_snr	=	3.5
 				skip_time		=	120
-				skip_freq		=	640
+				skip_freq		=	1280
 			elif self.safety_factor==1:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
@@ -245,7 +245,7 @@ class CalcParams:
 				max_DR			=	5000
 				min_selfcal_snr	=	4
 				skip_time		=	80
-				skip_freq		=	640
+				skip_freq		=	1280
 			else:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
@@ -258,7 +258,7 @@ class CalcParams:
 				max_DR			=	10000
 				min_selfcal_snr	=	4.5
 				skip_time		=	60
-				skip_freq		=	640
+				skip_freq		=	1280
 		else:
 			if self.safety_factor==0:
 				start_sigma		=	11.0
@@ -272,7 +272,7 @@ class CalcParams:
 				max_DR			=	10000
 				min_selfcal_snr	=	4.5
 				skip_time		=	80
-				skip_freq		=	320
+				skip_freq		=	640
 			elif self.safety_factor==1:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
@@ -285,7 +285,7 @@ class CalcParams:
 				max_DR			=	50000
 				min_selfcal_snr	=	5.0
 				skip_time		=	60
-				skip_freq		=	320
+				skip_freq		=	640
 			else:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
@@ -298,7 +298,7 @@ class CalcParams:
 				max_DR			=	100000
 				min_selfcal_snr	=	5.5
 				skip_time		=	30
-				skip_freq		=	320
+				skip_freq		=	640
 		uvrange_to_cal=''
 		if skip_freq<self.AM.calc_freqres():
 			skip_freq=self.AM.calc_freqres()

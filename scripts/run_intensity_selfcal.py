@@ -10,14 +10,15 @@ from astropy.io import fits
 from astropy import wcs
 matplotlib.use('Agg')
 
-cwd=os.getcwd()
-sys.path.append(cwd)
-if os.path.isfile(cwd+'/selfcal_inputs.py')==False:
-	print ('Input file does not exist.\n')
-	os._exit(0)
-else:
-	import selfcal_inputs as inputs
-	from selfcal_inputs import *
+if __name__!='__main__':
+	cwd=os.getcwd()
+	sys.path.append(cwd)
+	if os.path.isfile(cwd+'/selfcal_inputs.py')==False:
+		print ('Input file does not exist.\n')
+		os._exit(0)
+	else:
+		import selfcal_inputs as inputs
+		from selfcal_inputs import *
 
 '''
 Code is written by Devojyoti Kansabanik, 26 Jan, 2021
@@ -1151,15 +1152,60 @@ if __name__=='__main__':
 	logger.addHandler(filehandle)
 	logger.propagate = False
 
+	cwd=os.getcwd()
+	sys.path.append(cwd)
+	if os.path.isfile(cwd+'/selfcal_inputs.py')==False:
+		print('Input file does not exist.\n')
+		os._exit(0)
+	else:
+		import selfcal_inputs as inputs
+		from selfcal_inputs import *
+
 	if options.chantime_msname[-1]=='/':
 		options.chantime_msname=options.chantime_msname[:-1]
 
 	if options.chantime_msname==None or os.path.isdir(options.chantime_msname)==False:
 		logger.info('Measurement set does not exist. Exititing...\n')
+		touch_file=inputs.basedir+'/.Finished_gcal_'+msbasename+'_'+str('noms')
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Gain selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\nMessage : No measurement set is present\nTotal runtime : '+\
+					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			send_paircars_notification(inputs.email,msg_subject,msg_str)
+		os.system('touch '+touch_file)
+		if inputs.keep_logger==False:
+			os.system('rm -rf '+options.workdir+'/*.log')
+		os.system('rm -rf '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 	
 	if options.metafits==None or os.path.isfile(options.metafits)==False:
 		logger.info('Metafits file does not exist. Exititing...\n')
+		touch_file=inputs.basedir+'/.Finished_gcal_'+msbasename+'_'+str('nometa')
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Gain selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\nMessage : No metafits file is present\nTotal runtime : '+\
+					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			send_paircars_notification(inputs.email,msg_subject,msg_str)
+		os.system('touch '+touch_file)
+		if inputs.keep_logger==False:
+			os.system('rm -rf '+options.workdir+'/*.log')
+		os.system('rm -rf '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 
 	OBSID=get_OBSID(options.metafits)
@@ -1212,7 +1258,7 @@ if __name__=='__main__':
 					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
 		if inputs.send_notification==True:
-			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+			send_paircars_notification(inputs.email,msg_subject,msg_str)
 		os.system('touch '+touch_file)
 		if inputs.keep_logger==False:
 			os.system('rm -rf '+options.workdir+'/*.log')
