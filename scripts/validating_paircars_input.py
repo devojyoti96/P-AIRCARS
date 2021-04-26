@@ -73,7 +73,7 @@ if __name__=='__main__':
 	if os.path.isfile('paircars_inputs.py')==False:
 		print ('Input file does not exist. Exiting PAIRCARS......\n')
 		os.system('rm -rf casa*log')
-		os._exit(0)
+		os._exit(1)
 	else:
 		os.system('cp paircars_inputs.py selfcal_inputs_temp.py')
 	inpfil=open('selfcal_inputs_temp.py','r+')
@@ -85,11 +85,11 @@ if __name__=='__main__':
 			if basedir=='':
 				print ('Base directory path is still empty. Please become stable first and then run the code.\n')
 				os.system('rm -rf casa*log')
-				os._exit(0)
+				os._exit(1)
 		else:
 			print ('Base directory path is empty. Exititng PAIRCARS.....\n')
 			os.system('rm -rf casa*log')
-			os._exit(0)
+			os._exit(1)
 		
 	if os.path.isdir(basedir)==False: # If basedir is not present making it
 		print ('Base directory is not present. Making base directory at :'+basedir)
@@ -120,7 +120,7 @@ if __name__=='__main__':
 	if os.path.isfile(basedir+'/.paircars_running'):
 		mainlog.error('PAIRCARS is already running in this base directory. Choose a different directory. Exiting PAIRCARS......\n')
 		os.system('rm -rf casa*log')
-		os._exit(0)
+		os._exit(1)
 	elif os.path.isfile(basedir+'/.paircars_finished'):
 		mainlog.error('PAIRCARS is already have final results in this base directory.\n')
 		want_to_continue=input('Do you want to run it again? Y/y/N/n')
@@ -136,7 +136,7 @@ if __name__=='__main__':
 		else:
 			mainlog.info('Exiting the code.\n')
 			os.system('rm -rf casa*log')
-			os._exit(0)
+			os._exit(1)
 	elif os.path.isfile(basedir+'/.paircars_failed'):
 		mainlog.error('PAIRCARS have failed in this base directory. Cleaning the base directory for fresh start up.\n')
 		os.system('mv '+basedir+'/PAIRCARS_mainlog.log temp.log')
@@ -161,7 +161,7 @@ if __name__=='__main__':
 	if os.path.isdir(msdir)==False:
 		mainlog.info('Measurement set directory does not exist. Check the measurement set path and re run. Exiting PAIRCARS....\n')
 		os.system('rm -rf casa*log')
-		os._exit(0)
+		os._exit(1)
 
 	# Organising measurement sets
 	#############################
@@ -181,7 +181,7 @@ if __name__=='__main__':
 	if len(measurement_set_list)==0:
 		mainlog.error('No valid measurement set is present. Put the correct data. Exiting PAIRCARS.....\n')
 		os.system('rm -rf casa*log')
-		os._exit(0)
+		os._exit(1)
 	else:
 		mainlog.info(str(len(measurement_set_list))+' measurement set has been found.\n')
 

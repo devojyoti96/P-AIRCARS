@@ -171,17 +171,12 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				os.system('rm -rf '+working_dir+'/Backup_uncalib.ms')
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_uncalib.ms\',datacolumn=\'data\')\n')
 			split(vis=msname,outputvis=working_dir+'/Backup_uncalib.ms',datacolumn='data') # Backup of uncalibrated ms
-			if caltables!='':
-				caltable_list=caltables.split(',')
-				logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
-				applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
-				if os.path.isdir(workdir+'/temp.ms')==True:
-					os.system('rm -rf '+workdir+'/temp.ms')
-				logger.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/temp.ms\',datacolumn=\'corrected\')\n')
-				split(vis=msname,outputvis=workdir+'/temp.ms',datacolumn='corrected')
-				os.system('rm -rf '+msname)
-				os.system('mv '+workdir+'/temp.ms '+msname)
-
+		if caltables!='':
+			caltable_list=caltables.split(',')
+			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
+		
 	if msname[-1]=='/':
 		msname=msname[:-1]
 	if inputs.basedir[-1]=='/':
@@ -204,6 +199,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		os.makedirs(basedir+'/caltables/'+str(OBSID))
 	if os.path.isdir(basedir+'/imagemodels/'+str(OBSID))==False: # Directory to keep models
 		os.makedirs(basedir+'/imagemodels/'+str(OBSID))
+
 
 	if start_fresh==False:
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\

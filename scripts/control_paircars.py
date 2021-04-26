@@ -2,7 +2,9 @@
 Code is written by Devojyoti Kansabanik , 28 Jan, 2021
 '''
 import os,sys
-os.system('python3 validating_paircars_input.py\n')
+a=os.system('python3 validating_paircars_input.py\n')
+if os.WEXITSTATUS(a)!=0:
+	os._exit(1)
 from paircars_inputs import basedir
 from casatools import *
 from casatasks import *
@@ -317,11 +319,15 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 	touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal_*')
 	if len(touch_file_list)!=0:
 		for t in touch_file_list:
-			msg=int(t.split('_')[-1])
-			if msg>100:
-				msg-=100
-			if msg!=0 and mgs!=8 and msg!=9:
+			msg=t.split('_')[-1]
+			if msg=='error':
 				os.system('rm -rf '+t)
+			else:
+				msg=int(msg)
+				if msg>100:
+					msg-=100
+				if msg!=0 and mgs!=8 and msg!=9:
+					os.system('rm -rf '+t)
 
 	# In this while loop we are checking whether the present time and frequency averaging is enough to start the self calibration. If it has it will leave the loop and go for selfcal
 	while os.path.isfile('.ref_timechan_done')==False and ref_time_freq==True:  	
@@ -391,11 +397,15 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 				touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal_'+os.path.basename(ref_timechan_ms)+'_*')
 				if len(touch_file_list)!=0:
 					for t in touch_file_list:
-						msg=int(t.split('_')[-1])
-						if msg>100:
-							msg-=100
-						if msg!=0 and msg!-8 and msg!=9:
+						msg=t.split('_')[-1]
+						if msg=='error':
 							os.system('rm -rf '+t)
+						else:
+							msg=int(msg)
+							if msg>100:
+								msg-=100
+							if msg!=0 and mgs!=8 and msg!=9:
+								os.system('rm -rf '+t)
 				if len(calibrator_caltable)!=0:
 					calstring=','.join(calibrator_caltable)
 					cmd='run_intensity_selfcal --msname '+ref_timechan_ms+' --metafits '+metafits+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
@@ -480,14 +490,14 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 				channel_grid.remove(ref_chan)	
 				break
 
+	unflagged_channels=AM.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
+	if unflagged_channels==0:
+		mainlog.info('No unflagged channel is present.\n')
+		return 0,0,0
+	
 	# If not the reference time frequency ms, making time and channel and time frequency grid
 	#########################################################################################
-	if ref_time_freq==False:
-		unflagged_channels=AM.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
-		if unflagged_channels==0:
-			mainlog.info('No unflagged channel is present.\n')
-			return 0,0,0
-
+	if ref_time_freq==False or (os.path.isfile('.ref_timechan_done')==False):
 		timestamps=[mjdsec_to_timestamp(mjdsec,includedate=True,format=0) for mjdsec in mjd_timestamps]
 
 		skip_channel=int(skip_freq/AM.calc_freqres())
@@ -524,7 +534,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 	elif inputs.quality_factor==0:
 		mainlog.info('Quality factor is 0. Skipping bandpass self calibration.\n')
 		do_bandpass==False
-	elif len(calibrator_cal)!=0 and do_bandpass==True:
+	elif len(calibrator_caltable)!=0 and do_bandpass==True:
 		mainlog.warning('Bandpass calibration is already applied using calibrator observation.\n')
 		if inpurs.interactive==True:
 			want_bandpass=input('Do you still want to perform bandpass selfcal? Y/N\n')
@@ -551,7 +561,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 
 	# Estimating total casa instances
 	#################################
-	total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent())
+	total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
 	available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
 	casa_instance=int(available_cpu_for_paircars/3)
 	open_casa_instance=0
@@ -594,7 +604,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 					mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')
 					break	
 		time.sleep(2.0)	
-	mainlog.info('All gaincal jons are spawned.\n')
+	mainlog.info('All gaincal jobs are spawned.\n')
 
 	# Applying ref time solution
 	############################
@@ -695,11 +705,11 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 			else:
 				msname,msdir=spliting_timechan(averaged_msname,str(i),timerange,caltype='P',ref_timechan=False,\
 											input_file=workdir+'/selfcal_inputs.py',datacolumn='corrected')
-			if len(calibrator_cal)!=0:
+			if len(calibrator_caltable)!=0:
 				cmd='run_pol_selfcal --msname '+msname+' --metafits '+metafits+' --workdir '+msdir+' --verbose '+str(inputs.verbose)+\
 				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal False'
 			else:
-				cmd='python3 run_pol_selfcal --msname '+msname+' --metafits '+metafits+' --workdir '+msdir+' --verbose '+str(inputs.verbose)+\
+				cmd='run_pol_selfcal --msname '+msname+' --metafits '+metafits+' --workdir '+msdir+' --verbose '+str(inputs.verbose)+\
 				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal True'
 			polcal_cmd_list.append(cmd)
 			polcal_screen_list.append(os.path.basename(msname).split('.ms')[0]+'_screen_P')
@@ -739,7 +749,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_time_freq=False,do_bandpass=Fals
 				if clear_screen==True:
 					os.system('screen -ls | tail -n +2 | head -n -2 | awk \'{print $1}\'| xargs -I{} screen -S {} -X quit')
 				return ref_time,ref_chan,open_casa_instances
-
 
 def managing_caldatabase(msname,ref_time,gaincal_modedir,bandpass_modeldir,polcal_caldir,localdatabase):
 	'''
