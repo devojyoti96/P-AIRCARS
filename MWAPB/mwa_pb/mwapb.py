@@ -38,7 +38,7 @@ class MWA_PrimaryBeam:
 		AM=AccessMS(self.msname)
 		radecstr,ra,dec=AM.get_phasecenter()
 		LAT,LON,ALT=AM.get_observatory_loc()
-		parang=AM.get_phasecenter_parang(source_field=0,combine='field')
+		parang=np.deg2rad(AM.get_phasecenter_parang(source_field=0,combine='field')-360.0)
 		alt,az=AM.get_altaz(source_field=0,source_scan=1)
 		metaheader=fits.getheader(self.metafits)
 		gridpoint=metaheader['GRIDNUM']
@@ -49,12 +49,12 @@ class MWA_PrimaryBeam:
 		coord_transform=np.matrix([[0.0,-1.0],[-1.0,0.0]])
 		Jones_FEE_2D_IAU=np.matmul(coord_transform,np.matrix(Jones_FullEE))
 		pa_matrix=np.matrix([[np.cos(parang),np.sin(parang)],[-np.sin(parang),np.cos(parang)]])
-		Jones_FEE_2D_IAU=np.matrix(np.matmul(pa_matrix,Jones_FEE_2D_IAU))
+		Jones_FEE_2D_IAU_parang=np.matrix(np.matmul(pa_matrix,Jones_FEE_2D_IAU))
 		if self.invbeam==True:
-			Jones_FEE_2D_IAU=inv(Jones_FEE_2D_IAU)
+			Jones_FEE_2D_IAU_parang=inv(Jones_FEE_2D_IAU_parang)
 		if outputfile!='':
-			np.save(outputfile,Jones_FEE_2D_IAU)
-		return Jones_FEE_2D_IAU
+			np.save(outputfile,Jones_FEE_2D_IAU_parang)
+		return Jones_FEE_2D_IAU_parang
 
 
 	def MWA_phasecenter_beam_jones(self,outputfile='',nant=128,nchan=1024,nint=1000):
@@ -66,7 +66,7 @@ class MWA_PrimaryBeam:
 		nchan = Number of frequency channels
 		nint = Number of time slices
 		Return:
-		Beam jones of the phasecenter as CALIBRATE caltable format, Beam JOnes matrix
+		Beam jones of the phasecenter as CALIBRATE caltable format, Beam Jones matrix
 		'''
 		if outputfile=='':
 			return
