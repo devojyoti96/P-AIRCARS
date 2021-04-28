@@ -54,10 +54,17 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True):
 			ch0 = ch0 + minchan
 			ch1 = ch1 + minchan
 			i = i + 1
-		if os.path.isfile(msname+'/.coarse_chan_flagged_'+str(edgewidth))==False and do_flag==True:
+		code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
+		code_list=code.split(',')
+		if 'C_FLAG_'+str(edgewidth) not in code_list and do_flag==True:
 			print ('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
 			flagdata(vis=msname,spw=CHAN_FLAG_STR,mode='manual',flagbackup=False)
-			os.system('touch '+msname+'/.coarse_chan_flagged_'+str(edgewidth))
+			flagdata(vis=msname,autocorr=True,flagbackup=False)
+			if len(code_list)==1 and code_list[0]=='':
+				code+='C_FLAG_'+str(edgewidth)
+			else:
+				code+=',C_FLAG_'+str(edgewidth)
+			vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 	else:
 		if ncoarse_chan==0:
 			print ('Number of coarse channel is less than 1. No coarse channel flagging is required.\n')
@@ -78,6 +85,7 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True):
 	Return:
 	Flagged measurement set name
 	'''
+	print ('Using aNKflagger....\n')
 	mdflag=msmetadata()
 	tbflag=table()
 	mdflag.open(msname)
@@ -119,6 +127,7 @@ def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 	'''
 	tb=table()
 	md=msmetadata()
+	print ('Using uvsub_flagged.....\n')
 	# Keeping flag backup
 	if flagbackup==True:
 		af=agentflagger()
@@ -169,7 +178,9 @@ def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 	cor_col[flag_col]=np.nan
 	old_flags=np.sum(flag_col)
 	for nsigma in rmsthresh:
+		print ('Flagging in '+str(nsigma)+' sigma threshold.\n')
 		flag_count=True
+		flag_round=0
 		while flag_count==True:
 			flag_size=0
 			for chan in range(nchan):			
@@ -187,7 +198,8 @@ def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 				if pos_flag.size!=0:
 					flag_col[pol,pos_flag[0],pos_flag[1]]=True
 					cor_col[flag_col]=np.nan
-			if flag_size==0:
+			flag_round+=1
+			if flag_size==0 or flag_round>500:
 				flag_count=False
 	tb.putcol('FLAG',flag_col)
 	tb.flush()

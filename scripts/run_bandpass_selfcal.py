@@ -304,7 +304,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
 		os.chdir(cwd)
 		if __name__!='__main__':
-			touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_12'
+			touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_12'
 			msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 					os.path.basename(msname)+'\nMessage :'+error_msgs(12)+'\n\nBest regards,\nPAIRCARS developing team'
 			msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -376,7 +376,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			if 'ref' in msname:
 				os.chdir(cwd)
 				if __name__!='__main__':
-					touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_'+str(msg_code+100)
+					touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_'+str(msg_code+100)
 					msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+os.path.basename(msname)+'\nMessage : '+error_msgs(100)+', '+error_msgs(msg_code)\
 									+'\n\nBest regards,\nPAIRCARS developing team'
 					msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -393,7 +393,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			else:
 				os.chdir(cwd)
 				if __name__!='__main__':
-					touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_'+str(msg_code)
+					touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_'+str(msg_code)
 					msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 							os.path.basename(msname)+'\nMessage : '+error_msgs(6)+'\n\nBest regards,\nPAIRCARS developing team'
 					msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -474,9 +474,11 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						flagmanager(vis=msname,mode='delete',versionname=flagversion)
 					if use_ankflagger:
 						logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
+						logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
 						do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=False)
 					else:
 						logger.info('Performing uvsub flagging due to DR decrease.\n')
+						logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
 						do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
 					uvsub_flag_count+=1
 					os.system('rm -rf junk1.model')
@@ -498,7 +500,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					if 'ref' in msname:
 						os.chdir(cwd)
 						if __name__!='__main__':
-							touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_108'
+							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_108'
 							msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+os.path.basename(msname)+'\nMessage : '+error_msgs(100)+', '+error_msgs(8)\
 								+'\n\nBest regards,\nPAIRCARS developing team'
 							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -516,7 +518,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					else:
 						os.chdir(cwd)
 						if __name__!='__main__':
-							touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_8'
+							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_8'
 							msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 								os.path.basename(msname)+'\nMessage : '+error_msgs(8)+'\n\nBest regards,\nPAIRCARS developing team'
 							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -548,7 +550,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				os.system('rm -rf '+working_dir+'/junk*')
 				os.chdir(cwd)
 				if __name__!='__main__':
-					touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_0'
+					touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_0'
 					msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 						os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
 					msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -586,9 +588,11 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 								flagmanager(vis=msname,mode='delete',versionname=flagversion)
 							if use_ankflagger:
 								logger.info('Perforing final uvsub flag using aNKflagger.\n')
+								loggr.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
 								do_uvsub_ankflag(msname,model='junk1.model',nthread=1,verbose=verbose,flagbackup=False)
 							else:
 								logger.info('Performing final uvsub flag.\n')
+								logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk1.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
 								do_uvsub_flagger(msname,model='junk1.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
 							uvsub_flag_count+=1
 							continue
@@ -608,7 +612,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							os.system('rm -rf '+working_dir+'/junk*') 
 							os.chdir(cwd)
 							if __name__!='__main__':
-								touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_0'
+								touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_0'
 								msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 										os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
 								msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -665,7 +669,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					if 'ref' in msname:
 						os.chdir(cwd)
 						if __name__!='__main__':
-							touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_109'
+							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_109'
 							msg_str='Dear PAIRCARS User,\n\nBandpass self-calibration for : '+os.path.basename(msname)+'\nMessage : '+error_msgs(100)+', '+error_msgs(9)\
 										+'\n\nBest regards,\nPAIRCARS developing team'
 							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -683,7 +687,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					else:
 						os.chdir(cwd)
 						if __name__!='__main__':
-							touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_9'
+							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_9'
 							msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 								os.path.basename(msname)+'\nMessage : '+error_msgs(9)+'\n\nBest regards,\nPAIRCARS developing team'
 							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
@@ -706,7 +710,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					os.system('rm -rf '+working_dir+'/junk*')
 					os.chdir(cwd)
 					if __name__!='__main__':
-						touch_file=basedir+'/.Finished_bcal_'+os.path.basename(msname)+'_13'
+						touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_13'
 						msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
 							os.path.basename(msname)+'\nMessage : '+error_msgs(13)+'\n\nBest regards,\nPAIRCARS developing team'
 						msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
@@ -763,16 +767,53 @@ if __name__=='__main__':
 	if options.chantime_msname[-1]=='/':
 		options.chantime_msname=options.chantime_msname[:-1]
 
+	msbasename=os.path.basename(options.chantime_msname)
+	OBSID=get_OBSID(options.metafits)
+
 	if options.chantime_msname==None or os.path.isdir(options.chantime_msname)==False:
 		logger.info('Measurement set does not exist. Exititing...\n')
+		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+msbasename+'_'+str('noms')
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Bandpass selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\nMessage : No measurement set is present\nTotal runtime : '+\
+					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			send_paircars_notification(inputs.email,msg_subject,msg_str)
+		os.system('touch '+touch_file)
+		if inputs.keep_logger==False:
+			os.system('rm -rf '+options.workdir+'/*.log')
+		os.system('rm -rf '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 	
 	if options.metafits==None or os.path.isfile(options.metafits)==False:
 		logger.info('Metafits file does not exist. Exititing...\n')
+		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+msbasename+'_'+str('nometa')
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Bandpass selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\nMessage : No metafits file is present\nTotal runtime : '+\
+					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			send_paircars_notification(inputs.email,msg_subject,msg_str)
+		os.system('touch '+touch_file)
+		if inputs.keep_logger==False:
+			os.system('rm -rf '+options.workdir+'/*.log')
+		os.system('rm -rf '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 
-	OBSID=get_OBSID(options.metafits)
-	msbasename=os.path.basename(options.chantime_msname)
 	try:
 		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
 		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
@@ -790,7 +831,7 @@ if __name__=='__main__':
 			if options.verbose==False:
 				print ('Message : '+error_msgs(msg)+'\n')
 			logger.info('Message : '+error_msgs(msg)+'\n')
-		touch_file=inputs.basedir+'/.Finished_bcal_'+msbasename+'_'+str(msg)
+		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+msbasename+'_'+str(msg)
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 		logger.info('#############################\n')
@@ -809,7 +850,7 @@ if __name__=='__main__':
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 	except:
-		touch_file=inputs.basedir+'/.Finished_bcal_'+msbasename+'_'+str('error')
+		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 		logger.info('#############################\n')

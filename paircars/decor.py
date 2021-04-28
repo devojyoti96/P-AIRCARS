@@ -1,6 +1,7 @@
 import sys,os,numpy as np,glob,time,copy
 from astropy.io import fits
 from casatools import ms as mstools,quanta,msmetadata
+from casatasks import *
 '''
 Code is written by Leonid Benkevitch and Surajit Mondal
 Code is modified for python3 and CASA6 by Devojyoti Kansabanik, 05 Jan, 2021
@@ -99,8 +100,9 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 	Return:
 	Decorrelation corrected measurement set in IAU convention
 	'''
-	if os.path.isfile(msname+'/.decor_applied.check')==False:
-		
+	code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
+	code_list=code.split(',')
+	if 'DECORRED' not in code_list:
 		c_speed_of_light = 299792458. # m/s
 		# Definging CASA6 casatools
 		ms=mstools()
@@ -191,10 +193,10 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 
 			rec['data'][:,:,:] = cdat
 			print ('Time = %.2f' % (tims[0]))  # Only one single time
-
-			if os.path.isfile(msname+'/.iau')==False:
+			code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
+			code_list=code.split(',')	
+			if 'IAU' not in code_list:
 				rec_copy=copy.deepcopy(rec)
-
 				# Converting from MWA coordinate ( X=EW and Y=NS ) to IAU coordinate (X=S->N, Y=W -> E)	.
 				# Thus X=>-Y, and Y=>-X. So, XX=>YY,YY=>XX,XY=>YX,YX=>XY
 				rec[0,:,:]=rec_copy[3,:,:]
@@ -202,6 +204,11 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 				rec[2,:,:]=rec_copy[1,:,:]
 				rec[3,:,:]=rec_copy[0,:,:]
 				print ('Measurement set :'+msname+' is being converted in IAU convention')
+				if len(code_list)==1 and code_list[0]=='':
+					code+='IAU'
+				else:
+					code+=',IAU'
+				vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 				del rec_copy
 			else:
 				print ('Measurement set :'+msname+' is already in IAU convention')
@@ -216,7 +223,9 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 			if n_times % n_tblk != 0: n_io = n_io + 1
 			tblk = np.arange(n_io + 1)*n_tblk
 			tblk[-1] = n_times
-			if os.path.isfile(msname+'/.iau')==False:
+			code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
+			code_list=code.split(',')
+			if 'IAU' not in code_list:
 				do_iau_con=True
 				print ('Measurement set :'+msname+' is being converted in IAU convention')
 			else:
@@ -296,10 +305,18 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 				#
 				ms.putdata(rec)	
 		if do_iau_con==True:
-			os.system('touch '+msname+'/.iau')
+			if len(code_list)==1 and code_list[0]=='':
+				code+='IAU'
+			else:
+				code+=',IAU'
+			vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 		ms.close()
 		fout.close()
-		os.system("touch "+msname+"/.decor_applied.check")
+		if len(code_list)==1 and code_list[0]=='':
+			code+='DECORRED'
+		else:
+			code+=',DECORRED'
+		vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 	else:
 		print ('Amplitude decorrelation is already corrected\n')
 	return

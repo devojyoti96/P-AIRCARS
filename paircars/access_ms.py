@@ -44,7 +44,9 @@ class AccessMS:
 		Returns:
 		Measurement set in IAU convention and confirms the measurement set convention
 		'''
-		if os.path.isfile(self.msname+'/.iau')==False:
+		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
+		code_list=code.split(',')
+		if 'IAU' not in code_list:
 			self.tb.open(self.msname,nomodify=False)
 			data=self.tb.getcol('DATA')
 			data_iau=copy.deepcopy(data)
@@ -56,7 +58,11 @@ class AccessMS:
 			self.tb.flush()
 			self.tb.close()
 			del data,data_iau
-			os.system('touch '+self.msname+'/.iau')
+			if len(code_list)==1 and code_list[0]=='':
+				code+='IAU'
+			else:
+				code+=',IAU'
+			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 			msg='Measurement set :'+self.msname+' has been converted in IAU convention'
 			return msg
 		else:
@@ -258,12 +264,20 @@ class AccessMS:
 		IB=B.ImageBasic(self.msname)
 		psfsize=IB.calc_psf()
 		diff=(sunra_deg-ra)**2+(sundec_deg-dec)**2
-		if diff<(psfsize/3600.0)**2:
-			os.system('touch '+self.msname+'/.fixvis_sun')
-			return 'Phasecenter shift is less than PSF size. No shift is required.\n' 
-		elif os.path.isfile(self.msname+'/.fixvis_sun')==False:
-			fixvis(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
-			return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
+		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
+		code_list=code.split(',')
+		print (code_list)
+		if 'FIXVIS' not in code_list:
+			if len(code_list)==1 and code_list[0]=='':
+				code+='FIXVIS'
+			else:
+				code+=',FIXVIS'
+			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
+			if diff<(psfsize/3600.0)**2:
+				return 'Phasecenter shift is less than PSF size. No shift is required.\n' 
+			elif 'FIXVIS' not in code_list:
+				fixvis(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
+				return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
 		else:
 			return 'Phasecenter is already shifted to the Sun.\n'
 
@@ -278,13 +292,20 @@ class AccessMS:
 		if radec=='':
 			return 'No RA-DEC is given'
 		else:
+			code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
+			code_list=code.split(',')
 			radec_string='_'.join(radec.split(' ')[1:])
-			if os.path.isfile(self.msname+'/.fixvis_'+radec_string)==False:
-				old_fixvis=glob.glob(self.msname+'.fixvis_*')[0]
-				old_phasecenter_source=old_fixvis.split('_')[-1]
-				os.system('rm -rf '+old_fixvis)
+			if 'FIXVIS_'+radec_string not in code_list:
+				for i in range(len(code_list)):
+					if 'FIXVIS' in code_list[i]:
+						code_list.remove(code_list[i])
+				code=','.join(code_list)
 				fixvis(vis=self.msname,outputvis=self.msname,phasecenter=radec)
-				os.system('touch '+self.msname+'/.fixvis_'+radec_string)
+				if len(code_list)==1 and code_list[0]=='':
+					code+='FIXVIS_'+radec_string
+				else:
+					code+=',FIXVIS_'+radec_string
+				vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 				return 'Move phasecenter to :'+radec+'.\n'
 			else:
 				return 'Phasecenter is already at :'+radec+'.\n'
@@ -428,10 +449,9 @@ class AccessMS:
 			alt=np.deg2rad(alt)
 			az=np.deg2rad(az)
 			lat=np.deg2rad(LAT)
-			H=np.arcsin(-np.cos(alt)*np.sin(az)/np.cos(np.deg2rad(decdeg))) 
-			p=360.0-np.rad2deg(-np.arctan2((np.sin(H)*np.cos(lat)),(np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(H))))
+			p=-np.arctan2(np.sin(az)*np.cos(lat),np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(az))
 			self.md.close()
-			return p
+			return 360-np.rad2deg(p)
 		elif combine=='scan':
 			scans=self.md.scansforfield(source_field)
 			mjds=[np.mean(self.md.timesforscan(source_scan)) for source_scan in scans]
@@ -444,9 +464,8 @@ class AccessMS:
 				alt=np.deg2rad(alt)
 				az=np.deg2rad(az)
 				lat=np.deg2rad(LAT)
-				H=np.arcsin(-np.cos(alt)*np.sin(az)/np.cos(np.deg2rad(decdeg))) 
-				p=360.0-np.rad2deg(-np.arctan2((np.sin(H)*np.cos(lat)),(np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(H))))
-				parang[scan]=p
+				p=-np.arctan2(np.sin(az)*np.cos(lat),np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(az))
+				parang[scan]=360-np.rad2deg(p)
 				self.md.close()
 			return parang 
 		else:
@@ -459,9 +478,8 @@ class AccessMS:
 				alt=np.deg2rad(alt)
 				az=np.deg2rad(az)
 				lat=np.deg2rad(LAT)
-				H=np.arcsin(-np.cos(alt)*np.sin(az)/np.cos(np.deg2rad(decdeg))) 
-				p=360.0-np.rad2deg(-np.arctan2((np.sin(H)*np.cos(lat)),(np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(H))))
-				parang.append(p)
+				p=-np.arctan2(np.sin(az)*np.cos(lat),np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(az))
+				parang.append(360-np.rad2deg(p))
 				self.md.close()
 			return parang 
 
@@ -488,10 +506,9 @@ class AccessMS:
 			alt=np.deg2rad(alt)
 			az=np.deg2rad(az)
 			lat=np.deg2rad(LAT)
-			H=np.arcsin(-np.cos(alt)*np.sin(az)/np.cos(np.deg2rad(decdeg))) 
-			p=360.0-np.rad2deg(-np.arctan2((np.sin(H)*np.cos(lat)),(np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(H))))
+			p=-np.arctan2(np.sin(az)*np.cos(lat),np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(az))
 			self.md.close()
-			return p
+			return 360-np.rad2deg(p)
 		elif combine=='scan':
 			scans=self.md.scansforfield(source_field)
 			mjds=[np.mean(self.md.timesforscan(source_scan)) for source_scan in scans]
@@ -504,9 +521,8 @@ class AccessMS:
 				alt=np.deg2rad(alt)
 				az=np.deg2rad(az)
 				lat=np.deg2rad(LAT)
-				H=np.arcsin(-np.cos(alt)*np.sin(az)/np.cos(np.deg2rad(decdeg))) 
-				p=360.0-np.rad2deg(-np.arctan2((np.sin(H)*np.cos(lat)),(np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(H))))
-				parang[scan]=p
+				p=-np.arctan2(np.sin(az)*np.cos(lat),np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(az))
+				parang[scan]=360-np.rad2deg(p)
 				self.md.close()
 			return parang 
 		else:
@@ -519,9 +535,8 @@ class AccessMS:
 				alt=np.deg2rad(alt)
 				az=np.deg2rad(az)
 				lat=np.deg2rad(LAT)
-				H=np.arcsin(-np.cos(alt)*np.sin(az)/np.cos(np.deg2rad(decdeg))) 
-				p=360.0-np.rad2deg(-np.arctan2((np.sin(H)*np.cos(lat)),(np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(H))))
-				parang.append(p)
+				p=-np.arctan2(np.sin(az)*np.cos(lat),np.cos(alt)*np.sin(lat) - np.sin(alt)*np.cos(lat)*np.cos(az))				
+				parang.append(360-np.rad2deg(p))
 				self.md.close()
 			return parang 
 

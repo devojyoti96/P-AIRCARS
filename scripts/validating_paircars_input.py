@@ -10,7 +10,7 @@ from astropy.io import fits
 Code is written by Devojyoti Kansabanik, 01 Feb, 2021
 '''
 
-def get_OBSID(msname):
+def get_OBSID_from_ms(msname):
 	'''
 	Function to return OBSID of an MWA observation
 	Parameters:
@@ -34,6 +34,16 @@ def get_OBSID(msname):
 	except:
 		return 0
 
+def get_OBSID_from_metafits(metafits):
+	'''
+	Function to return OBSID of an MWA observation
+	Parameters:
+	metafits = Name of the metafits file
+	MWA OBSID
+	'''
+	OBSid=fits.getheader(metafits)['GPSTIME']
+	return OBSid 
+
 def download_metafits(msname,outdir):
 	'''
 	Function to download MWA metafits of a given measurement set.
@@ -47,7 +57,7 @@ def download_metafits(msname,outdir):
 		formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 		mainlog = logging.getLogger('paircars_main_log')
 	BASEURL='http://ws.mwatelescope.org/'
-	OBSid=get_OBSID(msname)
+	OBSid=get_OBSID_from_ms(msname)
 	if os.path.isfile(outdir+'/'+str(OBSid)+'.metafits')==False:
 		mainlog.info('Downloading metafits for OBS ID :'+str(OBSid)+' at : '+outdir+'/'+str(OBSid)+'.metafits.\n')
 		os.system('wget -O '+outdir+'/'+str(OBSid)+'.metafits http://ws.mwatelescope.org/metadata/fits?obs_id='+str(OBSid))

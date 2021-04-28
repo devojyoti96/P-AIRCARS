@@ -100,25 +100,27 @@ class PolSelfcal:
 				neg_dyn=0
 				for stokes in stokes_list:
 					if stokes=='I' or stokes=='XX' or stokes =='YY':
-						maxpos=imstat(imagename=imagename,stokes=stokes)['maxpos']
+						if os.path.isdir('I.image')==True:
+							os.system('rm -rf I.image')
+						immath(imagename=imagename,outfile='I.image',mode='evalexpr',stokes=stokes)
+						maxpos=imstat(imagename='I.image',stokes=stokes)['maxpos']
 						negative_box=self.negative_box(maxpos,box_width=box_width)
-						max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
-						rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
-						min_pix=imstat(imagename=imagename,box=negative_box,stokes=stokes)['min'][0]
+						max_pix=imstat(imagename='I.image',stokes=stokes)['max'][0]
+						rms=imstat(imagename='I.image',box=self.rms_box,stokes=stokes)['rms'][0]
+						min_pix=imstat(imagename='I.image',box=negative_box,stokes=stokes)['min'][0]
 						rms_dyn_range=max_pix/rms
 						if min_pix!=0:
 							neg_dyn+=max_pix/abs(min_pix)
 						else:
 							neg_dyn=rms_dyn_range
-						ia.open(imagename)
-						ia.calcmask('\"'+imagename+'\">'+str(sigma*rms),'mymask')
+						ia.open('I.image')
+						ia.calcmask('\"I.image\">'+str(sigma*rms),'mymask')
 						ia.close()
 						try:
-							total_flux=imstat(imagename=imagename,stokes=stokes)['flux'][0]
+							total_flux=imstat(imagename='I.image',stokes=stokes)['flux'][0]
 							out_dict[stokes]=[rms_dyn_range,rms,total_flux]							
 						except:
 							out_dict[stokes]=[rms_dyn_range,rms,np.nan]
-						makemask(mode='delete',inpmask=imagename+':mymask')
 					else:
 						max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
 						min_pix=imstat(imagename=imagename,stokes=stokes)['min'][0]
@@ -129,15 +131,14 @@ class PolSelfcal:
 						if os.path.isdir(stokes+'.image'):
 							os.system('rm -rf '+stokes+'.image')
 						immath(imagename=imagename,outfile=stokes+'.image',mode='evalexpr',expr='abs(IM0)',stokes=stokes)
-						ia.open(stokes+'.image')
-						ia.calcmask(stokes+'.image'+'>'+str(sigma*rms),'mymask')
-						ia.close()
+						makemask(inpimage='I.image',inpmask='I.image:mymask',output=stokes+'.image:mymask',mode='copy')
 						try:
 							total_flux=imstat(imagename=stokes+'.image',stokes=stokes)['flux'][0]
 							out_dict[stokes]=[rms_dyn_range,rms,total_flux]
 						except:
 							out_dict[stokes]=[rms_dyn_range,rms,np.nan]	
-						os.system('rm -rf '+stokes+'.image')			
+						os.system('rm -rf '+stokes+'.image')		
+				os.system('rm -rf I.image')		
 		else:
 			out_dict={}
 			rms_dyn_range=np.nan
@@ -753,17 +754,31 @@ class PolSelfcal:
 		if imagename_path!='':
 			os.chdir(imagename_path)
 		for stokes in stokes_list:
-			self.pollog_verbose.info('imstat(imagename=\''+imagename+'\',box=\''+self.rms_box+'\',stokes=\''+stokes+'\')[\'rms\'][0]\n')
-			rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
 			os.system('rm -rf reduce_sigma_*')
-			immath(imagename=imagename,mode='evalexpr',expr='abs(IM0)',stokes=stokes,outfile='reduce_sigma_'+stokes+'.image')
-			immath(imagename=residual,mode='evalexpr',expr='abs(IM0)',stokes=stokes,outfile='reduce_sigma_'+stokes+'.residual')
-			ia.open('reduce_sigma_'+stokes+'.image')			
-			ia.calcmask('\"reduce_sigma_'+stokes+'.image\">'+str(nsigma*rms),'mymask')
-			ia.close()
-			makemask(inpimage='reduce_sigma_'+stokes+'.image',inpmask='reduce_sigma_'+stokes+'.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
-			image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
-			residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
+			if stokes=='I' or stokes=='XX' or stokes=='YY':
+				if os.path.isdir('reduce_sigma_I.image')==True:
+					os.system('rm -rf reduce_sigma_I.image')
+				self.pollog_verbose.info('immath(imagename=\''+imagename+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',outfile=\'reduce_sigma_I.image\')\n')
+				immath(imagename=imagename,mode='evalexpr',stokes=stokes,outfile='reduce_sigma_I.image')
+				self.pollog_verbose.info('immath(imagename=\''+residual+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',outfile=\'reduce_sigma_I.residual\')\n')
+				immath(imagename=residual,mode='evalexpr',stokes=stokes,outfile='reduce_sigma_I.residual')
+				self.pollog_verbose.info('imstat(imagename=\''+imagename+'\',box=\''+self.rms_box+'\',stokes=\''+stokes+'\')[\'rms\'][0]\n')
+				rms=imstat(imagename='reduce_sigma_I.image',box=self.rms_box,stokes=stokes)['rms'][0]
+				ia.open('reduce_sigma_I.image')			
+				ia.calcmask('\"reduce_sigma_I.image\">'+str(nsigma*rms),'mymask')
+				ia.close()
+				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
+				image_pix_sum=imstat(imagename='reduce_sigma_I.image')['sum'][0]
+				residual_pix_sum=imstat(imagename='reduce_sigma_I.residual')['sum'][0]
+			else:
+				self.pollog_verbose.info('immath(imagename=\''+imagename+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',expr=\'abs(IM0)\',outfile=\'reduce_sigma_'+stokes+'.image\')\n')
+				immath(imagename=imagename,mode='evalexpr',stokes=stokes,expr='abs(IM0)',outfile='reduce_sigma_'+stokes+'.image')
+				self.pollog_verbose.info('imstat(imagename=\''+imagename+'\',box=\''+self.rms_box+'\',stokes=\''+stokes+'\')[\'rms\'][0]\n')
+				rms=imstat(imagename='reduce_sigma_'+stokes+'.image',box=self.rms_box,stokes=stokes)['rms'][0]
+				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
+				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_'+stokes+'.image:mymask',mode='copy')
+				image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
+				residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
 			os.system('rm -rf reduce_sigma_*')
 			if residual_pix_sum/image_pix_sum>residual_frac:
 				do_reduce_list.append(1)
@@ -807,11 +822,11 @@ class PolSelfcal:
 					os.system('rm -rf casa*log')
 					return nsigma-sigma_step
 			else:
-				self.pollog_verbose.info('Reducing sigma to:'+str(nsigma-sigma_step)+'\n')
+				self.pollog_verbose.info('Reducing sigma to:'+str(nsigma-sigma_step)+', because residual flux is more than '+str(residual_frac*100)+' %\n')
 				os.system('rm -rf casa*log')
 				return nsigma-sigma_step
 		else:
-			self.pollog_verbose.info('Sigma value is not changed. Sigma is at :'+str(nsigma)+'\n')
+			self.pollog_verbose.info('Sigma value is not changed, because residual flux less more than '+str(residual_frac*100)+' %. Sigma is at :'+str(nsigma)+'\n')
 			os.system('rm -rf casa*log')
 			return nsigma
 
