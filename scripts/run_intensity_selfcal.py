@@ -185,9 +185,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	if __name__!='__main__' and inputs.send_notification==True:
 		OBSID=get_OBSID(metafits)
 	if 'ref' in msname:
-		msname_str=splited_ms_rename(msname,ref_time_chan=True,change_msname=False)
+		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=True,change_msname=False))
 	else:
-		msname_str=splited_ms_rename(msname,ref_time_chan=False,change_msname=False)
+		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False))
 	freqstr=msname_str.split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
 	datestr_list=msname.split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
 	datestr='/'.join(datestr_list[:3])+'/'+':'.join(datestr_list[3:]) # Datetime string 
@@ -505,6 +505,11 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			logger.info('####################\n')
 			logger.info('Intensity Selfcal iteration:'+str(num_iter)+'\n')
 			logger.info('#####################\n')
+
+			if os.path.isdir(startmodel)==False:
+				startmodel=''
+			if os.path.isdir(startmask)==False:
+				startmask=''
 
 			if (num_iter<10 and nomask_try_count<1): 
 					# Use a circular mask of the size of the Sun if calmode=='p' and no mask is provided by user. This is to keep th phasecenter fixed

@@ -84,7 +84,7 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 		os.system('mv '+timechan_ms+' '+timechan_dir+'/'+os.path.basename(timechan_ms))
 		return timechan_dir+'/'+os.path.basename(timechan_ms),timechan_dir
 
-def casa_instance_runner(cmd,screen_name):
+def casa_instance_runner(cmd,screen_name,finished_touch_file,num_thread):
 	'''
 	Function to run a casa instance
 	Parameters:
@@ -92,8 +92,9 @@ def casa_instance_runner(cmd,screen_name):
 	screen_name = Name of the screen
 	'''
 	if os.path.isfile(inputs.basedir+'/.mpi_enabled'):
-		cmd='mpirun -np 1 -x OMP_NUM_THREADS=3 '+cmd
-	os.system('echo "'+cmd+';rm -rf '+inputs.basedir+'/'+screen_name+'.batch" > '+inputs.basedir+'/'+screen_name+'.batch')
+		cmd='mpirun -np 1 -x OMP_NUM_THREADS='+str(num_thread)+' '+cmd
+	cmd+=';wait; if ! ls .'+finished_touch_file+'_* ; then  touch .'+finished_touch_file+'_error ;  fi; rm -rf '+inputs.basedir+'/'+screen_name+'.batch'
+	os.system('echo "'+cmd+'" > '+inputs.basedir+'/'+screen_name+'.batch')
 	screen_cmd='sh '+inputs.basedir+'/'+screen_name+'.batch'
 	os.system('screen -S '+screen_name+' -X quit')	
 	time.sleep(0.5)
@@ -443,14 +444,15 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					cmd='run_intensity_selfcal --msname '+ref_timechan_ms+' --metafits '+metafits+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
 						+' --interactive '+str(inputs.interactive)+' --fresh True'
 				screen_name=os.path.basename(ref_timechan_ms).split('.ms')[0]+'_screen_refG'
-				result=casa_instance_runner(cmd,screen_name)
+				finished_touch_file=inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+os.path.basename(ref_timechan_ms)
+				result=casa_instance_runner(cmd,screen_name,finished_touch_file,2)
 				mainlog.info('Self calibration for ms : '+ref_timechan_ms+' is spawned in screen : '+result+'\n')
 				mainlog.info('Waiting to finish self calibration for reference time frequency ms :'+ref_timechan_ms+'................\n') 
 				while True:
 					time.sleep(2)
 					touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+os.path.basename(ref_timechan_ms)+'_*')
 					if len(touch_file_list)!=0:
-						msg=int(touch_file_list[0].split('_')[-1])
+						msg=touch_file_list[0].split('_')[-1]
 						break	
 			except Exception as e:
 				mainlog.error('Error occured :'+str(e)+'\n')
@@ -461,9 +463,13 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			if msg=='error':
 				mainlog.info('Runtime error occured.\n')
 				return 0,0,0,0,0
-			elif msg>=100:
-				msg=msg-100
-			if msg==10 and time_averaging_count<1 and freq_averaging_count<1:  # Checking for selfcal SNR and increasing the time and frequency averaging if required
+			elif msg=='noms':
+				mainlog.info('Runtime error occured. No measurement set found.\n')
+			elif msg=='nometa':
+				mainlog.info('Runtime error occured. No metafits file found.\n')
+			elif int(msg)>=100:
+				msg=int(msg)-100
+			if int(msg)==10 and time_averaging_count<1 and freq_averaging_count<1:  # Checking for selfcal SNR and increasing the time and frequency averaging if required
 				mainlog.error('SNR for self calibration is not sufficent.\n')
 				selfcal_snr=float(np.load(inputs.basedir+'/selfcal_snr.npy'))
 				new_time_avg=time_avg*np.sqrt(selfcal_snr/min_selfcal_snr)*1.5
@@ -483,8 +489,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				else:
 					mainlog.info('Both time and frequency averaging has been tried. Still SNR is not sufficient. Trying with other time frequency.\n')
 					continue
-			elif msg!=0 and msg!=9 and msg!=8:
-				mainlog.info('Message : '+error_msgs(100)+','+error_msgs(msg)+'\n')
+			elif int(msg)!=0 and int(msg)!=9 and int(msg)!=8:
+				mainlog.info('Message : '+error_msgs(100)+','+error_msgs(int(msg))+'\n')
 				if inputs.verbose==False:
 					mainlog.info('Removing the directory : '+ref_timechan_dir)
 					os.system('rm -rf '+ref_timechan_dir)
@@ -516,9 +522,9 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					os.system('rm -rf '+basedir+'/.paircars_running')
 					os.system('touch '+basedir+'/.paircars_failed')
 					return 0,0,0,0,0
-			elif msg==0 or msg==8 or msg==9:
+			elif int(msg)==0 or int(msg)==8 or int(msg)==9:
 				os.system('touch .ref_timechan_done')
-				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+os.path.basename(msname)+'_'+str(msg))		
+				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_'+str(msg))		
 				mainlog.info('Reference time frequency calibration done.\n')
 				time_grid.remove(ref_time)
 				channel_grid.remove(ref_chan)	
@@ -635,17 +641,18 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	#################################
 	total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
 	available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
-	casa_instance=int(available_cpu_for_paircars/3)
+	casa_instance=int(available_cpu_for_paircars/2)
 	open_casa_instance=0
 	spawned_casa_instances=0
 	touch_count=0
 	mainlog.info('Available cpus for P-AIRCARS: '+str(available_cpu_for_paircars)+'\n')
-	mainlog.info('Total number of CASA instances : '+str(casa_instance)+'\n')
+	mainlog.info('Total number of available CASA instances : '+str(casa_instance)+'\n')
 
 	# Spliting gaincal measurement set
 	##################################
 	gaincal_cmd_list=[]
 	gaincal_screen_list=[]
+	gaincal_finished_file_list=[]
 	if len(time_grid)!=0:
 		mainlog.info('Spliting reference chan data for performing gaincal.\n')
 		for timestamp in time_grid:
@@ -657,6 +664,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					+' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring
 			gaincal_cmd_list.append(cmd)
 			gaincal_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_G')
+			gaincal_finished_file_list.append(inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
 
 		while len(gaincal_cmd_list)!=0:  # Loop while all gaincal cmds are spawned
 			touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(ms_obsid)+'*')
@@ -668,11 +676,13 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				while len(gaincal_screen_list)!=0:
 					screen_name=gaincal_screen_list[0]
 					cmd=gaincal_cmd_list[0]
-					result=casa_instance_runner(cmd,screen_name)
+					finished_file=gaincal_finished_file_list[0]
+					result=casa_instance_runner(cmd,screen_name,finished_file,2)
 					open_casa_instance+=1
 					spawned_casa_instances+=1
 					gaincal_screen_list.remove(screen_name)
 					gaincal_cmd_list.remove(cmd)
+					gaincal_finished_file_list.remove(finished_file)
 					if open_casa_instance>casa_instance or len(gaincal_screen_list)==0:
 						mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')
 			time.sleep(2.0)	
@@ -702,6 +712,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		nchan=AM.get_num_channels()
 		bandpass_cmd_list=[]
 		bandpass_screen_list=[]
+		bandpass_finished_file_list=[]
 		mainlog.info('Spliting reference time data for performing bandpass........\n')
 		index=time_grid.index(ref_time)
 		if len(time_grid)>=10:
@@ -711,8 +722,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		for i in range(0,nchan,nchan_per_bandpass):
 			start_chan=i
 			end_chan=i+nchan_per_bandpass
-			if (nchan-end_chan)<int(nchan_per_bandpass/2):
-				end_chan=nchan
+			if ((nchan-1)-end_chan)<int(nchan_per_bandpass/2):
+				end_chan=nchan-1
 			mainlog.info('Spliting ms of channel range : '+str(start_chan)+'~'+str(end_chan)+'\n')
 			if ref_time_freq==True:
 				splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(start_chan)+'~'+str(end_chan),timerange,caltype='B',\
@@ -724,6 +735,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					+str(inputs.interactive)+' --fresh True'
 			bandpass_cmd_list.append(cmd)
 			bandpass_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_B')
+			bandpass_finished_file_list.append(inputs.basedir+'/.Finished_bcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
 			if end_chan>=nchan:
 				break
 		finished_bandpass=False
@@ -733,6 +745,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			mainlog.info('Bandpass for channel blocks are finished.\n')
 			bandpass_screen_list=[]
 			bandpass_cmd_list=[]
+			bandpass_finished_file_list=[]
 			finished_bandpass=True
 		while finished_bandpass==False:
 			touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(ms_obsid)+'*')
@@ -744,11 +757,13 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				while len(bandpass_screen_list)!=0:
 					screen_name=bandpass_screen_list[0]
 					cmd=bandpass_cmd_list[0]
-					result=casa_instance_runner(cmd,screen_name)
+					finished_file=bandpass_filished_file_list[0]
+					result=casa_instance_runner(cmd,screen_name,finished_file,3)
 					open_casa_instance+=1
 					spawned_casa_instances+=1
 					bandpass_screen_list.remove(screen_name)
 					bandpass_cmd_list.remove(cmd)
+					bandpass_finished_file_list.remove(finished_file)
 					if open_casa_instance>casa_instance or len(bandpass_screen_list)==0:
 						mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')
 			time.sleep(2.0)
@@ -756,7 +771,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			if len(bp_finish_list)==num_bp:
 				mainlog.info('Bandpass finished for all spectral slices.\n')
 				bandpass_screen_list=[]
-				sbandpass_cmd_list=[]
+				bandpass_cmd_list=[]
+				bandpass_finished_file_list=[]
 				finished_bandpass=True
 
 		bpcaltable=glob.glob(inputs.basedir+'/bpcaltables/'+str(ms_obsid)+'/*ref*.cal')+ref_gaintable
@@ -765,13 +781,18 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			timerange=','.join(time_grid[index-5:index+5])
 		else:
 			timerange=','.join(time_grid)
-		mainlog.info('Applying bandpass solution for timerange : '+str(timerange)+' in all channels.......\n')
-		mainlog.info('applycal(vis=\''+averaged_msname+'\',gaintable='+str(bpcaltable)+',timerange=\''+timerange+'\',applymode=\'calflag\',flagbackup=False)\n')
-		applycal(vis=averaged_msname,gaintable=bpcaltable,timerange=timerange,applymode='calflag',flagbackup=False)
-				
+		
 	# Spliting gain calibrated reference time channnel measurement set for polarisation calibration
 	###############################################################################################
 	if do_polcal==True and ((do_bandpass==True and finished_bandpass==True) or do_bandpass==False):
+		# Estimating total casa instances
+		#################################
+		total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
+		available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
+		casa_instance=int(available_cpu_for_paircars/3)
+		mainlog.info('Available cpus for P-AIRCARS polarisation calibration : '+str(available_cpu_for_paircars)+'\n')
+		mainlog.info('Total number of CASA instances available for polarisation calibration : '+str(casa_instance)+'\n')
+		
 		AM=AccessMS(averaged_msname)
 		unflagged_channels=AM.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
 		if len(unflagged_channels)==0:
@@ -796,22 +817,25 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			timerange=','.join(time_grid)
 		polcal_cmd_list=[]
 		polcal_screen_list=[]
+		polcal_finished_file_list=[]
 		for i in channel_grid:
 			mainlog.info('Spliting data for performing polarisation calibration of channel : '+str(i)+' and timerange : '+timerange+'\n')
 			if ref_time_freq==True:
 				splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(i),timerange,caltype='P',ref_timechan=True,\
-											input_file=workdir+'/selfcal_inputs.py',datacolumn='corrected')
+											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 			else:
 				splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(i),timerange,caltype='P',ref_timechan=False,\
-											input_file=workdir+'/selfcal_inputs.py',datacolumn='corrected')
-			if len(calibrator_caltable)!=0:
+											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
+			calstring=','.join(bpcaltable)
+			if len(bpcaltable)!=0:
 				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal False'
+				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal False --caltables '+calstring
 			else:
 				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
 				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal True'
 			polcal_cmd_list.append(cmd)
 			polcal_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_P')
+			polcal_finished_file_list.append(inputs.basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
 		num_pol=len(polcal_screen_list)
 		finished_polcal=False
 		polcal_finish_list=glob.glob(inputs.basedir+'/.Finished_*pcal*'+str(ms_obsid)+'*')
@@ -819,6 +843,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			mainlog.info('Polcal for all coarse channels have been finished.\b')
 			polcal_screen_list=[]
 			polcal_cmd_list=[]
+			polcal_finished_file_list=[]
 			finished_polcal=True
 		while finished_polcal==False:	
 			touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(ms_obsid)+'*')
@@ -830,29 +855,24 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				while len(polcal_screen_list)!=0:
 					screen_name=polcal_screen_list[0]
 					cmd=polcal_cmd_list[0]
-					result=casa_instance_runner(cmd,screen_name)
+					finished_file=polcal_finished_file_list[0]
+					result=casa_instance_runner(cmd,screen_name,finished_file,3)
 					open_casa_instance+=1
 					spawned_casa_instances+=1
 					polcal_screen_list.remove(screen_name)
 					polcal_cmd_list.remove(cmd)
+					polcal_finished_file_list.remove(finished_file)
 					if open_casa_instance>casa_instance or len(polcal_screen_list)==0:
 						mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')			
 			time.sleep(2.0)
-			polcal_finish_list=glob.glob(inputs.basedir+'/.Finished_*pcal*'+str(ms_obsid)+'*')
-			if len(polcal_finish_list)==num_pol:
+			if len(polcal_cmd_list)==0:
 				polcal_screen_list=[]
 				polcal_cmd_list=[]
+				polcal_finished_file_list=[]
 				finished_polcal=True	
-		if ref_time_freq==False:
-			mainlog.info('All calibration job spawned for ms : '+msname+'\n')
-			mainlog.info('#########################\n')
-			return ref_time,ref_chan,spawned_casa_instances,freq_avg,time_avg
-		else:
-			if (do_bandpass==True and do_polcal==True and len(bandpass_cmd_list)==0 and len(polcal_cmd_list)==0 and len(gaincal_cmd_list)==0) or \
-			(do_bandpass==True and do_polcal==False and len(bandpass_cmd_list)==0 and len(gaincal_cmd_list)==0) or (do_bandpass==False and do_polcal==False and len(gaincal_cmd_list)==0):
-				mainlog.info('All calibration finished for reference time frequency ms : '+msname+'\n')
-				mainlog.info('#########################\n')
-				return ref_time,ref_chan,spawned_casa_instances,freq_avg,time_avg
+		mainlog.info('All calibration job spawned for ms : '+msname+'\n')
+		mainlog.info('#########################\n')
+		return ref_time,ref_chan,spawned_casa_instances,freq_avg,time_avg
 
 def managing_caldatabase(msname,ref_time,gaincal_modedir,bandpass_modeldir,polcal_caldir,localdatabase):
 	'''
@@ -946,7 +966,6 @@ if os.path.isdir(basedir+'/data')==False:
 	os.makedirs(basedir+'/data')
 
 os.system('mv selfcal_inputs_temp.py '+basedir+'/selfcal_inputs.py')
-#os.system('cp -r *.py '+basedir) #TODO : remove after packaging
 os.chdir(basedir)
 sys.path.append(basedir)
 import selfcal_inputs as inputs
@@ -973,7 +992,6 @@ filehandle.setFormatter(formatter)
 mainlog.addHandler(filehandle)
 mainlog.propagate = False	
 os.system('touch '+inputs.basedir+'/.paircars_running')
-
 
 # Deciding bandpass interval
 ############################
@@ -1085,7 +1103,7 @@ for i in range(len(measurement_set_list)):
 		mainlog.info('Performing de-correlation correction and IAU convention correction for ms : '+msname+'\n')
 		decor(msname,metafits,10,False)
 	else: # If user do not want decorrelation correction perform only IAU convention
-		mainlog.info('Correcting to IAU convention')
+		mainlog.info('Correcting to IAU convention......\n')
 		AM.convert_mwa_to_iau()
 
 # Selecting reference time frequnency ms
@@ -1110,7 +1128,6 @@ mainlog.info('######################\n')
 ####################################################
 
 
-
 calibrator_found=False
 gaincal_list=[]
 # Self calibration for reference time frequency ms
@@ -1123,7 +1140,7 @@ if os.path.isdir(workdir)==False:
 
 spawned_ms_jobs={}
 finished_ms=[]
-touch_file_list=glob.glob(inputs.basedir+'/.ref_time_chan_done_'+os.path.basename(ref_freq_time_msname)+'*')
+touch_file_list=glob.glob(inputs.basedir+'/.ref_time_chan_done_'+str(reftimefreq_ms_OBSID)+'*')
 if len(touch_file_list)!=0:
 	for t in touch_file_list:
 		msg=t.split('_')[-1]
@@ -1148,8 +1165,8 @@ if calibrator_found==True and len(gaincal_list)!=0: # If calibration found from 
 			ref_freq_avg=0,ref_time_avg=0,ref_time_freq=ref_time_freq,do_bandpass=inputs.do_bandpass,do_polcal=inputs.do_polcal,calibrator_caltable=caltable_list)
 	spawned_ms_jobs[ref_freq_time_msname]=[ref_time,ref_chan,spawned_casa_instances]
 	while True:
-		touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(reftimefreq_ms_OBSID)+'*'+os.path.basename(ref_freq_time_msname)+'*')
-		if len(touch_file_list)==spawned_casa_instances:
+		touch_file_list=glob.glob(inputs.basedir+'/.ref_time_chan_done_'+str(reftimefreq_ms_OBSID)+'*')
+		if len(touch_file_list)==1:
 			mainlog.info('Reference time frequency calibration is finished.\n')
 			break
 		else:
@@ -1162,8 +1179,8 @@ elif calibrator_found==False and len(touch_file_list)==0:
 	ref_time,ref_chan,spawned_casa_instances,ref_freq_avg,ref_time_avg=result
 	spawned_ms_jobs[ref_freq_time_msname]=[ref_time,ref_chan,spawned_casa_instances]
 	while True:
-		touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(reftimefreq_ms_OBSID)+'*'+os.path.basename(ref_freq_time_msname)+'*')
-		if len(touch_file_list)==spawned_casa_instances:
+		touch_file_list=glob.glob(inputs.basedir+'/.ref_time_chan_done_'+str(reftimefreq_ms_OBSID)+'*')
+		if len(touch_file_list)==1:
 			mainlog.info('Reference time frequency calibration is finished.\n')
 			break
 		else:
@@ -1174,8 +1191,8 @@ measurement_set_list.remove(ref_freq_time_msname) # Removing ref time freq ms fr
 ms_OBSIDs.remove(ms_OBSIDs[index]) # Removing ref time freq ms from ms list
 del metafits_dic[ref_time_freq_metafits.split('.ms')[0].split('_chantimesliced')[0].split('_ref')[0]] # Removing ref time freq metafits from list 
 if len(measurement_set_list)>0:
-	gtable=glob.glob(inputs.basedir+'/caltables/*'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'*.cal') # Ref time caltables
-	bptable=glob.glob(inputs.basedir+'/bpcaltables/*'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'*.cal')
+	gtable=glob.glob(inputs.basedir+'/caltables/'+str(reftimefreq_ms_OBSID)+'/'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'*ref*.cal') # Ref time caltables
+	bptable=glob.glob(inputs.basedir+'/bpcaltables/'+str(reftimefreq_ms_OBSID)+'/'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'*ref*.cal')
 	caltable_list.append(gtable)
 	caltable_list.append(bptable)
 	mainlog.info('Caltables to be applied : '+','.join(caltable_list)+'\n')

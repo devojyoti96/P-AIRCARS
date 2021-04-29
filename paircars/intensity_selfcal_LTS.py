@@ -208,7 +208,7 @@ class IntensitySelfcal:
 		residual=imagename.split('.image')[0]+'.residual'
 		do_reduce_list=[]
 		ia=image()
-		imagename_path=os.path.dirname(oa.path.realpath(imagename))
+		imagename_path=os.path.dirname(os.path.realpath(imagename))
 		cwd=os.getcwd()
 		if imagename_path!='':
 			os.chdir(imagename_path)

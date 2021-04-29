@@ -108,7 +108,7 @@ def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_
 	os.system('rm -rf temp* casa*log')
 	return outfile
 
-def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True,perform_gaincal=False):
+def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True,perform_gaincal=False,caltables=''):
 	'''
 	Heart of the polarisation selfcal part of the PAIRCARS
 	This function performs the polarisation selfcal for PAIRCARS
@@ -123,6 +123,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	interactive = False, If True perform interactive selfcal
 	start_fresh = True, start fresh selfcal rounds from scratch or start from last round
 	perform_gaincal = False, perform gaincal using leakage corrected model (Only do when no calibrator observation is present)
+	caltables = Previous caltables, comma separated
 	Return:
 	Meassages about the selfcal success or errors
 	'''
@@ -167,15 +168,16 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		logger.propagate = False
 	print('\n')
 
+
 	if start_fresh==False and os.path.isdir('junk1.ms'):
 		os.system('rm -rf '+msname)
 		os.system('cp -r junk1.ms '+msname)
 	else:
 		start_fresh=True
 		if os.path.isfile(msname+'/.usedby_paircars'):
-			tb=table()
-			tb.open(msname,nomodify=False)
 			try:
+				tb=table()
+				tb.open(msname,nomodify=False)
 				flag=tb.getcol('FLAG')
 				flag*=False
 				tb.putcol('FLAG',flag)
@@ -183,9 +185,18 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				tb.close()
 				os.system('rm -rf '+msname+'.flagversions')	
 			except:
-				tb.close()
-				pass		
-
+				pass
+		else:
+			if os.path.isdir(working_dir+'/Backup.ms')==True:
+				os.system('rm -rf '+working_dir+'/Backup.ms')
+			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup.ms\',datacolumn=\'data\')\n')
+			split(vis=msname,outputvis=working_dir+'/Backup.ms',datacolumn='data') # Backup of uncalibrated ms
+		if caltables!='':
+			caltable_list=caltables.split(',')
+			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
+				
 	if msname[-1]=='/':
 		msname=msname[:-1]
 	if inputs.basedir[-1]=='/':
@@ -193,15 +204,13 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	else:
 		basedir=inputs.basedir
 
-	os.system('cp -r '+msname+' Backup.ms') # Keeping backup of the ms
-
 	if __name__!='__main__' and inputs.send_notification==True:
 		OBSID=get_OBSID(metafits)
 
 	if 'ref' in msname:
-		msname_str=splited_ms_rename(msname,ref_time_chan=True,change_msname=False)
+		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=True,change_msname=False))
 	else:
-		msname_str=splited_ms_rename(msname,ref_time_chan=False,change_msname=False)
+		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False))
 	freqstr=msname_str.split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
 	datestr_list=msname.split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
 	datestr='/'.join(datestr_list[:3])+'/'+':'.join(datestr_list[3:]) # Datetime string 
@@ -385,7 +394,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		# Performing gaincal again using the new leakage corrected source model
 		###################
 		if do_gaincal==True and gaincal_count<1:
-			os.system('rm -rf '+msname+'*')
+			os.system('rm -rf '+msname+' '+msname+'.flagversions')
 			os.system('cp -r Backup.ms '+msname)
 			if os.path.isfile(msname+'/.usedby_paircars')==False:
 				os.system('touch '+msname+'/.usedby_paircars')
@@ -414,8 +423,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			applycal_caltable=[working_dir+'/Leakage_cor_gaincal.cal']
 			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(applycal_caltable)+',applymode=\'calflag\',flagbackup=False)\n')
 			applycal(vis=msname,gaintable=applycal_caltable,applymode='calflag',flagbackup=False)
-			os.system('cp -r '+working_dir+'/Leakage_cor_gaincal.cal '+basedir+'/caltables/'+file_str+'.cal')  # Keeping the new leakage corrected gaintable caltable		
-			os.system('cp -r '+msname+' '+basedir+'/calibrated_ms/'+file_str+'.ms')  # Keeping the new leakage corrected ms	
+			os.system('cp -r '+working_dir+'/Leakage_cor_gaincal.cal '+basedir+'/caltables/'+str(OBSID)+'/'+file_str+'.cal') # Keeping the new leakage corrected gaintable caltable		
+			os.system('cp -r '+msname+' '+basedir+'/calibrated_ms/'+str(OBSID)+'/'+file_str+'.ms')  # Keeping the new leakage corrected ms	
 			logger.info('Gaincal using leakage corrected source model is done.\n')
 			if verbose==False:
 				os.system('rm -rf '+working_dir+'/Leakage_cor_gaincal.cal')
@@ -426,17 +435,25 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		elif done_qucor==True and num_iter_after_qucor<1:
 			do_pbcor=True
 			gaincal_count+=1
+		cor_data=[]
 		tb=table()
-		tb.open(msname,nomodify=False)
-		try:
+		tb.open(msname)		
+		try:			
 			cor_data=tb.getcol('CORRECTED_DATA')
-			tb.putcol('DATA',cor_data)
-			tb.putcol('CORRECTED_DATA',cor_data)
-			tb.flush()
 			tb.close()
 		except:
 			tb.close()
-			pass		
+		if len(cor_data)!=0:
+			tb=table()
+			tb.open(msname,nomodify=False)
+			try:
+				tb.putcol('DATA',cor_data)
+				tb.putcol('CORRECTED_DATA',cor_data)
+				tb.flush()
+				tb.close()
+			except:
+				tb.close()
+				pass		
 
 		if (do_pbcor==True and gaincal_count==1) or (do_pbcor==True and os.path.isfile(msname+'/.single_beamcorrected')==False):
 			if verbose==False:
@@ -524,24 +541,28 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('Polarisation Selfcal iteration : '+str(num_iter)+'\n')
 			logger.info('#####################\n')
 
+			if os.path.isdir(startmodel)==False:
+				startmodel=''
+			if os.path.isdir(startmask)==False:
+				startmask=''
 			antenna_to_use=PSC.antenna_string(antenna_list,-1)
 			if inputs.maskfile!='': # Use user defined mask
 				mask_str=''
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 				stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,do_solarqu_cor=do_solarqu_cor)  		
 			elif inputs.maskstr!='': # If mask user defined string is given
 				mask_str=inputs.maskstr
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,do_solarqu_cor=do_solarqu_cor)
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto maksing is off, use default central mask
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=True,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,do_solarqu_cor=do_solarqu_cor)
 			elif inputs.want_auto_masking==True:
-				maskstr=''
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=True,\
+				mask_str=''
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,do_solarqu_cor=do_solarqu_cor)
 
@@ -1151,6 +1172,7 @@ if __name__=='__main__':
 	parser.add_option('--interactive',dest="interactive",default=False,help="Interactive mode",metavar="Boolean")
 	parser.add_option('--fresh',dest="fresh",default=True,help="Start fresh self calibration loop",metavar="Boolean")
 	parser.add_option('--gaincal',dest="gaincal",default=False,help="Perform gaincal using leakage corrected model (Only do when no calibrator observation is present)",metavar="Boolean")
+	parser.add_option('--caltables',dest="caltables",default='',help="Previous caltables",metavar="String, comma separated")
 
 	(options, args) = parser.parse_args()
 
@@ -1230,13 +1252,12 @@ if __name__=='__main__':
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 
-
 	try:
 		print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
 		print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
-				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+')\n')
+				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\'ssss)\n')
 		msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
-				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)))
+				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
 		if msg>100:
 			msg1=msg-100
 			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
@@ -1263,7 +1284,8 @@ if __name__=='__main__':
 			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-	except:
+	except Exception as e:
+		logger.info('Error occured : '+str(r)+'\n')
 		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))

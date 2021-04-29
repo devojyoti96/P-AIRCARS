@@ -266,7 +266,6 @@ class AccessMS:
 		diff=(sunra_deg-ra)**2+(sundec_deg-dec)**2
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
-		print (code_list)
 		if 'FIXVIS' not in code_list:
 			if len(code_list)==1 and code_list[0]=='':
 				code+='FIXVIS'

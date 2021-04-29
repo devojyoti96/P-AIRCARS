@@ -1023,7 +1023,7 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return imagename,modelname
 
-	def polselfcal_iteration(self,num_iter,rms_thresh,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
+	def polselfcal_iteration(self,num_iter,rms_thresh,mask_str,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 							stokes='',interactive=False,use_ankflagger=False,poldistortion_correction=True,poldistortion_type='poldistortion',\
 							poldistortion_matrix='UH',do_solarqu_cor=False,box_width=3,calibrator_caltable=[]):
 		'''
@@ -1031,6 +1031,7 @@ class PolSelfcal:
 		Parameters:
 		num_iter = Number of self-calibration iteration
 		rms_thresh = RMS for threshold
+		maskstr = Mask string for CLEANing
 		sigma = Threshold sigma
 		maskfile = Maskfile for CLEANing
 		antenna_to_use = List of antennas for CLEANing
@@ -1064,6 +1065,8 @@ class PolSelfcal:
 		self.pollog_verbose.info('Iteration number : '+str(num_iter)+'\n')
 		self.pollog_verbose.info('==============================\n')
 		# Making image
+		if maskfile=='':
+			maskfile=mask_str
 		if maskfile!='':
 			self.pollog_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''\
 					+startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)\

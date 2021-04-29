@@ -34,8 +34,8 @@ cpu_frac				=	0.8
 do_bandpass				=	True
 do_polcal				=	True
 save_true_loc_image		=	False
-send_notification		=	False
-email					=	''
+send_notification		=	True
+email					=	'devojyoti96@gmail.com'
 local_caldatabase		=	''
 
 # Advanced options
