@@ -208,10 +208,11 @@ class IntensitySelfcal:
 		residual=imagename.split('.image')[0]+'.residual'
 		do_reduce_list=[]
 		ia=image()
-		imagename_path=os.path.dirname(imagename)
+		imagename_path=os.path.dirname(oa.path.realpath(imagename))
 		cwd=os.getcwd()
 		if imagename_path!='':
 			os.chdir(imagename_path)
+		os.system('rm -rf reduce_sigma_*')
 		for stokes in stokes_list:
 			self.log_verbose.info('imstat(imagename=\''+imagename+'\',box=\''+self.rms_box+'\',stokes=\''+stokes+'\')[\'rms\'][0]\n')
 			rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
@@ -222,11 +223,15 @@ class IntensitySelfcal:
 			ia.calcmask('\"reduce_sigma_'+stokes+'.image\">'+str(nsigma*rms),'mymask')
 			ia.close()
 			makemask(inpimage='reduce_sigma_'+stokes+'.image',inpmask='reduce_sigma_'+stokes+'.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
-			image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
-			residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
-			os.system('rm -rf reduce_sigma_*')
+			try:
+				image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
+				residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
+			except:
+				image_pix_sum=0
+				residual_pix_sum=1
 			if residual_pix_sum/image_pix_sum>residual_frac:
 				do_reduce_list.append(1)
+		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
 		if int(np.sum(np.array(do_reduce_list)))>=2:
 			if sigma_step>1.0:

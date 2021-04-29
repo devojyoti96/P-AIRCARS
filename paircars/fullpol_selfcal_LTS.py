@@ -618,7 +618,7 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return outfile
 
-	def correct_visibility_single_beam_jones(self,modify_datacolumn=True):	
+	def correct_visibility_single_beam_jones(self,modify_datacolumn=True):
 		'''
 		Correct visibility data for a single pointing beam jones
 		Parameters:
@@ -637,20 +637,25 @@ class PolSelfcal:
 		msname_path=os.path.dirname(os.path.realpath(self.msname))
 		beamfile=msname_path+'/beam.bin'
 		beamfile,beamjones=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,nant=nant,nchan=nchan,nint=nint)
-		if os.path.isfile(self.msname+'/.single_beamcorrected')==False or os.path.isfile(self.msname+'/.single_beamuncorrected')==True:
+		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
+		code_list=code.split(',')
+		if 'S_PBCOR' not in code_list or 'S_PBUNCOR' in code_list:
 			cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the beam correction
-			if modify_datacolumn==True:
-				tb=table()
-				tb.open(self.msname,nomodify=False)
-				cor_data=tb.getcol('CORRECTED_DATA')
-				tb.putcol('DATA',cor_data)
-				tb.flush()
-				tb.close()
-				self.pollog_verbose.info('Modified DATA column.\n')
+			tb=table()
+			tb.open(self.msname,nomodify=False)
+			cor_data=tb.getcol('CORRECTED_DATA')
+			tb.putcol('DATA',cor_data)
+			tb.flush()
+			tb.close()
+			self.pollog_verbose.info('Modified DATA column.\n')
 			os.system('rm -rf '+msname_path+'/beam.bin')
-			os.system('touch '+self.msname+'/.single_beamcorrected')
+			if len(code_list)==1 and code_list[0]=='':
+				code+='S_PBCOR'
+			else:
+				code+=',S_PBCOR'
+			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 			os.system('rm -rf casa*log')
-			self.pollog_verbose.info('Beam correction done.\n')
+			self.pollog_verbose.info('Beam correction done. Beam file is at : '+beamfile+'\n')
 			return beamfile,beamjones
 		else:
 			self.pollog_verbose.info('Beam correction has already been applied.\n')
@@ -675,10 +680,12 @@ class PolSelfcal:
 		md.close()
 		msname_path=os.path.dirname(os.path.realpath(self.msname))
 		beamfile=msname_path+'/beam.bin'
-		beamfile=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,nant=nant,nchan=nchan,nint=nint)
+		beamfile,beamjobes=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,nant=nant,nchan=nchan,nint=nint)
 		cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the inverse beam correction
+		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
+		code_list=code.split(',')
 		if modify==True:
-			if os.path.isfile(msname+'/.single_beamcorrected'):
+			if 'S_PBCOR' in code_list:
 				if os.path.isdir(msname_path+'/beam.ms'):
 					os.system('rm -rf '+msname_path+'/beam.ms')
 				split(vis=self.msname,outputvis=msname_path+'/beam.ms',datacolumn='corrected')
@@ -689,7 +696,11 @@ class PolSelfcal:
 				os.system('rm -rf '+msname)
 				os.system('mv '+msname_path+'/beam.ms '+msname)
 				os.system('rm -rf '+msname_path+'/beam.bin')
-				os.system('touch '+msname+'/.single_beamuncorrected')
+				if len(code_list)==1 and code_list[0]=='':
+					code+='S_PBUNCOR'
+				else:
+					code+=',S_PBUNCOR'
+				vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 				self.pollog_verbose.info('Beam correction\n')
 			else:
 				self.pollog_verbose.info('No beam correction was done on this measurement set. Thus not undoing any beam correction.\n')
@@ -749,15 +760,17 @@ class PolSelfcal:
 		residual=imagename.split('.image')[0]+'.residual'
 		do_reduce_list=[]
 		ia=image()
-		imagename_path=os.path.dirname(imagename)
+		imagename_path=os.path.dirname(os.path.realpath(imagename))
 		cwd=os.getcwd()
 		if imagename_path!='':
 			os.chdir(imagename_path)
+		os.system('rm -rf reduce_sigma_*')
 		for stokes in stokes_list:
-			os.system('rm -rf reduce_sigma_*')
 			if stokes=='I' or stokes=='XX' or stokes=='YY':
 				if os.path.isdir('reduce_sigma_I.image')==True:
 					os.system('rm -rf reduce_sigma_I.image')
+				if os.path.isdir('reduce_sigma_I.residual')==True:
+					os.system('rm -rf reduce_sigma_I.residual')
 				self.pollog_verbose.info('immath(imagename=\''+imagename+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',outfile=\'reduce_sigma_I.image\')\n')
 				immath(imagename=imagename,mode='evalexpr',stokes=stokes,outfile='reduce_sigma_I.image')
 				self.pollog_verbose.info('immath(imagename=\''+residual+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',outfile=\'reduce_sigma_I.residual\')\n')
@@ -767,21 +780,33 @@ class PolSelfcal:
 				ia.open('reduce_sigma_I.image')			
 				ia.calcmask('\"reduce_sigma_I.image\">'+str(nsigma*rms),'mymask')
 				ia.close()
-				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
-				image_pix_sum=imstat(imagename='reduce_sigma_I.image')['sum'][0]
-				residual_pix_sum=imstat(imagename='reduce_sigma_I.residual')['sum'][0]
+				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_I.residual:mymask',mode='copy')
+				try:
+					image_pix_sum=imstat(imagename='reduce_sigma_I.image')['sum'][0]
+					residual_pix_sum=imstat(imagename='reduce_sigma_I.residual')['sum'][0]
+				except:
+					image_pix_sum=0
+					residual_pix_sum=1
 			else:
 				self.pollog_verbose.info('immath(imagename=\''+imagename+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',expr=\'abs(IM0)\',outfile=\'reduce_sigma_'+stokes+'.image\')\n')
 				immath(imagename=imagename,mode='evalexpr',stokes=stokes,expr='abs(IM0)',outfile='reduce_sigma_'+stokes+'.image')
+				self.pollog_verbose.info('immath(imagename=\''+residual+'\',mode=\'evalexpr\',stokes=\''+stokes+'\',outfile=\'reduce_sigma_'+stokes+'.residual\')\n')
+				immath(imagename=residual,mode='evalexpr',stokes=stokes,outfile='reduce_sigma_'+stokes+'.residual')
 				self.pollog_verbose.info('imstat(imagename=\''+imagename+'\',box=\''+self.rms_box+'\',stokes=\''+stokes+'\')[\'rms\'][0]\n')
 				rms=imstat(imagename='reduce_sigma_'+stokes+'.image',box=self.rms_box,stokes=stokes)['rms'][0]
-				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
-				makemask(inpimage='reduce_sigma_I.image',inpmask='reduce_sigma_I.image:mymask',output='reduce_sigma_'+stokes+'.image:mymask',mode='copy')
-				image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
-				residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
-			os.system('rm -rf reduce_sigma_*')
+				ia.open('reduce_sigma_'+stokes+'.image')			
+				ia.calcmask('\"reduce_sigma_'+stokes+'.image\">'+str(nsigma*rms),'mymask')
+				ia.close()
+				makemask(inpimage='reduce_sigma_'+stokes+'.image',inpmask='reduce_sigma_'+stokes+'.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
+				try:
+					image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
+					residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
+				except:
+					image_pix_sum=1
+					residual_pix_sum=0
 			if residual_pix_sum/image_pix_sum>residual_frac:
 				do_reduce_list.append(1)
+		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
 		if int(np.sum(np.array(do_reduce_list)))>=2:
 			if sigma_step>1.0:
@@ -1220,13 +1245,5 @@ class PolSelfcal:
 #########################################
 # Finished PolSelfcal Class
 #########################################
-
-
-
-
-
-
-
-
 
 
