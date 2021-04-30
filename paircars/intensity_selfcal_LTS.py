@@ -786,7 +786,7 @@ class IntensitySelfcal:
 			os.system('rm -rf convolved*')
 			ra=data[5]
 			dec=data[6]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(32/60.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(16/60.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:

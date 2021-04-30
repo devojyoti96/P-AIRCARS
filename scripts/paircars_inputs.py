@@ -11,9 +11,10 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 ##################
 basedir				=	'/data1/devojyoti/PhD/data/test'
 msdir				=	'/data1/devojyoti/PhD/data/test/test1'
-calibrator_caltable	=	[]
 timerange			=	'2014-05-04 02:48:02.25'
 chanrange			=	'0~2,3~3,4~6,8~10,15~16'
+final_image_dir		=	''
+calibrator_caltable	=	[]
 safety_factor		=	1
 quality_factor		=	1
 verbose				=	True

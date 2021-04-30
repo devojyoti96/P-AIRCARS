@@ -23,6 +23,7 @@ from paircars.access_ms import *
 from paircars.decor import *
 from paircars.flagger import *
 from astropy.io import fits
+from CALIBRATE.access_calibrate import *
 
 def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,input_file='',datacolumn='corrected'):
 	'''
@@ -820,7 +821,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		if skip_freq<1280:
 			skip_freq_pol=1280
 		else:
-			skip_freq_pol=copy.deepcopy(skip_freq_pol)
+			skip_freq_pol=copy.deepcopy(skip_freq)
 		skip_channel=int(skip_freq_pol/AM.calc_freqres())
 		channel_grid=[]
 		if skip_channel<len(unflagged_channels):
@@ -1327,7 +1328,33 @@ while True:
 	else:
 		time.sleep(2.0)
 
+
+# Applying solution to whole ms
+############################### 
+
+
+
+
+
+
+
+# Final imaging mode
+####################
+
+
+
+
+
+
+
+
+
+
 final_finished_file='/'.join(inputs.basedir.split('/')[:-1])+'/.Finished_'+inputs.basedir.split('/')[-1]
+os.system('touch '+final_finished_file)
+
+
+
 # TODO : Final leakage correction using background sources
 # TODO : Calibration database
 # TODO : Diagnostic plots
