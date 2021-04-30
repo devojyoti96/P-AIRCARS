@@ -4,20 +4,23 @@ import os
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
 os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
+os.system('cp -r scripts/control_paircars.py scripts/control_paircars')
+os.system('cp -r scripts/validating_paircars_input.py scripts/validating_paircars_input')
 
 setup(
     name='paircars',
     version='1.1.0',
     packages=['paircars'],
+	package_data={'paircars':['libpaircars.so']},
     author='Devojyoti Kansabanik',
     author_email='Andrew.Williams@curtin.edu.au',
     description='PAIRCARS',
-    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal'],
+    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input'],
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
-os.system('rm -rf scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal')
+os.system('rm -rf scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars')
 
 setup(
     name='paircars_casatasks',
