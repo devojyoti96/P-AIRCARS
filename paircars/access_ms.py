@@ -212,6 +212,26 @@ class AccessMS:
 				unflagged_chan.append(chan)
 		return unflagged_chan	
 
+	def get_model_nomodel_chan(self):
+		'''
+		Function to get the channels wioth no model data.
+		Return:
+		List of model and nomodel channels
+		'''
+		self.tb.open(self.msname)
+		model=self.tb.getcol('MODEL_DATA')
+		self.tb.close()
+		nchan=self.get_num_channels()
+		nomodel_chan=[]
+		model_chan=[]
+		for chan in range(nchan):
+			model_data=model[:,chan,:]
+			if np.abs(np.sum(model_data))==0.0:
+				nomodel_chan.append(chan)
+			else:
+				model_chan.append(chan)
+		return model_chan,nomodel_chan
+
 	def calc_meanfreq(self):
 		'''
 		Function to return central frequency of the measurement set (Only MS with single SPW)

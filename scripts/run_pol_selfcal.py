@@ -9,6 +9,7 @@ from optparse import OptionParser
 from astropy.io import fits
 from astropy import wcs
 from CALIBRATE.access_calibrate import *
+from paircars.libpaircars import send_paircars_notification
 from mwa_pb.mwapb import *
 matplotlib.use('Agg')
 
@@ -21,6 +22,9 @@ if __name__!='__main__':
 	else:
 		import selfcal_inputs as inputs
 		from selfcal_inputs import *	
+else:
+	import selfcal_inputs as inputs
+	from selfcal_inputs import *
 
 '''
 Code is written by Devojyoti Kansabanik, March 6, 2021

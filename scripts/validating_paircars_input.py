@@ -1,70 +1,17 @@
+import os,sys
+sys.path.append(os.getcwd())
 from casatools import *
 from casatasks import *
-from paircars_inputs import *
+import selfcal_inputs as inputs
+from selfcal_inputs import *
 from datetime import datetime as dt, timedelta
-import logging,numpy as np,os,sys,copy,glob,psutil,json,urllib.request
+import logging,numpy as np,sys,copy,glob,psutil,json,urllib.request
 from paircars.basic_func import *
 from paircars.access_ms import *
 from astropy.io import fits
 '''
 Code is written by Devojyoti Kansabanik, 01 Feb, 2021
-'''
 
-def get_OBSID_from_ms(msname):
-	'''
-	Function to return OBSID of an MWA observation
-	Parameters:
-	msname = Name of the measurement set
-	Return:
-	MWA OBSID
-	'''
-	try:
-		BASEURL='http://ws.mwatelescope.org/'
-		md=msmetadata()
-		md.open(msname)
-		obs_mjd_ms=md.timerangeforobs(0)['begin']['m0']['value']
-		md.close()
-		utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)
-		ms_path=os.path.dirname(os.path.realpath(msname))
-		searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
-		GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
-		searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
-		OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
-		return OBSid
-	except:
-		return 0
-
-def get_OBSID_from_metafits(metafits):
-	'''
-	Function to return OBSID of an MWA observation
-	Parameters:
-	metafits = Name of the metafits file
-	MWA OBSID
-	'''
-	OBSid=fits.getheader(metafits)['GPSTIME']
-	return OBSid 
-
-def download_metafits(msname,outdir):
-	'''
-	Function to download MWA metafits of a given measurement set.
-	Parameters :
-	msname : Name of the measurement set
-	outdir : Name of the outputdir
-	Return :
-	Download the metafits file of the given measurement set and return metafits file name
-	'''
-	if __name__!='__main__':
-		formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
-		mainlog = logging.getLogger('paircars_main_log')
-	BASEURL='http://ws.mwatelescope.org/'
-	OBSid=get_OBSID_from_ms(msname)
-	if os.path.isfile(outdir+'/'+str(OBSid)+'.metafits')==False:
-		mainlog.info('Downloading metafits for OBS ID :'+str(OBSid)+' at : '+outdir+'/'+str(OBSid)+'.metafits.\n')
-		os.system('wget -O '+outdir+'/'+str(OBSid)+'.metafits http://ws.mwatelescope.org/metadata/fits?obs_id='+str(OBSid))
-	metafits=outdir+'/'+str(OBSid)+'.metafits'
-	return metafits
-
-'''
 Code to validate the PAIRCARS input parameters
 #######################
 # Here we are validating the user given parameters. 
@@ -80,14 +27,13 @@ if __name__=='__main__':
 	print ('Validating inputs........\n')
 	# Validating basedir path
 	#########################
-	if os.path.isfile('paircars_inputs.py')==False:
+	if os.path.isfile('selfcal_inputs.py')==False:
 		print ('Input file does not exist. Exiting PAIRCARS......\n')
 		os.system('rm -rf casa*log')
 		os._exit(1)
 	else:
-		os.system('cp paircars_inputs.py selfcal_inputs_temp.py')
-	inpfil=open('selfcal_inputs_temp.py','r+')
-	lines=inpfil.readlines()
+		inpfil=open('selfcal_inputs.py','r+')
+		lines=inpfil.readlines()
 	if basedir=='':
 		print ('Path of the base directory is empty\n')
 		if interactive==True:
@@ -166,34 +112,6 @@ if __name__=='__main__':
 		mainlog.addHandler(filehandle)
 		mainlog.info('Starting PAIRCARS in fresh base directory.\n')
 
-	# Validating measurement set dir 
-	################################
-	if os.path.isdir(msdir)==False:
-		mainlog.info('Measurement set directory does not exist. Check the measurement set path and re run. Exiting PAIRCARS....\n')
-		os.system('rm -rf casa*log')
-		os._exit(1)
-
-	# Organising measurement sets
-	#############################
-	mainlog.info('Searching for measurmenet sets......\n')
-	file_list=glob.glob(msdir+'/*.ms')
-	measurement_set_list=[]
-	for f in file_list:
-		if os.path.isdir(f)==True:
-			try:	
-				msname=splited_ms_rename(f,ref_time_chan=False,change_msname=False)
-				if os.path.islink(basedir+'/data/'+os.path.basename(msname))==False:
-					mainlog.info('Linking '+f+' to '+basedir+'/data/'+os.path.basename(msname)+'\n')
-					os.system('ln -s '+f+' '+basedir+'/data/'+os.path.basename(msname))
-				measurement_set_list.append(basedir+'/data/'+os.path.basename(msname))
-			except: 
-				pass
-	if len(measurement_set_list)==0:
-		mainlog.error('No valid measurement set is present. Put the correct data. Exiting PAIRCARS.....\n')
-		os.system('rm -rf casa*log')
-		os._exit(1)
-	else:
-		mainlog.info(str(len(measurement_set_list))+' measurement set has been found.\n')
 
 	# Validating calibrator caltables
 	#################################
@@ -210,16 +128,7 @@ if __name__=='__main__':
 			if 'calibrator_caltable' in lines[i]:
 				lines[i]='calibrator_caltable\t=\t'+str(calibrator_caltable)+'\n'
 
-	# Validating local database directory
-	#####################################
-	if os.path.isdir(local_caldatabase)==False:
-		if os.path.isdir(basedir+'/localcaldatabase')==False:
-			os.makedirs(basedir+'/localcaldatabase')
-		local_caldatabase=basedir+'/localcaldatabase'
-		for i in range(len(lines)):
-			if 'local_caldatabase' in lines[i]:
-				lines[i]='local_caldatabase\t\t=\t\''+str(local_caldatabase)+'\'\n'
-
+	
 	# Validating Safety standard and quality factor
 	###############################################
 	if type(safety_factor)==int and safety_factor>2:
@@ -372,9 +281,9 @@ if __name__=='__main__':
 	if type(send_notification)!=bool or email=='':
 		mainlog.info('send_notification was not boolean or no valid email is given. Setting it to default value False.\n')
 		send_notification=False
-	for i in range(len(lines)):
-		if 'send_notification' in lines[i]:
-			lines[i]='send_notification\t\t=\tFalse\n'
+		for i in range(len(lines)):
+			if 'send_notification' in lines[i]:
+				lines[i]='send_notification\t\t=\t'+str(send_notification)+'\n'
 
 	if email!='' and send_notification==False:
 		mainlog.info('send_notification = False. Setting email address to to default value None.\n')	
@@ -713,7 +622,8 @@ if __name__=='__main__':
 	inpfil.writelines(lines)
 	inpfil.close()
 	os.system('rm -rf casa*log')
-
+	mainlog.info('Input file validation complete.\n')	
+	
 
 
 

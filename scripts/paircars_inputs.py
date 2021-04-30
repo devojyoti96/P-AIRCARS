@@ -36,7 +36,6 @@ do_polcal				=	True
 save_true_loc_image		=	False
 send_notification		=	True
 email					=	'devojyoti96@gmail.com'
-local_caldatabase		=	''
 
 # Advanced options
 ##################

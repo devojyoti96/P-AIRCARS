@@ -8,6 +8,7 @@ from paircars.flagger import *
 from optparse import OptionParser
 from astropy.io import fits
 from astropy import wcs
+from paircars.libpaircars import send_paircars_notification
 matplotlib.use('Agg')
 
 if __name__!='__main__':
@@ -19,6 +20,9 @@ if __name__!='__main__':
 	else:
 		import selfcal_inputs as inputs
 		from selfcal_inputs import *
+else:
+	import selfcal_inputs as inputs
+	from selfcal_inputs import *
 
 '''
 Code is written by Devojyoti Kansabanik, 26 Jan, 2021
@@ -1251,12 +1255,13 @@ if __name__=='__main__':
 		os.system('rm -rf '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-	except:
+	except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 		logger.info('#############################\n')
 		logger.info('Gain selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Error occured : '+str(e)+'\n')
 		logger.info('Total runtime : '+str(run_time)+'\n')
 		logger.info('##############################\n')
 		msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\nMessage : Error in runtime\nTotal runtime : '+\

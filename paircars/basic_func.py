@@ -1,6 +1,7 @@
-import numpy as np,os,julian,smtplib,imaplib,datetime as dtt
+import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request
 from casatools import *
 from . import access_ms as am
+from astropy.io import fits
 from astropy.coordinates import EarthLocation,SkyCoord,AltAz
 from astropy.time import Time
 from astropy import units as u
@@ -347,91 +348,6 @@ def calc_flag_fraction_caltable(caltable):
 ##############################################
 # General usuage functions #
 ##############################################
-def delete_mailbox():
-	'''
-	Function to clear PAIRCARS mailbox 
-	'''
-	m = imaplib.IMAP4_SSL("imap.gmail.com")  # Server to connect to
-	m.login('paircars@gmail.com', 'Saroj1996*') # (encrypted)
-	m.select('"[Gmail]/All Mail"') # required to perform search, m.list() for all lables, '[Gmail]/Sent Mail'
-	before_date = (dtt.date.today() - dtt.timedelta(7)).strftime("%d-%b-%Y")  # Delete all mails before 1 week
-	typ, data = m.search(None, '(BEFORE {0})'.format(before_date))  # Search pointer for msgs before before_date
-	if len(data)!=0:  # if not empty list means messages exist
-		msgs = data[0].split()
-		if len(msgs)!=0:
-			no_msgs=msgs[-1]  # last msg id in the list
-			m.store("1:{0}".format(int(no_msgs)), '+X-GM-LABELS', '\\Trash')  # move to trash
-		else:
-			no_msgs=0
-		m.select('[Gmail]/Trash')  # Select all trash
-		m.store("1:*", '+FLAGS', '\\Deleted')  #Flag all Trash as Deleted
-		m.expunge()  # Not need if auto-expunge enabled
-		m.close()
-		m.logout()
-		return int(no_msgs)
-	else:
-		m.select('[Gmail]/Trash')  # select all trash
-		m.store("1:*", '+FLAGS', '\\Deleted')  #Flag all Trash as Deleted
-		m.expunge()  # Not need if auto-expunge enabled
-		m.close()
-		m.logout()
-		return 0
-
-def send_paircars_notification(mail_address,subject,msg,attachments=[]):
-	'''
-	Function to send PAIRCARS notification mail
-	Parameters:
-	mail_address = Name of receiver mail address
-	msg = Main body of the mail
-	subject = Mail subject
-	attachments = [], List of attchments
-	Return : Send the mail to notification mail address
-			0, if succeed
-			1, if failed
-	''' 
-	cwd=os.getcwd()
-	try:
-		mail_content=msg # Mail body text 
-		s='paircars@gmail.com' #(encrypted)
-		sp='Saroj1996*' #(encrypted)
-		b='devojyoti96@gmail.com'
-		receiver_address=mail_address 
-		message=MIMEMultipart()
-		message['From']='paircars@gmail.com'
-		message['To']=receiver_address
-		message['Subject']=subject #The subject line
-		for filename in attachments: #The attachments for the mail
-			with open(filename, "rb") as f:
-				attach = MIMEApplication(f.read())
-				attach.add_header('Content-Disposition','attachment',filename=os.path.basename(filename))
-				message.attach(attach)
-		message.attach(MIMEText(mail_content, 'plain')) # Main body attachment
-		session = smtplib.SMTP('smtp.gmail.com', 587)
-		session.ehlo()
-		session.starttls()
-		session.ehlo()
-		session.login(s, sp)
-		session.sendmail(s, [receiver_address], message.as_string())
-		session.quit()
-		if receiver_address!=b:
-			message1=MIMEMultipart()
-			mail_content='Dear developer,\nNotification mail send to user : '+receiver_address+'\n\nNotification content : "'+mail_content+'"\n\nBest,\nPAIRCARS developer team'
-			message1['From']=s		
-			message1['To']=b
-			message1['Subject']='PAIRCARS used by : '+receiver_address+' : '+subject
-			message1.attach(MIMEText(mail_content, 'plain')) # Main body attachment
-			session = smtplib.SMTP('smtp.gmail.com', 587)
-			session.ehlo()
-			session.starttls()
-			session.ehlo()
-			session.login(s, sp)
-			session.sendmail(s, [b], message1.as_string())
-			session.quit()
-		no_delete_msg=delete_mailbox()
-		os.chdir(cwd)
-		return 0
-	except:
-		return 1
 
 def getnearpos(array,value):
 	'''
@@ -603,10 +519,71 @@ def altaz_to_radec(alt,az,obstime,LAT,LON,ALT):
 	radec_str=radec_con_deg_to_hhmmss(radeg,decdeg)
 	return radec_str
 
+def freq_to_MWA_coarse(freq):
+	'''
+	Frequency to MWA coarse channel conversion
+	Parameters:
+	freq = Frequency in MHz
+	Return:
+	MWA coarse channel number
+	'''
+	coarse_chan_cent_freq=np.array(range(300))*1.28
+	coarse_chan=np.argmin(np.abs(coarse_chan_cent_freq-freq))
+	return coarse_chan
 
+def get_OBSID_from_ms(msname):
+	'''
+	Function to return OBSID of an MWA observation
+	Parameters:
+	msname = Name of the measurement set
+	Return:
+	MWA OBSID
+	'''
+	try:
+		BASEURL='http://ws.mwatelescope.org/'
+		md=msmetadata()
+		md.open(msname)
+		obs_mjd_ms=md.timerangeforobs(0)['begin']['m0']['value']
+		md.close()
+		utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)
+		ms_path=os.path.dirname(os.path.realpath(msname))
+		searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
+		GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
+		searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
+		OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
+		return OBSid
+	except:
+		return 0
 
+def get_OBSID_from_metafits(metafits):
+	'''
+	Function to return OBSID of an MWA observation
+	Parameters:
+	metafits = Name of the metafits file
+	MWA OBSID
+	'''
+	OBSid=fits.getheader(metafits)['GPSTIME']
+	return OBSid 
 
-
+def download_metafits(msname,outdir):
+	'''
+	Function to download MWA metafits of a given measurement set.
+	Parameters :
+	msname : Name of the measurement set
+	outdir : Name of the outputdir
+	Return :
+	Download the metafits file of the given measurement set and return metafits file name
+	'''
+	if __name__!='__main__':
+		formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+		mainlog = logging.getLogger('paircars_main_log')
+	BASEURL='http://ws.mwatelescope.org/'
+	OBSid=get_OBSID_from_ms(msname)
+	if os.path.isfile(outdir+'/'+str(OBSid)+'.metafits')==False:
+		mainlog.info('Downloading metafits for OBS ID :'+str(OBSid)+' at : '+outdir+'/'+str(OBSid)+'.metafits.\n')
+		os.system('wget -O '+outdir+'/'+str(OBSid)+'.metafits http://ws.mwatelescope.org/metadata/fits?obs_id='+str(OBSid))
+	metafits=outdir+'/'+str(OBSid)+'.metafits'
+	return metafits
 
 
 
