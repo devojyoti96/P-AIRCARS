@@ -20,9 +20,7 @@ if __name__!='__main__':
 	else:
 		import selfcal_inputs as inputs
 		from selfcal_inputs import *
-else:
-	import selfcal_inputs as inputs
-	from selfcal_inputs import *
+
 
 '''
 Code is written by Devojyoti Kansabanik, 26 Jan, 2021
