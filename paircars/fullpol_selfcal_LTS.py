@@ -618,11 +618,12 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return outfile
 
-	def correct_visibility_single_beam_jones(self,modify_datacolumn=True):
+	def correct_visibility_single_beam_jones(self,modify_datacolumn=True,force=False):
 		'''
 		Correct visibility data for a single pointing beam jones
 		Parameters:
 		modify_datacolumn = True, modify the DATA column, otherwise beam corrected visibilities will be saved on CORRECTED_DATA
+		force = False, beam correct forcefully avoiding ms header info
 		Return:
 		Name of the beam jones file, Beam Jones matrix.
 		'''
@@ -641,13 +642,14 @@ class PolSelfcal:
 		code_list=code.split(',')
 		if 'S_PBCOR' not in code_list or 'S_PBUNCOR' in code_list:
 			cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the beam correction
-			tb=table()
-			tb.open(self.msname,nomodify=False)
-			cor_data=tb.getcol('CORRECTED_DATA')
-			tb.putcol('DATA',cor_data)
-			tb.flush()
-			tb.close()
-			self.pollog_verbose.info('Modified DATA column.\n')
+			if modify_datacolumn==True:
+				tb=table()
+				tb.open(self.msname,nomodify=False)
+				cor_data=tb.getcol('CORRECTED_DATA')
+				tb.putcol('DATA',cor_data)
+				tb.flush()
+				tb.close()
+				self.pollog_verbose.info('Modified DATA column.\n')
 			os.system('rm -rf '+msname_path+'/beam.bin')
 			if len(code_list)==1 and code_list[0]=='':
 				code+='S_PBCOR'
@@ -657,16 +659,31 @@ class PolSelfcal:
 			os.system('rm -rf casa*log')
 			self.pollog_verbose.info('Beam correction done. Beam file is at : '+beamfile+'\n')
 			return beamfile,beamjones
+		elif force==True:
+			cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the beam correction
+			if modify_datacolumn==True:
+				tb=table()
+				tb.open(self.msname,nomodify=False)
+				cor_data=tb.getcol('CORRECTED_DATA')
+				tb.putcol('DATA',cor_data)
+				tb.flush()
+				tb.close()
+				self.pollog_verbose.info('Modified DATA column.\n')
+			os.system('rm -rf '+msname_path+'/beam.bin')
+			os.system('rm -rf casa*log')
+			self.pollog_verbose.info('Beam correction done. Beam file is at : '+beamfile+'\n')
+			return beamfile,beamjones
 		else:
 			self.pollog_verbose.info('Beam correction has already been applied.\n')
 			os.system('rm -rf casa*log')
 			return beamfile,beamjones
 
-	def uncorrect_visibility_single_beam_jones(self,modify=True):	
+	def uncorrect_visibility_single_beam_jones(self,modify_datacolumn=True,force=False):	
 		'''
 		Undo Correct visibility data for a single pointing beam jones
 		Parameters:
 		modify = True, modify the DATA column, otherwise beam corrected visibilities will be saved on CORRECTED_DATA
+		force = False, undo beam correct forcefully avoiding ms header info
 		Return:
 		Name of the beam jones file
 		'''
@@ -684,7 +701,7 @@ class PolSelfcal:
 		cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the inverse beam correction
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
-		if modify==True:
+		if modify_datacolumn==True:
 			if 'S_PBCOR' in code_list:
 				if os.path.isdir(msname_path+'/beam.ms'):
 					os.system('rm -rf '+msname_path+'/beam.ms')
@@ -701,7 +718,19 @@ class PolSelfcal:
 				else:
 					code+=',S_PBUNCOR'
 				vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
-				self.pollog_verbose.info('Beam correction\n')
+				self.pollog_verbose.info('Undo beam correction\n')
+			elif force==True:
+				if os.path.isdir(msname_path+'/beam.ms'):
+					os.system('rm -rf '+msname_path+'/beam.ms')
+				split(vis=self.msname,outputvis=msname_path+'/beam.ms',datacolumn='corrected')
+				if self.msname[-1]=='/':
+					msname=self.msname[:-1]
+				else:
+					msname=self.msname
+				os.system('rm -rf '+msname)
+				os.system('mv '+msname_path+'/beam.ms '+msname)
+				os.system('rm -rf '+msname_path+'/beam.bin')
+				self.pollog_verbose.info('Undo beam correction\n')
 			else:
 				self.pollog_verbose.info('No beam correction was done on this measurement set. Thus not undoing any beam correction.\n')
 				if self.verbose==False:

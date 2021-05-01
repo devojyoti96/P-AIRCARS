@@ -390,7 +390,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			AM=AccessMS(averaged_msname)
 			freq_avg=AM.calc_freqres()
 			time_avg=AM.calc_timeres()
-
+	spawned_casa_instances=len(glob.glob(basedir+'/.Finished*cal*'+str(ms_obsid)+'*'))
 	# In this while loop we are checking whether the present time and frequency averaging is enough to start the self calibration. If it has it will leave the loop and go for selfcal
 	while os.path.isfile('.ref_timechan_done')==False and ref_time_freq==True:  	
 		mainlog.info('Choosing averaging frequency width : '+str(freq_avg)+' kHz, averaging temporal width : '+str(time_avg)+' s, Skip frequency : '\
@@ -455,7 +455,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		###########################
 		ref_timechan_ms,ref_timechan_dir=spliting_timechan(averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 		cur_workdir=ref_timechan_dir
-		spawned_casa_instances=0
 		# Run selfcal
 		while True:
 			ref_time_chan_loop_count+=1
@@ -844,7 +843,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 		skip_channel_pol=int(skip_freq_pol/AM.calc_freqres())
 		channel_grid=[]
-		if skip_channel<len(unflagged_channels):
+		if skip_channel_pol<len(unflagged_channels):
 			for i in range(min(unflagged_channels),max(unflagged_channels),skip_channel_pol):
 				channel_grid.append(i)
 		else:
@@ -873,12 +872,16 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(i),timerange,caltype='P',ref_timechan=False,\
 											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 			calstring=','.join(bpcaltable)
+			if len(calibrator_caltable)!=0:
+				do_gaincal=False
+			else:
+				do_gaincal=True
 			if len(bpcaltable)!=0:
 				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal False --caltables '+calstring
+				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal '+str(do_gaincal)+' --caltables '+calstring
 			else:
 				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal True'
+				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal '+str(do_gaincal)
 			polcal_cmd_list.append(cmd)
 			polcal_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_P')
 			polcal_finished_file_list.append(inputs.basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
@@ -1342,7 +1345,7 @@ while True:
 			bandpass_modeldir=inputs.basedir+'/bpimagemodels/'+str(OBSID)
 			polcal_caldir=inputs.basedir+'/polcaltables/'+str(OBSID)
 			mainlog.info('Making final calibration tables for : '+msname+'\n')
-			managing_caldatabase(msname,OBSID,ref_time,gaincal_modeldir,bandpass_modeldir,polcal_caldir,inputs.local_caldatabase)	
+			managing_caldatabase(msname,OBSID,ref_time,gaincal_modeldir,bandpass_modeldir,polcal_caldir,local_caldatabase)	
 	else:
 		time.sleep(2.0)
 

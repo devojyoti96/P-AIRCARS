@@ -196,6 +196,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
 			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
 			applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
+			if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==False:
+				logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'corrected\')\n')
+				split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='corrected') # Backup of gain calibrated ms
 				
 	if msname[-1]=='/':
 		msname=msname[:-1]
@@ -457,14 +460,14 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				tb.close()
 				pass		
 
-		if (do_pbcor==True and gaincal_count==1) or (do_pbcor==True and os.path.isfile(msname+'/.single_beamcorrected')==False):
+		if (do_pbcor==True and gaincal_count==1) or do_pbcor==True:
 			if verbose==False:
 				print ('Performing ideal beam correction.\n')
 			logger.info('Performing ideal beam correction.\n')
 			if os.path.isdir(working_dir+'/Backup_beamcorrected.ms'):
 				os.system('rm -rf '+working_dir+'/Backup_beamcorrected.ms')
-			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False)\n')
-			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False) # Single pointing beam correction on visibility data
+			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=True)\n')
+			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=True) # Single pointing beam correction on visibility data
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_beamcorrected.ms\',datacolumn=\'corrected\')\n')
 			split(vis=msname,outputvis=working_dir+'/Backup_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
 			tb=table()
@@ -1258,7 +1261,7 @@ if __name__=='__main__':
 	try:
 		print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
 		print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
-				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\'ssss)\n')
+				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\')\n')
 		msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
 				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
 		if msg>100:
