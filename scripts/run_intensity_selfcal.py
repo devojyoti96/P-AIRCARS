@@ -21,7 +21,6 @@ if __name__!='__main__':
 		import selfcal_inputs as inputs
 		from selfcal_inputs import *
 
-
 '''
 Code is written by Devojyoti Kansabanik, 26 Jan, 2021
 '''
@@ -205,7 +204,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	if start_fresh==False:
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 					num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,\
-					startmask,uvsub_flag_count,ra,dec=np.load('Intensity_selfcal_record.npy',allow_pickle=True)		
+					startmask,uvsub_flag_count,ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done=np.load('Intensity_selfcal_record.npy',allow_pickle=True)		
 	if 'ref' in msname:
 		if start_fresh:
 			scratch=True # For reference time and frequency scratch = True
@@ -309,11 +308,13 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			uvsub_flag_count=0
 			num_iter_fixed_sigma=0
 			num_iter_fixed_ant=0	
+			num_iter_after_phasecenter_change=0
 			point_source_trial_count=0
 			num_iteration_after_ap = 0
 			nomask_try_count = 0
 			try_nomask=False
 			phasecenter_changed=False
+			phasecenter_change_done=False
 			ra=0
 			dec=0
 		else:
@@ -339,6 +340,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			num_iter_fixed_ant=num_iter_fixed_ant
 			point_source_trial_count=0
 			num_iteration_after_ap = num_iteration_after_ap
+			num_iter_after_phasecenter_change=num_iter_after_phasecenter_change
+			phasecenter_change_done=phasecenter_change_done
 			nomask_try_count = 0
 			try_nomask=False
 			phasecenter_changed=phasecenter_changed
@@ -512,6 +515,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				startmodel=''
 			if os.path.isdir(startmask)==False:
 				startmask=''
+			if phasecenter_change_done==True and phasecenter_changed==True:
+				phasecenter_changed=False
 
 			if (num_iter<10 and nomask_try_count<1): 
 					# Use a circular mask of the size of the Sun if calmode=='p' and no mask is provided by user. This is to keep th phasecenter fixed
@@ -550,8 +555,13 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			else:
 				msg_code=output_ISC
 
-			if phasecenter_changed==True:
-					phasecenter_changed=False
+			if phasecenter_changed==True and phasecenter_change_done==False:
+				phasecenter_changed=False
+				phasecenter_change_done=True
+
+			if phasecenter_change_done==True:
+				num_iter_after_phasecenter_change+=1
+
 			if 'ref' in msname:		
 				ISC.file_remover_and_keeper(num_iter,msg_code,do_bandpass=False,ref_time_chan=True)  # Removing files and keeping the required ones
 			else:
@@ -729,7 +739,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				if os.path.isfile('Intensity_selfcal_record.npy'):
 					os.system('rm -rf Intensity_selfcal_record.npy')
 				selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
-					num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,ra,dec],dtype='object')
+					num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,ra,dec,\
+					num_iter_after_phasecenter_change,phasecenter_change_done],dtype='object')
 				np.save('Intensity_selfcal_record',selfcal_record)
 
 				if verbose==False:
@@ -996,11 +1007,12 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							print ('New antenna added at iteration : '+str(num_iter)+'\n')
 						logger.info('New antenna added at iteration : '+str(num_iter)+'\n')		
 					else:
-						if do_ap==False:
+						if do_ap==False and phasecenter_change_done==False:
 							ra,dec,phasecenter_changed=ISC.cal_solar_phaseshift('junk1.image',sigma=start_sigma)
 							logger.info('Phase center changed required : '+str(phasecenter_changed)+'\n')
 							if phasecenter_changed==True:							
 								logger.info('New phasecenter : RA = '+str(ra)+' deg, DEC = '+str(dec)+' deg.\n')
+						elif do_ap==False and num_iter_after_phasecenter_change>min_iteration:
 							if verbose==False:
 								print ('Change calmode to \'ap\' at iteration : '+str(num_iter)+'\n')
 							logger.info('Change calmode to \'ap\' at iteration : '+str(num_iter)+'\n')
@@ -1262,7 +1274,7 @@ if __name__=='__main__':
 		logger.info('Error occured : '+str(e)+'\n')
 		logger.info('Total runtime : '+str(run_time)+'\n')
 		logger.info('##############################\n')
-		msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\nMessage : Error in runtime\nTotal runtime : '+\
+		msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\nMessage : Error in runtime : '+str(e)+'\nTotal runtime : '+\
 					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
 		if inputs.send_notification==True:

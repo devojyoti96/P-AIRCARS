@@ -856,15 +856,16 @@ if __name__=='__main__':
 			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-	except:
+	except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 		logger.info('#############################\n')
 		logger.info('Bandpass selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Error occured : '+str(e)+'\n')
 		logger.info('Total runtime : '+str(run_time)+'\n')
 		logger.info('##############################\n')
-		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\nMessage : Error in runtime\nTotal runtime : '+\
+		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\nMessage : Error in runtime : '+str(e)+'\nTotal runtime : '+\
 					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
 		if inputs.send_notification==True:

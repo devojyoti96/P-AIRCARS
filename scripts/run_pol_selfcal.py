@@ -134,11 +134,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		working_dir=working_dir[:-1]
 
 	cwd=os.getcwd()
-
 	os.chdir(msname)
 	mspath=os.path.dirname(os.path.realpath(os.getcwd()))
 	os.chdir(cwd)
-	
+	DR_delta_rms=inputs.DR_delta_rms
 	if mspath[-1]=='/':
 		mspath=mspath[:-1] 
 
@@ -227,7 +226,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	if start_fresh==False: # Reading selfcal record
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,FX2_I,FX2_Q,FX2_U,FX2_V,FX2_T,FX2_P,FX1_I,FX1_Q,FX1_U,FX1_V,FX1_T,FX1_P,\
 		rms_list,scratch,start_sigma,num_iteration_after_poldist,num_iter_after_qucor,\
-		num_iter_fixed_sigma,startmodel,startmask,uvsub_flag_count,do_solarqu_cor,do_poldist,do_pbcor,do_gaincal,gaincal_count,done_qucor\
+		num_iter_fixed_sigma,startmodel,startmask,uvsub_flag_count,do_solarqu_cor,do_poldist,do_pbcor,do_gaincal,gaincal_count,done_qucor,pre_res\
 			=np.load('Pol_selfcal_record.npy',allow_pickle=True)
 	
 	if 'ref' in msname:
@@ -304,11 +303,13 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		gaincal_count=0
 		num_iter=0
 		done_qucor=False
+		pre_res=0.0
 	else:
 		do_gaincal=do_gaincal
 		gaincal_count=gaincal_count
 		num_iter=num_iter
 		done_qucor=done_qucor
+		pre_res=pre_res
 
 	while end_selfcal==False:
 		if os.path.isfile(msname+'/.usedby_paircars')==False:
@@ -662,22 +663,22 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				if num_iter==0:
 					DR5=DR3=DR1=dyn_I
 					DR6=DR4=DR2=DR_neg
-					FX3_I=FX2_I=FX1_I=flux_I
-					FX3_Q=FX2_Q=FX1_Q=flux_Q
-					FX3_U=FX2_U=FX1_U=flux_U
-					FX3_V=FX2_V=FX1_V=flux_V
-					FX3_T=FX2_T=FX1_T=flux_T
-					FX3_P=FX2_P=FX1_P=flux_P
+					FX3_I=FX2_I=FX1_I=flux_I/rms_I
+					FX3_Q=FX2_Q=FX1_Q=flux_Q/rms_Q
+					FX3_U=FX2_U=FX1_U=flux_U/rms_U
+					FX3_V=FX2_V=FX1_V=flux_V/rms_V
+					FX3_T=FX2_T=FX1_T=flux_T/np.sqrt(rms_Q**2+rms_U**2+rms_V**2)
+					FX3_P=FX2_P=FX1_P=flux_P/np.sqrt(rms_Q**2+rms_U**2)
 					PSC.IMSTAT_record(DR5,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,'IMGSTAT_pol',init=True) # Keeping image statistics
 				elif num_iter==1:
 					DR5=dyn_I
 					DR6=DR_neg
-					FX3_I=flux_I
-					FX3_Q=flux_Q
-					FX3_U=flux_U
-					FX3_V=flux_V
-					FX3_T=flux_T
-					FX3_P=flux_P
+					FX3_I=flux_I/rms_I
+					FX3_Q=flux_Q/rms_Q
+					FX3_U=flux_U/rms_U
+					FX3_V=flux_V/rms_V
+					FX3_T=flux_T/np.sqrt(rms_Q**2+rms_U**2+rms_V**2)
+					FX3_P=flux_P/np.sqrt(rms_Q**2+rms_U**2)
 					PSC.IMSTAT_record(DR5,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,'IMGSTAT_pol',init=False) # Keeping image statistics
 				else:
 					DR1=DR3
@@ -688,22 +689,22 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 					DR6=DR_neg			
 					FX1_I=FX2_I
 					FX2_I=FX3_I
-					FX3_I=flux_I
+					FX3_I=flux_I/rms_I
 					FX1_Q=FX2_Q
 					FX2_Q=FX3_Q
-					FX3_Q=flux_Q
+					FX3_Q=flux_Q/rms_Q
 					FX1_U=FX2_U
 					FX2_U=FX3_U
-					FX3_U=flux_U
+					FX3_U=flux_U/rms_U
 					FX1_V=FX2_V
 					FX2_V=FX3_V
-					FX3_V=flux_V
+					FX3_V=flux_V/rms_V
 					FX1_T=FX2_T
 					FX2_T=FX3_T
-					FX3_T=flux_T
+					FX3_T=flux_T/np.sqrt(rms_Q**2+rms_U**2+rms_V**2)
 					FX1_P=FX2_P
 					FX2_P=FX3_P
-					FX3_P=flux_P
+					FX3_P=flux_P/np.sqrt(rms_Q**2+rms_U**2)
 					PSC.IMSTAT_record(DR5,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,'IMGSTAT_pol',init=False) # Keeping image statistics
 				
 				if do_solarqu_cor==True and done_qucor==False:
@@ -714,12 +715,13 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,FX2_I,FX2_Q,FX2_U,FX2_V,FX2_T,FX2_P,FX1_I,FX1_Q,FX1_U,FX1_V,FX1_T,FX1_P,\
 								rms_list,scratch,start_sigma,num_iteration_after_poldist,num_iter_after_qucor,\
 								num_iter_fixed_sigma,startmodel,startmask,uvsub_flag_count,do_solarqu_cor,do_poldist,\
-								do_pbcor,do_gaincal,gaincal_count,done_qucor],dtype='object')
+								do_pbcor,do_gaincal,gaincal_count,done_qucor,pre_res],dtype='object')
 				np.save('Pol_selfcal_record',selfcal_record)
 
 				if verbose==False:
 					print ('RMS based dynamic ranges : \n'+str(DR1)+','+str(DR3)+','+str(DR5)+'\n')
 					print ('Negative based dynamic ranges : \n'+str(DR2)+','+str(DR4)+','+str(DR6)+'\n')
+					PRINT ('Total flux based dynamic ranges :.\n')
 					print ('Stokes I : '+str(FX1_I)+', '+str(FX2_I)+', '+str(FX3_I)+'\n')
 					print ('Stokes Q : '+str(FX1_Q)+', '+str(FX2_Q)+', '+str(FX3_Q)+'\n')
 					print ('Stokes U : '+str(FX1_U)+', '+str(FX2_U)+', '+str(FX3_U)+'\n')
@@ -731,6 +733,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				logger.info(str(DR1)+','+str(DR3)+','+str(DR5)+'\n')
 				logger.info('Negative based dynamic ranges:\n')
 				logger.info(str(DR2)+','+str(DR4)+','+str(DR6)+'\n')
+				logger.info('Total flux based dynamic ranges :.\n')
 				logger.info('Stokes I : '+str(FX1_I)+', '+str(FX2_I)+', '+str(FX3_I)+'\n')
 				logger.info('Stokes Q : '+str(FX1_Q)+', '+str(FX2_Q)+', '+str(FX3_Q)+'\n')
 				logger.info('Stokes U : '+str(FX1_U)+', '+str(FX2_U)+', '+str(FX3_U)+'\n')
@@ -879,10 +882,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				#######################################################
 
 				# If statement 2 (Exiting selfcal conditions)
-				if ((DR5>=inputs.max_DR and abs(FX3_I/FX2_I-1)<frac_flux_change and abs(FX3_I/FX1_I-1)<frac_flux_change and abs(FX3_Q/FX2_Q-1)<frac_flux_change and\
-				 	abs(FX3_Q/FX1_Q-1)<frac_flux_change and abs(FX3_U/FX2_U-1)<frac_flux_change and abs(FX3_U/FX1_U-1)<frac_flux_change and abs(FX3_V/FX2_V-1)<frac_flux_change\
-					and abs(FX3_V/FX1_V-1)<frac_flux_change and abs(FX3_T/FX2_T-1)<frac_flux_change and abs(FX3_T/FX1_T-1)<frac_flux_change and abs(FX3_P/FX2_P-1)<frac_flux_change\
-					and abs(FX3_P/FX1_P-1)<frac_flux_change) and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3))):
+				if ((DR5>=inputs.max_DR and abs(FX3_I-FX1_I)<DR_delta_rms and abs(FX3_I-FX2_I)<DR_delta_rms and \
+					abs(FX3_Q-FX1_Q)<DR_delta_rms and abs(FX3_Q-FX2_Q)<DR_delta_rms and abs(FX3_U-FX1_U)<DR_delta_rms and abs(FX3_U-FX2_U)<DR_delta_rms and \
+						abs(FX3_V-FX1_V)<DR_delta_rms and abs(FX3_V-FX2_V)<DR_delta_rms) and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3))):
 					# Stokes I DR reached maximum limit and polarised flux converged
 					if gaincal_count==1 and done_qucor==True: # If QU correction has been done and new gaincal using leakage is done.
 						if verbose==False:
@@ -938,13 +940,13 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							logger.info('Going for a image based Stokes I to Q,U leakage correction because Stokes I max DR reached and polarised flux converged.\n')
 							logger.info('####################\n')
 							continue				
-				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(FX3_I/FX2_I-1)<frac_flux_change \
-					and abs(FX3_I/FX1_I-1)<frac_flux_change and abs(FX3_Q/FX2_Q-1)<frac_flux_change and abs(FX3_Q/FX1_Q-1)<frac_flux_change and abs(FX3_U/FX2_U-1)<frac_flux_change\
-					and abs(FX3_U/FX1_U-1)<frac_flux_change and abs(FX3_V/FX2_V-1)<frac_flux_change and abs(FX3_V/FX1_V-1)<frac_flux_change and abs(FX3_T/FX2_T-1)<frac_flux_change \
-					and abs(FX3_T/FX1_T-1)<frac_flux_change and abs(FX3_T/FX1_T-1)<frac_flux_change and abs(FX3_P/FX1_P-1)<frac_flux_change): # If polarised flux converged
+				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(FX3_I-FX1_I)<DR_delta_rms and \
+					abs(FX3_I-FX2_I)<DR_delta_rms and abs(FX3_Q-FX1_Q)<DR_delta_rms and abs(FX3_Q-FX2_Q)<DR_delta_rms and abs(FX3_U-FX1_U)<DR_delta_rms and \
+					abs(FX3_U-FX2_U)<DR_delta_rms and abs(FX3_V-FX1_V)<DR_delta_rms and abs(FX3_V-FX2_V)<DR_delta_rms): # If polarised flux converged
 					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3)):
 						if gaincal_count<1 and done_qucor==False: # If QU correction and leakage corrected gaincal not done
-							sigma=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,residual_frac=inputs.residual_frac,stokes_list=['I','Q','U','V'])
+							sigma,pre_res=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,pre_residual=pre_res,residual_frac=inputs.residual_frac,\
+									stokes_list=['I','Q','U','V'])
 							if sigma<start_sigma:						
 								start_sigma=sigma	
 								num_iter_fixed_sigma=0
@@ -1033,9 +1035,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				# If statement 3 (Using last round model) 
 				#(If DR increases at least DR_delta and all antennas are added and number of iteration at fixed antenna is greater than 5)
 				
-				if (abs(FX3_I/FX1_I-1)<frac_flux_change and abs(FX3_T/FX1_T-1)<frac_flux_change and abs(FX3_P/FX1_P-1)<frac_flux_change and abs(FX3_Q/FX2_Q-1)<frac_flux_change \
-					and abs(FX3_Q/FX1_Q-1)<frac_flux_change and abs(FX3_U/FX2_U-1)<frac_flux_change and abs(FX3_U/FX1_U-1)<frac_flux_change and abs(FX3_V/FX2_V-1)<frac_flux_change \
-					and abs(FX3_V/FX1_V-1)<frac_flux_change and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3))):
+				if (abs(FX3_I-FX1_I)<DR_delta_rms and abs(FX3_I-FX2_I)<DR_delta_rms and \
+					abs(FX3_Q-FX1_Q)<DR_delta_rms and abs(FX3_Q-FX2_Q)<DR_delta_rms and abs(FX3_U-FX1_U)<DR_delta_rms and abs(FX3_U-FX2_U)<DR_delta_rms and \
+						abs(FX3_V-FX1_V)<DR_delta_rms and abs(FX3_V-FX2_V)<DR_delta_rms and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3))):
 					startmodel='junk1.model'
 				else:
 					startmodel=''
@@ -1286,12 +1288,15 @@ if __name__=='__main__':
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 	except Exception as e:
-		logger.info('Error occured : '+str(r)+'\n')
 		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-		logger.info('Total runtime : '+str(run_time))
-		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\nMessage : Error in runtime\nTotal runtime : '+\
+		logger.info('#############################\n')
+		logger.info('Polarisation selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Error occured : '+str(e)+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\nMessage : Error in runtime : '+str(e)+'\nTotal runtime : '+\
 					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
 		if inputs.send_notification==True:

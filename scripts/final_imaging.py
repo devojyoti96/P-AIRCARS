@@ -1,9 +1,8 @@
 from casatasks import *
-from selfcal_inputs import *
-from basic_func import *
-from access_ms import *
-from poltclean import *
-from flagger import *
+from paircars.basic_func import *
+from paircars.access_ms import *
+from paircars_casatasks.poltclean import *
+from paircars.flagger import *
 
 
 class FinalImage:

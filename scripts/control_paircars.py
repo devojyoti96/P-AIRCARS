@@ -1,6 +1,7 @@
 '''
 Code is written by Devojyoti Kansabanik , 28 Jan, 2021
 '''
+
 from optparse import OptionParser
 if __name__=='__main__':
 	usage= ' PAIRCARS master controller for each day calibration'
@@ -138,6 +139,19 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	os.chdir(workdir)
 
 	ms_obsid=get_OBSID_from_metafits(metafits)
+
+	# Decorrelation correction and convention correction
+	####################################################
+
+	AM=AccessMS(msname)
+	output=AM.move_phasecenter_to_sun()  # Moving the phasecenter to the Sun
+	mainlog.info(output)
+	if inputs.do_decor_correction: # Performing decorrelation correction and IAU convention change
+		mainlog.info('Performing de-correlation correction and IAU convention correction for ms : '+msname+'\n')
+		decor(msname,metafits,10,False)
+	else: # If user do not want decorrelation correction perform only IAU convention
+		mainlog.info('Correcting to IAU convention......\n')
+		AM.convert_mwa_to_iau()
 
 	# Validating timerange
 	######################
@@ -441,6 +455,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		###########################
 		ref_timechan_ms,ref_timechan_dir=spliting_timechan(averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 		cur_workdir=ref_timechan_dir
+		spawned_casa_instances=0
 		# Run selfcal
 		while True:
 			ref_time_chan_loop_count+=1
@@ -537,7 +552,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_'+str(msg))		
 				mainlog.info('Reference time frequency calibration done.\n')
 				time_grid.remove(ref_time)
-				channel_grid.remove(ref_chan)	
+				channel_grid.remove(ref_chan)
+				spawned_casa_instances+=1	
 				break
 
 	# If not the reference time frequency ms, making time and channel and time frequency grid
@@ -653,7 +669,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
 	casa_instance=int(available_cpu_for_paircars/2)
 	open_casa_instance=0
-	spawned_casa_instances=0
 	touch_count=0
 	mainlog.info('Available cpus for P-AIRCARS: '+str(available_cpu_for_paircars)+'\n')
 	mainlog.info('Total number of available CASA instances : '+str(casa_instance)+'\n')
@@ -818,14 +833,19 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			mainlog.info('No unflagged channel is present.\n')
 			return 0,0,0,0,0
 				
-		if skip_freq<1280:
+		# Deciding polcal bandwidth
+		###########################
+		if inputs.quality_factor==0:
+			skip_freq_pol=5120
+		elif inputs.quality_factor==1:
+			skip_freq_pol=2560
+		elif inputs.quality_factor==2:
 			skip_freq_pol=1280
-		else:
-			skip_freq_pol=copy.deepcopy(skip_freq)
-		skip_channel=int(skip_freq_pol/AM.calc_freqres())
+
+		skip_channel_pol=int(skip_freq_pol/AM.calc_freqres())
 		channel_grid=[]
 		if skip_channel<len(unflagged_channels):
-			for i in range(min(unflagged_channels),max(unflagged_channels),skip_channel):
+			for i in range(min(unflagged_channels),max(unflagged_channels),skip_channel_pol):
 				channel_grid.append(i)
 		else:
 			channel_grid=unflagged_channels
@@ -1113,10 +1133,12 @@ mstimes=[float(timestamp_to_mjdsec('/'.join(os.path.basename(a).split('time_')[-
 mstimes_iso=[('-'.join(a.split('.ms')[0].split('_')[1:4])+' '+':'.join(a.split('.ms')[0].split('_')[4:7])) for a in measurement_set_list]
 ms_OBSIDs=[]
 metafits_obsids_msdir=glob.glob(inputs.msdir+'/*.metafits')
+
 if len(metafits_obsids_msdir)!=0:
 	for metafits in metafits_obsids_msdir:
 		os.system('cp -r '+metafits+' '+inputs.basedir+'/data/'+os.path.basename(metafits))
 metafits_obsids=[int(os.path.basename(x).split('.metafits')[0]) for x in glob.glob(inputs.basedir+'/data/*.metafits')]
+
 for i in range(len(measurement_set_list)):
 	msname=measurement_set_list[i]
 	obsid=get_OBSID_from_ms(msname)
@@ -1131,53 +1153,49 @@ for i in range(len(measurement_set_list)):
 			obsid=np.min(np.array(diff_gpstime))
 			ms_OBSIDs.append(obsid)
 		else:
-			mainlog.info('Metafits file is not found for ms : '+msname+'. Removing ms from list.\n')
-			measurement_set_list.remove(msname)
-			msfreqs.remove(msfreqs[i])
-			mstimes.remove(mstimes[i])
-			mstimes_iso.remove(mstimes_iso[i])
+			mainlog.info('Downloading metafits files if does not exist.\n')
+			metafits=download_metafits(msname,inputs.basedir+'/data')
+			if metafits!=None:
+				mainlog.info('Metafits file downloaded at : '+metafits+'\n')
+				ms_OBSIDs.append(get_OBSID_from_metafits(metafits))
+			else:
+				mainlog.info('Metafits file could not be downloaded for ms : '+msname+'. Removing ms from list.\n')
+				measurement_set_list.remove(msname)
+				msfreqs.remove(msfreqs[i])
+				mstimes.remove(mstimes[i])
+				mstimes_iso.remove(mstimes_iso[i])
 	elif obsid==0 and len(metafits_obsids)==0:
 		mainlog.info('Could not connect to MWA metadata server. No metafits files are found in local data directory. Exiting PAIRCARS.....\n')
 		os._exit(0)
 	else:
 		ms_OBSIDs.append(obsid)
 
-# Download metafits
-###################
+# Making metafits dictionary
+############################
 metafits_dic={}
-mainlog.info('Downloading metafits files if does not exist.\n')
 for i in range(len(measurement_set_list)):
 	msname=measurement_set_list[i]
 	metafits=str(ms_OBSIDs[i])+'.metafits'
 	if os.path.isfile(inputs.basedir+'/data/'+metafits)==False: 
-		metafits=download_metafits(msname,inputs.basedir+'/data')
-		mainlog.info('Metafits file downloaded at : '+inputs.basedir+'/data/'+metafits+'\n')	
-		metafits_dic[msname.split('.ms')[0].split('_chantimesliced')[0].split('_ref')[0]]=inputs.basedir+'/data/'+metafits
+		mainlog.info('Metafits file not found at : '+inputs.basedir+'/data/'+metafits+' for ms : '+msname+'\n')	
+		measurement_set_list.remove(msname)
+		msfreqs.remove(msfreqs[i])
+		mstimes.remove(mstimes[i])
+		mstimes_iso.remove(mstimes_iso[i])
+		ms_OBSIDs.remove(ms_OBSIDs[i])
 	else:
 		mainlog.info('Metafits file found at : '+inputs.basedir+'/data/'+metafits+'\n')
 		metafits_dic[msname.split('.ms')[0].split('_chantimesliced')[0].split('_ref')[0]]=inputs.basedir+'/data/'+metafits
 
+ms_list_copy=copy.deepcopy(measurement_set_list)
+ms_OBSIDs_copy=copy.deepcopy(ms_OBSIDs)
+metafits_dic_copy=copy.deepcopy(metafits_dic)
+
 ref_freq=str(msfreqs[int(len(msfreqs)/2)])
 ref_time=mjdsec_to_timestamp(mstimes[int(len(mstimes)/2)],format=3)
 
-# Phase center correction and decor correction
-##############################################
-for i in range(len(measurement_set_list)):
-	msname=measurement_set_list[i]
-	metafits=metafits_dic[msname.split('.ms')[0].split('_chantimesliced')[0].split('_ref')[0]]
-	AM=AccessMS(msname)
-	output=AM.move_phasecenter_to_sun()  # Moving the phasecenter to the Sun
-	mainlog.info(output)
-	if inputs.do_decor_correction: # Performing decorrelation correction and IAU convention change
-		mainlog.info('Performing de-correlation correction and IAU convention correction for ms : '+msname+'\n')
-		decor(msname,metafits,10,False)
-	else: # If user do not want decorrelation correction perform only IAU convention
-		mainlog.info('Correcting to IAU convention......\n')
-		AM.convert_mwa_to_iau()
-metafits_dic_copy=copy.deepcopy(metafits_dic)
 # Selecting reference time frequnency ms
 ######################################
-
 for i in range(len(measurement_set_list)):
 	msname=measurement_set_list[i]
 	if ref_freq in msname and ref_time in msname:
@@ -1305,14 +1323,14 @@ if len(measurement_set_list)>0:
 				available_casa_instance=len(touch_file_list)-spawned_casa_instances
 				time.sleep(2.0)				
 else:
-	mainlog.info('Calibration for all measurement sets are finished.\n')
+	mainlog.info('Calibration jobs for all measurement sets are spawned.\n')
 		
 job_spawned_msname=spawned_ms_jobs.keys()
 total_spawned_jobs=0
 metafits_dic=copy.deepcopy(metafits_dic_copy)
 for ms in job_spawned_msname:
-	total_spawned_job+=spawned_ms_jobs[ms][-1]
-mainlog.info('Waiting for finishing all calibrations of total '+str(total_spawned_jobs)+' spawned jobs.\n')
+	total_spawned_jobs+=spawned_ms_jobs[ms][-1]
+	mainlog.info('Waiting for finishing all calibrations of total '+str(total_spawned_jobs)+' spawned jobs.\n')
 while True:
 	touch_files=len(glob.glob(inputs.basedir+'/.Finished*cal*'))
 	if touch_files==total_spawned_jobs:
