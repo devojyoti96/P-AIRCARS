@@ -743,7 +743,7 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return IMSTAT_array
 
-	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,residual_frac=0.1,stokes_list=['I']):
+	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.1,stokes_list=['I']):
 		'''
 		Function to determine whether reduce the CLEAN sigma or not.
 		Parameters:
@@ -751,14 +751,16 @@ class PolSelfcal:
 		nsigma = Value of the present n-sigma
 		sigma_step = Step to reduce sigma value
 		minsigma = Minimum allowed sigma
-		residual_frac = Residual flux fraction to reduce sigma
+		pre_residual = Previous residual fraction to compare (default : 0.0)
+		residual_frac = Residual flux fraction to reduce sigma (default : 0.1)
 		stokes_list = ['I'], stokes plane list
 		Return:
-		Reduced value of n-sigma if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.
+		Reduced value of n-sigma and median residual fraction if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.
 		'''
 		imagename=imagename
 		residual=imagename.split('.image')[0]+'.residual'
 		do_reduce_list=[]
+		residual_frac_list=[]
 		ia=image()
 		imagename_path=os.path.dirname(os.path.realpath(imagename))
 		cwd=os.getcwd()
@@ -804,10 +806,12 @@ class PolSelfcal:
 				except:
 					image_pix_sum=1
 					residual_pix_sum=0
-			if residual_pix_sum/image_pix_sum>residual_frac:
+			residual_frac_list.append(residual_pix_sum/image_pix_sum)
+			if residual_pix_sum/image_pix_sum>residual_frac and (residual_pix_sum/image_pix_sum)<pre_residual:
 				do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
+		residual_frac_median=np.median(np.array(residual_frac_list))
 		if int(np.sum(np.array(do_reduce_list)))>=2:
 			if sigma_step>1.0:
 				self.pollog_verbose.info('WARNING : Choosing sigma step 1 is too risky. Selfcal may diverge\n')
@@ -820,10 +824,10 @@ class PolSelfcal:
 					if want_to_continue=='Y' or want_to_continue=='y' or want_to_continue=='Yes' or want_to_continue=='yes':	
 						self.pollog_verbose.info('Continuing with sigma step :'+str(sigma_step)+'\n')
 						os.system('rm -rf casa*log')
-						return nsigma-sigma_step
+						return nsigma-sigma_step,residual_frac_median
 					else:
 						os.system('rm -rf casa*log')
-						return nsigma
+						return nsigma,residual_frac_median
 			elif nsigma-sigma_step<minsigma:
 				self.pollog_verbose.info('WARNING : Choosing sigma less than '+str(minsigma)+'\n')
 				if self.verbose==False:
@@ -835,25 +839,25 @@ class PolSelfcal:
 					if want_to_continue=='Y' or want_to_continue=='y' or want_to_continue=='Yes' or want_to_continue=='yes':		
 						self.pollog_verbose.info('Continuing with sigma step :'+str(sigma_step)+'\n')
 						os.system('rm -rf casa*log')
-						return nsigma-sigma_step
+						return nsigma-sigma_step,residual_frac_median
 					else:
 						os.system('rm -rf casa*log')
-						return nsigma
+						return nsigma,residual_frac_median
 				else:
 					self.pollog_verbose.info('Interactive=False\n')
 					self.pollog_verbose.info('Continuing with sigma step :'+str(sigma_step)+'\n')
 					if self.verbose==False:
 						print ('Continuing with sigma step :'+str(sigma_step)+'\n')
 					os.system('rm -rf casa*log')
-					return nsigma-sigma_step
+					return nsigma-sigma_step,residual_frac_median
 			else:
 				self.pollog_verbose.info('Reducing sigma to:'+str(nsigma-sigma_step)+', because residual flux is more than '+str(residual_frac*100)+' %\n')
 				os.system('rm -rf casa*log')
-				return nsigma-sigma_step
+				return nsigma-sigma_step,residual_frac_median
 		else:
 			self.pollog_verbose.info('Sigma value is not changed, because residual flux less more than '+str(residual_frac*100)+' %. Sigma is at :'+str(nsigma)+'\n')
 			os.system('rm -rf casa*log')
-			return nsigma
+			return nsigma,residual_frac_median
 
 	def solarlin_pol_minimise(self,datai,datal,l,rmsl,i_flux):
 		'''

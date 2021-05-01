@@ -1,4 +1,4 @@
-import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request
+import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request,copy
 from casatools import *
 from . import access_ms as am
 from astropy.io import fits
@@ -66,13 +66,13 @@ class ImageBasic:
 		psf=self.calc_psf()
 		cellsize=self.calc_cellsize(num_pixel_in_psf)
 		max_size_rad=max_size/2.0
-		psf_pix	=	int(psf/cellsize)
-		scale=[0,psf_pix,3*psf_pix]  ### Choosing scale to be [0,psf,3*psf,max_size/5,max_size/3,max_size] in pixel
-		if int(max_size_rad/5*cellsize)>3*psf_pix and int(max_size_rad/5*cellsize)<int(max_size_rad/cellsize):
+		psf_pix	=int(psf/cellsize)
+		scale=[0,psf_pix,3*psf_pix,int(max_size_rad/cellsize)]  ### Choosing scale to be [0,psf,3*psf,max_size/5,max_size/3,max_size] in pixel
+		if int(max_size_rad/5*cellsize)<max(scale):
 			scale.append(int(max_size_rad/5*cellsize))
-			if int(max_size_rad/3*cellsize)>int(max_size_rad/5*cellsize):
+			if int(max_size_rad/3*cellsize)>int(max_size_rad/5*cellsize) and int(max_size_rad/3*cellsize)<max(scale) :
 				scale.append(int(max_size_rad/3*cellsize))
-		scale.append(int(max_size_rad/cellsize))
+		scale=sorted(scale)
 		return scale
 
 	def field_of_view(self):
@@ -407,6 +407,14 @@ def radec_con_deg_to_hhmmss(radeg,decdeg):
 	Return:
 	Numpy array ['RA','DEC'] in hh mm ss dd mm ss format
 	'''
+	radeg_copy=copy.deepcopy(radeg)
+	decdeg_copy=copy.deepcopy(decdeg)
+	radeg=abs(radeg)
+	decdeg=abs(decdeg)
+	ra_sign=int(radeg_copy/radeg)
+	dec_sign=int(decdeg_copy/decdeg)
+	if ra_sign<0:
+		radeg=copy.deepcopy(radeg_copy)+360.0
 	rahh=radeg/15.0
 	ramm=(rahh-int(rahh))*60.0
 	rass=(ramm-int(ramm))*60.0
@@ -414,7 +422,7 @@ def radec_con_deg_to_hhmmss(radeg,decdeg):
 	decdd=decdeg
 	decmm=(decdd-int(decdd))*60.0
 	decss=(decmm-int(decmm))*60.0
-	dec=str(int(decdd))+'d'+str(abs(int(decmm)))+'m'+str('%.2f'%abs(decss))+'s'
+	dec=str(int(dec_sign*decdd))+'d'+str(abs(int(decmm)))+'m'+str('%.2f'%abs(decss))+'s'
 	return np.array([ra,dec])
 
 def mjdsec_to_timestamp(mjdsec,includedate=True,format=0):
@@ -580,9 +588,14 @@ def download_metafits(msname,outdir):
 	BASEURL='http://ws.mwatelescope.org/'
 	OBSid=get_OBSID_from_ms(msname)
 	if os.path.isfile(outdir+'/'+str(OBSid)+'.metafits')==False:
-		mainlog.info('Downloading metafits for OBS ID :'+str(OBSid)+' at : '+outdir+'/'+str(OBSid)+'.metafits.\n')
-		os.system('wget -O '+outdir+'/'+str(OBSid)+'.metafits http://ws.mwatelescope.org/metadata/fits?obs_id='+str(OBSid))
-	metafits=outdir+'/'+str(OBSid)+'.metafits'
+		try:
+			mainlog.info('Downloading metafits for OBS ID :'+str(OBSid)+' at : '+outdir+'/'+str(OBSid)+'.metafits.\n')
+			os.system('wget -O '+outdir+'/'+str(OBSid)+'.metafits http://ws.mwatelescope.org/metadata/fits?obs_id='+str(OBSid))
+			metafits=outdir+'/'+str(OBSid)+'.metafits'
+		except:
+			metafits=None
+	else:
+		metafits=outdir+'/'+str(OBSid)+'.metafits'
 	return metafits
 
 

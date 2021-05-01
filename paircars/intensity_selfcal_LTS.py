@@ -7,6 +7,7 @@ from . import basic_func as B
 from . import flagger as fg
 from paircars_casatasks.poltclean import *
 from astropy.io import fits
+from astropy.wcs import WCS
 
 # PyBDSF installation has problem
 bdsf_import=False
@@ -767,7 +768,7 @@ class IntensitySelfcal:
 				maxpos=np.argmax(major)
 				ra=ra[maxpos]
 				dec=dec[maxpos]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(32/60.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(16/60.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:
@@ -808,34 +809,60 @@ class IntensitySelfcal:
 		psf=IB.calc_psf()/3600.0
 		if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)>psf:
 			try:
-				exportfits(imagename=imagename,fitsimage='shifted_model.fits')
-				hdul=fits.open('shifted_model.fits')
-				hdr=hdul[0].header
-				data=(hdul[0].data)
-				hdr['CRVAL1']=ra
-				hdr['CRVAL2']=dec
-				fits.writeto('shifted_model.fits',data=data,header=hdr,overwrite=True)
-				os.system('rm -rf '+imagename)
-				importfits(fitsimage='shifted_model.fits',imagename=imagename)
-				os.system('rm -rf shifted_model.fits')
-				os.system('rm -rf casa*log')
-				os.chdir(cwd)
-				return 0
-			except:
+				exportfits(imagename=imagename,fitsimage='wcs_model.fits',dropdeg=True,dropstokes=True)
+				w=WCS('wcs_model.fits')
+				pix=np.mean(w.all_world2pix(np.array([[ra,dec],[ra,dec]]),0),axis=0)
+				ra_pix=int(pix[0])
+				dec_pix=int(pix[1])
+				os.system('rm -rf wcs_model.fits')
 				try:
-					os.system('cp -r '+imagename+' shifted_model.fits')
-					hdul=fits.open('shifted_model.fits')
+					imsubimage(imagename=imagename,outfile='shift_model.model',stokes='I',dropdeg=False)
+					exportfits(imagename='shift_model.model',fitsimage='shift_model.fits',dropstokes=False,dropdeg=False)												 		
+					hdul=fits.open('shift_model.fits')
 					hdr=hdul[0].header
 					data=(hdul[0].data)
-					hdr['CRVAL1']=ra
-					hdr['CRVAL2']=dec
-					fits.writeto('shifted_model.fits',data=data,header=hdr,overwrite=True)
-					os.system('rm -rf '+imagename)
+					hdr['CRPIX1']=ra_pix
+					hdr['CRPIX2']=dec_pix
+					fits.writeto('shift_model.fits',data=data,header=hdr,overwrite=True)
+					os.system('rm -rf '+imagename+' shift_model.model')
+					importfits(fitsimage='shift_model.fits',imagename=imagename)
+					self.log_verbose.info('Image phase center shifted to , RA : '+str(radec_str[0])+', DEC : '+str(radec_str[1])+'\n')
+					os.system('rm -rf shift_model.fits')
 					os.system('rm -rf casa*log')
 					os.chdir(cwd)
-					return 0		 
+					return 0
 				except:
-					self.pollog_verbose.info('Image is not either in CASA or fits format.\n')
+					self.log_verbose.info('Image phase center could not be shifted. Please provide only Stokes I image.\n')
+			except:
+				try:
+					importfits(fitsimage=imagename,imagename=imagename+'.model')
+					try:
+						imsubimage(imagename=imagename+'.model',outfile='I.model',stokes='I',dropdeg=False)
+						os.system('rm -rf '+imagename+'.model')
+						exportfits(imagename='I.model',fitsimage='wcs_model.fits',dropdeg=True,dropstokes=True)
+						w=WCS('wcs_model.fits')
+						pix=np.mean(w.all_world2pix(np.array([[ra,dec],[ra,dec]]),0),axis=0)
+						ra_pix=int(pix[0])
+						dec_pix=int(pix[1])
+						os.system('rm -rf wcs_model.fits')
+						exportfits(imagename='I.model',fitsimage='shift_model.fits',dropstokes=False,dropdeg=False)												 		
+						hdul=fits.open('shift_model.fits')
+						hdr=hdul[0].header
+						data=(hdul[0].data)
+						hdr['CRPIX1']=ra_pix
+						hdr['CRPIX2']=dec_pix
+						fits.writeto('shift_model.fits',data=data,header=hdr,overwrite=True)
+						os.system('rm -rf I.model shift_model.model '+imagename)
+						os.system('mv shift_model.fits '+imagename)
+						self.log_verbose.info('Image phase center shifted to , RA : '+str(radec_str[0])+', DEC : '+str(radec_str[1])+'\n')
+						os.system('rm -rf shift_model.fits')
+						os.system('rm -rf casa*log')
+						os.chdir(cwd)
+						return 0
+					except:
+						self.log_verbose.info('Image phase center could not be shifted. Please provide only Stokes I image.\n')	 
+				except:
+					self.log_verbose.info('Image is not either in CASA or fits format.\n')
 					os.system('rm -rf casa*log')
 					os.chdir(cwd)
 					return 2
@@ -843,7 +870,7 @@ class IntensitySelfcal:
 			os.system('rm -rf casa*log')
 			os.chdir(cwd)
 			return 1
-
+		
 	def image_source_true_loc(self,outdir,do_bandpass=False):
 		'''
 		Function to make quick image for finding source true location with respect to reference time and channel
