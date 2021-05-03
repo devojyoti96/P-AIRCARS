@@ -535,9 +535,12 @@ def freq_to_MWA_coarse(freq):
 	Return:
 	MWA coarse channel number
 	'''
-	coarse_chan_cent_freq=np.array(range(300))*1.28
-	coarse_chan=np.argmin(np.abs(coarse_chan_cent_freq-freq))
-	return coarse_chan
+	coarse_chans=[[(i*1.28)-0.64,(i*1.28)+0.64] for i in range(300)]
+	for i in range(len(coarse_chans)):
+		ch0=coarse_chans[i][0]
+		ch1=coarse_chans[i][1]
+		if freq>=ch0 and freq<ch1:
+			return i 
 
 def get_OBSID_from_ms(msname):
 	'''

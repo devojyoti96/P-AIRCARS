@@ -85,10 +85,9 @@ def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_
 	os.system('rm -rf temp* casa*log')
 	return outfile
 
-
 # This part will run the self calibration loops. If the code is imported in some other python code, this part will not be executed
 
-def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True):
+def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,perform_leakage_cor=True,start_fresh=True):
 	'''
 	Heart of the bandpass selfcal part of the PAIRCARS
 	This function performs the bandpass selfcal for PAIRCARS
@@ -101,6 +100,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	working_dir = Name of the working directory
 	verbose = False, If True keep all intermediate selfcal records
 	interactive = False, If True perform interactive selfcal
+	perform_leakage_cor = True, perform leakage corrected gaincal (Use it when no calibrator observation is available)
 	start_fresh = True, start fresh selfcal rounds from scratch or start from last round
 	Return:
 	Meassages about the selfcal success or errors
@@ -190,8 +190,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		os.makedirs(basedir+'/bpimagemodels/'+str(OBSID))
 	
 	if start_fresh==False:
-		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,num_iter_fixed_sigma,num_iter_fixed_ant,stokes,startmodel,\
-					startmask,uvsub_flag_count=np.load('Bandpass_selfcal_record.npy',allow_pickle=True)		
+		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,num_iter_fixed_sigma,num_iter_fixed_ant,\
+			stokes,startmodel,startmask,uvsub_flag_count,do_leakage_cor,num_iter_after_leakcor,done_leakage_cor=np.load('Bandpass_selfcal_record.npy',allow_pickle=True)		
 	
 	scratch=False # For bandpass selfcal scratch is always False, since gain calibration is already applied
 	if 'ref' in msname:
@@ -204,6 +204,10 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				print('Restarting selfcal from selfcal round : '+str(num_iter)+'\n')
 			print ('Starting imaging for Reference time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
+		if perform_leakage_cor==True:
+			perform_leakcor=True
+		else:
+			perform_leakcor=False
 	else: # For other time and frequency
 		if start_fresh==False:
 			logger.info('Restarting selfcal from selfcal round : '+str(num_iter)+'\n')
@@ -214,8 +218,9 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				print('Restarting selfcal from selfcal round : '+str(num_iter)+'\n')
 			print ('Reference time frequency slice imaging has been done. Starting imaging for time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
+		perform_leakcor=False
 	
-	ISC=IntensitySelfcal(msname,32*60,verbose=verbose,interactive=interactive) # Creating selfcal object 32 arcmin maximum scale size
+	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive) # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 
 	###################
@@ -252,6 +257,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	logger.info('Minimum number of iteration at fixed sigma : '+str(min_num_iter_fixed_sigma)\
 		+'; Minimum number of total selfcal iterations : '+str(min_iteration)+'; Maximum number of selfcal iterations : '+str(max_iteration)\
 		+'; Antenna bins : '+str(antenna_bin)+'\n')
+	logger.info('Leakage corrected bandpass = '+str(perform_leakcor)+'\n')
 
 	antenna_list,num_ant=AM.make_antenna_list(num_bins=antenna_bin)  # Making the antenna list
 	
@@ -268,7 +274,10 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		startmask=''
 		uvsub_flag_count=0
 		num_iter_fixed_sigma=0
-		num_iter_fixed_ant=0				
+		num_iter_fixed_ant=0
+		do_leakage_cor=False
+		num_iter_after_leakcor=0	
+		done_leakage_cor=False		
 	else:
 		antenna_list_index=antenna_list_index
 		num_iter=num_iter
@@ -281,10 +290,13 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		else:
 			startmask=''
 		calmode=calmode
+		done_leakage_cor=done_leakage_cor
 		uvsub_flag_count=uvsub_flag_count
 		num_iter_fixed_sigma=num_iter_fixed_sigma
 		num_iter_fixed_ant=num_iter_fixed_ant
 		stokes=stokes
+		do_leakage_cor=do_leakage_cor
+		num_iter_after_leakcor=num_iter_after_leakcor
 
 	if inputs.maskfile=='' and inputs.maskstr=='':
 		mask_rad=int((32*60)/ISC.cellsize) # Creating a mask with 32 arcmin radius centered on the image
@@ -346,6 +358,10 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		if os.path.isdir(startmask)==False:
 			startmask=''
 
+		if do_leakage_cor==True and perform_leakcor==True:
+			logger.info('ISC.leakage_correct_gaincal(\'junk1.image\',\'junk1.model\','+str(sigma)+',do_bandpass=False,calibrator_caltable=[])\n')
+			leakage_cor_caltable=ISC.leakage_correct_gaincal('junk1.image','junk1.model',start_sigma,do_bandpass=True,calibrator_caltable=[])
+
 		if inputs.maskfile!='': # Use user defined mask
 			mask_str=''
 			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
@@ -370,6 +386,10 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			msg_code,out_dict,negative_dyn_range=output_ISC
 		else:
 			msg_code=output_ISC
+
+		if do_leakage_cor==True and perform_leakcor==True:
+			done_leakage_cor=True
+			do_leakage_cor=False
 
 		if 'ref' in msname:		
 			ISC.file_remover_and_keeper(num_iter,msg_code,do_bandpass=True,ref_time_chan=True)  # Removing files and keeping the required ones
@@ -441,7 +461,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			if os.path.isfile('Bandpass_selfcal_record.npy'):
 				os.system('rm -rf Bandpass_selfcal_record.npy')
 			selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,\
-				num_iter_fixed_sigma,num_iter_fixed_ant,stokes,startmodel,startmask,uvsub_flag_count],dtype='object')
+				num_iter_fixed_sigma,num_iter_fixed_ant,stokes,startmodel,startmask,uvsub_flag_count,do_leakage_cor,num_iter_after_leakcor,done_leakage_cor],dtype='object')
 			np.save('Bandpass_selfcal_record',selfcal_record)
 
 			if verbose==False:
@@ -491,7 +511,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					os.system('rm -rf junk1.model')
 					os.system('cp -r junk0.model junk1.model')
 					continue
-				if DR5>min_DR and num_iter>min_iteration: # If minimum number of iteration is completed (Only considered the rms based DR here)
+				if DR5>min_DR and num_iter>min_iteration and num_iter_after_leakcor>min_iteration: # If minimum number of iteration is completed (Only considered the rms based DR here)
 					os.system('rm -rf '+file_str+'.cal')
 					os.system('rm -rf '+file_str+'_'+str(num_iter)+'.model')
 					os.system('cp -r junk0.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+file_str+'.cal')  # Keeping the last good caltable
@@ -540,38 +560,55 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
 						return 8
+				elif done_leakage_cor==False and num_iter_after_leakcor<1 and perform_leakcor==True:
+					do_leakage_cor=True
+					if verbose==False:
+						print ('####################\nGoing for a image based Stokes I to Q,U leakage correction.\n####################\n')
+					logger.info('####################\n')
+					logger.info('Going for a image based Stokes I to Q,U leakage correction.\n')
+					logger.info('####################\n')
+					continue
 
 			#######################################################
 			# If statement 2 (Exiting selfcal conditions)
 
 			if (DR5>=inputs.max_DR and num_iter>min_iteration):
-				if verbose==False:
-					print ('Reached limiting dynamic range\n')
-				logger.info('Reached limiting dynamic range\n')
-				end_selfcal=True
-				os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+file_str+'.cal')
-				os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.model')
-				os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.image')
-				if inputs.send_notification==True:
-					quickimage=get_quicklook_image('junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',freqstr,datestr,DR5,DR6,field_of_view=2)
-				os.system('rm -rf '+working_dir+'/junk*')
-				os.chdir(cwd)
-				if __name__!='__main__':
-					touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_0'
-					msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
-						os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
-					msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+				if (num_iter_after_leakcor>min_iteration or perform_leakcor==False):
+					if verbose==False:
+						print ('Reached limiting dynamic range\n')
+					logger.info('Reached limiting dynamic range\n')
+					end_selfcal=True
+					os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+file_str+'.cal')
+					os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.model')
+					os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.image')
 					if inputs.send_notification==True:
-						send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
-						os.system('rm -rf '+quickimage)
-					os.system('touch '+touch_file)
-					if inputs.keep_logger==False:
-						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-					os.system('rm -rf '+working_dir+'/'+file_str+'*')
-					end_time=time.time()
-					run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-					logger.info('Total runtime : '+str(run_time))
-				return 0
+						quickimage=get_quicklook_image('junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',freqstr,datestr,DR5,DR6,field_of_view=2)
+					os.system('rm -rf '+working_dir+'/junk*')
+					os.chdir(cwd)
+					if __name__!='__main__':
+						touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_0'
+						msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
+							os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
+						msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+						if inputs.send_notification==True:
+							send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
+							os.system('rm -rf '+quickimage)
+						os.system('touch '+touch_file)
+						if inputs.keep_logger==False:
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+						os.system('rm -rf '+working_dir+'/'+file_str+'*')
+						end_time=time.time()
+						run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+						logger.info('Total runtime : '+str(run_time))
+					return 0
+				elif done_leakage_cor==False and num_iter_after_leakcor<1 and perform_leakcor==True:
+					do_leakage_cor=True
+					if verbose==False:
+						print ('####################\nGoing for a image based Stokes I to Q,U leakage correction because Stokes I max DR reached.\n####################\n')
+					logger.info('####################\n')
+					logger.info('Going for a image based Stokes I to Q,U leakage correction because Stokes I max DR reached.\n')
+					logger.info('####################\n')
+					continue
 			elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(DR5/DR3-1)<0.08) and\
 				 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and abs(DR6/DR4-1)<0.05):
 			#  If DR does not increas more the DR delta in last two steps and DR does not increase 8% for rms based and 5% for negative based => Converge
@@ -581,6 +618,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						start_sigma=sigma	
 						num_iter_fixed_sigma=0
 					else:
+						if done_leakage_cor==False and num_iter_after_leakcor<1 and perform_leakcor==True:
+							do_leakage_cor=True
+							if verbose==False:
+								print ('####################\nGoing for a image based Stokes I to Q,U leakage correction because selfcal converged.\n####################\n')
+							logger.info('####################\n')
+							logger.info('Going for a image based Stokes I to Q,U leakage correction because selfcal converged.\n')
+							logger.info('####################\n')
+							continue
 						if uvsub_flag_count<1 and want_uvsub_flag==True:
 							DR3=DR1
 							DR4=DR2
@@ -654,85 +699,96 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			num_iter+=1
 			num_iter_fixed_sigma+=1
 			num_iter_fixed_ant+=1
-			
+			if done_leakage_cor==True:
+				num_iter_after_leakcor+=1
+
 			###############################################################
 			# If statement 4 (Reached maximum selfcal rounds)
 	
 			if num_iter>max_iteration:
 				if DR5>min_DR:
-					os.system('rm -rf '+file_str+'.cal')
-					os.system('cp -r junk0.cal junk1.cal')  # Keeping the last good caltable
-					os.system('cp -r junk0.ms junk1.ms')  # Keeping the last good calibrated ms
-					if verbose==False:
-						print (error_msgs(8))
-					logger.error(error_msgs(8))
-					end_selfcal=True
-					os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+file_str+'.cal')
-					os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.model')
-					os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.image')
-					if inputs.send_notification==True:
-						quickimage=get_quicklook_image('junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',freqstr,datestr,DR5,DR6,field_of_view=2)
-					os.system('rm -rf '+working_dir+'/junk*')
-					if 'ref' in msname:
-						os.chdir(cwd)
-						if __name__!='__main__':
-							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_109'
-							msg_str='Dear PAIRCARS User,\n\nBandpass self-calibration for : '+os.path.basename(msname)+'\nMessage : '+error_msgs(100)+', '+error_msgs(9)\
-										+'\n\nBest regards,\nPAIRCARS developing team'
-							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-							if inputs.send_notification==True:
-								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
-								os.system('rm -rf '+quickimage)
-							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
-							end_time=time.time()
-							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-							logger.info('Total runtime : '+str(run_time))
-						return 109		
-					else:
-						os.chdir(cwd)
-						if __name__!='__main__':
-							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_9'
-							msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
-								os.path.basename(msname)+'\nMessage : '+error_msgs(9)+'\n\nBest regards,\nPAIRCARS developing team'
-							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-							if inputs.send_notification==True:
-								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
-								os.system('rm -rf '+quickimage)
-							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
-							end_time=time.time()
-							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-							logger.info('Total runtime : '+str(run_time))
-						return 9
-				else:
-					if verbose==False:
-						print (error_msgs(13))
-					logger.error(error_msgs(13))
-					end_selfcal=True
-					os.system('rm -rf '+working_dir+'/junk*')
-					os.chdir(cwd)
-					if __name__!='__main__':
-						touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_13'
-						msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
-							os.path.basename(msname)+'\nMessage : '+error_msgs(13)+'\n\nBest regards,\nPAIRCARS developing team'
-						msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
+					if done_leakage_cor==True or perform_leakcor==False:
+						os.system('rm -rf '+file_str+'.cal')
+						os.system('cp -r junk0.cal junk1.cal')  # Keeping the last good caltable
+						os.system('cp -r junk0.ms junk1.ms')  # Keeping the last good calibrated ms
+						if verbose==False:
+							print (error_msgs(8))
+						logger.error(error_msgs(8))
+						end_selfcal=True
+						os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+file_str+'.cal')
+						os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.model')
+						os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+file_str+'.image')
 						if inputs.send_notification==True:
-							send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
-							os.system('rm -rf '+quickimage)
-						os.system('touch '+touch_file)
-						if inputs.keep_logger==False:
-							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-						os.system('rm -rf '+working_dir+'/'+file_str+'*')
-						end_time=time.time()
-						run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-						logger.info('Total runtime : '+str(run_time))
-					return 13
-						
+							quickimage=get_quicklook_image('junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',freqstr,datestr,DR5,DR6,field_of_view=2)
+						os.system('rm -rf '+working_dir+'/junk*')
+						if 'ref' in msname:
+							os.chdir(cwd)
+							if __name__!='__main__':
+								touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_109'
+								msg_str='Dear PAIRCARS User,\n\nBandpass self-calibration for : '+os.path.basename(msname)+'\nMessage : '+error_msgs(100)+', '+error_msgs(9)\
+											+'\n\nBest regards,\nPAIRCARS developing team'
+								msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+								if inputs.send_notification==True:
+									send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
+									os.system('rm -rf '+quickimage)
+								os.system('touch '+touch_file)
+								if inputs.keep_logger==False:
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'*')
+								end_time=time.time()
+								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+								logger.info('Total runtime : '+str(run_time))
+							return 109		
+						else:
+							os.chdir(cwd)
+							if __name__!='__main__':
+								touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_9'
+								msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
+									os.path.basename(msname)+'\nMessage : '+error_msgs(9)+'\n\nBest regards,\nPAIRCARS developing team'
+								msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+								if inputs.send_notification==True:
+									send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
+									os.system('rm -rf '+quickimage)
+								os.system('touch '+touch_file)
+								if inputs.keep_logger==False:
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'*')
+								end_time=time.time()
+								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+								logger.info('Total runtime : '+str(run_time))
+							return 9
+					else:
+						if verbose==False:
+							print (error_msgs(13))
+						logger.error(error_msgs(13))
+						end_selfcal=True
+						os.system('rm -rf '+working_dir+'/junk*')
+						os.chdir(cwd)
+						if __name__!='__main__':
+							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+os.path.basename(msname)+'_13'
+							msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
+								os.path.basename(msname)+'\nMessage : '+error_msgs(13)+'\n\nBest regards,\nPAIRCARS developing team'
+							msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
+							if inputs.send_notification==True:
+								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
+								os.system('rm -rf '+quickimage)
+							os.system('touch '+touch_file)
+							if inputs.keep_logger==False:
+								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
+							end_time=time.time()
+							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+							logger.info('Total runtime : '+str(run_time))
+						return 13
+				elif done_leakage_cor==False and num_iter_after_leakcor<1 and perform_leakcor==True:
+					do_leakage_cor=True
+					if verbose==False:
+						print ('#################\nGoing for a image based Stokes I to Q,U leakage correction because maximum iterations reached.\n#################\n')
+					logger.info('#################\n')
+					logger.info('Going for a image based Stokes I to Q,U leakage correction because maximum iterations reached.\n')
+					logger.info('#################\n')
+					continue	
+
 # Function to run the script stand alone from command line
 if __name__=='__main__':
 	start_time=time.time()
@@ -743,6 +799,7 @@ if __name__=='__main__':
 	parser.add_option('--workdir',dest='workdir',default=None,help='Name of the working directory',metavar='Directory path')
 	parser.add_option('--verbose',dest="verbose",default=False,help="Verbose mode",metavar="Boolean")
 	parser.add_option('--interactive',dest="interactive",default=False,help="Interactive mode",metavar="Boolean")
+	parser.add_option('--leakcor',dest="leakcor",default=True,help="Perform leakage corrected gain calibration",metavar="Boolean")
 	parser.add_option('--fresh',dest="fresh",default=True,help="Start fresh self calibration loop",metavar="Boolean")
 	(options, args) = parser.parse_args()
 	if (os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and eval(str(options.fresh))==True) or \
@@ -824,9 +881,9 @@ if __name__=='__main__':
 	try:
 		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
 		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
-				+'\',interactive=\''+str(options.interactive)+'\',start_fresh=\''+str(options.fresh)+'\')\n')
+				+'\',interactive=\''+str(options.interactive)+'\',perform_leakage_cor='+str(options.leakcor)+',start_fresh=\''+str(options.fresh)+'\')\n')
 		msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
-				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)))
+				interactive=eval(str(options.interactive)),perform_leakage_cor=eval(str(options.leakcor)),start_fresh=eval(str(options.fresh)))
 		if msg>100:
 			msg1=msg-100
 			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'

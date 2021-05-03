@@ -116,7 +116,7 @@ def casa_instance_runner(cmd,screen_name,finished_touch_file,num_thread):
 	os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 	return screen_name
 
-def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_time_freq=False,do_bandpass=False,do_polcal=False,calibrator_caltable=[]): #TODO: XY phasecal
+def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_time_freq=False,do_bandpass=False,do_polcal=False,calatten=1.0,calibrator_caltable=[]): #TODO: XY phasecal
 	'''
 	Function to run paircars on a measurement set
 	Parameters:
@@ -139,6 +139,12 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	os.chdir(workdir)
 
 	ms_obsid=get_OBSID_from_metafits(metafits)
+	obs_atten=float(fits.getheader(metafits)['ATTEN_DB'])
+
+	if len(calibrator_caltable)==0 or calatten!=obs_atten:
+		perform_leakcor=True
+	else:
+		perform_leakcor=False
 
 	# Decorrelation correction and convention correction
 	####################################################
@@ -463,10 +469,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				if len(calibrator_caltable)!=0:
 					calstring=','.join(calibrator_caltable)
 					cmd='run_intensity_selfcal --msname '+ref_timechan_ms+' --metafits '+metafits+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
-						+' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring 
+						+' --interactive '+str(inputs.interactive)+' --fresh True --leakcor '+str(perform_leakcor)+' --caltables '+calstring 
 				else:
 					cmd='run_intensity_selfcal --msname '+ref_timechan_ms+' --metafits '+metafits+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
-						+' --interactive '+str(inputs.interactive)+' --fresh True'
+						+' --interactive '+str(inputs.interactive)+' --fresh True --leakcor '+str(perform_leakcor)
 				screen_name=os.path.basename(ref_timechan_ms).split('.ms')[0]+'_screen_refG'
 				finished_touch_file=inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+os.path.basename(ref_timechan_ms)
 				result=casa_instance_runner(cmd,screen_name,finished_touch_file,2)
@@ -685,7 +691,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 			calstring=','.join(ref_gaintable)
 			cmd='run_intensity_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --dopoint True --verbose '+str(inputs.verbose)\
-					+' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring
+					+' --interactive '+str(inputs.interactive)+' --fresh True --leakcor False --caltables '+calstring
 			gaincal_cmd_list.append(cmd)
 			gaincal_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_G')
 			gaincal_finished_file_list.append(inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
@@ -762,7 +768,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(start_chan)+'~'+str(end_chan),timerange,caltype='B',\
 						ref_timechan=False,input_file=workdir+'/selfcal_inputs.py',datacolumn='corrected')
 			cmd='run_bandpass_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+' --interactive '\
-					+str(inputs.interactive)+' --fresh True'
+					+str(inputs.interactive)+' --leakcor '+str(perform_leakcor)+' --fresh True'
 			bandpass_cmd_list.append(cmd)
 			bandpass_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_B')
 			bandpass_finished_file_list.append(inputs.basedir+'/.Finished_bcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
@@ -872,16 +878,12 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(i),timerange,caltype='P',ref_timechan=False,\
 											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 			calstring=','.join(bpcaltable)
-			if len(calibrator_caltable)!=0:
-				do_gaincal=False
-			else:
-				do_gaincal=True
 			if len(bpcaltable)!=0:
 				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal '+str(do_gaincal)+' --caltables '+calstring
+				' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring
 			else:
 				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal '+str(do_gaincal)
+				' --interactive '+str(inputs.interactive)+' --fresh True'
 			polcal_cmd_list.append(cmd)
 			polcal_screen_list.append(os.path.basename(splited_msname).split('.ms')[0]+'_screen_P')
 			polcal_finished_file_list.append(inputs.basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+os.path.basename(splited_msname))
@@ -922,130 +924,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		mainlog.info('All calibration job spawned for ms : '+msname+'\n')
 		mainlog.info('#########################\n')
 		return ref_time,ref_chan,spawned_casa_instances,freq_avg,time_avg
-
-def managing_caldatabase(msname,OBSID,ref_time,gaincal_modedir,bandpass_modeldir,polcal_caldir,localdatabase):
-	'''
-	Function to manager calibration database
-	msname : Averaged msname
-	ref_time : Reference timestamp
-	gaincal_modeldir = Model directory for gaincal
-	bandpass_modeldir = Model directory for bandpass
-	polcal_caldir = Polarisation caltable directory
-	localdatabase = Local database directory
-	'''
-	if localdatabase=='' or os.path.isdir(localdatabase)==False:
-		mainlog.error('Local data base not found. Making local database at basedir.\n')
-		localdatabase=inputs.basedir+'/localdatabase/'+str(OBSID)
-		if os.path.isdir(localdatabase)==False:
-			os.makedirs(localdatabase)
-	else:
-		mainlog.info('Local data base is at : '+localdatabase+'\n')
-		localdatabase=localdatabase+'/'+str(OBSID)
-		if os.path.isdir(localdatabase)==False:
-			os.makedirs(localdatabase)
-	if gaincal_modeldir=='' or os.path.isdir(gaincal_modeldir)==False or len(glob.glob(gaincal_modeldir+'/*.model'))==0:
-		mainlog.info('No models available.\n')
-		return 1
-	else:
-		AM=AccessMS(msname)
-		freqs=AM.get_freqs()/10**6
-		coarse_chan_0=freq_to_MWA_coarse(freqs[0])
-		coarse_chan_1=freq_to_MWA_coarse(freqs[-1])
-		caltable_name=str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1)+'.gcal'
-		model_list=glob.glob(gaincal_modeldir+'/*.model')
-		if os.path.isdir(caltable_name):
-			os.system('rm -rf '+caltable_name)
-		mainlog.info('#######################################\n')
-		mainlog.info('Making final gaincal table for ms : '+msname+'\n')
-		for i in range(len(model_list)):
-			modelname=model_list[i]
-			modelbasename=os.path.basename(modelname)
-			timestamp='/'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[:3])+'/'+':'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[3:])
-			freq=modelbasename.split('/')[-1].split('.model')[0].split('freq_')[-1].split('_')[0]
-			ch0,ch1=getnearpos(freqs,float(freq))
-			spw=str(ch0)+'~'+str(ch1)
-			mainlog.info('delmod(vis=\''+msname+'\',scr=True)\n')
-			delmod(vis=msname,scr=True)
-			mainlog.info('ft(vis=\''+msname+'\',model=\''+modelname+'\',spw=\'0:'+str(spw)+'\',usescratch=True)\n')
-			ft(vis=msname,model=modelname,spw='0:'+str(spw),usescratch=True)
-			IB=ImageBasic(msname)
-			uvrange_to_cal=IB.calc_calib_uvrange(4)[0]
-			mainlog.info('gaincal(vis=\''+msname+'\',caltable=\''+caltable_name+'\',spw=\'0:'+str(spw)+'\'timerange=\''+timestamp+'\',append=True,uvrange=\''+uvrange_to_cal\
-				+'\',solnorm=True,rmsthresh=[10,8,6],refant=\''+str(inputs.ref_ant)+'\',minsnr='+str(inputs.gain_minsnr)+')\n')
-			gaincal(vis=msname,caltable=caltable_name,spw='0:'+str(spw),timerange=timestamp,append=True,uvrange=uvrange_to_cal,solnorm=True,rmsthresh=[10,8,6],\
-					refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr)
-		os.system('cp -r '+caltable_name+' '+localdatabase)
-		os.system('rm -rf '+caltable_name)
-		if os.path.isdir(bandpass_modeldir)==False or len(glob.glob(bandpass_modeldir+'/*.model'))==0: # Backup bandpass
-			mainlog.info('No bandpass models are available.\n')
-		else:
-			mainlog.info('#######################################\n')
-			mainlog.info('Making final bandpass table for ms : '+msname+'\n')
-			bp_caltable_name=str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1)+'.bcal'
-			if os.path.isdir(bp_caltable_name):
-				os.system('rm -rf '+bp_caltable_name)
-			model_list=glob.glob(bandpass_modeldir+'/*.model')
-			modelname=model_list[0]
-			modelbasename=os.path.basename(modelname)
-			timerange='/'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[:3])+'/'+':'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[3:])
-			timestamps=AM.get_timestamps()
-			timeres=AM.calc_timeres()
-			index=timestamps.index(timerange)
-			if len(timestamps)<10 or timeres>2:
-				timerange=timestamps[index]
-				mainlog.info('applycal(vis=\''+msname+'\',gaintable=[\''+localdatabase+'/'+caltable_name+'\'],timerange=\''+timerange+'\',applymode=\'calonly\',flagbackup=False)\n')
-				applycal(vis=msname,gaintable=[localdatabase+'/'+caltable_name],timerange=timerange,applymode='calonly',flagbackup=False)
-				if os.path.isdir(inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms'):
-					os.system('rm -rf '+inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms')
-				mainlog.info('split(vis=\''+msname+'\',outputvis=\''+inputs.basedir+'/'+\
-							os.path.basename(msname).split('.ms')[0]+'_reftime.ms\',timerange=\''+timerange+'\',datacolumn=\'corrected\')\n')
-				split(vis=msname,outputvis=inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms',timerange=timerange,datacolumn='corrected')
-			elif timeres<2:
-				if (index-5)<0:
-					timerange=','.join(timestamps[0:10])
-				else:
-					timerange=','.join(timestamps[index-5:index+5])
-				mainlog.info('applycal(vis=\''+msname+'\',gaintable=[\''+localdatabase+'/'+caltable_name+'\'],timerange=\''+timerange+'\',applymode=\'calonlys\',flagbackup=False)\n')
-				applycal(vis=msname,gaintable=[localdatabase+'/'+caltable_name],timerange=timerange,applymode='calonly',flagbackup=False)
-				if os.path.isdir(inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms'):
-					os.system('rm -rf '+inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms')
-				mainlog.info('split(vis=\''+msname+'\',outputvis=\''+inputs.basedir+'/'\
-							+os.path.basename(msname).split('.ms')[0]+'_reftime.ms\',timerange=\''+timerange+'\',datacolumn=\'corrected\')\n')
-				split(vis=msname,outputvis=inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms',timerange=timerange,datacolumn='corrected')
-			bpmsname=inputs.basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime.ms'
-			AM2=AccessMS(bpmsname)
-			freqlist=(AM2.get_freqs()/10**6)
-			mainlog.info('delmod(vis=\''+bpmsname+'\',scr=True)\n')
-			delmod(vis=bpmsname,scr=True)
-			for i in range(len(model_list)):
-				modelname=model_list[i]
-				f=imhead(imagename=modelname,mode='list')['crval4']/10**6
-				df=(imhead(imagename=modelname,mode='list')['cdelt4']/10**6)/2.0
-				spw='0:'+str(f-df)+'~'+str(f+df)+'MHz'
-				mainlog.info('ft(vis=\''+bpmsname+'\',model=\''+modelname+'\',spw=\''+spw+'\',usescratch=True)\n')
-				ft(vis=bpmsname,model=modelname,spw=spw,usescratch=True)
-			AM1=AccessMS(bpmsname)
-			unflagged_chan=AM.get_unflag_chan()
-			model_chan,nomdel_chan=AM.get_model_nomodel_chan()
-			mainlog.info('bandpass(vis=\''+bpmsname+'\',caltable=\''+bp_caltable_name+'\',solnorm=True,refant=\''+str(inputs.ref_ant)+'\',minsnr='+str(inputs.gain_minsnr)+')\n')
-			bandpass(vis=bpmsname,caltable=bp_caltable_name,solnorm=True,refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr)
-			os.system('cp -r '+bp_caltable_name+' '+localdatabase)
-			#if model_chan==unflagged_chan:
-				#TODO: Updating global database
-			os.system('rm -rf '+bp_caltable_name)
-		if os.path.isdir(polcal_caldir)==False or len(glob.glob(polcal_caldir+'/*.bin'))==0: # Backup polcal
-			mainlog.info('No polarisation caltables are available.\n')
-		else:
-			mainlog.info('#######################################\n')
-			mainlog.info('Making final polcal table for ms : '+msname+'\n')
-			polcaltable_list=glob.glob(polcal_caldir+'/*.bin')
-			for polcal in polcaltable_list:
-				freq=float(polcal.split('.bin')[0].split('freq_')[-1].split('_')[0]) # In MHz
-				coarse_chan=freq_to_MWA_coarse(freq)
-				polcaltable_name=str(OBSID)+'_'+str(coarse_chan)+'.bin'
-				os.system('cp -r '+polcal+' '+localdatabase+'/'+polcaltable_name)	
-	os.system('rm -rf '+inputs.basedir+'/time*reftime.ms')
-	return 0
 
 
 # PAIRCARS master controller
@@ -1328,27 +1206,33 @@ if len(measurement_set_list)>0:
 else:
 	mainlog.info('Calibration jobs for all measurement sets are spawned.\n')
 		
-job_spawned_msname=spawned_ms_jobs.keys()
-total_spawned_jobs=0
+ms_list=copy.deepcopy(ms_list_copy)
+ms_OBSIDs=copy.deepcopy(ms_OBSIDs_copy)
 metafits_dic=copy.deepcopy(metafits_dic_copy)
-for ms in job_spawned_msname:
-	total_spawned_jobs+=spawned_ms_jobs[ms][-1]
-	mainlog.info('Waiting for finishing all calibrations of total '+str(total_spawned_jobs)+' spawned jobs.\n')
-while True:
-	touch_files=len(glob.glob(inputs.basedir+'/.Finished*cal*'))
-	if touch_files==total_spawned_jobs:
-		ms_list=glob.glob(inputs.basedir+'/data/time*.ms')
-		for msname in ms_list:
-			ref_time=spawned_ms_jobs[msname][0]
-			OBSID=get_OBSID_from_metafits(metafits_dic[msname.split('.ms')[0].split('_chantimesliced')[0].split('_ref')[0]])
-			gaincal_modeldir=inputs.basedir+'/imagemodels/'+str(OBSID)
-			bandpass_modeldir=inputs.basedir+'/bpimagemodels/'+str(OBSID)
-			polcal_caldir=inputs.basedir+'/polcaltables/'+str(OBSID)
-			mainlog.info('Making final calibration tables for : '+msname+'\n')
-			managing_caldatabase(msname,OBSID,ref_time,gaincal_modeldir,bandpass_modeldir,polcal_caldir,local_caldatabase)	
-	else:
-		time.sleep(2.0)
 
+for msname in ms_list:
+	OBSID=get_OBSID_from_metafits(metafits_dic[msname.split('.ms')[0].split('_chantimesliced')[0].split('_ref')[0]])
+	gaincal_modeldir=inputs.basedir+'/imagemodels/'+str(OBSID)
+	bandpass_modeldir=inputs.basedir+'/bpimagemodels/'+str(OBSID)
+	polcal_caldir=inputs.basedir+'/polcaltables/'+str(OBSID)
+	mainlog.info('Making final calibration tables for : '+msname+'\n')
+	num_jobs=spawned_ms_jobs[msname][-1]
+	screen_name='screen_'+str(OBSID)+'_manage_database'
+	cmd='manage_database --msname '+msname+' --OBSID '+str(OBSID)+' --num_jobs '+str(num_jobs)+' --basedir '+basedir+' --gaincal_modeldir '+gaincal_modeldir\
+				+' --bandpass_modeldir '+bandpass_modeldir+' --polcal_caldir '+polcal_caldir+' --localdatabase '+local_caldatabase
+	if os.path.isfile(inputs.basedir+'/.mpi_enabled'):
+		cmd='mpirun -np 1 -x OMP_NUM_THREADS='+str(3)+' '+cmd
+	cmd+=';wait; rm -rf '+inputs.basedir+'/'+screen_name+'.batch'
+	os.system('echo "'+cmd+'" > '+inputs.basedir+'/'+screen_name+'.batch')
+	screen_cmd='sh '+inputs.basedir+'/'+screen_name+'.batch'
+	os.system('screen -S '+screen_name+' -X quit')	
+	time.sleep(0.5)
+	os.system('screen -mdS '+screen_name)
+	time.sleep(0.5)
+	mainlog.info('########################\n')
+	mainlog.info('Made Screen : '+screen_name+'\n')
+	mainlog.info('Command : '+cmd+'\n')
+	os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 
 # Applying solution to whole ms
 ############################### 

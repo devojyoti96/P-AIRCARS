@@ -8,6 +8,7 @@ from . import flagger as fg
 from paircars_casatasks.poltclean import *
 from astropy.io import fits
 from astropy.wcs import WCS
+from mwa_pb.mwapb import *
 
 # PyBDSF installation has problem
 bdsf_import=False
@@ -21,16 +22,18 @@ class IntensitySelfcal:
 	Generic class to perform intensity self-calibration
 	Attributes:
 	msname = Name of the measurement set
+	metafits = Name of the metafits file
 	maximum_emission_scale = Maximum scale of the emission present in the image in arcsec
 	verbose = False,If True keep all the intermediate images, model, residuals, caltables and details of the log to detailed analysis
 	interactive = False, If True user have interactive control on self-calibration
 	'''
-	def __init__(self,msname,maximum_emission_scale,verbose=False,interactive=False):
+	def __init__(self,msname,metafits,maximum_emission_scale,verbose=False,interactive=False):
 		self.cwd=os.getcwd()
 		if msname[-1]=='/':
 			self.msname=msname[:-1]
 		else:
 			self.msname=msname
+		self.metafits=metafits
 		self.mspath=os.path.dirname(os.path.realpath(msname))
 		AM=am.AccessMS(self.msname)
 		IB=B.ImageBasic(self.msname)
@@ -912,6 +915,427 @@ class IntensitySelfcal:
 		os.system('rm -rf test_loc.* casa*log')
 		return imagename
 
+	def estimateSkyBrightnessMatrix(self,beam_jones,Vij):
+		''' 
+		Return beam corrected brightness matrix
+		Parameters:
+		beam_jones = Beam Jones matrix
+		Vij = Instrumental brightness matrix
+		Return:
+		Beam corrected brightness matrix in instrumental basis
+		'''
+		J=np.matrix(beam_jones)
+		J1=np.array(inv(J))
+		J2=np.array(inv(J.H))
+		J1_11=J1[0,0]
+		J1_12=J1[0,1]
+		J1_21=J1[1,0]
+		J1_22=J1[1,1]
+
+		J2_11=J2[0,0]
+		J2_12=J2[0,1]
+		J2_21=J2[1,0]
+		J2_22=J2[1,1]
+
+		XX=Vij[0,0]
+		XY=Vij[0,1]
+		YX=Vij[1,0]
+		YY=Vij[1,1]
+		XX_out=J2_11*(J1_11*XX+J1_12*YX)+J2_21*(J1_11*XY+J1_12*YY)
+		XY_out=J2_12*(J1_11*XX+J1_12*YX)+J2_22*(J1_11*XY+J1_12*YY)
+		YX_out=J2_11*(J1_21*XX+J1_22*YX)+J2_21*(J1_21*XY+J1_22*YY)
+		YY_out=J2_12*(J1_21*XX+J1_22*YX)+J2_22*(J1_21*XY+J1_22*YY)
+		B_corr=np.array([[XX_out,XY_out],[YX_out,YY_out]])
+		os.system('rm -rf casa*log')
+		return B_corr
+	
+	def get_IQUV(self,imagename,imagetype='FITS'):
+		'''
+		Stokes I,Q,U,V from a Stokes IQUV image cube.
+		Parameters:
+		imagename = Name of the image
+		imagetype= Type of the image, CASA or FITS
+		Return:
+		Python dictionary {'STOKES':imagedata}
+		'''
+		if imagetype=='CASA':
+			if os.path.isfile(imagename.split('.image')[0]+'.fits'):
+				os.system('rm -rf '+imagename.split('.image')[0]+'.fits')
+			exportfits(imagename=imagename,fitsimage=imagename.split('.image')[0]+'.fits')
+		fitsimage=imagename.split('.image')[0]+'.fits'
+		data=fits.getdata(fitsimage)
+		stokes = {}
+		stokes['I'] = data[0, 0, :, :]
+		stokes['Q'] = data[1, 0, :, :]
+		stokes['U'] = data[2, 0, :, :]
+		stokes['V'] = data[3, 0, :, :]
+		os.system('rm -rf '+fitsimage)
+		os.system('rm -rf casa*log')
+		return stokes	
+
+	def get_inst_pols(self,stokes_image,imagetype='FITS',pol_basis='Linear'): #TODO : Circular basis
+		'''
+		Return instrumental polarisation matrix (Vij)
+		Parameters:
+		stokes_image = Name of the Stokes IQUV image cube
+		imagetype= Type of the image, CASA or FITS
+		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		Return:
+		Instrumental polarisation matrix
+		'''
+		print (imagetype)
+		stokes=self.get_IQUV(stokes_image,imagetype=imagetype)
+		XX = stokes['I'] + stokes['Q']
+		XY = stokes['U'] + stokes['V'] * 1j
+		YX = stokes['U'] - stokes['V'] * 1j
+		YY = stokes['I'] - stokes['Q']
+		Vij = np.array([[XX, XY], [YX, YY]])
+		os.system('rm -rf casa*log')
+		return Vij
+
+	def B_to_IQUV(self,B,pol_basis='Linear'): # TODO : Circular Basis
+		'''
+		Convert brightness matrix in instrumental basis to I, Q, U, V
+		Parameters:
+		B = Brightness matrix in instrumental basis
+		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		'''
+		B11 = B[0, 0, :, :]
+		B12 = B[0, 1, :, :]
+		B21 = B[1, 0, :, :]
+		B22 = B[1, 1, :, :]
+		stokes = {}
+		stokes['I'] = (B11 + B22) / 2.
+		stokes['Q'] = (B11 - B22) / 2.
+		stokes['U'] = (B12 + B21) / 2.
+		stokes['V'] = 1j * (B21 - B12) / 2.
+		os.system('rm -rf casa*log')
+		return stokes
+
+	def correct_for_single_beam_jones(self,imagename,outfile,beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear'): #TODO : Circular basis
+		'''
+		Correct Stokes IQUV image cube for full Stokes Beam Jones at a single pointing
+		Parameters:
+		imagename = Name of the image of model
+		outfile = Name of the beam corrected image or model
+		beam_jones = Beam jones matrix
+		imagetype= Type of the image, CASA or FITS
+		outtype = Output image type, CASA or FITS
+		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		Return:
+		Beam corrected image or model
+		'''
+		Vij=self.get_inst_pols(imagename,imagetype=imagetype,pol_basis=pol_basis)
+		B=self.estimateSkyBrightnessMatrix(beam_jones,Vij)
+		stokes=self.B_to_IQUV(B,pol_basis='Linear')
+		if os.path.exists(outfile):
+			os.system('rm -rf '+outfile)
+			os.system('rm -rf '+'.'.join(imagename.split('.')[:-1])+'.fits')
+		if imagetype=='CASA' and os.path.isfile('.'.join(imagename.split('.')[:-1])+'.fits')==False:
+			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits',stokeslast=False)
+			os.system('cp -r '+imagename+' temp_org.image')
+		imagename='.'.join(imagename.split('.')[:-1])+'.fits'
+		data=fits.getdata(imagename)
+		header=fits.getheader(imagename)
+		data[0,0,:,:]=np.real(stokes['I'])
+		data[0,1,:,:]=np.real(stokes['Q'])
+		data[0,2,:,:]=np.real(stokes['U'])
+		data[0,3,:,:]=np.real(stokes['V'])
+		fits.writeto(outfile,data=data,header=header,overwrite=True)
+		if outtype=='CASA':
+			if os.path.exists('temp.image'):
+				os.system('rm -rf temp.image')
+			importfits(fitsimage=outfile,imagename='temp.image')
+			os.system('rm -rf '+outfile+' '+imagename)
+			ia=image()
+			ia.open('temp.image')
+			pbcor_data=ia.getchunk()
+			ia.close()
+			ia.open('temp_org.image')
+			ia.putchunk(pbcor_data)
+			ia.done()
+			ia.close()
+			os.system('mv temp_org.image '+outfile)
+		os.system('rm -rf casa*log temp*')
+		return outfile
+
+	def uncorrect_for_single_beam_jones(self,imagename,outfile,inv_beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear'): # TODO : Circular basis
+		'''
+		Undo the beam correction for Stokes IQUV image cube for full Stokes Beam Jones at a single pointing
+		Parameters:
+		imagename = Name of the image of model
+		outfile = Name of the beam corrected image or model
+		inv_beam_jones = Inverse of Beam jones matrix
+		imagetype = Type of the image, CASA or FITS
+		outtype = Output image type, CASA or FITS
+		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		Return:
+		Beam un-corrected image or model
+		'''
+		Vij=self.get_inst_pols(imagename,imagetype=imagetype,pol_basis=pol_basis)
+		B=self.estimateSkyBrightnessMatrix(inv_beam_jones,Vij)
+		stokes=self.B_to_IQUV(B,pol_basis='Linear')
+		if os.path.exists(outfile):
+			os.system('rm -rf '+outfile)
+			os.system('rm -rf '+'.'.join(imagename.split('.')[:-1])+'.fits')
+		if imagetype=='CASA' and os.path.isfile('.'.join(imagename.split('.')[:-1])+'.fits')==False:
+			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits',stokeslast=False)
+			os.system('cp -r '+imagename+' temp_org.image')
+		imagename='.'.join(imagename.split('.')[:-1])+'.fits'
+		data=fits.getdata(imagename)
+		header=fits.getheader(imagename)
+		data[0,0,:,:]=np.real(stokes['I'])
+		data[0,1,:,:]=np.real(stokes['Q'])
+		data[0,2,:,:]=np.real(stokes['U'])
+		data[0,3,:,:]=np.real(stokes['V'])
+		fits.writeto(outfile,data=data,header=header,overwrite=True)
+		if outtype=='CASA':
+			importfits(fitsimage=outfile,imagename='temp.image')
+			os.system('rm -rf '+outfile+' '+imagename)
+			ia=image()
+			ia.open('temp.image')
+			pbcor_data=ia.getchunk()
+			ia.close()
+			ia.open('temp_org.image')
+			ia.putchunk(pbcor_data)
+			ia.done()
+			ia.close()
+			os.system('mv temp_org.image '+outfile)
+		os.system('rm -rf casa*log temp*')
+		return outfile
+
+	def solarlin_pol_minimise(self,datai,datal,l,rmsl,i_flux):
+		'''
+		Polarisation minimisation function fir Sun
+		Parameters:
+		datai = Stokes I image data
+		datal = Stokes Q or U image data	
+		l = Trial leakage (-1,1)
+		rmsl = RMS of the Stokes map
+		i_flux = Mean brightness in Jy/beam
+		Return:
+		The number of pixels having polarisation fraction greater than rmsl/i_flux
+		'''
+		x1=np.abs((datal-l*datai)/datai)
+		pos=np.where(x1.flatten()>rmsl/i_flux)
+		f_out=(len(pos[0]))
+		del x1,datai,datal,l,rmsl
+		return f_out
+
+	def mwa_solar_fluxcal(self,imagename,outfile): # TODO :Flux scale needs to include
+		immath(imagename=imagename,outfile=outfile,mode='evalexpr',expr='IM0*20')
+		return outfile
+
+	def cal_solar_qu_leakage(self,imagename,do_fluxcal=False): 
+		'''
+		Function to calculate Stokes QU leakage for solar observation (Not vaild for any other astrophysical observation)
+		Parameters:
+		imagename = Name of the image
+		do_fluxcal = Do flux calibration or not
+		outfile_path = Name of the directory to save leakage data numpy table (default : image directory)
+		Return:
+		Stokes Q leakage, Stokes U leakage (Two numpy table will also be saved) 
+		'''
+		outfile_path=os.path.dirname(os.path.realpath(imagename))
+		os.system('rm -rf '+outfile_path+'/I*')
+		imsubimage(imagename=imagename,outfile=outfile_path+'/I.image',stokes='I',dropdeg=False)
+		if do_fluxcal==True:
+			fluxcal_image=self.mwa_solar_fluxcal(imagename=outfile_path+'/I.image',outfile=outfile_path+'/I_fluxcal.image')
+		else:
+			fluxcal_image=outfile_path+'/I.image'
+		major=imhead(imagename=fluxcal_image)['restoringbeam']['major']['value'] # In arcsec
+		minor=imhead(imagename=fluxcal_image)['restoringbeam']['minor']['value'] # In arcsec
+		freq=imhead(imagename=fluxcal_image)['refval'][-1]/10**9 # In GHz
+		expr='1.222e6*IM0/'+str(freq)+'^2/('+str(major*minor)+')'
+		immath(imagename=fluxcal_image,outfile=outfile_path+'/I_Tb.image',mode='evalexpr',expr=expr)
+		ia=image()
+		ia.open(imagename)
+		data=ia.getchunk()
+		ia.close()
+		rmsq=imstat(imagename=imagename,box=self.rms_box,stokes='Q')['rms'][0]
+		rmsu=imstat(imagename=imagename,box=self.rms_box,stokes='U')['rms'][0]
+		rmsi=imstat(imagename=imagename,box=self.rms_box,stokes='I')['rms'][0]
+		i_flux=imstat(imagename=imagename,stokes='I')['flux'][0]
+		dataq=data[:,:,1,0]
+		datau=data[:,:,2,0]
+		datai=data[:,:,0,0]
+		posi=np.where(datai<(10*rmsi))
+		datai[posi]=np.nan
+		dataq[posi]=np.nan
+		datau[posi]=np.nan
+		ia.open(outfile_path+'/I_Tb.image')
+		datatb=ia.getchunk()
+		ia.close()
+		postb=np.where((datatb[:,:,0,0]/10**6).astype('int')>1)
+		datai[postb]=np.nan
+		dataq[postb]=np.nan
+		datau[postb]=np.nan
+		i_flux=np.nanmean(datai)
+		leakage_list=[]
+		for stokes in ['Q','U']:
+			if stokes=='Q':
+				datal=dataq
+				rmsl=rmsq
+			elif stokes=='U':
+				datal=datau
+				rmsl=rmsu
+			step_range=[0.1,0.01,0.001]
+			start_range=-1
+			end_range=1
+			x=[]
+			y=[]
+			for step in step_range:
+				l_range=np.arange(start_range,end_range,step)
+				results=[]
+				for l in l_range:
+					x.append(l)
+					r=self.solarlin_pol_minimise(datai,datal,l,rmsl,i_flux)
+					y.append(r)
+					results.append(r)
+				results=np.array(results)
+				minval=l_range[np.argmin(results)]
+				start_range=(start_range+minval)/3.0
+				end_range=(end_range+minval)/3.0
+			y=np.array(y)
+			leakage=x[np.argmin(y)]
+			np.save(outfile_path+'/'+os.path.basename(imagename)+'_'+stokes+'_leakage',np.array([x,y,leakage],dtype=object))
+			leakage_list.append(leakage)
+		os.system('rm -rf casa*log I*.image')
+		self.log_verbose.info('Calculation of Stokes leakages has been done.\n')
+		return leakage_list[0],leakage_list[1]
+
+	def correct_solar_qu_leakage(self,imagename,modelname,sigma,overwrite=False):
+		'''
+		Function to correction for solar Stokes Q and Stokes U leakage (It is based on the fact that we do not expect any linear polarisation from the Quiet Sun emission)
+		Parameters:
+		imagename = Name of image
+		modelname = Name of the model
+		sigma = N-sigma threshold to choose Stokes I emission region
+		overwrite = False, overwrite the image and model or not
+		Return:
+		Stokes Q and U leakage corrected image and model name
+		'''
+		if overwrite==False:
+			os.system('cp -r '+imagename+' '+'qucor.image')
+			os.system('cp -r '+modelname+' '+'qucor.model')
+			imagename='qucor.image'
+			modelname='qucor.model'
+		self.log_verbose.info('Calculating Stokes Q,U leakage.\n')
+		q_leakage,u_leakage=self.cal_solar_qu_leakage(imagename,do_fluxcal=True)
+		ia=image()
+		ia.open(imagename) # Correcting image
+		data=ia.getchunk()
+		i=data[:,:,0,:]
+		q=data[:,:,1,:]
+		u=data[:,:,2,:]
+		v=data[:,:,3,:]
+		q=q-(q_leakage*i)
+		u=u-(u_leakage*i)
+		data[:,:,1,:]=q
+		data[:,:,2,:]=u
+		ia.putchunk(data)
+		ia.close()
+		rmsi=imstat(imagename=imagename,box=self.rms_box,stokes='I')['rms'][0]
+		rmsq=imstat(imagename=imagename,box=self.rms_box,stokes='Q')['rms'][0]
+		rmsu=imstat(imagename=imagename,box=self.rms_box,stokes='U')['rms'][0]
+		rmsv=imstat(imagename=imagename,box=self.rms_box,stokes='V')['rms'][0]
+		posi=np.where(abs(i)<(sigma*rmsi))
+		posq=np.where(abs(q)<(sigma*rmsq))
+		posu=np.where(abs(u)<(sigma*rmsu))
+		posv=np.where(abs(v)<(sigma*rmsv))
+		ia.open(modelname) # Correcting model
+		datam=ia.getchunk()
+		im=datam[:,:,0,:]
+		qm=datam[:,:,1,:]
+		um=datam[:,:,2,:]
+		posqm=np.where(qm==0)
+		posum=np.where(um==0)
+		qm=qm-(q_leakage*im)
+		um=um-(u_leakage*im)
+		qm[posq]=0
+		um[posu]=0
+		qm[posqm]=0
+		um[posum]=0
+		datam[:,:,1,:]=qm
+		datam[:,:,2,:]=um
+		datam[:,:,0,:][posi]=0
+		datam[:,:,3,:][posv]=0
+		ia.putchunk(datam)
+		ia.close()
+		if overwrite==True:
+			if os.path.isdir('qucor.image')==True:
+				os.system('rm -rf '+'qucor.image')
+			if os.path.isdir('qucor.model')==True:
+				os.system('rm -rf '+'qucor.model')
+			os.system('cp -r '+imagename+' '+'qucor.image')
+			os.system('cp -r '+modelname+' '+'qucor.model')
+		os.system('rm -rf casa*log')
+		return imagename,modelname
+
+	def leakage_correct_gaincal(self,imagename,modelname,sigma,do_bandpass=False,calibrator_caltable=[]):
+		'''
+		Function to perform Stokes Q,U leakage corrected gain calibration
+		Parameters:
+		imagename = Name of the Stokes IQUV image
+		modelname = Name of the Stokes IQUV model
+		sigma = Threshold sigma to choose Stokes I region
+		do_bandpass = Perform bandpass calibration
+		calibrator_caltable = [], list of previous caltables 
+		Return:
+		Leakage corrected gaincal/bandpass table
+		'''		
+		mwapb=MWA_PrimaryBeam(self.msname,self.metafits,inverse_beam=False)  # Beam jones
+		self.log_verbose.info('mwapb.calc_beamjones_phasecenter(outputfile=\'\')\n')
+		beam_jones=mwapb.calc_beamjones_phasecenter(outputfile='')
+		mwapb=MWA_PrimaryBeam(self.msname,self.metafits,inverse_beam=True)  # Inverse Beam jones
+		self.log_verbose.info('mwapb.calc_beamjones_phasecenter(outputfile=\'\')\n')
+		inv_beam_jones=mwapb.calc_beamjones_phasecenter(outputfile='')
+		self.log_verbose.info('correct_for_single_beam_jones(\''+imagename+'\',\''+imagename+'.pbcor\',beam_jones,imagetype=\'CASA\',outtype=\'CASA\',pol_basis=\'Linear\')\n')
+		self.correct_for_single_beam_jones(imagename,imagename+'.pbcor',beam_jones,imagetype='CASA',outtype='CASA',pol_basis='Linear')
+		self.log_verbose.info('correct_for_single_beam_jones(\''+modelname+'\',\''+modelname+'.pbcor\',beam_jones,imagetype=\'CASA\',outtype=\'CASA\',pol_basis=\'Linear\')\n')
+		self.correct_for_single_beam_jones(modelname,modelname+'.pbcor',beam_jones,imagetype='CASA',outtype='CASA',pol_basis='Linear')
+		self.log_verbose.info('Correcting solar Stokes I to Q,U leakage based on image.\n')	
+		self.log_verbose.info('correct_solar_qu_leakage(\''+imagename+'.pbcor\',\''+modelname+'.pbcor\','+str(sigma)+',overwrite=False)\n')
+		qucor_image,qucor_model=self.correct_solar_qu_leakage(imagename+'.pbcor',modelname+'.pbcor',sigma,overwrite=False)
+		os.system('rm -rf *.pbcor')
+		self.log_verbose.info('uncorrect_for_single_beam_jones(\''+qucor_model+'\',\''+modelname+\
+						'.qucor.pbuncor\',inv_beam_jones,imagetype=\'CASA\',outtype=\'CASA\',pol_basis=\'Linear\')\n')
+		self.uncorrect_for_single_beam_jones(qucor_model,modelname+'.qucor.pbuncor',inv_beam_jones,imagetype='CASA',outtype='CASA',pol_basis='Linear')
+		os.system('rm -rf qucor.*')
+		self.log_verbose.info('delmod(vis=\''+self.msname+'\',scr=True)\n')
+		self.log_verbose.info('do_bandpass = '+str(do_bandpass)+'\n')
+		delmod(vis=self.msname,scr=True)
+		if do_bandpass==True:
+			self.log_verbose.info('mwa_solar_fluxcal(\''+modelname+'.qucor.pbuncor\',\''+modelname+'.qucor.pbuncor.fluxcal\')\n')
+			fluxcal_model=self.mwa_solar_fluxcal(modelname+'.qucor.pbuncor',modelname+'.qucor.pbuncor.fluxcal')
+			final_modelname=fluxcal_model
+		else:
+			final_modelname=modelname+'.qucor.pbuncor'
+		self.log_verbose.info('ft(vis=\''+self.msname+'\',model=\''+final_modelname+'\',usescratch=True)\n')
+		ft(vis=self.msname,model=final_modelname,usescratch=True)
+		caltable_name=self.msname.split('.ms')[0]+'.cal' # Caltable name
+		if os.path.isdir(caltable_name):
+			os.system('rm -rf '+caltable_name)
+		if do_bandpass==False:
+			self.log_verbose.info('Doing gaincal.....\n')
+			self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)
+				+',calmode=\''+calmode+'\',solnorm=True,uvrange=\''+self.calib_uvrange+'\',gaintype=\'G\',solmode=\''+solmode+\
+				'\',rmsthresh=[10,7,5,3.5],gaintable='+str(calibrator_caltable)+')\n') 
+			gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=minsnr,calmode=calmode,solnorm=True,uvrange=self.calib_uvrange,\
+						gaintype='G',solmode=solmode,rmsthresh=[10,7,5,3.5],gaintable=calibrator_caltable) # Performing gain calibration
+		else:
+			self.log_verbose.info('Doing bandpass.....\n')
+			self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\''+calmode+'\',uvrange=\''+self.calib_uvrange+\
+					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\''+solmode+'\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
+			self.bpass_solver(caltable_name,spw='',timerange='',calmode=calmode,uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
+									solmode=solmode,rmsthresh=[15,10,8],gaintable=calibrator_caltable) # Perform bandpass calibration
+		applycal_caltable=copy.deepcopy(calibrator_caltable)
+		applycal_caltable.append(caltable_name)
+		self.log_verbose.info('Applying solutions from :'+str(applycal_caltable)+'\n')
+		self.log_verbose.info('applycal(vis=\''+self.msname+'\',gaintable='+str(applycal_caltable)+',applymode=\'calflag\',flagbackup=True,calwt=[False])\n')	
+		applycal(vis=self.msname,gaintable=applycal_caltable,applymode='calflag',flagbackup=True,calwt=[False]) # Applying the solution
+		return caltable_name
+	
 	def selfcal_iteration(self,num_iter,rms_thresh,sigma,maskstr,antenna_to_use,startmodel,startmask,ref_ant,minsnr,calmode,maskfile='',want_auto_masking=False,\
 							stokes='I',interactive=False,do_bandpass=False,solmode='R',correct_phasecenter=False,ra=0,dec=0,box_width=3,calibrator_caltable=[]):
 		'''
@@ -1091,7 +1515,7 @@ class IntensitySelfcal:
 						solmode=''
 					self.log_verbose.info('Doing bandpass.....\n')
 					self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\''+calmode+'\',uvrange=\''+self.calib_uvrange+\
-				'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\''+solmode+'\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
+					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\''+solmode+'\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
 					self.bpass_solver(caltable_name,spw='',timerange='',calmode=calmode,uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
 									solmode=solmode,rmsthresh=[15,10,8],gaintable=calibrator_caltable) # Perform bandpass calibration
 				else:

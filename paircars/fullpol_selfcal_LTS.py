@@ -497,14 +497,14 @@ class PolSelfcal:
 			if os.path.isfile(imagename.split('.image')[0]+'.fits'):
 				os.system('rm -rf '+imagename.split('.image')[0]+'.fits')
 			exportfits(imagename=imagename,fitsimage=imagename.split('.image')[0]+'.fits')
-		imagename=imagename.split('.image')[0]+'.fits'
-		data=fits.getdata(imagename)
+		fitsimage=imagename.split('.image')[0]+'.fits'
+		data=fits.getdata(fitsimage)
 		stokes = {}
 		stokes['I'] = data[0, 0, :, :]
 		stokes['Q'] = data[1, 0, :, :]
 		stokes['U'] = data[2, 0, :, :]
 		stokes['V'] = data[3, 0, :, :]
-		os.system('rm -rf '+imagename)
+		os.system('rm -rf '+fitsimage)
 		os.system('rm -rf casa*log')
 		return stokes	
 
@@ -518,6 +518,7 @@ class PolSelfcal:
 		Return:
 		Instrumental polarisation matrix
 		'''
+		print (imagetype)
 		stokes=self.get_IQUV(stokes_image,imagetype=imagetype)
 		XX = stokes['I'] + stokes['Q']
 		XY = stokes['U'] + stokes['V'] * 1j
@@ -567,6 +568,7 @@ class PolSelfcal:
 			os.system('rm -rf '+'.'.join(imagename.split('.')[:-1])+'.fits')
 		if imagetype=='CASA' and os.path.isfile('.'.join(imagename.split('.')[:-1])+'.fits')==False:
 			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits',stokeslast=False)
+			os.system('cp -r '+imagename+' temp_org.image')
 		imagename='.'.join(imagename.split('.')[:-1])+'.fits'
 		data=fits.getdata(imagename)
 		header=fits.getheader(imagename)
@@ -576,10 +578,20 @@ class PolSelfcal:
 		data[0,3,:,:]=np.real(stokes['V'])
 		fits.writeto(outfile,data=data,header=header,overwrite=True)
 		if outtype=='CASA':
+			if os.path.exists('temp.image'):
+				os.system('rm -rf temp.image')
 			importfits(fitsimage=outfile,imagename='temp.image')
 			os.system('rm -rf '+outfile+' '+imagename)
-			os.system('mv temp.image '+outfile)
-		os.system('rm -rf casa*log')
+			ia=image()
+			ia.open('temp.image')
+			pbcor_data=ia.getchunk()
+			ia.close()
+			ia.open('temp_org.image')
+			ia.putchunk(pbcor_data)
+			ia.done()
+			ia.close()
+			os.system('mv temp_org.image '+outfile)
+		os.system('rm -rf casa*log temp*')
 		return outfile
 
 	def uncorrect_for_single_beam_jones(self,imagename,outfile,inv_beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear'): # TODO : Circular basis
@@ -603,6 +615,7 @@ class PolSelfcal:
 			os.system('rm -rf '+'.'.join(imagename.split('.')[:-1])+'.fits')
 		if imagetype=='CASA' and os.path.isfile('.'.join(imagename.split('.')[:-1])+'.fits')==False:
 			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits',stokeslast=False)
+			os.system('cp -r '+imagename+' temp_org.image')
 		imagename='.'.join(imagename.split('.')[:-1])+'.fits'
 		data=fits.getdata(imagename)
 		header=fits.getheader(imagename)
@@ -614,8 +627,16 @@ class PolSelfcal:
 		if outtype=='CASA':
 			importfits(fitsimage=outfile,imagename='temp.image')
 			os.system('rm -rf '+outfile+' '+imagename)
-			os.system('mv temp.image '+outfile)
-		os.system('rm -rf casa*log')
+			ia=image()
+			ia.open('temp.image')
+			pbcor_data=ia.getchunk()
+			ia.close()
+			ia.open('temp_org.image')
+			ia.putchunk(pbcor_data)
+			ia.done()
+			ia.close()
+			os.system('mv temp_org.image '+outfile)
+		os.system('rm -rf casa*log temp*')
 		return outfile
 
 	def correct_visibility_single_beam_jones(self,modify_datacolumn=True,force=False):
