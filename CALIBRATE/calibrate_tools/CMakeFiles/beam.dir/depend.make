@@ -240,6 +240,8 @@ CMakeFiles/beam.dir/beam.cpp.o: /usr/local/include/casacore/tables/Tables/TableR
 CMakeFiles/beam.dir/beam.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
 CMakeFiles/beam.dir/beam.cpp.o: /usr/local/include/fitsio.h
 CMakeFiles/beam.dir/beam.cpp.o: /usr/local/include/longnam.h
+CMakeFiles/beam.dir/beam.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/beam.dir/beam.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/beam.dir/fitsiochecker.cpp.o: ../fitsiochecker.cpp
 CMakeFiles/beam.dir/fitsiochecker.cpp.o: ../fitsiochecker.h

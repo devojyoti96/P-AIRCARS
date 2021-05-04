@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/fitsmodel.dir/depend.make
@@ -59,133 +59,133 @@ include CMakeFiles/fitsmodel.dir/flags.make
 
 CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o: ../fitsmodel.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsmodel.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsmodel.cpp
 
 CMakeFiles/fitsmodel.dir/fitsmodel.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/fitsmodel.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsmodel.cpp > CMakeFiles/fitsmodel.dir/fitsmodel.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsmodel.cpp > CMakeFiles/fitsmodel.dir/fitsmodel.cpp.i
 
 CMakeFiles/fitsmodel.dir/fitsmodel.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/fitsmodel.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsmodel.cpp -o CMakeFiles/fitsmodel.dir/fitsmodel.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsmodel.cpp -o CMakeFiles/fitsmodel.dir/fitsmodel.cpp.s
 
 CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o: ../fitsiochecker.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp
 
 CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.i
 
 CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.s
 
 CMakeFiles/fitsmodel.dir/fitsreader.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/fitsreader.cpp.o: ../fitsreader.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/fitsmodel.dir/fitsreader.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/fitsmodel.dir/fitsreader.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp
 
 CMakeFiles/fitsmodel.dir/fitsreader.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/fitsreader.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/fitsmodel.dir/fitsreader.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/fitsmodel.dir/fitsreader.cpp.i
 
 CMakeFiles/fitsmodel.dir/fitsreader.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/fitsreader.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/fitsmodel.dir/fitsreader.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/fitsmodel.dir/fitsreader.cpp.s
 
 CMakeFiles/fitsmodel.dir/image.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/image.cpp.o: ../image.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/fitsmodel.dir/image.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/image.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/image.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/fitsmodel.dir/image.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/image.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/image.cpp
 
 CMakeFiles/fitsmodel.dir/image.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/image.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/image.cpp > CMakeFiles/fitsmodel.dir/image.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/image.cpp > CMakeFiles/fitsmodel.dir/image.cpp.i
 
 CMakeFiles/fitsmodel.dir/image.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/image.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/image.cpp -o CMakeFiles/fitsmodel.dir/image.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/image.cpp -o CMakeFiles/fitsmodel.dir/image.cpp.s
 
 CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
 
 CMakeFiles/fitsmodel.dir/nlplfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/nlplfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/fitsmodel.dir/nlplfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/fitsmodel.dir/nlplfitter.cpp.i
 
 CMakeFiles/fitsmodel.dir/nlplfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/nlplfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/fitsmodel.dir/nlplfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/fitsmodel.dir/nlplfitter.cpp.s
 
 CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o: ../polynomialfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polynomialfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.cpp
 
 CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polynomialfitter.cpp > CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.cpp > CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.i
 
 CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polynomialfitter.cpp -o CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.cpp -o CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.s
 
 CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o: ../deconvolution/deconvolutionalgorithm.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp
 
 CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp > CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp > CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.i
 
 CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp -o CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp -o CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.s
 
 CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o: ../deconvolution/spectralfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp
 
 CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp > CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp > CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.i
 
 CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp -o CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp -o CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.s
 
 CMakeFiles/fitsmodel.dir/model/model.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/model/model.cpp.o: ../model/model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/fitsmodel.dir/model/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/model/model.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/fitsmodel.dir/model/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
 
 CMakeFiles/fitsmodel.dir/model/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/model/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/fitsmodel.dir/model/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/fitsmodel.dir/model/model.cpp.i
 
 CMakeFiles/fitsmodel.dir/model/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/model/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/fitsmodel.dir/model/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/fitsmodel.dir/model/model.cpp.s
 
 CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o: CMakeFiles/fitsmodel.dir/flags.make
 CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o: ../wsclean/logger.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/wsclean/logger.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.cpp
 
 CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/wsclean/logger.cpp > CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.cpp > CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.i
 
 CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/wsclean/logger.cpp -o CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.cpp -o CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.s
 
 # Object files for target fitsmodel
 fitsmodel_OBJECTS = \
@@ -272,7 +272,7 @@ fitsmodel: /usr/lib64/libboost_date_time-mt.so
 fitsmodel: /usr/lib64/libboost_filesystem-mt.so
 fitsmodel: /usr/lib64/libboost_system-mt.so
 fitsmodel: CMakeFiles/fitsmodel.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable fitsmodel"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable fitsmodel"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/fitsmodel.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -285,6 +285,6 @@ CMakeFiles/fitsmodel.dir/clean:
 .PHONY : CMakeFiles/fitsmodel.dir/clean
 
 CMakeFiles/fitsmodel.dir/depend:
-	cd /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/fitsmodel.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/fitsmodel.dir/depend
 

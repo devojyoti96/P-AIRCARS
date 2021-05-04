@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/scaleimage.dir/depend.make
@@ -59,68 +59,68 @@ include CMakeFiles/scaleimage.dir/flags.make
 
 CMakeFiles/scaleimage.dir/scaleimage.cpp.o: CMakeFiles/scaleimage.dir/flags.make
 CMakeFiles/scaleimage.dir/scaleimage.cpp.o: ../scaleimage.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/scaleimage.dir/scaleimage.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/scaleimage.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/scaleimage.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/scaleimage.dir/scaleimage.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/scaleimage.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/scaleimage.cpp
 
 CMakeFiles/scaleimage.dir/scaleimage.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/scaleimage.dir/scaleimage.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/scaleimage.cpp > CMakeFiles/scaleimage.dir/scaleimage.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/scaleimage.cpp > CMakeFiles/scaleimage.dir/scaleimage.cpp.i
 
 CMakeFiles/scaleimage.dir/scaleimage.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/scaleimage.dir/scaleimage.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/scaleimage.cpp -o CMakeFiles/scaleimage.dir/scaleimage.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/scaleimage.cpp -o CMakeFiles/scaleimage.dir/scaleimage.cpp.s
 
 CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o: CMakeFiles/scaleimage.dir/flags.make
 CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o: ../fitsiochecker.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp
 
 CMakeFiles/scaleimage.dir/fitsiochecker.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/scaleimage.dir/fitsiochecker.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/scaleimage.dir/fitsiochecker.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/scaleimage.dir/fitsiochecker.cpp.i
 
 CMakeFiles/scaleimage.dir/fitsiochecker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/scaleimage.dir/fitsiochecker.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/scaleimage.dir/fitsiochecker.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/scaleimage.dir/fitsiochecker.cpp.s
 
 CMakeFiles/scaleimage.dir/fitsreader.cpp.o: CMakeFiles/scaleimage.dir/flags.make
 CMakeFiles/scaleimage.dir/fitsreader.cpp.o: ../fitsreader.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/scaleimage.dir/fitsreader.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/scaleimage.dir/fitsreader.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp
 
 CMakeFiles/scaleimage.dir/fitsreader.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/scaleimage.dir/fitsreader.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/scaleimage.dir/fitsreader.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/scaleimage.dir/fitsreader.cpp.i
 
 CMakeFiles/scaleimage.dir/fitsreader.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/scaleimage.dir/fitsreader.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/scaleimage.dir/fitsreader.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/scaleimage.dir/fitsreader.cpp.s
 
 CMakeFiles/scaleimage.dir/fitswriter.cpp.o: CMakeFiles/scaleimage.dir/flags.make
 CMakeFiles/scaleimage.dir/fitswriter.cpp.o: ../fitswriter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/scaleimage.dir/fitswriter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/fitswriter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/scaleimage.dir/fitswriter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/fitswriter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp
 
 CMakeFiles/scaleimage.dir/fitswriter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/scaleimage.dir/fitswriter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp > CMakeFiles/scaleimage.dir/fitswriter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp > CMakeFiles/scaleimage.dir/fitswriter.cpp.i
 
 CMakeFiles/scaleimage.dir/fitswriter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/scaleimage.dir/fitswriter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp -o CMakeFiles/scaleimage.dir/fitswriter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp -o CMakeFiles/scaleimage.dir/fitswriter.cpp.s
 
 CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o: CMakeFiles/scaleimage.dir/flags.make
 CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o: ../parser/votableparser.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/parser/votableparser.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/parser/votableparser.cpp
 
 CMakeFiles/scaleimage.dir/parser/votableparser.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/scaleimage.dir/parser/votableparser.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/parser/votableparser.cpp > CMakeFiles/scaleimage.dir/parser/votableparser.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/parser/votableparser.cpp > CMakeFiles/scaleimage.dir/parser/votableparser.cpp.i
 
 CMakeFiles/scaleimage.dir/parser/votableparser.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/scaleimage.dir/parser/votableparser.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/parser/votableparser.cpp -o CMakeFiles/scaleimage.dir/parser/votableparser.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/parser/votableparser.cpp -o CMakeFiles/scaleimage.dir/parser/votableparser.cpp.s
 
 # Object files for target scaleimage
 scaleimage_OBJECTS = \
@@ -188,7 +188,7 @@ scaleimage: /usr/lib64/libsz.so
 scaleimage: /usr/lib64/libz.so
 scaleimage: /usr/lib64/libdl.so
 scaleimage: CMakeFiles/scaleimage.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable scaleimage"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable scaleimage"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/scaleimage.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -201,6 +201,6 @@ CMakeFiles/scaleimage.dir/clean:
 .PHONY : CMakeFiles/scaleimage.dir/clean
 
 CMakeFiles/scaleimage.dir/depend:
-	cd /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/scaleimage.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/scaleimage.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/scaleimage.dir/depend
 

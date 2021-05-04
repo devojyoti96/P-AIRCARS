@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/sedcombine.dir/depend.make
@@ -59,146 +59,146 @@ include CMakeFiles/sedcombine.dir/flags.make
 
 CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o: ../experiments/sed/sedcombine.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/sed/sedcombine.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/sed/sedcombine.cpp
 
 CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/sed/sedcombine.cpp > CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/sed/sedcombine.cpp > CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.i
 
 CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/sed/sedcombine.cpp -o CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/sed/sedcombine.cpp -o CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.s
 
 CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o: ../experiments/sed/sedanalyser.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/sed/sedanalyser.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/sed/sedanalyser.cpp
 
 CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/sed/sedanalyser.cpp > CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/sed/sedanalyser.cpp > CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.i
 
 CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/sed/sedanalyser.cpp -o CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/sed/sedanalyser.cpp -o CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.s
 
 CMakeFiles/sedcombine.dir/model/model.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/model/model.cpp.o: ../model/model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/sedcombine.dir/model/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/model/model.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/sedcombine.dir/model/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
 
 CMakeFiles/sedcombine.dir/model/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/model/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/sedcombine.dir/model/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/sedcombine.dir/model/model.cpp.i
 
 CMakeFiles/sedcombine.dir/model/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/model/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/sedcombine.dir/model/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/sedcombine.dir/model/model.cpp.s
 
 CMakeFiles/sedcombine.dir/fitsiochecker.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/fitsiochecker.cpp.o: ../fitsiochecker.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/sedcombine.dir/fitsiochecker.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/sedcombine.dir/fitsiochecker.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp
 
 CMakeFiles/sedcombine.dir/fitsiochecker.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/fitsiochecker.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/sedcombine.dir/fitsiochecker.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/sedcombine.dir/fitsiochecker.cpp.i
 
 CMakeFiles/sedcombine.dir/fitsiochecker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/fitsiochecker.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/sedcombine.dir/fitsiochecker.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/sedcombine.dir/fitsiochecker.cpp.s
 
 CMakeFiles/sedcombine.dir/fitsreader.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/fitsreader.cpp.o: ../fitsreader.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/sedcombine.dir/fitsreader.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/sedcombine.dir/fitsreader.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp
 
 CMakeFiles/sedcombine.dir/fitsreader.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/fitsreader.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/sedcombine.dir/fitsreader.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/sedcombine.dir/fitsreader.cpp.i
 
 CMakeFiles/sedcombine.dir/fitsreader.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/fitsreader.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/sedcombine.dir/fitsreader.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/sedcombine.dir/fitsreader.cpp.s
 
 CMakeFiles/sedcombine.dir/fitswriter.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/fitswriter.cpp.o: ../fitswriter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/sedcombine.dir/fitswriter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/fitswriter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/sedcombine.dir/fitswriter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/fitswriter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp
 
 CMakeFiles/sedcombine.dir/fitswriter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/fitswriter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp > CMakeFiles/sedcombine.dir/fitswriter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp > CMakeFiles/sedcombine.dir/fitswriter.cpp.i
 
 CMakeFiles/sedcombine.dir/fitswriter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/fitswriter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp -o CMakeFiles/sedcombine.dir/fitswriter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp -o CMakeFiles/sedcombine.dir/fitswriter.cpp.s
 
 CMakeFiles/sedcombine.dir/nlplfitter.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/sedcombine.dir/nlplfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/sedcombine.dir/nlplfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
 
 CMakeFiles/sedcombine.dir/nlplfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/nlplfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/sedcombine.dir/nlplfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/sedcombine.dir/nlplfitter.cpp.i
 
 CMakeFiles/sedcombine.dir/nlplfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/nlplfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/sedcombine.dir/nlplfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/sedcombine.dir/nlplfitter.cpp.s
 
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: ../rmsynthesis.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/rmsynthesis.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.cpp
 
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/rmsynthesis.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/rmsynthesis.cpp > CMakeFiles/sedcombine.dir/rmsynthesis.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.cpp > CMakeFiles/sedcombine.dir/rmsynthesis.cpp.i
 
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/rmsynthesis.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/rmsynthesis.cpp -o CMakeFiles/sedcombine.dir/rmsynthesis.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.cpp -o CMakeFiles/sedcombine.dir/rmsynthesis.cpp.s
 
 CMakeFiles/sedcombine.dir/progressbar.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/progressbar.cpp.o: ../progressbar.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/sedcombine.dir/progressbar.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/progressbar.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/progressbar.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/sedcombine.dir/progressbar.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/progressbar.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/progressbar.cpp
 
 CMakeFiles/sedcombine.dir/progressbar.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/progressbar.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/progressbar.cpp > CMakeFiles/sedcombine.dir/progressbar.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/progressbar.cpp > CMakeFiles/sedcombine.dir/progressbar.cpp.i
 
 CMakeFiles/sedcombine.dir/progressbar.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/progressbar.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/progressbar.cpp -o CMakeFiles/sedcombine.dir/progressbar.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/progressbar.cpp -o CMakeFiles/sedcombine.dir/progressbar.cpp.s
 
 CMakeFiles/sedcombine.dir/spectrumft.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/spectrumft.cpp.o: ../spectrumft.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/sedcombine.dir/spectrumft.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/spectrumft.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/spectrumft.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/sedcombine.dir/spectrumft.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/spectrumft.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.cpp
 
 CMakeFiles/sedcombine.dir/spectrumft.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/spectrumft.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/spectrumft.cpp > CMakeFiles/sedcombine.dir/spectrumft.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.cpp > CMakeFiles/sedcombine.dir/spectrumft.cpp.i
 
 CMakeFiles/sedcombine.dir/spectrumft.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/spectrumft.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/spectrumft.cpp -o CMakeFiles/sedcombine.dir/spectrumft.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.cpp -o CMakeFiles/sedcombine.dir/spectrumft.cpp.s
 
 CMakeFiles/sedcombine.dir/subbandpassband.cpp.o: CMakeFiles/sedcombine.dir/flags.make
 CMakeFiles/sedcombine.dir/subbandpassband.cpp.o: ../subbandpassband.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/sedcombine.dir/subbandpassband.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/subbandpassband.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/subbandpassband.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/sedcombine.dir/subbandpassband.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/sedcombine.dir/subbandpassband.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/subbandpassband.cpp
 
 CMakeFiles/sedcombine.dir/subbandpassband.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/sedcombine.dir/subbandpassband.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/subbandpassband.cpp > CMakeFiles/sedcombine.dir/subbandpassband.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/subbandpassband.cpp > CMakeFiles/sedcombine.dir/subbandpassband.cpp.i
 
 CMakeFiles/sedcombine.dir/subbandpassband.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/sedcombine.dir/subbandpassband.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/subbandpassband.cpp -o CMakeFiles/sedcombine.dir/subbandpassband.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/subbandpassband.cpp -o CMakeFiles/sedcombine.dir/subbandpassband.cpp.s
 
 # Object files for target sedcombine
 sedcombine_OBJECTS = \
@@ -270,7 +270,7 @@ sedcombine: /usr/lib64/libgslcblas.so
 sedcombine: /usr/lib64/libboost_system-mt.so
 sedcombine: /usr/lib64/libboost_filesystem-mt.so
 sedcombine: CMakeFiles/sedcombine.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable sedcombine"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable sedcombine"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/sedcombine.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -283,6 +283,6 @@ CMakeFiles/sedcombine.dir/clean:
 .PHONY : CMakeFiles/sedcombine.dir/clean
 
 CMakeFiles/sedcombine.dir/depend:
-	cd /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/sedcombine.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/sedcombine.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/sedcombine.dir/depend
 

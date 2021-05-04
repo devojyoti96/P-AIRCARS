@@ -365,6 +365,8 @@ CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/sedcombine.dir/rmsynthesis.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/sedcombine.dir/spectrumft.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/sedcombine.dir/spectrumft.cpp.o: ../gnuplot.h

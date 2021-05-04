@@ -1,4 +1,4 @@
-# Install script for directory: /data1/devojyoti/PhD/PAIRCARS/mwa-reduce
+# Install script for directory: /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

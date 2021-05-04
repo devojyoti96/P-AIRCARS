@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/threadpool.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/threadpool.h
 sched.h
 -
 condition_variable
@@ -22,7 +22,7 @@ thread
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -36,7 +36,7 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -46,7 +46,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/beam2016implementation.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/beam2016implementation.h
 algorithm
 -
 complex
@@ -68,17 +68,17 @@ boost/math/special_functions/legendre.hpp
 H5Cpp.h
 -
 factorialtable.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/factorialtable.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/factorialtable.h
 recursive_lock.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/recursive_lock.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/recursive_lock.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/factorialtable.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/factorialtable.h
 boost/math/special_functions/factorials.hpp
 -
 ../uvector.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/recursive_lock.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/recursive_lock.h
 cstring
 -
 mutex
@@ -86,13 +86,13 @@ mutex
 system_error
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/tilebeam.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam.h
 tilebeam2016.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/tilebeam2016.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam2016.h
 tilebeambase.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/tilebeambase.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeambase.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/tilebeam2016.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam2016.h
 complex
 -
 map
@@ -100,15 +100,15 @@ map
 set
 -
 beam2016implementation.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/beam2016implementation.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/beam2016implementation.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/tilebeambase.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeambase.h
 casacore/measures/Measures/MDirection.h
 -
 casacore/measures/Measures/MCDirection.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp
 stdexcept
 -
 casacore/measures/TableMeasures/ScalarMeasColumn.h
@@ -122,11 +122,11 @@ casacore/measures/Measures/MDirection.h
 casacore/tables/Tables/TableRecord.h
 -
 beamevaluator.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.h
 banddata.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.h
 casacore/ms/MeasurementSets/MeasurementSet.h
 -
 casacore/measures/Measures/MPosition.h
@@ -136,15 +136,15 @@ casacore/measures/Measures/MEpoch.h
 memory
 -
 beam/tilebeam.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beam/tilebeam.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam.h
 matrix2x2.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
 model/modelsource.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
 model/model.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
 complex
 -
 limits
@@ -152,27 +152,27 @@ limits
 sstream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
 map
 -
 measurement.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/measurement.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measurement.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/measurement.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measurement.h
 cstring
 -
 ../polarization.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
 model.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
 modelparser.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelparser.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelparser.h
 ../units/radeccoord.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/units/radeccoord.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/radeccoord.h
 algorithm
 -
 cstdlib
@@ -184,35 +184,35 @@ fstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
 algorithm
 -
 vector
 -
 modelsource.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelcomponent.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelcomponent.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
 measuredsed.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
 powerlawsed.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
 ../units/imagecoordinates.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/units/imagecoordinates.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/imagecoordinates.h
 ../units/radeccoord.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/units/radeccoord.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/radeccoord.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelparser.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelparser.h
 model.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
 modelsource.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
 tokenizer.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/tokenizer.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/tokenizer.h
 powerlawsed.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
 cstdlib
 -
 fstream
@@ -220,7 +220,7 @@ fstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
 algorithm
 -
 string
@@ -228,21 +228,21 @@ string
 sstream
 -
 modelcomponent.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/modelcomponent.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelcomponent.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
 ../polynomialfitter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polynomialfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
 measurement.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/measurement.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measurement.h
 ../nlplfitter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
 ../polarization.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 cmath
 -
 iostream
@@ -258,15 +258,15 @@ limits
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/tokenizer.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/tokenizer.h
 fstream
 -
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
 nlplfitter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
 stdexcept
 -
 cmath
@@ -280,15 +280,15 @@ gsl/gsl_vector.h
 gsl/gsl_multifit_nlin.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
 cmath
 -
 memory
 -
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/phasecal.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/phasecal.cpp
 iostream
 -
 string.h
@@ -306,17 +306,17 @@ cmath
 fstream
 -
 banddata.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
 predicter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 stdint.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/stdint.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/stdint.h
 model/model.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 complex
 -
 stdexcept
@@ -326,33 +326,33 @@ set
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polynomialfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 array
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.cpp
 predicter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.h
 beamevaluator.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.h
 solutionfile.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
 units/imagecoordinates.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/units/imagecoordinates.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/imagecoordinates.h
 model/model.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.h
 complex
 -
 vector
 -
 aocommon/threadpool.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/threadpool.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/threadpool.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
 cstring
 -
 string
@@ -370,7 +370,7 @@ vector
 stdint.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/units/imagecoordinates.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/imagecoordinates.h
 algorithm
 -
 cmath
@@ -378,7 +378,7 @@ cmath
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/units/radeccoord.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/radeccoord.h
 string
 -
 sstream
@@ -390,9 +390,9 @@ cstdlib
 cmath
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h
@@ -2323,4 +2323,18 @@ casacore/casa/aips.h
 -
 casacore/casa/Containers/RecordRep.h
 -
+
+/usr/local/include/mpi.h
+stddef.h
+-
+mpi_portable_platform.h
+/usr/local/include/mpi_portable_platform.h
+openmpi/ompi/mpi/cxx/mpicxx.h
+/usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
+
+/usr/local/include/mpi_portable_platform.h
+omp.h
+/usr/local/include/omp.h
+omp.h
+/usr/local/include/omp.h
 

@@ -130,4 +130,6 @@ CMakeFiles/flagantennae.dir/flagantennae.cpp.o: /usr/local/include/casacore/tabl
 CMakeFiles/flagantennae.dir/flagantennae.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/flagantennae.dir/flagantennae.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/flagantennae.dir/flagantennae.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/flagantennae.dir/flagantennae.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/flagantennae.dir/flagantennae.cpp.o: /usr/local/include/mpi_portable_platform.h
 

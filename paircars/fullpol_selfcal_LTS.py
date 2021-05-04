@@ -1040,14 +1040,6 @@ class PolSelfcal:
 		data[:,:,2,:]=u
 		ia.putchunk(data)
 		ia.close()
-		rmsi=imstat(imagename=imagename,box=self.rms_box,stokes='I')['rms'][0]
-		rmsq=imstat(imagename=imagename,box=self.rms_box,stokes='Q')['rms'][0]
-		rmsu=imstat(imagename=imagename,box=self.rms_box,stokes='U')['rms'][0]
-		rmsv=imstat(imagename=imagename,box=self.rms_box,stokes='V')['rms'][0]
-		posi=np.where(abs(i)<(sigma*rmsi))
-		posq=np.where(abs(q)<(sigma*rmsq))
-		posu=np.where(abs(u)<(sigma*rmsu))
-		posv=np.where(abs(v)<(sigma*rmsv))
 		ia.open(modelname) # Correcting model
 		datam=ia.getchunk()
 		im=datam[:,:,0,:]
@@ -1057,14 +1049,10 @@ class PolSelfcal:
 		posum=np.where(um==0)
 		qm=qm-(q_leakage*im)
 		um=um-(u_leakage*im)
-		qm[posq]=0
-		um[posu]=0
 		qm[posqm]=0
 		um[posum]=0
 		datam[:,:,1,:]=qm
 		datam[:,:,2,:]=um
-		datam[:,:,0,:][posi]=0
-		datam[:,:,3,:][posv]=0
 		ia.putchunk(datam)
 		ia.close()
 		if overwrite==True:
@@ -1247,6 +1235,7 @@ class PolSelfcal:
 					os.chdir(self.cwd)
 					os.system('rm -rf casa*log')
 					return 7
+				self.pollog_verbose.info('poldistortion_correction='+str(poldistortion_correction)+'\n')
 				if poldistortion_correction==False:
 					self.pollog_verbose.info('cal.applycal(msname=\''+self.msname+'\',gaintable=\''+caltable_name+'\',applymode=\'calflag\',flagbackup=True)\n')
 					cal.applycal(msname=self.msname,gaintable=caltable_name,applymode='calflag',flagbackup=True) # Applying the solution
@@ -1257,13 +1246,14 @@ class PolSelfcal:
 						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
 						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
 					if do_solarqu_cor==True:
-						tb.open(self.msname,nomodify=False)
+						tb.open(self.msname)
 						cor_data=tb.getcol('CORRECTED_DATA')
+						tb.close()
+						tb.open(self.msname,nomodify=False)
 						tb.putcol('DATA',cor_data)
 						tb.flush()
 						tb.close()
-				self.pollog_verbose.info('poldistortion_correction='+str(poldistortion_correction)+'\n')
-				if poldistortion_correction==True:
+				elif poldistortion_correction==True:
 					self.pollog_verbose.info('self.cal_poldistortion(\''+caltable_name+'\',poldistortion_matrix='+poldistortion_matrix+')\n')
 					X,inv_X,H,inv_H,U,inv_U,poldist_file=self.cal_poldistortion(caltable_name,poldistortion_matrix=poldistortion_matrix)
 					if poldistortion_type=='polconversion':
@@ -1286,8 +1276,10 @@ class PolSelfcal:
 					fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
 					if do_solarqu_cor==True:
 						tb=table()
-						tb.open(self.msname,nomodify=False)
+						tb.open(self.msname)
 						cor_data=tb.getcol('CORRECTED_DATA')
+						tb.close()
+						tb.open(self.msname,nomodify=False)
 						tb.putcol('DATA',cor_data)
 						tb.flush()
 						tb.close()

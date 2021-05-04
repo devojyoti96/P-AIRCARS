@@ -236,6 +236,8 @@ CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/table
 CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
+CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/subtrmodel.dir/fftwmanager.cpp.o: ../fftwmanager.cpp
 CMakeFiles/subtrmodel.dir/fftwmanager.cpp.o: ../fftwmanager.h
@@ -494,6 +496,8 @@ CMakeFiles/subtrmodel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/
 CMakeFiles/subtrmodel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/subtrmodel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/subtrmodel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/subtrmodel.dir/mspredicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/subtrmodel.dir/mspredicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/subtrmodel.dir/nlplfitter.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/subtrmodel.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
@@ -700,6 +704,8 @@ CMakeFiles/subtrmodel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Ta
 CMakeFiles/subtrmodel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableDesc.h
 CMakeFiles/subtrmodel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/subtrmodel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/subtrmodel.dir/predicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/subtrmodel.dir/predicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/subtrmodel.dir/progressbar.cpp.o: ../progressbar.cpp
 CMakeFiles/subtrmodel.dir/progressbar.cpp.o: ../progressbar.h
@@ -921,4 +927,6 @@ CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o: /usr/local/include/casacore/tables/T
 CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o: /usr/local/include/mpi_portable_platform.h
 

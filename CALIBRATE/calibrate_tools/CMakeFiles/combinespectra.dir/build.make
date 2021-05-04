@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/combinespectra.dir/depend.make
@@ -59,133 +59,133 @@ include CMakeFiles/combinespectra.dir/flags.make
 
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.o: ../experiments/spectrummaker/combinespectra.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/spectrummaker/combinespectra.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/spectrummaker/combinespectra.cpp
 
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/spectrummaker/combinespectra.cpp > CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/spectrummaker/combinespectra.cpp > CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.i
 
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/spectrummaker/combinespectra.cpp -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/spectrummaker/combinespectra.cpp -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/combinespectra.cpp.s
 
 CMakeFiles/combinespectra.dir/beamevaluator.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/beamevaluator.cpp.o: ../beamevaluator.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/combinespectra.dir/beamevaluator.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/beamevaluator.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/combinespectra.dir/beamevaluator.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/beamevaluator.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp
 
 CMakeFiles/combinespectra.dir/beamevaluator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/beamevaluator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.cpp > CMakeFiles/combinespectra.dir/beamevaluator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp > CMakeFiles/combinespectra.dir/beamevaluator.cpp.i
 
 CMakeFiles/combinespectra.dir/beamevaluator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/beamevaluator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/beamevaluator.cpp -o CMakeFiles/combinespectra.dir/beamevaluator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp -o CMakeFiles/combinespectra.dir/beamevaluator.cpp.s
 
 CMakeFiles/combinespectra.dir/imageweights.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/imageweights.cpp.o: ../imageweights.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/combinespectra.dir/imageweights.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/imageweights.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/imageweights.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/combinespectra.dir/imageweights.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/imageweights.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/imageweights.cpp
 
 CMakeFiles/combinespectra.dir/imageweights.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/imageweights.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/imageweights.cpp > CMakeFiles/combinespectra.dir/imageweights.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/imageweights.cpp > CMakeFiles/combinespectra.dir/imageweights.cpp.i
 
 CMakeFiles/combinespectra.dir/imageweights.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/imageweights.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/imageweights.cpp -o CMakeFiles/combinespectra.dir/imageweights.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/imageweights.cpp -o CMakeFiles/combinespectra.dir/imageweights.cpp.s
 
 CMakeFiles/combinespectra.dir/model/model.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/model/model.cpp.o: ../model/model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/combinespectra.dir/model/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/model/model.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/combinespectra.dir/model/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
 
 CMakeFiles/combinespectra.dir/model/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/model/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/combinespectra.dir/model/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/combinespectra.dir/model/model.cpp.i
 
 CMakeFiles/combinespectra.dir/model/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/model/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/combinespectra.dir/model/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/combinespectra.dir/model/model.cpp.s
 
 CMakeFiles/combinespectra.dir/mspredicter.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/mspredicter.cpp.o: ../mspredicter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/combinespectra.dir/mspredicter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/mspredicter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/mspredicter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/combinespectra.dir/mspredicter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/mspredicter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mspredicter.cpp
 
 CMakeFiles/combinespectra.dir/mspredicter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/mspredicter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/mspredicter.cpp > CMakeFiles/combinespectra.dir/mspredicter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mspredicter.cpp > CMakeFiles/combinespectra.dir/mspredicter.cpp.i
 
 CMakeFiles/combinespectra.dir/mspredicter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/mspredicter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/mspredicter.cpp -o CMakeFiles/combinespectra.dir/mspredicter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mspredicter.cpp -o CMakeFiles/combinespectra.dir/mspredicter.cpp.s
 
 CMakeFiles/combinespectra.dir/multibanddata.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/multibanddata.cpp.o: ../multibanddata.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/combinespectra.dir/multibanddata.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/multibanddata.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/multibanddata.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/combinespectra.dir/multibanddata.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/multibanddata.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/multibanddata.cpp
 
 CMakeFiles/combinespectra.dir/multibanddata.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/multibanddata.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/multibanddata.cpp > CMakeFiles/combinespectra.dir/multibanddata.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/multibanddata.cpp > CMakeFiles/combinespectra.dir/multibanddata.cpp.i
 
 CMakeFiles/combinespectra.dir/multibanddata.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/multibanddata.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/multibanddata.cpp -o CMakeFiles/combinespectra.dir/multibanddata.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/multibanddata.cpp -o CMakeFiles/combinespectra.dir/multibanddata.cpp.s
 
 CMakeFiles/combinespectra.dir/nlplfitter.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/combinespectra.dir/nlplfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/combinespectra.dir/nlplfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
 
 CMakeFiles/combinespectra.dir/nlplfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/nlplfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/combinespectra.dir/nlplfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/combinespectra.dir/nlplfitter.cpp.i
 
 CMakeFiles/combinespectra.dir/nlplfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/nlplfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/combinespectra.dir/nlplfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/combinespectra.dir/nlplfitter.cpp.s
 
 CMakeFiles/combinespectra.dir/predicter.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/predicter.cpp.o: ../predicter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/combinespectra.dir/predicter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/predicter.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/combinespectra.dir/predicter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/predicter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.cpp
 
 CMakeFiles/combinespectra.dir/predicter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/predicter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.cpp > CMakeFiles/combinespectra.dir/predicter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.cpp > CMakeFiles/combinespectra.dir/predicter.cpp.i
 
 CMakeFiles/combinespectra.dir/predicter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/predicter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/predicter.cpp -o CMakeFiles/combinespectra.dir/predicter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/predicter.cpp -o CMakeFiles/combinespectra.dir/predicter.cpp.s
 
 CMakeFiles/combinespectra.dir/progressbar.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/progressbar.cpp.o: ../progressbar.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/combinespectra.dir/progressbar.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/progressbar.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/progressbar.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/combinespectra.dir/progressbar.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/progressbar.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/progressbar.cpp
 
 CMakeFiles/combinespectra.dir/progressbar.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/progressbar.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/progressbar.cpp > CMakeFiles/combinespectra.dir/progressbar.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/progressbar.cpp > CMakeFiles/combinespectra.dir/progressbar.cpp.i
 
 CMakeFiles/combinespectra.dir/progressbar.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/progressbar.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/progressbar.cpp -o CMakeFiles/combinespectra.dir/progressbar.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/progressbar.cpp -o CMakeFiles/combinespectra.dir/progressbar.cpp.s
 
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.o: CMakeFiles/combinespectra.dir/flags.make
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.o: ../experiments/spectrummaker/spectrummaker.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.o -c /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/spectrummaker/spectrummaker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/spectrummaker/spectrummaker.cpp
 
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/spectrummaker/spectrummaker.cpp > CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/spectrummaker/spectrummaker.cpp > CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.i
 
 CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/experiments/spectrummaker/spectrummaker.cpp -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/spectrummaker/spectrummaker.cpp -o CMakeFiles/combinespectra.dir/experiments/spectrummaker/spectrummaker.cpp.s
 
 # Object files for target combinespectra
 combinespectra_OBJECTS = \
@@ -270,7 +270,7 @@ combinespectra: /usr/local/lib/libcasa_casa.so
 combinespectra: /usr/lib64/libgsl.so
 combinespectra: /usr/lib64/libgslcblas.so
 combinespectra: CMakeFiles/combinespectra.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable combinespectra"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable combinespectra"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/combinespectra.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -283,6 +283,6 @@ CMakeFiles/combinespectra.dir/clean:
 .PHONY : CMakeFiles/combinespectra.dir/clean
 
 CMakeFiles/combinespectra.dir/depend:
-	cd /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build /data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/combinespectra.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/combinespectra.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/combinespectra.dir/depend
 

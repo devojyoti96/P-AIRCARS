@@ -334,7 +334,7 @@ double det(std::complex<double> mat[4])
 {
     std::complex<double> d;
 	d = sqrt(mat[0]*mat[3]-mat[1]*mat[2]);
-	double res = (real(d)*real(d))-(imag(d)*imag(d));	
+	double res = (real(d)*real(d))+(imag(d)*imag(d));	
     return res;
 } 
 
@@ -351,10 +351,11 @@ void CalibrationMethod::Execute(double& precisionLimit, size_t& nIter)
 	double d[_nAntenna];
 	std:: fill(d,d+_nAntenna,1.0);
 	double stepsize = 0.5;
-	double chisq=calculateChisq(_jonesSolutions.data());
-	double chisq1 =0.0;
-	double chidiff;
+	//double chisq=calculateChisq(_jonesSolutions.data());
+	//double chisq1 =0.0;
+	//double chidiff;
 	double maxval;
+	double maxfro;
 	ao::uvector<bool> antennaResults(_nAntenna, false);
 	do
 	{
@@ -383,6 +384,7 @@ void CalibrationMethod::Execute(double& precisionLimit, size_t& nIter)
 		// TODO stepsize based on something
 		//stepsize *= 0.99;
 		double tempchanges[_nAntenna];
+		double fro[_nAntenna];
 		for(size_t ant=0; ant!=_nAntenna; ++ant)
 		{
 			double changeSizes[4];
@@ -390,60 +392,49 @@ void CalibrationMethod::Execute(double& precisionLimit, size_t& nIter)
 				double alpha = Matrix2x2::RotationAngle(nextJonesPtr);
 				std::complex<double> temp[4];
 				Matrix2x2::RotationMatrix(temp, alpha);
+				std::complex<double> mat[4] = {std::complex<double>(1,0),std::complex<double>(0,0),std::complex<double>(0,0), std::complex<double>(1,0)};
+				std::complex<double> mat1[4] = {std::complex<double>(1,0),std::complex<double>(0,0),std::complex<double>(0,0), std::complex<double>(1,0)};
 				for(size_t p=0; p!=4; ++p)
 				{
 					*jonesPtr = *jonesPtr * (1.0-stepsize) + temp[p] * stepsize;
+					mat1[p]=abs(temp[p]-*jonesPtr);
+					mat[4]=*jonesPtr;
 					changeSizes[p] = std::norm(*jonesPtr - temp[p]);
 					++jonesPtr;
 				}
 				nextJonesPtr += 4;
 				tempchanges[ant]=my_maxfinder(changeSizes,4);
+				fro[ant]=frobeniusNorm(mat1);
 			}
-			else {
-					if (d[ant]>0.1)
+			else {	
+					std::complex<double> mat[4] = {std::complex<double>(1,0),std::complex<double>(0,0),std::complex<double>(0,0), std::complex<double>(1,0)};
+					std::complex<double> mat1[4] = {std::complex<double>(1,0),std::complex<double>(0,0),std::complex<double>(0,0), std::complex<double>(1,0)};
+					for(size_t p=0; p!=4; ++p)
 					{	
-						std::complex<double> mat[4] = {std::complex<double>(1,0),std::complex<double>(0,0),std::complex<double>(0,0), std::complex<double>(1,0)};
-						for(size_t p=0; p!=4; ++p)
-						{
-							mat[p]=*nextJonesPtr;	
-							changeSizes[p] = std::norm(*jonesPtr - *nextJonesPtr);
-							*jonesPtr = *jonesPtr * (1.0-stepsize) + *nextJonesPtr * stepsize;
-							++jonesPtr;
-							++nextJonesPtr;
-						}
-						d[ant]=det(mat);
+						changeSizes[p] = std::norm(*jonesPtr - *nextJonesPtr);
+						*jonesPtr = *jonesPtr * (1.0-stepsize) + *nextJonesPtr * stepsize;
+						mat[p]=*jonesPtr;
+						mat1[p]=abs(*nextJonesPtr-*jonesPtr);
+						++jonesPtr;
+						++nextJonesPtr;
 					}
-					else{
-							for (size_t p=0;p!=4;++p)
-							{
-								if (p==0) *jonesPtr = std::complex<double>(1.0,0.0);
-								if (p==1) *jonesPtr = std::complex<double>(0.0,0.0);
-								if (p==2) *jonesPtr = std::complex<double>(0.0,0.0);
-								if (p==3) *jonesPtr = std::complex<double>(1.0,0.0);
-								++jonesPtr;
-								++nextJonesPtr;
-							}
-						}
+					d[ant]=det(mat);
+					fro[ant]=frobeniusNorm(mat1)/frobeniusNorm(mat);	
 					tempchanges[ant]=my_maxfinder(changeSizes,4);
 			}
 		}
 		
 		continueIterating = false;
-		chidiff= std::abs(chisq-chisq1)/chisq;
+		//chidiff= std::abs(chisq-chisq1)/chisq;
 		maxval=my_maxfinder(tempchanges,_nAntenna);
-		if (chidiff>precisionLimit || maxval>precisionLimit)			
-			continueIterating = true;
-			if (chisq1==0.0)
-				{chisq1=calculateChisq(nextJones.data());}
-			else{
-				chisq=chisq1;
-				chisq1=calculateChisq(nextJones.data());
-				}
-		
+		maxfro=my_maxfinder(fro,_nAntenna);
+		//std :: cout<<"MAXfro: "<<maxfro<<"\n";
+		if (maxfro>precisionLimit || maxval>precisionLimit)			
+			continueIterating = true;	
 	} while(continueIterating && iterationNumber<nIter);
 	//reportDistances();
 	nIter = iterationNumber;
-	precisionLimit=std :: max(chidiff,maxval);
+	precisionLimit=std :: max(maxfro,maxval);
 	std::complex<double> *jonesPtr = _jonesSolutions.data();
 	const std::complex<double> nan(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
 	for(size_t ant=0; ant!=_nAntenna; ++ant)
@@ -460,20 +451,7 @@ void CalibrationMethod::Execute(double& precisionLimit, size_t& nIter)
 			}
 		}
 		else {
-			if (d[ant]<0.1) {
-				for(size_t p=0; p!=4; ++p)
-					{
-						if (p==0) *jonesPtr = std::complex<double>(1.0,0.0);
-						if (p==1) *jonesPtr = std::complex<double>(0.0,0.0);
-						if (p==2) *jonesPtr = std::complex<double>(0.0,0.0);
-						if (p==3) *jonesPtr = std::complex<double>(1.0,0.0);
-						++jonesPtr;
-					}
-				}
-			else
-				{
 				jonesPtr += 4;
-				}
 		}
 	}
 }

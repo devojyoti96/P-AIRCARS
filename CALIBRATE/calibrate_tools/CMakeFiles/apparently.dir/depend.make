@@ -145,6 +145,8 @@ CMakeFiles/apparently.dir/apparently.cpp.o: /usr/local/include/casacore/tables/T
 CMakeFiles/apparently.dir/apparently.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/apparently.dir/apparently.cpp.o: /usr/local/include/fitsio.h
 CMakeFiles/apparently.dir/apparently.cpp.o: /usr/local/include/longnam.h
+CMakeFiles/apparently.dir/apparently.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/apparently.dir/apparently.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/apparently.dir/fitsiochecker.cpp.o: ../fitsiochecker.cpp
 CMakeFiles/apparently.dir/fitsiochecker.cpp.o: ../fitsiochecker.h

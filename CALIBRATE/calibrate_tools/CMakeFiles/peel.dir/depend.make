@@ -236,6 +236,8 @@ CMakeFiles/peel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tabl
 CMakeFiles/peel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/peel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/peel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
+CMakeFiles/peel.dir/beamevaluator.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/peel.dir/beamevaluator.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/peel.dir/calibrationmethod.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/peel.dir/calibrationmethod.cpp.o: ../calibrationmethod.cpp
@@ -491,6 +493,8 @@ CMakeFiles/peel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables
 CMakeFiles/peel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/peel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/peel.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/peel.dir/mspredicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/peel.dir/mspredicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/peel.dir/nlplfitter.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/peel.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
@@ -647,6 +651,8 @@ CMakeFiles/peel.dir/peel.cpp.o: /usr/local/include/casacore/tables/Tables/TableD
 CMakeFiles/peel.dir/peel.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/peel.dir/peel.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/peel.dir/peel.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/peel.dir/peel.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/peel.dir/peel.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/peel.dir/peeler.cpp.o: ../aocommon/lane.h
 CMakeFiles/peel.dir/peeler.cpp.o: ../aocommon/lane_11.h
@@ -867,6 +873,8 @@ CMakeFiles/peel.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/Tabl
 CMakeFiles/peel.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/peel.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/peel.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/peel.dir/peeler.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/peel.dir/peeler.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/peel.dir/predicter.cpp.o: ../aocommon/threadpool.h
 CMakeFiles/peel.dir/predicter.cpp.o: ../aocommon/uvector_11.h
@@ -1068,4 +1076,6 @@ CMakeFiles/peel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/T
 CMakeFiles/peel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableDesc.h
 CMakeFiles/peel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/peel.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/peel.dir/predicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/peel.dir/predicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 

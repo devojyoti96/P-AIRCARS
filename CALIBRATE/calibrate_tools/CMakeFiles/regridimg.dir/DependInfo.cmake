@@ -4,10 +4,10 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/regridimg.dir/fitsiochecker.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/regridimg.dir/fitsreader.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/regridimg.dir/fitswriter.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/regridimg.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/regridimg.dir/regridimg.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/regridimg.dir/fitsiochecker.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/regridimg.dir/fitsreader.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/regridimg.dir/fitswriter.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/regridimg.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/regridimg.dir/regridimg.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

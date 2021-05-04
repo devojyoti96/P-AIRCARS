@@ -236,6 +236,8 @@ CMakeFiles/phasecal.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/
 CMakeFiles/phasecal.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/phasecal.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/phasecal.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
+CMakeFiles/phasecal.dir/beamevaluator.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/phasecal.dir/beamevaluator.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/phasecal.dir/model/model.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/phasecal.dir/model/model.cpp.o: ../model/measuredsed.h
@@ -406,6 +408,8 @@ CMakeFiles/phasecal.dir/phasecal.cpp.o: /usr/local/include/casacore/tables/Table
 CMakeFiles/phasecal.dir/phasecal.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/phasecal.dir/phasecal.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/phasecal.dir/phasecal.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/phasecal.dir/phasecal.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/phasecal.dir/phasecal.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/phasecal.dir/predicter.cpp.o: ../aocommon/threadpool.h
 CMakeFiles/phasecal.dir/predicter.cpp.o: ../aocommon/uvector_11.h
@@ -607,4 +611,6 @@ CMakeFiles/phasecal.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tabl
 CMakeFiles/phasecal.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableDesc.h
 CMakeFiles/phasecal.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/phasecal.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/phasecal.dir/predicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/phasecal.dir/predicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 

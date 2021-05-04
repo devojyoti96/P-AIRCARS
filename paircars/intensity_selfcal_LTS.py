@@ -983,7 +983,6 @@ class IntensitySelfcal:
 		Return:
 		Instrumental polarisation matrix
 		'''
-		print (imagetype)
 		stokes=self.get_IQUV(stokes_image,imagetype=imagetype)
 		XX = stokes['I'] + stokes['Q']
 		XY = stokes['U'] + stokes['V'] * 1j
@@ -1235,14 +1234,6 @@ class IntensitySelfcal:
 		data[:,:,2,:]=u
 		ia.putchunk(data)
 		ia.close()
-		rmsi=imstat(imagename=imagename,box=self.rms_box,stokes='I')['rms'][0]
-		rmsq=imstat(imagename=imagename,box=self.rms_box,stokes='Q')['rms'][0]
-		rmsu=imstat(imagename=imagename,box=self.rms_box,stokes='U')['rms'][0]
-		rmsv=imstat(imagename=imagename,box=self.rms_box,stokes='V')['rms'][0]
-		posi=np.where(abs(i)<(sigma*rmsi))
-		posq=np.where(abs(q)<(sigma*rmsq))
-		posu=np.where(abs(u)<(sigma*rmsu))
-		posv=np.where(abs(v)<(sigma*rmsv))
 		ia.open(modelname) # Correcting model
 		datam=ia.getchunk()
 		im=datam[:,:,0,:]
@@ -1252,14 +1243,10 @@ class IntensitySelfcal:
 		posum=np.where(um==0)
 		qm=qm-(q_leakage*im)
 		um=um-(u_leakage*im)
-		qm[posq]=0
-		um[posu]=0
 		qm[posqm]=0
 		um[posum]=0
 		datam[:,:,1,:]=qm
 		datam[:,:,2,:]=um
-		datam[:,:,0,:][posi]=0
-		datam[:,:,3,:][posv]=0
 		ia.putchunk(datam)
 		ia.close()
 		if overwrite==True:
@@ -1272,18 +1259,31 @@ class IntensitySelfcal:
 		os.system('rm -rf casa*log')
 		return imagename,modelname
 
-	def leakage_correct_gaincal(self,imagename,modelname,sigma,do_bandpass=False,calibrator_caltable=[]):
+	def leakage_correct_gaincal(self,rms_thresh,sigma,ref_ant,minsnr,do_bandpass=False,calibrator_caltable=[]):
 		'''
 		Function to perform Stokes Q,U leakage corrected gain calibration
 		Parameters:
-		imagename = Name of the Stokes IQUV image
-		modelname = Name of the Stokes IQUV model
-		sigma = Threshold sigma to choose Stokes I region
+		rms_thresh = [] , rms list for each stokes plane 
+		sigma = Threshold sigma for rms based thresholding
+		ref_ant = Reference antenna
+		minsnr = Minimum gain SNR
 		do_bandpass = Perform bandpass calibration
 		calibrator_caltable = [], list of previous caltables 
 		Return:
 		Leakage corrected gaincal/bandpass table
 		'''		
+		mask_rad=int((32*60)/self.cellsize) # Creating a mask with 32 arcmin radius centered on the image
+		mask_str='circle[['+str(self.imsize/2)+'pix,'+str(self.imsize/2)+'pix],'+str(mask_rad)+'pix]'
+		threshold=[str(rms*sigma)+'Jy' for rms in rms_thresh]
+		os.system('rm -rf junk_IQUV* *qucor* *.pbuncor')
+		self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\'junk_IQUV\',selectdata=True,stokes=\'IQUV\',imsize=['+str(self.imsize)+'],'+\
+			'cell='+str(self.cellsize)+',niter=100000000000,gain=0.1,threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
+			',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,mask=['+str(mask_str)+'])\n')
+		poltclean(vis=self.msname,imagename='junk_IQUV',selectdata=True,stokes='IQUV',imsize=[self.imsize],\
+			cell=self.cellsize,niter=100000000000,gain=0.1,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+			weighting='natural',interactive=False,mask=[mask_str])
+		imagename='junk_IQUV.image'
+		modelname='junk_IQUV.model'
 		mwapb=MWA_PrimaryBeam(self.msname,self.metafits,inverse_beam=False)  # Beam jones
 		self.log_verbose.info('mwapb.calc_beamjones_phasecenter(outputfile=\'\')\n')
 		beam_jones=mwapb.calc_beamjones_phasecenter(outputfile='')
@@ -1319,21 +1319,22 @@ class IntensitySelfcal:
 		if do_bandpass==False:
 			self.log_verbose.info('Doing gaincal.....\n')
 			self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)
-				+',calmode=\''+calmode+'\',solnorm=True,uvrange=\''+self.calib_uvrange+'\',gaintype=\'G\',solmode=\''+solmode+\
+				+',calmode=\'ap\',solnorm=True,uvrange=\''+self.calib_uvrange+'\',gaintype=\'G\',solmode=\'R\''+\
 				'\',rmsthresh=[10,7,5,3.5],gaintable='+str(calibrator_caltable)+')\n') 
-			gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=minsnr,calmode=calmode,solnorm=True,uvrange=self.calib_uvrange,\
-						gaintype='G',solmode=solmode,rmsthresh=[10,7,5,3.5],gaintable=calibrator_caltable) # Performing gain calibration
+			gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=minsnr,calmode='ap',solnorm=True,uvrange=self.calib_uvrange,\
+						gaintype='G',solmode='R',rmsthresh=[10,7,5,3.5],gaintable=calibrator_caltable) # Performing gain calibration
 		else:
 			self.log_verbose.info('Doing bandpass.....\n')
-			self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\''+calmode+'\',uvrange=\''+self.calib_uvrange+\
-					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\''+solmode+'\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
-			self.bpass_solver(caltable_name,spw='',timerange='',calmode=calmode,uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
-									solmode=solmode,rmsthresh=[15,10,8],gaintable=calibrator_caltable) # Perform bandpass calibration
+			self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\'ap\',uvrange=\''+self.calib_uvrange+\
+					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\'R\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
+			self.bpass_solver(caltable_name,spw='',timerange='',calmode='ap',uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
+									solmode='R',rmsthresh=[15,10,8],gaintable=calibrator_caltable) # Perform bandpass calibration
 		applycal_caltable=copy.deepcopy(calibrator_caltable)
 		applycal_caltable.append(caltable_name)
 		self.log_verbose.info('Applying solutions from :'+str(applycal_caltable)+'\n')
 		self.log_verbose.info('applycal(vis=\''+self.msname+'\',gaintable='+str(applycal_caltable)+',applymode=\'calflag\',flagbackup=True,calwt=[False])\n')	
 		applycal(vis=self.msname,gaintable=applycal_caltable,applymode='calflag',flagbackup=True,calwt=[False]) # Applying the solution
+		os.system('rm -rf junk_IQUV*')
 		return caltable_name
 	
 	def selfcal_iteration(self,num_iter,rms_thresh,sigma,maskstr,antenna_to_use,startmodel,startmask,ref_ant,minsnr,calmode,maskfile='',want_auto_masking=False,\

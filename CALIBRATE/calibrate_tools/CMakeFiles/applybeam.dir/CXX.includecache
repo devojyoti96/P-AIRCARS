@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -20,11 +20,11 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/applybeam.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/applybeam.cpp
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
 fitswriter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.h
 iostream
 -
 vector
@@ -34,9 +34,9 @@ stdexcept
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
 fitsio.h
 -
 sstream
@@ -44,15 +44,15 @@ sstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 stdexcept
 -
 sstream
@@ -66,7 +66,7 @@ casacore/casa/Quanta/MVTime.h
 casacore/measures/Measures/MeasConvert.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
 string
 -
 vector
@@ -74,17 +74,17 @@ vector
 fitsio.h
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp
 fitswriter.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.h
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 stdexcept
 -
 sstream
@@ -100,7 +100,7 @@ limits
 iostream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.h
 fitsio.h
 -
 string
@@ -112,11 +112,11 @@ map
 cmath
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
 complex
 -
 stdexcept
@@ -126,9 +126,9 @@ set
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h

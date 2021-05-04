@@ -159,4 +159,6 @@ CMakeFiles/applysolutions.dir/applysolutions.cpp.o: /usr/local/include/casacore/
 CMakeFiles/applysolutions.dir/applysolutions.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/applysolutions.dir/applysolutions.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
 CMakeFiles/applysolutions.dir/applysolutions.cpp.o: /usr/local/include/casacore/tables/Tables/TableTrace.h
+CMakeFiles/applysolutions.dir/applysolutions.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/applysolutions.dir/applysolutions.cpp.o: /usr/local/include/mpi_portable_platform.h
 

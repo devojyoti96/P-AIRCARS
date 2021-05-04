@@ -226,7 +226,7 @@ class AccessMS:
 		model_chan=[]
 		for chan in range(nchan):
 			model_data=model[:,chan,:]
-			if np.abs(np.sum(model_data))==0.0:
+			if np.abs(np.sum(model_data))==0.0 or np.abs(np.sum(model_data))==len(model_data.flatten())/2:
 				nomodel_chan.append(chan)
 			else:
 				model_chan.append(chan)

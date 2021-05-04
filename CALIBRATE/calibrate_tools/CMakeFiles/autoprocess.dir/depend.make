@@ -246,6 +246,8 @@ CMakeFiles/autoprocess.dir/autoprocess.cpp.o: /usr/local/include/casacore/tables
 CMakeFiles/autoprocess.dir/autoprocess.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/autoprocess.dir/autoprocess.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
 CMakeFiles/autoprocess.dir/autoprocess.cpp.o: /usr/local/include/casacore/tables/Tables/TableTrace.h
+CMakeFiles/autoprocess.dir/autoprocess.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/autoprocess.dir/autoprocess.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: ../banddata.h
@@ -482,6 +484,8 @@ CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tabl
 CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
+CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/autoprocess.dir/beamevaluator.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/autoprocess.dir/calibrationmethod.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/autoprocess.dir/calibrationmethod.cpp.o: ../calibrationmethod.cpp
@@ -713,6 +717,8 @@ CMakeFiles/autoprocess.dir/calibrator.cpp.o: /usr/local/include/casacore/tables/
 CMakeFiles/autoprocess.dir/calibrator.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/autoprocess.dir/calibrator.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/autoprocess.dir/calibrator.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/autoprocess.dir/calibrator.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/autoprocess.dir/calibrator.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/autoprocess.dir/model/model.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/autoprocess.dir/model/model.cpp.o: ../model/measuredsed.h
@@ -961,6 +967,8 @@ CMakeFiles/autoprocess.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables
 CMakeFiles/autoprocess.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/autoprocess.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/autoprocess.dir/mspredicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/autoprocess.dir/mspredicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/autoprocess.dir/mspredicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/autoprocess.dir/nlplfitter.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/autoprocess.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
@@ -1186,6 +1194,8 @@ CMakeFiles/autoprocess.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tabl
 CMakeFiles/autoprocess.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/autoprocess.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/autoprocess.dir/peeler.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/autoprocess.dir/peeler.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/autoprocess.dir/peeler.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/autoprocess.dir/predicter.cpp.o: ../aocommon/threadpool.h
 CMakeFiles/autoprocess.dir/predicter.cpp.o: ../aocommon/uvector_11.h
@@ -1387,6 +1397,8 @@ CMakeFiles/autoprocess.dir/predicter.cpp.o: /usr/local/include/casacore/tables/T
 CMakeFiles/autoprocess.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableDesc.h
 CMakeFiles/autoprocess.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/autoprocess.dir/predicter.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/autoprocess.dir/predicter.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/autoprocess.dir/predicter.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/autoprocess.dir/progressbar.cpp.o: ../progressbar.cpp
 CMakeFiles/autoprocess.dir/progressbar.cpp.o: ../progressbar.h

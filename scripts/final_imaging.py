@@ -3,68 +3,48 @@ from paircars.basic_func import *
 from paircars.access_ms import *
 from paircars_casatasks.poltclean import *
 from paircars.flagger import *
+from astropy.io import fits
 
+def modify_header(imagename,inputfile,tclean_dic={},astrometry=False):
+	header=fits.getheader(imagename)
+	if inputfile!='' or os.path.isfile(inputfile)==True:
+		with open(inputfile,'r') as fil:
+			lines=fil.readlines()
+		for line in lines:
+			if 'timerange' in line:
+				skip_header=int(lines.index(line))
+		input_params,input_vals=np.genfromtxt(inputfile,delimiter='=',dtype=str,autostrip=True,skip_header=skip_header,skip_footer=True,usecols=(0,1),unpack=True) 
+		for key,value in zip(inp_params,inp_vals):
+			header[key]=str(value)
+	if len(tclean_dic)!=0:
+		tclean_keys=tclean_dic.keys()
+		tclean_values=tclean_dic.values()
+		for key,value in zip(tclean_keys,tclean_values):
+			header[key]=str(value)
+	header['PIPELINE']='P-AIRCARS'
+	header['Devoloper']='Devojyoti Kansabanik, Surajit Mondal'
+	header=['astrometry_corrected']=str(astrometry)
+	fits.writeto(imagename,data=fits.getdata(imagename),header=header,overwrite=True)
+	return 
 
-def export_images(imagename,savedir='',savemodel=False,saveresidual=False,savecutout=False,cutoutbox=[5,5],imageformat='FITS',poltclean_dict={},astrometry=False): #TODO :Other formats in heliocentric coordinate
+def export_images(imagename,OBSID,savedir='',savemodel=False,saveresidual=False,cutoutbox=[5,5],poltclean_dict={},inputfile='',astrometry=False): #TODO :Other formats in heliocentric coordinate
 	'''
 	Function to save final images
 	'''
-	inplines=[]
-	with open('selfcal_input.py','r') as fil:
-		lines=fil.readlines()
-	for line in lines:
-		if 'safety_standard' in line:
-			skip_header=int(lines.index(line))
-	input_params,input_vals=np.genfromtxt('selfcal_inputs.py',delimiter='=',dtype=str,autostrip=True,skip_header=skip_header,skip_footer=True,usecols=(0,1),unpack=True) 
-	for key,value in zip(inp_params,inp_vals):
-		imhead(imagename=imagename+'.image',mode='add',hdkey=key,hdvalue=value)
-	tclean_keys=poltclean_dict.keys()
-	tclean_values=poltclean_dict.values()
-	for key,value in zip(tclean_keys,tclean_values):
-		imhead(imagename=imagename+'.image',mode='add',hdkey=key,hdvalue=value)
-	if savedir=='':
-		os.makedirs(basedir+'/All_final_images')
-		imagedir=basedir+'/All_final_images'
-		if savemodel==True:
-			os.makedirs(basedir+'/All_final_models')
-			modeldir=basedir+'/All_final_models'
-		if saveresidual==True:
-			os.makedirs(basedir+'/All_final_residuals')
-			resdir=basedir+'/All_final_residuals'
-	else:
-		os.makedirs(savedir+'/All_final_images')
-		imagedir=savedir+'/All_final_images'
-		if savemodel==True:
-			os.makedirs(savedir+'/All_final_models')
-			modeldir=savedir+'/All_final_models'
-		if saveresidual==True:
-			os.makedirs(savedir+'/All_final_residuals')
-			resdir=savedir+'/All_final_residuals'
+	cwd=os.getcwd()
+	if os.path.isdir(savedir+'/All_final_images/'+str(OBSID))==False:	
+		os.makedirs(savedir+'/All_final_images/'+str(OBSID))
+	imagedir=savedir+'/All_final_images/'+str(OBSID)
+	if savemodel==True:
+		if os.path.isdir(savedir+'/All_final_models/'+str(OBSID))==False:
+			os.makedirs(savedir+'/All_final_models/'+str(OBSID))
+		modeldir=savedir+'/All_final_models/'+str(OBSID)
+	if saveresidual==True:
+		if os.path.isdir(savedir+'/All_final_residuals/'+str(OBSID))==False:
+			os.makedirs(savedir+'/All_final_residuals/'+str(OBSID))
+		resdir=savedir+'/All_final_residuals/'+str(OBSID)
 
-	if imageformat=='CASA' and savecutout==False:
-		os.system('mv '+imagename+'.image '+imagedir)
-		if savemodel==True:
-			os.system('mv '+imagename+'.model '+modeldir)
-		if saveresidual==True:
-			os.system('mv '+imagename+'.residual '+resdir)
-	elif imageformat=='CASA' and savecutout==True:
-		x_pix=int((cutoutbox[0]*3600)/self.cellsize)
-		y_pix=int((cutoutbox[1]*3600)/self.cellsize)
-		x_cen=int(self.imsize[0]/2)
-		y_cen=x_cen
-		box=str(int(x_cen-x_pix/2))+','+str(int(x_cen+x_pix/2))+','+str(int(y_cen-y_pix/2))+','+str(int(y_cen+y_pix/2))
-		imsubimage(imagename=imagename+'.image',outfile=imagedir+'/'+imagename+'.image',box=box)
-		if savemodel==True:
-			imsubimage(imagename=imagename+'.model',outfile=modeldir+'/'+imagename+'.model',box=box)
-		if saveresidual==True:
-			imsubimage(imagename=imagename+'.residual',outfile=resdir+'/'+imagename+'.residual',box=box)
-	elif savecutout==False:
-		exportfits(imagename=imagename+'.image ',fitsimage=imagedir+'/'+imagename+'_image.fits',history=False)
-		if savemodel==True:
-			exportfits(imagename=imagename+'.model ',fitsimage=modeldir+'/'+imagename+'_model.fits',history=False)
-		if saveresidual==True:
-			exportfits(imagename=imagename+'.residual ',fitsimage=resdir+'/'+imagename+'_res.fits',history=False)
-	else:
+	if len(cutoutbox)!=0:
 		x_pix=int((cutoutbox[0]*3600)/self.cellsize)
 		y_pix=int((cutoutbox[1]*3600)/self.cellsize)
 		x_cen=int(self.imsize[0]/2)
@@ -72,55 +52,67 @@ def export_images(imagename,savedir='',savemodel=False,saveresidual=False,savecu
 		box=str(int(x_cen-x_pix/2))+','+str(int(x_cen+x_pix/2))+','+str(int(y_cen-y_pix/2))+','+str(int(y_cen+y_pix/2))
 		imsubimage(imagename=imagename+'.image',outfile='cutout.image',box=box)
 		exportfits(imagename='cutout.image',fitsimage=imagedir+'/'+imagename+'_image.fits',history=False)
+		modify_header(imagedir+'/'+imagename+'_image.fits',inputfile,tclean_dic=poltclean_dict,astrometry=astrometry)
 		if savemodel==True:
 			imsubimage(imagename='cutout.model',outfile='cutout.model',box=box)
 			exportfits(imagename='cutout.model',fitsimage=modeldir+'/'+imagename+'_model.fits',history=False)
+			modify_header(modeldir+'/'+imagename+'_model.fits',inputfile,tclean_dic=poltclean_dict,astrometry=astrometry)
 		if saveresidual==True:
 			imsubimage(imagename=imagename+'.residual',outfile='cutout.residual',box=box)
 			exportfits(imagename='cutout.residual',fitsimage=resdir+'/'+imagename+'_res.fits',history=False)
+			modify_header(resdir+'/'+imagename+'_res.fits',inputfile,tclean_dic=poltclean_dict,astrometry=astrometry)
 		os.system('rm -rf cutout*')
-
-	#if other_format!='':
+	else:
+		exportfits(imagename=imagename+'.image',fitsimage=imagedir+'/'+imagename+'_image.fits',history=False)
+		modify_header(imagedir+'/'+imagename+'_image.fits',inputfile,tclean_dic=poltclean_dict,astrometry=astrometry)
+		if savemodel==True:
+			exportfits(imagename=imagename+'.model',fitsimage=modeldir+'/'+imagename+'_model.fits',history=False)
+			modify_header(modeldir+'/'+imagename+'_model.fits',inputfile,tclean_dic=poltclean_dict,astrometry=astrometry)
+		if saveresidual==True:
+			exportfits(imagename=imagename+'.residual',fitsimage=resdir+'/'+imagename+'_res.fits',history=False)
+			modify_header(resdir+'/'+imagename+'_res.fits',inputfile,tclean_dic=poltclean_dict,astrometry=astrometry)
+	os.chdir(imagedir)
 	os.system('rm -rf *.pb *.mask *.model *.image *.flux *.sumwt *.residual *.psf')
+	os.chdir(cwd)
 	return 
 
-	def get_stokes(stokes):
-		if stokes=='I':
-			return ['I']
-		elif stokes=='Q':
-			return ['Q']
-		elif stokes=='U':
-			return ['U']
-		elif stokes=='V':
-			return ['V']
-		elif stokes=='IV':
-			return ['I','V']
-		elif stokes=='QU':
-			return ['Q','U']
-		elif stokes=='IQ':
-			return ['I','Q']
-		elif stokes=='UV':
-			rerun ['U','V']
-		elif stokes=='IQUV':
-			return ['I','Q','U','V']
-		elif stokes=='RR':
-			return ['RR']
-		elif stokes=='LL':
-			return ['LL']
-		elif stokes=='XX':
-			return ['XX']
-		elif stokes=='YY':
-			return ['YY']
-		elif stokes=='RRLL':
-			return ['RR','LL']
-		elif stokes=='XXYY':
-			return ['XX','YY']
-		else:
-			return
+def get_stokes(stokes):
+	if stokes=='I':
+		return ['I']
+	elif stokes=='Q':
+		return ['Q']
+	elif stokes=='U':
+		return ['U']
+	elif stokes=='V':
+		return ['V']
+	elif stokes=='IV':
+		return ['I','V']
+	elif stokes=='QU':
+		return ['Q','U']
+	elif stokes=='IQ':
+		return ['I','Q']
+	elif stokes=='UV':
+		rerun ['U','V']
+	elif stokes=='IQUV':
+		return ['I','Q','U','V']
+	elif stokes=='RR':
+		return ['RR']
+	elif stokes=='LL':
+		return ['LL']
+	elif stokes=='XX':
+		return ['XX']
+	elif stokes=='YY':
+		return ['YY']
+	elif stokes=='RRLL':
+		return ['RR','LL']
+	elif stokes=='XXYY':
+		return ['XX','YY']
+	else:
+		return
 
 
-def make_image(msname,workdir,stokes='I',savedir='',threshold=[0.1],imsize=[],cell='',scales=[],want_automask=False,maskfile='',uvtaper='',quality_factor=1,\
-				savemodel=False,saveresidual=False,cutoutbox='5,5',imageformat='FITS'): #TODO : Wide FOV beam correction
+def make_image(msname,workdir,stokes='I',savedir='',threshold=0.1,imsize=[],cell='',scales=[],want_automask=False,maskfile='',uvtaper='',quality_factor=1,\
+				savemodel=False,saveresidual=False,cutoutbox='',inputfile=''): #TODO : Wide FOV beam correction
 	'''
 	Function to make final images
 	Parameters:		
@@ -146,8 +138,9 @@ def make_image(msname,workdir,stokes='I',savedir='',threshold=[0.1],imsize=[],ce
 		gain=0.1				
 		sigma=5
 		cycleniter=-1
+	stokes_list=get_stokes(stokes)
 
-	rmsthresh=[str(thresh*sigma)+'Jy' for i in threshold]
+	rmsthresh=[str(thresh*sigma)+'Jy']*len(stokes_list)
 	mask_rad=int((32*60)/ISC.cellsize) # Creating a mask with 32 arcmin radius centered on the image
 	mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 	poltclean(vis=msname,selectdata=True,datacolumn="corrected",imagename='temp_image',imsize=imsize,cell=cellsize,stokes=stokes,gridder='standard',\
@@ -155,7 +148,6 @@ def make_image(msname,workdir,stokes='I',savedir='',threshold=[0.1],imsize=[],ce
 	niter=100000000000,gain=0.5,threshold=rmsthresh,cycleniter=-1,cyclefactor=1.0,interactive=False,usemask="user",mask=mask_str,savemodel='modelcolumn')
 
 	rms_box='50,50,'+str(imsize-50)+','+str(int(imsize/4)) # CASA box to calculate the rms
-	stokes_list=get_stokes(stokes)
 	rms_list=[]
 	for s in stokes_list: 
 		rms_list.append(imstat(imagename='temp_image.residual',box=rms_box,stokes=s)['rms'][0])
@@ -199,7 +191,7 @@ def make_image(msname,workdir,stokes='I',savedir='',threshold=[0.1],imsize=[],ce
 
 	# Exporting images
 	##################		
-	export_images(file_str,savedir=savedir,savemodel=savemodel,saveresidual=saveresidual,cutoutbox=cutoutbox,imageformat=imageformat,poltclean_dict=poltclean_dict)
+	export_images(imagename,OBSID,savedir=savedir,savemodel=False,saveresidual=False,cutoutbox=cutoutbox,poltclean_dict=poltclean_dict,inputfile=inputfile,astrometry=False)
 	os.system('rm -rf '+file_str+'*')	
 	os.system('cd ../')	
 	os.system('rm -rf '+workdir)
@@ -209,24 +201,38 @@ def make_image(msname,workdir,stokes='I',savedir='',threshold=[0.1],imsize=[],ce
 
 # Function to run the script stand alone from command line
 if __name__='__main__':
-	usage= ' Perform final imaging.....\n'
+	usage= ' Perform final imaging\n'
 	parser = OptionParser(usage=usage)
 	parser.add_option('--msname',dest="chantime_msname",default=None,help="Name of measurement set of a single time anf frequency slice",metavar="Measurement Set")
+	parser.add_option('--basedir',dest='basedir',default=None,help='Name of the base directory',metavar='Directory path')
 	parser.add_option('--workdir',dest='workdir',default=None,help='Name of the working directory',metavar='Directory path')
 	parser.add_option('--savedir',dest='savedir',default=None,help='Directory name to save final images',metavar="Boolean")
 	parser.add_option('--savemodel',dest='savemodel',default=False,help='Want to save final models',metavar="Boolean")
 	parser.add_option('--saveres',dest="saveresidual",default=False,help="Want to save residual images",metavar="Boolean")
-	parser.add_option('--savecutout',dest='savecutout',default=False,help='Want to save curout images',metavar="Boolean")
+	parser.add_option('--stokes',dest='stokes',default='pseudoI',help='Stokes planes to image',metavar="String")
 	parser.add_option('--cutoutbox',dest='cutoutbox',default='5,5',help='Cutout box \'X_width,Y_width\' in degree',metavar="Comma separated string")
-	parser.add_option('--imageformat',dest='imageformat',default='FITS',help='Output image format',metavar="String")
-	parser.add_option('--other_format',dest='other_format',default='png',help='Other image formats to save',metavar="Comma separated string")
-	parser.add_option('--plotcontour',dest='plotcontour',default=False,help='Plot image contours',metavar="Boolean")
-	parser.add_option('--contour_levels',dest='contour_levels',default='0,0.2,0.4,0.6,0.8',help='Contour levels',metavar="Comma separated string")
-	parser.add_option('--image_delta_freq',dest='delta_f',default=40.0,help='Image frequency resolution in kHz',metavar="Float")
-	parser.add_option('--image_delta_time',dest='delta_t',default=0.5,help='Image time resolution in second',metavar="Float")
+	parser.add_option('--threshold',dest='thresh',default=0.1,help='RMS threshold for cleaning',metavar="Float")
+	parser.add_option('--imsize',dest='imsize',default=1024,help='Number of pixels in the image',metavar="Integer")
+	parser.add_option('--cell',dest='cell',default=1.0,help='Pixel size in arcsec',metavar="Float")
+	parser.add_option('--scales',dest='scales',default='0,3,6,9',help='Multiscale scales in number of pixels',metavar="Comma separated string")
+	parser.add_option('--want_automask',dest='want_automask',default=False,help='Want auto masking or not',metavar="Boolean")
+	parser.add_option('--maskfile',dest='maskfile',default='',help='Mask for imaging when auto masking is off',metavar="Maskfile or CASA mask dtring")
+	parser.add_option('--uvtaper',dest='uvtaper',default='',help='UV taper string',metavar="String")
+	parser.add_option('--quality_factor',dest='quality_factor',default=1,help='Quality factor of imaging',metavar="Integer")
+	parser.add_option('--inputfile',dest='inputfile',default='',help='Path of the P-AIRCARS input file',metavar="File path")
 	(options, args) = parser.parse_args()
-	make_image(workdir,delta_t,delta_f,savedir='',savecutout=False,imageformat='FITS',cutoutformat='png',plotcontour=False,contour_levels=[])
-	touch_file=basedir+'/.Finished_final_'+workdir
+
+	if os.path.isdir(str(options.msname))==False or options.msname==None:
+		
+
+
+
+	multiscales=str(options.scales).split(',')
+	make_image(str(options.msname),str(options.workdir),stokes=str(options.stokes),savedir=str(options.savedir),threshold=float(options.threshold),imsize=[int(options.imsize)],\
+			cell=float(options.cell),scales=multiscales,want_automask=eval(str(options.want_automask)),maskfile=str(options.maskfile),uvtaper=str(options.uvtaper),\
+			quality_factor=int(options.quality_factpr),savemodel=eval(str(options.savemodel)),saveresidual=eval(str(options.saveresidual)),\
+			cutoutbox=str(options.cutoutbox),inputfile=str(options.inputfile))
+	touch_file=basedir+'/.Finished_final_imaging_'+os.path.basename(msname).split('.ms')[0]
 	os.system('touch '+touch_file)
 	
 

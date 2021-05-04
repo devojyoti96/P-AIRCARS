@@ -371,6 +371,8 @@ CMakeFiles/render.dir/render.cpp.o: /usr/local/include/casacore/tables/Tables/Ta
 CMakeFiles/render.dir/render.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/render.dir/render.cpp.o: /usr/local/include/fitsio.h
 CMakeFiles/render.dir/render.cpp.o: /usr/local/include/longnam.h
+CMakeFiles/render.dir/render.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/render.dir/render.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/render.dir/wsclean/logger.cpp.o: ../wsclean/logger.cpp
 CMakeFiles/render.dir/wsclean/logger.cpp.o: ../wsclean/logger.h

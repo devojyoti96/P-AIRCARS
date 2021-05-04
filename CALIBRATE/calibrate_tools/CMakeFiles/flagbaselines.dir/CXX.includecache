@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -16,7 +16,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/flagbaselines.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/flagbaselines.cpp
 iostream
 -
 stdexcept
@@ -30,7 +30,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 banddata.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h
@@ -1135,4 +1135,18 @@ casacore/casa/aips.h
 -
 casacore/casa/IO/LockFile.h
 -
+
+/usr/local/include/mpi.h
+stddef.h
+-
+mpi_portable_platform.h
+/usr/local/include/mpi_portable_platform.h
+openmpi/ompi/mpi/cxx/mpicxx.h
+/usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
+
+/usr/local/include/mpi_portable_platform.h
+omp.h
+/usr/local/include/omp.h
+omp.h
+/usr/local/include/omp.h
 

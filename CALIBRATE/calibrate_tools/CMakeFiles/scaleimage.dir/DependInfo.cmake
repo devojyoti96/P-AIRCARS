@@ -4,11 +4,11 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsiochecker.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitsreader.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/scaleimage.dir/fitsreader.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/fitswriter.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/scaleimage.dir/fitswriter.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/parser/votableparser.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o"
-  "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/scaleimage.cpp" "/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/build/CMakeFiles/scaleimage.dir/scaleimage.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/scaleimage.dir/fitsreader.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/scaleimage.dir/fitswriter.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/parser/votableparser.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/scaleimage.dir/parser/votableparser.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/scaleimage.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/scaleimage.dir/scaleimage.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/flagantennae.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/flagantennae.cpp
 iostream
 -
 stdexcept
@@ -1123,4 +1123,18 @@ casacore/casa/aips.h
 -
 casacore/casa/IO/LockFile.h
 -
+
+/usr/local/include/mpi.h
+stddef.h
+-
+mpi_portable_platform.h
+/usr/local/include/mpi_portable_platform.h
+openmpi/ompi/mpi/cxx/mpicxx.h
+/usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
+
+/usr/local/include/mpi_portable_platform.h
+omp.h
+/usr/local/include/omp.h
+omp.h
+/usr/local/include/omp.h
 

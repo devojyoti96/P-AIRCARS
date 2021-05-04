@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/stopwatch.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/stopwatch.cpp
 stopwatch.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/stopwatch.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/stopwatch.h
 cmath
 -
 sstream
@@ -16,13 +16,13 @@ sstream
 boost/date_time/posix_time/posix_time.hpp
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/stopwatch.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/stopwatch.h
 boost/date_time/posix_time/posix_time_types.hpp
 -
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/storetime.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/storetime.cpp
 fstream
 -
 iostream
@@ -34,5 +34,5 @@ map
 iomanip
 -
 stopwatch.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/stopwatch.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/stopwatch.h
 

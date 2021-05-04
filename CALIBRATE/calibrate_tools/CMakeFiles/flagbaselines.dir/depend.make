@@ -131,4 +131,6 @@ CMakeFiles/flagbaselines.dir/flagbaselines.cpp.o: /usr/local/include/casacore/ta
 CMakeFiles/flagbaselines.dir/flagbaselines.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/flagbaselines.dir/flagbaselines.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/flagbaselines.dir/flagbaselines.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/flagbaselines.dir/flagbaselines.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/flagbaselines.dir/flagbaselines.cpp.o: /usr/local/include/mpi_portable_platform.h
 

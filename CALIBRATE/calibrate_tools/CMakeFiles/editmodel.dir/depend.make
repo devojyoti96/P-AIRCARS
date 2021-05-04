@@ -236,6 +236,8 @@ CMakeFiles/editmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables
 CMakeFiles/editmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/editmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecord.h
 CMakeFiles/editmodel.dir/beamevaluator.cpp.o: /usr/local/include/casacore/tables/Tables/TableRecordRep.h
+CMakeFiles/editmodel.dir/beamevaluator.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/editmodel.dir/beamevaluator.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/editmodel.dir/deconvolution/spectralfitter.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/editmodel.dir/deconvolution/spectralfitter.cpp.o: ../deconvolution/spectralfitter.cpp
@@ -406,6 +408,8 @@ CMakeFiles/editmodel.dir/editmodel.cpp.o: /usr/local/include/casacore/tables/Tab
 CMakeFiles/editmodel.dir/editmodel.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
 CMakeFiles/editmodel.dir/editmodel.cpp.o: /usr/local/include/fitsio.h
 CMakeFiles/editmodel.dir/editmodel.cpp.o: /usr/local/include/longnam.h
+CMakeFiles/editmodel.dir/editmodel.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/editmodel.dir/editmodel.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/editmodel.dir/fftwmanager.cpp.o: ../fftwmanager.cpp
 CMakeFiles/editmodel.dir/fftwmanager.cpp.o: ../fftwmanager.h
@@ -716,6 +720,8 @@ CMakeFiles/editmodel.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/T
 CMakeFiles/editmodel.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/editmodel.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/editmodel.dir/rmsynthesis.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/editmodel.dir/rmsynthesis.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/editmodel.dir/rmsynthesis.cpp.o: /usr/local/include/mpi_portable_platform.h
 
 CMakeFiles/editmodel.dir/spectrumft.cpp.o: ../aocommon/uvector_11.h
 CMakeFiles/editmodel.dir/spectrumft.cpp.o: ../gnuplot.h

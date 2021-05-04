@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -20,11 +20,11 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/flagsolutions.cpp
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/flagsolutions.cpp
 solutionflagfile.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/solutionflagfile.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionflagfile.h
 solutionfile.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
 iostream
 -
 limits
@@ -32,7 +32,7 @@ limits
 boost/filesystem/operations.hpp
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
 cstring
 -
 string
@@ -50,15 +50,15 @@ vector
 stdint.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/solutionflagfile.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionflagfile.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 string
 -
 fstream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
 

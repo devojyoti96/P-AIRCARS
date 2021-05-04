@@ -130,4 +130,6 @@ CMakeFiles/flagsubbands.dir/flagsubbands.cpp.o: /usr/local/include/casacore/tabl
 CMakeFiles/flagsubbands.dir/flagsubbands.cpp.o: /usr/local/include/casacore/tables/Tables/TableError.h
 CMakeFiles/flagsubbands.dir/flagsubbands.cpp.o: /usr/local/include/casacore/tables/Tables/TableInfo.h
 CMakeFiles/flagsubbands.dir/flagsubbands.cpp.o: /usr/local/include/casacore/tables/Tables/TableLock.h
+CMakeFiles/flagsubbands.dir/flagsubbands.cpp.o: /usr/local/include/mpi.h
+CMakeFiles/flagsubbands.dir/flagsubbands.cpp.o: /usr/local/include/mpi_portable_platform.h
 
