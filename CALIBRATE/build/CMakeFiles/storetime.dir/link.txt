@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -ggdb -Wvla -Wall -DNDEBUG -march=native -std=c++0x -pthread  -rdynamic CMakeFiles/storetime.dir/storetime.cpp.o CMakeFiles/storetime.dir/stopwatch.cpp.o  -o storetime -lpthread 

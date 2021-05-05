@@ -139,16 +139,24 @@ class AccessMS:
 		self.md.close()
 		return nchan
 
+	def get_timestamps_in_mjdsecs(self):
+		'''
+		Function to return list of timestamps
+		Return:
+		List of timestamps in MJD seconds
+		'''
+		self.md.open(self.msname)
+		mjds=self.md.timesforfield(0)
+		self.md.close()
+		return mjds
+
 	def get_timestamps(self):
 		'''
 		Function to return list of timestamps
 		Return:
 		List of timestamps in 'YYYY/MM/DD/hh:mm:ss' format
 		'''
-		self.md.open(self.msname)
-		mjds=self.md.timesforfield(0)
-		self.md.close()
-		timestamps=[B.mjdsec_to_timestamp(mjdsec,includedate=True,format=0) for mjdsec in mjds]	
+		timestamps=[B.mjdsec_to_timestamp(mjdsec,includedate=True,format=0) for mjdsec in self.get_timestamps_in_mjdsecs()]	
 		return timestamps	
 	
 	def get_obs_startend_time(self):
@@ -179,6 +187,17 @@ class AccessMS:
 		start=B.mjdsec_to_timestamp(start_mjdsec,includedate=True,format=0)
 		end=B.mjdsec_to_timestamp(end_mjdsec,includedate=True,format=0)
 		return start,end,start_mjdsec,end_mjdsec
+
+	def get_num_antenna(self):
+		'''
+		Function to get total number of antennas in the ms
+		Return:
+		Number of antennas
+		'''
+		self.md.open(self.msnamne)
+		nant=self.md.nantennas()
+		self.md.close()
+		return nant
 
 	def get_freqs(self):
 		'''

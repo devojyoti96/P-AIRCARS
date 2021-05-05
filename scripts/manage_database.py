@@ -32,14 +32,40 @@ def fill_models(msname):
 
 def copy_gcals_to_bcal(gcals=[],bcal='',outputname=''):
 	if len(gcals)==0:
-		obslog.info('No gaincal table is provided to copy.\n')
+		print('No gaincal table is provided to copy.\n')
 		return
 	elif bcal=='':
-		obslog.info('No template bandpass table is not provided to copy.\n')
+		print('No template bandpass table is not provided to copy.\n')
 		return
 	else:
-		
-
+		print('Copying gaintables to bandpass...\n')
+		for i in range(len(gcals)):
+			if gcals[i][-1]=='/':
+				gcals[i]=gcals[i][:-1]
+		gcal_chan_list=np.array([int(os.path.basename(i).split('temp_')[-1].split('.cal')[0]) for i in gcals])
+		tb=table()
+		tb.open(bcal)
+		gain=tb.getcol('CPARAM')
+		tb.close()
+		for i in range(gain.shape[1]):
+			nearest_gcal=gcals[np.argmin(abs(gcal_chan_list-i))]
+			tb1=table()
+			tb1.open(nearest_gcal)
+			data=tb1.getcol('CPARAM')
+			tb1.close()
+			gain[:,i,:]=data[:,0,:]
+		tb=table()
+		tb.open(bcal,nomodify=False)
+		tb.putcol('CPARAM',gain)
+		tb.flush()
+		tb.flush()
+		if outputname!='':
+			if outputname[-1]=='/':
+				outputname=outputname[:-1]
+			if os.path.exists(outputname):
+				os.system('rm -rf '+outputname)
+			os.system('cp -r '+bcal+' '+outputname)
+		return
 
 def managing_caldatabase(msname,metafits,OBSID,total_spawned_jobs,basedir,gaincal_modeldir,bandpass_modeldir,polcal_modeldir,localdatabase,gain_minsnr,ref_ant,freq_avg=160.0):
 	'''
@@ -217,14 +243,14 @@ def managing_caldatabase(msname,metafits,OBSID,total_spawned_jobs,basedir,gainca
 			polleak_caltable=caltable_name_prefix+'.lcal'
 			pol_caltable=caltable_name_prefix+'.pcal'
 			gcals=[]
+			os.system('rm -rf '+localdatabase+'/'+bp_caltable_name+'_temp*cal')
+			os.system('cp -r '+localdatabase+'/'+bp_caltable_name+' '+localdatabase+'/'+bp_caltable_name+'_temp.bcal')
 			for i in model_chan:
-				obslog.info('bandpass(vis=\''+bpmsname+'.polleakcal\',caltable=\'temp_'+str(freqs[i])+'.cal\',spw=\''+spw+'\',solnorm=True,refant=\''+\
+				obslog.info('bandpass(vis=\''+bpmsname+'.polleakcal\',caltable=\''+localdatabase+'/'+bp_caltable_name+'_temp_'+str(i)+'.cal\',spw=\''+spw+'\',solnorm=True,refant=\''+\
 						str(ref_ant)+'\',minsnr='+str(gain_minsnr)+')\n')
-				gaincal(vis=bpmsname+'.polleakcal',caltable='temp_'+str(freqs[i])+'.cal',spw=spw,solnorm=True,refant=str(ref_ant),minsnr=gain_minsnr)
-				gcals.append('temp_'+str(freqs[i])+'.cal')
-			os.system('cp -r '+bp_caltable_name+' temp.bcal')
-			copy_gcals_to_bcal(gcals=gcals,bcal='temp.bcal',outputname=polleak_caltable)
-			os.system('cp -r '+polleak_caltable+' '+localdatabase)	
+				gaincal(vis=bpmsname+'.polleakcal',caltable=localdatabase+'/'+bp_caltable_name+'_temp_'+str(i)+'.cal',spw=spw,solnorm=True,refant=str(ref_ant),minsnr=gain_minsnr)
+				gcals.append(localdatabase+'/'+bp_caltable_name+'_temp_'+str(i)+'.cal')
+			copy_gcals_to_bcal(gcals=gcals,bcal=localdatabase+'/'+bp_caltable_name+'_temp.bcal',outputname=localdatabase+'/'+polleak_caltable)
 			obslog.info('applycal(vis=\''+bpmsname+'.polleakcal\',gaintable='+str(polleak_caltable)+',applymode=\'calflag\',flagbackup=False)\n')		
 			applycal(vis=bpmsname+'.polleakcal',gaintable=[polleak_caltable],applymode='calflag',flagbackup=False)
 			polcal_ms=bpmsname+'.polcal'
@@ -235,6 +261,7 @@ def managing_caldatabase(msname,metafits,OBSID,total_spawned_jobs,basedir,gainca
 			polcal_models=glob.glob(polcal_modeldir+'/*.model')
 			for i in leakcor_gain_models:
 				polcal_models.remove(i)
+			os.system('rm -rf '+localdatabase+'/'+bp_caltable_name+'_temp*cal')
 			obslog.info('delmod(vis=\''+polcal_ms+'\',scr=True)\n')
 			delmod(vis=polcal_ms,scr=True)
 			for i in range(len(polcal_models)):
@@ -244,18 +271,16 @@ def managing_caldatabase(msname,metafits,OBSID,total_spawned_jobs,basedir,gainca
 				spw='0:'+str(f-df)+'~'+str(f+df)+'MHz'
 				obslog.info('ft(vis=\''+polcal_ms+'\',model=\''+modelname+'\',spw=\''+spw+'\',usescratch=True)\n')
 				ft(vis=polcal_ms,model=modelname,spw=spw,usescratch=True)
-			
 			PSC=PolSelfcal(polcal_ms,metafits,32*60,verbose=False,interactive=False)
 			obslog.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=True)\n')
 			PSC.correct_visibility_single_beam_jones(modify_datacolumn=True)
-			IB=ImageBasic(polcal_ms)
+			IB1=ImageBasic(polcal_ms)
 			calib_uvrange_min=IB1.calc_calib_uvrange(4)[1]
 			calib_uvrange_max=IB1.calc_calib_uvrange(4)[2]
 			cal=CALIBRATE()
 			obslog.info('cal.calibrate(msname=\''+polcal_ms+'\',caltable=\''+pol_caltable+'\',minuv='+str(calib_uvrange_min)\
 						+',quiet=True,maxuv='+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'\')\n')
-			cal.calibrate(msname=polcal_ms,caltable=pol_caltable,minuv=calib_uvrange_min,quiet=True,maxuv=calib_uvrange_max,j=1,absmem=1,solmode='')			
-			os.system('cp -r '+pol_caltable+' '+localdatabase)				
+			cal.calibrate(msname=polcal_ms,caltable=localdatabase+'/'+pol_caltable,minuv=calib_uvrange_min,quiet=True,maxuv=calib_uvrange_max,j=1,absmem=1,solmode='')					
 	os.system('rm -rf '+basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime*')
 	return 0
 

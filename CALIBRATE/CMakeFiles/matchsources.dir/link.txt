@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -ggdb -Wvla -Wall -DNDEBUG -march=native -std=c++0x -pthread  -rdynamic CMakeFiles/matchsources.dir/matchsources.cpp.o CMakeFiles/matchsources.dir/model/model.cpp.o CMakeFiles/matchsources.dir/nlplfitter.cpp.o CMakeFiles/matchsources.dir/progressbar.cpp.o  -o matchsources -lpthread -lgsl -lgslcblas 
