@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwafinfo.cpp
+algorithm
+-
+cmath
+-
+cstdlib
+-
+fstream
+-
+iostream
+-
+vector
+-
+stdint.h
+-
+
