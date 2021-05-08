@@ -406,7 +406,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('mwapb=MWA_PrimaryBeam(\''+msname+'\',\''+metafits+'\',\'inverse_beam=True)\n')
 			mwapb=MWA_PrimaryBeam(msname,metafits,inverse_beam=True)  # Inverse beam jones
 			logger.info('mwapb.calc_beamjones_phasecenter(outputfile=\'\')\n')
-			inv_beam_jones=mwapb.calc_beamjones_phasecenter(outputfile='')
+			inv_beam_jones=mwapb.calc_beamjones_phasecenter(outputfile='')[0]
 			logger.info('PSC.uncorrect_for_single_beam_jones(\''+working_dir+'/qucor.model\',\''+working_dir+'/qucor_pbuncor.model\','+\
 						'inv_beam_jones,imagetype=\'CASA\',outtype=\'CASA\',pol_basis=\'Linear\')\n')
 			PSC.uncorrect_for_single_beam_jones(working_dir+'/qucor.model',working_dir+'/qucor_pbuncor.model',inv_beam_jones,imagetype='CASA',outtype='CASA',pol_basis='Linear')
