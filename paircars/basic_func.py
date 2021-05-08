@@ -361,7 +361,10 @@ def getnearpos(array,value):
 	a = abs(array-value)
 	b=np.argsort(a)
 	del a
-	return b[0],b[1]
+	if len(b)>1:
+		return b[0],b[1]
+	else:
+		return b[0],b[0]
 
 def error_msgs(err_code):
 	'''

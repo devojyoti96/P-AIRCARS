@@ -194,7 +194,7 @@ class AccessMS:
 		Return:
 		Number of antennas
 		'''
-		self.md.open(self.msnamne)
+		self.md.open(self.msname)
 		nant=self.md.nantennas()
 		self.md.close()
 		return nant
