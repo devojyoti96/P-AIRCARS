@@ -3,12 +3,13 @@ Code is written by Devojyoti Kansabanik , 2 May, 2021
 '''
 from casatools import *
 from casatasks import *
-import os,sys,logging,numpy as np,copy,glob,psutil,time
+import os,sys,logging,numpy as np,copy,glob,psutil,time,multiprocessing as mp
 from paircars.basic_func import *
 from paircars.access_ms import *
 from paircars.decor import *
 from paircars.flagger import *
 from paircars.fullpol_selfcal_LTS import *
+from optparse import OptionParser
 from astropy.io import fits
 from CALIBRATE.access_calibrate import *
 from paircars.libpaircars import send_paircars_notification,send_to_database
@@ -53,25 +54,16 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	ref_ant = Reference antenna
 	freq_avg = Frequency averaging done during calibration
 	pol_skip_freq = Frequency interval to perform polarisation calibration
+	Return:
+	Message code, global database caltable list, local database caltable list
 	'''
 	# Setting up logs and waiting for calibrations jobs to finish
 	#############################################################
 	cal=CALIBRATE()
 	OBSID=int(fits.getheader(metafits)['GPSTIME'])
-	formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
-	obslog = logging.getLogger(str(OBSID)+'_log')
-	obslog.setLevel(logging.DEBUG)
-	console=logging.StreamHandler(sys.stdout)
-	console.setFormatter(formatter)
-	obslog.addHandler(console)
-	if os.path.exists(basedir+'/'+str(OBSID)+'_obslog.log'):
-		os.system('rm -rf '+basedir+'/'+str(OBSID)+'_obslog.log')
-	filehandle=logging.FileHandler(basedir+'/'+str(OBSID)+'_obslog.log')
-	filehandle.setFormatter(formatter)
-	obslog.addHandler(filehandle)
-	obslog.propagate = False
 	obslog.info('Waiting for finishing '+str(total_spawned_jobs)+' calibration jobs for ms : '+msname+'\n')
 	caltable_for_global_database=[]
+	caltable_for_local_database=[]
 	# Setting up different directory names
 	######################################
 	if basedir[-1]=='/':
@@ -115,7 +107,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	#########################
 	if gaincal_modeldir=='' or os.path.isdir(gaincal_modeldir)==False or len(glob.glob(gaincal_modeldir+'/*.model'))==0:
 		obslog.info('No models available.\n')  # Checking if any gaincal model is present or not. If not exit at this stage
-		return 1,caltable_for_global_database
+		return 1,caltable_for_global_database,caltable_for_local_database
 	else:
 		AM=AccessMS(msname)
 		freqs=AM.get_freqs()/10**6
@@ -187,6 +179,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		os.system('cp -r '+caltable_name+' '+localdatabase) # Copying to local database
 		os.system('cp -r '+caltable_name+'.bin '+localdatabase) # Copying to local database for further copying to global database
 		caltable_for_global_database.append(localdatabase+'/'+os.path.basename(caltable_name)+'.bin')
+		caltable_for_local_database.append(localdatabase+'/'+os.path.basename(caltable_name))
 		os.system('rm -rf '+caltable_name+'*')
 		# Applying gain solutions and spliting for bandpass or polarisation calibration 
 		###############################################################################
@@ -267,6 +260,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				caltable_for_global_database.append(localdatabase+'/'+os.path.basename(bp_caltable_name)+'.bin')
 			os.system('cp -r '+bp_caltable_name+' '+localdatabase)
 			os.system('rm -rf '+bp_caltable_name+'*')
+			caltable_for_local_database.append(localdatabase+'/'+os.path.basename(bp_caltable_name))
 			obslog.info('flagmanager(vis=\''+bpmsname+'\',mode=\'restore\',versionname=\'flagdata_1\')\n')
 			flagmanager(vis=bpmsname,mode='restore',versionname='flagdata_1') # Restoring flags
 			obslog.info('flagmanager(vis=\''+bpmsname+'\',mode=\'delete\',versionname=\'flagdata_1\')\n')
@@ -313,6 +307,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 			flagdata(vis=bpmsname+'.polleakcal',mode='manual',spw=flagchans)
 			freqs=AM1.get_freqs()/10**6
 			polleak_caltable=basedir+'/'+caltable_name_prefix+'.lcal' # Leakage corrected differential gain correction gaintable
+			beamfile=basedir+'/'+caltable_name_prefix+'.beam' # Ideal beam jones table
 			pol_caltable=basedir+'/'+caltable_name_prefix+'.pcal.bin' # Polarisation calibration table
 			obslog.info('bandpass(vis=\''+bpmsname+'.polleakcal\',caltable=\''+polleak_caltable+'\',solnorm=True,refant=\''+str(ref_ant)+\
 						'\',minsnr='+str(gain_minsnr)+',uvrange=\''+uvrange_to_cal+'\',bandtype=\'B\',fillgaps=3)\n') # Performing leakage corrected gain calibration
@@ -326,6 +321,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 			caltable_for_global_database.append(localdatabase+'/'+os.path.basename(polleak_caltable)+'.bin')
 			os.system('cp -r '+polleak_caltable+' '+localdatabase)
 			os.system('rm -rf '+polleak_caltable+'*')
+			caltable_for_local_database.append(localdatabase+'/'+os.path.basename(polleak_caltable))
 			obslog.info('flagmanager(vis=\''+bpmsname+'.polleakcal\',mode=\'restore\',versionname=\'flagdata_1\')\n')
 			flagmanager(vis=bpmsname+'.polleakcal',mode='restore',versionname='flagdata_1')
 			obslog.info('flagmanager(vis=\''+bpmsname+'.polleakcal\',mode=\'delete\',versionname=\'flagdata_1\')\n')
@@ -354,19 +350,31 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 			obslog.info('PolSelfcal(\''+polcal_ms+'\',\''+metafits+'\','+str(32*60)+',verbose=False,interactive=False)\n')
 			PSC=PolSelfcal(polcal_ms,metafits,32*60,verbose=False,interactive=False) # Performing ideal beam correction at phase center for every coarse channels
 			obslog.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=True)\n')
-			PSC.correct_visibility_single_beam_jones(modify_datacolumn=True,skip_freq=float(pol_skip_freq))
+			PSC.correct_visibility_single_beam_jones(modify_datacolumn=True,skip_freq=float(pol_skip_freq),save_beamfile=beamfile)
 			obslog.info('cal.calibrate(msname=\''+polcal_ms+'\',caltable=\''+pol_caltable+'\',minuv='+str(calib_uvrange_min)\
 						+',quiet=True,maxuv='+str(calib_uvrange_max)+',j=2)\n')
 			cal.calibrate(msname=polcal_ms,caltable=pol_caltable,minuv=calib_uvrange_min,quiet=True,maxuv=calib_uvrange_max,j=2)
-			os.system('cp -r '+pol_caltable+' '+localdatabase)	
-			caltable_for_global_database.append(localdatabase+'/'+os.path.basename(pol_caltable))				
+			os.system('cp -r '+pol_caltable+' '+localdatabase)
+			os.system('cp -r '+beamfile+' '+localdatabase)	
+			os.system('rm -rf '+pol_caltable+'* '+beamfile+'*')		
+			caltable_for_global_database.append(localdatabase+'/'+os.path.basename(pol_caltable))	
+			caltable_for_local_database.append(localdatabase+'/'+os.path.basename(beamfile))			
+			caltable_for_local_database.append(localdatabase+'/'+os.path.basename(pol_caltable))			
 	os.system('rm -rf '+basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime* '+basedir+'/'+os.path.basename(msname).split('.ms')[0]+'.temp*')
 	obslog.info('All final calibrations are finished.\n')
-	return 0,caltable_for_global_database
+	return 0,caltable_for_global_database,caltable_for_local_database
 
 
-#def run_final_imaging(msname,OBSID,channel_grid,time_grid):
+def final_imaging_for_database(msname,basedir):
+	'''
+	Function to make final images for database
+	'''
+	os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+'/database_imaging --freq_interval 1280 --time_interval 30.0 --freq_width 1280 '+\
+				'--time_width 30.0 --datacolumn corrected')
 	
+
+	return
+
 
 from optparse import OptionParser
 if __name__=='__main__':
@@ -383,7 +391,17 @@ if __name__=='__main__':
 	parser.add_option('--freqavg',dest="freqavg",default=160,help="Frequency averaging during calibration in kHz",metavar="Float")
 	(options, args) = parser.parse_args()
 	
-os.chdir(options.basedir)
+if os.path.isdir(str(options.msname))==False:
+	print ('Measurement set is not present.\n')
+	os._exit(0)
+	
+if options.basedir==None:
+	print ('No base directory path is given. Please give base directory path to continue.\n')
+	os._exit(0)
+elif os.path.isdir(str(options.basedir))==False:
+	os.makedirs(str(options.basedir))
+
+os.chdir(str(options.basedir))
 sys.path.append(os.getcwd())
 import selfcal_inputs as inputs
 if inputs.quality_factor==0:
@@ -398,10 +416,23 @@ freqs=AM.get_freqs()/10**6
 coarse_chan_0=freq_to_MWA_coarse(freqs[0])
 coarse_chan_1=freq_to_MWA_coarse(freqs[-1])
 OBSID=int(fits.getheader(str(options.metafits))['GPSTIME'])
+formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+obslog = logging.getLogger(str(OBSID)+'_log')
+obslog.setLevel(logging.DEBUG)
+if inputs.verbose==True:
+	console=logging.StreamHandler(sys.stdout)
+	console.setFormatter(formatter)
+	obslog.addHandler(console)
+if os.path.exists(str(options.basedir)+'/'+str(OBSID)+'_obslog.log'):
+	os.system('rm -rf '+str(options.basedir)+'/'+str(OBSID)+'_obslog.log')
+filehandle=logging.FileHandler(str(options.basedir)+'/'+str(OBSID)+'_obslog.log')
+filehandle.setFormatter(formatter)
+obslog.addHandler(filehandle)
+obslog.propagate = False
 
-msg,caltable_for_global_database=managing_caldatabase(str(options.msname),str(options.metafits),int(options.num_jobs),str(options.basedir),str(options.gaincal_modeldir),\
-					str(options.bandpass_modeldir),str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),\
-					freq_avg=float(options.freqavg),pol_skip_freq=float(polskip))
+msg,caltable_for_global_database,caltable_for_local_database=managing_caldatabase(str(options.msname),\
+	str(options.metafits),int(options.num_jobs),str(options.basedir),str(options.gaincal_modeldir),str(options.bandpass_modeldir),\
+	str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),freq_avg=float(options.freqavg),pol_skip_freq=float(polskip))
 if len(caltable_for_global_database)>0:
 	calarrays={}
 	calmodes=[]
@@ -434,4 +465,48 @@ if len(caltable_for_global_database)>0:
 			for i in caltable_for_global_database:
 				os.system('rm -rf '+i)
 			os.system('rm -rf '+final_caltable+'.bin')	
-	
+
+# Appying solution to main ms
+#############################
+casa_gaintable=[]
+for i in caltable_for_local_database:
+	if 'gcal' in i:
+		casa_gaintable.append(i)
+	if 'bcal' in i:
+		casa_gaintable.append(i)
+	ig 'lcal' in i:
+		casa_gaintable.append(i)
+calibrate_gaintable=[]
+for i in caltable_for_local_database:
+	if 'beam' in i:
+		calibrate_gaintable.append(i)
+	elif 'pcal' in i:
+		calibrate_gaintable.append(i)
+
+obslog.info('Applying solutions from : '+str(casa_gaintable)+'\n')
+obslog.info('applycal(vis=\''+str(options.msname)+'\',gaintable='+str(casa_gaintable)+',applymode=\'calflag\',flagbackup=False)\n')
+applycal(vis=str(options.msname),gaintable=casa_gaintable,applymode='calflag',flagbackup=False)
+obslog.info('Applying solutions from : '+str(calibrate_gaintable)+'\n')
+cal=CALIBRATE()
+for i in calibrate_gaintable:
+	obslog.info('cal.applycal(msname=\''+str(options.msname)+'\',gaintable=\''+i+'\',datacolumn=\'corrected\',applymode=\'calflag\',flagbackup=False)\n')
+	cal.applycal(msname=str(options.msname),gaintable=i,datacolumn='corrected',applymode='calflag',flagbackup=False)
+
+obslog.info('All solutions applied on ms : '+str(options.msname)+'\n')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
