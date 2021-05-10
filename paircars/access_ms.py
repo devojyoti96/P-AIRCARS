@@ -603,6 +603,8 @@ def splited_ms_rename(msname,ref_time_chan=True,change_msname=True):
 	else:
 		filename=ms_path+'/time_'+yyyy+'_'+mm+'_'+dd+'_'+timestamp+'_freq_'+str(mean_freq)+'_ref.ms'
 	if change_msname==True and msname!=filename:
+		if os.path.exists(filename):
+			os.system('rm -rf '+filename)
 		os.system('mv '+msname+' ' +filename)
 	return filename
 

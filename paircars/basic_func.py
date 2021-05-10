@@ -615,9 +615,3 @@ def download_metafits(msname,outdir):
 
 
 
-
-
-
-
-
-

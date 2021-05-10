@@ -639,13 +639,14 @@ class PolSelfcal:
 		os.system('rm -rf casa*log temp*')
 		return outfile
 
-	def correct_visibility_single_beam_jones(self,modify_datacolumn=True,force=False,skip_freq=1.28):
+	def correct_visibility_single_beam_jones(self,modify_datacolumn=True,force=False,skip_freq=1.28,save_beamfile=''):
 		'''
 		Correct visibility data for a single pointing beam jones
 		Parameters:
 		modify_datacolumn = True, modify the DATA column, otherwise beam corrected visibilities will be saved on CORRECTED_DATA
 		force = False, beam correct forcefully avoiding ms header info
 		skip_freq = Frequency interval in MHz to make independent beams (default : 1.28 MHz). If anything greater than 1.28 MHz is given it will be overwritten to 1.28 MHz
+		save_beamfile= = Save beam file in this given name
 		Return:
 		Name of the beam jones file, Beam Jones matrix.
 		'''
@@ -653,6 +654,8 @@ class PolSelfcal:
 		cal=CALIBRATE()
 		beamfile=self.msname+'.beam.bin'
 		beamfile,beamjones=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,skip_freq=float(skip_freq))
+		if save_beamfile!='':
+			os.system('cp -r '+beamfile+' '+save_beamfile)
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
 		if 'S_PBCOR' not in code_list or 'S_PBUNCOR' in code_list:

@@ -11,7 +11,7 @@ from casatasks import *
 Code is written by Devojyoti Kansabanik, 26 Jan ,2021
 '''
 
-def flag_MWA_coarse(msname,edgewidth=80,do_flag=True):
+def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False):
 	'''
 	A function to generate the list of coarse-channels edges + the 
 	central channel in each coarse channel to be flagged.
@@ -19,6 +19,7 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True):
 	msname= Name of the masurement set
 	edgewidth = Flag edge channels width in kHz
 	do_flag = True, If true flag tedge channels, otherwise return only the good channels list
+	force = False, If True flag again if even if the flag keyword is in header
 	Return:
 	Unflagged channels, One central channel per coarse channel
 	'''
@@ -56,7 +57,7 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True):
 			i = i + 1
 		code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
-		if 'C_FLAG_'+str(edgewidth) not in code_list and do_flag==True:
+		if ('C_FLAG_'+str(edgewidth) not in code_list and do_flag==True) or (force==True and do_flag==True):
 			print ('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
 			flagdata(vis=msname,spw=CHAN_FLAG_STR,mode='manual',flagbackup=False)
 			flagdata(vis=msname,autocorr=True,flagbackup=False)
