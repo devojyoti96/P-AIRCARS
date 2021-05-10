@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/ionspectrum.dir/depend.make
@@ -59,94 +59,94 @@ include CMakeFiles/ionspectrum.dir/flags.make
 
 CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o: ../experiments/ionspectrum/ionspectrum.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/ionspectrum/ionspectrum.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/experiments/ionspectrum/ionspectrum.cpp
 
 CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/ionspectrum/ionspectrum.cpp > CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/experiments/ionspectrum/ionspectrum.cpp > CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.i
 
 CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/experiments/ionspectrum/ionspectrum.cpp -o CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/experiments/ionspectrum/ionspectrum.cpp -o CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.s
 
 CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o: ../beamevaluator.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beamevaluator.cpp
 
 CMakeFiles/ionspectrum.dir/beamevaluator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/beamevaluator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp > CMakeFiles/ionspectrum.dir/beamevaluator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beamevaluator.cpp > CMakeFiles/ionspectrum.dir/beamevaluator.cpp.i
 
 CMakeFiles/ionspectrum.dir/beamevaluator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/beamevaluator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp -o CMakeFiles/ionspectrum.dir/beamevaluator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beamevaluator.cpp -o CMakeFiles/ionspectrum.dir/beamevaluator.cpp.s
 
 CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o: ../fluxaccumulator.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fluxaccumulator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fluxaccumulator.cpp
 
 CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fluxaccumulator.cpp > CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fluxaccumulator.cpp > CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.i
 
 CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fluxaccumulator.cpp -o CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fluxaccumulator.cpp -o CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.s
 
 CMakeFiles/ionspectrum.dir/imageweights.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/imageweights.cpp.o: ../imageweights.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/ionspectrum.dir/imageweights.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/imageweights.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/imageweights.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/ionspectrum.dir/imageweights.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/imageweights.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/imageweights.cpp
 
 CMakeFiles/ionspectrum.dir/imageweights.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/imageweights.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/imageweights.cpp > CMakeFiles/ionspectrum.dir/imageweights.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/imageweights.cpp > CMakeFiles/ionspectrum.dir/imageweights.cpp.i
 
 CMakeFiles/ionspectrum.dir/imageweights.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/imageweights.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/imageweights.cpp -o CMakeFiles/ionspectrum.dir/imageweights.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/imageweights.cpp -o CMakeFiles/ionspectrum.dir/imageweights.cpp.s
 
 CMakeFiles/ionspectrum.dir/model/model.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/model/model.cpp.o: ../model/model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/ionspectrum.dir/model/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/ionspectrum.dir/model/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp
 
 CMakeFiles/ionspectrum.dir/model/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/model/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/ionspectrum.dir/model/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp > CMakeFiles/ionspectrum.dir/model/model.cpp.i
 
 CMakeFiles/ionspectrum.dir/model/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/model/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/ionspectrum.dir/model/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp -o CMakeFiles/ionspectrum.dir/model/model.cpp.s
 
 CMakeFiles/ionspectrum.dir/multibanddata.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/multibanddata.cpp.o: ../multibanddata.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/ionspectrum.dir/multibanddata.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/multibanddata.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/multibanddata.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/ionspectrum.dir/multibanddata.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/multibanddata.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/multibanddata.cpp
 
 CMakeFiles/ionspectrum.dir/multibanddata.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/multibanddata.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/multibanddata.cpp > CMakeFiles/ionspectrum.dir/multibanddata.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/multibanddata.cpp > CMakeFiles/ionspectrum.dir/multibanddata.cpp.i
 
 CMakeFiles/ionspectrum.dir/multibanddata.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/multibanddata.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/multibanddata.cpp -o CMakeFiles/ionspectrum.dir/multibanddata.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/multibanddata.cpp -o CMakeFiles/ionspectrum.dir/multibanddata.cpp.s
 
 CMakeFiles/ionspectrum.dir/nlplfitter.cpp.o: CMakeFiles/ionspectrum.dir/flags.make
 CMakeFiles/ionspectrum.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/ionspectrum.dir/nlplfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/ionspectrum.dir/nlplfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ionspectrum.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp
 
 CMakeFiles/ionspectrum.dir/nlplfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ionspectrum.dir/nlplfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/ionspectrum.dir/nlplfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp > CMakeFiles/ionspectrum.dir/nlplfitter.cpp.i
 
 CMakeFiles/ionspectrum.dir/nlplfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ionspectrum.dir/nlplfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/ionspectrum.dir/nlplfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp -o CMakeFiles/ionspectrum.dir/nlplfitter.cpp.s
 
 # Object files for target ionspectrum
 ionspectrum_OBJECTS = \
@@ -225,7 +225,7 @@ ionspectrum: /usr/local/lib/libcasa_casa.so
 ionspectrum: /usr/lib64/libgsl.so
 ionspectrum: /usr/lib64/libgslcblas.so
 ionspectrum: CMakeFiles/ionspectrum.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable ionspectrum"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable ionspectrum"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ionspectrum.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -238,6 +238,6 @@ CMakeFiles/ionspectrum.dir/clean:
 .PHONY : CMakeFiles/ionspectrum.dir/clean
 
 CMakeFiles/ionspectrum.dir/depend:
-	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/ionspectrum.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/ionspectrum.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ionspectrum.dir/depend
 

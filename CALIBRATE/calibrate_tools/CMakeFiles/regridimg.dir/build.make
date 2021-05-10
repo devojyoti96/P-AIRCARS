@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/regridimg.dir/depend.make
@@ -59,55 +59,55 @@ include CMakeFiles/regridimg.dir/flags.make
 
 CMakeFiles/regridimg.dir/regridimg.cpp.o: CMakeFiles/regridimg.dir/flags.make
 CMakeFiles/regridimg.dir/regridimg.cpp.o: ../regridimg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/regridimg.dir/regridimg.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/regridimg.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/regridimg.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/regridimg.dir/regridimg.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/regridimg.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/regridimg.cpp
 
 CMakeFiles/regridimg.dir/regridimg.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/regridimg.dir/regridimg.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/regridimg.cpp > CMakeFiles/regridimg.dir/regridimg.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/regridimg.cpp > CMakeFiles/regridimg.dir/regridimg.cpp.i
 
 CMakeFiles/regridimg.dir/regridimg.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/regridimg.dir/regridimg.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/regridimg.cpp -o CMakeFiles/regridimg.dir/regridimg.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/regridimg.cpp -o CMakeFiles/regridimg.dir/regridimg.cpp.s
 
 CMakeFiles/regridimg.dir/fitsiochecker.cpp.o: CMakeFiles/regridimg.dir/flags.make
 CMakeFiles/regridimg.dir/fitsiochecker.cpp.o: ../fitsiochecker.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/regridimg.dir/fitsiochecker.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/regridimg.dir/fitsiochecker.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/fitsiochecker.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.cpp
 
 CMakeFiles/regridimg.dir/fitsiochecker.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/regridimg.dir/fitsiochecker.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp > CMakeFiles/regridimg.dir/fitsiochecker.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.cpp > CMakeFiles/regridimg.dir/fitsiochecker.cpp.i
 
 CMakeFiles/regridimg.dir/fitsiochecker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/regridimg.dir/fitsiochecker.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp -o CMakeFiles/regridimg.dir/fitsiochecker.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.cpp -o CMakeFiles/regridimg.dir/fitsiochecker.cpp.s
 
 CMakeFiles/regridimg.dir/fitsreader.cpp.o: CMakeFiles/regridimg.dir/flags.make
 CMakeFiles/regridimg.dir/fitsreader.cpp.o: ../fitsreader.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/regridimg.dir/fitsreader.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/regridimg.dir/fitsreader.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/fitsreader.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.cpp
 
 CMakeFiles/regridimg.dir/fitsreader.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/regridimg.dir/fitsreader.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp > CMakeFiles/regridimg.dir/fitsreader.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.cpp > CMakeFiles/regridimg.dir/fitsreader.cpp.i
 
 CMakeFiles/regridimg.dir/fitsreader.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/regridimg.dir/fitsreader.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp -o CMakeFiles/regridimg.dir/fitsreader.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.cpp -o CMakeFiles/regridimg.dir/fitsreader.cpp.s
 
 CMakeFiles/regridimg.dir/fitswriter.cpp.o: CMakeFiles/regridimg.dir/flags.make
 CMakeFiles/regridimg.dir/fitswriter.cpp.o: ../fitswriter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/regridimg.dir/fitswriter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/fitswriter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/regridimg.dir/fitswriter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/regridimg.dir/fitswriter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitswriter.cpp
 
 CMakeFiles/regridimg.dir/fitswriter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/regridimg.dir/fitswriter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp > CMakeFiles/regridimg.dir/fitswriter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitswriter.cpp > CMakeFiles/regridimg.dir/fitswriter.cpp.i
 
 CMakeFiles/regridimg.dir/fitswriter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/regridimg.dir/fitswriter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitswriter.cpp -o CMakeFiles/regridimg.dir/fitswriter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitswriter.cpp -o CMakeFiles/regridimg.dir/fitswriter.cpp.s
 
 # Object files for target regridimg
 regridimg_OBJECTS = \
@@ -157,7 +157,7 @@ regridimg: /usr/lib64/libsz.so
 regridimg: /usr/lib64/libz.so
 regridimg: /usr/lib64/libdl.so
 regridimg: CMakeFiles/regridimg.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable regridimg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable regridimg"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/regridimg.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -170,6 +170,6 @@ CMakeFiles/regridimg.dir/clean:
 .PHONY : CMakeFiles/regridimg.dir/clean
 
 CMakeFiles/regridimg.dir/depend:
-	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/regridimg.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/regridimg.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/regridimg.dir/depend
 

@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/mrc2model.dir/depend.make
@@ -59,55 +59,55 @@ include CMakeFiles/mrc2model.dir/flags.make
 
 CMakeFiles/mrc2model.dir/model/model.cpp.o: CMakeFiles/mrc2model.dir/flags.make
 CMakeFiles/mrc2model.dir/model/model.cpp.o: ../model/model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/mrc2model.dir/model/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/mrc2model.dir/model/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp
 
 CMakeFiles/mrc2model.dir/model/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/mrc2model.dir/model/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/mrc2model.dir/model/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp > CMakeFiles/mrc2model.dir/model/model.cpp.i
 
 CMakeFiles/mrc2model.dir/model/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/mrc2model.dir/model/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/mrc2model.dir/model/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp -o CMakeFiles/mrc2model.dir/model/model.cpp.s
 
 CMakeFiles/mrc2model.dir/mrc2model.cpp.o: CMakeFiles/mrc2model.dir/flags.make
 CMakeFiles/mrc2model.dir/mrc2model.cpp.o: ../mrc2model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/mrc2model.dir/mrc2model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/mrc2model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mrc2model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/mrc2model.dir/mrc2model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/mrc2model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/mrc2model.cpp
 
 CMakeFiles/mrc2model.dir/mrc2model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/mrc2model.dir/mrc2model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mrc2model.cpp > CMakeFiles/mrc2model.dir/mrc2model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/mrc2model.cpp > CMakeFiles/mrc2model.dir/mrc2model.cpp.i
 
 CMakeFiles/mrc2model.dir/mrc2model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/mrc2model.dir/mrc2model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mrc2model.cpp -o CMakeFiles/mrc2model.dir/mrc2model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/mrc2model.cpp -o CMakeFiles/mrc2model.dir/mrc2model.cpp.s
 
 CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o: CMakeFiles/mrc2model.dir/flags.make
 CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o: ../mrccatalogue.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mrccatalogue.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/mrccatalogue.cpp
 
 CMakeFiles/mrc2model.dir/mrccatalogue.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/mrc2model.dir/mrccatalogue.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mrccatalogue.cpp > CMakeFiles/mrc2model.dir/mrccatalogue.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/mrccatalogue.cpp > CMakeFiles/mrc2model.dir/mrccatalogue.cpp.i
 
 CMakeFiles/mrc2model.dir/mrccatalogue.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/mrc2model.dir/mrccatalogue.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/mrccatalogue.cpp -o CMakeFiles/mrc2model.dir/mrccatalogue.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/mrccatalogue.cpp -o CMakeFiles/mrc2model.dir/mrccatalogue.cpp.s
 
 CMakeFiles/mrc2model.dir/nlplfitter.cpp.o: CMakeFiles/mrc2model.dir/flags.make
 CMakeFiles/mrc2model.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/mrc2model.dir/nlplfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/mrc2model.dir/nlplfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mrc2model.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp
 
 CMakeFiles/mrc2model.dir/nlplfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/mrc2model.dir/nlplfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/mrc2model.dir/nlplfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp > CMakeFiles/mrc2model.dir/nlplfitter.cpp.i
 
 CMakeFiles/mrc2model.dir/nlplfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/mrc2model.dir/nlplfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/mrc2model.dir/nlplfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp -o CMakeFiles/mrc2model.dir/nlplfitter.cpp.s
 
 # Object files for target mrc2model
 mrc2model_OBJECTS = \
@@ -127,7 +127,7 @@ mrc2model: CMakeFiles/mrc2model.dir/build.make
 mrc2model: /usr/lib64/libgsl.so
 mrc2model: /usr/lib64/libgslcblas.so
 mrc2model: CMakeFiles/mrc2model.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable mrc2model"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable mrc2model"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/mrc2model.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -140,6 +140,6 @@ CMakeFiles/mrc2model.dir/clean:
 .PHONY : CMakeFiles/mrc2model.dir/clean
 
 CMakeFiles/mrc2model.dir/depend:
-	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/mrc2model.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/mrc2model.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/mrc2model.dir/depend
 

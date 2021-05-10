@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce
+CMAKE_SOURCE_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools
+CMAKE_BINARY_DIR = /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools
 
 # Include any dependencies generated for this target.
 include CMakeFiles/bbs2model.dir/depend.make
@@ -59,42 +59,42 @@ include CMakeFiles/bbs2model.dir/flags.make
 
 CMakeFiles/bbs2model.dir/bbs2model.cpp.o: CMakeFiles/bbs2model.dir/flags.make
 CMakeFiles/bbs2model.dir/bbs2model.cpp.o: ../bbs2model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/bbs2model.dir/bbs2model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/bbs2model.dir/bbs2model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/bbs2model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/bbs2model.dir/bbs2model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/bbs2model.dir/bbs2model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/bbs2model.cpp
 
 CMakeFiles/bbs2model.dir/bbs2model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/bbs2model.dir/bbs2model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/bbs2model.cpp > CMakeFiles/bbs2model.dir/bbs2model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/bbs2model.cpp > CMakeFiles/bbs2model.dir/bbs2model.cpp.i
 
 CMakeFiles/bbs2model.dir/bbs2model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/bbs2model.dir/bbs2model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/bbs2model.cpp -o CMakeFiles/bbs2model.dir/bbs2model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/bbs2model.cpp -o CMakeFiles/bbs2model.dir/bbs2model.cpp.s
 
 CMakeFiles/bbs2model.dir/model/model.cpp.o: CMakeFiles/bbs2model.dir/flags.make
 CMakeFiles/bbs2model.dir/model/model.cpp.o: ../model/model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/bbs2model.dir/model/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/bbs2model.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/bbs2model.dir/model/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/bbs2model.dir/model/model.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp
 
 CMakeFiles/bbs2model.dir/model/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/bbs2model.dir/model/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp > CMakeFiles/bbs2model.dir/model/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp > CMakeFiles/bbs2model.dir/model/model.cpp.i
 
 CMakeFiles/bbs2model.dir/model/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/bbs2model.dir/model/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp -o CMakeFiles/bbs2model.dir/model/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp -o CMakeFiles/bbs2model.dir/model/model.cpp.s
 
 CMakeFiles/bbs2model.dir/nlplfitter.cpp.o: CMakeFiles/bbs2model.dir/flags.make
 CMakeFiles/bbs2model.dir/nlplfitter.cpp.o: ../nlplfitter.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/bbs2model.dir/nlplfitter.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/bbs2model.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/bbs2model.dir/nlplfitter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/bbs2model.dir/nlplfitter.cpp.o -c /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp
 
 CMakeFiles/bbs2model.dir/nlplfitter.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/bbs2model.dir/nlplfitter.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp > CMakeFiles/bbs2model.dir/nlplfitter.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp > CMakeFiles/bbs2model.dir/nlplfitter.cpp.i
 
 CMakeFiles/bbs2model.dir/nlplfitter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/bbs2model.dir/nlplfitter.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp -o CMakeFiles/bbs2model.dir/nlplfitter.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp -o CMakeFiles/bbs2model.dir/nlplfitter.cpp.s
 
 # Object files for target bbs2model
 bbs2model_OBJECTS = \
@@ -112,7 +112,7 @@ bbs2model: CMakeFiles/bbs2model.dir/build.make
 bbs2model: /usr/lib64/libgsl.so
 bbs2model: /usr/lib64/libgslcblas.so
 bbs2model: CMakeFiles/bbs2model.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable bbs2model"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable bbs2model"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/bbs2model.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -125,6 +125,6 @@ CMakeFiles/bbs2model.dir/clean:
 .PHONY : CMakeFiles/bbs2model.dir/clean
 
 CMakeFiles/bbs2model.dir/depend:
-	cd /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/bbs2model.dir/DependInfo.cmake --color=$(COLOR)
+	cd /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools /data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/bbs2model.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/bbs2model.dir/depend
 

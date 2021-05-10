@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/flagsubbands.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/flagsubbands.cpp
 iostream
 -
 stdexcept

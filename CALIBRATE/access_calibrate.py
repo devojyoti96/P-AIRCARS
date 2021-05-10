@@ -3,6 +3,7 @@ from datetime import datetime
 from casatools import *
 from casatasks import *
 from paircars.access_ms import *
+from paircars.basic_func import *
 
 '''
 Code is written by Devojyoti Kansabanik, 16 Feb, 2021; 22 Feb, 2021
@@ -47,17 +48,12 @@ class CALIBRATE():
 				return
 			else:
 				ms_dirname=os.path.dirname(os.path.realpath(msname))
-				os.system('cp -r '+msname+' '+ms_dirname+'/temp.ms')
-				msname=ms_dirname+'/temp.ms'
+				if os.path.isdir(msname.split('.ms')[0]+'.temp.ms'):
+					os.system('rm -rf '+msname.split('.ms')[0]+'.temp.ms')
+				os.system('cp -r '+msname+' '+msname.split('.ms')[0]+'.temp.ms')
+				msname=msname.split('.ms')[0]+'.temp.ms'
 			caltable=kwargs['caltable'] # Caltable name
-			caltable_path=os.path.dirname(caltable)
-			if caltable_path!='':
-				if os.path.isdir(os.path.dirname(caltable))==False:
-					print ('Output directory path is not found.')
-					os.makedirs(os.path.dirname(caltable))
-					print ('New directory is made at :'+os.path.dirname(caltable))
-
-
+			
 			AM=AccessMS(msname)
 			freqs=AM.get_freqs()/10**6
 			start_freq=freqs[0]
@@ -65,8 +61,8 @@ class CALIBRATE():
 			mjdsecs=AM.get_timestamps_in_mjdsecs()
 			startmjd=mjdsecs[0]
 			endmjd=mjdsecs[-1]
-
-			arg_str+=' -startfreq '+str(start_freq)+' -endfreq '+str(end_freq)+' -starttime '+str(startmjd)+' -endtime '+str(endmjd)
+			nchan=AM.get_num_channels()
+			ntime=AM.get_num_timestamps()
 
 			if 'calmode' in kwords:
 				if kwargs['calmode']=='scalar':
@@ -146,6 +142,7 @@ class CALIBRATE():
 				try:
 					t=int(kwargs.get('t'))
 					arg_str+=' -t '+str(t)
+					ntime=int(ntime/t)
 				except:
 					print ('Wrong format of -t')
 			if 'interval' in kwords: # Time interval
@@ -168,6 +165,7 @@ class CALIBRATE():
 				try:
 					ch=int(kwargs.get('ch'))
 					arg_str+=' -ch '+str(ch)
+					nchan=int(nchan/ch)
 				except:
 					print ('Wrong format of -ch')
 			if 'gaintable' in kwords: # Previous gaintable
@@ -230,9 +228,12 @@ class CALIBRATE():
 						num_flag,flag_fraction=self.flagger(msname,float(rms))
 						if int(num_flag)==0:
 							c=1
-							
-			if os.path.isdir(ms_dirname+'/temp.ms'):
-				os.system('rm -rf '+ms_dirname+'/temp.ms*')
+			bin_data=np.fromfile(caltable,dtype=np.float64)
+			np.save(caltable+'.temp',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
+			os.system('rm -rf '+caltable)
+			os.system('mv '+caltable+'.temp.npy '+caltable)				
+			if os.path.isdir(msname.split('.ms')[0]+'.temp.ms'):
+				os.system('rm -rf '+msname.split('.ms')[0]+'.temp.ms*')
 			os.chdir(cwd)
 			os.system('rm -rf casa*log')
 		return caltable
@@ -287,8 +288,13 @@ class CALIBRATE():
 			else:
 				flagbackup=True
 			gaintable_path=os.path.dirname(os.path.realpath(gaintable))
-			self.modify_caltable_for_ms(self,msname,gaintable,gaintable_path+'/temp_nchan_ntime.bin') 
-			gaintable=gaintable_path+'/temp_nchan_ntime.bin'
+			result=self.modify_caltable_for_ms(msname,gaintable,gaintable+'.temp_nchan_ntime.bin')
+			if result=='Nosol':
+				os.system('rm -rf casa*log '+gaintable+'.temp_nchan_ntime.bin')
+				os.chdir(cwd)
+				os.system('rm -rf casa*log')
+				return 'Nosol'
+			gaintable=gaintable+'.temp_nchan_ntime.bin'
 			if applymode=='calflag':
 				if flagbackup==True:
 					af=agentflagger()
@@ -323,7 +329,7 @@ class CALIBRATE():
 			else:		
 				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable)
 				os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
-			os.system('rm -rf '+gaintable_path+'/temp_nchan_ntime.bin')
+			os.system('rm -rf casa*log '+gaintable+'.temp_nchan_ntime.bin')
 		os.chdir(cwd)
 		os.system('rm -rf casa*log')
 		return 0
@@ -344,10 +350,10 @@ class CALIBRATE():
 		gaintable_path=os.path.dirname(os.path.realpath(gaintable))
 		outfile_path=os.path.dirname(outputfile)
 		data=open(gaintable,'rb').read()
-		data_header=data[:64]
+		data_header=data[:48]
 		struct_unpack=struct.Struct('sssssss').unpack_from	# Header string	
 		try:
-			header_intro=''.join(struct_unpack(data_header[:8])) # Header intro 'MWAOCAL'
+			header_intro=''.join(struct_unpack(data_header[:7])) # Header intro 'MWAOCAL'
 		except TypeError:
 			header_intro=str(data_header[:7],'utf-8')
 		struct_unpack=struct.Struct('i').unpack_from      
@@ -356,13 +362,7 @@ class CALIBRATE():
 		num_antenna=struct_unpack(data_header[20:24])[0] # Number of antenna
 		num_channels=struct_unpack(data_header[24:28])[0] # Number of channels
 		num_polarisation=struct_unpack(data_header[28:32])[0] # Number of polarisation
-		struct_unpack=struct.Struct('d').unpack_from      
-		start_freq=struct_unpack(data_header[32:40])[0] # Start frequency
-		end_freq=struct_unpack(data_header[40:48])[0] # End frequency
-		start_time=struct_unpack(data_header[48:56])[0] # Start frequency
-		end_time=struct_unpack(data_header[56:64])[0] # End frequency
-		print (start_freq,end_freq,start_time,start_time)
-		jones_header=np.array([header_intro,filetype,num_intervals,num_antenna,num_channels,num_polarisation,start_freq,end_freq,start_time,end_time])
+		jones_header=np.array([header_intro,filetype,num_intervals,num_antenna,num_channels,num_polarisation])
 		jones_data=np.fromfile(gaintable,dtype=np.float64)
 		jones_data_copy=copy.deepcopy(jones_data)
 		jones_data=jones_data[6:]
@@ -443,67 +443,100 @@ class CALIBRATE():
 		Function to modify the CALIBRATE caltable to apply on a ms
 		Parameters:
 		msname = Name of the measurement set
-		caltable = Name of the caltable
-		outputname= Name of the output caltable
+		caltable = Name of the numpy caltable
+		outputname= Name of the output caltable in CALIBRATE binary format
 		Return:
 		Modified caltable		
 		'''
+		print ('Arranging solutions to apply on the ms.........\n')
 		cwd=os.getcwd()
 		gaintable_path=os.path.dirname(os.path.realpath(caltable))
 		outfile_path=os.path.dirname(outputname)
-		npyfile=self.convert_gaintable_bin2npy(caltable,'CALIBRATE_temp')
-		numpy_table=np.load(npyfile,allow_pickle=True)
-		data=numpy_table[3]
-		header=numpy_table[0]
-		cal_ntime=int(header[2])
-		cal_nant=int(header[3])
-		cal_nchan=int(header[4])
-		cal_npol=int(header[5])
-		cal_startfreq=float(header[6])
-		cal_endfreq=float(header[7])
-		cal_starttime=float(header[8])
-		cal_endtime=float(header[9])
-		cal_time_res=abs(cal_endtime-cal_starttime)/cal_ntime
-		cal_freq_res=(cal_endtime-cal_starttime)/cal_ntime
-		cal_times=np.arange(cal_starttime,cal_endtime,cal_time_res)
-		if cal_freq_res>=0:
-			cal_freqs=np.arange(cal_startfreq,cal_endfreq,cal_freq_res)
-		else:
-			cal_freqs=np.arange(cal_endfreq,cal_startfreq,cal_freq_res)
+		bin_data,cal_start_freq,cal_end_freq,cal_startmjd,cal_endmjd,cal_nchan,cal_ntime=np.load(caltable,allow_pickle=True)
 		AM=AccessMS(msname)
 		ntime=AM.get_num_timestamps()
 		nchan=AM.get_num_channels()
-		nant-=AM.get_num_antenna()
+		nant=AM.get_num_antenna()
 		times=AM.get_timestamps_in_mjdsecs()
 		startmjd=times[0]
 		endmjd=times[-1]
 		freqs=AM.get_freqs()/10**6
 		startfreq=float(freqs[0])
 		endfreq=float(freqs[-1])
-		bin_header = struct.pack("8s",b"MWAOCAL\n")+struct.pack("i",0)+struct.pack("i",0)+struct.pack("i",int(ntime))+struct.pack("i",int(nant))+struct.pack("i",int(nchan))+\
-				struct.pack("i",4)+struct.pack("d",startfreq)+struct.pack("d",endfreq)+struct.pack("d",float(startmjd))+struct.pack("d",float(endmjd))
+		bin_data=bin_data.astype('float64')
+		bin_data.tofile(caltable+'.temp.bin',format='np.float64')
+		npyfile=self.convert_gaintable_bin2npy(caltable+'.temp.bin',caltable+'.CALIBRATE_temp')
+		numpy_table=np.load(npyfile,allow_pickle=True)
+		data=numpy_table[3]
 		new_data=np.empty((ntime,nant,nchan,8))
+		bad_calchantime=[]
+		bin_header = struct.pack("8s",b"MWAOCAL\n")+struct.pack("i",0)+struct.pack("i",0)+struct.pack("i",int(ntime))+struct.pack("i",int(nant))+struct.pack("i",int(nchan))+\
+				struct.pack("i",4)+struct.pack("d",0.0)+struct.pack("d",0.0)
+		cal_nchan=data.shape[2]
+		cal_ntime=data.shape[0]
+		cal_time_res=abs(cal_endmjd-cal_startmjd)/cal_ntime
+		cal_freq_res=(cal_end_freq-cal_start_freq)/cal_nchan
+		if cal_time_res>0:
+			cal_times=np.arange(cal_startmjd,cal_endmjd,cal_time_res)
+		else:
+			cal_times=np.array([cal_startmjd])
+		if cal_freq_res>0:
+			cal_freqs=np.arange(cal_start_freq,cal_end_freq,cal_freq_res)
+		elif cal_freq_res==0:
+			cal_freqs=np.array([cal_start_freq])
+		else:
+			cal_freqs=np.arange(cal_end_freq,cal_start_freq,cal_freq_res)
+		for i in range(data.shape[0]):
+			for j in range(data.shape[2]):
+				caltime=cal_times[i]
+				calfreq=cal_freqs[j]
+				if np.sum(np.isnan(data[i,:,j,:]))==4:
+					bad_calchantime.append([caltime,calfreq])
+		bad_calchantime=np.array(bad_calchantime)
+		if len(bad_calchantime)==cal_ntime*cal_nchan:
+			print ('No unflagged solutions in the caltable.\n')
+			os.system('rm -rf casa*log '+caltable+'.temp.bin '+caltable+'.CALIBRATE_temp*')
+			os.chdir(cwd)
+			os.system('rm rf casa*log')
+			return 'Nosol'
 		for i in range(ntime):
 			for j in range(nchan):
 				mstime=times[i]
 				msfreq=freqs[j]
-				nearest_cal_chan=np.argmin(abs(cal_freqs-msfreq))
-				nearest_cal_timestamp=np.argmin(abs(cal_times-mstime))
-				new_data[i,:,j,:]=data[nearest_cal_time,:,nearest_cal_chan,:]
-		new_data=np.swapaxes(new_data,axis1=0,axis2=1)			
-		new_data=new_data.flatten()
+				while True:
+					min_cal_chan=min(getnearpos(np.array(cal_freqs),msfreq))
+					max_cal_chan=max(getnearpos(np.array(cal_freqs),msfreq))
+					if j>=max_cal_chan:
+						nearest_cal_chan=max_cal_chan
+					else:
+						nearest_cal_chan=min_cal_chan
+					min_cal_time=min(getnearpos(np.array(cal_times),mstime))
+					max_cal_time=max(getnearpos(np.array(cal_times),mstime))
+					if i>=max_cal_time:
+						nearest_cal_time=max_cal_time
+					else:
+						nearest_cal_time=min_cal_time
+					if [nearest_cal_time,nearest_cal_chan] in bad_calchantime:
+						print ('Bad cal chantime encountered.\n')
+						continue
+					else:
+						new_data[i,:,j,:]=data[nearest_cal_time,:,nearest_cal_chan,:]
+						break	
+		np.save(caltable+'.test',new_data)	
+		new_data_flattened=new_data.flatten(order='C')
 		if outfile_path=='':
-			outfile=gaintable_path+'/'+outputfile
+			outfile=gaintable_path+'/'+outputname
 		elif os.path.isdir(outfile_path)==False:
-			outfile=gaintable_path+'/'+os.path.basename(outputfile)
+			outfile=gaintable_path+'/'+os.path.basename(outputname)
 		else:
-			outfile=outputfile
+			outfile=outputname
 		fil=open(outfile,'wb')
 		fil.write(bin_header)
 		fil.close()
 		with open(outfile,mode='ba+') as f:
-			new_data.tofile(f,format='np.float64')
+			new_data_flattened.tofile(f,format='np.float64')
 		os.system('rm -rf '+npyfile)
+		os.system('rm -rf casa*log '+caltable+'.temp.bin '+caltable+'.CALIBRATE_temp*')
 		os.chdir(cwd)
 		os.system('rm -rf casa*log')
 		return outfile
@@ -579,7 +612,6 @@ class CALIBRATE():
 		Bad antenna strings
 		'''
 		cwd=os.getcwd()
-		print ('MSNAME:',msname)
 		mstool=ms()
 		msmd=msmetadata()
 		msmd.open(msname)

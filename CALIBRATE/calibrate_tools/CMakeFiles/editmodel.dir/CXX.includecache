@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -20,9 +20,9 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/application.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/application.h
 wsclean/logger.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/wsclean/logger.h
 sys/types.h
 -
 sys/wait.h
@@ -30,7 +30,7 @@ sys/wait.h
 unistd.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -40,7 +40,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/beam2016implementation.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/beam2016implementation.h
 algorithm
 -
 complex
@@ -62,17 +62,17 @@ boost/math/special_functions/legendre.hpp
 H5Cpp.h
 -
 factorialtable.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/factorialtable.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/factorialtable.h
 recursive_lock.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/recursive_lock.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/recursive_lock.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/factorialtable.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/factorialtable.h
 boost/math/special_functions/factorials.hpp
 -
 ../uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/recursive_lock.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/recursive_lock.h
 cstring
 -
 mutex
@@ -80,13 +80,13 @@ mutex
 system_error
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/tilebeam.h
 tilebeam2016.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam2016.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/tilebeam2016.h
 tilebeambase.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeambase.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/tilebeambase.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam2016.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/tilebeam2016.h
 complex
 -
 map
@@ -94,15 +94,15 @@ map
 set
 -
 beam2016implementation.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/beam2016implementation.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/beam2016implementation.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeambase.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/tilebeambase.h
 casacore/measures/Measures/MDirection.h
 -
 casacore/measures/Measures/MCDirection.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beamevaluator.cpp
 stdexcept
 -
 casacore/measures/TableMeasures/ScalarMeasColumn.h
@@ -116,11 +116,11 @@ casacore/measures/Measures/MDirection.h
 casacore/tables/Tables/TableRecord.h
 -
 beamevaluator.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beamevaluator.h
 banddata.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beamevaluator.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beamevaluator.h
 casacore/ms/MeasurementSets/MeasurementSet.h
 -
 casacore/measures/Measures/MPosition.h
@@ -130,31 +130,31 @@ casacore/measures/Measures/MEpoch.h
 memory
 -
 beam/tilebeam.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/beam/tilebeam.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/beam/tilebeam.h
 matrix2x2.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/matrix2x2.h
 model/modelsource.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelsource.h
 model/model.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/deconvolution/spectralfitter.cpp
 spectralfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/deconvolution/spectralfitter.h
 ../polynomialfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polynomialfitter.h
 ../nlplfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.h
 ../wsclean/logger.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/wsclean/logger.h
 limits
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/deconvolution/spectralfitter.h
 ../uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/delaunay.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/delaunay.h
 algorithm
 -
 fstream
@@ -168,35 +168,35 @@ sstream
 stack
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/editmodel.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/editmodel.cpp
 banddata.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 delaunay.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/delaunay.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/delaunay.h
 units/imagecoordinates.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/imagecoordinates.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/imagecoordinates.h
 loghistogram.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/loghistogram.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/loghistogram.h
 rmsynthesis.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/rmsynthesis.h
 uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 model/model.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.h
 model/powerlawsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/powerlawsed.h
 fitsreader.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.h
 matrix2x2.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/matrix2x2.h
 gnuplot.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/gnuplot.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/gnuplot.h
 spectrumft.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/spectrumft.h
 ndppp.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/ndppp.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/ndppp.h
 deconvolution/spectralfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/deconvolution/spectralfitter.h
 casacore/ms/MeasurementSets/MeasurementSet.h
 -
 cmath
@@ -214,25 +214,25 @@ random
 set
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fftwmanager.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fftwmanager.cpp
 fftwmanager.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fftwmanager.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fftwmanager.h
 system.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/system.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/system.h
 iostream
 -
 fftw3.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fftwmanager.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fftwmanager.h
 cstring
 -
 mutex
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.cpp
 fitsiochecker.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.h
 fitsio.h
 -
 sstream
@@ -240,15 +240,15 @@ sstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.h
 string
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.cpp
 fitsreader.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.h
 polarization.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polarization.h
 stdexcept
 -
 sstream
@@ -262,7 +262,7 @@ casacore/casa/Quanta/MVTime.h
 casacore/measures/Measures/MeasConvert.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.h
 string
 -
 vector
@@ -270,11 +270,11 @@ vector
 fitsio.h
 -
 polarization.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/gnuplot.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/gnuplot.h
 fstream
 -
 string
@@ -284,7 +284,7 @@ vector
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/loghistogram.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/loghistogram.h
 map
 -
 cmath
@@ -294,9 +294,9 @@ stdexcept
 vector
 -
 serializable.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/serializable.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/serializable.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/matrix2x2.h
 complex
 -
 limits
@@ -304,27 +304,27 @@ limits
 sstream
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measuredsed.h
 map
 -
 measurement.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measurement.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measurement.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/spectralenergydistribution.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measurement.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measurement.h
 cstring
 -
 ../polarization.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polarization.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp
 model.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.h
 modelparser.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelparser.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelparser.h
 ../units/radeccoord.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/radeccoord.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/radeccoord.h
 algorithm
 -
 cstdlib
@@ -336,35 +336,35 @@ fstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.h
 algorithm
 -
 vector
 -
 modelsource.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelsource.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelcomponent.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelcomponent.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/spectralenergydistribution.h
 measuredsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measuredsed.h
 powerlawsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/powerlawsed.h
 ../units/imagecoordinates.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/imagecoordinates.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/imagecoordinates.h
 ../units/radeccoord.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/radeccoord.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/radeccoord.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelparser.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelparser.h
 model.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.h
 modelsource.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelsource.h
 tokenizer.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/tokenizer.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/tokenizer.h
 powerlawsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/powerlawsed.h
 cstdlib
 -
 fstream
@@ -372,7 +372,7 @@ fstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelsource.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelsource.h
 algorithm
 -
 string
@@ -380,21 +380,21 @@ string
 sstream
 -
 modelcomponent.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/modelcomponent.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/modelcomponent.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/powerlawsed.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/spectralenergydistribution.h
 ../polynomialfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polynomialfitter.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/spectralenergydistribution.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/spectralenergydistribution.h
 measurement.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measurement.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measurement.h
 ../nlplfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.h
 ../polarization.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polarization.h
 cmath
 -
 iostream
@@ -410,27 +410,27 @@ limits
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/tokenizer.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/tokenizer.h
 fstream
 -
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/ndppp.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/ndppp.h
 fstream
 -
 boost/filesystem/operations.hpp
 -
 model/model.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.h
 model/powerlawsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/powerlawsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/powerlawsed.h
 application.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/application.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/application.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp
 nlplfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.h
 stdexcept
 -
 cmath
@@ -444,15 +444,15 @@ gsl/gsl_vector.h
 gsl/gsl_multifit_nlin.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.h
 cmath
 -
 memory
 -
 uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polarization.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polarization.h
 complex
 -
 stdexcept
@@ -462,31 +462,31 @@ set
 vector
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polynomialfitter.cpp
 polynomialfitter.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polynomialfitter.h
 gsl/gsl_multifit.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polynomialfitter.h
 uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 array
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/rmsynthesis.cpp
 rmsynthesis.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/rmsynthesis.h
 banddata.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/rmsynthesis.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/rmsynthesis.h
 model/measuredsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measuredsed.h
 uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/serializable.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/serializable.h
 iostream
 -
 complex
@@ -494,29 +494,29 @@ complex
 stdint.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/spectrumft.cpp
 spectrumft.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/spectrumft.h
 windowfunction.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/windowfunction.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/windowfunction.h
 model/measuredsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measuredsed.h
 universe.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/universe.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/universe.h
 gnuplot.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/gnuplot.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/gnuplot.h
 cmath
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/spectrumft.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/spectrumft.h
 uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 model/measuredsed.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/measuredsed.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/measuredsed.h
 universe.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/universe.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/universe.h
 units/angle.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/angle.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/angle.h
 fftw3.h
 -
 cstring
@@ -524,7 +524,7 @@ cstring
 complex
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/system.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/system.h
 casacore/casa/OS/HostInfo.h
 -
 stdio.h
@@ -540,7 +540,7 @@ stdexcept
 string
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/angle.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/angle.h
 string
 -
 sstream
@@ -552,7 +552,7 @@ cmath
 boost/algorithm/string/case_conv.hpp
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/imagecoordinates.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/imagecoordinates.h
 algorithm
 -
 cmath
@@ -560,7 +560,7 @@ cmath
 vector
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/units/radeccoord.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/units/radeccoord.h
 string
 -
 sstream
@@ -572,21 +572,21 @@ cstdlib
 cmath
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/universe.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/universe.h
 cmath
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/aocommon/uvector_11.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/windowfunction.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/windowfunction.h
 cmath
 -
 cstring
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/wsclean/logger.h
 sstream
 -
 iostream

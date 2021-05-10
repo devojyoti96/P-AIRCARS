@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -20,11 +20,11 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/applysolutions.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/applysolutions.cpp
 solutionfile.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
 solutionapplier.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionapplier.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionapplier.h
 iostream
 -
 stdexcept
@@ -40,9 +40,9 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 stdint.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/stdint.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/stdint.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -52,7 +52,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/matrix2x2.h
 complex
 -
 limits
@@ -60,7 +60,7 @@ limits
 sstream
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionapplier.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionapplier.h
 complex
 -
 iostream
@@ -74,15 +74,15 @@ casacore/ms/MeasurementSets/MeasurementSet.h
 casacore/tables/Tables/ArrColDesc.h
 -
 banddata.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 solutionfile.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
 uvector.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 matrix2x2.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/matrix2x2.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/matrix2x2.h
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
 cstring
 -
 string
@@ -100,9 +100,9 @@ vector
 stdint.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/uvector.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/aocommon/uvector_11.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/aocommon/uvector_11.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h

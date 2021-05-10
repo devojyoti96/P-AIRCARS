@@ -17,22 +17,22 @@ int main(int argc, char* argv[])
 			nAnt = file.AntennaCount(),
 			nInt = file.IntervalCount(),
 			nChanBlock = file.ChannelCount();
+			std :: cout << "Ant" <<nAnt << "ch"<<nChanBlock << "T" << nInt <<"\n";
 		if(nAnt < selectedAnt)
 			throw std::runtime_error("Antenna not found");
 		
-		for(size_t a = 0; a!=selectedAnt; ++a) {
-			for(size_t cb = 0; cb!=nChanBlock; ++cb) {
-				for(size_t tb = 0; tb!=nInt; ++tb) {
+		for(size_t tb = 0; tb!=nInt; ++tb){
+			  for(size_t a = 0; a!=selectedAnt; ++a){
+				for(size_t cb = 0; cb!=nChanBlock; ++cb) {
 					for(size_t p = 0; p!=4; ++p) {
 						file.ReadNextSolution();
 					}
 				}
 			}
 		}
-		
-		for(size_t cb = 0; cb!=nChanBlock; ++cb) {
-			for(size_t tb = 0; tb!=nInt; ++tb) {
-				std::cout << cb << '\t' << tb;
+		for(size_t tb = 0; tb!=nInt; ++tb)  {
+			for(size_t cb = 0; cb!=nChanBlock; ++cb){
+				std::cout << "Channel: " <<cb << '\t' << "Timestamp: " <<tb;
 				for(size_t p = 0; p!=4; ++p) {
 					std::cout << '\t' << file.ReadNextSolution();
 				}

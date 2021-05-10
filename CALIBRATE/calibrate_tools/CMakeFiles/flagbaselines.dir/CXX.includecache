@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -16,7 +16,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/flagbaselines.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/flagbaselines.cpp
 iostream
 -
 stdexcept
@@ -30,7 +30,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 banddata.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/banddata.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/banddata.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h

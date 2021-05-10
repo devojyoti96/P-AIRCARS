@@ -4,16 +4,16 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/deconvolutionalgorithm.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/deconvolution/spectralfitter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsiochecker.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsmodel.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/fitsreader.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/fitsreader.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/image.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/image.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/model/model.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/model/model.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/nlplfitter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/polynomialfitter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o"
-  "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/wsclean/logger.cpp" "/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/calibrate_tools/CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/deconvolution/deconvolutionalgorithm.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/deconvolution/deconvolutionalgorithm.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/deconvolution/spectralfitter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/deconvolution/spectralfitter.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsiochecker.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsmodel.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/fitsreader.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/fitsreader.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/image.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/image.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/model/model.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/model/model.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/nlplfitter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/nlplfitter.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/polynomialfitter.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/polynomialfitter.cpp.o"
+  "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/wsclean/logger.cpp" "/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/calibrate_tools/CMakeFiles/fitsmodel.dir/wsclean/logger.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
 cstring
 -
 string
@@ -24,9 +24,9 @@ vector
 stdint.h
 -
 
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutiontool.cpp
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutiontool.cpp
 iostream
 -
 solutionfile.h
-/data1/devojyoti/PhD/P-AIRCARS/mwa-reduce/solutionfile.h
+/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
 
