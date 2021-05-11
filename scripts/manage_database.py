@@ -38,6 +38,42 @@ def fill_models(msname):
 	print ('Fill models are done.\n')
 	return
 
+# MPI check
+###########
+def MPI_check():
+	try:
+		os.system('echo "import os\nprint (\'CHECK MPI\')" > test_mpi.py')
+		os.system('mpirun -np 1 -x OMP_NUM_THREADS=3 python3 test_mpi.py')
+		os.system('rm -rf test_mpi.py') 
+		return 0
+	except:	
+		return 1
+
+def casa_instance_runner(cmd,screen_name,finished_touch_file,num_thread):
+	'''
+	Function to run a casa instance
+	Parameters:
+	cmd = Command to run
+	screen_name = Name of the screen
+	'''
+	mpi_check=MPI_check()
+	print (mpi_check)
+	if mpi_check==0:
+		cmd='mpirun -np 1 -x OMP_NUM_THREADS='+str(num_thread)+' '+cmd
+	cmd+=';wait; if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi; rm -rf '+inputs.basedir+'/'+screen_name+'.batch'
+	os.system('echo "'+cmd+'" > '+inputs.basedir+'/'+screen_name+'.batch')
+	screen_cmd='sh '+inputs.basedir+'/'+screen_name+'.batch'
+	os.system('screen -S '+screen_name+' -X quit')	
+	time.sleep(0.5)
+	os.system('screen -mdS '+screen_name)
+	time.sleep(0.5)
+	mainlog.info('########################\n')
+	mainlog.info('Made Screen : '+screen_name+'\n')
+	mainlog.info('Command : '+cmd+'\n')
+	os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
+	return screen_name
+
+
 def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_modeldir,bandpass_modeldir,polcal_modeldir,localdatabase,gain_minsnr,\
 						ref_ant,freq_avg=160.0,pol_skip_freq=1.28):
 	'''
@@ -140,6 +176,8 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		obslog.info('Spliting ms for gain calibration.....\n')
 		if os.path.isdir(basedir+'/'+os.path.basename(msname)+'.gcalms'):
 			os.system('rm -rf '+basedir+'/'+os.path.basename(msname)+'.gcalms '+basedir+'/'+os.path.basename(msname)+'.gcalms.flagversions')
+		if os.path.isdir(basedir+'/'+os.path.basename(msname)+'.gcalms.ref'):
+			os.system('rm -rf '+basedir+'/'+os.path.basename(msname)+'.gcalms.ref '+basedir+'/'+os.path.basename(msname)+'.gcalms.ref.flagversions')
 		obslog.info('split(vis=\''+msname+'\',outputvis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+timerange+'\')\n')
 		split(vis=msname,outputvis=basedir+'/'+os.path.basename(msname)+'.gcalms',datacolumn='DATA',spw='0:'+spw,timerange=timerange) # Reference channel ms
 		obslog.info('split(vis=\''+msname+'\',outputvis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms.ref\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+ref_timestamp+'\')\n')
@@ -365,15 +403,94 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	return 0,caltable_for_global_database,caltable_for_local_database
 
 
-def final_imaging_for_database(msname,basedir):
+def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals=[],residual_frac=0.1,\
+		quality_factor=1,inputfile='',localdatabase='',savedir='',cutoutbox='',want_automask=False,\
+		savemodel=False,saveres=False,use_ankflag=False,do_pol=False,mask='',freq_interval=160,\
+		time_interval=10.0,freq_width=160,time_width=10,sigma=10,thresh=[0.1]):
 	'''
 	Function to make final images for database
+	Parameters:
+	msname = Name of the measurement set
+	workdir = Name of the working directory
+	casacals = CASA caltables to apply
+	calibratecals = CALIBRATE caltables to apply
+	Return:
+	0 on success, 1 on failure
 	'''
-	os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+'/database_imaging --freq_interval 1280 --time_interval 30.0 --freq_width 1280 '+\
-				'--time_width 30.0 --datacolumn corrected')
-	
-
-	return
+	if len(casacals)!=0:
+		casa_caltables=','.join(casacals)
+	else:
+		casa_caltables=''
+	if len(calibratecals)!=0:
+		calibrate_caltables=','.join(calibratecals)
+	else:
+		calibrate_caltables=''
+	if casa_caltables=='' and calibrate_caltables=='':
+		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected\n')
+		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected')
+	elif casa_caltables!='' and calibrate_caltables=='':
+		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables)
+		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables)
+	elif casa_caltables=='' and calibrate_caltables!='':
+		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --calibrate_caltables '+calibrate_caltables)
+		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --calibrate_caltables '+calibrate_caltables)
+	elif casa_caltables!='' and calibrate_caltables!='':
+		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables+' --calibrate_caltables '+calibrate_caltables)
+		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
+						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables+' --calibrate_caltables '+calibrate_caltables)
+	if os.WEXITSTATUS(a)!=0:
+		return 1
+	else:
+		splited_ms=glob.glob(workdir+'/*.ms')
+		splited_ms_copy=copy.deepcopy(splited_ms)
+		if do_pol==True:
+			stokes='IQUV'
+			if len(thresh)!=4:
+				thresh=thresh*4
+		else:
+			if len(thresh)>1:
+				thresh=thresh[0]
+			stokes='psudoI'
+		threshold=','.join(thresh)
+		touch_count=0			
+		while len(splited_ms)!=0:
+			# Estimating total casa instances
+			#################################
+			total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
+			available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
+			total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
+			if available_cpu_for_paircars>total_cpu_frac:
+				available_cpu_for_paircars=total_cpu_frac
+			casa_instance=int(available_cpu_for_paircars/2)
+			open_casa_instance=0
+			for i in range(casa_instance):
+				ms=splited_ms[0]
+				if ms[-1]=='/':
+					ms=ms[:-1]
+				workdir=os.path.abspath(ms)+'/'+os.path.basename(ms)
+				cmd='final_imaging --msname '+ms+' --metafits '+metafits+' --basedir '+basedir+' --workdir '+workdir+' --savedir '+savedir+' --savemodel '+str(savemodel)\
+					+' --saveres '+str(saveres)+' --stokes '+stokes+' --cutoutbox '+cutoutbox+' --sigma '+str(sigma)+' --threshold '+str(threshold)\
+					+' --want_automask '+str(want_automask)+'--maskfile '+str(mask)+' --quality_factor '+str(quality_factor)+' --inputfile '+str(inputfile)\
+						+' --use_ankflag '+str(use_ankflag)+' --residual_frac '+str(residual_frac)
+				screen_name='Final_imaging_'+os.path.basename(ms).split('.ms')[0]
+				finished_touch_file=basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_'
+				casa_instance_runner(cmd,screen_name,finished_touch_file,2)
+				splited_ms.remove(ms)
+				touch_count+=1
+				open_casa_instance+=1
+			while True:
+				obslog.info('Waiting for final imaging spawned to be finished......\n')
+				time.sleep(2.0)
+				if len(glob.glob(basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_*'))>=(touch_count-open_casa_instance):
+					break
+		return 0
 
 
 from optparse import OptionParser
@@ -382,13 +499,14 @@ if __name__=='__main__':
 	parser = OptionParser(usage=usage)
 	parser.add_option('--msname',dest="msname",default=None,help="Name of the measurement set",metavar="Measurement set")
 	parser.add_option('--metafits',dest="metafits",default=None,help="Name of the metafits file",metavar="Metafits file")
-	parser.add_option('--num_jobs',dest="num_jobs",default=0,help="Toatal number of calibration jobs spawned for this measurement set",metavar="Integer")
+	parser.add_option('--num_jobs',dest="num_jobs",default=0,help="Total number of calibration jobs spawned for this measurement set",metavar="Integer")
 	parser.add_option('--basedir',dest="basedir",default=None,help="Name of base directory for a given day",metavar="Directory path")
 	parser.add_option('--gaincal_modeldir',dest="gaincal_modeldir",default=None,help="Name of gaincal model directory",metavar="Directory path")
 	parser.add_option('--bandpass_modeldir',dest="bandpass_modeldir",default=None,help="Name of bandpass model directory",metavar="Directory path")
 	parser.add_option('--polcal_modeldir',dest="polcal_modeldir",default=None,help="Name of polarisation model directory",metavar="Directory path")
 	parser.add_option('--localdatabase',dest="localdatabase",default=None,help="Name of local database",metavar="Directory path")
 	parser.add_option('--freqavg',dest="freqavg",default=160,help="Frequency averaging during calibration in kHz",metavar="Float")
+	parser.add_option('--inputfile',dest='inputfile',default='',help='Path of the P-AIRCARS input file',metavar="File path")
 	(options, args) = parser.parse_args()
 	
 if os.path.isdir(str(options.msname))==False:
@@ -400,9 +518,11 @@ if options.basedir==None:
 	os._exit(0)
 elif os.path.isdir(str(options.basedir))==False:
 	os.makedirs(str(options.basedir))
-
 os.chdir(str(options.basedir))
-sys.path.append(os.getcwd())
+inputfile=str(options.inputfile)
+if inputfile[-1]=='/':
+	inputfile=inputfile[:-1]
+sys.path.append(os.path.dirname(os.path.abspath(inputfile)))
 import selfcal_inputs as inputs
 if inputs.quality_factor==0:
 	polskip=5.12
@@ -434,37 +554,33 @@ msg,caltable_for_global_database,caltable_for_local_database=managing_caldatabas
 	str(options.metafits),int(options.num_jobs),str(options.basedir),str(options.gaincal_modeldir),str(options.bandpass_modeldir),\
 	str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),freq_avg=float(options.freqavg),pol_skip_freq=float(polskip))
 if len(caltable_for_global_database)>0:
-	calarrays={}
+	calarrays=[]
 	calmodes=[]
 	for i in caltable_for_global_database:
 		calmode=os.path.basename(i).split('.bin')[0].split('.')[-1]
-		calarrays[calmode]=np.load(i,allow_pickle=True)	
+		calarrays.append(np.load(i,allow_pickle=True))	
 		calmodes.append(calmode)
-	final_caltable=str(options.localdatabase)+'/'+str(OBSID)+'/'+str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1)
-	if os.path.exists(final_caltable+'.npz'):
-		os.system('rm -rf '+final_caltable+'.npz')
-	if 'gcal' in calmodes and 'bcal' in calmodes and 'lcal' in calmodes and 'pcal' in calmodes:
-		np.savez_compressed(final_caltable,gcal=calarrays['gcal'],bcal=calarrays['bcal'],lcal=calarrays['lcal'],pcal=calarrays['pcal'])
-		os.system('mv '+final_caltable+'/npz '+final_caltable+'.bin') 
-	elif 'gcal' in calmodes and 'bcal' in calmodes:
-		np.savez_compressed(final_caltable,gcal=calarrays['gcal'],bcal=calarrays['bcal'])
-		os.system('mv '+final_caltable+'.npz '+final_caltable+'.bin') 
-	elif 'gcal' in calmodes and 'lcal' in calmodes and 'pcal' in calmodes:
-		np.savez_compressed(final_caltable,gcal=calarrays['gcal'],lcal=calarrays['lcal'],pcal=calarrays['pcal'])
-		os.system('mv '+final_caltable+'.npz '+final_caltable+'.bin') 
-	elif 'gcal' in calmodes:
-		np.savez_compressed(final_caltable,gcal=calarrays['gcal'])
-		os.system('mv '+final_caltable+'.npz '+final_caltable+'.bin') 
-	if os.path.exists(final_caltable+'.bin'):
-		attachments=[final_caltable+'.bin']
+	if str(options.localdatabase)[-1]=='/':
+		localdatabase=str(options.localdatabase)[:-1]
+	else:
+		localdatabase=str(options.localdatabase)
+	final_caltable=str(localdatabase)+'/'+str(OBSID)+'/'+str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1)+'.bin'
+	if os.path.exists(final_caltable):	
+		os.system('rm -rf '+final_caltable)
+	caltable_list=','.join(caltable_for_global_database)
+	obslog.info('Compressing caltables........\n')
+	os.system('compress_caltables --caltables '+caltable_list+' --compressed_file '+final_caltable)
+	if os.path.exists(final_caltable):
+		attachments=[final_caltable]
 		msg='Dear PAIRCARS developers,\n\nCaltables for : OBSID : '+str(OBSID)+' Coarse channels : '+str(coarse_chan_0)+'-'+\
 								str(coarse_chan_1)+'\n\nBest,\nPAIRCARS developing team.\n'
+		print ('Sending caltables to database....\n')
 		send_msg_code,send_msg=send_to_database('Caltables for : OBSID : '+str(OBSID)+' Coarse channels : '+str(coarse_chan_0)+'-'+\
 								str(coarse_chan_1),msg,attachments=attachments)
 		if send_msg_code==0:
 			for i in caltable_for_global_database:
 				os.system('rm -rf '+i)
-			os.system('rm -rf '+final_caltable+'.bin')	
+			os.system('rm -rf '+final_caltable)	
 
 # Appying solution to main ms
 #############################
@@ -474,7 +590,7 @@ for i in caltable_for_local_database:
 		casa_gaintable.append(i)
 	if 'bcal' in i:
 		casa_gaintable.append(i)
-	ig 'lcal' in i:
+	if 'lcal' in i:
 		casa_gaintable.append(i)
 calibrate_gaintable=[]
 for i in caltable_for_local_database:
@@ -483,20 +599,31 @@ for i in caltable_for_local_database:
 	elif 'pcal' in i:
 		calibrate_gaintable.append(i)
 
-obslog.info('Applying solutions from : '+str(casa_gaintable)+'\n')
-obslog.info('applycal(vis=\''+str(options.msname)+'\',gaintable='+str(casa_gaintable)+',applymode=\'calflag\',flagbackup=False)\n')
-applycal(vis=str(options.msname),gaintable=casa_gaintable,applymode='calflag',flagbackup=False)
-obslog.info('Applying solutions from : '+str(calibrate_gaintable)+'\n')
-cal=CALIBRATE()
-for i in calibrate_gaintable:
-	obslog.info('cal.applycal(msname=\''+str(options.msname)+'\',gaintable=\''+i+'\',datacolumn=\'corrected\',applymode=\'calflag\',flagbackup=False)\n')
-	cal.applycal(msname=str(options.msname),gaintable=i,datacolumn='corrected',applymode='calflag',flagbackup=False)
+if inputs.calc_selfcalib_params==True:
+	calparams=CalcParams(str(options.msname),inputs.quality_factor,inputs.safety_factor)
+	residual_frac=float(calparams.calc_calibration_params()[2])
+if inputs.maskfile!='':
+	mask=inputs.maskfile
+elif inputs.maskstr!='':
+	mask=inputs.maskstr
+else:
+	mask=''
 
-obslog.info('All solutions applied on ms : '+str(options.msname)+'\n')
+start_sigma=np.load(str(options.basedir)+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0]
+rms_list=np.load(str(options.basedir)+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
 
+result=final_imaging_for_database(str(options.msname),str(options.metafits),basedir,casacals=casa_gaintable,calibratecals=calibrate_gaintable,residual_frac=residual_frac,\
+		quality_factor=inputs.quality_factor,inputfile=inputfile,localdatabase=localdatabase,savedir=localdatabase+'/'+str(OBSID)+'/images',cutoutbox='3,3',\
+		want_automask=False,savemodel=False,saveres=False,use_ankflag=False,do_pol=inputs.do_polcal,mask=mask,\
+		freq_interval=1280,time_interval=30,freq_width=1280,time_width=30,sigma=start_sigma,threshold=rms_thresh)
 
+'''
+result=final_imaging_for_database(str(options.msname),str(options.metafits),basedir,casacals=casa_gaintable,calibratecals=calibrate_gaintable,residual_frac=residual_frac,\
+		quality_factor=inputs.quality_factor,inputfile=inputfile,localdatabase=localdatabase,savedir=inputs.savedir,cutoutbox=inputs.cutoutbox,want_automask=inputs.want_auto_masking,\
+		savemodel=inputs.savemodel,saveres=inputs.saveresidual,use_ankflag=inputs.use_ankflagger,do_pol=inputs.do_polcal,mask=mask,freq_interval=inputs.image_delta_freq,\
+		time_interval=image_delta_time,freq_width=inputs.image_freq,time_width=inputs.image_time,sigma=start_sigma,threshold=rms_thresh)
 
-
+'''
 
 
 

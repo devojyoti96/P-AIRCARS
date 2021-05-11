@@ -247,7 +247,7 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',threshold=
 		cutoutbox=[]
 	AM=AccessMS(msname)
 	freqs=AM.calc_meanfreq()/10**6	
-	multiscales=str(scales).split(',')		
+	multiscales=scales	
 	scales=[int(i) for i in multiscales]
 	OBSID=str(fits.getheader(metafits)['GPSTIME'])	
 	file_str=workdir+'/'+os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False)).split('.ms')[0]
@@ -314,12 +314,12 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',threshold=
 			break
 	# Exporting images
 	##################		
-	print (cell)
 	output=export_images(file_str,OBSID,cell,imsize,savedir=savedir,savemodel=savemodel,saveresidual=saveresidual,cutoutbox=cutoutbox,\
 					poltclean_dict=poltclean_dict,inputfile=inputfile,astrometry=False)
 	os.system('rm -rf '+file_str+'*')	
 	os.system('cd ../')	
-	os.system('rm -rf '+workdir)
+	if savedir!=workdir:
+		os.system('rm -rf '+workdir)
 	os.chdir(cwd)		
 	return output
 	
@@ -340,12 +340,8 @@ if __name__=='__main__':
 	parser.add_option('--cutoutbox',dest='cutoutbox',default='',help='Cutout box \'X_width,Y_width\' in degree',metavar="Comma separated string")
 	parser.add_option('--threshold',dest='threshold',default=0.1,help='RMS threshold for cleaning for each Stokes plane',metavar="Comma separated string")
 	parser.add_option('--sigma',dest='sigma',default=10,help='Sigma value for thresholding',metavar="Float")
-	parser.add_option('--imsize',dest='imsize',default=1024,help='Number of pixels in the image',metavar="Integer")
-	parser.add_option('--cell',dest='cell',default=1.0,help='Pixel size in arcsec',metavar="Float")
-	parser.add_option('--scales',dest='scales',default='0,3,6,9',help='Multiscale scales in number of pixels',metavar="Comma separated string")
 	parser.add_option('--want_automask',dest='want_automask',default=False,help='Want auto masking or not',metavar="Boolean")
 	parser.add_option('--maskfile',dest='maskfile',default='',help='Mask for imaging when auto masking is off',metavar="Maskfile or CASA mask string")
-	parser.add_option('--uvtaper',dest='uvtaper',default='',help='UV taper string',metavar="String")
 	parser.add_option('--quality_factor',dest='quality_factor',default=1,help='Quality factor of imaging',metavar="Integer")
 	parser.add_option('--inputfile',dest='inputfile',default='',help='Path of the P-AIRCARS input file',metavar="File path")
 	parser.add_option('--use_ankflag',dest='use_ankflag',default=False,help='Use aNKflag for flagging or not',metavar="Boolean")
@@ -360,11 +356,11 @@ if __name__=='__main__':
 	if os.path.isdir(str(options.msname))==False or options.msname==None:
 		print ('Measurement set is not present.\n')
 		os.system('touch '+cwd+'/.Finished_final_imaging_'+os.path.basename(str(msname))+'_noms')
-		os._exit(0)
+		os._exit(1)
 	elif os.path.isfile(str(options.metafits))==False or options.metafits==None:
 		print ('Metafits file is not present.\n')
 		os.system('touch '+cwd+'/.Finished_final_imaging_'+os.path.basename(str(msname))+'_nometa')
-		os._exit(0)
+		os._exit(1)
 	else:
 		print ('#############################\nStart imaging for ms : '+str(msname)+'\n')
 
@@ -400,10 +396,18 @@ if __name__=='__main__':
 
 		rmsthresh=str(options.threshold).split(',')
 		threshold=[float(i) for i in rmsthresh]
+		IB=ImageBasic(str(options.msname))
+		AM=AccessMS(str(options.msname))
+		cent_freq=AM.calc_meanfreq()/10**6
+		coarse_chan_freq=freq_to_MWA_coarse(cent_freq)*1.28
+		cell=IB.calc_cellsize(3,freq=coarse_chan_freq)
+		imsize=IB.num_pixels(3,freq=coarse_chan_freq)
+		scales=IB.choose_scales(3,32*60,freq=coarse_chan_freq)
+		uvtaper=IB.calc_uvtaper()
 
 		make_image(str(options.msname),str(options.metafits),str(workdir),sigma=float(options.sigma),stokes=str(options.stokes),\
-				savedir=str(savedir),threshold=threshold,imsize=[int(options.imsize)],cell=float(options.cell),\
-				scales=str(options.scales),want_automask=eval(str(options.want_automask)),maskfile=str(options.maskfile),uvtaper=str(options.uvtaper),\
+				savedir=str(savedir),threshold=threshold,imsize=[int(imsize)],cell=float(cell),\
+				scales=scales,want_automask=eval(str(options.want_automask)),maskfile=str(options.maskfile),uvtaper=uvtaper,\
 				quality_factor=int(options.quality_factor),savemodel=eval(str(options.savemodel)),saveresidual=eval(str(options.saveresidual)),\
 				cutoutbox=str(options.cutoutbox),inputfile=str(options.inputfile),use_ankflagger=eval(str(options.use_ankflag)),residual_frac=float(options.resfrac))
 		print ('\nImaging finished.\n#############################\n')

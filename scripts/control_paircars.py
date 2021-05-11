@@ -673,6 +673,9 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	#################################
 	total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
 	available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
+	total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
+	if available_cpu_for_paircars>total_cpu_frac:
+		available_cpu_for_paircars=total_cpu_frac
 	casa_instance=int(available_cpu_for_paircars/2)
 	open_casa_instance=0
 	touch_count=0
