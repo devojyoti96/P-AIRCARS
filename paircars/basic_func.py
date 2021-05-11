@@ -32,39 +32,46 @@ class ImageBasic:
 	############################################
 	# Imaging related #
 	############################################
-	def calc_psf(self):
+	def calc_psf(self,freq=0):
 		'''
 		Function to calculate PSF size in arcsec
+		Parameter :
+		freq = Frequency in MHz (default : 0, using central frequency of the ms)
 		Return:
-		iPSF size in arcsec
+		PSF size in arcsec
 		'''
-		wavelength = 299792458.0/self.freq
+		if freq==0:
+			wavelength = 299792458.0/self.freq
+		else:
+			wavelength = 299792458.0/(freq*10**6)
 		psf	= (1.42*(wavelength/self.max_baseline))*(180/np.pi*3600.0) # In arcsec
 		return psf
 
-	def calc_cellsize(self,num_pixel_in_psf):
+	def calc_cellsize(self,num_pixel_in_psf,freq=0):
 		'''
 		Calculate pixel size in arcsec
 		Parameters:
 		num_pixel_in_psf = Number of pixels in one PSF
+		freq = Frequency in MHz (default : 0, using central frequency of the ms)
 		Return:
 		Pixel size in arcsec
 		'''
-		psf	=	self.calc_psf()	
+		psf	=	self.calc_psf(freq=freq)	
 		pixel	=	int(psf/num_pixel_in_psf) 
 		return pixel
 
-	def choose_scales(self,num_pixel_in_psf,max_size):
+	def choose_scales(self,num_pixel_in_psf,max_size,freq=0):
 		'''
 		Function to calculate multiscale scales
 		Parameters:
 		num_pixel_in_psf = Number of pixels in one PSF
 		max_size = Maximum source size in arcsec
+		freq = Frequency in MHz (default : 0, using central frequency of the ms)
 		Return:
 		List of multiscale lists in number of pixels
 		'''
-		psf=self.calc_psf()
-		cellsize=self.calc_cellsize(num_pixel_in_psf)
+		psf=self.calc_psf(freq=freq)
+		cellsize=self.calc_cellsize(num_pixel_in_psf,freq=freq)
 		max_size_rad=max_size/2.0
 		psf_pix	=int(psf/cellsize)
 		scale=[0,psf_pix,3*psf_pix,int(max_size_rad/cellsize)]  ### Choosing scale to be [0,psf,3*psf,max_size/5,max_size/3,max_size] in pixel
@@ -75,25 +82,31 @@ class ImageBasic:
 		scale=sorted(scale)
 		return scale
 
-	def field_of_view(self):
+	def field_of_view(self,freq=0):
 		'''
 		Calculate optimum field of view in arcsec
+		Parameter :
+		freq = Frequency in MHz (default : 0, using central frequency of the ms)
 		Return:
 		Field of view in arcsec
 		'''
-		FOV=np.sqrt(610)*150*10**6/self.freq  # 610 deg^2 is the image FoV at 150MHz for MWA. So extrapolating this to central frequency
+		if freq==0:
+			FOV=np.sqrt(610)*150*10**6/self.freq  # 610 deg^2 is the image FoV at 150MHz for MWA. So extrapolating this to central frequency
+		else:
+			FOV=np.sqrt(610)*150/freq  # 610 deg^2 is the image FoV at 150MHz for MWA. So extrapolating this to central frequency
 		return FOV*3600 ### In arcsecs
 
-	def num_pixels(self,num_pixel_in_psf):
+	def num_pixels(self,num_pixel_in_psf,freq=0):
 		'''
 		Number of image pixels
 		Parameters:
 		num_pixel_in_psf = Number of pixels in one PSF
+		freq = Frequency in MHz (default : 0, using central frequency of the ms)
 		Return:
 		Number of pixels in the image
 		'''
-		FOV=self.field_of_view()
-		cellsize=self.calc_cellsize(num_pixel_in_psf)
+		FOV=self.field_of_view(freq=freq)
+		cellsize=self.calc_cellsize(num_pixel_in_psf,freq=freq)
 		num	=	FOV/cellsize
 		pow2	=	int(np.log2(num))
 		possibility=	np.array([2**(pow2-1)*3,2**(pow2-2)*5,2**(pow2-2)*7,2**(pow2+1)])
@@ -604,9 +617,24 @@ def download_metafits(msname,outdir):
 		metafits=outdir+'/'+str(OBSid)+'.metafits'
 	return metafits
 
-
-
-
+def compress_files(filelist,outputfile):
+	'''
+	Compress a list of numpy files
+	Parameters:
+	filelist = List of numpy table files
+	outputfile = Output compressed file name
+	Return:
+	Compressed file name (Compressed file have arrays in format [original_filename,data_array])
+	'''
+	file_array_list=[]
+	file_name_list=[]
+	for i in filelist:
+		a=np.load(i,allow_pickle=True)
+		a=np.append(i,a)
+		file_array_list.append(a)
+	np.savez_compressed(outputfile,a=np.array(file_array_list))
+	os.system('mv '+outputfile+'.npz '+outputfile)
+	return outputfile
 
 
 
