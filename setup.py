@@ -18,7 +18,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='Andrew.Williams@curtin.edu.au',
     description='PAIRCARS',
-    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input','scripts/manage_database','scripts.parallel_ms_split','scripts/final_imaging','scripts/compress_caltables'],
+    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input','scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables'],
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
