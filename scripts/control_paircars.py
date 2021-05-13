@@ -824,7 +824,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				bandpass_finished_file_list=[]
 				finished_bandpass=True
 
-		bpcaltable=glob.glob(inputs.basedir+'/bpcaltables/'+str(ms_obsid)+'/*ref*.cal')+ref_gaintable
+		bpcaltable=glob.glob(inputs.basedir+'/bpcaltables/'+str(ms_obsid)+'/'+basemsdir+'/*ref*.cal')+ref_gaintable
 		index=time_grid.index(ref_time)
 		if len(time_grid)>=10 and time_avg<2:
 			if (index-5)<0:
