@@ -654,7 +654,7 @@ class PolSelfcal:
 		cal=CALIBRATE()
 		beamfile=self.msname+'.beam.bin'
 		beamfile,beamjones=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,skip_freq=float(skip_freq))
-		if save_beamfile!='':
+		if save_beamfile!='' and save_beamfile!=beamfile and os.path.exists(save_beamfile)==False:
 			os.system('cp -r '+beamfile+' '+save_beamfile)
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
@@ -668,7 +668,8 @@ class PolSelfcal:
 				tb.flush()
 				tb.close()
 				self.pollog_verbose.info('Modified DATA column.\n')
-			os.system('rm -rf '+self.msname+'.beam*')
+			if save_beamfile!=beamfile:
+				os.system('rm -rf '+self.msname+'.beam*')
 			if len(code_list)==1 and code_list[0]=='':
 				code+='S_PBCOR'
 			else:
@@ -687,7 +688,8 @@ class PolSelfcal:
 				tb.flush()
 				tb.close()
 				self.pollog_verbose.info('Modified DATA column.\n')
-			os.system('rm -rf '+self.msname+'.beam*')
+			if save_beamfile!=beamfile:
+				os.system('rm -rf '+self.msname+'.beam*')
 			os.system('rm -rf casa*log')
 			self.pollog_verbose.info('Beam correction done. Beam file is at : '+beamfile+'\n')
 			return beamfile,beamjones
@@ -1285,5 +1287,3 @@ class PolSelfcal:
 #########################################
 # Finished PolSelfcal Class
 #########################################
-
-

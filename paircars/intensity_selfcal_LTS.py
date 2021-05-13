@@ -43,7 +43,7 @@ class IntensitySelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange=IB.calc_calib_uvrange(4)[0] # Short baselines sensitive to larger than 4 deg are excluded 
+		self.calib_uvrange=IB.calc_calib_uvrange(2)[0] # Short baselines sensitive to larger than 2 deg are excluded 
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive

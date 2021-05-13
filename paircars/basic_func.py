@@ -129,8 +129,8 @@ class ImageBasic:
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
 		hist=np.histogram(uvdist)
-		percentile_95=np.percentile(uvdist,95)
-		uvmax=int(percentile_95)
+		percentile_99=np.percentile(uvdist,99)
+		uvmax=int(percentile_99)
 		uvmax_lambda=uvmax/wavelength
 		return str(int(uvmin_lambda))+'~'+str(int(uvmax_lambda))+'lambda',int(uvmin),int(uvmax),int(uvmin_lambda),int(uvmax_lambda)
 
