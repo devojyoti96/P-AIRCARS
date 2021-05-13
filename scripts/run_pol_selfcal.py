@@ -457,16 +457,23 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				tb.close()
 				pass		
 
-		if (do_pbcor==True and gaincal_count==1) or (do_pbcor==True and os.path.isfile(msname+'/.single_beamcorrected')==False):
+		if (do_pbcor==True and gaincal_count==1) or (do_pbcor==True):
 			if verbose==False:
 				print ('Performing ideal beam correction.\n')
 			logger.info('Performing ideal beam correction.\n')
 			if os.path.isdir(working_dir+'/Backup_beamcorrected.ms'):
 				os.system('rm -rf '+working_dir+'/Backup_beamcorrected.ms')
-			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False)\n')
-			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False) # Single pointing beam correction on visibility data
+			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
+			if gaincal_count==1:
+				force=True
+			else:
+				force=False
+			save_beamfile=basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+os.path.basename(msname).split('.ms')[0]+'_beam.bin'
+			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=force,skip_freq=1.28,save_beamfile=save_beamfile) # Single pointing beam correction on visibility data
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_beamcorrected.ms\',datacolumn=\'corrected\')\n')
 			split(vis=msname,outputvis=working_dir+'/Backup_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
+			if verbose==True:
+				os.system('cp -r '+working_dir+'/Backup_beamcorrected.ms '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+os.path.basename(msname).split('.ms')[0]+'_beamcor.ms')
 			tb=table()
 			tb.open('Backup_beamcorrected.ms')
 			beamcor_data=tb.getcol('DATA')
@@ -1309,4 +1316,3 @@ if __name__=='__main__':
 		file_str=msbasename.split('.ms')[0]
 		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')
 		pass
-

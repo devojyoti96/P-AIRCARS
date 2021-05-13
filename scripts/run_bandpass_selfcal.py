@@ -596,7 +596,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 								flagmanager(vis=msname,mode='delete',versionname=flagversion)
 							if use_ankflagger:
 								logger.info('Perforing final uvsub flag using aNKflagger.\n')
-								loggr.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
+								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
 								do_uvsub_ankflag(msname,model='junk1.model',nthread=1,verbose=verbose,flagbackup=False)
 							else:
 								logger.info('Performing final uvsub flag.\n')

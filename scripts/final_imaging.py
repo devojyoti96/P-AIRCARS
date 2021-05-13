@@ -277,7 +277,7 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',threshold=
 		mask_rad=int((32*60)/float(cell)) # Creating a mask with 32 arcmin radius centered on the image
 		mask_str='circle[['+str(imsize[0]/2)+'pix,'+str(imsize[0]/2)+'pix],'+str(mask_rad)+'pix]'
 	else:
-		mask_str=inputs.maskstr
+		mask_str=maskfile
 	while True:
 		if os.path.isdir(mask)==True:
 			poltclean(vis=msname,selectdata=True,datacolumn="corrected",imagename=file_str,imsize=imsize,cell=cell,stokes=stokes,gridder='standard',\
@@ -305,8 +305,6 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',threshold=
 		if median_res_frac>=residual_frac:
 			if use_ankflagger==True:
 				do_uvsub_ankflag(msname,model='',nthread=1,verbose=False,flagbackup=False)
-			else:
-				do_uvsub_flagger(msname,model='',mode='uvsub',rmsthresh=[10,8,6,4],flagbackup=False)
 			print ('Continuing CLEANing, since residual fraction is more than '+str(residual_frac*100)+'%\n')
 			sigma-=1.0
 			continue
@@ -341,9 +339,9 @@ if __name__=='__main__':
 	parser.add_option('--threshold',dest='threshold',default=0.1,help='RMS threshold for cleaning for each Stokes plane',metavar="Comma separated string")
 	parser.add_option('--sigma',dest='sigma',default=10,help='Sigma value for thresholding',metavar="Float")
 	parser.add_option('--want_automask',dest='want_automask',default=False,help='Want auto masking or not',metavar="Boolean")
-	parser.add_option('--maskfile',dest='maskfile',default='',help='Mask for imaging when auto masking is off',metavar="Maskfile or CASA mask string")
+	parser.add_option('--maskfile',dest='maskfile',default=None,help='Mask for imaging when auto masking is off',metavar="Maskfile or CASA mask string")
 	parser.add_option('--quality_factor',dest='quality_factor',default=1,help='Quality factor of imaging',metavar="Integer")
-	parser.add_option('--inputfile',dest='inputfile',default='',help='Path of the P-AIRCARS input file',metavar="File path")
+	parser.add_option('--inputfile',dest='inputfile',default=None,help='Path of the P-AIRCARS input file',metavar="File path")
 	parser.add_option('--use_ankflag',dest='use_ankflag',default=False,help='Use aNKflag for flagging or not',metavar="Boolean")
 	parser.add_option('--residual_frac',dest='resfrac',default=0.15,help='Residual flux fraction',metavar="Float")
 	(options, args) = parser.parse_args()
@@ -405,11 +403,21 @@ if __name__=='__main__':
 		scales=IB.choose_scales(3,32*60,freq=coarse_chan_freq)
 		uvtaper=IB.calc_uvtaper()
 
+		if options.maskfile==None:
+			maskfile=''
+		else:
+			maskfile=str(options.maskfile)
+
+		if options.inputfile==None:
+			inputfile=''
+		else:
+			inputfile=str(options.inputfile)
+
 		make_image(str(options.msname),str(options.metafits),str(workdir),sigma=float(options.sigma),stokes=str(options.stokes),\
 				savedir=str(savedir),threshold=threshold,imsize=[int(imsize)],cell=float(cell),\
-				scales=scales,want_automask=eval(str(options.want_automask)),maskfile=str(options.maskfile),uvtaper=uvtaper,\
+				scales=scales,want_automask=eval(str(options.want_automask)),maskfile=maskfile,uvtaper=uvtaper,\
 				quality_factor=int(options.quality_factor),savemodel=eval(str(options.savemodel)),saveresidual=eval(str(options.saveresidual)),\
-				cutoutbox=str(options.cutoutbox),inputfile=str(options.inputfile),use_ankflagger=eval(str(options.use_ankflag)),residual_frac=float(options.resfrac))
+				cutoutbox=str(options.cutoutbox),inputfile=inputfile,use_ankflagger=eval(str(options.use_ankflag)),residual_frac=float(options.resfrac))
 		print ('\nImaging finished.\n#############################\n')
 		os.system('touch '+touch_file)
 		print ('Total run time : '+str(time.time()-start_time)+' s\n#############################\n')

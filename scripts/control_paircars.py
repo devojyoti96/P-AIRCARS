@@ -18,7 +18,7 @@ if os.WEXITSTATUS(a)!=0:
 from selfcal_inputs import basedir
 from casatools import *
 from casatasks import *
-import logging,numpy as np,copy,glob,psutil,time
+import logging,numpy as np,copy,glob,psutil,time,subprocess
 from paircars.basic_func import *
 from paircars.access_ms import *
 from paircars.decor import *
@@ -93,6 +93,14 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 			os.system('rm -rf '+timechan_dir+'/'+os.path.basename(timechan_ms))
 		os.system('mv '+timechan_ms+' '+timechan_dir+'/'+os.path.basename(timechan_ms))
 		return timechan_dir+'/'+os.path.basename(timechan_ms),timechan_dir
+# MPI check
+###########
+def MPI_check():
+	a=subprocess.getstatusoutput('mpirun -h')[0]
+	if a==0:
+		return 0
+	else:
+		return 1
 
 def casa_instance_runner(cmd,screen_name,finished_touch_file,num_thread):
 	'''
@@ -101,8 +109,9 @@ def casa_instance_runner(cmd,screen_name,finished_touch_file,num_thread):
 	cmd = Command to run
 	screen_name = Name of the screen
 	'''
-	if os.path.isfile(inputs.basedir+'/.mpi_enabled'):
-		cmd='mpirun -np 1 -x OMP_NUM_THREADS='+str(num_thread)+' '+cmd
+	a=MPI_check()
+	if a==0:
+		cmd='mpirun -n 1 -x OMP_NUM_THREADS='+str(num_thread)+' -cpus-per-proc '+str(num_thread)+' '+cmd
 	cmd+=';wait; if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi; rm -rf '+inputs.basedir+'/'+screen_name+'.batch'
 	os.system('echo "'+cmd+'" > '+inputs.basedir+'/'+screen_name+'.batch')
 	screen_cmd='sh '+inputs.basedir+'/'+screen_name+'.batch'
@@ -941,14 +950,6 @@ os.chdir(basedir)
 sys.path.append(basedir)
 import selfcal_inputs as inputs
 
-# MPI check
-###########
-if os.path.isfile('.mpi_enabled'):
-	os.system('rm -rf .mpi_enabled')
-os.system('echo "import os\nos.system(\'touch .mpi_enabled\')" > test_mpi.py')
-os.system('mpirun -np 1 -x OMP_NUM_THREADS=3 python3 test_mpi.py')
-os.system('rm -rf test_mpi.py') 
-
 # Logger initiating
 ###################
 formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
@@ -1223,7 +1224,8 @@ for msname in ms_list:
 	screen_name='screen_'+str(OBSID)+'_manage_database'
 	cmd='manage_database --msname '+msname+' --metafits '+metafits+' --OBSID '+str(OBSID)+' --num_jobs '+str(num_jobs)+' --basedir '+basedir+' --gaincal_modeldir '+gaincal_modeldir\
 				+' --bandpass_modeldir '+bandpass_modeldir+' --polcal_caldir '+polcal_caldir+' --localdatabase '+local_caldatabase
-	if os.path.isfile(inputs.basedir+'/.mpi_enabled'):
+	a=MPI_check()
+	if a==0:
 		cmd='mpirun -np 1 -x OMP_NUM_THREADS='+str(3)+' '+cmd
 	cmd+=';wait; rm -rf '+inputs.basedir+'/'+screen_name+'.batch'
 	os.system('echo "'+cmd+'" > '+inputs.basedir+'/'+screen_name+'.batch')

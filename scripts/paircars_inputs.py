@@ -9,8 +9,8 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 
 # Basic parameters #TODO : Different run mode, download data, download data and calib, only calinbration, etc.
 ##################
-basedir				=	'/data1/devojyoti/PhD/data/paircars_test'
-msdir				=	'/data1/devojyoti/PhD/data/test/test1'
+basedir				=	'/data1/devojyoti/PhD/data/paircars_test2'
+msdir				=	'/data1/devojyoti/PhD/data/paircars_test/test1'
 timerange			=	'2014-05-04 02:48:02.25'
 chanrange			=	'0~2,3~3,4~6,8~10,15~16'
 final_image_dir		=	''
@@ -73,7 +73,7 @@ min_selfcal_snr	=	4
 # Flagging parameters
 #####################
 want_uvsub_flag	=	True
-use_ankflagger	=	False
+use_ankflagger	= 	True
 
 # Image export options
 ######################
