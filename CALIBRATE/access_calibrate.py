@@ -224,6 +224,10 @@ class CALIBRATE():
 					while c==0:
 						print ('./calibrate '+arg_str+' '+msname+' '+caltable)
 						os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
+						bin_data=np.fromfile(caltable,dtype=np.float64)
+						np.save(caltable+'.temp',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
+						os.system('rm -rf '+caltable)
+						os.system('mv '+caltable+'.temp.npy '+caltable)
 						self.applycal(msname=msname,gaintable=caltable,datacolumn=datacolumn,applymode='calflag',flagbackup=False)
 						num_flag,flag_fraction=self.flagger(msname,float(rms))
 						if int(num_flag)==0:
