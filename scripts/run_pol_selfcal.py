@@ -467,8 +467,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				force=True
 			else:
 				force=False
-			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
 			save_beamfile=basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+os.path.basename(msname).split('.ms')[0]+'_beam.bin'
+			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
 			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=force,skip_freq=1.28,save_beamfile=save_beamfile) # Single pointing beam correction on visibility data
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_beamcorrected.ms\',datacolumn=\'corrected\')\n')
 			split(vis=msname,outputvis=working_dir+'/Backup_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
