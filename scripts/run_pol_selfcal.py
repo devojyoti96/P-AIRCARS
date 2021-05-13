@@ -463,11 +463,11 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('Performing ideal beam correction.\n')
 			if os.path.isdir(working_dir+'/Backup_beamcorrected.ms'):
 				os.system('rm -rf '+working_dir+'/Backup_beamcorrected.ms')
-			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
 			if gaincal_count==1:
 				force=True
 			else:
 				force=False
+			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
 			save_beamfile=basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+os.path.basename(msname).split('.ms')[0]+'_beam.bin'
 			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=force,skip_freq=1.28,save_beamfile=save_beamfile) # Single pointing beam correction on visibility data
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_beamcorrected.ms\',datacolumn=\'corrected\')\n')
