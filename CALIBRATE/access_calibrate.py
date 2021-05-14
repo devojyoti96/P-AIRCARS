@@ -212,6 +212,10 @@ class CALIBRATE():
 			if ('solmode' not in kwords or 'rmsthresh' not in kwords) or (kwargs['solmode']!='R' or len(kwargs['rmsthresh'])==0): 
 				print ('./calibrate '+arg_str+' '+msname+' '+caltable)
 				os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
+				bin_data=np.fromfile(caltable,dtype=np.float64)
+				np.save(caltable+'.temp',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
+				os.system('rm -rf '+caltable)
+				os.system('mv '+caltable+'.temp.npy '+caltable)	
 			elif kwargs['solmode']=='R' and len(kwargs['rmsthresh'])!=0:
 				solmode=kwargs['solmode']
 				rmsthresh=kwargs['rmsthresh']
@@ -231,11 +235,7 @@ class CALIBRATE():
 						self.applycal(msname=msname,gaintable=caltable,datacolumn=datacolumn,applymode='calflag',flagbackup=False)
 						num_flag,flag_fraction=self.flagger(msname,float(rms))
 						if int(num_flag)==0:
-							c=1
-			bin_data=np.fromfile(caltable,dtype=np.float64)
-			np.save(caltable+'.temp',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
-			os.system('rm -rf '+caltable)
-			os.system('mv '+caltable+'.temp.npy '+caltable)				
+							c=1				
 			if os.path.isdir(msname.split('.ms')[0]+'.temp.ms'):
 				os.system('rm -rf '+msname.split('.ms')[0]+'.temp.ms*')
 			os.chdir(cwd)
