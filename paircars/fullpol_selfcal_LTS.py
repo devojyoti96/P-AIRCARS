@@ -42,8 +42,8 @@ class PolSelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange_min=IB.calc_calib_uvrange(4)[1]
-		self.calib_uvrange_max=IB.calc_calib_uvrange(4)[2]
+		self.calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
+		self.calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
