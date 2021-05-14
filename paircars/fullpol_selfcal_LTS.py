@@ -265,9 +265,11 @@ class PolSelfcal:
 		NOte : Saved X matrix is for B'=XBX^\dagger, which is inverse of poldistortion_matrix of correct_poldistortion function
 		'''
 		cal=CALIBRATE()
-		gaintable_path=os.path.dirname(os.path.realpath(gaintable))
-		cal.convert_gaintable_bin2npy(gaintable,gaintable_path+'/temp')
-		jones_array=np.load(gaintable_path+'/temp.npy',allow_pickle=True)[1]
+		if gaintable[-1]=='/':
+			gaintable=gaintable[:-1]
+		bin_caltable=cal.modify_caltable_for_ms(self.msname,gaintable,gaintable+'.calibrate_bin')
+		npytable=cal.convert_gaintable_bin2npy(bin_caltable,gaintable+'.calibrate_bin.temp')
+		jones_array=np.load(npytable,allow_pickle=True)[1]
 		jones_array=jones_array.reshape(2,2,-1)
 		jones_array_copy=copy.deepcopy(jones_array)
 		nanpos=np.where(np.isnan(jones_array[0,0,:])==True)
@@ -285,7 +287,7 @@ class PolSelfcal:
 			U,H=polar(x,side='right')
 		else:
 			H,U=polar(x,side='left')
-		os.system('rm -rf '+gaintable_path+'/temp.npy')
+		os.system('rm -rf '+gaintable+'.calibrate_bin*')
 		os.system('rm -rf casa*log')
 		np.save(gaintable+'.poldist',np.array([inv(x)]))   # Saving X matrix for B'=XBX^\dagger, which is inverse of poldistortion_matrix of correct_poldistortion function
 		return x,inv(x),np.matrix(H),np.matrix(inv(H)),np.matrix(U),np.matrix(inv(U)),gaintable+'.poldist'
@@ -301,9 +303,11 @@ class PolSelfcal:
 		Poldistortion corrected gaintable
 		'''
 		cal=CALIBRATE()
-		gaintable_path=os.path.dirname(os.path.realpath(gaintable))
+		if gaintable[-1]=='/':
+			gaintable=gaintable[:-1]
 		outfile_path=os.path.dirname(outfile)
-		npytable=cal.convert_gaintable_bin2npy(gaintable,gaintable_path+'/temp')
+		bin_caltable=cal.modify_caltable_for_ms(self.msname,gaintable,gaintable+'.calibrate_bin')
+		npytable=cal.convert_gaintable_bin2npy(bin_caltable,gaintable+'.calibrate_bin.temp')
 		numpy_table=np.load(npytable,allow_pickle=True)
 		bin_header=numpy_table[2]
 		data=numpy_table[1]
@@ -323,8 +327,13 @@ class PolSelfcal:
 			outputfile=gaintable_path+'/'+os.path.basename(outfile)
 		else:
 			outputfile=outfile
-		outputfile,bad_flags=cal.convert_gaintable_npy2bin(npytable,outputfile,remove_nan=False)
-		os.system('rm -rf '+npytable)
+		outputfile_bin,bad_flags=cal.convert_gaintable_npy2bin(npytable,outputfile+'.calibrate_bin',remove_nan=False)
+		bin_data=np.fromfile(outputfile_bin,dtype=np.float64)
+		data=np.load(gaintable,allow_pickle=True)
+		data[0]=bin_data
+		np.save(outputfile+'.temp',data)
+		os.system('mv '+outputfile+'.temp.npy '+outputfile)
+		os.system('rm -rf '+npytable+' *.calibrate_bin*')
 		os.system('rm -rf casa*log')
 		return outputfile
 
