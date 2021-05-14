@@ -810,7 +810,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								logger.info('ft(vis=\''+working_dir+'/Backup_uncalib.ms\',model=\'junk0.model\',usescratch=True)\n')
 								if inputs.uvrange_to_cal!='':
 									IB=ImageBsic(working_dir+'/Backup_uncalib.ms')	
-									uvrange_to_cal=IB.calc_calib_uvrange(4)[0]
+									uvrange_to_cal=IB.calc_calib_uvrange(2)[0]
 								else:
 									uvrange_to_cal=inputs.uvrange_to_cal
 								logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''\
@@ -889,7 +889,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						ft(vis=working_dir+'/Backup_uncalib.ms',model='junk1.model',usescratch=True)
 						if inputs.uvrange_to_cal!='':
 							IB=ImageBsic(working_dir+'/Backup_uncalib.ms')	
-							uvrange_to_cal=IB.calc_calib_uvrange(4)[0]
+							uvrange_to_cal=IB.calc_calib_uvrange(2)[0]
 						else:
 							uvrange_to_cal=inputs.uvrange_to_cal
 						logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''\
@@ -963,7 +963,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								ft(vis=working_dir+'/Backup_uncalib.ms',model='junk1.model',usescratch=True)
 								if inputs.uvrange_to_cal!='':
 									IB=ImageBsic(working_dir+'/Backup_uncalib.ms')	
-									uvrange_to_cal=IB.calc_calib_uvrange(4)[0]
+									uvrange_to_cal=IB.calc_calib_uvrange(2)[0]
 								else:
 									uvrange_to_cal=inputs.uvrange_to_cal
 								logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''\
@@ -1057,7 +1057,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							ft(vis=working_dir+'/Backup_uncalib.ms',model='junk1.model',usescratch=True)
 							if inputs.uvrange_to_cal!='':
 								IB=ImageBsic(working_dir+'/Backup_uncalib.ms')	
-								uvrange_to_cal=IB.calc_calib_uvrange(4)[0]
+								uvrange_to_cal=IB.calc_calib_uvrange(2)[0]
 							else:
 								uvrange_to_cal=inputs.uvrange_to_cal
 							logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''\

@@ -417,7 +417,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('ft(vis=\''+msname+'\',model=\''+modelname+'\',usescratch=True)\n')
 			ft(vis=msname,model=modelname,usescratch=True)
 			IB=ImageBasic(msname)
-			uvrange=IB.calc_calib_uvrange(4)[0]
+			uvrange=IB.calc_calib_uvrange(2)[0]
 			logger.info('gaincal(vis=\''+msname+'\',caltable=\''+working_dir+'/Leakage_cor_gaincal.cal\',refant=\''+str(inputs.ref_ant)+'\',minsnr='+\
 				str(inputs.gain_minsnr)+',calmode=\'ap\',solnorm=True,uvrange=\''+str(uvrange)+'\',gaintype=\'G\',solmode=\'R\',rmsthresh=[10,7,5,3.5],gaintable='+\
 				str('[]')+'\n')
@@ -486,8 +486,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			if gaincal_count==1:
 				logger.info('Re-calibrating using Stokes Q,U corrected model.\n')
 				IB1=ImageBasic(msname)
-				calib_uvrange_min=IB1.calc_calib_uvrange(4)[1]
-				calib_uvrange_max=IB1.calc_calib_uvrange(4)[2]
+				calib_uvrange_min=IB1.calc_calib_uvrange(2)[1]
+				calib_uvrange_max=IB1.calc_calib_uvrange(2)[2]
 				clearcal(vis=msname,addmodel=True)
 				logger.info('delmod(vis=\''+msname+'\',scr=True)\n')
 				delmod(vis=msname,scr=True)
@@ -814,8 +814,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk0.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk0.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(4)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(4)[2]
+								calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
+								calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=False)\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -905,8 +905,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 						delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 						logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 						ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-						calib_uvrange_min=IB.calc_calib_uvrange(4)[1]
-						calib_uvrange_max=IB.calc_calib_uvrange(4)[2]
+						calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
+						calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
 						logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 								str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=False)\n')
 						cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -1004,8 +1004,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(4)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(4)[2]
+								calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
+								calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=False)\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -1073,8 +1073,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(4)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(4)[2]
+								calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
+								calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=True)\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\

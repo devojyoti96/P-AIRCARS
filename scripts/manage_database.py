@@ -73,6 +73,125 @@ def casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,num_thread,
 	return screen_name
 
 
+def make_final_gaincal(msname,workdir,caltable_name_prefix,ref_ant='1',gain_minsnr=3,modellist=[]):
+	'''
+	Function to make final gain caltable
+	Parameters:
+	msname = Name of the measurement set
+	workdir = Name of the working directory
+	caltable_name_prefix = Caltable name prefix with full path. For local caltable .gcal extension will be added, for global caltable .gcal.bin extension will be added
+	ref_ant = Reference antenna (default : 1)
+	gain_minsnr = Minimum gain SNR for calibration (default : 3)
+	modellist = [], list of gain calibration models
+	Return:
+	0,1 (For success or failure), List of local caltables, List of global caltables
+	'''
+	caltable_for_local_database=[]
+	caltable_for_global_database=[]
+	if len(modellist)==0:
+		obslog.info('No models are present for gain calibration.\n')
+		return 1,caltable_for_global_database,caltable_for_local_database
+	else:
+		local_caltable=caltable_name_prefix+'.gcal'
+		glocal_caltable=caltable_name_prefix+'.gcal.bin'
+		if os.path.isdir(local_caltable):
+			os.system('rm -rf '+local_caltable)
+		if os.path.isdir(global_caltable):
+			os.system('rm -rf '+global_caltable)
+		obslog.info('#######################################\n')
+		obslog.info('Making final gaincal table for ms : '+msname+'\n')
+		# Determining frequency and time stamps
+		#######################################
+		timerange_list=[]
+		ref_timestamp=''
+		ref_model=''
+		for i in range(len(model_list)):
+			modelname=model_list[i]
+			modelbasename=os.path.basename(modelname)
+			timestamp='/'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[:3])+'/'+':'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[3:])
+			timerange_list.append(timestamp)
+			if 'ref' in modelname:
+				ref_model=modelname
+				ref_timestamp+=timestamp+','	
+		if ref_model=='':
+			ref_index=int(len(model_list)/2)
+			ref_model=model_list[ref_index]
+			ref_timestamp=timerange_list[ref_index]
+		else:
+			ref_timestamp=ref_timestamp[:-1] # Reference time
+		timerange=','.join(timerange_list)
+		f=imhead(imagename=ref_model,mode='list')['crval4']/10**6
+		df=(imhead(imagename=ref_model,mode='list')['cdelt4']/10**6)/2.0
+		spw=str(f-df)+'~'+str(f+df)+'MHz' # Spectral window range for reference model
+		AM=AccessMS(msname)
+		freqres=AM.calc_freqres()
+		chanwidth=int((float(2*df)*10**3)/freqres)
+
+		# Spliting ms for local and global caltable, for global caltable only reference time solution will be there
+		###########################################################################################################
+		obslog.info('Spliting ms for gain calibration.....\n')
+		if os.path.isdir(workdir+'/'+os.path.basename(msname)+'.gcalms'):
+			os.system('rm -rf '+workdir+'/'+os.path.basename(msname)+'.gcalms '+workdir+'/'+os.path.basename(msname)+'.gcalms.flagversions')
+		if os.path.isdir(workdir+'/'+os.path.basename(msname)+'.gcalms.ref'):
+			os.system('rm -rf '+workdir+'/'+os.path.basename(msname)+'.gcalms.ref '+workdir+'/'+os.path.basename(msname)+'.gcalms.ref.flagversions')
+		obslog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname)+'.gcalms\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+\
+					timerange+'\',width'+str(chanwidth)+')\n')
+		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname)+'.gcalms',datacolumn='DATA',spw='0:'+spw,timerange=timerange,width=chanwidth) # Reference channel ms
+		local_cal_ms=workdir+'/'+os.path.basename(msname)+'.gcalms'
+		obslog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname)+'.gcalms.ref\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+ref_timestamp\
+					+'\',width='+str(chanwidth)+')\n')
+		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname)+'.gcalms.ref',datacolumn='DATA',spw='0:'+spw,timerange=ref_timestamp,width=chanwidth)
+																																				# Only reference channel and time ms
+		global_cal_ms=workdir+'/'+os.path.basename(msname)+'.gcalms.ref'
+
+		# Deleteing previous models and importing reference time model in reference time ms
+		###################################################################################
+		obslog.info('delmod(vis=\''+local_cal_ms+'\',scr=True)\n') # Deleting any previous models in ms and importing refernece time chan model
+		delmod(vis=local_cal_ms,scr=True)
+		obslog.info('ft(vis=\''+global_cal_ms+'\',model=\''+ref_model+'\',spw=\'0:'+str(spw)+'\',usescratch=True)\n')
+		ft(vis=global_cal_ms,model=ref_model,spw='0:'+str(spw),usescratch=True)
+
+		# Iteratively add models, perform gaincal, append them in a single caltable for all times 
+		#########################################################################################
+		IB=ImageBasic(local_cal_ms)
+		uvrange_to_cal=IB.calc_calib_uvrange(2)[0]
+		for i in range(len(model_list)): # Importing model for all times dequentially for reference chan and calibrating 
+			modelname=model_list[i]
+			modelbasename=os.path.basename(modelname)
+			timestamp='/'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[:3])+'/'+':'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[3:])
+			timerange_list.append(timestamp)
+			obslog.info('delmod(vis=\''+local_cal_ms+'\',scr=True)\n')
+			delmod(vis=local_cal_ms,scr=True)
+			obslog.info('ft(vis=\''+local_cal_ms+'\',model=\''+modelname+'\',spw=\'0:'+str(spw)+'\',usescratch=True)\n')
+			ft(vis=local_cal_ms,model=modelname,spw='0:'+str(spw),usescratch=True)
+			obslog.info('gaincal(vis=\''+local_cal_ms+'\',caltable=\''+local_caltable+'\',spw=\'0:'+str(spw)+'\',timerange=\''+timestamp+\
+						'\',append=True,uvrange=\''+uvrange_to_cal+'\',solnorm=True,rmsthresh=[10,8,6],refant=\''+str(ref_ant)+'\',minsnr='+str(gain_minsnr)+')\n')
+			gaincal(vis=local_cal_ms,caltable=local_caltable,spw='0:'+str(spw),timerange=timestamp,append=True,\
+					uvrange=uvrange_to_cal,solnorm=True,rmsthresh=[10,8,6],refant=str(ref_ant),minsnr=gain_minsnr) # Appedning solutions into a same gain table
+
+		# Making glocal caltable in CALIBRATE numpy format
+		##################################################
+		AMgcal=AccessMS(global_cal_ms)
+		ntimes=AMgcal.get_num_timestamps()
+		nchan=AMgcal.get_num_channels()
+		IB1=ImageBasic(global_cal_ms)
+		calib_uvrange_min=IB1.calc_calib_uvrange(2)[1]
+		calib_uvrange_max=IB1.calc_calib_uvrange(2)[2]
+		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
+					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
+					str(int(ntimes/len(model_list)))+',j=3,ch='+str(int(AMgcal.get_num_channels()))+')\n') # Making gaincal table for reference time and chan
+		cal.calibrate(msname=basedir+'/'+os.path.basename(msname)+'.gcalms.ref',caltable=caltable_name+'.bin',calmode='diag',minuv=calib_uvrange_min,maxuv=calib_uvrange_max,\
+			quiet=True,a='0.001,0.0001',t=int(ntimes/len(model_list)),j=3,ch=int(AMgcal.get_num_channels()))
+		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
+		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
+		os.system('mv '+local_caltable+' '+localdatabase) # Copying to local database
+		os.system('mv '+global_caltable+' '+localdatabase) # Copying to local database for further copying to global database
+		caltable_for_global_database.append(global_caltable)
+		caltable_for_local_database.append(local_caltable)
+		os.system('rm -rf '+local_caltable+'* '+global_caltable+'*')
+		return 0,caltable_for_global_database,caltable_for_local_database
+
+
 def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_modeldir,bandpass_modeldir,polcal_modeldir,localdatabase,gain_minsnr,\
 						ref_ant,freq_avg=160.0,pol_skip_freq=1.28):
 	'''
@@ -138,6 +257,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 			os.makedirs(localdatabase)
 	os.system('rm -rf '+basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime*')	
 	casalog.showconsole(True)
+
 	# Final gain calibrations
 	#########################
 	if gaincal_modeldir=='' or os.path.isdir(gaincal_modeldir)==False or len(glob.glob(gaincal_modeldir+'/*.model'))==0:
@@ -149,75 +269,13 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		nchan_avg=int(freq_avg/AM.calc_freqres())
 		coarse_chan_0=freq_to_MWA_coarse(freqs[0])
 		coarse_chan_1=freq_to_MWA_coarse(freqs[-1])
-		caltable_name_prefix=str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1) # Caltable name prefix; OBSID_startcoarsechan_endcoarsechan format
-		caltable_name=basedir+'/'+caltable_name_prefix+'.gcal' # Final gaincal table name
+		caltable_name_prefix=basedir+'/'+str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1) # Caltable name prefix; OBSID_startcoarsechan_endcoarsechan format
 		model_list=glob.glob(gaincal_modeldir+'/*.model') # Gaincal model list
-		if os.path.isdir(caltable_name):
-			os.system('rm -rf '+caltable_name)
-		obslog.info('#######################################\n')
-		obslog.info('Making final gaincal table for ms : '+msname+'\n')
-		timerange_list=[]
-		ref_timestamp=''
-		ref_model=''
-		for i in range(len(model_list)):
-			modelname=model_list[i]
-			modelbasename=os.path.basename(modelname)
-			timestamp='/'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[:3])+'/'+':'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[3:])
-			timerange_list.append(timestamp)
-			if 'ref' in modelname:
-				ref_model=modelname
-				ref_timestamp+=timestamp+','	
-		ref_timestamp=ref_timestamp[:-1] # Reference time
-		timerange=','.join(timerange_list)
-		f=imhead(imagename=ref_model,mode='list')['crval4']/10**6
-		df=(imhead(imagename=ref_model,mode='list')['cdelt4']/10**6)/2.0
-		spw=str(f-df)+'~'+str(f+df)+'MHz' # Spectral window range for reference model
-		obslog.info('Spliting ms for gain calibration.....\n')
-		if os.path.isdir(basedir+'/'+os.path.basename(msname)+'.gcalms'):
-			os.system('rm -rf '+basedir+'/'+os.path.basename(msname)+'.gcalms '+basedir+'/'+os.path.basename(msname)+'.gcalms.flagversions')
-		if os.path.isdir(basedir+'/'+os.path.basename(msname)+'.gcalms.ref'):
-			os.system('rm -rf '+basedir+'/'+os.path.basename(msname)+'.gcalms.ref '+basedir+'/'+os.path.basename(msname)+'.gcalms.ref.flagversions')
-		obslog.info('split(vis=\''+msname+'\',outputvis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+timerange+'\')\n')
-		split(vis=msname,outputvis=basedir+'/'+os.path.basename(msname)+'.gcalms',datacolumn='DATA',spw='0:'+spw,timerange=timerange) # Reference channel ms
-		obslog.info('split(vis=\''+msname+'\',outputvis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms.ref\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+ref_timestamp+'\')\n')
-		split(vis=msname,outputvis=basedir+'/'+os.path.basename(msname)+'.gcalms.ref',datacolumn='DATA',spw='0:'+spw,timerange=ref_timestamp) # Only reference channel and time ms
-		AMgcal=AccessMS(basedir+'/'+os.path.basename(msname)+'.gcalms.ref')
-		ntimes=AMgcal.get_num_timestamps()
-		nchan=AMgcal.get_num_channels()
-		obslog.info('delmod(vis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms.ref\',scr=True)\n') # Deleting any previous models in ms and importing refernece time chan model
-		delmod(vis=basedir+'/'+os.path.basename(msname)+'.gcalms.ref',scr=True)
-		obslog.info('ft(vis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms.ref\',model=\''+ref_model+'\',spw=\'0:'+str(spw)+'\',usescratch=True)\n')
-		ft(vis=basedir+'/'+os.path.basename(msname)+'.gcalms.ref',model=ref_model,spw='0:'+str(spw),usescratch=True)
-		for i in range(len(model_list)): # Importing model for all times dequentially for reference chan and calibrating 
-			modelname=model_list[i]
-			modelbasename=os.path.basename(modelname)
-			timestamp='/'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[:3])+'/'+':'.join(modelbasename.split('time_')[1].split('_freq')[0].split('_')[3:])
-			timerange_list.append(timestamp)
-			obslog.info('delmod(vis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms\',scr=True)\n')
-			delmod(vis=basedir+'/'+os.path.basename(msname)+'.gcalms',scr=True)
-			obslog.info('ft(vis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms\',model=\''+modelname+'\',spw=\'0:'+str(spw)+'\',usescratch=True)\n')
-			ft(vis=basedir+'/'+os.path.basename(msname)+'.gcalms',model=modelname,spw='0:'+str(spw),usescratch=True)
-			IB=ImageBasic(msname)
-			uvrange_to_cal=IB.calc_calib_uvrange(4)[0]
-			obslog.info('gaincal(vis=\''+basedir+'/'+os.path.basename(msname)+'.gcalms\',caltable=\''+caltable_name+'\',spw=\'0:'+str(spw)+'\',timerange=\''+timestamp+\
-						'\',append=True,uvrange=\''+uvrange_to_cal+'\',solnorm=True,rmsthresh=[10,8,6],refant=\''+str(ref_ant)+'\',minsnr='+str(gain_minsnr)+')\n')
-			gaincal(vis=basedir+'/'+os.path.basename(msname)+'.gcalms',caltable=caltable_name,spw='0:'+str(spw),timerange=timestamp,append=True,\
-					uvrange=uvrange_to_cal,solnorm=True,rmsthresh=[10,8,6],refant=str(ref_ant),minsnr=gain_minsnr) # Appedning solutions into a same gain table
-		IB1=ImageBasic(msname)
-		calib_uvrange_min=IB1.calc_calib_uvrange(4)[1]
-		calib_uvrange_max=IB1.calc_calib_uvrange(4)[2]
-		obslog.info('cal.calibrate(msname=\''+basedir+'/'+os.path.basename(msname)+'.gcalms.ref\',caltable=\''+caltable_name+'.bin\',calmode=\'diag\',minuv='+\
-					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
-					str(int(ntimes/len(model_list)))+',j=2,ch='+str(int(AMgcal.get_num_channels()))+')\n') # Making gaincal table for reference time and chan
-		cal.calibrate(msname=basedir+'/'+os.path.basename(msname)+'.gcalms.ref',caltable=caltable_name+'.bin',calmode='diag',minuv=calib_uvrange_min,maxuv=calib_uvrange_max,\
-			quiet=True,a='0.001,0.0001',t=int(ntimes/len(model_list)),j=2,ch=int(AMgcal.get_num_channels()))
-		os.system('rm -rf '+basedir+'/'+os.path.basename(msname)+'.gcalms '+basedir+'/'+os.path.basename(msname)+'.gcalms.flagversions')
-		#os.system('rm -rf '+basedir+'/'+os.path.basename(msname)+'.gcalms.ref '+basedir+'/'+os.path.basename(msname)+'.gcalms.ref.flagversions')
-		os.system('cp -r '+caltable_name+' '+localdatabase) # Copying to local database
-		os.system('cp -r '+caltable_name+'.bin '+localdatabase) # Copying to local database for further copying to global database
-		caltable_for_global_database.append(localdatabase+'/'+os.path.basename(caltable_name)+'.bin')
-		caltable_for_local_database.append(localdatabase+'/'+os.path.basename(caltable_name))
-		os.system('rm -rf '+caltable_name+'*')
+		msg,caltable_for_global_database,caltable_for_local_database=make_final_gaincal(msname,workdir,caltable_name_prefix,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=model_list)
+		return msg,caltable_for_global_database,caltable_for_local_database
+
+
+		'''
 		# Applying gain solutions and spliting for bandpass or polarisation calibration 
 		###############################################################################
 		AM=AccessMS(msname)
@@ -420,7 +478,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	#os.system('rm -rf '+basedir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftime* '+basedir+'/'+os.path.basename(msname).split('.ms')[0]+'.temp*')
 	obslog.info('All final calibrations are finished.\n')
 	return 0,caltable_for_global_database,caltable_for_local_database
-
+	'''
 
 def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals=[],residual_frac=0.1,\
 		quality_factor=1,inputfile='',localdatabase='',savedir='',cutoutbox='',want_automask=False,\
