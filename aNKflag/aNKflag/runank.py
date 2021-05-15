@@ -1,22 +1,28 @@
 import numpy as np
-import os,logging
+import os,logging,sys,glob
 import time as tm
 from astropy.io import fits
 from casatasks import importuvfits,exportuvfits
 from casatools import *
 from datetime import datetime 
 from . import convertfits as cf
-from . import inputs
+#from . import inputs
 
 '''
 Code is written by Apurba Bera (NCRA-TIFR)
 Wrapper for PAIRCARS is written by Devojyoti Kansabanik, 23 Jan, 2021
 '''
 os.system('rm -rf casa*log')
+cwd=os.getcwd()
+pathname=os.path.dirname(os.path.realpath(cf.__file__))
+os.system('cp -r '+pathname+'/inputs.py '+cwd)
+sys.path.append(cwd)
+import inputs as inputs
 
 class ANKFLAG():
 	def __init__(self):
-		pathname=os.path.dirname(os.path.realpath(inputs.__file__))
+		self.cwd=os.getcwd()
+		pathname=os.path.dirname(os.path.realpath(cf.__file__))
 		self.path=pathname
 		os.system('rm -rf casa*log')
 
@@ -51,7 +57,7 @@ class ANKFLAG():
 
 
 	def runankflag(self,inpfilename,ANTS,THREADS,nchan,ntime,npols,inp_fileformat='ms',out_fileformat='ms',overwrite=False,automode=True,datacolumn='corrected',\
-					flagpars=[],verbose=False,**kwargs):
+					flagpars=[],verbose=False,logfile_path='',**kwargs):
 		'''
 		Function to run the aNKflag for full polarization data. Advanced options can be changed from aNKflag installed directory inputs.py file.
 		Parameters:
@@ -67,6 +73,7 @@ class ANKFLAG():
 		datacolumn = 'CORRECTED_DATA', datacolumn to perform flagging
 		flagpars = [], use aNKflag specific flag parameters if automode=False
 		verbose = False, verbose output
+		logfile_path = If verbose True, path to save logfile (default : inputfile path)
 		###############################
 		Advanced options:
 		CLEARSCRATCH : True ,Clear the scratch directory (default : True)
@@ -110,6 +117,9 @@ class ANKFLAG():
 		os.chdir(self.path)
 		LDPATH=str(np.load('LDPATH.npy',allow_pickle=True))
 		os.environ['LD_LIBRARY_PATH']=LDPATH
+		if inpfilename[-1]=='/':
+			inpfilename=inpfilename[:-1]
+		inpfile_name_prefix=os.path.basename(inpfilename)+'_aNKflag'
 		cwd=os.getcwd()
 		os.system('rm -rf casa*log')
 		kwords=list(kwargs.keys())
@@ -198,7 +208,7 @@ class ANKFLAG():
 			inpfil.writelines(lines)
 			inpfil.close()
 
-		inp_filepath=os.path.dirname(os.path.realpath(inpfilename))
+		inp_filepath=os.path.dirname(os.path.abspath(inpfilename))
 		inpfile_basename=os.path.basename(inpfilename)
 		if verbose==True:
 			logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
@@ -260,11 +270,13 @@ class ANKFLAG():
 					logger.error('Input file format is not either uvfits or ms.\n')
 					os._exit(1)
 
-		outfits=inp_filepath+'/temp_ankflag.uvfits'
+		outfits=inp_filepath+'/'+inpfile_name_prefix+'.temp_ankflag.uvfits'
 		if os.path.isfile(outfits):
 			os.system('rm -rf '+outfits)
 
-		scratchdir=cwd+'/scratch/'
+		scratchdir=inp_filepath+'/'+inpfile_name_prefix+'/scratch/'
+		if os.path.isdir(scratchdir)==False:
+			os.makedirs(scratchdir)
 		if (CLEARSCRATCH):
 			if os.path.isdir(scratchdir):
 				if verbose:
@@ -272,6 +284,9 @@ class ANKFLAG():
 				os.system('rm -rf '+scratchdir+'*')
 			else:
 				os.system('mkdir '+scratchdir)
+		ankflag_file=glob.glob('*')
+		os.system('cp -r * '+inp_filepath+'/'+inpfile_name_prefix)
+		os.chdir(inp_filepath+'/'+inpfile_name_prefix)
 		# Choosing flag parameters based on number of channels and time slices in the dataset
 		if automode==True or len(flagpars)==0:
 			if nchan==1 and ntime==1:
@@ -439,14 +454,14 @@ class ANKFLAG():
 					now = datetime.now()
 					dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
 					afank.saveflagversion('aNKflag_'+str(version_num),'Flags autosave on '+dt_string)
-					if os.path.isdir(inp_filepath+'/temp_aNKflag.ms'):
-						os.system('rm -rf '+inp_filepath+'/temp_aNKflag.ms')
-					importuvfits(fitsfile=outfits,vis=inp_filepath+'/temp_aNKflag.ms')
+					if os.path.isdir(inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms'):
+						os.system('rm -rf '+inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
+					importuvfits(fitsfile=outfits,vis=inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
 					tbank=table()
-					tbank.open(inp_filepath+'/temp_aNKflag.ms')
+					tbank.open(inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
 					data=tbank.getcol('DATA')
 					tbank.close()
-					os.system('rm -rf '+inp_filepath+'/temp_aNKflag.ms')
+					os.system('rm -rf '+inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
 					tbank.open(inpfilename,nomodify=False)
 					if datacolumn=='corrected':
 						try:
@@ -473,6 +488,17 @@ class ANKFLAG():
 			os.system('rm '+scratchdir+'*')
 		os.system('rm -rf casa*log')
 		os.chdir(pwd)
+		for i in ankflag_file:
+			os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix+'/'+i)
+		if verbose==True:
+			if logfile_path=='':
+				os.system('mv '+inp_filepath+'/'+inpfile_name_prefix+'/ankflag.out '+inp_filepath+'/ankflag.out')
+			else:
+				os.system('mv '+inp_filepath+'/'+inpfile_name_prefix+'/ankflag.out '+logfile_path+'/ankflag.out')
+		else:
+			os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix+'/ankflag.out')
+		os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix)
+		os.chdir(self.cwd)
 		os.system('rm -rf casa*log')
 		os.unsetenv('LD_LIBRARY_PATH')
 		return finalout
