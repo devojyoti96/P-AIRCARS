@@ -43,7 +43,7 @@ class IntensitySelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange=IB.calc_calib_uvrange(2)[0] # Short baselines sensitive to larger than 2 deg are excluded 
+		self.calib_uvrange=IB.calc_calib_uvrange(12)[0] # Short baselines sensitive to larger than 2 deg are excluded 
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -473,15 +473,19 @@ class IntensitySelfcal:
 		'''
 		if os.path.isdir(imagename):
 			try:
+				if os.path.exists('convolved_selfcal.image'):
+					os.system('rm -rf convolved_selfcal.image')
+				imsmooth(imagename=imagename,outfile='convolved_selfcal.image',beam={'major':'10800arcsec','minor':'10800arcsec','pa':'0deg'},targetres=True)
+				imagename='convolved_selfcal.image'
 				rms=imstat(imagename=imagename,box=self.rms_box)['rms'][0]
 				ia=image()
 				ia.open(imagename)
 				ia.calcmask('\''+imagename+'\'>'+str(sigma*rms),'selfcal_snr_mask')
 				ia.close()
-				flux=imstat(imagename)['flux'][0]
+				flux=imstat(imagename)['max'][0]
 				makemask(inpmask=imagename+':selfcal_snr_mask',mode='delete')
 				selfcal_snr=flux/(rms*np.sqrt(num_antenna_to_use-3))
-				os.system('rm -rf casa*log')
+				os.system('rm -rf casa*log convolved_selfcal.image')
 				return selfcal_snr
 			except:
 				os.system('rm -rf casa*log')
@@ -685,9 +689,9 @@ class IntensitySelfcal:
 		self.log_verbose.info('ft(vis=\''+self.msname+'\',model=\''+modelname+'\',usescratch=True)\n')
 		ft(vis=self.msname,model=modelname,usescratch=True)
 		self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\''+calmode+'\',uvrange=\''+self.calib_uvrange+'\',solnorm=True,refant=\''+\
-							str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\'R\',rmsthresh=[10,8,6],gaintable='+str(calibrator_caltable)+')\n')
+							str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\'R\',rmsthresh=[],gaintable='+str(calibrator_caltable)+')\n')
 		caltable_name=self.bpass_solver(caltable_name,spw='',timerange='',calmode=calmode,uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
-						solmode='R',rmsthresh=[10,8,6],gaintable=calibrator_caltable) # Perform bandpass calibration
+						solmode='R',rmsthresh=[],gaintable=calibrator_caltable) # Perform bandpass calibration
 		calibrator_caltable.append(caltable_name)
 		self.log_verbose.info('applycal(vis=\''+self.msname+'\',gaintable='+str(calibrator_caltable)+',applymode=\'calflag\',flagbackup=True)\n')
 		applycal(vis=self.msname,gaintable=calibrator_caltable,applymode='calflag',flagbackup=True)
@@ -755,14 +759,14 @@ class IntensitySelfcal:
 		'''
 		AM=am.AccessMS(self.msname)
 		radec_str,radeg,decdeg=AM.get_phasecenter()
-		imsmooth(imagename=imagename,outfile='convolved.image',beam={'major':'1920arcsec','minor':'1920arcsec','pa':'0deg'},targetres=False)
+		imsmooth(imagename=imagename,outfile='convolved_phaseshift.image',beam={'major':'1920arcsec','minor':'1920arcsec','pa':'0deg'},targetres=False)
 		modelname=imagename.split('.image')[0]+'.model'
 		if bdsf_import==True:
-			exportfits(imagename='convolved.image',fitsimage='convolved.fits')
-			bdsf.process_image('convolved.fits',thresh_isl=sigma,thresh_pix=sigma-2,output_opts=True,output_all=True)
-			fitsfile=glob.glob('convolved_pybdsm/*/cata*/*srl.FITS')[0]
+			exportfits(imagename='convolved_phaseshift.image',fitsimage='convolved_phaseshift.fits')
+			bdsf.process_image('convolved_phaseshift.fits',thresh_isl=sigma,thresh_pix=sigma-2,output_opts=True,output_all=True)
+			fitsfile=glob.glob('convolved_phaseshift__pybdsm/*/cata*/*srl.FITS')[0]
 			data=fits.getdata(fitsfile)
-			os.system('rm -rf convolved*')
+			os.system('rm -rf convolved_phaseshift*')
 			ra=data['RA']
 			dec=data['DEC']
 			major=data['Major']
@@ -771,26 +775,26 @@ class IntensitySelfcal:
 				maxpos=np.argmax(major)
 				ra=ra[maxpos]
 				dec=dec[maxpos]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(16/60.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(8/60.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:
 				os.system('rm -rf casa*log')
 				return ra,dec,True
 		elif bdsf_import==False: # Using CASA imfit
-			rms=imstat(imagename='convolved.image',box=self.rms_box)['rms'][0]
+			rms=imstat(imagename='convolved_phaseshift.image',box=self.rms_box)['rms'][0]
 			ia=image()			
-			ia.open('convolved.image')
-			ia.calcmask('convolved.image>'+str(sigma*rms),'mymask')
+			ia.open('convolved_phaseshift.image')
+			ia.calcmask('convolved_phaseshift.image>'+str(sigma*rms),'mymask')
 			ia.close()
-			imfit(imagename='convolved.image',summary='convolved.image.summary')
-			data=np.loadtxt('convolved.image.summary')
+			imfit(imagename='convolved_phaseshift.image',summary='convolved_phaseshift.image.summary')
+			data=np.loadtxt('convolved_phaseshift.image.summary')
 			if self.verbose:
-				os.system('cp -r convolved* freq_*datetime_*')
-			os.system('rm -rf convolved*')
+				os.system('cp -r convolved_phaseshift* freq_*datetime_*')
+			os.system('rm -rf convolved_phaseshift*')
 			ra=data[5]
 			dec=data[6]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(16/60.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(8/60.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:
@@ -1326,9 +1330,9 @@ class IntensitySelfcal:
 		else:
 			self.log_verbose.info('Doing bandpass.....\n')
 			self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\'ap\',uvrange=\''+self.calib_uvrange+\
-					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\'R\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
+					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',gaintable='+str(calibrator_caltable)+')\n')
 			self.bpass_solver(caltable_name,spw='',timerange='',calmode='ap',uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
-									solmode='R',rmsthresh=[15,10,8],gaintable=calibrator_caltable) # Perform bandpass calibration
+									gaintable=calibrator_caltable) # Perform bandpass calibration
 		applycal_caltable=copy.deepcopy(calibrator_caltable)
 		applycal_caltable.append(caltable_name)
 		self.log_verbose.info('Applying solutions from :'+str(applycal_caltable)+'\n')
@@ -1516,9 +1520,9 @@ class IntensitySelfcal:
 						solmode=''
 					self.log_verbose.info('Doing bandpass.....\n')
 					self.log_verbose.info('bpass_solver(\''+caltable_name+'\',spw=\'\',timerange=\'\',calmode=\''+calmode+'\',uvrange=\''+self.calib_uvrange+\
-					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\''+solmode+'\',rmsthresh=[15,10,8],gaintable='+str(calibrator_caltable)+')\n')
+					'\',solnorm=True,refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)+',solmode=\''+solmode+'\',gaintable='+str(calibrator_caltable)+')\n')
 					self.bpass_solver(caltable_name,spw='',timerange='',calmode=calmode,uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
-									solmode=solmode,rmsthresh=[15,10,8],gaintable=calibrator_caltable) # Perform bandpass calibration
+									solmode=solmode,gaintable=calibrator_caltable) # Perform bandpass calibration
 				else:
 					self.log_verbose.info('Doing gaincal.....\n')
 					self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)

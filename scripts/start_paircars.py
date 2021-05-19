@@ -1,6 +1,7 @@
 import os,time
 from paircars_inputs import *
 from paircars.access_ms import *
+from paircars.basic_func import *
 
 def casa_instance_runner(cmd,screen_name,finished_touch_file):
 	'''
@@ -22,6 +23,14 @@ def casa_instance_runner(cmd,screen_name,finished_touch_file):
 	os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 	return screen_name
 
+from optparse import OptionParser
+if __name__=='__main__':
+	usage= ' PAIRCARS database manager'
+	parser = OptionParser(usage=usage)
+	parser.add_option('--fresh',dest="fresh",default=False,help="Want to start fresh calibration with P-AIRCARS",metavar="Boolean")
+	parser.add_option('--restart',dest="restart",default=False,help="Want to re-start calibration with P-AIRCARS",metavar="Boolean")
+	(options, args) = parser.parse_args()
+	
 print ('############################\n Starting PAIRCARS..............\n############################\n')
 
 # Validating measurement set dir 
@@ -35,7 +44,7 @@ if os.path.isdir(msdir)==False:
 #############################
 if basedir[-1]=='/':
 	basedir=basedir[:-1]
-print('Searching for measurmenet sets......\n')
+print('Searching for measurment sets......\n')
 file_list=glob.glob(msdir+'/*.ms')
 measurement_set_list=[]
 basedir_list=[]
@@ -44,6 +53,12 @@ for f in file_list:
 		try:	
 			msname=splited_ms_rename(f,ref_time_chan=False,change_msname=False)
 			datestamp='_'.join(msname.split('time_')[-1].split('_')[:3])
+			if eval(str(options.fresh))==True:
+				if os.path.exists(basedir+'/basedir_for_'+datestamp)==True:
+					print ('Removing existing base directory : '+basedir+'/basedir_for_'+datestamp)
+					os.system('rm -rf '+basedir+'/basedir_for_'+datestamp)		
+			if eval(str(options.restart))==True:
+				os.system('rm -rf '+basedir+'/basedir_for_'+datestamp+'/.paircars* '+basedir+'/basedir_for_'+datestamp+'/.ref_timechan_done_*')		
 			if os.path.isdir(basedir+'/basedir_for_'+datestamp)==False:
 				os.makedirs(basedir+'/basedir_for_'+datestamp+'/data/')
 			basedir_list.append(basedir+'/basedir_for_'+datestamp)
@@ -51,8 +66,8 @@ for f in file_list:
 				print('Linking '+f+' to '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname)+'\n')
 				os.system('ln -s '+f+' '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
 			measurement_set_list.append(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
-		except: 
-			pass
+		except Exception as e: 
+			print ('Error occured : '+str(e)+'\n')
 if len(measurement_set_list)==0:
 	print('No valid measurement set is present. Put the correct data. Exiting PAIRCARS.....\n')
 else:

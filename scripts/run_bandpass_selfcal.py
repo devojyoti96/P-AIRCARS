@@ -295,31 +295,78 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 
 	file_str=os.path.basename(msname).split('.ms')[0]
 
-	try:
-		start_sigma=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0] # Starting with last gaincal start_sigma and threshold
-		rms_list=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
-		if len(rms_list)!=2:
-			rms_list.append(rms_list[0])
-	except:
-		logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
-		if verbose==False:
-			print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
-		os.chdir(cwd)
-		if __name__!='__main__':
-			touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_12'
-			msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
-					os.path.basename(msname)+'\nMessage :'+error_msgs(12)+'\n\nBest regards,\nPAIRCARS developing team'
-			msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-			if inputs.send_notification==True:
-				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
-			os.system('touch '+touch_file)
-			if inputs.keep_logger==False:
-				os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-			os.system('rm -rf '+working_dir+'/'+file_str+'*')
-			end_time=time.time()
-			run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-			logger.info('Total runtime : '+str(run_time))
-		return 12
+	if os.path.exists(basedir+'/Ref_time_chan_sigma.npy')==True:
+		try:
+			start_sigma=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0] # Starting with last gaincal start_sigma and threshold
+			rms_list=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
+			if len(rms_list)!=2:
+				rms_list.append(rms_list[0])
+		except:
+			try:
+				logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
+							' Making dirty map to get rms threshold.\n')
+				if verbose==False:
+					print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
+							' Making dirty map to get rms threshold.\n')
+				start_sigma=inputs.start_sigma
+				msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+				ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=False)
+				if msg_code==0:
+					logger.info('Initial selfcal SNR : '+str(selfcal_snr)+'\n')
+					rms_list=[out_dict['I'][1]]
+			except:
+				logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found and dirty image making failed.\n')
+				if verbose==False:
+					print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found and dirty image making failed.\n')
+				os.chdir(cwd)
+				if __name__!='__main__':
+					touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_12'
+					msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
+							os.path.basename(msname)+'\nMessage :'+error_msgs(12)+'\n\nBest regards,\nPAIRCARS developing team'
+					msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+					if inputs.send_notification==True:
+						send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
+					os.system('touch '+touch_file)
+					if inputs.keep_logger==False:
+						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+					os.system('rm -rf '+working_dir+'/'+file_str+'*')
+					end_time=time.time()
+					run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+					logger.info('Total runtime : '+str(run_time))
+				return 12
+	else:
+		try:
+			logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
+						' Making dirty map to get rms threshold.\n')
+			if verbose==False:
+				print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
+						' Making dirty map to get rms threshold.\n')
+			start_sigma=inputs.start_sigma
+			msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+			ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=False)
+			if msg_code==0:
+				logger.info('Initial selfcal SNR : '+str(selfcal_snr)+'\n')
+				rms_list=[out_dict['I'][1]]
+		except:
+			logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found and dirty image making failed.\n')
+			if verbose==False:
+				print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found and dirty image making failed.\n')
+			os.chdir(cwd)
+			if __name__!='__main__':
+				touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_12'
+				msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
+						os.path.basename(msname)+'\nMessage :'+error_msgs(12)+'\n\nBest regards,\nPAIRCARS developing team'
+				msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+				if inputs.send_notification==True:
+					send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
+				os.system('touch '+touch_file)
+				if inputs.keep_logger==False:
+					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+				os.system('rm -rf '+working_dir+'/'+file_str+'*')
+				end_time=time.time()
+				run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+				logger.info('Total runtime : '+str(run_time))
+			return 12	
 
 	if save_true_loc_image==True: # Save source true location images with respect to the reference time and channel
 		logger.info('Source true location imaging is being done.\n')
@@ -346,6 +393,10 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			startmodel=''
 		if os.path.isdir(startmask)==False:
 			startmask=''
+		if num_iter>min_iteration:
+			calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
+			if inputs.gain_minsnr>2 and calc_flag_frac>0.05:
+				inputs.gain_minsnr-=0.5
 
 		if inputs.maskfile!='': # Use user defined mask
 			mask_str=''
@@ -582,63 +633,40 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						start_sigma=sigma	
 						num_iter_fixed_sigma=0
 					else:
-						if uvsub_flag_count<1 and want_uvsub_flag==True:
-							DR3=DR1
-							DR4=DR2
-							flaglist=flagmanager(vis=msname,mode='list')
-							logger.info('Present flag versions : \n')
-							logger.info(str(flaglist)+'\n')
-							flaglist_keys=list(flaglist.keys())
-							flaglist_keys.remove('MS')
-							for key in flaglist_keys:	
-								flagversion=flaglist[key]['name']
-								logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
-								flagmanager(vis=msname,mode='delete',versionname=flagversion)
-							if use_ankflagger:
-								logger.info('Perforing final uvsub flag using aNKflagger.\n')
-								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
-								do_uvsub_ankflag(msname,model='junk1.model',nthread=1,verbose=verbose,flagbackup=False)
-							else:
-								logger.info('Performing final uvsub flag.\n')
-								logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk1.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
-								do_uvsub_flagger(msname,model='junk1.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
-							uvsub_flag_count+=1
-							continue
-						else:
-							if verbose==False:
-								print ('#################\nSelfcal converged. Residual flux inside the mask is less than : '+\
-										str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n##################\n') 	
-							logger.info('########################\n')							
-							logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
-							logger.info('########################\n')								
-							end_selfcal=True
-							os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')
-							os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
-							os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
+						if verbose==False:
+							print ('#################\nSelfcal converged. Residual flux inside the mask is less than : '+\
+									str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n##################\n') 	
+						logger.info('########################\n')							
+						logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
+						logger.info('########################\n')								
+						end_selfcal=True
+						os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')
+						os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
+						os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
+						if inputs.send_notification==True:
+							quickimage=get_quicklook_image('junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',freqstr,datestr,DR5,DR6,field_of_view=2)
+						os.system('rm -rf '+working_dir+'/junk*') 
+						os.chdir(cwd)
+						if __name__!='__main__':
+							touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_0'
+							msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
+									os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
+							msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
 							if inputs.send_notification==True:
-								quickimage=get_quicklook_image('junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',freqstr,datestr,DR5,DR6,field_of_view=2)
-							os.system('rm -rf '+working_dir+'/junk*') 
-							os.chdir(cwd)
-							if __name__!='__main__':
-								touch_file=basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_0'
-								msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+\
-										os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
-								msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-								if inputs.send_notification==True:
-									sent=send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
-									if sent==0:
-										logger.info('Notification sent successfully.\n')
-									else:
-										logger.info('Notification could not be sent.\n')
-									os.system('rm -rf '+quickimage)
-								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-								os.system('rm -rf '+working_dir+'/'+file_str+'*')
-								end_time=time.time()
-								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-								logger.info('Total runtime : '+str(run_time))
-							return 0
+								sent=send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
+								if sent==0:
+									logger.info('Notification sent successfully.\n')
+								else:
+									logger.info('Notification could not be sent.\n')
+								os.system('rm -rf '+quickimage)
+							os.system('touch '+touch_file)
+							if inputs.keep_logger==False:
+								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
+							end_time=time.time()
+							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+							logger.info('Total runtime : '+str(run_time))
+						return 0
 			
 			#############################################################			
 			# If statement 3 (Using last round model) 
@@ -824,22 +852,34 @@ if __name__=='__main__':
 		os._exit(0)
 
 	try:
+		previous_touch_list=glob.glob(inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+		if len(previous_touch_list)!=0:
+			os.system('rm -rf '+inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
 		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
 		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
 				+'\',interactive=\''+str(options.interactive)+'\',start_fresh=\''+str(options.fresh)+'\')\n')
 		msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
 				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)))
-		if msg>100:
-			msg1=msg-100
-			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-			if options.verbose==False:
-				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-		else:
-			msg_str='Message : '+error_msgs(msg)+'\n'
-			if options.verbose==False:
-				print ('Message : '+error_msgs(msg)+'\n')
-			logger.info('Message : '+error_msgs(msg)+'\n')
+		if type(msg)==int:
+			if msg>100:
+				msg1=msg-100
+				if msg1==10:
+					send_notification=False
+				else:
+					send_notification=True
+				msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+				if options.verbose==False:
+					print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+				logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			else:
+				if msg==10:
+					send_notification=False
+				else:
+					send_notification=True
+				msg_str='Message : '+error_msgs(msg)+'\n'
+				if options.verbose==False:
+					print ('Message : '+error_msgs(msg)+'\n')
+				logger.info('Message : '+error_msgs(msg)+'\n')
 		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -849,10 +889,11 @@ if __name__=='__main__':
 		logger.info('##############################\n')
 		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-		if inputs.send_notification==True:
-			attachments=glob.glob(options.workdir+'/quick_image_*.png')
-			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+		if type(msg)==int:
+			if send_notification==True:
+				attachments=glob.glob(options.workdir+'/quick_image_*.png')
+				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
 		os.system('touch '+touch_file)
 		if inputs.keep_logger==False:
 			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')

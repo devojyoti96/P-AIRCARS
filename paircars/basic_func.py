@@ -128,9 +128,22 @@ class ImageBasic:
 		self.tb.close()
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
-		hist=np.histogram(uvdist)
-		percentile_99=np.percentile(uvdist,99)
-		uvmax=int(percentile_99)
+		uvlambda=uvdist/wavelength
+		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/5))
+		max_uvpoints=np.max(uvlambda_hist[1])
+		cutpos1=np.min(np.where(uvlambda_hist[0]<max_uvpoints*0.1))
+		cutpos2=np.min(np.where(uvlambda_hist[0]==0))
+		uvlambda1=uvlambda_hist[1][cutpos1]
+		uvlambda2=uvlambda_hist[1][cutpos2]
+		if uvlambda1>200 and uvlambda2<200:
+			uvmax=uvlambda1
+		elif uvlambda1<200 and uvlambda2>200:
+			uvmax=uvlambda2
+		elif uvlambda1<max(uvlambda_hist[1])*0.7 and uvlambda2<max(uvlambda_hist[1])*0.7:
+			uvmax=max(uvlambda_hist[1])*0.9
+		else:
+			uvmax=max(uvlambda1,uvlambda2)
+		uvmax=uvmax*wavelength
 		uvmax_lambda=uvmax/wavelength
 		return str(int(uvmin_lambda))+'~'+str(int(uvmax_lambda))+'lambda',int(uvmin),int(uvmax),int(uvmin_lambda),int(uvmax_lambda)
 
@@ -146,11 +159,24 @@ class ImageBasic:
 		self.tb.close()
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
-		hist=np.histogram(uvdist)
-		percentile_99=np.percentile(uvdist,99)
-		uvmax=int(percentile_99)
-		uvmaxlambda=uvmax/wavelength
-		return str(uvmaxlambda)+'lambda'
+		uvlambda=uvdist/wavelength
+		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/5))
+		max_uvpoints=np.max(uvlambda_hist[1])
+		cutpos1=np.min(np.where(uvlambda_hist[0]<max_uvpoints*0.1))
+		cutpos2=np.min(np.where(uvlambda_hist[0]==0))
+		uvlambda1=uvlambda_hist[1][cutpos1]
+		uvlambda2=uvlambda_hist[1][cutpos2]
+		if uvlambda1>200 and uvlambda2<200:
+			uvmax=uvlambda1
+		elif uvlambda1<200 and uvlambda2>200:
+			uvmax=uvlambda2
+		elif uvlambda1<max(uvlambda_hist[1])*0.7 and uvlambda2<max(uvlambda_hist[1])*0.7:
+			uvmax=max(uvlambda_hist[1])*0.9
+		else:
+			uvmax=max(uvlambda1,uvlambda2)
+		uvmax=uvmax*wavelength
+		uvmax_lambda=uvmax/wavelength
+		return str(uvmax_lambda)+'lambda'
 
 	def calc_suntaper(self):
 		'''
@@ -197,80 +223,80 @@ class CalcParams:
 			if self.safety_factor==0:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.3
+				residual_frac	=	0.2
 				min_sigma		=	6
 				gain_minsnr		=	3.0		
 				DR_delta_rms	=	25
 				DR_delta_neg	=	20
 				min_DR			=	20
 				max_DR			=	100
-				min_selfcal_snr	=	3
-				skip_time		=	240
+				min_selfcal_snr	=	2.5
+				skip_time		=	960
 				skip_freq		=	2560
 			elif self.safety_factor==1:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.25
+				residual_frac	=	0.15
 				min_sigma		=	7
-				gain_minsnr		=	3.5		
+				gain_minsnr		=	3.0		
 				DR_delta_rms	=	22
 				DR_delta_neg	=	18
 				min_DR			=	25
 				max_DR			=	500
-				min_selfcal_snr	=	3.5
-				skip_time		=	120
+				min_selfcal_snr	=	2.5
+				skip_time		=	720
 				skip_freq		=	2560
 			else:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.2
+				residual_frac	=	0.1
 				min_sigma		=	8
-				gain_minsnr		=	4.0		
+				gain_minsnr		=	3.0		
 				DR_delta_rms	=	20
 				DR_delta_neg	=	15
 				min_DR			=	30
 				max_DR			=	1000
-				min_selfcal_snr	=	4
-				skip_time		=	80
+				min_selfcal_snr	=	2.5
+				skip_time		=	480
 				skip_freq		=	2560
 		elif self.quality_factor==1:
 			if self.safety_factor==0:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.2
+				residual_frac	=	0.15
 				min_sigma		=	7
-				gain_minsnr		=	3.5		
+				gain_minsnr		=	4		
 				DR_delta_rms	=	20
 				DR_delta_neg	=	15
 				min_DR			=	30
 				max_DR			=	1000
-				min_selfcal_snr	=	3.5
-				skip_time		=	120
+				min_selfcal_snr	=	3
+				skip_time		=	240
 				skip_freq		=	1280
 			elif self.safety_factor==1:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.15
+				residual_frac	=	0.1
 				min_sigma		=	8
-				gain_minsnr		=	4.0		
+				gain_minsnr		=	4		
 				DR_delta_rms	=	18
 				DR_delta_neg	=	12
 				min_DR			=	35
 				max_DR			=	5000
-				min_selfcal_snr	=	4
-				skip_time		=	80
+				min_selfcal_snr	=	3
+				skip_time		=	120
 				skip_freq		=	1280
 			else:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.1
+				residual_frac	=	0.05
 				min_sigma		=	9
-				gain_minsnr		=	4.5		
+				gain_minsnr		=	4		
 				DR_delta_rms	=	15
 				DR_delta_neg	=	10
 				min_DR			=	40
 				max_DR			=	10000
-				min_selfcal_snr	=	4.5
+				min_selfcal_snr	=	3
 				skip_time		=	60
 				skip_freq		=	1280
 		else:
@@ -279,12 +305,12 @@ class CalcParams:
 				sigma_step		=	0.25
 				residual_frac	=	0.1
 				min_sigma		=	8
-				gain_minsnr		=	4.0		
+				gain_minsnr		=	4.5		
 				DR_delta_rms	=	18
 				DR_delta_neg	=	12
 				min_DR			=	40
 				max_DR			=	10000
-				min_selfcal_snr	=	4.5
+				min_selfcal_snr	=	3
 				skip_time		=	80
 				skip_freq		=	640
 			elif self.safety_factor==1:
@@ -297,7 +323,7 @@ class CalcParams:
 				DR_delta_neg	=	10
 				min_DR			=	45
 				max_DR			=	50000
-				min_selfcal_snr	=	5.0
+				min_selfcal_snr	=	3
 				skip_time		=	60
 				skip_freq		=	640
 			else:
@@ -305,12 +331,12 @@ class CalcParams:
 				sigma_step		=	0.25
 				residual_frac	=	0.05
 				min_sigma		=	10
-				gain_minsnr		=	5.0		
+				gain_minsnr		=	4.5		
 				DR_delta_rms	=	12
 				DR_delta_neg	=	8
 				min_DR			=	50
 				max_DR			=	100000
-				min_selfcal_snr	=	5.5
+				min_selfcal_snr	=	3
 				skip_time		=	30
 				skip_freq		=	640
 		uvrange_to_cal=''

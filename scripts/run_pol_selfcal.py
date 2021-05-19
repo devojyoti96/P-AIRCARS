@@ -189,12 +189,17 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		if caltables!='':
 			caltable_list=caltables.split(',')
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
-			applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=False)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=False)
 		if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==True:
 			os.system('rm -rf '+working_dir+'/Backup_gaincaled.ms')
 		logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'corrected\')\n')
 		split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='corrected') # Backup of gain calibrated ms
+		logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\')\n')
+		split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')
+		os.system('rm -rf '+msname+' '+msname+'.flagversions')
+		logger.info('os.system(\'mv '+msname+'.temp '+msname+')\n')
+		os.system('mv '+msname+'.temp '+msname)
 
 	if msname[-1]=='/':
 		msname=msname[:-1]
@@ -209,11 +214,11 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	if 'ref' in msname:
 		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=True,change_msname=False))
 	else:
-		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False))
-	freqstr=msname_str.split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
-	datestr_list=msname.split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
-	datestr='/'.join(datestr_list[:3])+'/'+':'.join(datestr_list[3:]) # Datetime string 
-	datestrfile='_'.join(datestr_list[:3])+'_'+'_'.join(datestr_list[3:]) # Datetime string for name 
+		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False)) 
+	freqstr=os.path.basename(msname_str).split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
+	datestr_list=os.path.basename(msname_str).split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
+	datestr='/'.join(datestr_list[:3])+'/'+':'.join(datestr_list[3:]) # Datetime string s
+	datestrfile='_'.join(datestr_list[:3])+'_'+'_'.join(datestr_list[3:]) # Datetime string 
 	file_str_prefix='freq_'+freqstr+'_datetime_'+datestrfile+'_pol'
 
 	OBSID=get_OBSID(metafits)
@@ -222,6 +227,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		os.makedirs(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir)
 	if os.path.isdir(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
 		os.makedirs(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir)
+	if os.path.isdir(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+		os.makedirs(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)
 	
 	if start_fresh==False: # Reading selfcal record
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,FX2_I,FX2_Q,FX2_U,FX2_V,FX2_T,FX2_P,FX1_I,FX1_Q,FX1_U,FX1_V,FX1_T,FX1_P,\
@@ -397,7 +404,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		###################
 		if do_gaincal==True and gaincal_count<1:
 			os.system('rm -rf '+msname+' '+msname+'.flagversions')
-			os.system('cp -r Backup_gaincaled.ms '+msname)
+			logger.info('Spliting from gaincaled backup ms.....\n')
+			logger.info('split(vis=\'Backup_gaincaled.ms\',outputvis=\''+msname+'\',datacolumn=\'data\')\n')
+			split(vis='Backup_gaincaled.ms',outputvis=msname,datacolumn='data')
+			os.system('cp -r '+msname+' '+basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/Gaincaled.ms')
 			if os.path.isfile(msname+'/.usedby_paircars')==False:
 				os.system('touch '+msname+'/.usedby_paircars')
 			logger.info('Performing gain calibration using the leakage corrected source model.\n')
@@ -417,84 +427,90 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('ft(vis=\''+msname+'\',model=\''+modelname+'\',usescratch=True)\n')
 			ft(vis=msname,model=modelname,usescratch=True)
 			IB=ImageBasic(msname)
-			uvrange=IB.calc_calib_uvrange(2)[0]
-			logger.info('gaincal(vis=\''+msname+'\',caltable=\''+working_dir+'/Leakage_cor_gaincal.cal\',refant=\''+str(inputs.ref_ant)+'\',minsnr='+\
-				str(inputs.gain_minsnr)+',calmode=\'ap\',solnorm=True,uvrange=\''+str(uvrange)+'\',gaintype=\'G\',solmode=\'R\',rmsthresh=[10,7,5,3.5],gaintable='+\
-				str('[]')+'\n')
-			gaincal(vis=msname,caltable=working_dir+'/Leakage_cor_gaincal.cal',refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr,\
-					calmode='ap',solnorm=True,uvrange=uvrange,gaintype='G',solmode='R',rmsthresh=[10,7,5,3.5],gaintable=[]) # Performing gain calibration
+			uvrange=IB.calc_calib_uvrange(12)[0]
+			logger.info('bandpass(vis=\''+msname+'\',caltable=\''+working_dir+'/Leakage_cor_gaincal.cal\',refant='+str(inputs.ref_ant)+',minsnr='+str(inputs.gain_minsnr)+','+\
+					'solnorm=True,uvrange=\''+uvrange+'\',bandtype=\'B\')\n')
+			bandpass(vis=msname,caltable=working_dir+'/Leakage_cor_gaincal.cal',refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr,\
+					solnorm=True,uvrange=uvrange,bandtype='B') # Performing gain calibration
 			applycal_caltable=[working_dir+'/Leakage_cor_gaincal.cal']
 			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(applycal_caltable)+',applymode=\'calflag\',flagbackup=False)\n')
 			applycal(vis=msname,gaintable=applycal_caltable,applymode='calflag',flagbackup=False)
-			os.system('cp -r '+working_dir+'/Leakage_cor_gaincal.cal '+basedir+'/caltables/'+str(OBSID)+'/'+file_str+'.lcal') # Keeping new leakage corrected gaintable caltable		
+			logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\')\n')
+			split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')
+			os.system('rm -rf '+msname+' '+msname+'.flagversions')
+			logger.info('os.system(\'mv '+msname+'.temp '+msname+')\n')
+			os.system('mv '+msname+'.temp '+msname)
+			os.system('cp -r '+msname+' '+basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/Leakcor_gaincaled.ms')
+			os.system('cp -r '+working_dir+'/Leakage_cor_gaincal.cal '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.lcal') 
+																															# Keeping new leakage corrected gaintable caltable		
 			logger.info('Gaincal using leakage corrected source model is done.\n')
 			if verbose==False:
 				os.system('rm -rf '+working_dir+'/Leakage_cor_gaincal.cal')
 			else:
-				os.system('mv '+working_dir+'/Leakage_cor_gaincal.cal '+working_dir+'/freq_'+freqstr+'_datetime_'+datestrfile+'_pol/')
+				os.system('mv '+working_dir+'/Leakage_cor_gaincal.cal '+working_dir+'/'+file_str_prefix)
 			do_pbcor=True
 			gaincal_count+=1
 		elif done_qucor==True and num_iter_after_qucor<1:
 			do_pbcor=True
 			gaincal_count+=1
-		cor_data=[]
-		tb=table()
-		tb.open(msname)		
-		try:			
-			cor_data=tb.getcol('CORRECTED_DATA')
-			tb.close()
-		except:
-			tb.close()
-		if len(cor_data)!=0:
-			tb=table()
-			tb.open(msname,nomodify=False)
-			try:
-				tb.putcol('DATA',cor_data)
-				tb.putcol('CORRECTED_DATA',cor_data)
-				tb.flush()
-				tb.close()
-			except:
-				tb.close()
-				pass		
-
+		
 		if (do_pbcor==True and gaincal_count==1) or (do_pbcor==True):
 			if verbose==False:
 				print ('Performing ideal beam correction.\n')
 			logger.info('Performing ideal beam correction.\n')
-			if os.path.isdir(working_dir+'/Backup_beamcorrected.ms'):
-				os.system('rm -rf '+working_dir+'/Backup_beamcorrected.ms')
 			if gaincal_count==1:
 				force=True
 			else:
 				force=False
+			if os.path.isdir(working_dir+'/Backup_beamcorrected.ms')==False:
+				force=True
+			else:
+				force=False
 			save_beamfile=basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+os.path.basename(msname).split('.ms')[0]+'_beam.bin'
+			if os.path.exists(working_dir+'/temp_beamcorrected.ms'):
+				os.system('rm -rf '+working_dir+'/temp_beamcorrected.ms')
+				force=True
 			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
 			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=force,skip_freq=1.28,save_beamfile=save_beamfile) # Single pointing beam correction on visibility data
-			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_beamcorrected.ms\',datacolumn=\'corrected\')\n')
-			split(vis=msname,outputvis=working_dir+'/Backup_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
-			if verbose==True:
-				os.system('cp -r '+working_dir+'/Backup_beamcorrected.ms '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+os.path.basename(msname).split('.ms')[0]+'_beamcor.ms')
+			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/temp_beamcorrected.ms\',datacolumn=\'corrected\')\n')
+			a=split(vis=msname,outputvis=working_dir+'/temp_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
+			if a==True:
+				if os.path.isdir(working_dir+'/Backup_beamcorrected.ms'):
+					os.system('rm -rf '+working_dir+'/Backup_beamcorrected.ms')
+				os.system('mv '+working_dir+'/temp_beamcorrected.ms '+working_dir+'/Backup_beamcorrected.ms')
+			else:
+				os.system('rm -rf '+working_dir+'/temp_beamcorrected.ms')
 			tb=table()
 			tb.open('Backup_beamcorrected.ms')
 			beamcor_data=tb.getcol('DATA')
 			tb.close()
 			tb.open(msname,nomodify=False)
-			tb.putcol('DATA',beamcor_data)
-			tb.putcol('CORRECTED_DATA',beamcor_data)
+			try:
+				tb.putcol('DATA',beamcor_data)
+			except:
+				pass
+			try:
+				tb.putcol('CORRECTED_DATA',beamcor_data)
+			except:
+				pass
 			tb.flush()
 			tb.close()
+			os.system('cp -r '+msname+' '+basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/Beamcored.ms')
 			if gaincal_count==1:
 				logger.info('Re-calibrating using Stokes Q,U corrected model.\n')
 				IB1=ImageBasic(msname)
-				calib_uvrange_min=IB1.calc_calib_uvrange(2)[1]
-				calib_uvrange_max=IB1.calc_calib_uvrange(2)[2]
+				calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
+				calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
 				clearcal(vis=msname,addmodel=True)
 				logger.info('delmod(vis=\''+msname+'\',scr=True)\n')
 				delmod(vis=msname,scr=True)
 				logger.info('ft(vis=\''+msname+'\',model=\''+working_dir+'/qucor.model\',usescratch=True)\n')
 				ft(vis=msname,model=working_dir+'/qucor.model',usescratch=True)
-				cal.calibrate(msname=msname,caltable=working_dir+'/Leakage_corrected.bin',minuv=calib_uvrange_min,quiet=True,\
-						maxuv=calib_uvrange_max,j=1,absmem=1,solmode='')
+				logger.info('cal.calibrate(msname=\''+msname+'\',caltable=\''+working_dir+'/Leakage_corrected.bin\',minuv='+str(calib_uvrange_min)+',quiet='+str(verbose)+\
+						',maxuv='+str(calib_uvrange_max)+',j=1,absmem=1)\n')
+				cal.calibrate(msname=msname,caltable=working_dir+'/Leakage_corrected.bin',minuv=calib_uvrange_min,quiet=verbose,\
+						maxuv=calib_uvrange_max,j=1,absmem=1)
+				logger.info('cal.applycal(msname=\''+msname+'\',gaintable=\''+working_dir+'/Leakage_corrected.bin\',applymode=\'calflag\',flagbackup=True)\n')
 				cal.applycal(msname=msname,gaintable=working_dir+'/Leakage_corrected.bin',applymode='calflag',flagbackup=True) # Applying the solution
 				tb=table()
 				tb.open(msname)
@@ -504,17 +520,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				tb.putcol('DATA',leakage_cor_data)
 				tb.flush()
 				tb.close()
-				if use_ankflagger:
-					logger.info('Performing uvsub flagging using aNKflagger after performing calibration using leakage corrected model.\n')
-					logger.info('do_uvsub_ankflag(\''+msname+'\',model=\''+working_dir+'/qucor.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
-					do_uvsub_ankflag(msname,model=working_dir+'/qucor.model',nthread=1,verbose=verbose,flagbackup=False)
-				else:
-					logger.info('Performing uvsub flagging after performing calibration using leakage corrected model.\n')
-					logger.info('do_uvsub_flagger(\''+msname+'\',model=\''+working_dir+'/qucor.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
-					do_uvsub_flagger(msname,model=working_dir+'/qucor.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
 				if verbose:
-					os.system('mv '+working_dir+'/Leakage_corrected.bin '+working_dir+'/freq_'+freqstr+'_datetime_'+datestrfile+'_pol/')
-					os.system('mv '+working_dir+'/qucor* '+working_dir+'/freq_'+freqstr+'_datetime_'+datestrfile+'_pol/')
+					os.system('mv '+working_dir+'/Leakage_corrected.bin '+working_dir+'/'+file_str_prefix)
+					os.system('mv '+working_dir+'/qucor* '+working_dir+'/'+file_str_prefix)
 				else:
 					os.system('rm -rf '+working_dir+'/Leakage_corrected.bin')
 					os.system('rm -rf '+working_dir+'/qucor*')
@@ -531,7 +539,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				cal.applycal(msname=msname,gaintable=ref_time_chan_gaintable,applymode='calflag')
 			else:
 				if os.path.isdir(working_dir+'/beamcor_backup.ms') and gaincal_count<1:
-					os.system('rm -rf '+msname+'*')
+					os.system('rm -rf '+msname+' '+msname+'.flagversions')
 					os.system('mv '+working_dir+'/beamcor_backup.ms '+msname)
 		
 		##############
@@ -791,12 +799,12 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							flagmanager(vis=msname,mode='delete',versionname=flagversion)
 						if use_ankflagger:
 							logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
-							logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
-							do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=False)
+							logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
+							do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
 						else:
 							logger.info('Performing uvsub flagging due to DR decrease.\n')
-							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
-							do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
+							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=True)\n')
+							do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=True)
 						uvsub_flag_count+=1
 						os.system('rm -rf junk1.model')
 						os.system('cp -r junk0.model junk1.model')
@@ -814,12 +822,12 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk0.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk0.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
+								calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
+								calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
-										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=False)\n')
+										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
-									maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=False)
+									maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=verbose)
 								logger.info('cal.applycal(msname=\''+working_dir+'/Backup_beamcorrected.ms\',gaintable=\''+working_dir+'/junk_final.bin\',applymode=\'calflag\')\n')
 								cal.applycal(msname=working_dir+'/Backup_beamcorrected.ms',gaintable=working_dir+'/junk_final.bin',applymode='calflag')
 								os.system('cp -r '+working_dir+'/junk_final.bin '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bin')
@@ -905,12 +913,12 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 						delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 						logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 						ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-						calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
-						calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
+						calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
+						calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
 						logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
-								str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=False)\n')
+								str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 						cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
-							maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=False)
+							maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=verbose)
 						logger.info('cal.applycal(msname=\''+working_dir+'/Backup_beamcorrected.ms\',gaintable=\''+working_dir+'/junk_final.bin\',applymode=\'calflag\')\n')
 						cal.applycal(msname=working_dir+'/Backup_beamcorrected.ms',gaintable=working_dir+'/junk_final.bin',applymode='calflag')
 						os.system('cp -r '+working_dir+'/junk_final.bin '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bin')
@@ -968,74 +976,49 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 									logger.info('####################\n')
 									continue
 						else:
-							if uvsub_flag_count<1 and want_uvsub_flag==True:
-								DR3=DR1
-								DR4=DR2
-								flaglist=flagmanager(vis=msname,mode='list')
-								logger.info('Present flag versions : \n')
-								logger.info(str(flaglist)+'\n')
-								flaglist_keys=list(flaglist.keys())
-								flaglist_keys.remove('MS')
-								for key in flaglist_keys:	
-									flagversion=flaglist[key]['name']
-									logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
-									flagmanager(vis=msname,mode='delete',versionname=flagversion)
-								if use_ankflagger:
-									logger.info('Performing uvsub flagging using aNKflagger before final output.\n')
-									logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
-									do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=False)
-								else:
-									logger.info('Performing uvsub flagging before final outout.\n')
-									logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
-									do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
-								uvsub_flag_count+=1
-								os.system('rm -rf junk1.model')
-								os.system('cp -r junk0.model junk1.model')
-								continue
-							else:
-								if verbose==False:
-									print ('Selfcal converged. Residual flux inside the mask is less than :'+str(residual_frac*100)+'%. Stopped sigma :'+str(start_sigma)+'\n') 	
-								logger.info('Selfcal converged. Residual flux inside the mask is less than :'+str(residual_frac*100)+'%. Stopped sigma :'+str(start_sigma)+'\n')	
-								os.system('rm -rf beamcor_backup.ms')
-								end_selfcal=True
-								logger.info('----------------------------------\n')
-								logger.info('Making final calibration table.\n')
-								logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True)\n')
-								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
-								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
-								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
-								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
-										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=False)\n')
-								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
-									maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=False)
-								logger.info('cal.applycal(msname=\''+working_dir+'/Backup_beamcorrected.ms\',gaintable=\''+working_dir+'/junk_final.bin\',applymode=\'calflag\')\n')
-								cal.applycal(msname=working_dir+'/Backup_beamcorrected.ms',gaintable=working_dir+'/junk_final.bin',applymode='calflag')
-								os.system('cp -r '+working_dir+'/junk_final.bin '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bin')
-								os.system('cp -r '+working_dir+'/junk1.model '+basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
-								os.system('cp -r '+working_dir+'/junk1.image '+basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
-								os.system('rm -rf Backup_*.ms*')
+							if verbose==False:
+								print ('Selfcal converged. Residual flux inside the mask is less than :'+str(residual_frac*100)+'%. Stopped sigma :'+str(start_sigma)+'\n') 	
+							logger.info('Selfcal converged. Residual flux inside the mask is less than :'+str(residual_frac*100)+'%. Stopped sigma :'+str(start_sigma)+'\n')	
+							os.system('rm -rf beamcor_backup.ms')
+							end_selfcal=True
+							logger.info('----------------------------------\n')
+							logger.info('Making final calibration table.\n')
+							logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True)\n')
+							delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
+							logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
+							ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
+							calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
+							calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
+							logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
+									str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
+							cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
+								maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=verbose)
+							logger.info('cal.applycal(msname=\''+working_dir+'/Backup_beamcorrected.ms\',gaintable=\''+working_dir+'/junk_final.bin\',applymode=\'calflag\')\n')
+							cal.applycal(msname=working_dir+'/Backup_beamcorrected.ms',gaintable=working_dir+'/junk_final.bin',applymode='calflag')
+							os.system('cp -r '+working_dir+'/junk_final.bin '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bin')
+							os.system('cp -r '+working_dir+'/junk1.model '+basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
+							os.system('cp -r '+working_dir+'/junk1.image '+basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
+							os.system('rm -rf Backup_*.ms*')
+							if inputs.send_notification==True:
+								quickimage=get_quicklook_image(working_dir+'/junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',\
+								freqstr,datestr,DR5,DR6,field_of_view=2)
+							os.system('rm -rf '+working_dir+'/junk*')
+							if __name__!='__main__':
+								touch_file=basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_0'
+								msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+\
+									os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
+								msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
 								if inputs.send_notification==True:
-									quickimage=get_quicklook_image(working_dir+'/junk1.image','quick_image_freq_'+freqstr+'_time_'+datestrfile+'.png',\
-									freqstr,datestr,DR5,DR6,field_of_view=2)
-								os.system('rm -rf '+working_dir+'/junk*')
-								if __name__!='__main__':
-									touch_file=basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_0'
-									msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+\
-										os.path.basename(msname)+'\nMessage : '+error_msgs(0)+'\n\nBest regards,\nPAIRCARS developing team'
-									msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
-									if inputs.send_notification==True:
-										send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
-										os.system('rm -rf '+quickimage)
-									os.system('touch '+touch_file)
-									if inputs.keep_logger==False:
-										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_*.ms')
-									end_time=time.time()
-									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-									logger.info('Total runtime : '+str(run_time))
-								return 0
+									send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
+									os.system('rm -rf '+quickimage)
+								os.system('touch '+touch_file)
+								if inputs.keep_logger==False:
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_*.ms')
+								end_time=time.time()
+								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+								logger.info('Total runtime : '+str(run_time))
+							return 0
 								
 									
 				#############################################################			
@@ -1073,12 +1056,12 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
+								calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
+								calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
-										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet=True)\n')
+										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
-									maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=True)
+									maxuv=calib_uvrange_max,j=1,absmem=1,solmode='R',rmsthresh=[15,10,8],quiet=verbose)
 								logger.info('cal.applycal(msname=\''+working_dir+'/Backup_beamcorrected.ms\',gaintable=\''+working_dir+'/junk_final.bin\',applymode=\'calflag\')\n')
 								cal.applycal(msname=working_dir+'/Backup_beamcorrected.ms',gaintable=working_dir+'/junk_final.bin',applymode='calflag')
 								os.system('cp -r '+working_dir+'/junk_final.bin '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bin')
@@ -1263,32 +1246,45 @@ if __name__=='__main__':
 		os._exit(0)
 
 	try:
+		previous_touch_list=glob.glob(inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+		if len(previous_touch_list)!=0:
+			os.system('rm -rf '+inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
 		print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
 		print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
 				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\'ssss)\n')
 		msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
 				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
-		if msg>100:
-			msg1=msg-100
-			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-			if options.verbose==False:
-				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-		else:
-			msg_str='Message : '+error_msgs(msg)+'\n'
-			if options.verbose==False:
-				print ('Message : '+error_msgs(msg)+'\n')
-			logger.info('Message : '+error_msgs(msg)+'\n')
+		if type(msg)==int:
+			if msg>100:
+				msg1=msg-100
+				msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+				if msg1==10:
+					send_notification=False
+				else:
+					send_notification=True
+				if options.verbose==False:
+					print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+				logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			else:
+				msg_str='Message : '+error_msgs(msg)+'\n'
+				if msg==10:
+					send_notification=False
+				else:
+					send_notification=True
+				if options.verbose==False:
+					print ('Message : '+error_msgs(msg)+'\n')
+				logger.info('Message : '+error_msgs(msg)+'\n')
 		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 		logger.info('Total runtime : '+str(run_time))
 		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
-		if inputs.send_notification==True:
-			attachments=glob.glob(options.workdir+'/quick_image_*.png')
-			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+		if type(msg)==int:
+			if send_notification==True:
+				attachments=glob.glob(options.workdir+'/quick_image_*.png')
+				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
 		os.system('touch '+touch_file)
 		if inputs.keep_logger==False:
 			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')

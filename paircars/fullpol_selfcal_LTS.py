@@ -42,8 +42,8 @@ class PolSelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
-		self.calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
+		self.calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
+		self.calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -1066,6 +1066,7 @@ class PolSelfcal:
 			os.system('cp -r '+modelname+' '+'qucor.model')
 		os.system('rm -rf casa*log')
 		return imagename,modelname
+
 
 	def polselfcal_iteration(self,num_iter,rms_thresh,mask_str,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 							stokes='',interactive=False,use_ankflagger=False,poldistortion_correction=True,poldistortion_type='poldistortion',\

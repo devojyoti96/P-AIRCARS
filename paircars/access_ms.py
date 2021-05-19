@@ -102,6 +102,21 @@ class AccessMS:
 		self.md.close()
 		return bandwidth
 
+	def calc_total_time(self):
+		'''
+		Function to calculate total time of the measurement set
+		Return:
+		Total time in seceond
+		'''
+		self.md.open(self.msname)
+		times=self.md.timesforfield(0)
+		if len(times)==1:
+			timewidth=self.md.exposuretime(1)['value']
+		else:
+			timewidth=(times[-1]-times[0])+self.calc_timeres()
+		self.md.close()
+		return timewidth
+
 	def calc_timeres(self):
 		'''
 		Function to calculate time resolution of the measurement set
@@ -195,9 +210,22 @@ class AccessMS:
 		Number of antennas
 		'''
 		self.md.open(self.msname)
-		nant=self.md.nantennas()
+		nant=int(self.md.nantennas())
 		self.md.close()
 		return nant
+
+	def get_antenna_string(self):
+		'''
+		Function to get total antenna string
+		Return:
+		Antenna string
+		'''
+		nant=self.get_num_antenna()
+		ant=''
+		for i in range(nant):
+			ant+=str(i)+','
+		ant=ant[:-1]
+		return ant
 
 	def get_freqs(self):
 		'''

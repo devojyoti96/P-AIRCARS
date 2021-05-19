@@ -61,10 +61,11 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False):
 			print ('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
 			flagdata(vis=msname,spw=CHAN_FLAG_STR,mode='manual',flagbackup=False)
 			flagdata(vis=msname,autocorr=True,flagbackup=False)
-			if len(code_list)==1 and code_list[0]=='':
-				code+='C_FLAG_'+str(edgewidth)
-			else:
-				code+=',C_FLAG_'+str(edgewidth)
+			if (force==True and do_flag==True and 'C_FLAG_'+str(edgewidth) not in code_list) or (force==False and do_flag==True):
+				if len(code_list)==1 and code_list[0]=='':
+					code+='C_FLAG_'+str(edgewidth)
+				else:
+					code+=',C_FLAG_'+str(edgewidth)
 			vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 	else:
 		if ncoarse_chan==0:
