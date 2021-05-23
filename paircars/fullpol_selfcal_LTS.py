@@ -11,7 +11,8 @@ from scipy.linalg import polar
 from mwa_pb.mwapb import *
 from paircars_casatasks.poltclean import *
 import matplotlib,matplotlib.pyplot as plt
-matplotlib.use('Agg')
+import scipy.linalg
+#matplotlib.use('Agg')
 '''
 Code is written by Devojyoti Kansabanik, 01 Mar, 2021
 '''
@@ -924,16 +925,180 @@ class PolSelfcal:
 		The number of pixels having polarisation fraction greater than rmsl/i_flux
 		'''
 		x1=np.abs((datal-l*datai)/datai)
-		pos=np.where(x1.flatten()>rmsl/i_flux)
+		pos=np.where(x1.flatten()>0.01)#rmsl/i_flux)
 		f_out=(len(pos[0]))
 		del x1,datai,datal,l,rmsl
 		return f_out
+
+	def subtract_leakage_surface(self,imagename,modelname,sigma=10,do_fluxcal=False,overwrite=False):
+		'''
+		Function to subtract quadratic leakage surface
+		Parameters:
+		imagename = Name of the image
+		modelname = Name of the model
+		sigma = N-sigma value above which any emission is considered to be real
+		Return:
+		Leakage surface subtracted image and model
+		'''
+		if os.path.exists('qucor_surface.image'):
+			os.system('rm -rf qucor_surface.image')
+		if os.path.exists('qucor_surface.model'):
+			os.system('rm -rf qucor_surface.model')
+		if overwrite==False:
+			os.system('cp -r '+imagename+' '+'qucor_surface.image')
+			os.system('cp -r '+modelname+' '+'qucor_surface.model')
+			imagename='qucor_surface.image'
+			modelname='qucor_surface.model'
+		self.pollog_verbose.info('Correcting Stokes Q,U leakage surface.\n')
+		outfile_path=os.path.dirname(os.path.realpath(imagename))
+		os.system('rm -rf '+outfile_path+'/I*')
+		imsubimage(imagename=imagename,outfile=outfile_path+'/I.image',stokes='I',dropdeg=False)
+		if do_fluxcal==True:
+			fluxcal_image=self.mwa_solar_fluxcal(imagename=outfile_path+'/I.image',outfile=outfile_path+'/I_fluxcal.image')
+		else:
+			fluxcal_image=outfile_path+'/I.image'
+		major=imhead(imagename=fluxcal_image)['restoringbeam']['major']['value'] # In arcsec
+		minor=imhead(imagename=fluxcal_image)['restoringbeam']['minor']['value'] # In arcsec
+		freq=imhead(imagename=fluxcal_image)['refval'][-1]/10**9 # In GHz
+		ref_beam_axes_multi=600000
+		beam_axes_multi=major*minor	
+		scale_tb_limit=int(beam_axes_multi/ref_beam_axes_multi)
+		expr='1.222e6*IM0/'+str(freq)+'^2/('+str(major*minor)+')'
+		immath(imagename=fluxcal_image,outfile=outfile_path+'/I_Tb.image',mode='evalexpr',expr=expr)
+		imhead(imagename=outfile_path+'/I_Tb.image', mode='put', hdkey='bunit', hdvalue='K')
+		ia=image()
+		ia.open(imagename)
+		data=ia.getchunk()
+		ia.close()
+		a=image()
+		ia.open(modelname)
+		modeldata=ia.getchunk()
+		ia.close()
+		model_datai=modeldata[:,:,0,0]
+		model_dataq=modeldata[:,:,1,0]
+		model_datau=modeldata[:,:,2,0]
+		model_datav=modeldata[:,:,3,0]
+		rmsq=imstat(imagename=imagename,box=self.rms_box,stokes='Q')['rms'][0]
+		rmsu=imstat(imagename=imagename,box=self.rms_box,stokes='U')['rms'][0]
+		rmsi=imstat(imagename=imagename,box=self.rms_box,stokes='I')['rms'][0]
+		i_flux=imstat(imagename=imagename,stokes='I')['flux'][0]
+		dataq=data[:,:,1,0]
+		datau=data[:,:,2,0]
+		datai=data[:,:,0,0]
+		datai_copy=copy.deepcopy(datai)
+		dataq_copy=copy.deepcopy(dataq)
+		datau_copy=copy.deepcopy(datau)
+		posi=np.where(datai<(sigma*rmsi))
+		maxpos=imstat(imagename=imagename,stokes='I')['maxpos']
+		box=self.negative_box(maxpos,box_width=3).split(',')
+		box_coords=[int(i) for i in box]
+		posq=np.where(dataq<(sigma*rmsq))
+		posu=np.where(datau<(sigma*rmsu))
+		ia.open(outfile_path+'/I_Tb.image')
+		datatb=ia.getchunk()
+		ia.close()
+		datai_mask=copy.deepcopy(datai)
+		for i in range(datai_mask.shape[0]):
+			for j in range(datai_mask.shape[1]):
+				if i<box_coords[0] or i>box_coords[2] or j<box_coords[1] or j>box_coords[3]:
+					datai_mask[i,j]=np.nan
+		if scale_tb_limit!=0:
+			postb=np.where((datatb[:,:,0,0]/(scale_tb_limit*10**6)).astype('int')>1)
+		else:
+			postb=np.where((datatb[:,:,0,0]/10**6).astype('int')>1)
+		datai[posi]=np.nan
+		dataq[posi]=np.nan
+		datai[posq]=np.nan
+		dataq[posq]=np.nan
+		datai[postb]=np.nan
+		dataq[postb]=np.nan
+		x=[]
+		y=[]
+		z=[]
+		q_by_i=dataq/datai
+		for k in range(datai.shape[0]):
+			for l in range(datai.shape[1]):
+				if np.isnan(q_by_i[k,l])==False:
+					x.append(k)
+					y.append(l)
+					z.append(q_by_i[k,l])
+		q_stack=np.vstack((x,y,z)).T
+		del x,y,z
+		AQ = np.c_[np.ones(q_stack.shape[0]), q_stack[:,:2], np.prod(q_stack[:,:2], axis=1), q_stack[:,:2]**2]
+		CQ,_,_,_ = scipy.linalg.lstsq(AQ, q_stack[:,2])	
+		for k in range(datai_copy.shape[0]):
+			for l in range(datai_copy.shape[1]):
+				if np.isnan(datai_mask[k,l])==False:
+					dataq_copy[k,l] -= (CQ[4]*k**2. + CQ[5]*l**2. + CQ[3]*k*l + CQ[1]*k + CQ[2]*l + CQ[0])*datai_copy[k,l]
+		datai=copy.deepcopy(datai_copy)
+		datau=copy.deepcopy(datau_copy)
+		datai[posi]=np.nan
+		dataq[posi]=np.nan
+		datai[posu]=np.nan
+		datau[posu]=np.nan
+		datai[postb]=np.nan
+		datau[postb]=np.nan
+		x=[]
+		y=[]
+		z=[]
+		u_by_i=datau/datai
+		for k in range(datai.shape[0]):
+			for l in range(datai.shape[1]):
+				if np.isnan(u_by_i[k,l])==False:
+					x.append(k)
+					y.append(l)
+					z.append(u_by_i[k,l])
+		u_stack=np.vstack((x,y,z)).T
+		del x,y,z
+		AU = np.c_[np.ones(u_stack.shape[0]), u_stack[:,:2], np.prod(u_stack[:,:2], axis=1), u_stack[:,:2]**2]
+		CU,_,_,_ = scipy.linalg.lstsq(AU, u_stack[:,2])	
+		for k in range(datai_copy.shape[0]):
+			for l in range(datai_copy.shape[1]):
+				if np.isnan(datai_mask[k,l])==False:
+					datau_copy[k,l] -= (CU[4]*k**2. + CU[5]*l**2. + CU[3]*k*l + CU[1]*k + CU[2]*l + CU[0])*datai_copy[k,l]
+		data[:,:,0,0]=datai_copy
+		data[:,:,1,0]=dataq_copy
+		data[:,:,2,0]=datau_copy
+		ia.open(imagename)
+		ia.putchunk(data)
+		ia.close()
+		posq=np.where(dataq_copy<(sigma*rmsq))
+		posu=np.where(datau_copy<(sigma*rmsu))
+		posqm=np.where(model_dataq==0)
+		posum=np.where(model_datau==0)
+		for k in range(model_datai.shape[0]):
+			for l in range(model_datai.shape[1]):
+				if np.isnan(datai_mask[k,l])==False:
+					model_dataq[k,l] -= (CU[4]*k**2. + CU[5]*l**2. + CU[3]*k*l + CU[1]*k + CU[2]*l + CU[0])*model_datai[k,l]
+		for k in range(model_datai.shape[0]):
+			for l in range(model_datai.shape[1]):
+				if np.isnan(datai_mask[k,l])==False:
+					model_datau[k,l] -= (CU[4]*k**2. + CU[5]*l**2. + CU[3]*k*l + CU[1]*k + CU[2]*l + CU[0])*model_datai[k,l]
+		model_dataq[posq]=0
+		model_datau[posu]=0
+		modeldata[:,:,0,0]=model_datai
+		modeldata[:,:,1,0]=model_dataq
+		modeldata[:,:,2,0]=model_datau
+		modeldata[:,:,3,0]=model_datav
+		ia.open(modelname)
+		ia.putchunk(modeldata)
+		ia.close()
+		if overwrite==True:
+			if os.path.isdir('qucor_surface.image')==True:
+				os.system('rm -rf qucor_surface.image')
+			if os.path.isdir('qucor_surface.model')==True:
+				os.system('rm -rf qucor_surface.model')
+			os.system('cp -r '+imagename+' '+'qucor_surface.image')
+			os.system('cp -r '+modelname+' '+'qucor_surface.model')
+		os.system('rm -rf casa*log I*.image')
+		del modeldata,data,datai_mask,dataq,datai,datau,model_datai,model_dataq,model_datau,datai_copy,dataq_copy,datau_copy
+		return imagename,modelname		
 
 	def mwa_solar_fluxcal(self,imagename,outfile): # TODO :Flux scale needs to include
 		immath(imagename=imagename,outfile=outfile,mode='evalexpr',expr='IM0*20')
 		return outfile
 
-	def cal_solar_qu_leakage(self,imagename,do_fluxcal=False): 
+	def cal_solar_qu_leakage(self,imagename,sigma=10,do_fluxcal=False): 
 		'''
 		Function to calculate Stokes QU leakage for solar observation (Not vaild for any other astrophysical observation)
 		Parameters:
@@ -953,8 +1118,12 @@ class PolSelfcal:
 		major=imhead(imagename=fluxcal_image)['restoringbeam']['major']['value'] # In arcsec
 		minor=imhead(imagename=fluxcal_image)['restoringbeam']['minor']['value'] # In arcsec
 		freq=imhead(imagename=fluxcal_image)['refval'][-1]/10**9 # In GHz
+		ref_beam_axes_multi=600000
+		beam_axes_multi=major*minor	
+		scale_tb_limit=int(beam_axes_multi/ref_beam_axes_multi)
 		expr='1.222e6*IM0/'+str(freq)+'^2/('+str(major*minor)+')'
 		immath(imagename=fluxcal_image,outfile=outfile_path+'/I_Tb.image',mode='evalexpr',expr=expr)
+		imhead(imagename=outfile_path+'/I_Tb.image', mode='put', hdkey='bunit', hdvalue='K')
 		ia=image()
 		ia.open(imagename)
 		data=ia.getchunk()
@@ -966,19 +1135,31 @@ class PolSelfcal:
 		dataq=data[:,:,1,0]
 		datau=data[:,:,2,0]
 		datai=data[:,:,0,0]
-		posi=np.where(datai<(10*rmsi))
+		posi=np.where(datai<(sigma*rmsi))
+		posq=np.where(dataq<(sigma*rmsq))
+		posu=np.where(datau<(sigma*rmsu))
 		datai[posi]=np.nan
 		dataq[posi]=np.nan
 		datau[posi]=np.nan
+		datai[posq]=np.nan
+		dataq[posq]=np.nan
+		datai[posu]=np.nan
+		datau[posu]=np.nan
 		ia.open(outfile_path+'/I_Tb.image')
 		datatb=ia.getchunk()
 		ia.close()
-		postb=np.where((datatb[:,:,0,0]/10**6).astype('int')>1)
+		if scale_tb_limit!=0:
+			postb=np.where((datatb[:,:,0,0]/(scale_tb_limit*10**6)).astype('int')>1)
+		else:
+			postb=np.where((datatb[:,:,0,0]/10**6).astype('int')>1)
 		datai[postb]=np.nan
 		dataq[postb]=np.nan
 		datau[postb]=np.nan
 		i_flux=np.nanmean(datai)
-		leakage_list=[]
+		leakage_list=[]		
+		if np.sum(np.isnan(i_flux))==len(i_flux.flatten()):
+			leakage_list=[0,0]
+			return leakage_list		
 		for stokes in ['Q','U']:
 			if stokes=='Q':
 				datal=dataq
@@ -1022,13 +1203,18 @@ class PolSelfcal:
 		Return:
 		Stokes Q and U leakage corrected image and model name
 		'''
+		if os.path.exists('qucor.image'):
+			os.system('rm -rf qucor.image')
+		if os.path.exists('qucor.model'):
+			os.system('rm -rf qucor.model')
 		if overwrite==False:
 			os.system('cp -r '+imagename+' '+'qucor.image')
 			os.system('cp -r '+modelname+' '+'qucor.model')
 			imagename='qucor.image'
 			modelname='qucor.model'
+		imagename,modelname=self.subtract_leakage_surface(imagename,modelname,sigma=sigma,do_fluxcal=True,overwrite=True)
 		self.pollog_verbose.info('Calculating Stokes Q,U leakage.\n')
-		q_leakage,u_leakage=self.cal_solar_qu_leakage(imagename,do_fluxcal=True)
+		q_leakage,u_leakage=self.cal_solar_qu_leakage(imagename,sigma=sigma,do_fluxcal=True)
 		ia=image()
 		ia.open(imagename) # Correcting image
 		data=ia.getchunk()
@@ -1036,8 +1222,10 @@ class PolSelfcal:
 		q=data[:,:,1,:]
 		u=data[:,:,2,:]
 		v=data[:,:,3,:]
-		q=q-(q_leakage*i)
-		u=u-(u_leakage*i)
+		if q_leakage!=0:
+			q=q-(q_leakage*i)
+		if u_leakage!=0:
+			u=u-(u_leakage*i)
 		data[:,:,1,:]=q
 		data[:,:,2,:]=u
 		ia.putchunk(data)
@@ -1064,7 +1252,7 @@ class PolSelfcal:
 				os.system('rm -rf '+'qucor.model')
 			os.system('cp -r '+imagename+' '+'qucor.image')
 			os.system('cp -r '+modelname+' '+'qucor.model')
-		os.system('rm -rf casa*log')
+		os.system('rm -rf casa*log qucor_surface*')
 		return imagename,modelname
 
 

@@ -215,8 +215,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=True,change_msname=False))
 	else:
 		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False)) 
-	freqstr=os.path.basename(msname_str).split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
-	datestr_list=os.path.basename(msname_str).split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
+	freqstr=msname_str.split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
+	datestr_list=msname_str.split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
 	datestr='/'.join(datestr_list[:3])+'/'+':'.join(datestr_list[3:]) # Datetime string s
 	datestrfile='_'.join(datestr_list[:3])+'_'+'_'.join(datestr_list[3:]) # Datetime string 
 	file_str_prefix='freq_'+freqstr+'_datetime_'+datestrfile+'_pol'

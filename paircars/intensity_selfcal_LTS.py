@@ -310,27 +310,27 @@ class IntensitySelfcal:
 						max_iteration=50
 						antenna_bin=2
 					else:
-						min_iteration=3
+						min_iteration=2
 						max_iteration=10
 						antenna_bin=1
 				elif (safety_factor==1):
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
-						min_iteration=10
+						min_iteration=5
 						max_iteration=70
 						antenna_bin=3
 					else:
-						min_iteration=5
+						min_iteration=3
 						max_iteration=30
 						antenna_bin=1
 				else:
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
-						min_iteration=20
+						min_iteration=7
 						max_iteration=100
 						antenna_bin=5
 					else:
-						min_iteration=10
+						min_iteration=3
 						max_iteration=60
 						antenna_bin=1
 			elif quality_factor==1:  # Medium quality imaging (Computing speed medium)
@@ -347,7 +347,7 @@ class IntensitySelfcal:
 				elif (safety_factor==1):
 					min_num_iter_fixed_sigma=5
 					if (scratch==True):
-						min_iteration=10
+						min_iteration=7
 						max_iteration=400
 						antenna_bin=5
 					else:
@@ -357,11 +357,11 @@ class IntensitySelfcal:
 				else:
 					min_num_iter_fixed_sigma=10
 					if (scratch==True):
-						min_iteration=20
+						min_iteration=10
 						max_iteration=600
 						antenna_bin=7
 					else:
-						min_iteration=10
+						min_iteration=5
 						max_iteration=550
 						antenna_bin=1
 			else:  # Best quality imaging (Computing slow)
@@ -369,7 +369,7 @@ class IntensitySelfcal:
 					max_iteration=700
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
-						min_iteration=10
+						min_iteration=7
 						max_iteration=600
 						antenna_bin=5
 					else:
@@ -380,21 +380,21 @@ class IntensitySelfcal:
 					min_num_iter_fixed_sigma=5
 					if (scratch==True):
 						max_iteration=650
-						min_iteration=20
+						min_iteration=10
 						antenna_bin=7
 					else:
 						max_iteration=600
-						min_iteration=10
+						min_iteration=7
 						antenna_bin=1
 				else:
 					min_num_iter_fixed_sigma=10
 					if (scratch==True):
 						max_iteration=700
-						min_iteration=30
+						min_iteration=13
 						antenna_bin=9
 					else:
 						max_iteration=650
-						min_iteration=20
+						min_iteration=7
 						antenna_bin=1
 		self.log_verbose.info('Quality factor : '+str(quality_factor)+', Safety standard : '+str(safety_factor)+', Scratch : '+str(scratch)+\
 				', Minimum number of iteration at fixed sigma : '+str(min_num_iter_fixed_sigma)+', Minimum iteration : '+str(min_iteration)+', Antenna bins : '+str(antenna_bin)+'\n')
@@ -475,9 +475,9 @@ class IntensitySelfcal:
 			try:
 				if os.path.exists('convolved_selfcal.image'):
 					os.system('rm -rf convolved_selfcal.image')
-				imsmooth(imagename=imagename,outfile='convolved_selfcal.image',beam={'major':'10800arcsec','minor':'10800arcsec','pa':'0deg'},targetres=True)
-				imagename='convolved_selfcal.image'
+				imsmooth(imagename=imagename,outfile='convolved_selfcal.image',beam={'major':'3640arcsec','minor':'3640arcsec','pa':'0deg'},targetres=True)
 				rms=imstat(imagename=imagename,box=self.rms_box)['rms'][0]
+				imagename='convolved_selfcal.image'
 				ia=image()
 				ia.open(imagename)
 				ia.calcmask('\''+imagename+'\'>'+str(sigma*rms),'selfcal_snr_mask')

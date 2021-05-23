@@ -222,6 +222,8 @@ if __name__=='__main__':
 			if 'maskfile' in lines[i]:
 				lines[i]='maskfile\t\t\t\t=\t\''+maskfile+'\'\n'
 
+	# TODO : maskstr
+
 	# Validating want_auto_masking
 	##############################
 	if type(want_auto_masking)!=bool:
@@ -235,8 +237,8 @@ if __name__=='__main__':
 	# Validating cpu_frac
 	#####################
 	if cpu_frac>0.8:
-		cpu_frac=0.8
-		mainlog.info('CPU fraction was chosen more than 80%. Setting it to default value : 0.8.\n')
+		cpu_frac=0.5
+		mainlog.info('CPU fraction was chosen more than 80%. Setting it to default value : 0.5.\n')
 		for i in range(len(lines)):
 			if 'cpu_frac' in lines[i]:
 				lines[i]='cpu_frac\t\t\t\t=\t'+str(cpu_frac)+'\n'
@@ -291,6 +293,16 @@ if __name__=='__main__':
 		for i in range(len(lines)):
 			if 'email' in lines[i]:
 				lines[i]='email\t\t\t\t\t=\t\'\'\n'
+
+	# Validating clear screen
+	#########################
+	if type(clear_screen)!=bool:
+		clear_screen=True
+		mainlog.info('clear_screen was not boolean. Setting it to default value True.\n')
+		clear_screen=True
+		for i in range(len(lines)):
+			if 'clear_screen' in lines[i]:
+				lines[i]='clear_screen\t\t\t=\t'+str(clear_screen)+'\n'
 
 	# Validating basic imaging parameters
 	######################################

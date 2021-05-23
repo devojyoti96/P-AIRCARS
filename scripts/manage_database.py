@@ -3,7 +3,7 @@ Code is written by Devojyoti Kansabanik , 2 May, 2021
 '''
 from casatools import *
 from casatasks import *
-import os,sys,logging,numpy as np,copy,glob,psutil,time,multiprocessing as mp,subprocess
+import os,sys,logging,numpy as np,copy,glob,psutil,time,multiprocessing as mp,subprocess,getpass
 from paircars.basic_func import *
 from paircars.access_ms import *
 from paircars.decor import *
@@ -73,7 +73,7 @@ def casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,num_thread,
 	return screen_name
 
 
-def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='1',gain_minsnr=3,modellist=[]):
+def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[]):
 	'''
 	Function to make final gain caltable
 	Parameters:
@@ -81,6 +81,7 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='
 	workdir = Name of the working directory
 	caltable_name_prefix = Caltable name prefix with full path. For local caltable .gcal extension will be added, for global caltable .gcal.bin extension will be added
 	freqavg = Frequency averaging in kHz
+	timeavg = Time averaging in s 
 	ref_ant = Reference antenna (default : 1)
 	gain_minsnr = Minimum gain SNR for calibration (default : 3)
 	modellist = [], list of gain calibration models
@@ -110,6 +111,7 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='
 			os.system('rm -rf '+global_caltable)
 		obslog.info('#######################################\n')
 		obslog.info('Making final gaincal table for ms : '+original_msname+'\n')
+		msname_copy=copy.deepcopy(msname)
 		# Determining frequency and time stamps
 		#######################################
 		timerange_list=[]
@@ -129,6 +131,7 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='
 			ref_timestamp=timerange_list[ref_index]
 		else:
 			ref_timestamp=ref_timestamp[:-1] # Reference time
+		timerange_list=sorted(timerange_list)
 		timerange=','.join(timerange_list)
 		f=imhead(imagename=ref_model,mode='list')['crval4']/10**6
 		df=(imhead(imagename=ref_model,mode='list')['cdelt4']/10**6)/2.0
@@ -136,7 +139,17 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='
 		AM=AccessMS(msname)
 		freqres=AM.calc_freqres()
 		chanwidth=int((float(freqavg))/freqres)
+		timeres=AM.calc_timeres()
 
+		ref_time_start=mjdsec_to_timestamp(timestamp_to_mjdsec(ref_timestamp,format=0)-float(timeavg/2),includedate=True,format=0)
+		ref_time_end=mjdsec_to_timestamp(timestamp_to_mjdsec(ref_timestamp,format=0)+float(timeavg/2),includedate=True,format=0)
+		ref_timestamp=ref_time_start+'~'+ref_time_end
+
+		time_start=mjdsec_to_timestamp(timestamp_to_mjdsec(timerange_list[0],format=0)-float(timeavg/2),includedate=True,format=0)
+		time_end=mjdsec_to_timestamp(timestamp_to_mjdsec(timerange_list[-1],format=0)+float(timeavg/2),includedate=True,format=0)
+		timerange=time_start+'~'+time_end
+		timebin=str(timeavg)+'s'
+	
 		# Spliting ms for local and global caltable, for global caltable only reference time solution will be there
 		###########################################################################################################
 		obslog.info('Spliting ms for gain calibration.....\n')
@@ -145,12 +158,13 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='
 		if os.path.isdir(workdir+'/'+os.path.basename(msname)+'.gcalms.ref'):
 			os.system('rm -rf '+workdir+'/'+os.path.basename(msname)+'.gcalms.ref '+workdir+'/'+os.path.basename(msname)+'.gcalms.ref.flagversions')
 		obslog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname)+'.gcalms\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+\
-					timerange+'\',width='+str(chanwidth)+')\n')
-		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname)+'.gcalms',datacolumn='DATA',spw='0:'+spw,timerange=timerange,width=chanwidth) # Reference channel ms
+					timerange+'\',width='+str(chanwidth)+',timebin=\''+timebin+'\')\n')
+		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname)+'.gcalms',datacolumn='DATA',spw='0:'+spw,timerange=timerange,width=chanwidth,timebin=timebin)
+																																			# Reference channel ms
 		local_cal_ms=workdir+'/'+os.path.basename(msname)+'.gcalms'
 		obslog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname)+'.gcalms.ref\',datacolumn=\'DATA\',spw=\'0:'+spw+'\',timerange=\''+ref_timestamp\
-					+'\',width='+str(chanwidth)+')\n')
-		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname)+'.gcalms.ref',datacolumn='DATA',spw='0:'+spw,timerange=ref_timestamp,width=chanwidth)
+					+'\',width='+str(chanwidth)+',timebin=\''+timebin+'\')\n')
+		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname)+'.gcalms.ref',datacolumn='DATA',spw='0:'+spw,timerange=ref_timestamp,width=chanwidth,timebin=timebin)
 																																				# Only reference channel and time ms
 		global_cal_ms=workdir+'/'+os.path.basename(msname)+'.gcalms.ref'
 		# Deleteing previous models and importing reference time model in reference time ms
@@ -205,16 +219,16 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,ref_ant='
 			quiet=True,a='0.001,0.0001',t=int(ntimes/len(modellist)),j=3,ch=int(AMgcal.get_num_channels()))
 		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
 		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
-		if os.path.islink(workdir+'/'+original_msname+'.temp'):
-			os.system('unlink '+workdir+'/'+original_msname+'.temp')
+		if os.path.islink(msname_copy):
+			os.system('unlink '+msname_copy)
 		else:
-			os.system('rm -rf '+workdir+'/'+original_msname+'.temp '+workdir+'/'+original_msname+'.temp.flagversions')
+			os.system('rm -rf '+msname_copy+'*')
 		caltable_for_global_database.append(global_caltable)
 		caltable_for_local_database.append(local_caltable)
 		return 0,caltable_for_global_database,caltable_for_local_database
 
 
-def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,ref_ant='1',gain_minsnr=3,modellist=[]):
+def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[]):
 	'''
 	Function to make final bandpass caltable
 	Parameters:
@@ -251,6 +265,7 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 			os.system('rm -rf '+global_caltable)
 		obslog.info('#######################################\n')
 		obslog.info('Making final bandpass table for ms : '+original_msname+'\n')
+		msname_copy=copy.deepcopy(msname)
 
 		# Determining frequency and time stamps
 		#######################################
@@ -276,16 +291,11 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 		timeres=AM.calc_timeres()
 		timestamps=AM.get_timestamps()
 		timeres=AM.calc_timeres()
-		index=timestamps.index(ref_timestamp)
-		if len(timestamps)<10 or timeres>2:
-			timerange=timestamps[index]
-			timebin=''
-		elif timeres<2:
-			if (index-5)<0:
-				timerange=','.join(timestamps[0:10])
-			else:
-				timerange=','.join(timestamps[index-5:index+5])
-			timebin='2s'
+		ref_time_mjd=timestamp_to_mjdsec(ref_timestamp,format=0)
+		ref_time_start=mjdsec_to_timestamp(ref_time_mjd-float(timeavg/2),includedate=True,format=0)
+		ref_time_end=mjdsec_to_timestamp(ref_time_mjd+float(timeavg/2),includedate=True,format=0)
+		timerange=ref_time_start+'~'+ref_time_end
+		timebin=str(timeavg)+'s'
 
 		# Applying previous gaincal solutions
 		#####################################
@@ -353,9 +363,10 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 		model_chan,nomodel_chan=AMgcal.get_model_nomodel_chan()
 		if len(nomodel_chan)!=0:
 			flagchans=[str(i) for i in nomodel_chan]
-			flag_chan_str=';'.join(flagchans)
-			obslog.info('flagdata(vis=\''+global_cal_ms+'\',spw=\'0:'+flag_chan_str[:-1]+'\',flagbackup=False)\n')
-			flagdata(vis=global_cal_ms,spw='0:'+flag_chan_str[:-1],flagbackup=False)
+			if len(flagchans)!=0:
+				flag_chan_str=';'.join(flagchans)
+				obslog.info('flagdata(vis=\''+global_cal_ms+'\',spw=\'0:'+flag_chan_str+'\',flagbackup=False)\n')
+				flagdata(vis=global_cal_ms,spw='0:'+flag_chan_str,flagbackup=False)
 		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
 					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
 					str(int(ntimes))+',j=3,ch=1)\n') # Making bandpass table for reference time
@@ -363,15 +374,15 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 			quiet=True,a='0.001,0.0001',t=int(ntimes),j=3,ch=1)
 		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
 		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
-		if os.path.islink(workdir+'/'+original_msname+'.temp'):
-			os.system('unlink '+workdir+'/'+original_msname+'.temp')
+		if os.path.islink(msname_copy):
+			os.system('unlink '+msname_copy)
 		else:
-			os.system('rm -rf '+workdir+'/'+original_msname+'.temp '+workdir+'/'+original_msname+'.temp.flagversions')
+			os.system('rm -rf '+msname_copy+'*')
 		caltable_for_global_database.append(global_caltable)
 		caltable_for_local_database.append(local_caltable)
 		return 0,caltable_for_global_database,caltable_for_local_database
 
-def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,ref_ant='1',gain_minsnr=3,modellist=[]):
+def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[]):
 	'''
 	Function to make final leakage corrected differential gain caltable
 	Parameters:
@@ -408,6 +419,7 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 			os.system('rm -rf '+global_caltable)
 		obslog.info('#######################################\n')
 		obslog.info('Making final leakage corrected table for ms : '+original_msname+'\n')
+		msname_copy=copy.deepcopy(msname)
 
 		# Determining frequency and time stamps
 		#######################################
@@ -433,16 +445,11 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 		timeres=AM.calc_timeres()
 		timestamps=AM.get_timestamps()
 		timeres=AM.calc_timeres()
-		index=timestamps.index(ref_timestamp)
-		if len(timestamps)<10 or timeres>2:
-			timerange=timestamps[index]
-			timebin=''
-		elif timeres<2:
-			if (index-5)<0:
-				timerange=','.join(timestamps[0:10])
-			else:
-				timerange=','.join(timestamps[index-5:index+5])
-			timebin='2s'
+		ref_time_mjd=timestamp_to_mjdsec(ref_timestamp,format=0)
+		ref_time_start=mjdsec_to_timestamp(ref_time_mjd-float(timeavg/2),includedate=True,format=0)
+		ref_time_end=mjdsec_to_timestamp(ref_time_mjd+float(timeavg/2),includedate=True,format=0)
+		timerange=ref_time_start+'~'+ref_time_end
+		timebin=str(timeavg)+'s'
 
 		# Applying previous gaincal solutions
 		#####################################
@@ -508,9 +515,10 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 		model_chan,nomodel_chan=AMgcal.get_model_nomodel_chan()
 		if len(nomodel_chan)!=0:
 			flagchans=[str(i) for i in nomodel_chan]
-			flag_chan_str=';'.join(flagchans)
-			obslog.info('flagdata(vis=\''+global_cal_ms+'\',spw=\'0:'+flag_chan_str[:-1]+'\',flagbackup=False)\n')
-			flagdata(vis=global_cal_ms,spw='0:'+flag_chan_str[:-1],flagbackup=False)
+			if len(flagchans)!=0:
+				flag_chan_str=';'.join(flagchans)
+				obslog.info('flagdata(vis=\''+global_cal_ms+'\',spw=\'0:'+flag_chan_str+'\',flagbackup=False)\n')
+				flagdata(vis=global_cal_ms,spw='0:'+flag_chan_str,flagbackup=False)
 		calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
 		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
 		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
@@ -520,15 +528,15 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 			quiet=True,a='0.001,0.0001',t=int(ntimes),j=3,ch=1)
 		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
 		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
-		if os.path.islink(workdir+'/'+original_msname+'.temp'):
-			os.system('unlink '+workdir+'/'+original_msname+'.temp')
+		if os.path.islink(msname_copy):
+			os.system('unlink '+msname_copy)
 		else:
-			os.system('rm -rf '+workdir+'/'+original_msname+'.temp '+workdir+'/'+original_msname+'.temp.flagversions')
+			os.system('rm -rf '+msname_copy+'*')
 		caltable_for_global_database.append(global_caltable)
 		caltable_for_local_database.append(local_caltable)
 		return 0,caltable_for_global_database,caltable_for_local_database
 
-def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],freqavg=160,pol_skip_freq=1280,modellist=[]):
+def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,pol_skip_freq=1280,modellist=[]):
 	'''
 	Function to make final gain caltable
 	Parameters:
@@ -564,7 +572,8 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 		if os.path.isdir(polcal_caltable):
 			os.system('rm -rf '+polcal_caltable)
 		obslog.info('#######################################\n')
-		obslog.info('Making final polarisation caltable for ms : '+msname+'\n')
+		obslog.info('Making final polarisation caltable for ms : '+original_msname+'\n')
+		msname_copy=copy.deepcopy(msname)
 
 		# Determining frequency and time stamps
 		#######################################
@@ -590,16 +599,11 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 		timeres=AM.calc_timeres()
 		timestamps=AM.get_timestamps()
 		timeres=AM.calc_timeres()
-		index=timestamps.index(ref_timestamp)
-		if len(timestamps)<10 or timeres>2:
-			timerange=timestamps[index]
-			timebin=''
-		elif timeres<2:
-			if (index-5)<0:
-				timerange=','.join(timestamps[0:10])
-			else:
-				timerange=','.join(timestamps[index-5:index+5])
-			timebin='2s'
+		ref_time_mjd=timestamp_to_mjdsec(ref_timestamp,format=0)
+		ref_time_start=mjdsec_to_timestamp(ref_time_mjd-float(timeavg/2),includedate=True,format=0)
+		ref_time_end=mjdsec_to_timestamp(ref_time_mjd+float(timeavg/2),includedate=True,format=0)
+		timerange=ref_time_start+'~'+ref_time_end
+		timebin=str(timeavg)+'s'
 
 		# Applying previous gaincal solutions
 		#####################################
@@ -647,6 +651,11 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 		delmod(vis=polcal_ms,scr=True)
 		AMpcal=AccessMS(polcal_ms)
 		freqs=AMpcal.get_freqs()
+
+		for i in modellist:
+			if 'leakage' in i:
+				modellist.remove(i)
+
 		for i in range(len(modellist)):
 			modelname=modellist[i]
 			modelbasename=os.path.basename(modelname)
@@ -675,9 +684,10 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 		model_chan,nomodel_chan=AMgcal.get_model_nomodel_chan()
 		if len(nomodel_chan)!=0:
 			flagchans=[str(i) for i in nomodel_chan]
-			flag_chan_str=';'.join(flagchans)
-			obslog.info('flagdata(vis=\''+polcal_ms+'\',spw=\'0:'+flag_chan_str[:-1]+'\',flagbackup=False)\n')
-			flagdata(vis=polcal_ms,spw='0:'+flag_chan_str[:-1],flagbackup=False)
+			if len(flagchans)!=0:
+				flag_chan_str=';'.join(flagchans)
+				obslog.info('flagdata(vis=\''+polcal_ms+'\',spw=\'0:'+flag_chan_str+'\',flagbackup=False)\n')
+				flagdata(vis=polcal_ms,spw='0:'+flag_chan_str,flagbackup=False)
 		calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
 		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
 		obslog.info('cal.calibrate(msname=\''+polcal_ms+'\',caltable=\''+polcal_caltable+'\',minuv='+\
@@ -689,16 +699,16 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 		cal.applycal(msname=polcal_ms,gaintable=polcal_caltable,applymode='calflag')
 		os.system('rm -rf '+beamcal_ms+' '+beamcal_ms+'.flagversions')
 		os.system('rm -rf '+polcal_ms+' '+polcal_ms+'.flagversions')
-		if os.path.islink(workdir+'/'+original_msname+'.temp'):
-			os.system('unlink '+workdir+'/'+original_msname+'.temp')
+		if os.path.islink(msname_copy):
+			os.system('unlink '+msname_copy)
 		else:
-			os.system('rm -rf '+workdir+'/'+original_msname+'.temp '+workdir+'/'+original_msname+'.temp.flagversions')
+			os.system('rm -rf '+msname_copy+'*')
 		caltable_for_global_database.append(polcal_caltable)
 		caltable_for_local_database.append(polcal_caltable)
 		return 0,caltable_for_global_database,caltable_for_local_database
 
 def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_modeldir,bandpass_modeldir,polcal_modeldir,localdatabase,gain_minsnr,\
-						ref_ant,freq_avg=160.0,pol_skip_freq=1.28):
+						ref_ant,freq_avg=160.0,time_avg=2.0,pol_skip_freq=1.28):
 	'''
 	Function to manager calibration database
 	Parameters:
@@ -712,6 +722,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	gain_minsnr = Minimum SNR for gain calibration
 	ref_ant = Reference antenna
 	freq_avg = Frequency averaging done during calibration
+	time_avg = Time averaging done during calibration
 	pol_skip_freq = Frequency interval to perform polarisation calibration
 	Return:
 	Message code, global database caltable list, local database caltable list
@@ -747,6 +758,25 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 			break	
 		else:
 			time.sleep(2.0)
+
+	batch_files=glob.glob(basedir+'/'+basemsdir+'/*.batch')
+	mpiapp_files=glob.glob(basedir+'/'+basemsdir+'/*cal_mpicmd*')
+	if len(batch_files)!=0:
+		for i in batch_files:
+			os.system('rm -rf '+i)
+	if len(mpiapp_files)!=0:
+		for j in mpiapp_files:
+			os.system('rm -rf '+j)	
+
+	if inputs.clear_screen==True:
+		screen_list=[os.path.basename(i) for i in glob.glob('/var/run/screen/S-'+str(getpass.getuser())+'/*')]
+		for i in screen_list:
+			if str(OBSID)+'_' not in i:
+				screen_list.remove(i) 
+
+		for i in screen_list:
+			os.system('screen -S '+i+' -X quit')
+
 	if localdatabase=='' or os.path.isdir(localdatabase)==False: # If localdabase is available, making the localdatabase directory
 		obslog.error('Local data base not found. Making local database at basedir.\n')
 		localdatabase=basedir+'/localdatabase/'+str(OBSID)
@@ -776,13 +806,9 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	else:
 		AM=AccessMS(msname)
 		antenna=AM.get_antenna_string()
-		unflag_chan=AM.get_unflag_chan()
-		unflag_chan_str='0:'
-		for i in unflag_chan:
-			unflag_chan_str+=str(i)+';'
-		unflag_chan_str=unflag_chan_str[:-1]
-		obslog.info('flagdata(vis=\''+msname+'\',mode=\'unflag\',antenna=\''+antenna+'\',spw=\''+unflag_chan_str+'\')\n')
-		flagdata(vis=msname,mode='unflag',antenna=antenna,spw=unflag_chan_str)
+		unflagchan,flagchan=flag_MWA_coarse(msname,edgewidth=160,do_flag=False,force=False)
+	#	obslog.info('flagdata(vis=\''+msname+'\',mode=\'unflag\',antenna=\''+antenna+'\',spw=\''+unflagchan+'\')\n')
+	#	flagdata(vis=msname,mode='unflag',antenna=antenna,spw=unflagchan)
 		freqs=AM.get_freqs()/10**6
 		nchan_avg=int(freq_avg/AM.calc_freqres())
 		coarse_chan_0=freq_to_MWA_coarse(freqs[0])
@@ -790,7 +816,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		caltable_name_prefix=basedir+'/'+str(OBSID)+'_'+str(coarse_chan_0)+'_'+str(coarse_chan_1) # Caltable name prefix; OBSID_startcoarsechan_endcoarsechan format
 		obslog.info('Searching gaincal models in model directory : '+gaincal_modeldir+'\n')
 		model_list=glob.glob(gaincal_modeldir+'/*.model') # Gaincal model list
-		gcal_msg,global_database_list,local_database_list=make_final_gaincal(msname,basedir,caltable_name_prefix,freqavg=freq_avg,ref_ant=ref_ant,\
+		gcal_msg,global_database_list,local_database_list=make_final_gaincal(msname,basedir,caltable_name_prefix,freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,\
 																				gain_minsnr=gain_minsnr,modellist=model_list)
 		caltable_for_local_database+=local_database_list
 		caltable_for_global_database+=global_database_list	
@@ -803,7 +829,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				bp_msg=2
 			else:
 				bp_msg,global_database_list,local_database_list=make_final_bandpass(msname,basedir,caltable_name_prefix,gaintable=caltable_for_local_database,\
-								freqavg=freq_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=bpmodel_list)
+								freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=bpmodel_list)
 				caltable_for_local_database+=local_database_list
 				caltable_for_global_database+=global_database_list	
 
@@ -819,7 +845,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				lcal_msg=2
 			else:
 				lcal_msg,global_database_list,local_database_list=make_final_leakcal(msname,basedir,caltable_name_prefix,gaintable=caltable_for_local_database,\
-								freqavg=freq_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=lcal_model_list)
+								freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=lcal_model_list)
 				caltable_for_local_database+=local_database_list
 				caltable_for_global_database+=global_database_list	
 
@@ -834,7 +860,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				pcal_msg=2
 			else:
 				pcal_msg,global_database_list,local_database_list=make_final_polcal(msname,metafits,basedir,caltable_name_prefix,\
-									gaintable=caltable_for_local_database,freqavg=freq_avg,pol_skip_freq=pol_skip_freq,modellist=polcalmodel_list)
+									gaintable=caltable_for_local_database,freqavg=freq_avg,timeavg=time_avg,pol_skip_freq=pol_skip_freq,modellist=polcalmodel_list)
 				caltable_for_local_database+=local_database_list
 				caltable_for_global_database+=global_database_list
 		else:
@@ -854,11 +880,15 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		if len(caltable_for_local_database)!=0:
 			for i in caltable_for_local_database:				
 				os.system('cp -r '+i+' '+localdatabase) # Copying to local database
-				os.system('rm -rf '+i)
 		if len(caltable_for_global_database)!=0:
 			for j in caltable_for_global_database:
-				os.system('cp -r '+j+' '+localdatabase) # Copying to local database for further copying to global database	
-				os.system('rm -rf '+j)
+				os.system('cp -r '+j+' '+localdatabase) # Copying to local database for further copying to global database
+		if len(caltable_for_local_database)!=0:
+			for i in caltable_for_local_database:				
+				os.system('rm -rf '+i) # Deleting to local database
+		if len(caltable_for_global_database)!=0:
+			for j in caltable_for_global_database:
+				os.system('rm -rf '+j) # Deleting to local database for further copying to global database	
 		return gcal_msg,caltable_for_global_database,caltable_for_local_database
 
 def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals=[],residual_frac=0.1,\
@@ -980,7 +1010,10 @@ if __name__=='__main__':
 	parser.add_option('--polcal_modeldir',dest="polcal_modeldir",default=None,help="Name of polarisation model directory",metavar="Directory path")
 	parser.add_option('--localdatabase',dest="localdatabase",default=None,help="Name of local database",metavar="Directory path")
 	parser.add_option('--freqavg',dest="freqavg",default=160,help="Frequency averaging during calibration in kHz",metavar="Float")
+	parser.add_option('--timeavg',dest="timeavg",default=2.0,help="Time averaging during calibration in second",metavar="Float")
+	parser.add_option('--cal_obsid',dest="cal_obsid",default=None,help="Caltable Observation ID",metavar="Integer")
 	parser.add_option('--inputfile',dest='inputfile',default=None,help='Path of the P-AIRCARS input file',metavar="File path")
+	
 	(options, args) = parser.parse_args()
 	
 if os.path.isdir(str(options.msname))==False:
@@ -1029,9 +1062,14 @@ filehandle.setFormatter(formatter)
 obslog.addHandler(filehandle)
 obslog.propagate = False
 
-msg,caltable_for_global_database,caltable_for_local_database=managing_caldatabase(str(options.msname),\
-	str(options.metafits),int(options.num_jobs),str(options.basedir),str(options.gaincal_modeldir),str(options.bandpass_modeldir),\
-	str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),freq_avg=float(options.freqavg),pol_skip_freq=float(polskip))
+if int(options.cal_obsid)==OBSID:
+	msg,caltable_for_global_database,caltable_for_local_database=managing_caldatabase(str(options.msname),str(options.metafits),int(options.num_jobs),str(options.basedir),\
+	str(options.gaincal_modeldir),str(options.bandpass_modeldir),str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),\
+	freq_avg=float(options.freqavg),time_avg=float(options.timeavg),pol_skip_freq=float(polskip))
+else:
+	obslog.info('Calibration was not performed for this MS. Applying solutions from nearest caltables.\n')
+	caltable_for_local_database=glob.glob(inputs.basedir+'/localdatabase/'+str(int(options.cal_obsid))
+
 '''
 if len(caltable_for_global_database)>0:
 	calarrays=[]

@@ -11,7 +11,7 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 ##################
 basedir				=	'/data1/devojyoti/PhD/data/paircars_test2'
 msdir				=	'/data1/devojyoti/PhD/data/paircars_test/test1'
-timerange			=	'2014-05-04 02:48:02.25'
+timerange			=	'2014-05-04 02:48:02.25~2014-05-04 02:51:10.00,2014-05-04 03:51:10.00~2014-05-04 04:51:10.00'
 chanrange			=	'0~2,3~3,4~6,8~10,15~16'
 final_image_dir		=	''
 calibrator_caltable	=	[]
@@ -31,13 +31,13 @@ image_delta_freq		=	160.0
 image_delta_time		=	2.0
 image_freq				=	160.0
 image_time				=	0.5
-cpu_frac				=	0.8
+cpu_frac				=	0.5
 do_bandpass				=	True
 do_polcal				=	True
 save_true_loc_image		=	False
 send_notification		=	True
 email					=	'devojyoti96@gmail.com'
-
+clear_screen			=	False
 # Advanced options
 ##################
 # PAIRCARS will run with default options if we do not change these advanced options. 

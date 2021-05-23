@@ -509,11 +509,20 @@ def timestamp_to_mjdsec(timestamp,format=0):
 	Return correspondong second of the day
 	'''
 	if format==0:
-		timestamp_datetime=datetime.strptime(timestamp,'%Y/%m/%d/%H:%M:%S.%f')
+		try:
+			timestamp_datetime=datetime.strptime(timestamp,'%Y/%m/%d/%H:%M:%S.%f')
+		except:
+			timestamp_datetime=datetime.strptime(timestamp,'%Y/%m/%d/%H:%M:%S')
 	elif format==1:
-		timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%dT%H:%M:%S.%f')
+		try:
+			timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%dT%H:%M:%S.%f')
+		except:
+			timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%dT%H:%M:%S')
 	elif format==2:
-		timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S.%f')
+		try:
+			timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S.%f')
+		except:
+			timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S')
 	mjd=(julian.to_jd(timestamp_datetime)-2400000.5)*(24.*3600.)
 	return mjd
 

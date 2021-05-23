@@ -107,9 +107,11 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	Return:
 	Meassages about the selfcal success or errors
 	'''
-	if __name__!='__main__':
+	if __name__!='__main__' or start_fresh==True:
 		start_time=time.time()
-
+	else:	
+		start_time=0
+	
 	if working_dir[-1]=='/':
 		working_dir=working_dir[:-1]
 
@@ -196,12 +198,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	else:
 		msname_str=os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False))
 	freqstr=msname_str.split('.ms')[0].split('_freq_')[1].split('_')[0]  # Frequency string in MHz
-	datestr_list=msname.split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
+	datestr_list=msname_str.split('.ms')[0].split('_freq_')[0].split('time_')[1].split('_')
 	datestr='/'.join(datestr_list[:3])+'/'+':'.join(datestr_list[3:]) # Datetime string 
 	datestrfile='_'.join(datestr_list[:3])+'_'+'_'.join(datestr_list[3:]) # Datetime string for name 
 
 	OBSID=get_OBSID(metafits)
 	basemsdir=os.path.dirname(working_dir).split('/')[-1]
+	start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'
+	if start_fresh==True:
+		os.system('rm -rf '+start_time_file+'*')
 	if os.path.isdir(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
 		os.makedirs(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)
 	if os.path.isdir(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
@@ -211,7 +216,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	if start_fresh==False:
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 					num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
-				ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode=np.load(working_dir+'/Intensity_selfcal_record.npy',allow_pickle=True)		
+				ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time=np.load(working_dir+'/Intensity_selfcal_record.npy',allow_pickle=True)		
 	if 'ref' in msname:
 		if start_fresh:
 			scratch=True # For reference time and frequency scratch = True
@@ -406,6 +411,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+									os.system('touch '+start_time_file)
 								return 12
 				else:
 					try:
@@ -439,6 +447,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								logger.info('Total runtime : '+str(run_time))
+							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+								os.system('touch '+start_time_file)
 							return 12
 			else:
 				start_sigma=inputs.start_sigma
@@ -497,6 +508,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
+							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+								os.system('touch '+start_time_file)
 							return 11
 						else:
 							start_sigma=new_start_sigma
@@ -526,6 +540,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 							logger.info('Total runtime : '+str(run_time))
+						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+							os.system('touch '+start_time_file)
 						return msg_code
 					elif msg_code!=0:
 						logger.error('Message :'+error_msgs(msg_code))
@@ -551,6 +568,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							logger.info('Total runtime : '+str(run_time))
 						if 'ref' in msname:
 							msg_code+=100
+						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+							os.system('touch '+start_time_file)
 						return msg_code	# If dirty image is not made no point in continuing, return error
 					else:
 						logger.info('Dirty image is made successfully.\n')
@@ -585,7 +605,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				startmask=''
 			if phasecenter_change_done==True:
 				phasecenter_changed=False
-
+			
+			# If more than 30% solutions are flagged at phase cal round try to reduce them by changing solmode
+			################################################################################################## 
 			if num_iter>min_iteration:
 				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
 				if calc_flag_frac>0.3 and calmode=='p' and num_iteration_after_ap<1:
@@ -617,11 +639,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
+							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+								os.system('touch '+start_time_file)
 							return msg_code
 				else:
 					if solmode=='L1R' or solmode=='L1':
-						somode=''	
+						solmode=''	
 		
+			# If number of flagged solutions are more than 5% after minimum apcal round, try to reduce flag solutions by increasing time averaging
+			######################################################################################################################################
 			if num_iteration_after_ap>min_iteration:
 				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
 				if calc_flag_frac>0.05 and calmode=='ap':
@@ -649,6 +676,10 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
+							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+							print (start_time_file)
+							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+								os.system('touch '+start_time_file)
 							return msg_code
 		
 			if (num_iter<10 and nomask_try_count<1): 
@@ -754,6 +785,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+									os.system('touch '+start_time_file)
 								return 106
 							else:
 								os.chdir(cwd)
@@ -771,6 +805,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+									os.system('touch '+start_time_file)
 								return 6
 					else:
 						scratch=True
@@ -809,6 +846,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+							os.system('touch '+start_time_file)
 						return msg_code+100
 					else:
 						os.chdir(cwd)
@@ -826,6 +866,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+							os.system('touch '+start_time_file)
 						return msg_code
 				else:
 					scratch=True
@@ -873,7 +916,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					os.system('rm -rf '+working_dir+'/Intensity_selfcal_record.npy')
 				selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 					num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,ra,dec,\
-					num_iter_after_phasecenter_change,phasecenter_change_done,solmode],dtype='object')
+					num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time],dtype='object')
 				np.save(working_dir+'/Intensity_selfcal_record',selfcal_record)
 
 				if verbose==False:
@@ -977,6 +1020,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 										end_time=time.time()
 										run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 										logger.info('Total runtime : '+str(run_time))
+									start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+									if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+										os.system('touch '+start_time_file)
 									return 108
 								else:
 									os.chdir(cwd)
@@ -995,6 +1041,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 										end_time=time.time()
 										run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 										logger.info('Total runtime : '+str(run_time))
+									start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+									if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+										os.system('touch '+start_time_file)
 									return 8
 					else:
 						scratch=True
@@ -1051,6 +1100,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+							os.system('touch '+start_time_file)
 						return 0
 				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and do_ap==True and abs(DR5/DR3-1)<0.08) and\
 					 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and do_ap==True and abs(DR6/DR4-1)<0.05) and \
@@ -1107,6 +1159,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								logger.info('Total runtime : '+str(run_time))
+							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+								os.system('touch '+start_time_file)
 							return 0
 				elif (abs(DR5/DR3-1)<0.08 and abs(DR5/DR1-1)<0.08 and num_iter_fixed_ant>=5 and \
 						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_itration))): # New antenna addition or calmode change
@@ -1206,6 +1261,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+									os.system('touch '+start_time_file)
 								return 109		
 							else:
 								os.chdir(cwd)
@@ -1224,6 +1282,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+									os.system('touch '+start_time_file)
 								return 9
 						else:
 							if verbose==False:
@@ -1247,6 +1308,9 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								logger.info('Total runtime : '+str(run_time))
+							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+								os.system('touch '+start_time_file)
 							return 13
 					else:
 						scratch=True
@@ -1306,6 +1370,15 @@ if __name__=='__main__':
 	msbasename=os.path.basename(options.chantime_msname)
 	OBSID=get_OBSID(options.metafits)
 	basemsdir=os.path.dirname(options.workdir).split('/')[-1]
+	
+	start_time_file=glob.glob(inputs.basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(options.chantime_msname)+'_*')
+	if len(start_time_file)>0 and eval(str(options.fresh))==False:
+		start=float(start_time_file[0].split('_')[-1])
+		if start>0:
+			start_time=start	
+	elif len(start_time_file)>0 and eval(str(options.fresh))==True:
+		for i in start_time_file:
+			os.system('rm -rf '+i)
 
 	if options.chantime_msname==None or os.path.isdir(options.chantime_msname)==False:
 		logger.info('Measurement set does not exist. Exititing...\n')
