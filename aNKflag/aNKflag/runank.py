@@ -6,7 +6,6 @@ from casatasks import importuvfits,exportuvfits
 from casatools import *
 from datetime import datetime 
 from . import convertfits as cf
-#from . import inputs
 
 '''
 Code is written by Apurba Bera (NCRA-TIFR)
@@ -15,14 +14,14 @@ Wrapper for PAIRCARS is written by Devojyoti Kansabanik, 23 Jan, 2021
 os.system('rm -rf casa*log')
 cwd=os.getcwd()
 pathname=os.path.dirname(os.path.realpath(cf.__file__))
-os.system('cp -r '+pathname+'/inputs.py '+cwd)
-sys.path.append(cwd)
+sys.path.append(pathname)
 import inputs as inputs
 
 class ANKFLAG():
 	def __init__(self):
 		self.cwd=os.getcwd()
 		pathname=os.path.dirname(os.path.realpath(cf.__file__))
+		os.system('cp -r '+pathname+'/inputs.py '+self.cwd)
 		self.path=pathname
 		os.system('rm -rf casa*log')
 
@@ -124,7 +123,7 @@ class ANKFLAG():
 		os.system('rm -rf casa*log')
 		kwords=list(kwargs.keys())
 		if len(kwords)!=0:
-			inpfil=open('inputs.py','r+')
+			inpfil=open(self.cwd+'/inputs.py','r+')
 			lines=inpfil.readlines()
 			if 'CLEARSCRATCH' in kwords:
 				CLEARSCRATCH=kwargs['CLEARSCRATCH']
@@ -207,18 +206,16 @@ class ANKFLAG():
 			inpfil.seek(0)
 			inpfil.writelines(lines)
 			inpfil.close()
-
 		inp_filepath=os.path.dirname(os.path.abspath(inpfilename))
 		inpfile_basename=os.path.basename(inpfilename)
+		formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+		logger = logging.getLogger('ankflag_verbose_log')
+		logger.setLevel(logging.DEBUG)
+		filehandle=logging.FileHandler(inp_filepath+'/aNKflagger.log')
+		filehandle.setFormatter(formatter)
+		logger.addHandler(filehandle)
+		logger.propagate = False
 		if verbose==True:
-			logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
-			logger = logging.getLogger('ankflag_logger')
-			logger.setLevel(logging.DEBUG)
-			if os.path.isfile(inp_filepath+'/aNKflagger.log')==True:
-				os.system('rm -rf '+inp_filepath+'/aNKflagger.log')
-			fh = logging.FileHandler(inp_filepath+'/aNKflagger.log')
-			fh.setLevel(logging.DEBUG)
-			logger.addHandler(fh)
 			logger.info('Input file name : '+inpfilename+'\n')
 			logger.info('Starting aNKflagger..........\n')
 			logger.info('Flagging datacolumn : '+datacolumn+'\n')
@@ -355,11 +352,8 @@ class ANKFLAG():
 		start1	=	tm.time()
 
 		if (DOFLAG):
-			if verbose==False:
-				status	=	os.system('./ankflag %d'%npols+' > ankflag.out')	
-				#print("\nFlagging done in 		%d seconds\n"%(tm.time()-start1))
-			else:
-				status	=	os.system('./ankflag %d'%npols)	
+			status	=	os.system('./ankflag %d'%npols+' > '+pwd+'/ankflag.out')	
+			if verbose==True:
 				logger.info("Flagging done in 		%d seconds\n"%(tm.time()-start1))
 				
 			
@@ -459,17 +453,11 @@ class ANKFLAG():
 					importuvfits(fitsfile=outfits,vis=inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
 					tbank=table()
 					tbank.open(inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
-					data=tbank.getcol('DATA')
+					flag=tbank.getcol('FLAG')
 					tbank.close()
 					os.system('rm -rf '+inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
 					tbank.open(inpfilename,nomodify=False)
-					if datacolumn=='corrected':
-						try:
-							tbank.putcol('CORRECTED_DATA',data)
-						except:
-							tbank.putcol('DATA',data)
-					elif datacolumn=='data':
-						tbank.putcol('DATA',data)
+					tbank.putcol('FLAG',flag)
 					tbank.flush()
 					tbank.close()
 					if verbose:
@@ -492,15 +480,19 @@ class ANKFLAG():
 			os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix+'/'+i)
 		if verbose==True:
 			if logfile_path=='':
-				os.system('mv '+inp_filepath+'/'+inpfile_name_prefix+'/ankflag.out '+inp_filepath+'/ankflag.out')
+				if pwd+'/ankflag.out'!=inp_filepath+'/ankflag.out':
+					os.system('mv '+pwd+'/ankflag.out '+inp_filepath+'/ankflag.out')
 			else:
-				os.system('mv '+inp_filepath+'/'+inpfile_name_prefix+'/ankflag.out '+logfile_path+'/ankflag.out')
+				if pwd+'/ankflag.out'!=logfile_path+'/ankflag.out':
+					os.system('mv '+pwd+'/ankflag.out '+logfile_path+'/ankflag.out')
 		else:
-			os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix+'/ankflag.out')
+			os.system('rm -rf '+pwd+'/ankflag.out')
 		os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix)
 		os.chdir(self.cwd)
+		os.system('rm -rf '+self.cwd+'/inputs.py')
 		os.system('rm -rf casa*log')
 		os.unsetenv('LD_LIBRARY_PATH')
+		os.chdir(self.cwd)
 		return finalout
 
 
