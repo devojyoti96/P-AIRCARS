@@ -18,7 +18,7 @@ if os.WEXITSTATUS(a)!=0:
 from selfcal_inputs import basedir
 from casatools import *
 from casatasks import *
-import logging,numpy as np,copy,glob,psutil,time,subprocess
+import logging,numpy as np,copy,glob,psutil,time,subprocess,getpass
 from paircars.basic_func import *
 from paircars.access_ms import *
 from paircars.decor import *
@@ -26,11 +26,12 @@ from paircars.flagger import *
 from astropy.io import fits
 from CALIBRATE.access_calibrate import *
 
-def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,input_file='',datacolumn='corrected'):
+def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=False,input_file='',datacolumn='corrected'):
 	'''
 	Function to split specific time and frequency slice and keep the necessary files in one directory to run the PAIRCARS
 	Parameters:
 	msname = Name of the source measurement set
+	metafits = Name of the metafits file
 	channel = Channel number to split
 	timestamp = Time stamp to split
 	caltype = 'B' or 'G' or 'P'
@@ -45,6 +46,7 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 	md.open(msname)
 	freqlist=md.chanfreqs(0)
 	md.close()
+	inttime=float(fits.getheader(metafits)['INTTIME'])/2
 	if type(channel)==str:
 		if '~' in channel:
 			ch0=int(channel.split('~')[0])
@@ -57,6 +59,10 @@ def spliting_timechan(msname,channel,timestamp,caltype='',ref_timechan=False,inp
 	else:
 		spw='0:'+str(channel)
 		ch=channel
+	mjd=timestamp_to_mjdsec(timestamp,format=0)
+	t0=mjdsec_to_timestamp(mjd-inttime)
+	t1=mjdsec_to_timestamp(mjd+inttime)
+	timestamp=t0+'~'+t1
 	if ref_timechan==True:
 		mainlog.info('Reference channel : '+str(channel)+' at '+str(freqlist[ch]/10**6)+' MHz and reference time : '+str(timestamp)+'\n')
 		# Spliting ref time chan ms
@@ -113,8 +119,10 @@ def casa_instance_runner(cmd,screen_name,finished_touch_file):
 	screen_name = Name of the screen
 	'''
 	batch_file=inputs.basedir+'/'+screen_name+'.batch'
-	cmd+=';if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi;'
-	cmd='screen -S '+screen_name+' -X quit; screen -mdS '+screen_name+'; echo \"'+cmd+'\" > '+batch_file+'; screen -S '+screen_name+' -X stuff \"sh '+batch_file+'\\n\"'
+	cmd_batch=inputs.basedir+'/'+screen_name+'_cmd.batch'
+	cmd+=';if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi'
+	cmd='screen -S '+screen_name+' -X quit; screen -mdS '+screen_name+'; echo \"'+cmd+'\" > '+cmd_batch+'; chmod 755 '+cmd_batch+\
+			'; screen -S '+screen_name+' -X stuff \"sh '+cmd_batch+'\\n\"'
 	if os.path.isfile(batch_file):
 		fil=open(batch_file,'r+')
 	else:
@@ -146,6 +154,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	cwd=os.getcwd()
 	os.chdir(workdir)
 	
+	inttime=float(fits.getheader(metafits)['INTTIME'])/2
 	AM=AccessMS(msname)
 	antenna=AM.get_antenna_string()
 	unflagchan,flagchan=flag_MWA_coarse(msname,edgewidth=160,do_flag=False,force=False)
@@ -156,6 +165,14 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	ms_obsid=get_OBSID_from_metafits(metafits)
 	obs_atten=float(fits.getheader(metafits)['ATTEN_DB'])
 	basemsdir=os.path.basename(msname).split('.ms')[0]
+
+
+	screen_list=[os.path.basename(i) for i in glob.glob('/var/run/screen/S-'+str(getpass.getuser())+'/*')]
+	for i in screen_list:
+		if str(ms_obsid)+'_' not in i:
+			screen_list.remove(i) 
+	for i in screen_list:
+		os.system('screen -S '+i+' -X quit')
 
 	if len(calibrator_caltable)==0:
 		perform_leakcor=True
@@ -176,99 +193,74 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		mainlog.info('Correcting to IAU convention......\n')
 		AM.convert_mwa_to_iau()
 
-	# Validating timerange
+	# Validating timerange # TODO :correct this part
 	######################
-	AM=AccessMS(msname)
-	if len(inputs.timerange)!=0:
-		start,end,start_mjdsec,end_mjdsec=AM.get_scan_startend_time()
-		new_timerange=[]
-		new_timerange_mjd=[]
-		times=inputs.timerange.split(',') # Spliting timeblocks separated by ','
-		for i in range(len(times)):
-			t=times[i].split('~')
-			mjd_list=[]
-			for timestamp in t:
-				try:
-					a=timestamp_to_mjdsec(timestamp,format=2)
-					mjd_list.append(a)
-				except:
-					mainlog.error('Timestamp format is wrong. Removing timestamp '+str(i)+'\n')
-					break
-			if len(mjd_list)!=0:
-				mjd_list=sorted(mjd_list)
-				if len(mjd_list)==1:
-					if mjd_list[0]>end_mjdsec or mjd_list[0]<start_mjdsec:
-						mainlog.info('Time range is not in ms, removing timestamp '+str(i))
-					elif mjd_list[0]<start_mjdsec:
-						mainlog.info('Start time is less than observation start time. Shifted it to observation start time.\n')
-						mjd_list[0]=start_mjdsec
-					elif mjd_list[0]>end_mjdsec:
-						mainlog.info('End time is greater than observation start time. Shifted it to observation end time.\n')
-						mjd_list[0]=end_mjdsec
-					new_timerange_mjd.append(mjd_list[0])
-				else:
-					if mjd_list[0]>end_mjdsec or mjd_list[1]<start_mjdsec:
-						mainlog.info('Time range is not in ms, removing timestamp '+str(i))
-					elif mjd_list[0]<start_mjdsec:
-						mainlog.info('Start time is less than observation start time. Shifted it to observation start time.\n')
-						mjd_list[0]=start_mjdsec
-					elif mjd_list[1]>end_mjdsec:
-						mainlog.info('End time is greater than observation start time. Shifted it to observation end time.\n')
-						mjd_list[1]=end_mjdsec
-					new_timerange_mjd.append(mjd_list[0])
-					new_timerange_mjd.append(mjd_list[1])
-
-		if len(new_timerange_mjd)!=0:
-			new_timerange_mjd=sorted(new_timerange_mjd)
-			start_time=mjdsec_to_timestamp(new_timerange_mjd[0],includedate=True,format=0)
-			end_time=mjdsec_to_timestamp(new_timerange_mjd[-1],includedate=True,format=0)
-			if start_time!=end_time:
-				new_timerange=start_time+'~'+end_time
-			else:
-				new_timerange=start_time
-		else:
-			mainlog.info('Given time stamps are not in ms. Continue with all times.\n')
-			start,end,start_mjdsec,end_mjdsec=AM.get_scan_startend_time()
+	if inputs.timerange!='':
+		try:
+			AM=AccessMS(msname)
+			ms_mjds=AM.get_timestamps_in_mjdsecs()
+			ms_start_mjd=min(ms_mjds)
+			ms_end_mjd=max(ms_mjds)
+			time_list=[]
+			for i in inputs.timerange.split(','):
+				l=i.split('~')
+				for j in l:
+					time_list.append(j)
+			time_list_mjds=sorted([float(timestamp_to_mjdsec(i,format=2)) for i in time_list])
+			for i in range(len(time_list_mjds)):
+				if time_list_mjds[i]<=ms_start_mjd:
+					time_list_mjds[i]=ms_start_mjd
+				elif time_list_mjds[i]>=ms_end_mjd:
+					time_list_mjds[i]=ms_end_mjd
+			time_list_mjds=sorted(time_list_mjds)
+			new_timerange=mjdsec_to_timestamp(min(time_list_mjds),format=0)+'~'+mjdsec_to_timestamp(max(time_list_mjds),format=0)
+		except:
+			mainlog.info('Error in user given time range. Choosing full ms.\n')
 			new_timerange=''
 	else:
-		start,end,start_mjdsec,end_mjdsec=AM.get_scan_startend_time()
-		new_timerange=start+'~'+end
+		new_timerange=''
+
+	ms_times=AM.get_timestamps(format=0)
+	ms_timerange=ms_times[0]+'~'+ms_times[-1]
 
 	# Validating channel ranges
 	###########################
-	if inputs.chanrange!='':
-		chans=inputs.chanrange.split(',')
-		nchan=AM.get_num_channels()
-		new_chan_list=[]
-		for i in range(len(chans)):
-			c=chans[i].split('~')
-			chan_list=[]
-			for chan in c:
-				try:
-					a=int(chan)
-				except:
-					mainlog.error('Channel number is wrong. Removing chanstamp '+str(i))
-					break
-				chan_list.append(a)
-			chan_list=sorted(chan_list)
-			if chan_list[0]>nchan or chan_list[1]<0:
-				mainlog.info('Channel range is not in ms, removing chanstamp '+str(i))
-			elif chan_list[0]<0:
-				mainlog.info('Start channel is less than 0. Shifted it to channel 0.\n')
-				chan_list[0]=0
-			elif chan_list[1]>nchan:
-				mainlog.info('End chan is greater than total number of channels. Shifted it to total number of channels.\n')
-				chan_list[1]=nchan
-			for x in range(chan_list[0],chan_list[1]): 
-				new_chan_list.append(str(x))
-		
-		if len(new_chan_list)!=0:
-			new_chan_list=','.join(new_chan_list)
+	try:
+		if inputs.chanrange!='':
+			chans=inputs.chanrange.split(',')
+			nchan=AM.get_num_channels()
+			new_chan_list=[]
+			for i in range(len(chans)):
+				c=chans[i].split('~')
+				chan_list=[]
+				for chan in c:
+					try:
+						a=int(chan)
+					except:
+						mainlog.error('Channel number is wrong. Removing chanstamp '+str(i))
+						break
+					chan_list.append(a)
+				chan_list=sorted(chan_list)
+				if chan_list[0]>nchan or chan_list[1]<0:
+					mainlog.info('Channel range is not in ms, removing chanstamp '+str(i))
+				elif chan_list[0]<0:
+					mainlog.info('Start channel is less than 0. Shifted it to channel 0.\n')
+					chan_list[0]=0
+				elif chan_list[1]>nchan:
+					mainlog.info('End chan is greater than total number of channels. Shifted it to total number of channels.\n')
+					chan_list[1]=nchan
+				for x in range(chan_list[0],chan_list[1]): 
+					new_chan_list.append(str(x))
+			
+			if len(new_chan_list)!=0:
+				new_chan_list=','.join(new_chan_list)
+			else:
+				mainlog.info('Given channels are not in ms. Continue with all channels.\n')
+				new_chan_list=','.join([str(i) for i in range(nchan)])
 		else:
-			mainlog.info('Given channels are not in ms. Continue with all channels.\n')
 			new_chan_list=','.join([str(i) for i in range(nchan)])
-	else:
-		new_chan_list=','.join([str(i) for i in range(nchan)])
+	except:
+			new_chan_list=','.join([str(i) for i in range(nchan)])
 
 	# Auto calculate calibration parameters
 	#######################################
@@ -359,42 +351,26 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 	# Spliting timeranges for reference times
 	#########################################
-	timerange_list=new_timerange.split('~')
-	mjdlist=sorted([timestamp_to_mjdsec(timestamp,format=0) for timestamp in timerange_list])
-	time_diff=max(mjdlist)-min(mjdlist)
-	if time_diff<skip_time:
-		middle_index=int(len(mjdlist)/2)
-		timestamp1=mjdsec_to_timestamp(float(mjdlist[middle_index]-(5)),includedate=True,format=0)
-		timestamp2=mjdsec_to_timestamp(float(mjdlist[middle_index]+(5)-AM.calc_timeres()),includedate=True,format=0)
-		ref_new_timerange=timestamp1+'~'+timestamp2
-	else:
-		ref_new_timerange=new_timerange
-
-	mainlog.info('Reference timeslice range : '+ref_new_timerange+'\n')
 	mainlog.info('Measurement set timeslice range : '+new_timerange+'\n')
 
-	mainlog.info('Spliting reference timerange : '+str(ref_new_timerange)+'\n')	
-	if os.path.isdir(workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms')==True:
-		os.system('rm -rf '+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms* '+\
-					workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms.flagversions')
-	mainlog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms\',timerange=\''+ref_new_timerange\
-				+'\',datacolumn=\'data\')\n')
-	split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms',timerange=ref_new_timerange,datacolumn='data')
-	ref_timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms'
-
-	if new_timerange!=ref_new_timerange:
-		mainlog.info('Spliting measurement set timerange : '+str(new_timerange)+'\n')	
-		if os.path.isdir(workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms')==True:
-			os.system('rm -rf '+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms* '+\
-						workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms.flagversions')
-		mainlog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms\',timerange=\''+new_timerange\
+	if new_timerange!=ms_timerange:
+		mainlog.info('Spliting reference timerange : '+str(new_timerange)+'\n')	
+		if os.path.isdir(workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms')==True:
+			os.system('rm -rf '+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms* '+\
+						workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms.flagversions')
+		mainlog.info('split(vis=\''+msname+'\',outputvis=\''+workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms\',timerange=\''+new_timerange\
 					+'\',datacolumn=\'data\')\n')
-		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms',timerange=new_timerange,datacolumn='data')
-		timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms'
+		split(vis=msname,outputvis=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms',\
+				timerange=new_timerange,datacolumn='data')
+		ref_timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms'
 	else:
-		mainlog.info('Copying reference timesliced ms to timesliced ms.....\n')
-		timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms'
-		os.system('cp -r '+ref_timesliced_measurement_set+' '+timesliced_measurement_set)
+		mainlog.info('Reference timerange is similar to MS timerange. Copying the MS.....\n')
+		ref_timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_reftimesliced.ms'
+		os.system('cp -r '+os.path.realpath(msname)+' '+ref_timesliced_measurement_set)
+
+	mainlog.info('Copying reference timeslice ms to timesliced ms....\n')
+	timesliced_measurement_set=workdir+'/'+os.path.basename(msname).split('.ms')[0]+'_timesliced.ms'
+	os.system('cp -r '+ref_timesliced_measurement_set+' '+timesliced_measurement_set)
 	os.system('rm -rf casa*.log')	# Time slices list
 	
 	# Setting time and frequency averaging parameters
@@ -437,18 +413,54 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	pass_flag=False # Pass the while loop if True and failed to selfcal with all time and frequency averaging
 	try_reduce_flag=True # Try to reduce flag solutions by increasing time averaging
 	reduce_moreflag=True # Try to reduce more number of solutions flag
-	reduce_flag_count=0	# 
+	reduce_flag_count=0	#
 	previous_selfcal_record=''
 	previous_ms=''
 	previous_caltable=''
-
+	preworkdi=''
+	touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+basemsdir+'*ref*')
+	if len(touch_file_list)>0:
+		touch_file=touch_file_list[0]
+	else:
+		touch_file=''
+	ref_time=''
+	ref_chan=''
+	ref_freq_avg=freq_avg
+	ref_time_avg=time_avg
 	# In this while loop we are checking whether the present time and frequency averaging is enough to start the self calibration. If it has it will leave the loop and go for selfcal
 	##################################################################################################################################################################################
-	while os.path.isfile('.ref_timechan_done')==False and ref_time_freq==True:  	
-		mainlog.info('Choosing averaging frequency width : '+str(freq_avg)+' kHz, averaging temporal width : '+str(time_avg)+' s, Skip frequency : '\
+	while os.path.isfile('.ref_timechan_done')==False and ref_time_freq==True and os.path.exists(touch_file)==False:  	
+		mainlog.info('Choosing averaging frequency width : '+str(ref_freq_avg)+' kHz, averaging temporal width : '+str(ref_time_avg)+' s, Skip frequency : '\
 				+str(skip_freq)+' kHz, Skip time : '+str(skip_time)+' s\n')
+		
+		# Averaging reference timesliced measurement set
+		################################################
+		do_averaging=False
+		AMtimesliced=AccessMS(ref_timesliced_measurement_set)
+		if ref_freq_avg>AMtimesliced.calc_freqres() or ref_time_avg>AMtimesliced.calc_timeres():
+			chan_width=int(ref_freq_avg/AMtimesliced.calc_freqres())
+			previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
+			for pams in previous_averaged_ms:
+				os.system('rm -rf '+pams+'* '+pams+'.flagversions')
+			ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_ref_averaged.ms'
+			if os.path.isdir(ref_averaged_msname)==True:
+				os.system('rm -rf '+ref_averaged_msname+'* '+ref_averaged_msname+'.flagversions')	
+			mainlog.info('Avearging reference time measurement width frequency average :'+str(ref_freq_avg)+' kHz, temporal average :'+str(ref_time_avg)+'s\n')
+			mainlog.info('split(vis=\''+ref_timesliced_measurement_set+'\',outputvis=\''+ref_averaged_msname+'\',width='+\
+						str(chan_width)+',timerange=\''+new_timerange+'\',timebin=\''+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
+			split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=new_timerange,timebin=str(ref_time_avg)+'s',datacolumn='data')
+			np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
+			do_averaging=True
+		else:
+			mainlog.info('No averaging is required.\n')
+			previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
+			for pams in previous_averaged_ms:
+				os.system('rm -rf '+pams+'* '+pams+'.flagversions')
+			ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_ref_averaged.ms'
+			os.system('cp -r '+ref_timesliced_measurement_set+' '+ref_averaged_msname)
+			np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 
-		AMref=AccessMS(ref_timesliced_measurement_set)
+		AMref=AccessMS(ref_averaged_msname)
 		# Making reference time and channel and time frequency grid
 		##########################################################
 		unflagged_channels=AMref.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
@@ -456,50 +468,30 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			mainlog.info('No unflagged channel is present.\n')
 			os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_selfcalerror')		
 			return 1,0,0,0,0,0
-
-		timestamps=AMref.get_timestamps()
-		total_time=AMref.calc_total_time()
-		timeres=AMref.calc_timeres()
-		mjdlist=AMref.get_timestamps_in_mjdsecs()
-		ref_time_grid=[]		
-		skip_timestamp=int(skip_time/AMref.calc_timeres())
-		if skip_timestamp<len(timestamps):
-			for i in range(0,len(timestamps),skip_timestamp):
-				ref_time_grid.append(timestamps[i])
-		else:
+		if do_averaging==True or ref_time_chan_loop_count==0:
+			timestamps=AMref.get_timestamps()
+			total_time=AMref.calc_total_time()
+			timeres=AMref.calc_timeres()
+			mjdlist=AMref.get_timestamps_in_mjdsecs()
+			ref_time_grid=copy.deepcopy(timestamps)
+			while True:
+				ref_time=ref_time_grid[int(len(ref_time_grid)/2)]
+				ref_time_mjd=timestamp_to_mjdsec(ref_time)
+				ref_time_mjd_frac_sec=ref_time_mjd-int(ref_time_mjd)
+				frac_multiple=ref_time_mjd_frac_sec/inttime
+				if (frac_multiple-int(frac_multiple))==0:
+					break
+				else:
+					ref_time_grid.remove(ref_time)
+			ref_time_grid_copy=copy.deepcopy(ref_time_grid)
+		elif ref_time_chan_loop_count==0:
+			timestamps=AMref.get_timestamps()
 			ref_time_grid=timestamps
-		ref_time=ref_time_grid[int(len(ref_time_grid)/2)]
-		ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from rf time grid if failed
-		if time_avg<total_time:
-			middle_index=int(len(mjdlist)/2)
-			timestamp1=mjdsec_to_timestamp(float(mjdlist[middle_index]-(time_avg/2)),includedate=True,format=0)
-			timestamp2=mjdsec_to_timestamp(float(mjdlist[middle_index]+(time_avg/2)-timeres),includedate=True,format=0)
-			ref_new_timerange=timestamp1+'~'+timestamp2
+			ref_time_grid_copy=copy.deepcopy(ref_time_grid)
 		else:
-			ref_new_timerange=ref_time
-		
-		# Averaging reference timesliced measurement set
-		################################################
-		AMtimesliced=AccessMS(ref_timesliced_measurement_set)
-		if freq_avg>AMtimesliced.calc_freqres() or time_avg>AMtimesliced.calc_timeres():
-			chan_width=int(freq_avg/AMtimesliced.calc_freqres())
-			previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
-			for pams in previous_averaged_ms:
-				os.system('rm -rf '+pams+'* '+pams+'.flagversions')
-			ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(freq_avg))+'kHz_'+str(time_avg)+'s_ref_averaged.ms'
-			if os.path.isdir(ref_averaged_msname)==True:
-				os.system('rm -rf '+ref_averaged_msname+'* '+ref_averaged_msname+'.flagversions')	
-			mainlog.info('Avearging measurement width frequency average :'+str(freq_avg)+' kHz, temporal average :'+str(time_avg)+'s\n')
-			split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=ref_new_timerange,timebin=str(time_avg)+'s',datacolumn='data')
-			mainlog.info('split(vis=\''+ref_timesliced_measurement_set+'\',outputvis=\''+ref_averaged_msname+'\',width='+\
-						str(chan_width)+',timerange=\''+ref_new_timerange+'\',timebin=\''+str(time_avg)+'s\',datacolumn=\'data\')\n')
-			np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
-		else:
-			mainlog.info('No averaging is required.\n')
-			ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(freq_avg))+'kHz_'+str(time_avg)+'s_ref_averaged.ms'
-			os.system('cp -r '+ref_timesliced_measurement_set+' '+ref_averaged_msname)
-			np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+			ref_time_grid=copy.deepcopy(ref_time_grid_copy)
 
+		ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from ref time grid if failed
 		AMref=AccessMS(ref_averaged_msname)
 		# Making reference time and channel and time frequency grid
 		##########################################################
@@ -511,18 +503,17 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 		timestamps=AMref.get_timestamps()
 		total_time=AMref.calc_total_time()
-		ref_freqs=AMref.get_freqs()/10**6		
-		mjdlist=AMref.get_timestamps_in_mjdsecs()
-		skip_channel=int(skip_freq/AMref.calc_freqres())
-		ref_channel_grid=[]		
-		if skip_channel<len(unflagged_channels):
-			for i in range(0,len(unflagged_channels),skip_channel):
-				ref_channel_grid.append(unflagged_channels[i])
-		else:
-			ref_channel_grid=unflagged_channels
+		ref_freqs=AMref.get_freqs()/10**6
+		if do_averaging==True or ref_time_chan_loop_count==0:		
+			mjdlist=AMref.get_timestamps_in_mjdsecs()
+			skip_channel=int(skip_freq/AMref.calc_freqres())
+			ref_channel_grid=[]		
+			if skip_channel<len(unflagged_channels):
+				for i in range(0,len(unflagged_channels),skip_channel):
+					ref_channel_grid.append(unflagged_channels[i])
+				ref_channel_grid=unflagged_channels
 
-		ref_chan=ref_channel_grid[int(len(ref_channel_grid)/2)]
-		ref_time=timestamps[0] # Only one timestamp in reference timesliced averaged ms
+			ref_chan=ref_channel_grid[int(len(ref_channel_grid)/2)]
 
 		mainlog.info('Reference frequency : '+str(ref_freqs[ref_chan])+' MHz.\n')
 		mainlog.info('Reference time : '+str(ref_time)+'\n')
@@ -545,7 +536,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 		# Spliting ref time chan ms
 		###########################
-		ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
+		ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,metafits,ref_chan,ref_time,caltype='G',ref_timechan=True,\
+						input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 		cur_workdir=ref_timechan_dir
 		mpicmd_file=inputs.basedir+'/'+basemsdir+'.ref_mpicmd'
 		# Run selfcal
@@ -555,7 +547,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				if os.path.isfile(mpicmd_file):
 					os.system('rm -rf '+mpicmd_file)
 			try:
-				touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+basemsdir+'*'+os.path.basename(ref_timechan_ms)+'_*')
+				touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+basemsdir+'*'+os.path.basename(ref_timechan_ms)+'*')
 				if reduce_flag_count==1: # Restarting calibration with more time averaging
 					if previous_caltable!='' and previous_record!='':
 						try:
@@ -572,13 +564,20 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 								mainlog.info('flagmanager(vis=\''+ref_timechan_ms+'\',mode=\'delete\',versionname=\''+str(last_flagversion)+'\')\n')
 								flagmanager(vis=ref_timechan_ms,mode='restore',versionname=last_flagversion,merge='replace')
 								flagmanager(vis=ref_timechan_ms,mode='delete',versionname=last_flagversion)
+							if os.path.isdir(ref_timechan_dir+'/junk1.ms')==False:
+								os.system('cp -r '+ref_timechan_ms+' '+ref_timechan_dir+'/junk1.ms')
+							if os.path.isdir(ref_timechan_dir+'/junk1.cal')==False:
+								os.system('cp -r '+previous_caltable+' '+ref_timechan_dir+'/junk1.cal')
+							if len(glob.glob(inputs.basedir+'/freq_*datetime*'))>0:
+								mainlog.info('Copying previous round backup directories : '+str(glob.glob(inputs.basedir+'/freq_*datetime*'))+'\n')
+								os.system('cp -r '+inputs.basedir+'/freq_*datetime* '+ref_timechan_dir)
 							num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 								num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
 								ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time=np.load(previous_record,allow_pickle=True)
 							startmodel=''
 							startmask=''
-							if os.path.isfile(working_dir+'/Intensity_selfcal_record.npy'):
-								os.system('rm -rf '+working_dir+'/Intensity_selfcal_record.npy')
+							if os.path.isfile(workdir+'/Intensity_selfcal_record.npy'):
+								os.system('rm -rf '+workdir+'/Intensity_selfcal_record.npy')
 							selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 									num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,ra,dec,\
 									num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time],dtype='object')
@@ -594,7 +593,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					else:
 						fresh=True
 				else:
-					fresh=True									
+					fresh=True	
+				mainlog.info('Perforimg self-calibration using fresh = '+str(fresh)+'\n')
+				if try_reduce_flag==True and reduce_flag_count<1 and reduce_moreflag==False:
+					reduce_moreflag=True		
 				if len(calibrator_caltable)!=0:
 					calstring=','.join(calibrator_caltable)
 					cmd='run_intensity_selfcal --msname '+ref_timechan_ms+' --metafits '+metafits+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)\
@@ -635,14 +637,12 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					mainlog.info('Made Screen : '+str(ms_obsid)+'_'+basemsdir+'_refcal\n')
 					mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+str(ms_obsid)+'_'+basemsdir+'_refcal -X stuff \"'+screen_cmd+'\n"')	
-					time.sleep(2.0)
-					os.system('screen -S '+str(ms_obsid)+'_'+basemsdir+'_refcal -X quit')
-					os.system('rm -rf '+mpicmd_file)	
+					time.sleep(2.0)	
 				mainlog.info('Self calibration for ms : '+ref_timechan_ms+' is spawned in screen : '+screen_name+'\n')
 				mainlog.info('Waiting to finish self calibration for reference time frequency ms :'+ref_timechan_ms+'................\n') 
 				while True:
 					time.sleep(2)
-					touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+basemsdir+'*'+os.path.basename(ref_timechan_ms)+'_*')
+					touch_file_list=glob.glob(inputs.basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+basemsdir+'*'+os.path.basename(ref_timechan_ms)+'*')
 					if len(touch_file_list)!=0:
 						msg=touch_file_list[0].split('_')[-1]
 						break	
@@ -653,35 +653,35 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				os.system('rm -rf '+basedir+'/.paircars_running')
 				os.system('touch '+basedir+'/.paircars_failed')
 				os.system('rm -rf '+cur_workdir)
-				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 				return 1,0,0,0,0,0
 			if msg=='error': # If error occured in run_intensity_selfcal
 				mainlog.info('Runtime error occured.\n')
 				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_runtimeerror')	
 				os.system('rm -rf '+cur_workdir)	
-				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 				return 1,0,0,0,0,0
 			elif msg=='noms': # If ms is not present
 				mainlog.info('Runtime error occured. No measurement set found.\n')
 				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_runtimeerror')	
 				os.system('rm -rf '+cur_workdir)	
-				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 				return 1,0,0,0,0,0
 			elif msg=='nometa': # If metafits not present
 				mainlog.info('Runtime error occured. No metafits file found.\n')
 				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_runtimeerror')	
 				os.system('rm -rf '+cur_workdir)	
-				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 				return 1,0,0,0,0,0
 			elif msg=='moreflag' and try_reduce_flag==True: # Try to reduce more flags with more time averaging
 				mainlog.info('More than 5 % solutions are flagged. Increasing time averaging.\n')
-				new_time_avg=time_avg+3.0 # Averaging extra 5 seconds
+				new_time_avg=int(ref_time_avg+4.0) # Averaging extra 4 seconds
 				if try_reduce_flag==True and reduce_flag_count<1:
 					try_reduce_flag=False
 					reduce_moreflag=False
 					reduce_flag_count+=1
 					os.system('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/prerecord.npy')					
-					os.system('cp -r '+cur_workdir+'/junk.pcal '+workdir+'/precal.cal')
+					os.system('cp -r '+cur_workdir+'/junk.precal '+workdir+'/precal.cal')
 					os.system('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/pre.log')
 					prelog=workdir+'/pre.log'
 					if os.path.exists(cur_workdir+'/Intensity_Selfcal_verbose.log')==True:
@@ -692,13 +692,14 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					os.system('rm -rf '+cur_workdir)
 					previous_caltable=workdir+'/precal.cal'
 					previous_record=workdir+'/prerecord.npy'
+					preworkdir=cur_workdir
 				for i in touch_file_list:
 					msg=i.split('_')[-1]
 					if type(msg)==str and msg=='moreflag':						
 						os.system('rm -rf '+i)
 				if new_time_avg<=10.0:
-					time_avg=new_time_avg
-					mainlog.info('Increasing time averaging to '+str(time_avg)+'s\n')
+					ref_time_avg=new_time_avg
+					mainlog.info('Increasing time averaging to '+str(ref_time_avg)+'s\n')
 					break
 			elif int(msg)>=100:
 				msg=int(msg)-100
@@ -706,12 +707,12 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				mainlog.error('SNR for self calibration is not sufficent.\n')
 				selfcal_snr=float(np.load(inputs.basedir+'/selfcal_minsnr.npy'))
 				mainlog.info('Selfcal SNR : '+str(selfcal_snr)+'\n')
-				new_time_avg=int(time_avg*np.sqrt(selfcal_snr/min_selfcal_snr)*3)
-				if new_time_avg==time_avg:
+				new_time_avg=int(ref_time_avg*np.sqrt(selfcal_snr/min_selfcal_snr)*3)
+				if new_time_avg==ref_time_avg:
 					new_time_avg+=AMref.calc_timeres()
-				if new_time_avg<=skip_time and new_time_avg>time_avg and new_time_avg<=total_time:
-					time_avg=new_time_avg
-					mainlog.info('Increasing time averaging to '+str(time_avg)+'s\n')
+				if new_time_avg<=skip_time and new_time_avg>ref_time_avg and new_time_avg<=total_time:
+					ref_time_avg=new_time_avg
+					mainlog.info('Increasing time averaging to '+str(ref_time_avg)+'s\n')
 					os.system('rm -rf '+touch_file_list[0])
 					break
 				new_freq_avg=int(freq_avg*np.sqrt(selfcal_snr/min_selfcal_snr)*3)
@@ -731,7 +732,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						mainlog.info('Both time and frequency averaging has been tried. Still SNR is not sufficient. Trying with other time frequency.\n')
 						os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_selfcalerror')	
 						os.system('rm -rf '+cur_workdir)
-						np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))		
+						np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))		
 						return 1,0,0,0,0,0
 			elif int(msg)!=0 and int(msg)!=9 and int(msg)!=8: # If not succeeded, or max iteration reached or DR decreased but more than min DR, removing the ref time
 				mainlog.info('Message : '+error_msgs(100)+' : '+error_msgs(int(msg))+'\n')
@@ -746,7 +747,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					mainlog.info('Trying for new timestamp :'+str(ref_time)+'\n')
 					if inputs.verbose==False:
 						os.system('rm -rf '+ref_timechan_dir)
-					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workfir\
+					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,metafits,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workfir\
 									+'/selfcal_inputs.py',datacolumn='data')
 					cur_workdir=ref_timechan_dir
 					continue
@@ -755,12 +756,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					ref_channel_grid.remove(ref_chan)
 					ref_chan_index=int(len(ref_channel_grid)/2)
 					ref_chan=ref_channel_grid[ref_chan_index]
-					ref_time_index=int(len(ref_time_grid)/2)
-					ref_time=ref_time_grid[ref_time_index]
 					mainlog.info('Trying with new channel : '+str(ref_chan)+'\n')
 					if inputs.verbose==False:
 						os.system('rm -rf '+ref_timechan_dir)
-					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=\
+					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,metafits,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=\
 								workfir+'/selfcal_inputs.py',datacolumn='data')
 					cur_workdir=ref_timechan_dir
 					continue
@@ -770,13 +769,13 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					os.system('rm -rf '+basedir+'/.paircars_running')
 					os.system('touch '+basedir+'/.paircars_failed')
 					os.system('rm -rf '+cur_workdir)	
-					np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+					np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 					return 1,0,0,0,0,0
 			elif int(msg)==0 or int(msg)==8 or int(msg)==9: # if succeeded omax iteration reached or DR decreases but more than min DR
 				os.system('touch .ref_timechan_done')
 				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_'+str(msg))		
 				mainlog.info('Reference time frequency calibration done.\n')
-				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_freq_avg,ref_time_avg]))
+				np.save(inputs.basedir+'/Ref_time_cal_record',np.array([ref_time,ref_chan,ref_freq_avg,ref_time_avg]))
 				ref_time_grid.remove(ref_time_copy)
 				ref_channel_grid.remove(ref_chan)
 				spawned_casa_instances+=1	
@@ -789,7 +788,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		pass
 
 	try:
-		ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+		ref_time,ref_chan,ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+		ref_chan=int(ref_chan)
+		ref_freq_avg=float(ref_freq_avg)
+		ref_time_avg=float(ref_time_avg)
 	except:
 		ref_freq_avg=freq_avg
 		ref_time_avg=2
@@ -800,43 +802,12 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	# If not the reference time frequency ms, making time and channel and time frequency grid or reference time frequency ms but touch file does not exist
 	######################################################################################################################################################
 	if ref_time_freq==False or (len(glob.glob(inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_*'))==0 and ref_time_freq==True and ref_time_chan_loop_count==0):
-		AMref=AccessMS(ref_timesliced_measurement_set)
-		# Making reference time and channel and time qquency grid
-		##########################################################
-		unflagged_channels=AMref.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
-		if len(unflagged_channels)==0:
-			mainlog.info('No unflagged channel is present.\n')
-			os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_selfcalerror')		
-			return 1,0,0,0,0,0
-
-		timestamps=AMref.get_timestamps()
-		total_time=AMref.calc_total_time()
-		mjdlist=AMref.get_timestamps_in_mjdsecs()
-		timeres=AMref.calc_timeres()
-		skip_timestamp=int(skip_time/AMref.calc_timeres())
-		ref_time_grid=[]		
-		if skip_timestamp<len(timestamps):
-			for i in range(0,len(timestamps),skip_timestamp):
-				ref_time_grid.append(timestamps[i])
-		else:
-			ref_time_grid=timestamps
-		ref_time=ref_time_grid[int(len(ref_time_grid)/2)]
-		ref_time_copy=copy.deepcopy(ref_time)
-		if time_avg<total_time:
-			middle_index=int(len(mjdlist)/2)
-			timestamp1=mjdsec_to_timestamp(float(mjdlist[middle_index]-(time_avg/2)),includedate=True,format=0)
-			timestamp2=mjdsec_to_timestamp(float(mjdlist[middle_index]+(time_avg/2)-timeres),includedate=True,format=0)
-			ref_new_timerange=timestamp1+'~'+timestamp2
-		else:
-			ref_new_timerange=ref_time
-		try:
-			del ref_time_grid
-		except:
-			pass
-
 		if ref_time_freq==False:
 			try:
-				ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+				ref_time,ref_chan,ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+				ref_chan=int(ref_chan)
+				ref_freq_avg=float(ref_freq_avg)
+				ref_time_avg=float(ref_time_avg)
 			except:
 				ref_freq_avg=freq_avg
 				ref_time_avg=2
@@ -850,6 +821,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			# Averaging reference measurement set
 			#####################################
 			AMtimesliced=AccessMS(ref_timesliced_measurement_set)
+			do_averaging=False
 			if ref_freq_avg>AMtimesliced.calc_freqres() or ref_time_avg>AMtimesliced.calc_timeres():
 				chan_width=int(ref_freq_avg/AMtimesliced.calc_freqres())
 				previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
@@ -858,18 +830,55 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(2)+'s_ref_averaged.ms'
 				if os.path.isdir(ref_averaged_msname)==True:
 					os.system('rm -rf '+ref_averaged_msname+'* '+ref_averaged_msname+'.flagversions')	
-				mainlog.info('Avearging measurement width frequency average :'+str(ref_freq_avg)+' kHz, temporal average :'+str(2)+'s\n')
-				split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=ref_new_timerange,timebin=str(ref_time_avg)+'s',datacolumn='data')
+				mainlog.info('Avearging reference time 2 measurement width frequency average :'+str(ref_freq_avg)+' kHz, temporal average :'+str(2)+'s\n')
+				split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=new_timerange,timebin=str(ref_time_avg)+'s',datacolumn='data')
 				mainlog.info('split(vis=\''+ref_timesliced_measurement_set+'\',outputvis=\''+ref_averaged_msname+'\',width='+\
-							str(chan_width)+',timerange=\''+ref_new_timerange+'\',timebin=\''+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
+							str(chan_width)+',timerange=\''+new_timerange+'\',timebin=\''+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
+				do_averaging=True
 			else:
 				mainlog.info('No averaging is required.\n')
-				ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(time_avg)+'s_ref_averaged.ms'
+				previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
+				for pams in previous_averaged_ms:
+					os.system('rm -rf '+pams+'* '+pams+'.flagversions')
+				ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_ref_averaged.ms'
 				os.system('cp -r '+ref_timesliced_measurement_set+' '+ref_averaged_msname)
 			
+			AMref=AccessMS(ref_averaged_msname)
+			# Making reference time and channel and time frequency grid
+			##########################################################
+			unflagged_channels=AMref.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
+			if len(unflagged_channels)==0:
+				mainlog.info('No unflagged channel is present.\n')
+				os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_selfcalerror')		
+				return 1,0,0,0,0,0
+
+			timestamps=AMref.get_timestamps()
+			total_time=AMref.calc_total_time()
+			timeres=AMref.calc_timeres()
+			mjdlist=AMref.get_timestamps_in_mjdsecs()
+			ref_time_grid=copy.deepcopy(timestamps)
+			while True:
+				ref_time=ref_time_grid[int(len(ref_time_grid)/2)]
+				ref_time_mjd=timestamp_to_mjdsec(ref_time)
+				ref_time_mjd_frac_sec=ref_time_mjd-int(ref_time_mjd)
+				frac_multiple=ref_time_mjd_frac_sec/inttime
+				if (frac_multiple-int(frac_multiple))==0:
+					break
+				else:
+					ref_time_grid.remove(ref_time)
+			ref_time_grid_copy=copy.deepcopy(ref_time_grid)
+			ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from ref time grid if failed
+			try:
+				del ref_time_grid
+			except:
+				pass			
+
 		elif ref_time_freq==True:
 			try:
-				ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+				ref_time,ref_chan,ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+				ref_chan=int(ref_chan)
+				ref_freq_avg=float(ref_freq_avg)
+				ref_time_avg=float(ref_time_avg)
 			except:
 				ref_freq_avg=freq_avg
 				ref_time_avg=2
@@ -877,7 +886,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				ref_freq_avg=freq_avg
 			if ref_time_avg==0:
 				ref_time_avg=2
-			
+
+			previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
+			for pams in previous_averaged_ms:
+				os.system('rm -rf '+pams+'* '+pams+'.flagversions')
 			ref_averaged_msname_list=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'_*s_ref_averaged.ms')
 			if len(ref_averaged_msname_list)==0:
 				AMtimesliced=AccessMS(ref_timesliced_measurement_set)
@@ -889,12 +901,15 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_ref_averaged.ms'
 					if os.path.isdir(ref_averaged_msname)==True:
 						os.system('rm -rf '+ref_averaged_msname+'* '+ref_averaged_msname+'.flagversions')	
-					mainlog.info('Avearging reference measurement width frequency average :'+str(ref_freq_avg)+' kHz, temporal average :'+str(ref_time_avg)+'s\n')
-					split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=ref_new_timerange,timebin=str(ref_time_avg)+'s',datacolumn='data')
+					mainlog.info('Avearging reference time 3 measurement width frequency average :'+str(ref_freq_avg)+' kHz, temporal average :'+str(ref_time_avg)+'s\n')
+					split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=new_timerange,timebin=str(ref_time_avg)+'s',datacolumn='data')
 					mainlog.info('split(vis=\''+ref_timesliced_measurement_set+'\',outputvis=\''+ref_averaged_msname+'\',width='+\
-								str(chan_width)+',timerange=\''+ref_new_timerange+'\',timebin=\''+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
+								str(chan_width)+',timerange=\''+new_timerange+'\',timebin=\''+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
 				else:
 					mainlog.info('No averaging is required.\n')
+					previous_averaged_ms=glob.glob(ref_timesliced_measurement_set.split('.ms')[0]+'*s_ref_averaged.ms')
+					for pams in previous_averaged_ms:
+						os.system('rm -rf '+pams+'* '+pams+'.flagversions')
 					ref_averaged_msname=ref_timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_ref_averaged.ms'
 					os.system('cp -r '+ref_timesliced_measurement_set+' '+ref_averaged_msname)
 			else:
@@ -904,7 +919,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	######################################
 	AM=AccessMS(timesliced_measurement_set)	
 	try:
-		ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+		ref_time,ref_chan,ref_freq_avg,ref_time_avg=np.load(inputs.basedir+'/Ref_time_cal_record.npy')
+		ref_chan=int(ref_chan)
+		ref_freq_avg=float(ref_freq_avg)
+		ref_time_avg=float(ref_time_avg)
 	except:
 		ref_freq_avg=freq_avg
 		ref_time_avg=2
@@ -913,25 +931,16 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	if ref_time_avg==0:
 		ref_time_avg=2
 
+
 	if ref_freq_avg>AM.calc_freqres() or ref_time_avg>AM.calc_timeres():
-		chan_width=int(ref_freq_avg/AM.calc_freqres())
-		previous_averaged_ms=glob.glob(timesliced_measurement_set.split('.ms')[0]+'*s_averaged.ms')
-		for pams in previous_averaged_ms:
-			os.system('rm -rf '+pams+'* '+pams+'.flagversions')
+		mainlog.info('Copying averaged reference timesliced ms to timesliced ms.....\n')
 		averaged_msname=timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_averaged.ms'
-		if os.path.isdir(averaged_msname)==True:
-			os.system('rm -rf '+averaged_msname+'* '+averaged_msname+'.flagversions')	
-		mainlog.info('Avearging measurement width frequency average : '+str(ref_freq_avg)+' kHz, temporal average : '+str(ref_time_avg)+'s\n')
-		mainlog.info('split(vis=\''+timesliced_measurement_set+'\',outputvis=\''+averaged_msname+'\',width='+str(chan_width)+',timebin=\''\
-					+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
-		split(vis=timesliced_measurement_set,outputvis=averaged_msname,width=chan_width,timebin=str(ref_time_avg)+'s',datacolumn='data')
+		os.system('cp -r '+ref_averaged_msname+' '+averaged_msname)
 	else:
 		mainlog.info('No averaging is required.\n')
 		averaged_msname=timesliced_measurement_set.split('.ms')[0]+'_'+str(float(ref_freq_avg))+'kHz_'+str(ref_time_avg)+'s_averaged.ms'
 		os.system('cp -r '+timesliced_measurement_set+' '+averaged_msname)
-	freq_avg=ref_freq_avg
-	time_avg=ref_time_avg
-	
+
 	AMref=AccessMS(ref_averaged_msname)
 	# Making reference time and channel and time frequency grid
 	##########################################################
@@ -943,22 +952,15 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 	timestamps=AMref.get_timestamps()
 	total_time=AMref.calc_total_time()
-	ref_freqs=AMref.get_freqs()/10**6		
-	mjdlist=AMref.get_timestamps_in_mjdsecs()
-	skip_channel=int(skip_freq/AMref.calc_freqres())
-	ref_channel_grid=[]		
-	if skip_channel<len(unflagged_channels):
-		for i in range(0,len(unflagged_channels),skip_channel):
-			ref_channel_grid.append(unflagged_channels[i])
-	else:
-		ref_channel_grid=unflagged_channels
-
-	ref_chan=ref_channel_grid[int(len(ref_channel_grid)/2)]
-	ref_time=timestamps[0]
+	ref_freqs=AMref.get_freqs()/10**6
+	unflagged_channels=AMref.get_unflag_chan(flagfrac=1) # Unflagged averaged channels
+	if len(unflagged_channels)==0:
+		mainlog.info('No unflagged channel is present.\n')
+		os.system('touch '+inputs.basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_selfcalerror')		
+		return 1,0,0,0,0,0
 
 	mainlog.info('Reference frequency : '+str(ref_freqs[ref_chan])+' MHz.\n')
 	mainlog.info('Reference time : '+str(ref_time)+'\n')
-
 	try:
 		del ref_channel_grid
 		del ref_time_grid
@@ -983,25 +985,32 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 	if skip_channel<len(unflagged_channels): # Final channel grid
 		for i in range(min(unflagged_channels),max(unflagged_channels),skip_channel):
-			channel_grid.append(i)
+			if i!=ref_chan:
+				channel_grid.append(i)
 	else:
 		channel_grid=[]
 
 	if skip_timestamp<len(timestamps): # Final time grid
 		for i in range(0,len(mjd_timestamps),skip_timestamp):
-			time_grid.append(timestamps[i])
+			if timestamps[i]!=ref_time:
+				time_grid.append(timestamps[i])
 	else:
 		time_grid=[]
 
-	channel_grid_copy=copy.deepcopy(channel_grid)
+	mjd_time_grid=np.array([timestamp_to_mjdsec(i,format=0) for i in time_grid])
+	ref_mjd=timestamp_to_mjdsec(ref_time,format=0)
+	time_diff_list=np.abs(np.array(mjd_time_grid)-ref_mjd)
+	pos=np.where(time_diff_list<=skip_time)
+	mjd_time_grid=np.delete(mjd_time_grid,pos)
+	time_grid=[mjdsec_to_timestamp(i,format=0) for i in mjd_time_grid]
+
 	time_grid_copy=copy.deepcopy(time_grid)
 
-	ref_chan=channel_grid[int(len(channel_grid)/2)]
-	ref_time=time_grid[int(len(time_grid)/2)]
+	if ref_chan=='':
+		ref_chan=channel_grid[int(len(channel_grid)/2)]
+	if ref_time=='' or ref_time_freq==False:
+		ref_time=time_grid[int(len(time_grid)/2)]
 
-	time_grid.remove(ref_time)
-	channel_grid.remove(ref_chan)
-	
 	mainlog.info('Channel grid list : '+str(channel_grid)+'\n')
 	mainlog.info('Timestamp grid list : '+str(time_grid)+'\n')
 		
@@ -1031,6 +1040,37 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	mainlog.info('Available cpus for P-AIRCARS: '+str(available_cpu_for_paircars)+'\n')
 	mainlog.info('Total number of available CASA instances : '+str(casa_instance)+'\n')
 
+	# Applying ref time solution
+	############################
+	mainlog.info('Applying gain solution for reference time in all times and all channels.......\n')
+	mainlog.info('applycal(vis=\''+ref_averaged_msname+'\',gaintable='+str(ref_gaintable)+',applymode=\'calflag\',flagbackup=False)\n')
+	applycal(vis=ref_averaged_msname,gaintable=ref_gaintable,applymode='calflag',flagbackup=False)
+	mainlog.info('applycal(vis=\''+averaged_msname+'\',gaintable='+str(ref_gaintable)+',applymode=\'calflag\',flagbackup=False)\n')
+	applycal(vis=averaged_msname,gaintable=ref_gaintable,applymode='calflag',flagbackup=False)
+	flaglist=flagmanager(vis=ref_averaged_msname,mode='list')
+	if len(flaglist)>1:
+		flaglist_keys=list(flaglist.keys())
+		flaglist_keys.remove('MS')
+		last_flag_key=len(flaglist_keys)-1
+		last_flagversion=flaglist[last_flag_key]['name']
+		# Restore the flag and delete the present flag version
+		mainlog.info('flagmanager(vis=\''+ref_averaged_msname+'\',mode=\'restore\',versionname=\''+str(last_flagversion)+'\',merge=\'replace\')\n')
+		mainlog.info('flagmanager(vis=\''+ref_averaged_msname+'\',mode=\'delete\',versionname=\''+str(last_flagversion)+'\')\n')
+		flagmanager(vis=ref_averaged_msname,mode='restore',versionname=last_flagversion,merge='replace')
+		flagmanager(vis=ref_averaged_msname,mode='delete',versionname=last_flagversion)
+	flaglist=flagmanager(vis=averaged_msname,mode='list')
+	if len(flaglist)>1:
+		flaglist_keys=list(flaglist.keys())
+		flaglist_keys.remove('MS')
+		last_flag_key=len(flaglist_keys)-1
+		last_flagversion=flaglist[last_flag_key]['name']
+		# Restore the flag and delete the present flag version
+		mainlog.info('flagmanager(vis=\''+averaged_msname+'\',mode=\'restore\',versionname=\''+str(last_flagversion)+'\',merge=\'replace\')\n')
+		mainlog.info('flagmanager(vis=\''+averaged_msname+'\',mode=\'delete\',versionname=\''+str(last_flagversion)+'\')\n')
+		flagmanager(vis=averaged_msname,mode='restore',versionname=last_flagversion,merge='replace')
+		flagmanager(vis=averaged_msname,mode='delete',versionname=last_flagversion)
+
+
 	# Spliting gaincal measurement set
 	##################################
 	gaincal_cmd_list=[]
@@ -1044,31 +1084,31 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	if len(time_grid)!=0:
 		mainlog.info('Spliting reference chan data for performing gaincal.\n')
 		for timestamp in time_grid:
-			splited_msname,splited_msdir=spliting_timechan(averaged_msname,str(ref_chan),timestamp,caltype='G',ref_timechan=False,\
+			splited_msname,splited_msdir=spliting_timechan(averaged_msname,metafits,str(ref_chan),timestamp,caltype='G',ref_timechan=False,\
 											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
-
-			calstring=','.join(ref_gaintable)
-			cmd='run_intensity_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --dopoint True --verbose '+str(inputs.verbose)\
-					+' --interactive '+str(inputs.interactive)+' --fresh True --reduce_flags True --caltables '+calstring
-			gaincal_cmd_list.append(cmd)
-			gaincal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_G')
-			gaincal_finished_file_list.append(inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
-		touch_count=0
+			touch_file=glob.glob(inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname)+'*')
+			if len(touch_file)==0:
+				calstring=','.join(ref_gaintable)
+				cmd='run_intensity_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --dopoint True --verbose '+str(inputs.verbose)\
+						+' --interactive '+str(inputs.interactive)+' --fresh True --reduce_flags True --caltables '+calstring
+				gaincal_cmd_list.append(cmd)
+				gaincal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_G')
+				gaincal_finished_file_list.append(inputs.basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
 		mpicmd=[]
 		mpicount=0
 		while len(gaincal_cmd_list)!=0:  # Loop while all gaincal cmds are spawned
 			touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			if (len(touch_file_list)-touch_count)!=0:
-				if open_casa_instance!=0:
+			if (len(touch_file_list)-touch_count)>0:
+				if open_casa_instance>1:
 					open_casa_instance-=(len(touch_file_list)-touch_count)
-				touch_count=len(touch_file_list)
-				mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')
+					mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')
 			while len(gaincal_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
 				screen_name=gaincal_screen_list[0]
 				cmd=gaincal_cmd_list[0]
 				finished_file=gaincal_finished_file_list[0]
 				screen_batch_file=casa_instance_runner(cmd,screen_name,finished_file)
 				batch_file_list.append(screen_batch_file)
+				touch_count+=1
 				if mpi==1:
 					screen_cmd='sh '+screen_batch_file
 					os.system('screen -S '+screen_name+' -X quit')	
@@ -1086,7 +1126,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				gaincal_screen_list.remove(screen_name)
 				gaincal_cmd_list.remove(cmd)
 				gaincal_finished_file_list.remove(finished_file)
-				print ('Open and total casa : ',open_casa_instance,casa_instance)
 				if open_casa_instance>=casa_instance or len(gaincal_screen_list)==0:
 					mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')
 					if mpi==0:
@@ -1174,11 +1213,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		bandpass_screen_list=[]
 		bandpass_finished_file_list=[]
 		mainlog.info('Spliting reference time data for performing bandpass........\n')
-		bp_timerange_list=AM.get_timestamps()
-		if bp_timerange_list[0]!=bp_timerange_list[-1]:
-			bp_timerange=bp_timerange_list[0]+'~'+bp_timerange_list[-1]
-		else:
-			bp_timerange=bp_timerange_list[0]
 		for i in range(0,nchan,nchan_per_bandpass):
 			start_chan=i
 			end_chan=i+nchan_per_bandpass-1
@@ -1186,16 +1220,19 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				end_chan=nchan-1
 			mainlog.info('Spliting ms of channel range : '+str(start_chan)+'~'+str(end_chan)+'\n')
 			if ref_time_freq==True:
-				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,str(start_chan)+'~'+str(end_chan),bp_timerange,caltype='B',\
+				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,metafits,str(start_chan)+'~'+str(end_chan),ref_time,caltype='B',\
 						ref_timechan=True,input_file=workdir+'/selfcal_inputs.py',datacolumn='corrected')
 			else:
-				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,str(start_chan)+'~'+str(end_chan),bp_timerange,caltype='B',\
+				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,metafits,str(start_chan)+'~'+str(end_chan),ref_time,caltype='B',\
 						ref_timechan=False,input_file=workdir+'/selfcal_inputs.py',datacolumn='corrected')
-			cmd='run_bandpass_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+' --interactive '\
-					+str(inputs.interactive)+' --fresh True'
-			bandpass_cmd_list.append(cmd)
-			bandpass_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_B')
-			bandpass_finished_file_list.append(inputs.basedir+'/.Finished_bcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
+			print (splited_msname)
+			touch_file=glob.glob(inputs.basedir+'/.Finished_bcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname)+'*')
+			if len(touch_file)==0:
+				cmd='run_bandpass_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+' --interactive '\
+						+str(inputs.interactive)+' --fresh True'
+				bandpass_cmd_list.append(cmd)
+				bandpass_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_B')
+				bandpass_finished_file_list.append(inputs.basedir+'/.Finished_bcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
 			if end_chan>=nchan:
 				break
 		finished_bandpass=False
@@ -1213,16 +1250,16 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		mpicount=0
 		while finished_bandpass==False:
 			touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			if (len(touch_file_list)-touch_count)!=0:
-				if open_casa_instance>0:
+			if (len(touch_file_list)-touch_count)>0:
+				if open_casa_instance>1:
 					open_casa_instance-=(len(touch_file_list)-touch_count)
-				touch_count=len(touch_file_list)	
-				mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')		
+					mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')		
 			while len(bandpass_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
 				screen_name=bandpass_screen_list[0]
 				cmd=bandpass_cmd_list[0]
 				finished_file=bandpass_finished_file_list[0]
 				screen_batch_file=casa_instance_runner(cmd,screen_name,finished_file)
+				touch_count+=1
 				if mpi==1:
 					screen_cmd='sh '+screen_batch_file
 					os.system('screen -S '+screen_name+' -X quit')	
@@ -1267,17 +1304,30 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					break
 			time.sleep(2.0)
 			bp_finish_list=glob.glob(inputs.basedir+'/.Finished_*bcal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			print('NUMBP',num_bp,bp_finish_list)
-			if len(bp_finish_list)==num_bp:
-				mainlog.info('Bandpass finished for all spectral slices.\n')
+			if len(bandpass_cmd_list)==0:
+				mainlog.info('All bandpass tasks are spawned for all spectral slices.\n')
 				bandpass_screen_list=[]
 				bandpass_cmd_list=[]
 				bandpass_finished_file_list=[]
 				finished_bandpass=True
 				break
-
 		bpcaltable=glob.glob(inputs.basedir+'/bpcaltables/'+str(ms_obsid)+'/'+basemsdir+'/*ref*.cal')+ref_gaintable
 		
+
+	print (finished_bandpass)
+	mainlog.info('Waiting for bandpass jobs to be finished......\n')
+	while True:
+		bp_finish_list=glob.glob(inputs.basedir+'/.Finished_*bcal*'+str(ms_obsid)+'*'+basemsdir+'*')
+		if len(bp_finish_list)==num_bp:
+			mainlog.info('Bandpass finished for all spectral slices.\n')
+			bandpass_screen_list=[]
+			bandpass_cmd_list=[]
+			bandpass_finished_file_list=[]
+			finished_bandpass=True
+			break
+		else:
+			time.sleep(2.0)
+
 	# Spliting gain calibrated reference time channnel measurement set for polarisation calibration
 	###############################################################################################
 	if do_polcal==True and ((do_bandpass==True and finished_bandpass==True) or do_bandpass==False):
@@ -1308,34 +1358,30 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			pol_channel_grid.append(i)
 		
 		mainlog.info('Polcal channel grid list : '+str(pol_channel_grid)+' for calibration per '+str(skip_freq_pol)+' MHz.\n')
-		polcal_timerange_list=AM.get_timestamps()
-		if polcal_timerange_list[0]!=polcal_timerange_list[-1]:
-			polcal_timerange=polcal_timerange_list[0]+'~'+polcal_timerange_list[-1]
-		else:
-			polcal_timerange=polcal_timerange_list[0]
-
 		polcal_cmd_list=[]
 		polcal_screen_list=[]
 		polcal_finished_file_list=[]
 		for i in pol_channel_grid:
-			mainlog.info('Spliting data for performing polarisation calibration of channel : '+str(i)+' and timerange : '+polcal_timerange+'\n')
+			mainlog.info('Spliting data for performing polarisation calibration of channel : '+str(i)+' and timerange : '+ref_time+'\n')
 			if ref_time_freq==True:
-				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,str(i),polcal_timerange,caltype='P',ref_timechan=True,\
+				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,metafits,str(i),ref_time,caltype='P',ref_timechan=True,\
 											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
 			else:
-				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,str(i),polcal_timerange,caltype='P',ref_timechan=False,\
+				splited_msname,splited_msdir=spliting_timechan(ref_averaged_msname,metafits,str(i),ref_time,caltype='P',ref_timechan=False,\
 											input_file=workdir+'/selfcal_inputs.py',datacolumn='data')
+			print (splited_msname)
 			calstring=','.join(bpcaltable)
-
-			if len(bpcaltable)!=0:
-				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring+' --gaincal '+str(perform_leakcor)
-			else:
-				cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
-				' --interactive '+str(inputs.interactive)+' --fresh True --gaincal '+str(perform_leakcor)
-			polcal_cmd_list.append(cmd)
-			polcal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_P')
-			polcal_finished_file_list.append(inputs.basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
+			touch_file=glob.glob(inputs.basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname)+'*')
+			if len(touch_file)==0:
+				if len(bpcaltable)!=0:
+					cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
+					' --interactive '+str(inputs.interactive)+' --fresh True --caltables '+calstring+' --gaincal '+str(perform_leakcor)
+				else:
+					cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
+					' --interactive '+str(inputs.interactive)+' --fresh True --gaincal '+str(perform_leakcor)
+				polcal_cmd_list.append(cmd)
+				polcal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_P')
+				polcal_finished_file_list.append(inputs.basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
 		num_pol=len(polcal_screen_list)
 		finished_polcal=False
 		polcal_finish_list=glob.glob(inputs.basedir+'/.Finished_*pcal*'+str(ms_obsid)+'*'+basemsdir+'*')
@@ -1351,16 +1397,16 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		mpicount=0
 		while finished_polcal==False:	
 			touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			if (len(touch_file_list)-touch_count)!=0:
-				if open_casa_instance!=0:
+			if (len(touch_file_list)-touch_count)>0:
+				if open_casa_instance>1:
 					open_casa_instance-=(len(touch_file_list)-touch_count)
-				touch_count=len(touch_file_list)
-				mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')
+					mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')
 			while len(polcal_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
 				screen_name=polcal_screen_list[0]
 				cmd=polcal_cmd_list[0]
 				finished_file=polcal_finished_file_list[0]
 				screen_batch_file=casa_instance_runner(cmd,screen_name,finished_file)
+				touch_count+=1
 				if mpi==1:
 					screen_cmd='sh '+screen_batch_file
 					os.system('screen -S '+screen_name+' -X quit')	
@@ -1383,6 +1429,9 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					if mpi==0:
 						mpicmd_file=inputs.basedir+'/'+basemsdir+'.pcal_mpicmd_'+str(mpicount)
 						mpifil=open(mpicmd_file,'w')
+						mainlog.info('MPI commands .....\n')
+						for i in mpicmd:
+							mainlog.info(i+'\n')
 						mpifil.writelines(mpicmd)
 						mpifil.close()
 						os.system('chmod 755 '+mpicmd_file)
@@ -1404,22 +1453,22 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						mpicmd=[]
 					break
 			time.sleep(2.0)
-			print ('polcmd',len(polcal_cmd_list))
 			if len(polcal_cmd_list)==0:
 				polcal_screen_list=[]
 				polcal_cmd_list=[]
 				polcal_finished_file_list=[]
 				finished_polcal=True
+				time.sleep(10.0)
 				break	
 		
 		mainlog.info('All calibration job spawned for ms : '+msname+'\n')
 		mainlog.info('#########################\n')
-		os.system('rm -rf '+ref_timesliced_measurement_set+'* '+ref_timesliced_measurement_set+'.flagversions')
-		os.system('rm -rf '+ref_averaged_msname+'* '+ref_timesliced_measurement_set+'.flagversions')
-		os.system('rm -rf '+timesliced_measurement_set+'* '+ref_timesliced_measurement_set+'.flagversions')
-		os.system('rm -rf '+averaged_msname+'* '+ref_timesliced_measurement_set+'.flagversions')
+	#	os.system('rm -rf '+ref_timesliced_measurement_set+'* '+ref_timesliced_measurement_set+'.flagversions')
+	#	os.system('rm -rf '+ref_averaged_msname+'* '+ref_timesliced_measurement_set+'.flagversions')
+	#	os.system('rm -rf '+timesliced_measurement_set+'* '+ref_timesliced_measurement_set+'.flagversions')
+	#	os.system('rm -rf '+averaged_msname+'* '+ref_timesliced_measurement_set+'.flagversions')
 		del pol_channel_grid
-		return 0,ref_time,ref_chan,spawned_casa_instances,freq_avg,time_avg
+		return 0,ref_time,ref_chan,spawned_casa_instances,ref_freq_avg,ref_time_avg
 
 
 # PAIRCARS master controller
@@ -1848,12 +1897,7 @@ if len(measurement_set_list)!=0:
 
 	# Spawning jobs for making final caltables and images
 	#####################################################
-	if mpi==0:
-		mpicmd_file=inputs.basedir+'/'+basemsdir+'.managedatabase_mpicmd'
-		if os.path.isfile(mpicmd_file):
-			mpifil=open(mpicmd_file,'r+')
-		else:
-			mpifil=open(mpicmd_file,'w')
+	mpicmd=[]
 	ms_OBSIDs_cal=np.array(copy.deepcopy(ms_OBSIDs_copy_cals))
 	for msname in ms_list: 
 		metafits=metafits_dic[msname.split('.ms')[0].split('_timesliced')[0].split('_ref')[0]]
@@ -1869,12 +1913,14 @@ if len(measurement_set_list)!=0:
 		num_jobs=spawned_ms_jobs[msname][2]
 		freq_avg=spawned_ms_jobs[msname][3]
 		time_avg=spawned_ms_jobs[msname][4]
-		screen_name='screen_'+str(nearest_OBSID)+'_manage_database'
+		screen_name=str(OBSID)+'_screen_'+str(nearest_OBSID)+'_manage_database'
 		batch_file=inputs.basedir+'/'+screen_name+'.batch'
+		cmd_batch_file=inputs.basedir+'/'+screen_name+'_cmd.batch'
 		cmd='manage_database --msname '+msname+' --metafits '+metafits+' --num_jobs '+str(num_jobs)+' --basedir '+basedir+' --gaincal_modeldir '+gaincal_modeldir\
 					+' --bandpass_modeldir '+bandpass_modeldir+' --polcal_modeldir '+polcal_modeldir+' --localdatabase '+local_caldatabase+\
-					'--freqavg '+str(freq_avg)+' --timeavg '+str(time_savg)+' --cal_obsid '+str(nearest_OBSID)+' --inputfile '+basedir+'/selfcal_inputs.py'
-		cmd='screen -S '+screen_name+' -X quit; screen -mdS '+screen_name+'; echo \"'+cmd+'\" > '+batch_file+'; screen -S '+screen_name+' -X stuff \"'+batch_file+'\\n\"'
+					' --freqavg '+str(freq_avg)+' --timeavg '+str(time_avg)+' --cal_obsid '+str(nearest_OBSID)+' --inputfile '+basedir+'/selfcal_inputs.py --verbose '+str(inputs.verbose)
+		cmd='screen -S '+screen_name+' -X quit; screen -mdS '+screen_name+'; echo \"'+cmd+'\" > '+cmd_batch_file+'; chmod 755 '+cmd_batch_file+\
+			'; screen -S '+screen_name+' -X stuff \"'+cmd_batch_file+'\\n\"'
 		if os.path.isfile(batch_file):
 			fil=open(batch_file,'r+')
 		else:
@@ -1893,24 +1939,22 @@ if len(measurement_set_list)!=0:
 			mainlog.info('Command : '+cmd+'\n')
 			os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 		elif mpi==0:
-			mpicmd='-np 1 -x OMP_NUM_THREADS=3 sh '+batch_file+'\n'
-			mpifil.write(mpicmd)
+			mpicmd.append('-np 1 -x OMP_NUM_THREADS=3 sh '+batch_file+'\n')
 	if mpi==0:
-		mpifil.seek(0)
+		mpicmd_file=inputs.basedir+'/'+basemsdir+'.manage_database_mpicmd'
+		mpifil=open(mpicmd_file,'w')
+		mpifil.writelines(mpicmd)
 		mpifil.close()
 		os.system('chmod 755 '+mpicmd_file)
 		screen_cmd='mpirun --app '+mpicmd_file
-		os.system('screen -S '+basemsdir+'_managedatabase -X quit')	
+		os.system('screen -S '+basemsdir+'_manage_database -X quit')	
 		time.sleep(0.5)
-		os.system('screen -mdS '+basemsdir+'_managedatabase')
+		os.system('screen -mdS '+basemsdir+'_manage_database')
 		time.sleep(0.5)
 		mainlog.info('########################\n')
-		mainlog.info('Made Screen : '+basemsdir+'_managedatabase\n')
+		mainlog.info('Made Screen : '+basemsdir+'_manage_database\n')
 		mainlog.info('Command : '+cmd+'\n')
-		os.system('screen -S '+basemsdir+'_managedatabase -X stuff \"'+screen_cmd+'\n"')	
-		time.sleep(2.0)
-		os.system('screen -S '+basemsdir+'_managedatabase -X quit')
-		os.system('rm -rf '+mpicmd_file)
+		os.system('screen -S '+basemsdir+'_manage_database -X stuff \"'+screen_cmd+'\n"')			
 else:
 	if inputs.timerange!='':
 		mainlog.info('No measurement set is present in the timerange : '+inputs.timerange+'\n')
@@ -1943,20 +1987,3 @@ else:
 # TODO : Start from the failed part or stopped part
 # End of PAIRCARS
 #################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

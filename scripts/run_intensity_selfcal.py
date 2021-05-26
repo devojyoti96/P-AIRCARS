@@ -152,14 +152,18 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		logger.addHandler(filehandle)
 		logger.propagate = False
 	print('\n')
+	
+	logger.info('JUNK1'+str(os.path.isdir('junk1.ms')))
+	logger.info(str(start_fresh))
 
-	if start_fresh==False and os.path.isdir('junk1.ms'):
+	if start_fresh==False and os.path.isdir('junk1.ms') and os.path.isdir('junk1.cal'):
 		os.system('rm -rf '+msname)
 		os.system('cp -r junk1.ms '+msname)
 		if os.path.isdir(working_dir+'/Backup_uncalib.ms')==True:
 			os.system('rm -rf '+working_dir+'/Backup_uncalib.ms')
 		logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_uncalib.ms\',datacolumn=\'data\')\n')
 		split(vis=msname,outputvis=working_dir+'/Backup_uncalib.ms',datacolumn='data') # Backup of uncalibrated ms
+		caltable_list=[]
 	else:
 		start_fresh=True
 		if os.path.isfile(msname+'/.usedby_paircars'):
@@ -184,6 +188,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
 			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
 			applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
+		else:
+			caltable_list=[]
 		
 	if msname[-1]=='/':
 		msname=msname[:-1]
@@ -207,12 +213,23 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'
 	if start_fresh==True:
 		os.system('rm -rf '+start_time_file+'*')
+	elif len(glob.glob(start_time_file+'*'))>0:
+		start_time=float(glob.glob(start_time_file+'*')[0].split('_')[-1])
 	if os.path.isdir(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
 		os.makedirs(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)
 	if os.path.isdir(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
 		os.makedirs(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)
 
-
+	if 'ref' in msname:
+		refcals=glob.glob(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		refimages=glob.glob(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		if len(refcals)!=0:
+			for i in refcals:
+				os.system('rm -rf '+i)
+		if len(refimages)!=0:
+			for j in refimages:
+				os.system('rm -rf '+j)
+		
 	if start_fresh==False:
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 					num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
@@ -273,6 +290,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		###############################################################
 		
 		min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin=ISC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch,bandpass_selfcal=False)
+
+		if len(caltable_list)!=0: # If calibrator solutions available antennas addition steps and minimum iteration reduced by 2 steps
+			antenna_bin-=2
+			min_iteration-=2
+		if min_iteration<1:
+			min_iteration=1
+		if antenna_bin<1:
+			antenna_bin=1
 
 		logger.info('########################\n')
 		logger.info('Estimating the number of selfcal iterations\n')
@@ -642,6 +667,11 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
+							os.system('cp -r junk1.cal junk.precal')
+							backup_dir=glob.glob('freq*datetime*')
+							if len(backup_dir)>0:
+								for i in range(len(backup_dir)):
+									os.system('cp -r '+backup_dir[i]+' '+inputs.basedir+'/'+os.path.basename(backup_dir[i]))
 							return msg_code
 				else:
 					if solmode=='L1R' or solmode=='L1':
@@ -677,9 +707,13 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
-							print (start_time_file)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
+							os.system('cp -r junk1.cal junk.precal')
+							backup_dir=glob.glob('freq*datetime*')
+							if len(backup_dir)>0:
+								for i in range(len(backup_dir)):
+									os.system('cp -r '+backup_dir[i]+' '+inputs.basedir+'/'+os.path.basename(backup_dir[i]))
 							return msg_code
 		
 			if (num_iter<10 and nomask_try_count<1): 
@@ -946,7 +980,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				if (((DR5<0.85*DR3 and DR5<0.9*DR1 and DR3>DR1) or (DR6<0.85*DR4 and DR6<0.9*DR2 and DR4>DR2)) and antenna_added==False and num_ant_current_iteration==num_ant)\
 					or (((DR5<0.8*DR3 and DR5<0.85*DR1 and DR3>DR1) or (DR6<0.8*DR4 and DR6<0.85*DR2 and DR4>DR2)) and antenna_added==True and num_ant_current_iteration==num_ant)\
 					or (((DR5<0.9*DR3 and DR1>1.5*DR3) or (DR6<0.9*DR4 and DR2>1.5*DR4)) and antenna_added==False and num_ant_current_iteration==num_ant and \
-						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_itration))):
+						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_iteration))):
 					# If DR decreases.
 					# Case 1: If DR decreases less than 90% and 85% of previous two rounds and all antennas are added. This is a check if the rms is diverging. 
 					# Case 2: If DR decreases less than 85% and 80% of previous two rounds and all antennas are addded and last set of antennas are added in the last round.
@@ -964,9 +998,20 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
 							flagmanager(vis=msname,mode='delete',versionname=flagversion)
 						if use_ankflagger:
-							logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
-							logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
-							do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
+							os.system('cp -r '+msname+' '+msname+'.backup')
+							try:
+								logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
+								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
+								do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
+								os.system('rm -rf '+msname+'.backup')
+							except Exception as e:
+								os.system('rm -rf '+msname)
+								os.system('mv '+msname+'.backup '+msname)
+								logger.error('Error in aNKflagger : '+str(e)+'\n')
+								logger.info('Error in running aNKflagger. Using rms threshold based flagging.\n')
+								logger.info('Performing uvsub flagging due to DR decrease.\n')
+								logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=True)\n')
+								do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=True)
 						else:
 							logger.info('Performing uvsub flagging due to DR decrease.\n')
 							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=True)\n')
@@ -1060,7 +1105,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				# If statement 2 (Exiting selfcal conditions)
 
 				antenna_added=False
-				if (DR5>=inputs.max_DR and num_ant_current_iteration==num_ant and (start_fresh==True or (start_fresh==False and num_iter_after_restart>min_itration))):
+				if (DR5>=inputs.max_DR and num_ant_current_iteration==num_ant and (start_fresh==True or (start_fresh==False and num_iter_after_restart>min_iteration))):
 					if num_iteration_after_ap>min_iteration+5:
 						if verbose==False:
 							print ('Reached limiting dynamic range\n')
@@ -1106,7 +1151,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						return 0
 				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and do_ap==True and abs(DR5/DR3-1)<0.08) and\
 					 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and do_ap==True and abs(DR6/DR4-1)<0.05) and \
-						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_itration)):
+						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_iteration)):
 				#  If DR does not increas more the DR delta in last two steps and DR does not increase 8% for rms based and 5% for negative based => Converge
 					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and num_iteration_after_ap>min_iteration+5:
 						sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,residual_frac=inputs.residual_frac,stokes_list=['XX','YY'])
@@ -1164,7 +1209,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								os.system('touch '+start_time_file)
 							return 0
 				elif (abs(DR5/DR3-1)<0.08 and abs(DR5/DR1-1)<0.08 and num_iter_fixed_ant>=5 and \
-						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_itration))): # New antenna addition or calmode change
+						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_iteration))): # New antenna addition or calmode change
 				# If fractional change of DR is less than 8% in last two steps and number of iterations at fixed antenna is greater than 5.
 					if (num_ant_current_iteration<num_ant):
 						antenna_list_index+=1
@@ -1188,7 +1233,6 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if verbose==False:
 								print ('Change calmode to \'ap\' at iteration : '+str(num_iter)+'\n')
 							logger.info('Change calmode to \'ap\' at iteration : '+str(num_iter)+'\n')
-							os.system('cp -r junk1.cal junk.pcal')
 							do_ap=True
 							calmode='ap'
 							stokes='XXYY'
@@ -1371,15 +1415,26 @@ if __name__=='__main__':
 	OBSID=get_OBSID(options.metafits)
 	basemsdir=os.path.dirname(options.workdir).split('/')[-1]
 	
-	start_time_file=glob.glob(inputs.basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(options.chantime_msname)+'_*')
+	if 'ref' in str(options.chantime_msname):
+		start_time_file=glob.glob(inputs.basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'*ref*')
+	else:
+		start_time_file=glob.glob(inputs.basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'*')
 	if len(start_time_file)>0 and eval(str(options.fresh))==False:
-		start=float(start_time_file[0].split('_')[-1])
-		if start>0:
+		if os.path.exists(str(options.workdir)+'/Intensity_selfcal_record.npy'):
+			start=float(np.load(str(options.workdir)+'/Intensity_selfcal_record.npy',allow_pickle=True)[-1])
+		else:
+			st_list=[]
+			for i in start_time_file:
+				st_list.append(float(i.split('_')[-1]))
+			st_list=np.array(st_list)
+			start=st_list[np.argmin(np.abs(start_time-st_list))]
+		if start>0 and start<start_time:
 			start_time=start	
+			print ('Start time',start_time)
 	elif len(start_time_file)>0 and eval(str(options.fresh))==True:
 		for i in start_time_file:
 			os.system('rm -rf '+i)
-
+		
 	if options.chantime_msname==None or os.path.isdir(options.chantime_msname)==False:
 		logger.info('Measurement set does not exist. Exititing...\n')
 		touch_file=inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('noms')

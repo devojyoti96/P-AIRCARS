@@ -230,6 +230,20 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	if os.path.isdir(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
 		os.makedirs(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)
 	
+	if 'ref' in msname:
+		refcals=glob.glob(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		refimages=glob.glob(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		refms=glob.glob(basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		if len(refcals)!=0:
+			for i in refcals:
+				os.system('rm -rf '+i)
+		if len(refimages)!=0:
+			for j in refimages:
+				os.system('rm -rf '+j)
+		if len(refms)!=0:
+			for k in refms:
+				os.system('rm -rf '+k)
+
 	if start_fresh==False: # Reading selfcal record
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,FX3_I,FX3_Q,FX3_U,FX3_V,FX3_T,FX3_P,FX2_I,FX2_Q,FX2_U,FX2_V,FX2_T,FX2_P,FX1_I,FX1_Q,FX1_U,FX1_V,FX1_T,FX1_P,\
 		rms_list,scratch,start_sigma,num_iteration_after_poldist,num_iter_after_qucor,\
@@ -798,9 +812,20 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
 							flagmanager(vis=msname,mode='delete',versionname=flagversion)
 						if use_ankflagger:
-							logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
-							logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
-							do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
+							os.system('cp -r '+msname+' '+msname+'.backup')
+							try:
+								logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
+								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
+								do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
+								os.system('rm -rf '+msname+'.backup')
+							except Exception as e:
+								os.system('rm -rf '+msname)
+								os.system('mv '+msname+'.backup '+msname)
+								logger.error('Error in aNKflagger : '+str(e)+'\n')
+								logger.info('Error in running aNKflagger. Using rms threshold flagging.\n')
+								logger.info('Performing uvsub flagging due to DR decrease.\n')
+								logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=True)\n')
+								do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=True)
 						else:
 							logger.info('Performing uvsub flagging due to DR decrease.\n')
 							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=True)\n')

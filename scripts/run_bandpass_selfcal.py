@@ -190,6 +190,16 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	if os.path.isdir(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
 		os.makedirs(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir)
 	
+	if 'ref' in msname:
+		refcals=glob.glob(basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		refimages=glob.glob(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/*ref*')
+		if len(refcals)!=0:
+			for i in refcals:
+				os.system('rm -rf '+i)
+		if len(refimages)!=0:
+			for j in refimages:
+				os.system('rm -rf '+j)
+
 	if start_fresh==False:
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,num_iter_fixed_sigma,num_iter_fixed_ant,stokes,startmodel,\
 					startmask,uvsub_flag_count=np.load('Bandpass_selfcal_record.npy',allow_pickle=True)		
@@ -532,9 +542,19 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
 						flagmanager(vis=msname,mode='delete',versionname=flagversion)
 					if use_ankflagger:
-						logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
-						logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
-						do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=False)
+						os.system('cp -r '+msname+' '+msname+'.backup')
+						try:
+							logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
+							logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
+							do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=False)
+							os.system('rm -rf '+msname+'.backup')
+						except Exception as e:
+							os.system('mv '+msname+'.backup '+msname)
+							logger.error('Error in aNKflagger : '+str(e)+'\n')
+							logger.info('Error in running aNKflagger. Using rms threshold based flagging.\n')
+							logger.info('Performing uvsub flagging due to DR decrease.\n')
+							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
+							do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
 					else:
 						logger.info('Performing uvsub flagging due to DR decrease.\n')
 						logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')

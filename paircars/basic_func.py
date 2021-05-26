@@ -523,7 +523,7 @@ def timestamp_to_mjdsec(timestamp,format=0):
 			timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S.%f')
 		except:
 			timestamp_datetime=datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S')
-	mjd=(julian.to_jd(timestamp_datetime)-2400000.5)*(24.*3600.)
+	mjd=float("{:.2f}".format((julian.to_jd(timestamp_datetime)-2400000.5)*(24.*3600.)))
 	return mjd
 
 def radec_to_altaz(ra,dec,obstime,LAT,LON,ALT):

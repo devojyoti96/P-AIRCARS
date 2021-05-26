@@ -130,6 +130,20 @@ def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 	tb=table()
 	md=msmetadata()
 	print ('Using uvsub_flagged.....\n')
+	AM=am.AccessMS(msname)
+	unflag_chan=AM.get_unflag_chan()
+	antenna=''
+	unflag_spws='0:'
+	nant=AM.get_num_antenna()
+	if len(unflag_chan)>0:
+		for i in unflag_chan:
+			unflag_spws+=str(i)+';'
+		unflag_spws=unflag_spws[:-1]
+		for i in range(nant):
+			antenna+=str(i)+','
+		antenna=antenna[:-1]
+		print ('flagdata(vis=\''+msname+'\',antenna=\''+antenna+'\',spw=\''+unflag_spws+'\',mode=\'unflag\')\n')
+		flagdata(vis=msname,antenna=antenna,spw=unflag_spws,mode='unflag')
 	# Keeping flag backup
 	if flagbackup==True:
 		af=agentflagger()

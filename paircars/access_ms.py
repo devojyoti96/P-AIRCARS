@@ -165,13 +165,15 @@ class AccessMS:
 		self.md.close()
 		return mjds
 
-	def get_timestamps(self):
+	def get_timestamps(self,format=0):
 		'''
 		Function to return list of timestamps
+		Parameter:
+		format = Datetime string format (0 : 'YYYY/MM/DD/hh:mm:ss', 1: 'YYYY-MM-DDThh:mm:ss', 2: 'YYYY-MM-DD hh:mm:ss', 3: 'YYYY_MM_DD_hh_mm_ss') 
 		Return:
-		List of timestamps in 'YYYY/MM/DD/hh:mm:ss' format
+		List of timestamps in UTC at the format 'YYYY/MM/DD/hh:mm:ss'
 		'''
-		timestamps=[B.mjdsec_to_timestamp(mjdsec,includedate=True,format=0) for mjdsec in self.get_timestamps_in_mjdsecs()]	
+		timestamps=[B.mjdsec_to_timestamp(mjdsec,includedate=True,format=format) for mjdsec in self.get_timestamps_in_mjdsecs()]	
 		return timestamps	
 	
 	def get_obs_startend_time(self):

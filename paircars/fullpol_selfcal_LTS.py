@@ -660,6 +660,8 @@ class PolSelfcal:
 		Return:
 		Name of the beam jones file, Beam Jones matrix.
 		'''
+		if os.path.exists(save_beamfile)==True:
+			os.system('rm -rf '+save_beamfile)
 		mwapb=MWA_PrimaryBeam(self.msname,self.metafits,inverse_beam=False)  #TODO : Beam per coarse channel for multi coarse chan ms
 		cal=CALIBRATE()
 		beamfile=self.msname+'.beam.bin'
@@ -1431,8 +1433,14 @@ class PolSelfcal:
 					self.pollog_verbose.info('cal.applycal(msname=\''+self.msname+'\',gaintable=\''+caltable_name+'\',applymode=\'calflag\',flagbackup=True)\n')
 					cal.applycal(msname=self.msname,gaintable=caltable_name,applymode='calflag',flagbackup=True) # Applying the solution
 					if use_ankflagger==True:
-						self.pollog_verbose.info('do_uvsub_ankflag(\''+self.msname+'\',nthread=1,verbose='+str(False)+')\n')
-						fg.do_uvsub_ankflag(self.msname,nthread=1,verbose=False)
+						try:
+							self.pollog_verbose.info('do_uvsub_ankflag(\''+self.msname+'\',nthread=1,verbose='+str(False)+')\n')
+							fg.do_uvsub_ankflag(self.msname,nthread=1,verbose=False)
+						except Exception as e:
+							self.pollog_verbose.info('Error in aNKflagger : '+str(e)+'\n')
+							self.pollog_verbose.info('Error in running aNKflagger. Using rms threshold flagging.\n')
+							self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
+							fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
 					else:
 						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
 						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
