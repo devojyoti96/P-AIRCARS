@@ -48,10 +48,10 @@ class CALIBRATE():
 				return
 			else:
 				ms_dirname=os.path.dirname(os.path.realpath(msname))
-				if os.path.isdir(msname.split('.ms')[0]+'.temp.ms'):
-					os.system('rm -rf '+msname.split('.ms')[0]+'.temp.ms')
-				os.system('cp -r '+msname+' '+msname.split('.ms')[0]+'.temp.ms')
-				msname=msname.split('.ms')[0]+'.temp.ms'
+				if os.path.isdir(msname.split('.ms')[0]+'.temp_aocal.ms'):
+					os.system('rm -rf '+msname.split('.ms')[0]+'.temp_aocal.ms')
+				os.system('cp -r '+msname+' '+msname.split('.ms')[0]+'.temp_aocal.ms')
+				msname=msname.split('.ms')[0]+'.temp_aocal.ms'
 			caltable=kwargs['caltable'] # Caltable name
 			
 			AM=AccessMS(msname)
@@ -199,7 +199,11 @@ class CALIBRATE():
 				if len(gaintable)>0:
 					arg_str+=' -datacolumn CORRECTED_DATA'
 					datacolumn='CORRECTED_DATA'
-				elif datacolumn=='DATA' or datacolumn=='CORRECTED_DATA':
+				elif datacolumn=='DATA' or datacolumn=='CORRECTED_DATA' or datacolumn=='corrected' or datacolumn=='data' or datacolumn=='CORRECTED':
+					if datacolumn=='DATA' or datacolumn=='data':
+						datacolumn='DATA'
+					elif datacolumn=='CORRECECTED_DATA' or datacolumn=='CORRECTED' or datacolumn=='corrected':
+						datacolumn='CORRECTED_DATA'
 					arg_str+=' -datacolumn '+str(datacolumn)
 				else:
 					print ('Wrong datacolumn.')
@@ -213,9 +217,9 @@ class CALIBRATE():
 				print ('./calibrate '+arg_str+' '+msname+' '+caltable)
 				os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
 				bin_data=np.fromfile(caltable,dtype=np.float64)
-				np.save(caltable+'.temp',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
+				np.save(caltable+'.temp_aocal',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
 				os.system('rm -rf '+caltable)
-				os.system('mv '+caltable+'.temp.npy '+caltable)	
+				os.system('mv '+caltable+'.temp_aocal.npy '+caltable)	
 			elif kwargs['solmode']=='R' and len(kwargs['rmsthresh'])!=0:
 				solmode=kwargs['solmode']
 				rmsthresh=kwargs['rmsthresh']
@@ -229,15 +233,15 @@ class CALIBRATE():
 						print ('./calibrate '+arg_str+' '+msname+' '+caltable)
 						os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
 						bin_data=np.fromfile(caltable,dtype=np.float64)
-						np.save(caltable+'.temp',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
+						np.save(caltable+'.temp_aocal',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
 						os.system('rm -rf '+caltable)
-						os.system('mv '+caltable+'.temp.npy '+caltable)
+						os.system('mv '+caltable+'.temp_aocal.npy '+caltable)
 						self.applycal(msname=msname,gaintable=caltable,datacolumn=datacolumn,applymode='calflag',flagbackup=False)
 						num_flag,flag_fraction=self.flagger(msname,float(rms))
 						if int(num_flag)==0:
 							c=1				
-			if os.path.isdir(msname.split('.ms')[0]+'.temp.ms'):
-				os.system('rm -rf '+msname.split('.ms')[0]+'.temp.ms*')
+			if os.path.isdir(msname):
+				os.system('rm -rf '+msname)
 			os.chdir(cwd)
 			os.system('rm -rf casa*log')
 		return caltable
@@ -292,13 +296,14 @@ class CALIBRATE():
 			else:
 				flagbackup=True
 			gaintable_path=os.path.dirname(os.path.realpath(gaintable))
-			result=self.modify_caltable_for_ms(msname,gaintable,gaintable+'.temp_nchan_ntime.bin')
+			original_gaintable=copy.deepcopy(gaintable)
+			result=self.modify_caltable_for_ms(msname,gaintable,gaintable+'.temp_aocal_nchan_ntime.bin')
 			if result=='Nosol':
-				os.system('rm -rf casa*log '+gaintable+'.temp_nchan_ntime.bin')
+				os.system('rm -rf casa*log '+gaintable+'.temp_aocal_nchan_ntime.bin')
 				os.chdir(cwd)
 				os.system('rm -rf casa*log')
 				return 'Nosol'
-			gaintable=gaintable+'.temp_nchan_ntime.bin'
+			gaintable=gaintable+'.temp_aocal_nchan_ntime.bin'
 			if applymode=='calflag':
 				if flagbackup==True:
 					af=agentflagger()
@@ -333,9 +338,9 @@ class CALIBRATE():
 			else:		
 				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable)
 				os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
-			os.system('rm -rf casa*log '+gaintable+'.temp_nchan_ntime.bin')
+			os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		os.chdir(cwd)
-		os.system('rm -rf casa*log')
+		os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		return 0
 			
 	def convert_gaintable_bin2npy(self,gaintable,outputfile):
@@ -468,8 +473,8 @@ class CALIBRATE():
 		startfreq=float(freqs[0])
 		endfreq=float(freqs[-1])
 		bin_data=bin_data.astype('float64')
-		bin_data.tofile(caltable+'.temp.bin',format='np.float64')
-		npyfile=self.convert_gaintable_bin2npy(caltable+'.temp.bin',caltable+'.CALIBRATE_temp')
+		bin_data.tofile(caltable+'.temp_aocal.bin',format='np.float64')
+		npyfile=self.convert_gaintable_bin2npy(caltable+'.temp_aocal.bin',caltable+'.CALIBRATE_temp_aocal')
 		numpy_table=np.load(npyfile,allow_pickle=True)
 		data=numpy_table[3]
 		new_data=np.empty((ntime,nant,nchan,8))
@@ -484,14 +489,12 @@ class CALIBRATE():
 			cal_times=np.arange(cal_startmjd,cal_endmjd,cal_time_res)
 		else:
 			cal_times=np.array([cal_startmjd])
-		if cal_freq_res>0:
-			cal_freqs=np.arange(cal_start_freq,cal_end_freq,cal_freq_res)
-		elif cal_freq_res==0:
+		if cal_freq_res==0:
 			cal_freqs=np.array([cal_start_freq])
 		else:
-			cal_freqs=np.arange(cal_end_freq,cal_start_freq,cal_freq_res)
-		for i in range(data.shape[0]):
-			for j in range(data.shape[2]):
+			cal_freqs=np.arange(cal_start_freq,cal_end_freq,cal_freq_res)
+		for i in range(cal_ntime):
+			for j in range(cal_nchan):
 				caltime=cal_times[i]
 				calfreq=cal_freqs[j]
 				if np.sum(np.isnan(data[i,:,j,:]))==4:
@@ -499,7 +502,7 @@ class CALIBRATE():
 		bad_calchantime=np.array(bad_calchantime)
 		if len(bad_calchantime)==cal_ntime*cal_nchan:
 			print ('No unflagged solutions in the caltable.\n')
-			os.system('rm -rf casa*log '+caltable+'.temp.bin '+caltable+'.CALIBRATE_temp*')
+			os.system('rm -rf casa*log '+caltable+'.temp_aocal.bin '+caltable+'.CALIBRATE_temp_aocal*')
 			os.chdir(cwd)
 			os.system('rm rf casa*log')
 			return 'Nosol'
@@ -540,7 +543,7 @@ class CALIBRATE():
 		with open(outfile,mode='ba+') as f:
 			new_data_flattened.tofile(f,format='np.float64')
 		os.system('rm -rf '+npyfile)
-		os.system('rm -rf casa*log '+caltable+'.temp.bin '+caltable+'.CALIBRATE_temp*')
+		os.system('rm -rf casa*log '+caltable+'.temp_aocal.bin '+caltable+'.CALIBRATE_temp_aocal*')
 		os.chdir(cwd)
 		os.system('rm -rf casa*log')
 		return outfile
