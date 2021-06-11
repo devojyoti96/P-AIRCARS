@@ -891,13 +891,13 @@ class PolSelfcal:
 				else:
 					min_frac_diff=0
 			residual_frac_list.append(residual_pix_sum/image_pix_sum)
-			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or (max_frac_diff>residual_frac or \
-				(min_frac_diff>residual_frac and stokes!='I' and stokes!='XX' and stokes!='YY')) :
+			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or ((max_frac_diff>0 and max_frac_diff>residual_frac) or \
+				((min_frac_diff>0 and min_frac_diff>residual_frac) and stokes!='I' and stokes!='XX' and stokes!='YY')) :
 				do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
 		residual_frac_median=np.median(np.array(residual_frac_list))
-		if int(np.sum(np.array(do_reduce_list)))>0:
+		if int(np.sum(np.array(do_reduce_list)))>1:
 			if sigma_step>1.0:
 				self.pollog_verbose.info('WARNING : Choosing sigma step 1 is too risky. Selfcal may diverge\n')
 				if self.verbose==False:
@@ -1479,7 +1479,7 @@ class PolSelfcal:
 
 	def polselfcal_iteration(self,num_iter,rms_thresh,mask_str,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 							stokes='',interactive=False,use_ankflagger=False,poldistortion_correction=True,poldistortion_type='poldistortion',\
-							poldistortion_matrix='UH',do_solarqu_cor=False,box_width=3,calibrator_caltable=[]):
+							poldistortion_matrix='UH',do_solarquv_cor=False,box_width=3,calibrator_caltable=[]):
 		'''
 		Function to perform a polarisation self-calibration loop, make an image, put the model in the measurement set, and perform the calibration
 		Parameters:
@@ -1498,7 +1498,7 @@ class PolSelfcal:
 		poldistortion_correction = True, Correct poldistortion using the known ideal Jones matrix of the instrument
 		poldistortion_type = 'polconversion ; Stokes I to STOKES Q,U,V leakages' or 'polrotation; changes between Stokes Q,U,V' or 'poldistortion' (default : poldistortion)
 		poldistortion_matrix = 'UH or HU ' , where H is polconversion and U is polrotation
-		do_solarqu_cor = False, correct solar Stokes I to Q,U imaged based leakage correction
+		do_solarquv_cor = False, correct solar Stokes I to Q,U imaged based leakage correction
 		box_width = Length of negative box width in degree (default : 3 degree)
 		calibrator_caltable = List of calilbrator caltables
 		Return:
@@ -1580,7 +1580,7 @@ class PolSelfcal:
 			poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 			cell=str(self.cellsize)+'arcsec',niter=100000000000,gain=0.05,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
 			uvtaper=self.uvtaper,weighting='natural',interactive=False,mask='')
-		if do_solarqu_cor==True:
+		if do_solarquv_cor==True:
 			self.pollog_verbose.info('Correcting solar Stokes I to Q,U leakage based on image.\n')	
 			self.correct_solar_quv_leakage(imagename+'.image',imagename+'.model',sigma,overwrite=True)
 		out_dict,negative_dyn_range=self.calc_dyn_range(num_iter,sigma,box_width=box_width,stokes_list=['I','Q','U','V']) # Calculating the dynamic range of the image
@@ -1670,7 +1670,7 @@ class PolSelfcal:
 					else:
 						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
 						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
-					if do_solarqu_cor==True:
+					if do_solarquv_cor==True:
 						tb=table()
 						tb.open(self.msname)
 						cor_data=tb.getcol('CORRECTED_DATA')
@@ -1700,7 +1700,7 @@ class PolSelfcal:
 					cal.applycal(msname=self.msname,gaintable=caltable_name,applymode='calflag',flagbackup=True) # Applying the solution
 					self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
 					fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
-					if do_solarqu_cor==True:
+					if do_solarquv_cor==True:
 						tb=table()
 						tb.open(self.msname)
 						cor_data=tb.getcol('CORRECTED_DATA')

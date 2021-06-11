@@ -1,4 +1,4 @@
-import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request,copy,logging
+import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request,copy,time
 from casatools import *
 from . import access_ms as am
 from astropy.io import fits
@@ -79,7 +79,6 @@ class ImageBasic:
 			scale.append(int(max_size_rad/5*cellsize))
 			if int(max_size_rad/3*cellsize)>int(max_size_rad/5*cellsize) and int(max_size_rad/3*cellsize)<max(scale) :
 				scale.append(int(max_size_rad/3*cellsize))
-		scale=sorted(scale)
 		return scale
 
 	def field_of_view(self,freq=0):
@@ -236,7 +235,7 @@ class CalcParams:
 			elif self.safety_factor==1:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.15
+				residual_frac	=	0.17
 				min_sigma		=	7
 				gain_minsnr		=	3.0		
 				DR_delta_rms	=	22
@@ -249,7 +248,7 @@ class CalcParams:
 			else:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.1
+				residual_frac	=	0.15
 				min_sigma		=	8
 				gain_minsnr		=	3.0		
 				DR_delta_rms	=	20
@@ -263,7 +262,7 @@ class CalcParams:
 			if self.safety_factor==0:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.15
+				residual_frac	=	0.17
 				min_sigma		=	7
 				gain_minsnr		=	4		
 				DR_delta_rms	=	20
@@ -276,7 +275,7 @@ class CalcParams:
 			elif self.safety_factor==1:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.1
+				residual_frac	=	0.15
 				min_sigma		=	8
 				gain_minsnr		=	4		
 				DR_delta_rms	=	18
@@ -289,7 +288,7 @@ class CalcParams:
 			else:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.05
+				residual_frac	=	0.12
 				min_sigma		=	9
 				gain_minsnr		=	4		
 				DR_delta_rms	=	15
@@ -303,7 +302,7 @@ class CalcParams:
 			if self.safety_factor==0:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
-				residual_frac	=	0.1
+				residual_frac	=	0.15
 				min_sigma		=	8
 				gain_minsnr		=	4.5		
 				DR_delta_rms	=	18
@@ -316,7 +315,7 @@ class CalcParams:
 			elif self.safety_factor==1:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
-				residual_frac	=	0.07
+				residual_frac	=	0.1
 				min_sigma		=	9
 				gain_minsnr		=	4.5		
 				DR_delta_rms	=	15
@@ -329,7 +328,7 @@ class CalcParams:
 			else:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
-				residual_frac	=	0.05
+				residual_frac	=	0.07
 				min_sigma		=	10
 				gain_minsnr		=	4.5		
 				DR_delta_rms	=	12
@@ -619,7 +618,7 @@ def get_OBSID_from_ms(msname):
 			return OBSid
 		except:
 			c+=1
-			time.sleep(1.0)
+			time.sleep(5.0)
 			if c>=5:
 				return 0
 

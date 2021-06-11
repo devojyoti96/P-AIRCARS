@@ -195,7 +195,7 @@ class IntensitySelfcal:
 		os.system('rm -rf casa*log')
 		return nsigma
 		
-	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.05,stokes_list=['I']):
+	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.1,stokes_list=['I']):
 		'''
 		Function to determine whether reduce the CLEAN sigma or not.
 		Parameters:
@@ -207,7 +207,7 @@ class IntensitySelfcal:
 		residual_frac = Residual flux fraction to reduce sigma
 		stokes_list = ['I'], stokes plane list
 		Return:
-		Reduced value of n-sigma if residual flux is more than given percentage (default : 5%) of the total flux in Stokes I or in all Stokes Q,U,V.
+		Reduced value of n-sigma if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.
 		'''
 		imagename=imagename
 		residual=imagename.split('.image')[0]+'.residual'
@@ -246,8 +246,8 @@ class IntensitySelfcal:
 				max_frac_diff=(maxval-(nsigma-sigma_step)*rms)/maxval
 			else:
 				max_frac_diff=0
-			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or\
-					 (max_frac_diff>0 and max_frac_diff>residual_frac and (maxval-abs(minval))>(nsigma-sigma_step)*rms):
+			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or \
+				(max_frac_diff>0 and max_frac_diff>residual_frac and ((maxval-abs(minval))/((nsigma-sigma_step)*rms))>residual_frac):
 				do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
