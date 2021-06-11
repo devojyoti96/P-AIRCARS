@@ -337,12 +337,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					if inputs.send_notification==True:
 						send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 					os.system('touch '+touch_file)
-					if inputs.keep_logger==False:
-						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 					end_time=time.time()
 					run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 					logger.info('Total runtime : '+str(run_time))
+					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					if inputs.keep_logger and verbose==True:
+						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return 12
 	else:
 		try:
@@ -370,12 +372,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				if inputs.send_notification==True:
 					send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 				os.system('touch '+touch_file)
-				if inputs.keep_logger==False:
-					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-				os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				end_time=time.time()
 				run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 				logger.info('Total runtime : '+str(run_time))
+				os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+				if inputs.keep_logger and verbose==True:
+					os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+				os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+				os.system('rm -rf '+working_dir+'/'+file_str+'*')
 			return 12	
 
 	if save_true_loc_image==True: # Save source true location images with respect to the reference time and channel
@@ -452,12 +456,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					if inputs.send_notification==True:
 						send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 					os.system('touch '+touch_file)
-					if inputs.keep_logger==False:
-						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 					end_time=time.time()
 					run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 					logger.info('Total runtime : '+str(run_time))
+					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					if inputs.keep_logger and verbose==True:
+						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return msg_code+100
 			else:
 				os.chdir(cwd)
@@ -469,12 +475,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					if inputs.send_notification==True:
 						send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 					os.system('touch '+touch_file)
-					if inputs.keep_logger==False:
-						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 					end_time=time.time()
 					run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 					logger.info('Total runtime : '+str(run_time))
+					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					if inputs.keep_logger and verbose==True:
+						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return msg_code
 		else:	
 			dyn1=(out_dict['XX'][0]+out_dict['YY'][0])/2.0
@@ -566,7 +574,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				if DR5>min_DR and num_iter>min_iteration: # If minimum number of iteration is completed (Only considered the rms based DR here)
 					os.system('rm -rf '+file_str+'.cal')
 					os.system('rm -rf '+file_str+'_'+str(num_iter)+'.model')
-					os.system('cp -r junk0.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')  # Keeping the last good caltable
+					os.system('cp -r junk0.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bcal')  # Keeping the last good caltable
 					os.system('cp -r junk0.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model') # Keeping last good model
 					os.system('cp -r junk0.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image') # Keeping last good model
 					if verbose==False:
@@ -587,12 +595,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 								os.system('rm -rf '+quickimage)
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 108
 					else:
 						os.chdir(cwd)
@@ -605,12 +615,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 								os.system('rm -rf '+quickimage)
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 8
 
 			#######################################################
@@ -621,7 +633,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					print ('Reached limiting dynamic range\n')
 				logger.info('Reached limiting dynamic range\n')
 				end_selfcal=True
-				os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')
+				os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bcal')
 				os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
 				os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
 				if inputs.send_notification==True:
@@ -637,12 +649,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 						os.system('rm -rf '+quickimage)
 					os.system('touch '+touch_file)
-					if inputs.keep_logger==False:
-						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 					end_time=time.time()
 					run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 					logger.info('Total runtime : '+str(run_time))
+					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					if inputs.keep_logger and verbose==True:
+						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return 0
 			elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(DR5/DR3-1)<0.08) and\
 				 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and abs(DR6/DR4-1)<0.05):
@@ -660,7 +674,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
 						logger.info('########################\n')								
 						end_selfcal=True
-						os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')
+						os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bcal')
 						os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
 						os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
 						if inputs.send_notification==True:
@@ -680,12 +694,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 									logger.info('Notification could not be sent.\n')
 								os.system('rm -rf '+quickimage)
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 0
 			
 			#############################################################			
@@ -716,7 +732,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						print (error_msgs(8))
 					logger.error(error_msgs(8))
 					end_selfcal=True
-					os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')
+					os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bcal')
 					os.system('cp -r junk1.model '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
 					os.system('cp -r junk1.image '+basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
 					if inputs.send_notification==True:
@@ -733,12 +749,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 								os.system('rm -rf '+quickimage)
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 109		
 					else:
 						os.chdir(cwd)
@@ -751,12 +769,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 								os.system('rm -rf '+quickimage)
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 9
 				else:
 					if verbose==False:
@@ -774,12 +794,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 							os.system('rm -rf '+quickimage)
 						os.system('touch '+touch_file)
-						if inputs.keep_logger==False:
-							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-						os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						end_time=time.time()
 						run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 						logger.info('Total runtime : '+str(run_time))
+						os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+						if inputs.keep_logger and verbose==True:
+							os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+						os.system('rm -rf '+working_dir+'/'+file_str+'*')
 					return 13
 						
 # Function to run the script stand alone from command line
@@ -839,13 +861,15 @@ if __name__=='__main__':
 		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\nMessage : No measurement set is present\nTotal runtime : '+\
 					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-		if inputs.send_notification==True:
-			send_paircars_notification(inputs.email,msg_subject,msg_str)
-		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log')
-		os.system('rm -rf '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 	
@@ -864,10 +888,15 @@ if __name__=='__main__':
 		if inputs.send_notification==True:
 			send_paircars_notification(inputs.email,msg_subject,msg_str)
 		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log')
-		os.system('rm -rf '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 
@@ -915,9 +944,15 @@ if __name__=='__main__':
 				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
 				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
 		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 	except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('error')
@@ -936,8 +971,14 @@ if __name__=='__main__':
 			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
 			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
 		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		pass

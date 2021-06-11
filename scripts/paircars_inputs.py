@@ -9,9 +9,9 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 
 # Basic parameters #TODO : Different run mode, download data, download data and calib, only calinbration, etc.
 ##################
-basedir				=	'/data1/devojyoti/PhD/data/paircars_test2'
-msdir				=	'/data1/devojyoti/PhD/data/paircars_test/test1'
-timerange			=	'2014-05-04 02:48:02.25~2014-05-04 02:51:10.00,2014-05-04 02:53:10.00~2014-05-04 04:51:10.00'
+basedir				=	'/data1/devojyoti/PhD/data/paircars_test'
+msdir				=	'/data1/devojyoti/PhD/data/paircars_test/test2'
+timerange			=	''
 chanrange			=	'0~2,3~3,4~6,8~10,15~16'
 final_image_dir		=	''
 calibrator_caltable	=	[]

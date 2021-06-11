@@ -45,23 +45,27 @@ if os.path.isdir(msdir)==False:
 if basedir[-1]=='/':
 	basedir=basedir[:-1]
 print('Searching for measurment sets......\n')
-file_list=glob.glob(msdir+'/*.ms')
+file_list=sorted(glob.glob(msdir+'/*.ms'))
 measurement_set_list=[]
 basedir_list=[]
+remove_count=0
+prebasedir=''
 for f in file_list:
 	if os.path.isdir(f)==True:
 		try:	
 			msname=splited_ms_rename(f,ref_time_chan=False,change_msname=False)
 			datestamp='_'.join(msname.split('time_')[-1].split('_')[:3])
 			if eval(str(options.fresh))==True:
-				if os.path.exists(basedir+'/basedir_for_'+datestamp)==True:
+				if os.path.exists(basedir+'/basedir_for_'+datestamp)==True and basedir+'/basedir_for_'+datestamp!=prebasedir:
 					print ('Removing existing base directory : '+basedir+'/basedir_for_'+datestamp)
 					os.system('rm -rf '+basedir+'/basedir_for_'+datestamp)		
+				prebasedir=basedir+'/basedir_for_'+datestamp
 			if eval(str(options.restart))==True:
 				os.system('rm -rf '+basedir+'/basedir_for_'+datestamp+'/.paircars* '+basedir+'/basedir_for_'+datestamp+'/.ref_timechan_done_*')		
 			if os.path.isdir(basedir+'/basedir_for_'+datestamp)==False:
 				os.makedirs(basedir+'/basedir_for_'+datestamp+'/data/')
-			basedir_list.append(basedir+'/basedir_for_'+datestamp)
+			if basedir+'/basedir_for_'+datestamp not in basedir_list:
+				basedir_list.append(basedir+'/basedir_for_'+datestamp)
 			if os.path.islink(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))==False:
 				print('Linking '+f+' to '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname)+'\n')
 				os.system('ln -s '+f+' '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))

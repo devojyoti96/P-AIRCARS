@@ -153,9 +153,6 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		logger.propagate = False
 	print('\n')
 	
-	logger.info('JUNK1'+str(os.path.isdir('junk1.ms')))
-	logger.info(str(start_fresh))
-
 	if start_fresh==False and os.path.isdir('junk1.ms') and os.path.isdir('junk1.cal'):
 		os.system('rm -rf '+msname)
 		os.system('cp -r junk1.ms '+msname)
@@ -186,8 +183,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		if caltables!='':
 			caltable_list=caltables.split(',')
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calonly\')\n')
-			applycal(vis=msname,gaintable=caltable_list,applymode='calonly')
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=True)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
+			tb=table()
+			tb.open(msname,nomodify=False)
+			cor_data=tb.getcol('CORRECTED_DATA')
+			tb.putcol('DATA',cor_data)
+			tb.flush()
+			tb.close()
 		else:
 			caltable_list=[]
 		
@@ -219,6 +222,10 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		os.makedirs(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)
 	if os.path.isdir(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
 		os.makedirs(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)
+	if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+		os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+	if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and verbose==True:
+		os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
 
 	if 'ref' in msname:
 		refcals=glob.glob(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')
@@ -281,6 +288,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			ISC.calib_uvrange=inputs.uvrange_to_cal
 
 	end_selfcal=False
+	scratch_restart=False
 	while end_selfcal==False:
 		if os.path.isfile(msname+'/.usedby_paircars')==False:
 			os.system('touch '+msname+'/.usedby_paircars')
@@ -305,7 +313,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			+'; Minimum number of total selfcal iterations : '+str(min_iteration)+'; Maximum number of selfcal iterations : '+str(max_iteration)\
 			+'; Antenna bins : '+str(antenna_bin)+'\n')
 
-		if scratch==True and 'ref' not in msname: # If scratch=True due to failure, restore the flag and original data to start
+		if scratch==True and scratch_restart==True>0: # If scratch=True due to failure, restore the flag and original data to start
+			logger.info('Restoring data and flag, because calibration restarted from scratch due to failure.\n')
 			tb=table()
 			tb.open(msname,nomodify=False)
 			data=tb.getcol('DATA')
@@ -430,12 +439,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									if inputs.send_notification==True:
 										send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 									os.system('touch '+touch_file)
-									if inputs.keep_logger==False:
-										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									if inputs.keep_logger and verbose==True:
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 									os.system('touch '+start_time_file)
@@ -466,12 +477,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								if inputs.send_notification==True:
 									send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								logger.info('Total runtime : '+str(run_time))
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								if inputs.keep_logger and verbose==True:
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
@@ -526,13 +539,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								if inputs.send_notification==True:
 									send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								if inputs.keep_logger and verbose==True:
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
@@ -554,17 +569,19 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if inputs.send_notification==True:
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							if verbose==False:
 								print('Message :'+error_msgs(10)) # If selfcal SNR is not sufficient
 							logger.error('Message :'+error_msgs(10))
 							os.chdir(cwd)
-							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 							os.system('touch '+start_time_file)
@@ -583,14 +600,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if inputs.send_notification==True:
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							os.chdir(cwd)
-							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 						if 'ref' in msname:
 							msg_code+=100
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
@@ -653,17 +672,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if __name__!='__main__':
 								touch_file=basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(msg_code)
 								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 								if verbose==False:
 									print('Message : More than 30% solutions are flagged.\n') # If more than 30% solutions are flagged and time resolution is less than 10 s
 								logger.error('Message : More than 30% solutions are flagged.\n')
 								os.chdir(cwd)
-								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
@@ -681,7 +698,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			######################################################################################################################################
 			if num_iteration_after_ap>min_iteration:
 				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
-				if calc_flag_frac>0.05 and calmode=='ap':
+				if calc_flag_frac>0.01 and calmode=='ap':
 					if inputs.gain_minsnr>3:
 						inputs.gain_minsnr-=0.5
 						logger.info('Reducing minimum SNR of calibration to : '+str(inputs.gain_minsnr)+'\n')
@@ -695,17 +712,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if __name__!='__main__':
 								touch_file=basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(msg_code)
 								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 								if verbose==False:
 									print('Message : More than 5% solutions are flagged.\n') # If more than 5% solutions are flagged and time resolution is less than 10 s
 								logger.error('Message : More than 5% solutions are flagged.\n')
 								os.chdir(cwd)
-								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
 								logger.info('Total runtime : '+str(run_time))
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
@@ -813,12 +828,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									if inputs.send_notification==True:
 										send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])									
 									os.system('touch '+touch_file)
-									if inputs.keep_logger==False:
-										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									if inputs.keep_logger and verbose==True:
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 									os.system('touch '+start_time_file)
@@ -833,12 +850,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									if inputs.send_notification==True:
 										send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 									os.system('touch '+touch_file)
-									if inputs.keep_logger==False:
-										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									if inputs.keep_logger and verbose==True:
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 									os.system('touch '+start_time_file)
@@ -852,6 +871,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						logger.info('#####################################\n')
 						os.system('rm -rf '+working_dir+'/junk*')
 						do_selfcal=False
+						scratch_restart=True
 						break
 				else:				
 					logger.info('Trying with reduced start sigma : '+str(start_sigma)+'\n')
@@ -874,12 +894,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if inputs.send_notification==True:
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 							os.system('touch '+start_time_file)
@@ -894,12 +916,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							if inputs.send_notification==True:
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 							os.system('touch '+start_time_file)
@@ -912,6 +936,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					logger.info('Going for a full selfcal from scratch = True\n')
 					logger.info('#####################################\n')
 					os.system('rm -rf '+working_dir+'/junk*')
+					scratch_restart=True
 					do_selfcal=False
 					break
 			else:	
@@ -1034,9 +1059,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
 								else:
 									uvrange_to_cal=inputs.uvrange_to_cal
-								logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',minsnr='+\
-												str(gain_minsnr)+',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
-								gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',solmode='R',minsnr=gain_minsnr,rmsthresh=[10,8,6],calmode='ap',uvrange=uvrange_to_cal)
+								tb=table()
+								tb.open(working_dir+'/Backup_uncalib.ms',nomodify=False)
+								last_flags=tb.getcol('FLAG')*False
+								tb.putcol('FLAG',last_flags)
+								tb.flush()
+								tb.close()
+								logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',minsnr='+\
+												str(gain_minsnr)+',solnorm=True,solmode=\'R\',rmsthresh=[20,18,15],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
+								gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',solmode='R',rmsthresh=[20,18,15],minsnr=gain_minsnr,solnorm=True,\
+													calmode='ap',uvrange=uvrange_to_cal)
 								os.system('mv temp.cal '+basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')  # Keeping the last good caltable
 								os.system('cp -r junk0.model '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model') # Keeping last good model
 								os.system('cp -r junk0.image '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image') # Keeping last good model
@@ -1059,12 +1091,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 											send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 											os.system('rm -rf '+quickimage)
 										os.system('touch '+touch_file)
-										if inputs.keep_logger==False:
-											os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-										os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 										end_time=time.time()
 										run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 										logger.info('Total runtime : '+str(run_time))
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+										if inputs.keep_logger and verbose==True:
+											os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+										os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 									if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 										os.system('touch '+start_time_file)
@@ -1080,12 +1114,13 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 											send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 											os.system('rm -rf '+quickimage)
 										os.system('touch '+touch_file)
-										if inputs.keep_logger==False:
-											os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-										os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 										end_time=time.time()
-										run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 										logger.info('Total runtime : '+str(run_time))
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+										if inputs.keep_logger and verbose==True:
+											os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+										os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 									if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 										os.system('touch '+start_time_file)
@@ -1120,9 +1155,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
 						else:
 							uvrange_to_cal=inputs.uvrange_to_cal
-						logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',minsnr='+\
-												str(gain_minsnr)+',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
-						gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',solmode='R',minsnr=gain_minsnr,rmsthresh=[10,8,6],calmode='ap',uvrange=uvrange_to_cal)
+						tb=table()
+						tb.open(working_dir+'/Backup_uncalib.ms',nomodify=False)
+						last_flags=tb.getcol('FLAG')*False
+						tb.putcol('FLAG',last_flags)
+						tb.flush()
+						tb.close()
+						logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',minsnr='+\
+												str(gain_minsnr)+',solnorm=True,solmode=\'R\',rmsthresh=[20,18,15]calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
+						gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',minsnr=gain_minsnr,solnorm=True,solmode='R',rmsthresh=[20,18,15],\
+								calmode='ap',uvrange=uvrange_to_cal)
 						os.system('mv temp.cal '+basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')  # Keeping the last good caltable
 						os.system('cp -r junk1.model '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
 						os.system('cp -r junk1.image '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
@@ -1139,12 +1181,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 								os.system('rm -rf '+quickimage)
 							os.system('touch '+touch_file)
-							if inputs.keep_logger==False:
-								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							end_time=time.time()
 							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 							logger.info('Total runtime : '+str(run_time))
+							os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							if inputs.keep_logger and verbose==True:
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 							os.system('touch '+start_time_file)
@@ -1175,9 +1219,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
 							else:
 								uvrange_to_cal=inputs.uvrange_to_cal
-							logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',minsnr='+\
-											str(gain_minsnr)+',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
-							gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',solmode='R',minsnr=gain_minsnr,rmsthresh=[10,8,6],calmode='ap',uvrange=uvrange_to_cal)
+							tb=table()
+							tb.open(working_dir+'/Backup_uncalib.ms',nomodify=False)
+							last_flags=tb.getcol('FLAG')*False
+							tb.putcol('FLAG',last_flags)
+							tb.flush()
+							tb.close()
+							logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',minsnr='+\
+											str(gain_minsnr)+',solnorm=True,solmode=\'R\',rmsthresh=[20,18,15],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
+							gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',minsnr=gain_minsnr,solnorm=True,solmode='R',rmsthresh=[20,18,15],\
+										calmode='ap',uvrange=uvrange_to_cal)
 							os.system('mv temp.cal '+basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')  # Keeping the last good caltable
 							os.system('cp -r junk1.model '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
 							os.system('cp -r junk1.image '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
@@ -1198,12 +1249,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 										logger.info('Notification could not be sent.\n')
 									os.system('rm -rf '+quickimage)
 								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								logger.info('Total runtime : '+str(run_time))
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								if inputs.keep_logger and verbose==True:
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
@@ -1215,7 +1268,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						antenna_list_index+=1
 						num_iter_fixed_ant=0
 						antenna_added=True	
-						if nomask_try_count>=1 and scratch==True and antenna_list_index==1:
+						if (nomask_try_count>=1 and scratch==True and antenna_list_index==1) or (scratch==False and num_iter>min_iteration): #TODO : testing
 							phasecenter_changed=True
 						if verbose==False:
 							print ('New antenna added at iteration : '+str(num_iter)+'\n')
@@ -1278,9 +1331,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
 							else:
 								uvrange_to_cal=inputs.uvrange_to_cal
-							logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',solmode=\'R\',minsnr='+\
-												str(gain_minsnr)+',rmsthresh=[10,8,6],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
-							gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',solmode='R',minsnr=gain_minsnr,rmsthresh=[10,8,6],calmode='ap',uvrange=uvrange_to_cal)
+							tb=table()
+							tb.open(working_dir+'/Backup_uncalib.ms',nomodify=False)
+							last_flags=tb.getcol('FLAG')*False
+							tb.putcol('FLAG',last_flags)
+							tb.flush()
+							tb.close()
+							logger.info('gaincal(vis=\''+working_dir+'/Backup_uncalib.ms\',caltable=\'temp.cal\',minsnr='+\
+												str(gain_minsnr)+',solnorm=True,solmode=\'R\',rmsthresh=[20,18,15],calmode=\'ap\',uvrange=\''+uvrange_to_cal+'\')\n')
+							gaincal(vis=working_dir+'/Backup_uncalib.ms',caltable='temp.cal',minsnr=gain_minsnr,solnorm=True,solmode='R',rmsthresh=[20,18,15],\
+										calmode='ap',uvrange=uvrange_to_cal)
 							os.system('mv temp.cal '+basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.cal')  # Keeping the last good caltable
 							os.system('cp -r junk1.model '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.model')
 							os.system('cp -r junk1.image '+basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.image')
@@ -1299,12 +1359,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 										send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 										os.system('rm -rf '+quickimage)
 									os.system('touch '+touch_file)
-									if inputs.keep_logger==False:
-										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									if inputs.keep_logger and verbose==True:
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 									os.system('touch '+start_time_file)
@@ -1320,12 +1382,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 										send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 										os.system('rm -rf '+quickimage)
 									os.system('touch '+touch_file)
-									if inputs.keep_logger==False:
-										os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 									end_time=time.time()
 									run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 									logger.info('Total runtime : '+str(run_time))
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									if inputs.keep_logger and verbose==True:
+										os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+									os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 								if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 									os.system('touch '+start_time_file)
@@ -1346,12 +1410,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 									send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[quickimage])
 									os.system('rm -rf '+quickimage)
 								os.system('touch '+touch_file)
-								if inputs.keep_logger==False:
-									os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
-								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 								end_time=time.time()
 								run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 								logger.info('Total runtime : '+str(run_time))
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								if inputs.keep_logger and verbose==True:
+									os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+								os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
+								os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
@@ -1384,9 +1450,11 @@ if __name__=='__main__':
 	(options, args) = parser.parse_args()
 	if (os.path.isfile(str(options.workdir)+'/Intensity_Selfcal.log') and eval(str(options.fresh))==True) or \
 			(os.path.isfile(str(options.workdir)+'/Intensity_Selfcal.log') and os.path.isdir(str(options.workdir)+'/junk1.ms')==False and eval(str(options.fresh))==False):
+		print ('Deleting previous log.\n')
 		os.system('rm -rf '+str(options.workdir)+'/Intensity_Selfcal.log')
 	if os.path.isfile(str(options.workdir)+'/Intensity_Selfcal_verbose.log') and eval(str(options.verbose))==True:
-			os.system('rm -rf '+str(options.workdir)+'/Intensity_Selfcal_verbose.log')
+		print ('Deleteling previous verbose log.\n')
+		os.system('rm -rf '+str(options.workdir)+'/Intensity_Selfcal_verbose.log')
 	formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 	logger = logging.getLogger('intensity_selfcal_log')
 	logger.setLevel(logging.DEBUG)
@@ -1394,6 +1462,9 @@ if __name__=='__main__':
 		console=logging.StreamHandler(sys.stdout)
 		console.setFormatter(formatter)
 		logger.addHandler(console)
+	print (str(options.workdir))
+	print (os.path.exists(str(options.workdir)))
+	print (os.path.exists(str(options.workdir)+'/Intensity_Selfcal.log'))
 	filehandle=logging.FileHandler(str(options.workdir)+'/Intensity_Selfcal.log')
 	filehandle.setFormatter(formatter)
 	logger.addHandler(filehandle)
@@ -1450,11 +1521,16 @@ if __name__=='__main__':
 		if inputs.send_notification==True:
 			send_paircars_notification(inputs.email,msg_subject,msg_str)
 		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log')
-		os.system('rm -rf '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
-		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
 		os._exit(0)
 	
 	if options.metafits==None or os.path.isfile(options.metafits)==False:
@@ -1472,11 +1548,16 @@ if __name__=='__main__':
 		if inputs.send_notification==True:
 			send_paircars_notification(inputs.email,msg_subject,msg_str)
 		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log')
-		os.system('rm -rf '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
-		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
 		os._exit(0)
 
 	try:
@@ -1515,7 +1596,9 @@ if __name__=='__main__':
 		logger.info('Gain selfcal finished for ms : '+options.chantime_msname+'\n')
 		logger.info('Total runtime : '+str(run_time)+'\n')
 		logger.info('##############################\n')
-		os.system('touch '+touch_file)
+		while os.path.isfile(touch_file)==False:
+			os.system('touch '+touch_file)
+		file_str=msbasename.split('.ms')[0]
 		if type(msg)==int:
 			msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 			msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
@@ -1523,11 +1606,16 @@ if __name__=='__main__':
 				attachments=glob.glob(options.workdir+'/quick_image_*.png')
 				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
 				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log')
-		os.system('rm -rf '+options.workdir+'/TempLattice*')
-		file_str=msbasename.split('.ms')[0]
-		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
+		if type(msg)==int or (type(msg)!=int and msg!='moreflag'):
+			if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+				os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+				os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+			if inputs.keep_logger and eval(str(options.verbose))==True:
+				os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+			os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
 	except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
@@ -1543,9 +1631,14 @@ if __name__=='__main__':
 		if inputs.send_notification==True:
 			send_paircars_notification(inputs.email,msg_subject,msg_str)
 		os.system('touch '+touch_file)
-		if inputs.keep_logger==False:
-			os.system('rm -rf '+options.workdir+'/*.log')
-		os.system('rm -rf '+options.workdir+'/TempLattice*')
 		file_str=msbasename.split('.ms')[0]
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
 		pass

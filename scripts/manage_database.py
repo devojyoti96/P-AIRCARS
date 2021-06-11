@@ -1101,7 +1101,7 @@ obslog.setLevel(logging.DEBUG)
 if eval(str(options.verbose))==True:
 	console=logging.StreamHandler(sys.stdout)
 	console.setFormatter(formatter)
-	logger.addHandler(console)
+	obslog.addHandler(console)
 if os.path.exists(str(options.basedir)+'/'+str(OBSID)+'_obslog.log'):
 	os.system('rm -rf '+str(options.basedir)+'/'+str(OBSID)+'_obslog.log')
 filehandle=logging.FileHandler(str(options.basedir)+'/'+str(OBSID)+'_obslog.log')
@@ -1147,7 +1147,7 @@ if len(caltable_for_global_database)>0:
 				if 'pcal' not in i and 'beam' not in i: 
 					os.system('rm -rf '+i)
 			os.system('rm -rf '+final_caltable)	
-
+os.system('touch '+inputs.basedir+'/.Finished_final_cal_'+os.path.basename(str(options.msname)))
 
 
 '''
