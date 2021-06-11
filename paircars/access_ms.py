@@ -259,7 +259,101 @@ class AccessMS:
 			flagged_data=float(np.sum(flagged_data.flatten()))
 			if (flagged_data/total_data)<flagfrac:
 				unflagged_chan.append(chan)
-		return unflagged_chan	
+		return unflagged_chan
+
+	def get_unflag_times_mjd(self,flagfrac=1):
+		'''
+		Function to get the unflagged timestamps in MJD seconds if flag fraction is less than certain value
+		Parameter:
+		flagfrac = Flag fraction per channel (default : 1)
+		Return:
+		List of unflagged times in MJD seconds
+		'''
+		self.tb.open(self.msname)
+		flag=self.tb.getcol('FLAG')
+		self.tb.close()
+		ntime=self.get_num_timestamps()
+		nbaselines_frac=(flag.shape[-1]/(ntime))-int(flag.shape[-1]/(ntime))
+		if nbaselines_frac==0:
+			nbaselines=int(flag.shape[-1]/ntime)
+			ntime=int(ntime)
+		else:
+			nbaselines=int(flag.shape[-1]/(ntime-1))
+			ntime=int(ntime-1)
+		flag=flag.reshape(flag.shape[0],flag.shape[1],ntime,nbaselines)
+		unflagged_time=[]
+		for t in range(flag.shape[2]):
+			flagged_data=flag[:,:,t,:]
+			total_data=float(len(flagged_data.flatten()))
+			flagged_data=float(np.sum(flagged_data.flatten()))
+			if (flagged_data/total_data)<flagfrac:
+				unflagged_time.append(t)
+		timestamps=self.get_timestamps_in_mjdsecs()
+		unflagged_times_mjd=[float(timestamps[i]) for i in unflagged_time]
+		return unflagged_times_mjd
+
+	def get_unflag_timestamps(self,flagfrac=1):
+		'''
+		Function to get the unflagged timestamps in MJD seconds if flag fraction is less than certain value
+		Parameter:
+		flagfrac = Flag fraction per channel (default : 1)
+		Return:
+		List of unflagged channels
+		'''
+		self.tb.open(self.msname)
+		flag=self.tb.getcol('FLAG')
+		self.tb.close()
+		ntime=self.get_num_timestamps()
+		nbaselines_frac=(flag.shape[-1]/(ntime))-int(flag.shape[-1]/(ntime))
+		if nbaselines_frac==0:
+			nbaselines=int(flag.shape[-1]/ntime)
+			ntime=int(ntime)
+		else:
+			nbaselines=int(flag.shape[-1]/(ntime-1))
+			ntime=int(ntime-1)
+		flag=flag.reshape(flag.shape[0],flag.shape[1],ntime,nbaselines)
+		unflagged_time=[]
+		for t in range(flag.shape[2]):
+			flagged_data=flag[:,:,t,:]
+			total_data=float(len(flagged_data.flatten()))
+			flagged_data=float(np.sum(flagged_data.flatten()))
+			if (flagged_data/total_data)<flagfrac:
+				unflagged_time.append(t)
+		timestamps=self.get_timestamps()
+		unflagged_timestamps=[timestamps[i] for i in unflagged_time]
+		return unflagged_timestamps
+
+	def get_flag_timestamps(self,flagfrac=1):
+		'''
+		Function to get the flagged timestamps in MJD seconds if flag fraction is less than certain value
+		Parameter:
+		flagfrac = Flag fraction per channel (default : 1)
+		Return:
+		List of flagged timestamps
+		'''
+		unflagged_time=self.get_unflag_timestamps()
+		timestamps=self.get_timestamps()
+		flagged_times=[]
+		for i in timestamps:
+			if i not in unflagged_time:
+				flagged_times.append(i)
+		return flagged_times
+	
+	def get_flag_times_mjd(self,flagfrac=1):
+		'''
+		Function to get the flagged timestamps in MJD seconds if flag fraction is less than certain value
+		Parameter:
+		flagfrac = Flag fraction per channel (default : 1)
+		Return:
+		List of flagged times in MJD seconds
+		'''
+		unflagged_time=self.get_unflag_times_mjd()
+		timestamps=self.get_timestamps_in_mjdsecs()
+		flagged_times=[]
+		for i in timestamps:
+			if i not in unflagged_time:
+				flagged_times.append(float(i))
+		return flagged_times
 
 	def get_model_nomodel_chan(self):
 		'''

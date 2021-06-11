@@ -195,7 +195,7 @@ class IntensitySelfcal:
 		os.system('rm -rf casa*log')
 		return nsigma
 		
-	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,residual_frac=0.1,stokes_list=['I']):
+	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.05,stokes_list=['I']):
 		'''
 		Function to determine whether reduce the CLEAN sigma or not.
 		Parameters:
@@ -203,10 +203,11 @@ class IntensitySelfcal:
 		nsigma = Value of the present n-sigma
 		sigma_step = Step to reduce sigma value
 		minsigma = Minimum allowed sigma
+		pre_residual = Previous residual fraction to compare (default : 0.0)
 		residual_frac = Residual flux fraction to reduce sigma
 		stokes_list = ['I'], stokes plane list
 		Return:
-		Reduced value of n-sigma if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.
+		Reduced value of n-sigma if residual flux is more than given percentage (default : 5%) of the total flux in Stokes I or in all Stokes Q,U,V.
 		'''
 		imagename=imagename
 		residual=imagename.split('.image')[0]+'.residual'
@@ -224,7 +225,7 @@ class IntensitySelfcal:
 			immath(imagename=imagename,mode='evalexpr',expr='abs(IM0)',stokes=stokes,outfile='reduce_sigma_'+stokes+'.image')
 			immath(imagename=residual,mode='evalexpr',expr='abs(IM0)',stokes=stokes,outfile='reduce_sigma_'+stokes+'.residual')
 			ia.open('reduce_sigma_'+stokes+'.image')			
-			ia.calcmask('\"reduce_sigma_'+stokes+'.image\">'+str(nsigma*rms),'mymask')
+			ia.calcmask('\"reduce_sigma_'+stokes+'.image\">'+str((nsigma-sigma_step)*rms),'mymask')
 			ia.close()
 			makemask(inpimage='reduce_sigma_'+stokes+'.image',inpmask='reduce_sigma_'+stokes+'.image:mymask',output='reduce_sigma_'+stokes+'.residual:mymask',mode='copy')
 			try:
@@ -233,7 +234,20 @@ class IntensitySelfcal:
 			except:
 				image_pix_sum=0
 				residual_pix_sum=1
-			if residual_pix_sum/image_pix_sum>residual_frac:
+			try:
+				maxval=imstat(imagename='reduce_sigma_'+stokes+'.residual')['max'][0]
+			except:
+				maxval=0
+			try:
+				minval=imstat(imagename='reduce_sigma_'+stokes+'.residual')['min'][0]
+			except:
+				minval=0					
+			if maxval>(nsigma-sigma_step)*rms:
+				max_frac_diff=(maxval-(nsigma-sigma_step)*rms)/maxval
+			else:
+				max_frac_diff=0
+			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or\
+					 (max_frac_diff>0 and max_frac_diff>residual_frac and (maxval-abs(minval))>(nsigma-sigma_step)*rms):
 				do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)

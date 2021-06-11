@@ -1,4 +1,4 @@
-import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request,copy
+import numpy as np,os,julian,smtplib,imaplib,datetime as dtt,psutil,json,urllib.request,copy,logging
 from casatools import *
 from . import access_ms as am
 from astropy.io import fits
@@ -586,6 +586,7 @@ def freq_to_MWA_coarse(freq):
 	Return:
 	MWA coarse channel number
 	'''
+	freq=float(freq)
 	coarse_chans=[[(i*1.28)-0.64,(i*1.28)+0.64] for i in range(300)]
 	for i in range(len(coarse_chans)):
 		ch0=coarse_chans[i][0]
@@ -601,21 +602,26 @@ def get_OBSID_from_ms(msname):
 	Return:
 	MWA OBSID
 	'''
-	try:
-		BASEURL='http://ws.mwatelescope.org/'
-		md=msmetadata()
-		md.open(msname)
-		obs_mjd_ms=md.timerangeforobs(0)['begin']['m0']['value']
-		md.close()
-		utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)
-		ms_path=os.path.dirname(os.path.realpath(msname))
-		searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
-		GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
-		searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
-		OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
-		return OBSid
-	except:
-		return 0
+	c=0
+	while c<5:
+		try:
+			BASEURL='http://ws.mwatelescope.org/'
+			md=msmetadata()
+			md.open(msname)
+			obs_mjd_ms=md.timerangeforobs(0)['begin']['m0']['value']
+			md.close()
+			utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)
+			ms_path=os.path.dirname(os.path.realpath(msname))
+			searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
+			GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
+			searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
+			OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
+			return OBSid
+		except:
+			c+=1
+			time.sleep(1.0)
+			if c>=5:
+				return 0
 
 def get_OBSID_from_metafits(metafits):
 	'''
@@ -636,14 +642,10 @@ def download_metafits(msname,outdir):
 	Return :
 	Download the metafits file of the given measurement set and return metafits file name
 	'''
-	if __name__!='__main__':
-		formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
-		mainlog = logging.getLogger('paircars_main_log')
 	BASEURL='http://ws.mwatelescope.org/'
 	OBSid=get_OBSID_from_ms(msname)
 	if os.path.isfile(outdir+'/'+str(OBSid)+'.metafits')==False:
 		try:
-			mainlog.info('Downloading metafits for OBS ID :'+str(OBSid)+' at : '+outdir+'/'+str(OBSid)+'.metafits.\n')
 			os.system('wget -O '+outdir+'/'+str(OBSid)+'.metafits http://ws.mwatelescope.org/metadata/fits?obs_id='+str(OBSid))
 			metafits=outdir+'/'+str(OBSid)+'.metafits'
 		except:
