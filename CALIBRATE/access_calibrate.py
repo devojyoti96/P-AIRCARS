@@ -338,9 +338,9 @@ class CALIBRATE():
 			else:		
 				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable)
 				os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
-			os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
+			#os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		os.chdir(cwd)
-		os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
+		#os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		return 0
 			
 	def convert_gaintable_bin2npy(self,gaintable,outputfile):
@@ -497,9 +497,8 @@ class CALIBRATE():
 			for j in range(cal_nchan):
 				caltime=cal_times[i]
 				calfreq=cal_freqs[j]
-				if np.sum(np.isnan(data[i,:,j,:]))==4:
+				if np.sum(np.isnan(data[i,:,j,:]))==len(data[i,:,j,:].flatten()):
 					bad_calchantime.append([caltime,calfreq])
-		bad_calchantime=np.array(bad_calchantime)
 		if len(bad_calchantime)==cal_ntime*cal_nchan:
 			print ('No unflagged solutions in the caltable.\n')
 			os.system('rm -rf casa*log '+caltable+'.temp_aocal.bin '+caltable+'.CALIBRATE_temp_aocal*')
@@ -507,28 +506,44 @@ class CALIBRATE():
 			os.system('rm rf casa*log')
 			return 'Nosol'
 		for i in range(ntime):
+			mstime=times[i]
+			cal_time_diff=np.abs(np.array(cal_times)-mstime)
+			args_time=np.argsort(cal_time_diff)
+			min_cal_time=args_time[0]
 			for j in range(nchan):
-				mstime=times[i]
+				cal_time_diff_copy=copy.deepcopy(cal_time_diff)
 				msfreq=freqs[j]
+				cal_freq_diff=np.abs(np.array(cal_freqs)-msfreq)
+				args_chan=np.argsort(cal_freq_diff)
+				cal_freq_diff_copy=copy.deepcopy(cal_freq_diff)
+				pos_nearest_cal_chan=[]
 				while True:
-					min_cal_chan=min(getnearpos(np.array(cal_freqs),msfreq))
-					max_cal_chan=max(getnearpos(np.array(cal_freqs),msfreq))
-					if j>=max_cal_chan:
-						nearest_cal_chan=max_cal_chan
+					min_cal_chan=args_chan[0]
+					nearest_cal_chan=min_cal_chan
+					nearest_cal_time=min_cal_time
+					if [cal_times[nearest_cal_time],cal_freqs[nearest_cal_chan]] in bad_calchantime:
+						args_chan=np.delete(args_chan,np.where(args_chan==nearest_cal_chan))
+						cal_freq_diff_copy=np.delete(cal_freq_diff_copy,np.where(cal_freq_diff_copy==cal_freq_diff[nearest_cal_chan]))
+						if len(args_chan)==0:
+							args_time=np.delete(args_time,np.where(args_time==nearest_cal_time))	
+							cal_time_diff_copy=np.delete(cal_time_diff_copy,np.where(cal_time_diff_copy==cal_time_diff[nearest_cal_time]))					
+							break
+						else:
+							continue
 					else:
-						nearest_cal_chan=min_cal_chan
-					min_cal_time=min(getnearpos(np.array(cal_times),mstime))
-					max_cal_time=max(getnearpos(np.array(cal_times),mstime))
-					if i>=max_cal_time:
-						nearest_cal_time=max_cal_time
-					else:
-						nearest_cal_time=min_cal_time
-					if [nearest_cal_time,nearest_cal_chan] in bad_calchantime:
-						print ('Bad cal chantime encountered.\n')
-						continue
-					else:
-						new_data[i,:,j,:]=data[nearest_cal_time,:,nearest_cal_chan,:]
-						break	
+						pos_nearest_cal_chan.append(nearest_cal_chan)
+						args_chan=np.delete(args_chan,np.where(args_chan==nearest_cal_chan))
+						cal_freq_diff_copy=np.delete(cal_freq_diff_copy,np.where(cal_freq_diff_copy==cal_freq_diff[nearest_cal_chan]))
+						if len(args_chan)==0:
+							args_time=np.delete(args_time,np.where(args_time==nearest_cal_time))	
+							cal_time_diff_copy=np.delete(cal_time_diff_copy,np.where(cal_time_diff_copy==cal_time_diff[nearest_cal_time]))					
+							break
+						else:
+							continue
+				cal_freq_diff_partial=np.abs(np.array(cal_freqs)[pos_nearest_cal_chan]-msfreq)
+				pos=np.where(cal_freq_diff==np.min(cal_freq_diff_partial))
+				new_data[i,:,j,:]=data[nearest_cal_time,:,pos,:]
+						
 		np.save(caltable+'.test',new_data)	
 		new_data_flattened=new_data.flatten(order='C')
 		if outfile_path=='':
@@ -643,13 +658,4 @@ class CALIBRATE():
 		os.chdir(cwd)
 		os.system('rm -rf casa*log')
 		return bad_ants
-
-
-
-
-
-
-
-
-		
 
