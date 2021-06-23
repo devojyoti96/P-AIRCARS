@@ -43,7 +43,7 @@ class IntensitySelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange=IB.calc_calib_uvrange(12)[0] # Short baselines sensitive to larger than 2 deg are excluded 
+		self.calib_uvrange=IB.calc_calib_uvrange(2)[0] # Short baselines sensitive to larger than 2 deg are excluded 
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -246,8 +246,8 @@ class IntensitySelfcal:
 				max_frac_diff=(maxval-(nsigma-sigma_step)*rms)/maxval
 			else:
 				max_frac_diff=0
-			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or \
-				(max_frac_diff>0 and max_frac_diff>residual_frac and ((maxval-abs(minval))/((nsigma-sigma_step)*rms))>residual_frac):
+			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) and \
+				(max_frac_diff>0 and max_frac_diff>residual_frac and abs(minval)<(nsigma-sigma_step)*rms and ((maxval-abs(minval))/((nsigma-sigma_step)*rms))>residual_frac):
 				do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
@@ -289,7 +289,7 @@ class IntensitySelfcal:
 					if self.verbose==False:
 						print ('Continuing with sigma step :'+str(sigma_step)+'\n')
 					os.system('rm -rf casa*log')
-					return nsigma-sigma_step
+					return nsigma
 			else:
 				self.log_verbose.info('Reducing sigma to:'+str(nsigma-sigma_step)+'\n')
 				os.system('rm -rf casa*log')

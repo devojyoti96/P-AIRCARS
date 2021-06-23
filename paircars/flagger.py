@@ -11,15 +11,16 @@ from casatasks import *
 Code is written by Devojyoti Kansabanik, 26 Jan ,2021
 '''
 
-def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False):
+def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False,flagbackup=True):
 	'''
 	A function to generate the list of coarse-channels edges + the 
 	central channel in each coarse channel to be flagged.
 	Parameters:
 	msname= Name of the masurement set
 	edgewidth = Flag edge channels width in kHz
-	do_flag = True, If true flag tedge channels, otherwise return only the good channels list
+	do_flag = True, If true flag edge channels, otherwise return only the good channels list
 	force = False, If True flag again if even if the flag keyword is in header
+	flagbackup = True, keep flag backup or not
 	Return:
 	Unflagged channels, One central channel per coarse channel
 	'''
@@ -28,39 +29,36 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False):
 	AM=am.AccessMS(msname)
 	ncoarse_chan=AM.calc_ncoarse()
 	freqres=AM.calc_freqres()
-	minchan=int(1.28*10**3/freqres)
-	n_multi=40/freqres # Frequency resolution in multiple of 40 kHz, since rest of the function is written based on 40 kHz frequency resolution
-	M = int((edgewidth/40)*n_multi) # No. of channels to be flagged at the start of the coarse channel
-	N = int((edgewidth/40)*n_multi) # No. of channels to be flagged at the tail of the coarse channel
-	a = int(16*n_multi)	# The central channel which occassionally shows the DC spike
-	b = minchan-N
-	c = minchan+(M-1)
+	nchan_per_coarse=int(1.28*10**3/freqres)
+	M = int(edgewidth/freqres) # No. of channels to be flagged at the start of the coarse channel
+	N = int(edgewidth/freqres) # No. of channels to be flagged at the tail of the coarse channel
+	a = int(nchan_per_coarse/2)	# The central channel which occassionally shows the DC spike
 	CHAN_FLAG_STR='0:'
 	CHAN_UNFLAG_STR='0:'
 	i = 0
 	ch0 = 0
-	ch1 = minchan-1
+	ch1 = nchan_per_coarse
 	channels_per_coarse={}
 	if ncoarse_chan!=0:
 		while i < ncoarse_chan:
 			# The 0th coarse channel requires special treatment (one less ';')
-			if ch0 == 0:
-				CHAN_FLAG_STR=CHAN_FLAG_STR+str(ch0)+'~'+str(ch0+M)+';'+str(a)+';'+str(ch1-(N+1))+'~'+str(ch1)	
+			if i == 0:
+				CHAN_FLAG_STR=CHAN_FLAG_STR+str(ch0)+'~'+str(ch0+M)+';'+str(a)+';'+str(ch1-N)+'~'+str(ch1-1)	
 				CHAN_UNFLAG_STR+=str(ch0+M+1)+'~'+str(a-1)+';'+str(a+1)+'~'+str(ch1-(N+1)-1)+';'+str(ch1-(N+1)+1)+'~'+str(ch1-1)		
 			else:
-				CHAN_FLAG_STR=CHAN_FLAG_STR+';'+str(ch0)+'~'+str(ch0+M)+';'+str(a)+';'+str(ch1-(N+1))+'~'+str(ch1)
+				CHAN_FLAG_STR=CHAN_FLAG_STR+';'+str(ch0)+'~'+str(ch0+M)+';'+str(a)+';'+str(ch1-N)+'~'+str(ch1-1)
 				CHAN_UNFLAG_STR+=';'+str(ch0+M+1)+'~'+str(a-1)+';'+str(a+1)+'~'+str(ch1-(N+1)-1)+';'+str(ch1-(N+1)+1)+'~'+str(ch1-1)
 			channels_per_coarse[i]=a-1
-			a =int(a+32*n_multi)
-			ch0 = ch0 + minchan
-			ch1 = ch1 + minchan
+			a = a+nchan_per_coarse
+			ch0 = ch0 + nchan_per_coarse
+			ch1 = ch1 + nchan_per_coarse
 			i = i + 1
 		code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
 		if ('C_FLAG_'+str(edgewidth) not in code_list and do_flag==True) or (force==True and do_flag==True):
 			print ('Flagging coarse channel edges and central DC-spike channels:'+CHAN_FLAG_STR+'\n')
-			flagdata(vis=msname,spw=CHAN_FLAG_STR,mode='manual',flagbackup=False)
-			flagdata(vis=msname,autocorr=True,flagbackup=False)
+			flagdata(vis=msname,spw=CHAN_FLAG_STR,mode='manual',flagbackup=flagbackup)
+			flagdata(vis=msname,autocorr=True,flagbackup=flagbackup)
 			if (force==True and do_flag==True and 'C_FLAG_'+str(edgewidth) not in code_list) or (force==False and do_flag==True):
 				if len(code_list)==1 and code_list[0]=='':
 					code+='C_FLAG_'+str(edgewidth)

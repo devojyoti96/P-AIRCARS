@@ -44,8 +44,8 @@ class PolSelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
-		self.calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
+		self.calib_uvrange_min=IB.calc_calib_uvrange(2)[1]
+		self.calib_uvrange_max=IB.calc_calib_uvrange(2)[2]
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -495,12 +495,13 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return B_corr
 	
-	def get_IQUV(self,imagename,imagetype='FITS'):
+	def get_IQUV(self,imagename,imagetype='FITS',stokes='IQUV'):
 		'''
 		Stokes I,Q,U,V from a Stokes IQUV image cube.
 		Parameters:
 		imagename = Name of the image
 		imagetype= Type of the image, CASA or FITS
+		stokes = 'IQUV' , to options 'IQUV' for full Stokes or 'I' for only intensity for unpolarised source
 		Return:
 		Python dictionary {'STOKES':imagedata}
 		'''
@@ -508,33 +509,46 @@ class PolSelfcal:
 			if os.path.isfile(imagename.split('.image')[0]+'.fits'):
 				os.system('rm -rf '+imagename.split('.image')[0]+'.fits')
 			exportfits(imagename=imagename,fitsimage=imagename.split('.image')[0]+'.fits')
-		fitsimage=imagename.split('.image')[0]+'.fits'
+			fitsimage=imagename.split('.image')[0]+'.fits'
+		else:
+			fitsimage=imagename
 		data=fits.getdata(fitsimage)
-		stokes = {}
-		stokes['I'] = data[0, 0, :, :]
-		stokes['Q'] = data[1, 0, :, :]
-		stokes['U'] = data[2, 0, :, :]
-		stokes['V'] = data[3, 0, :, :]
-		os.system('rm -rf '+fitsimage)
-		os.system('rm -rf casa*log')
-		return stokes	
-
-	def get_inst_pols(self,stokes_image,imagetype='FITS',pol_basis='Linear'): #TODO : Circular basis
+		stokes_data = {}
+		if stokes=='IQUV' and data.shape[0]==4:
+			stokes_data['I'] = data[0, 0, :, :]
+			stokes_data['Q'] = data[1, 0, :, :]
+			stokes_data['U'] = data[2, 0, :, :]
+			stokes_data['V'] = data[3, 0, :, :]
+			os.system('rm -rf casa*log')
+			return stokes_data
+		elif stokes=='I' and data.shape[0]==1:
+			stokes_data['I'] = data[0, 0, :, :]
+			stokes_data['Q'] = data[0, 0, :, :]*0
+			stokes_data['U'] = data[0, 0, :, :]*0
+			stokes_data['V'] = data[0, 0, :, :]*0
+			os.system('rm -rf casa*log')
+			return stokes_data
+		else:
+			print ('Stokes parameter does not match with the Stokes parameters of your image.\n')
+			os.system('rm -rf casa*log')
+			return stokes_data
+		
+	def get_inst_pols(self,stokes_image,imagetype='FITS',pol_basis='Linear',stokes='IQUV'): #TODO : Circular basis
 		'''
 		Return instrumental polarisation matrix (Vij)
 		Parameters:
 		stokes_image = Name of the Stokes IQUV image cube
 		imagetype= Type of the image, CASA or FITS
 		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		stokes = 'IQUV' , to options 'IQUV' for full Stokes or 'I' for only intensity for unpolarised source
 		Return:
 		Instrumental polarisation matrix
 		'''
-		print (imagetype)
-		stokes=self.get_IQUV(stokes_image,imagetype=imagetype)
-		XX = stokes['I'] + stokes['Q']
-		XY = stokes['U'] + stokes['V'] * 1j
-		YX = stokes['U'] - stokes['V'] * 1j
-		YY = stokes['I'] - stokes['Q']
+		stokes_data=self.get_IQUV(stokes_image,imagetype=imagetype,stokes=stokes)
+		XX = stokes_data['I'] + stokes_data['Q']
+		XY = stokes_data['U'] + stokes_data['V'] * 1j
+		YX = stokes_data['U'] - stokes_data['V'] * 1j
+		YY = stokes_data['I'] - stokes_data['Q']
 		Vij = np.array([[XX, XY], [YX, YY]])
 		os.system('rm -rf casa*log')
 		return Vij
@@ -558,7 +572,7 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return stokes
 
-	def correct_for_single_beam_jones(self,imagename,outfile,beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear'): #TODO : Circular basis
+	def correct_for_single_beam_jones(self,imagename,outfile,beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear',stokes='IQUV'): #TODO : Circular basis
 		'''
 		Correct Stokes IQUV image cube for full Stokes Beam Jones at a single pointing
 		Parameters:
@@ -568,44 +582,46 @@ class PolSelfcal:
 		imagetype= Type of the image, CASA or FITS
 		outtype = Output image type, CASA or FITS
 		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		stokes = 'IQUV' , to options 'IQUV' for full Stokes or 'I' for only intensity for unpolarised source
 		Return:
 		Beam corrected image or model
 		'''
-		Vij=self.get_inst_pols(imagename,imagetype=imagetype,pol_basis=pol_basis)
+		Vij=self.get_inst_pols(imagename,imagetype=imagetype,pol_basis=pol_basis,stokes=stokes)
 		B=self.estimateSkyBrightnessMatrix(beam_jones,Vij)
 		stokes=self.B_to_IQUV(B,pol_basis='Linear')
 		if os.path.exists(outfile):
 			os.system('rm -rf '+outfile)
-			os.system('rm -rf '+'.'.join(imagename.split('.')[:-1])+'.fits')
+			os.system('rm -rf '+'.'.join(outfile.split('.')[:-1])+'.fits')
 		if imagetype=='CASA' and os.path.isfile('.'.join(imagename.split('.')[:-1])+'.fits')==False:
 			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits',stokeslast=False)
 			os.system('cp -r '+imagename+' temp_org.image')
 		imagename='.'.join(imagename.split('.')[:-1])+'.fits'
-		data=fits.getdata(imagename)
+		fitsdata=fits.getdata(imagename)
 		header=fits.getheader(imagename)
+		data=np.empty((1,4,fitsdata.shape[-2],fitsdata.shape[-1]))
 		data[0,0,:,:]=np.real(stokes['I'])
 		data[0,1,:,:]=np.real(stokes['Q'])
 		data[0,2,:,:]=np.real(stokes['U'])
 		data[0,3,:,:]=np.real(stokes['V'])
 		fits.writeto(outfile,data=data,header=header,overwrite=True)
 		if outtype=='CASA':
-			if os.path.exists('temp.image'):
-				os.system('rm -rf temp.image')
+			#if os.path.isdir('temp_org.image')==False:
+			#	importfits(fitsimage=imagename,imagename='temp_org.image')
 			importfits(fitsimage=outfile,imagename='temp.image')
 			os.system('rm -rf '+outfile+' '+imagename)
 			ia=image()
 			ia.open('temp.image')
 			pbcor_data=ia.getchunk()
 			ia.close()
-			ia.open('temp_org.image')
-			ia.putchunk(pbcor_data)
-			ia.done()
-			ia.close()
-			os.system('mv temp_org.image '+outfile)
+			#ia.open('temp_org.image')
+			#ia.putchunk(pbcor_data)
+			#ia.done()
+			#ia.close()
+			os.system('mv temp.image '+outfile)
 		os.system('rm -rf casa*log temp*')
 		return outfile
 
-	def uncorrect_for_single_beam_jones(self,imagename,outfile,inv_beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear'): # TODO : Circular basis
+	def uncorrect_for_single_beam_jones(self,imagename,outfile,inv_beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear',stokes='IQUV'): # TODO : Circular basis
 		'''
 		Undo the beam correction for Stokes IQUV image cube for full Stokes Beam Jones at a single pointing
 		Parameters:
@@ -615,38 +631,43 @@ class PolSelfcal:
 		imagetype = Type of the image, CASA or FITS
 		outtype = Output image type, CASA or FITS
 		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		stokes = 'IQUV' , to options 'IQUV' for full Stokes or 'I' for only intensity for unpolarised source
 		Return:
 		Beam un-corrected image or model
 		'''
-		Vij=self.get_inst_pols(imagename,imagetype=imagetype,pol_basis=pol_basis)
+		Vij=self.get_inst_pols(imagename,imagetype=imagetype,pol_basis=pol_basis,stokes=stokes)
 		B=self.estimateSkyBrightnessMatrix(inv_beam_jones,Vij)
 		stokes=self.B_to_IQUV(B,pol_basis='Linear')
 		if os.path.exists(outfile):
 			os.system('rm -rf '+outfile)
-			os.system('rm -rf '+'.'.join(imagename.split('.')[:-1])+'.fits')
+			os.system('rm -rf '+'.'.join(outfile.split('.')[:-1])+'.fits')
 		if imagetype=='CASA' and os.path.isfile('.'.join(imagename.split('.')[:-1])+'.fits')==False:
-			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits',stokeslast=False)
+			exportfits(imagename=imagename,fitsimage='.'.join(imagename.split('.')[:-1])+'.fits')
 			os.system('cp -r '+imagename+' temp_org.image')
 		imagename='.'.join(imagename.split('.')[:-1])+'.fits'
-		data=fits.getdata(imagename)
+		fitsdata=fits.getdata(imagename)
 		header=fits.getheader(imagename)
+		print (header)
+		data=np.empty((4,1,fitsdata.shape[-2],fitsdata.shape[-1]))
 		data[0,0,:,:]=np.real(stokes['I'])
-		data[0,1,:,:]=np.real(stokes['Q'])
-		data[0,2,:,:]=np.real(stokes['U'])
-		data[0,3,:,:]=np.real(stokes['V'])
+		data[1,0,:,:]=np.real(stokes['Q'])
+		data[2,0,:,:]=np.real(stokes['U'])
+		data[3,0,:,:]=np.real(stokes['V'])
 		fits.writeto(outfile,data=data,header=header,overwrite=True)
 		if outtype=='CASA':
+			#if os.path.isdir('temp_org.image')==False:
+			#	importfits(fitsimage=imagename,imagename='temp_org.image')
 			importfits(fitsimage=outfile,imagename='temp.image')
 			os.system('rm -rf '+outfile+' '+imagename)
 			ia=image()
 			ia.open('temp.image')
 			pbcor_data=ia.getchunk()
 			ia.close()
-			ia.open('temp_org.image')
-			ia.putchunk(pbcor_data)
-			ia.done()
-			ia.close()
-			os.system('mv temp_org.image '+outfile)
+			#ia.open('temp_org.image')
+			#ia.putchunk(pbcor_data)
+			#ia.done()
+			#ia.close()
+			os.system('mv temp.image '+outfile)
 		os.system('rm -rf casa*log temp*')
 		return outfile
 
@@ -724,7 +745,7 @@ class PolSelfcal:
 		mwapb=MWA_PrimaryBeam(self.msname,self.metafits,inverse_beam=True)
 		cal=CALIBRATE()
 		beamfile=self.msname+'.beam.bin'
-		beamfile,beamjobes=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,skip_freq=float(skip_freq))
+		beamfile,beamjones=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,skip_freq=float(skip_freq))
 		cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the inverse beam correction
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
@@ -765,6 +786,45 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return beamfile
 
+	def uncorrect_visibility_model_single_beam_jones(self,force=False,skip_freq=1.28):	
+		'''
+		Undo Correct visibility data for a single pointing beam jones
+		Parameters:
+		force = False, undo beam correct forcefully avoiding ms header info
+		skip_freq = Frequency interval in MHz to make independent beams (default : 1.28 MHz). If anything greater than 1.28 MHz is given it will be overwritten to 1.28 MHz
+		Return:
+		Name of the beam jones file
+		'''
+		mwapb=MWA_PrimaryBeam(self.msname,self.metafits,inverse_beam=True)
+		cal=CALIBRATE()
+		beamfile=self.msname+'.beam.bin'
+		beamfile,beamjones=mwapb.MWA_phasecenter_beam_jones(outputfile=beamfile,skip_freq=float(skip_freq))
+		tb=table()
+		tb.open(self.msname,nomodify=False)
+		data=tb.getcol('DATA')
+		try:
+			cor_data=tb.getcol('CORRECTED_DATA')
+		except:
+			cor_data=data
+		model_data=tb.getcol('MODEL_DATA')
+		tb.putcol('DATA',model_data)
+		tb.flush()
+		tb.close()
+		cal.applycal(msname=self.msname,gaintable=beamfile,applymode='calonly') # Applying the inverse beam correction
+		tb.open(self.msname,nomodify=False)
+		model_data=tb.getcol('CORRECTED_DATA')
+		tb.putcol('MODEL_DATA',model_data)
+		try:
+			tb.putcol('CORRECTED_DATA',cor_data)
+		except:
+			pass
+		tb.putcol('DATA',data)
+		tb.flush()
+		tb.close()
+		del data,cor_data,model_data
+		os.system('rm -rf casa*log')
+		return beamfile
+
 	def IMSTAT_record(self,DRI,DR_neg,FXI,FXQ,FXU,FXV,FXT,FXP,record_filename,init=True):
 		'''
 		Function to keep the record of image statistics at different self calibration steps
@@ -777,7 +837,7 @@ class PolSelfcal:
 		FXV = Total Stokes V flux
 		FXT = Total Stokes T flux
 		FXP = Total Stokes P flux
-		record_filename = Name of the file to stro dynamic ranges
+		record_filename = Name of the file to store dynamic ranges
 		init = True, initiating a new record from the current selfcal iteration
 		Return:
 		Image statistic record array; shape [7,num_of_record]
@@ -1478,7 +1538,7 @@ class PolSelfcal:
 		return imagename,modelname
 
 	def polselfcal_iteration(self,num_iter,rms_thresh,mask_str,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
-							stokes='',interactive=False,use_ankflagger=False,do_flag=False,poldistortion_correction=True,poldistortion_type='poldistortion',\
+							stokes='',interactive=False,use_ankflagger=False,poldistortion_correction=True,poldistortion_type='poldistortion',\
 							poldistortion_matrix='UH',do_solarquv_cor=False,box_width=3,calibrator_caltable=[]):
 		'''
 		Function to perform a polarisation self-calibration loop, make an image, put the model in the measurement set, and perform the calibration
@@ -1495,7 +1555,6 @@ class PolSelfcal:
 		stokes = '', Stokes plane to image
 		interactive= False, Perform interactive CLEAN
 		use_ankflagger = False, use aNKflagger for flagging after each selfcal round
-		do_flag = False, flag after each selfcal round
 		poldistortion_correction = True, Correct poldistortion using the known ideal Jones matrix of the instrument
 		poldistortion_type = 'polconversion ; Stokes I to STOKES Q,U,V leakages' or 'polrotation; changes between Stokes Q,U,V' or 'poldistortion' (default : poldistortion)
 		poldistortion_matrix = 'UH or HU ' , where H is polconversion and U is polrotation
@@ -1666,11 +1725,11 @@ class PolSelfcal:
 						except Exception as e:
 							self.pollog_verbose.info('Error in aNKflagger : '+str(e)+'\n')
 							self.pollog_verbose.info('Error in running aNKflagger. Using rms threshold flagging.\n')
-							self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[15,10,8])\n')
-							fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[15,10,8])
+							self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
+							fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
 					else:
-						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[15,10,8])\n')
-						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[15,10,8])
+						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
+						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
 					if do_solarquv_cor==True:
 						tb=table()
 						tb.open(self.msname)
