@@ -9,10 +9,10 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 
 # Basic parameters #TODO : Different run mode, download data, download data and calib, only calinbration, etc.
 ##################
-basedir				=	'/data1/devojyoti/PhD/data/paircars_test'
-msdir				=	'/data1/devojyoti/PhD/data/paircars_test/test2'
+basedir				=	'/data1/devojyoti/PhD/data/paircars_test_typeiii'
+msdir				=	'/data1/devojyoti/PhD/data/type-III/test1'
 timerange			=	''
-chanrange			=	'0~2,3~3,4~6,8~10,15~16'
+chanrange			=	''
 final_image_dir		=	''
 calibrator_caltable	=	[]
 safety_factor		=	1
@@ -20,7 +20,7 @@ quality_factor		=	1
 verbose				=	True
 keep_logger			=	True
 interactive			=	False
-do_decor_correction	=	True
+do_decor_correction	=	False
 ref_ant				=	1
 calc_image_parameters	=	True
 calc_selfcalib_params	=	True

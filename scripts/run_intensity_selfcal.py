@@ -163,6 +163,10 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		caltable_list=[]
 	else:
 		start_fresh=True
+		if os.path.isfile('DR_rms.npy')==True:
+			os.system('rm -rf DR_rms.npy')
+		if os.path.isfile('DR_neg.npy')==True:
+			os.system('rm -rf DR_neg.npy')
 		if os.path.isfile(msname+'/.usedby_paircars'):
 			try:
 				tb=table()
@@ -950,9 +954,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					rms_list=[out_dict['XX'][1],out_dict['YY'][1]]
 				if 'ref' not in msname and num_iter==0:
 					DR1=dyn1
-					DR2=dyn2				
-					ISC.DR_record(DR1,'DR_rms',init=True)
-					ISC.DR_record(DR2,'DR_neg',init=True)
+					DR2=dyn2		
+					if os.path.isfile('DR_rms.npy')==False:		
+						ISC.DR_record(DR1,'DR_rms',init=True)
+					else:
+						ISC.DR_record(DR1,'DR_rms',init=False)
+					if os.path.isfile('DR_neg.npy')==False:
+						ISC.DR_record(DR2,'DR_neg',init=True)
+					else:
+						ISC.DR_record(DR2,'DR_neg',init=False)
 				if num_iter==0:
 					DR5=DR3=dyn1
 					DR6=DR4=dyn2

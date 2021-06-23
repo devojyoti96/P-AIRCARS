@@ -353,9 +353,11 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				mainlog.info('Given channels are not in ms. Continue with all channels.\n')
 				new_chan_list=','.join([str(i) for i in range(nchan)])
 		else:
+			nchan=AM.get_num_channels()
 			new_chan_list=','.join([str(i) for i in range(nchan)])
 	except:
-			new_chan_list=','.join([str(i) for i in range(nchan)])
+		nchan=AM.get_num_channels()
+		new_chan_list=','.join([str(i) for i in range(nchan)])
 
 	# Auto calculate calibration parameters
 	#######################################
@@ -646,6 +648,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			if skip_channel<len(unflagged_channels):
 				for i in range(0,len(unflagged_channels),skip_channel):
 					ref_channel_grid.append(unflagged_channels[i])
+			else:
 				ref_channel_grid=unflagged_channels
 
 			ref_chan=ref_channel_grid[int(len(ref_channel_grid)/2)]
@@ -692,19 +695,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						try:
 							mainlog.info('applycal(vis=\''+ref_timechan_ms+'\',gaintable=\''+previous_caltable+'\',applymode=\'calflag\',flagbackup=True)\n')
 							applycal(vis=ref_timechan_ms,gaintable=previous_caltable,applymode='calflag',flagbackup=True)
-							'''
-							flaglist=flagmanager(vis=ref_timechan_ms,mode='list')
-							flaglist_keys=list(flaglist.keys())
-							flaglist_keys.remove('MS')
-							if len(flaglist_keys)>0:								
-								for i in flaglist_keys:	
-									#last_flag_key=flaglist_keys[-1]
-									last_flagversion=flaglist[i]['name']
-									# Restore the flag and delete the present flag version
-									mainlog.info('flagmanager(vis=\''+ref_timechan_ms+'\',mode=\'restore\',versionname=\''+str(last_flagversion)+'\',merge=\'replace\')\n')
-									mainlog.info('flagmanager(vis=\''+ref_timechan_ms+'\',mode=\'delete\',versionname=\''+str(last_flagversion)+'\')\n')
-									flagmanager(vis=ref_timechan_ms,mode='restore',versionname=last_flagversion,merge='replace')
-									flagmanager(vis=ref_timechan_ms,mode='delete',versionname=last_flagversion)'''
 							if os.path.isdir(cur_workdir+'/junk1.ms')==False:
 								os.system('cp -r '+ref_timechan_ms+' '+cur_workdir+'/junk1.ms')
 							if os.path.isdir(cur_workdir+'/junk1.cal')==False:
@@ -729,7 +719,14 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 							if preverboselog!='':
 								mainlog.info('Copying previous verbose log......\n')
 								os.system('cp -r '+preverboselog+' '+cur_workdir+'/Intensity_Selfcal_verbose.log')
-							os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+inputs.basedir+'/freq_*datetime*')
+							if prerms!='':
+								mainlog.info('Copying previous DR_rms record......\n')
+								os.system('cp -r '+prerms+' '+cur_workdir+'/DR_rms.npy')
+							if prerneg!='':
+								mainlog.info('Copying previous DR_neg record......\n')
+								os.system('cp -r '+preneg+' '+cur_workdir+'/DR_neg.npy')
+							os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+preneg+' '+\
+										inputs.basedir+'/freq_*datetime*')
 							fresh=False
 						except:
 							fresh=True
@@ -768,7 +765,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd=['-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':socket:pe=2 -x OMP_NUM_THREADS='+\
+					mpicmd=['-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':core:pe=2 -x OMP_NUM_THREADS='+\
 						str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n']
 					mpicmd.append('-np 1 sleep 1\n')
 					mainlog.info('MPI commands .....\n')
@@ -857,6 +854,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					os.system('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/prerecord.npy')					
 					os.system('cp -r '+cur_workdir+'/junk.precal '+workdir+'/precal.cal')
 					os.system('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/pre.log')
+					os.system('cp -r '+cur_workdir+'/DR_neg.npy '+workdir+'/pre_DR_neg.npy')
+					os.system('cp -r '+cur_workdir+'/DR_rms.npy '+workdir+'/pre_DR_rms.npy')
+					prerms=workdir+'/pre_DR_rms.npy'
+					preneg=workdir+'/pre_DR_neg.npy'
 					prelog=workdir+'/pre.log'
 					if os.path.exists(cur_workdir+'/Intensity_Selfcal_verbose.log')==True:
 						os.system('cp -r '+cur_workdir+'/Intensity_Selfcal_verbose.log '+workdir+'/preverbose.log')
@@ -1257,7 +1258,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			if (i!=ref_chan and ref_time_freq==True) or ref_time_freq==False:
 				channel_grid.append(i)
 	else:
-		channel_grid=[i for i in range(min(unflagged_channels),max(unflagged_channels))]
+		channel_grid=unflagged_channels
 
 	if skip_timestamp<len(timestamps): # Final time grid
 		for i in range(0,len(mjd_timestamps),skip_timestamp):
@@ -1367,7 +1368,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':socket:pe=2 -x OMP_NUM_THREADS='+\
+					mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':core:pe=2 -x OMP_NUM_THREADS='+\
 							str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n')
 					mpicmd.append('-np 1 sleep 1\n')
 				open_casa_instance+=1
@@ -1533,7 +1534,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':socket:pe=2 -x OMP_NUM_THREADS='+\
+					mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':core:pe=2 -x OMP_NUM_THREADS='+\
 							str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n')
 					mpicmd.append('-np 1 sleep 1\n')
 				open_casa_instance+=1
@@ -1698,7 +1699,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':socket:pe=2 -x OMP_NUM_THREADS='+\
+					mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/4)/cpu_sockets))+':core:pe=4 -x OMP_NUM_THREADS='+\
 							str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n')
 					mpicmd.append('-np 1 sleep 1\n')
 				open_casa_instance+=1
@@ -2349,7 +2350,7 @@ if len(measurement_set_list)!=0:
 			mainlog.info('Command : '+cmd+'\n')
 			os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 		elif mpi==0:
-			mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':socket:pe=2 -x OMP_NUM_THREADS='+\
+			mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':core:pe=2 -x OMP_NUM_THREADS='+\
 				str(available_cpu_for_paircars)+' sh '+batch_file+'\n')
 			mpicmd.append('-np 1 sleep 1\n')
 	basemsdir=os.path.basename(msname).split('.ms')[0]

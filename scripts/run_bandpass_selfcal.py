@@ -153,6 +153,10 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		os.system('cp -r junk1.ms '+msname)
 	else:
 		start_fresh=True
+		if os.path.isfile('DR_rms.npy')==True:
+			os.system('rm -rf DR_rms.npy')
+		if os.path.isfile('DR_neg.npy')==True:
+			os.system('rm -rf DR_neg.npy')
 		if os.path.isfile(msname+'/.usedby_paircars'):
 			try:
 				tb=table()
@@ -489,10 +493,16 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			dyn2=negative_dyn_range
 			rms_list=[out_dict['XX'][1],out_dict['YY'][1]]				
 			if num_iter==0:
-				ISC.DR_record(dyn1,'DR_rms',init=True)
-				ISC.DR_record(dyn2,'DR_neg',init=True)
 				DR5=DR3=DR1=dyn1
 				DR6=DR4=DR2=dyn2
+				if os.path.isfile('DR_rms.npy')==False:		
+					ISC.DR_record(DR1,'DR_rms',init=True)
+				else:
+					ISC.DR_record(DR1,'DR_rms',init=False)
+				if os.path.isfile('DR_neg.npy')==False:
+					ISC.DR_record(DR2,'DR_neg',init=True)
+				else:
+					ISC.DR_record(DR2,'DR_neg',init=False)
 			elif num_iter==1:
 				DR5=dyn1
 				DR6=dyn2
@@ -661,7 +671,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(DR5/DR3-1)<0.08) and\
 				 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and abs(DR6/DR4-1)<0.05):
 			#  If DR does not increas more the DR delta in last two steps and DR does not increase 8% for rms based and 5% for negative based => Converge
-				if num_iter_fixed_sigma>min_num_iter_fixed_sigma and num_iter>min_iteration:
+				if (num_iter_fixed_sigma>min_num_iter_fixed_sigma and num_iter_fixed_sigma>3) and num_iter>min_iteration:
 					sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,residual_frac=inputs.residual_frac,stokes_list=['XX','YY'])
 					if sigma<start_sigma: # If the next sigma is less than the present sigma
 						start_sigma=sigma	
