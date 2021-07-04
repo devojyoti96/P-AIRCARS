@@ -79,7 +79,7 @@ class ImageBasic:
 			scale.append(int(max_size_rad/5*cellsize))
 			if int(max_size_rad/3*cellsize)>int(max_size_rad/5*cellsize) and int(max_size_rad/3*cellsize)<max(scale) :
 				scale.append(int(max_size_rad/3*cellsize))
-		return scale
+		return sorted(scale)
 
 	def field_of_view(self,freq=0):
 		'''

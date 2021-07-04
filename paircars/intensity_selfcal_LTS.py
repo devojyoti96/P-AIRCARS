@@ -24,10 +24,11 @@ class IntensitySelfcal:
 	msname = Name of the measurement set
 	metafits = Name of the metafits file
 	maximum_emission_scale = Maximum scale of the emission present in the image in arcsec
+	largest_scale = Largest spatial scale in degree used for self calibration
 	verbose = False,If True keep all the intermediate images, model, residuals, caltables and details of the log to detailed analysis
 	interactive = False, If True user have interactive control on self-calibration
 	'''
-	def __init__(self,msname,metafits,maximum_emission_scale,verbose=False,interactive=False):
+	def __init__(self,msname,metafits,maximum_emission_scale,largest_scale=12,verbose=False,interactive=False):
 		self.cwd=os.getcwd()
 		if msname[-1]=='/':
 			self.msname=msname[:-1]
@@ -43,7 +44,7 @@ class IntensitySelfcal:
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(3,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange=IB.calc_calib_uvrange(2)[0] # Short baselines sensitive to larger than 2 deg are excluded 
+		self.calib_uvrange=IB.calc_calib_uvrange(largest_scale)[0] # Short baselines sensitive to larger than 12 deg are excluded 
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -1295,10 +1296,10 @@ class IntensitySelfcal:
 		threshold=[str(rms*sigma)+'Jy' for rms in rms_thresh]
 		os.system('rm -rf junk_IQUV* *qucor* *.pbuncor')
 		self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\'junk_IQUV\',selectdata=True,stokes=\'IQUV\',imsize=['+str(self.imsize)+'],'+\
-			'cell='+str(self.cellsize)+',niter=100000000000,gain=0.1,threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
+			'cell='+str(self.cellsize)+',niter=10000,gain=0.1,threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 			',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,mask=['+str(mask_str)+'])\n')
 		poltclean(vis=self.msname,imagename='junk_IQUV',selectdata=True,stokes='IQUV',imsize=[self.imsize],\
-			cell=self.cellsize,niter=100000000000,gain=0.1,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+			cell=self.cellsize,niter=10000,gain=0.1,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
 			weighting='natural',interactive=False,mask=[mask_str])
 		imagename='junk_IQUV.image'
 		modelname='junk_IQUV.model'
@@ -1354,7 +1355,30 @@ class IntensitySelfcal:
 		applycal(vis=self.msname,gaintable=applycal_caltable,applymode='calflag',flagbackup=True,calwt=[False]) # Applying the solution
 		os.system('rm -rf junk_IQUV*')
 		return caltable_name
-	
+
+	def remove_model_negative(self,modelname,overwrite=False):
+		'''
+		Function to remove negatives from model image
+		Parameters:
+		modelname = Name of the model
+		overwrite = False, overwrite the model image or not
+		Return:
+		Model image without negatives
+		'''
+		ia=image()
+		if overwrite==False:
+			if os.path.isdir(modelname+'.nonegative')==True:
+				os.system('rm -rf '+modelname+'.nonegative')
+			os.system('cp -r '+modelname+' '+modelname+'.nonegative')
+			modelimage=modelname+'.nonegative'
+		ia.open(modelname)
+		data=ia.getchunk()
+		pos=np.where(data<0)
+		data[pos]=0
+		ia.putchunk(data)
+		ia.done()
+		return modelname
+
 	def selfcal_iteration(self,num_iter,rms_thresh,sigma,maskstr,antenna_to_use,startmodel,startmask,ref_ant,minsnr,calmode,maskfile='',want_auto_masking=False,\
 							stokes='I',interactive=False,do_bandpass=False,solmode='R',correct_phasecenter=False,ra=0,dec=0,box_width=3,calibrator_caltable=[]):
 		'''
@@ -1407,11 +1431,11 @@ class IntensitySelfcal:
 		if maskfile!='': # Using the user provided mask file
 			self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''+\
 					startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)\
-					+'\',niter=100000000000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)
-					+',uvtaper=\''+self.uvtaper+'\',weighting=\'natural\',interactive=False,mask=\''+str(maskfile)+'\')\n')
+					+'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)
+					+',uvtaper=\''+self.uvtaper+'\',weighting=\'natural\',interactive=False,mask=\''+str(maskfile)+'\',uvrange=\''+str(self.calib_uvrange)+'\')\n')
 			poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-				cell=self.cellsize,niter=100000000000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-				weighting='natural',interactive=False,mask=maskfile)
+				cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+				weighting='natural',interactive=False,mask=maskfile,uvrange=self.calib_uvrange)
 		elif want_auto_masking==True and maskfile=='' and maskstr=='': # Use auto-masking
 			try_count=0
 			while True:
@@ -1419,35 +1443,35 @@ class IntensitySelfcal:
 					self.log_verbose.info('Normal auto-masking.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''\
 						+startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
-						'\',niter=100000000000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
+						'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask='+\
-						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=1.5,noisethreshold=3.0,lownoisethreshold=1.5,negativethreshold=0.0,smoothfactor=1.0,'+\
-						'minbeamfrac=0.1,growiterations=75,minpercentchange=5.0)\n')
+						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,negativethreshold=0.0,smoothfactor=1.0,'+\
+						'minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-					cell=self.cellsize,niter=100000000000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=1.5,noisethreshold=3.0,lownoisethreshold=1.5,\
-					negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0)
+					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,\
+					negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0,uvrange=self.calib_uvrange)
 				elif try_count==1:
 					self.log_verbose.info('Trying with auto-masking with no restriction of minimum beam fraction.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel\
 						+'\',startmask=\''+startmask+'\',stokes=\''+stokes+',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
-						'\',niter=100000000000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
+						'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask=\''+\
-						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=1.5,noisethreshold=3.0,lownoisethreshold=1.5,negativethreshold=0.0,smoothfactor=1.0,'+\
-						'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0)\n')
+						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,negativethreshold=0.0,smoothfactor=1.0,'+\
+						'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-					cell=self.cellsize,niter=100000000000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=1.5,noisethreshold=3.0,lownoisethreshold=1.5,\
-					negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0)
+					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,\
+					negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=self.calib_uvrange)
 				elif try_count==2:
 					self.log_verbose.info('Trying without masking.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''+\
 						startmask+'\'stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
-						'\',niter=100000000000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
-						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask=\'user\',mask=\'\')\n')
+						'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
+						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask=\'user\',mask=\'\',uvrange=\''+str(self.calib_uvrange)+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-					cell=self.cellsize,niter=100000000000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-					weighting='natural',interactive=False,usemask='user',mask='')
+					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+					weighting='natural',interactive=False,usemask='user',mask='',uvrange=self.calib_uvrange)
 				else:
 					break
 				modelflux=imstat(imagename=imagename+'.model')['sum'][0]
@@ -1458,11 +1482,11 @@ class IntensitySelfcal:
 		else: # If no masking
 			self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',dtartmask=\''+startmask\
 					+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)\
-					+'\',niter=100000000000,gain='+str(clean_gain)+',threshold=\''+str(threshold)+'\',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)
-					+',uvtaper=\''+self.uvtaper+'\',weighting=\'natural\',interactive=False,mask='+str([maskfile])+')\n')		
+					+'\',niter=10000,gain='+str(clean_gain)+',threshold=\''+str(threshold)+'\',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)
+					+',uvtaper=\''+self.uvtaper+'\',weighting=\'natural\',interactive=False,mask='+str([maskfile])+',uvrange=\''+str(self.calib_uvrange)+'\')\n')		
 			poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-				cell=self.cellsize,niter=100000000000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-				weighting='natural',interactive=False,mask='')
+				cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+				weighting='natural',interactive=False,mask='',uvrange=self.calib_uvrange)
 		if stokes=='I':
 			stokes_list=['I']
 		elif stokes=='RR':
@@ -1516,6 +1540,7 @@ class IntensitySelfcal:
 				clearcal(vis=self.msname)
 				self.log_verbose.info('delmod(vis=\''+self.msname+'\',scr=True)\n') 
 				delmod(vis=self.msname,scr=True) # Clear the MODEL column
+				self.remove_model_negative(imagename+'.model',overwrite=True) # Removing negatives from model
 				if correct_phasecenter==True:
 					if ra==0 or dec==0:
 						AM=am.AccessMS(self.msname)
@@ -1544,6 +1569,13 @@ class IntensitySelfcal:
 							str(calibrator_caltable)+')\n') 
 					gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=minsnr,calmode=calmode,solnorm=True,uvrange=self.calib_uvrange,\
 						gaintype='G',solmode=solmode,rmsthresh=[10,7,5,3.5],gaintable=calibrator_caltable) # Performing gain calibration
+					calc_flag_frac=B.calc_flag_fraction_caltable(caltable_name)
+					if calc_flag_frac>=0.4:
+						self.log_verbose.info('Performing gaincal without robust calibration due large number of flagged solutions.\n')
+						self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(3)
+							+',calmode=\''+calmode+'\',solnorm=True,uvrange=\''+self.calib_uvrange+'\',gaintype=\'G\',gaintable='+str(calibrator_caltable)+')\n') 
+						gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=3,calmode=calmode,solnorm=True,uvrange=self.calib_uvrange,\
+							gaintype='G',gaintable=calibrator_caltable) # Performing gain calibration
 				if os.path.isdir(caltable_name)==False:
 					self.log_verbose.info('No good solution found. No caltable made.\n')
 					os.system('rm -rf casa*log')
