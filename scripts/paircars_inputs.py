@@ -9,8 +9,8 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 
 # Basic parameters #TODO : Different run mode, download data, download data and calib, only calinbration, etc.
 ##################
-basedir				=	'/data1/devojyoti/PhD/data/paircars_test_typeiii'
-msdir				=	'/data1/devojyoti/PhD/data/type-III/test1'
+basedir				=	'/data1/devojyoti/PhD/data/paircars_test_5'
+msdir				=	'/data1/devojyoti/CME_project/1083199696'
 timerange			=	''
 chanrange			=	''
 final_image_dir		=	''
@@ -20,12 +20,12 @@ quality_factor		=	1
 verbose				=	True
 keep_logger			=	True
 interactive			=	False
-do_decor_correction	=	False
+do_decor_correction	=	True
 ref_ant				=	1
 calc_image_parameters	=	True
 calc_selfcalib_params	=	True
-maskfile				=	'circle[[640.0pix,640.0pix],55pix]'	
-maskstr					=	'circle[[640.0pix,640.0pix],55pix]'	# New addition	
+maskfile				=	''	
+maskstr					=	''	# New addition	
 want_auto_masking		=	True
 image_delta_freq		=	160.0
 image_delta_time		=	2.0

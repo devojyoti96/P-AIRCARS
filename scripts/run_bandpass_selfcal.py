@@ -189,10 +189,22 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 
 	OBSID=get_OBSID(metafits)
 	basemsdir=os.path.dirname(working_dir).split('/')[-1]
-	if os.path.isdir(basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
-		os.makedirs(basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir)
-	if os.path.isdir(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
-		os.makedirs(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir)
+	c=0
+	while c<=10:
+		c+=1
+		try:
+			if os.path.isdir(basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
+				os.makedirs(basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/bpimagemodels/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and verbose==True:
+				os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+			break
+		except:
+			time.sleep(2.0)
+			pass
 	
 	if 'ref' in msname:
 		refcals=glob.glob(basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')
@@ -302,7 +314,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		stokes=stokes
 
 	if inputs.maskfile=='' and inputs.maskstr=='':
-		mask_rad=int((32*60)/ISC.cellsize) # Creating a mask with 32 arcmin radius centered on the image
+		mask_rad=int((40*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
 		mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 	elif inputs.maskstr!='':
 		mask_str=inputs.maskstr

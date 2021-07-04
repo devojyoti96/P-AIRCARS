@@ -222,14 +222,22 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		os.system('rm -rf '+start_time_file+'*')
 	elif len(glob.glob(start_time_file+'*'))>0:
 		start_time=float(glob.glob(start_time_file+'*')[0].split('_')[-1])
-	if os.path.isdir(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
-		os.makedirs(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)
-	if os.path.isdir(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
-		os.makedirs(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)
-	if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
-		os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
-	if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and verbose==True:
-		os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+	c=0
+	while c<=10:
+		c+=1
+		try:
+			if os.path.isdir(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
+				os.makedirs(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/imagemodels/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and verbose==True:
+				os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+			break
+		except:
+			time.sleep(2.0)
+			pass
 
 	if 'ref' in msname:
 		refcals=glob.glob(basedir+'/caltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')
@@ -404,7 +412,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			solmode=solmode
 
 		if inputs.maskfile=='' and inputs.maskstr=='':
-			mask_rad=int((32*60)/ISC.cellsize) # Creating a mask with 32 arcmin radius centered on the image
+			mask_rad=int((40*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
 			mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 		elif inputs.maskstr!='':
 			mask_str=inputs.maskstr
@@ -700,6 +708,35 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		
 			# If number of flagged solutions are more than 5% after minimum apcal round, try to reduce flag solutions by increasing time averaging
 			######################################################################################################################################
+			if num_iteration_after_ap>=1:
+				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
+				if calc_flag_frac>0.3 and calmode=='ap':
+					AMflag=AccessMS(msname)
+					timeres=AMflag.calc_timeres()
+					if timeres<10 and reduce_moreflag==True and 'ref' in msname:
+						msg_code='moreflag'
+						if __name__!='__main__':
+							touch_file=basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(msg_code)
+							os.system('touch '+touch_file)
+							if verbose==False:
+								print('Message : More than 5% solutions are flagged.\n') # If more than 5% solutions are flagged and time resolution is less than 10 s
+							logger.error('Message : More than 5% solutions are flagged.\n')
+							os.chdir(cwd)
+							end_time=time.time()
+							run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+							np.save(inputs.basedir+'/selfcal_minsnr',selfcal_snr)
+							logger.info('Total runtime : '+str(run_time))
+							os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_uncalib.ms')
+						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
+						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
+							os.system('touch '+start_time_file)
+						os.system('cp -r junk1.cal junk.precal')
+						backup_dir=glob.glob('freq*datetime*')
+						if len(backup_dir)>0:
+							for i in range(len(backup_dir)):
+								os.system('cp -r '+backup_dir[i]+' ../')
+						return msg_code
+
 			if num_iteration_after_ap>min_iteration:
 				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
 				if calc_flag_frac>0.01 and calmode=='ap':
@@ -1305,8 +1342,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				# If statement 3 (Using last round model) 
 				#(If DR increases at least DR_delta and all antennas are added and number of iteration at fixed antenna is greater than 5)
 				
-				if ((DR5-DR3)>DR_delta_rms and (DR5-DR1)>DR_delta_rms) and (num_iter_fixed_ant>=5 or (num_ant_current_iteration==num_ant and num_iter_fixed_ant>=5))\
-					 and phasecenter_changed==False:
+				if ((DR5-DR3)>DR_delta_rms and (DR5-DR1)>DR_delta_rms) and ((DR6-DR4)>DR_delta_rms and (DR4-DR2)>DR_delta_rms) and \
+					(num_iter_fixed_ant>=5 or (num_ant_current_iteration==num_ant and num_iter_fixed_ant>=5)) and phasecenter_changed==False:
 					startmodel='junk1.model'
 				else:
 					startmodel=''
