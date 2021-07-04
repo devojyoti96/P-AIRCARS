@@ -241,21 +241,21 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	c=0
 	while c<=10:
 		c+=1
-	try:
-		if os.path.isdir(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
-			os.makedirs(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
-			os.makedirs(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
-			os.makedirs(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
-			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and verbose==True:
-			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
-		break
-	except:
-		time.sleep(2.0)
-		pass
+		try:
+			if os.path.isdir(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep caltables
+				os.makedirs(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/polms/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False: # Directory to keep models
+				os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and verbose==True:
+				os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+			break
+		except:
+			time.sleep(2.0)
+			pass
 
 	if 'ref' in msname:
 		refcals=glob.glob(basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/*ref*')

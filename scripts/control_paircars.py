@@ -575,7 +575,7 @@ if len(measurement_set_list)!=0:
 						spawned_ms_jobs[ref_freq_time_msname]=[ref_time,ref_chan,spawned_casa_instances,ref_freq_avg,ref_time_avg]
 					break
 				else:
-					time.sleep(2.0)
+					time.sleep(10.0)
 		elif calibrator_found==False and len(touch_file_list)==0:
 			for j in range(len(ref_freq_time_msname)):
 				single_ref_freq_time_ms=ref_freq_time_msname[j]
@@ -651,7 +651,7 @@ if len(measurement_set_list)!=0:
 							ref_timechan_success=True
 							break
 				else:
-					time.sleep(2.0)
+					time.sleep(10.0)
 		else:
 			mainlog.info('Reference time frequency calibration is done already.\n')
 			msfreqs_cal.remove(float(ref_freqstamp))
