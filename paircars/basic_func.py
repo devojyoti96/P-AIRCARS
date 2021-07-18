@@ -13,6 +13,7 @@ from email.mime.application import MIMEApplication
 Code is written by Devojyoti Kansabanik, 05 Jan, 2021
 '''
 ############ Basic functions ###############
+datadir = os.path.dirname(__file__)
 
 class ImageBasic:
 	'''
@@ -593,6 +594,52 @@ def freq_to_MWA_coarse(freq):
 		if freq>=ch0 and freq<ch1:
 			return i 
 
+def update_mwa_obsids(obsid_file=''):
+	'''
+	Function to update MWA OBSIDs 
+	Parameter:
+	obsid_file = Name of the file to save MWA OBSIDs
+	Return:
+	OBSID file name, update code 
+	'''
+	print ('Updating local MWA OBSid file......\n')
+	if obsid_file=='':
+		obsid_file=datadir+'/MWA_OBSids'
+	BASEURL='http://ws.mwatelescope.org/'
+	temp_array=np.empty(0,dtype='int')
+	if os.path.isfile(obsid_file+'.npy')==True:
+		try:
+			obsids=np.load(obsid_file+'.npy',allow_pickle=True)
+			start_obsid=np.max(obsids)
+			temp_array=np.append(temp_array,obsids)
+		except:
+			start_obsid=972654120
+	else:
+		start_obsid=972654120
+	end_obsid=3786480018  # Till 2100-01-01
+	searchurl=BASEURL+'metadata/find?maxtime='+str(end_obsid)+'&page=20000000000000'
+	try:
+		end_obsid=json.load(urllib.request.urlopen(searchurl,timeout=10))[-1][0]
+		print ('Last OBSID in MWA metadata server : '+end_obsid+'\n')
+		while True:
+			searchurl=BASEURL+'metadata/find?mintime='+str(start_obsid)+'&maxtime='+str(start_obsid+432000)
+			try:
+				OBSid=json.load(urllib.request.urlopen(searchurl,timeout=150))
+				OBSid=np.array(OBSid)[:,0].astype('int')
+				start_obsid=np.max(OBSid)+235
+			except:
+				OBSid=np.empty(0,dtype='int')
+				start_obsid=start_obsid+3600
+			if len(OBSid)!=0:
+				temp_array=np.append(temp_array,OBSid)
+			if start_obsid>=end_obsid:
+				break
+		np.save(obsid_file,temp_array)
+		return obsid_file+'.npy',0
+	except:
+		return obsid_file+'.npy',1
+
+
 def get_OBSID_from_ms(msname):
 	'''
 	Function to return OBSID of an MWA observation
@@ -601,26 +648,38 @@ def get_OBSID_from_ms(msname):
 	Return:
 	MWA OBSID
 	'''
-	c=0
-	while c<5:
-		try:
-			BASEURL='http://ws.mwatelescope.org/'
-			md=msmetadata()
-			md.open(msname)
-			obs_mjd_ms=md.timerangeforobs(0)['begin']['m0']['value']
-			md.close()
-			utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)
-			ms_path=os.path.dirname(os.path.realpath(msname))
-			searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
-			GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
-			searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
-			OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
-			return OBSid
-		except:
-			c+=1
-			time.sleep(5.0)
-			if c>=5:
-				return 0
+	obsid_file=datadir+'/MWA_OBSids.npy'
+	if os.path.isfile(obsid_file)==True:
+		obsids=np.load(obsid_file,allow_pickle=True)
+	else:
+		obsids=np.empty(0)
+	if len(obsids)!=0:
+		md=msmetadata()
+		md.open(msname)
+		obs_mjd_ms=md.timerangeforobs(0)['begin']['m0']['value']
+		md.close()
+		utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)	
+		GPStime=int(Time(utc_string,format='isot',scale='utc').gps)
+		OBSid=obsids[np.argmin(abs(GPStime-obsids))]
+		return OBSid
+	else:
+		c=0
+		while c<5:
+			try:
+				BASEURL='http://ws.mwatelescope.org/'
+				
+				ms_path=os.path.dirname(os.path.realpath(msname))
+				searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
+				GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
+				searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
+				OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
+				return OBSid
+			except Exception as e:
+				print ('Error occured : '+str(e)+'\n')
+				c+=1
+				time.sleep(5.0)
+				if c>=5:
+					return 0
 
 def get_OBSID_from_metafits(metafits):
 	'''

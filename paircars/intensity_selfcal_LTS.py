@@ -790,7 +790,7 @@ class IntensitySelfcal:
 				maxpos=np.argmax(major)
 				ra=ra[maxpos]
 				dec=dec[maxpos]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(8/60.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<((5*float(self.cellsize))/3600.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:
@@ -809,7 +809,7 @@ class IntensitySelfcal:
 			os.system('rm -rf convolved_phaseshift*')
 			ra=data[5]
 			dec=data[6]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<(8/60.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<((5*float(self.cellsize))/3600.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:
@@ -1445,24 +1445,25 @@ class IntensitySelfcal:
 						+startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
 						'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask='+\
-						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,negativethreshold=0.0,smoothfactor=1.0,'+\
-						'minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
+						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+',lownoisethreshold='+str(float(sigma/3.0))+\
+						',negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,\
-					negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0,uvrange=self.calib_uvrange)
+					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=float(sigma),\
+					lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0,uvrange=self.calib_uvrange)
 				elif try_count==1:
 					self.log_verbose.info('Trying with auto-masking with no restriction of minimum beam fraction.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel\
 						+'\',startmask=\''+startmask+'\',stokes=\''+stokes+',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
 						'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask=\''+\
-						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,negativethreshold=0.0,smoothfactor=1.0,'+\
+						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+\
+						',lownoisethreshold='+str(float(sigma/3.0))+',negativethreshold=0.0,smoothfactor=1.0,'+\
 						'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,lownoisethreshold=1.5,\
-					negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=self.calib_uvrange)
+					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=float(sigma),\
+					lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=self.calib_uvrange)
 				elif try_count==2:
 					self.log_verbose.info('Trying without masking.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''+\
