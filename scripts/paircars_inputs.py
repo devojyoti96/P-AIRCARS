@@ -10,7 +10,7 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 # Basic parameters #TODO : Different run mode, download data, download data and calib, only calinbration, etc.
 ##################
 basedir				=	'/data1/devojyoti/PhD/data/paircars_test_5'
-msdir				=	'/data1/devojyoti/CME_project/1083199696'
+msdir				=	'/data1/devojyoti/CME_project/test_data'
 timerange			=	''
 chanrange			=	''
 final_image_dir		=	''

@@ -1803,6 +1803,7 @@ if __name__=='__main__':
 	ms_mainlog.addHandler(filehandle)
 	ms_mainlog.propagate = False	
 
+	#try:
 	ms_mainlog.info('Starting calibration for ms : '+str(options.chantime_msname)+'\n')		
 	ms_mainlog.info('run_paircars_ms(\''+str(options.chantime_msname)+'\',\''+str(options.metafits)+'\',\''+str(options.workdir)+'\',ref_freq_avg='+str(options.ref_freq_avg)+\
 					',ref_time_avg='+str(options.ref_time_avg)+',ref_time_freq='+str(options.ref_time_freq)+',do_bandpass='+str(options.do_bandpass)+\
@@ -1812,6 +1813,7 @@ if __name__=='__main__':
 			ref_time_freq=eval(str(options.ref_time_freq)),do_bandpass=eval(str(options.do_bandpass)),do_polcal=eval(str(options.do_polcal)),\
 			calatten=float(options.calatten),num_threads=int(options.num_threads),calibrator_caltable=calibrator_caltable)
 	result=list(result)
+	ms_obsid=get_OBSID_from_metafits(options.metafits)
 	if os.path.isfile(str(options.basedir)+'/Ref_time_freq_slice_output.npy')==False and eval(str(options.ref_time_freq))==True:
 		result.append(str(options.chantime_msname))
 		np.save(str(options.basedir)+'/Ref_time_freq_slice_output',np.array(result,dtype='object'))
@@ -1820,5 +1822,7 @@ if __name__=='__main__':
 		result.append(str(options.chantime_msname))
 		result=np.append(pre_result,np.array(result))
 		np.save(str(options.basedir)+'/Ref_time_freq_slice_output',np.array(result,dtype='object'))
-
+	os.system('touch '+basedir+'/.Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_'+str(0))
+#	except:
+#		os.system('touch '+basedir+'/..Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_error')
 

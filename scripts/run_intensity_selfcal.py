@@ -700,7 +700,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							backup_dir=glob.glob('freq*datetime*')
 							if len(backup_dir)>0:
 								for i in range(len(backup_dir)):
-									os.system('cp -r '+backup_dir[i]+' '+inputs.basedir+'/'+os.path.basename(backup_dir[i]))
+									os.system('cp -r '+backup_dir[i]+' '+workdir+'/'+os.path.basename(backup_dir[i]))
 							return msg_code
 				else:
 					if solmode=='L1R' or solmode=='L1':
@@ -734,7 +734,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						backup_dir=glob.glob('freq*datetime*')
 						if len(backup_dir)>0:
 							for i in range(len(backup_dir)):
-								os.system('cp -r '+backup_dir[i]+' ../')
+								os.system('cp -r '+backup_dir[i]+' '+working_dir+'/'+os.path.basename(backup_dir[i]))
 						return msg_code
 
 			if num_iteration_after_ap>min_iteration:
@@ -769,7 +769,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							backup_dir=glob.glob('freq*datetime*')
 							if len(backup_dir)>0:
 								for i in range(len(backup_dir)):
-									os.system('cp -r '+backup_dir[i]+' '+inputs.basedir+'/'+os.path.basename(backup_dir[i]))
+									os.system('cp -r '+backup_dir[i]+' '+working_dir+'/'+os.path.basename(backup_dir[i]))
 							return msg_code
 		
 			if (num_iter<10 and nomask_try_count<1): 

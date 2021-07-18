@@ -242,6 +242,7 @@ mainlog.info('Local calibration database is at : '+local_caldatabase+'\n')
 
 # Organising ms
 ###############
+updated_MWA_obsids=0
 mainlog.info('Organising measurement sets .....\n')
 measurement_set_list=glob.glob(inputs.basedir+'/data/*.ms')
 msfreqs=[float(os.path.basename(a).split('.ms')[0].split('_')[-1]) for a in measurement_set_list]
@@ -576,6 +577,10 @@ if len(measurement_set_list)!=0:
 					break
 				else:
 					time.sleep(10.0)
+					if updated_MWA_obsids==0:
+						obsid_file,update_msg=update_mwa_obsids()
+						if update_msg==0:
+							updated_MWA_obsids=1
 		elif calibrator_found==False and len(touch_file_list)==0:
 			for j in range(len(ref_freq_time_msname)):
 				single_ref_freq_time_ms=ref_freq_time_msname[j]
@@ -652,6 +657,10 @@ if len(measurement_set_list)!=0:
 							break
 				else:
 					time.sleep(10.0)
+					if updated_MWA_obsids==0:
+						obsid_file,update_msg=update_mwa_obsids()
+						if update_msg==0:
+							updated_MWA_obsids=1
 		else:
 			mainlog.info('Reference time frequency calibration is done already.\n')
 			msfreqs_cal.remove(float(ref_freqstamp))
@@ -725,7 +734,11 @@ if len(measurement_set_list)!=0:
 					break
 				else:
 					available_casa_instance=len(touch_file_list)-len(glob.glob(inputs.basedir+'/.Finished_*cal*'+str(obsid)+'*'+basemsdir+'*'))
-					time.sleep(2.0)				
+					time.sleep(10.0)
+					if updated_MWA_obsids==0:
+						obsid_file,update_msg=update_mwa_obsids()
+						if update_msg==0:
+							updated_MWA_obsids=1				
 	else:
 		mainlog.info('Calibration jobs for all measurement sets are spawned.\n')
 			
@@ -791,6 +804,10 @@ if len(measurement_set_list)!=0:
 				str(available_cpu_for_paircars)+' sh '+batch_file+'\n')
 			mpicmd.append('-np 1 sleep 1\n')
 	basemsdir=os.path.basename(msname).split('.ms')[0]
+	if updated_MWA_obsids==0:
+		obsid_file,update_msg=update_mwa_obsids()
+		if update_msg==0:
+			updated_MWA_obsids=1
 	if mpi==0:
 		mpicmd_file=inputs.basedir+'/'+basemsdir+'.manage_database_mpicmd'
 		if os.path.exists(mpicmd_file):
@@ -810,8 +827,16 @@ if len(measurement_set_list)!=0:
 		mainlog.info('########################\n')
 		mainlog.info('Made Screen : '+basemsdir+'_manage_database\n')
 		mainlog.info('Command : '+cmd+'\n')
-		os.system('screen -S '+basemsdir+'_manage_database -X stuff \"'+screen_cmd+'\n"')			
+		os.system('screen -S '+basemsdir+'_manage_database -X stuff \"'+screen_cmd+'\n"')	
+	if updated_MWA_obsids==0:
+		obsid_file,update_msg=update_mwa_obsids()
+		if update_msg==0:
+			updated_MWA_obsids=1		
 else:
+	if updated_MWA_obsids==0:
+		obsid_file,update_msg=update_mwa_obsids()
+		if update_msg==0:
+			updated_MWA_obsids=1
 	if inputs.timerange!='':
 		mainlog.info('No measurement set is present in the timerange : '+inputs.timerange+'\n')
 	else:
@@ -821,3 +846,4 @@ else:
 
 # Final imaging mode
 ####################
+# TODO : include mwa_hyperbeam instead of mwa_pb

@@ -419,7 +419,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		###########################
 		if start_fresh:
 			do_selfcal=True
-			stokes='Iqu'
+			stokes='IQUV'
 			do_poldist=False
 			if (do_gaincal==False) and ((num_iter==0 and perform_gaincal==False) or (perform_gaincal==True)):	
 				do_pbcor=True	
@@ -432,7 +432,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				startmask=''
 		else:
 			do_selfcal=True
-			stokes='Iqu'
+			stokes='IQUV'
 			do_poldist=do_poldist
 			do_pbcor=do_pbcor	
 			do_solarqu_cor=do_solarqu_cor
@@ -1385,58 +1385,58 @@ if __name__=='__main__':
 		os.system('rm -rf '+options.workdir+'/*.log')
 		os._exit(0)
 
-	try:
-		previous_touch_list=glob.glob(inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-		if len(previous_touch_list)!=0:
-			os.system('rm -rf '+inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-		print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
-		print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
-				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\')\n')
-		msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
-				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
-		if type(msg)==int:
-			if msg>100:
-				msg1=msg-100
-				msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-				if msg1==10:
-					send_notification=False
-				else:
-					send_notification=True
-				if options.verbose==False:
-					print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-				logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+	#try:
+	previous_touch_list=glob.glob(inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+	if len(previous_touch_list)!=0:
+		os.system('rm -rf '+inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+	print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
+	print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
+			',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\')\n')
+	msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
+			start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
+	if type(msg)==int:
+		if msg>100:
+			msg1=msg-100
+			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+			if msg1==10:
+				send_notification=False
 			else:
-				msg_str='Message : '+error_msgs(msg)+'\n'
-				if msg==10:
-					send_notification=False
-				else:
-					send_notification=True
-				if options.verbose==False:
-					print ('Message : '+error_msgs(msg)+'\n')
-				logger.info('Message : '+error_msgs(msg)+'\n')
-		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
-		end_time=time.time()
-		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-		logger.info('Total runtime : '+str(run_time))
-		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
-		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
-		if type(msg)==int:
-			if send_notification==True:
-				attachments=glob.glob(options.workdir+'/quick_image_*.png')
-				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-		os.system('touch '+touch_file)
-		file_str=msbasename.split('.ms')[0]
-		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
-			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
-			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
-		os.system('cp -r '+options.workdir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
-		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
-		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice* '+options.workdir+'/I*image')
-		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')	
-	except Exception as e:
+				send_notification=True
+			if options.verbose==False:
+				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+		else:
+			msg_str='Message : '+error_msgs(msg)+'\n'
+			if msg==10:
+				send_notification=False
+			else:
+				send_notification=True
+			if options.verbose==False:
+				print ('Message : '+error_msgs(msg)+'\n')
+			logger.info('Message : '+error_msgs(msg)+'\n')
+	touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
+	end_time=time.time()
+	run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+	logger.info('Total runtime : '+str(run_time))
+	msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+	msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
+	if type(msg)==int:
+		if send_notification==True:
+			attachments=glob.glob(options.workdir+'/quick_image_*.png')
+			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+	os.system('touch '+touch_file)
+	file_str=msbasename.split('.ms')[0]
+	if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+		os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+	if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+		os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+	os.system('cp -r '+options.workdir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+	if inputs.keep_logger and eval(str(options.verbose))==True:
+		os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+	os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice* '+options.workdir+'/I*image')
+	os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')	
+	'''except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -1463,4 +1463,4 @@ if __name__=='__main__':
 			os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
 		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice* '+options.workdir+'/I*image')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')
-		pass
+		pass'''
