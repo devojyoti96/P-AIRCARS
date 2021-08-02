@@ -190,6 +190,13 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=True)\n')
 			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
 			tb=table()
+			tb.open(caltable_list[0])
+			try:
+				caltable_calmode=tb.getkeyword('CALTYPE')
+			except:
+				caltable_calmode='ap'
+				pass
+			tb.close()
 			tb.open(msname,nomodify=False)
 			cor_data=tb.getcol('CORRECTED_DATA')
 			tb.putcol('DATA',cor_data)
@@ -197,6 +204,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			tb.close()
 		else:
 			caltable_list=[]
+			caltable_calmode='p'
+		
 		
 	if msname[-1]=='/':
 		msname=msname[:-1]
@@ -325,7 +334,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			+'; Minimum number of total selfcal iterations : '+str(min_iteration)+'; Maximum number of selfcal iterations : '+str(max_iteration)\
 			+'; Antenna bins : '+str(antenna_bin)+'\n')
 
-		if scratch==True and scratch_restart==True>0: # If scratch=True due to failure, restore the flag and original data to start
+		if scratch==True and scratch_restart==True: # If scratch=True due to failure, restore the flag and original data to start
 			logger.info('Restoring data and flag, because calibration restarted from scratch due to failure.\n')
 			tb=table()
 			tb.open(msname,nomodify=False)
@@ -355,9 +364,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				antenna_added=True
 				antenna_list_index=0
 			else:
-				do_ap=True
-				stokes='XXYY'
-				calmode='ap'
+				if caltable_calmode=='p':
+					calmode='p'
+					do_ap=False
+					stokes='I'
+				else:
+					calmode='ap'
+					do_ap=True
+					stokes='XXYY'
 				antenna_added=False
 				antenna_list_index=-1
 			num_iter=0
@@ -414,6 +428,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		if inputs.maskfile=='' and inputs.maskstr=='':
 			mask_rad=int((40*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
 			mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
+			ini_mask_rad=int((120*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
+			ini_mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 		elif inputs.maskstr!='':
 			mask_str=inputs.maskstr
 
@@ -664,7 +680,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			
 			# If more than 30% solutions are flagged at phase cal round try to reduce them by changing solmode
 			################################################################################################## 
-			if num_iter>min_iteration:
+			if num_iter>min_iteration and scratch==True:
 				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
 				if calc_flag_frac>0.3 and calmode=='p' and num_iteration_after_ap<1:
 					if inputs.gain_minsnr>3:
@@ -696,11 +712,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
-							os.system('cp -r junk1.cal junk.precal')
-							backup_dir=glob.glob('freq*datetime*')
+							logger.info('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
+							os.system('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
+							backup_dir=glob.glob(working_dir+'/freq*datetime*')
+							if os.path.isdir(working_dir+'/presession_backup')==False:
+								os.makedirs(working_dir+'/presession_backup')
 							if len(backup_dir)>0:
 								for i in range(len(backup_dir)):
-									os.system('cp -r '+backup_dir[i]+' '+workdir+'/'+os.path.basename(backup_dir[i]))
+									logger.info('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
+									os.system('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
 							return msg_code
 				else:
 					if solmode=='L1R' or solmode=='L1':
@@ -708,7 +728,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		
 			# If number of flagged solutions are more than 5% after minimum apcal round, try to reduce flag solutions by increasing time averaging
 			######################################################################################################################################
-			if num_iteration_after_ap>=1:
+			if num_iteration_after_ap>=1 and scratch==True:
 				calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
 				if calc_flag_frac>0.3 and calmode=='ap':
 					AMflag=AccessMS(msname)
@@ -730,11 +750,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 							os.system('touch '+start_time_file)
-						os.system('cp -r junk1.cal junk.precal')
-						backup_dir=glob.glob('freq*datetime*')
+						logger.info('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
+						os.system('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
+						if os.path.isdir(working_dir+'/presession_backup')==False:
+							os.makedirs(working_dir+'/presession_backup')
+						backup_dir=glob.glob(working_dir+'/freq*datetime*')
 						if len(backup_dir)>0:
 							for i in range(len(backup_dir)):
-								os.system('cp -r '+backup_dir[i]+' '+working_dir+'/'+os.path.basename(backup_dir[i]))
+								logger.info('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
+								os.system('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
 						return msg_code
 
 			if num_iteration_after_ap>min_iteration:
@@ -765,11 +789,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
-							os.system('cp -r junk1.cal junk.precal')
-							backup_dir=glob.glob('freq*datetime*')
+							logger.info('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
+							os.system('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
+							backup_dir=glob.glob(working_dir+'/freq*datetime*')
+							if os.path.isdir(working_dir+'/presession_backup')==False:
+								os.makedirs(working_dir+'/presession_backup')
 							if len(backup_dir)>0:
 								for i in range(len(backup_dir)):
-									os.system('cp -r '+backup_dir[i]+' '+working_dir+'/'+os.path.basename(backup_dir[i]))
+									logger.info('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
+									os.system('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
 							return msg_code
 		
 			if (num_iter<10 and nomask_try_count<1): 
@@ -783,7 +811,10 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile=inputs.maskfile,want_auto_masking=False,stokes=stokes,interactive=interactive,\
 					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[]) # Performing selfcal iterations	
 			elif inputs.maskstr!='' and try_nomask==False: # Use user defined mask string
-				mask_str=inputs.maskstr
+				if num_iter<=1:
+					mask_str=ini_mask_str
+				else:
+					mask_str=inputs.maskstr
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile=inputs.maskfile,want_auto_masking=False,stokes=stokes,interactive=interactive,\
 					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[]) # Performing selfcal iterations	
@@ -795,14 +826,19 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				try_nomask=False
 				nomask_try_count+=1
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto masking off use a circular central mask
+				if num_iter<=1:
+					mask_str=ini_mask_str
+				else:
+					mask_str=mask_str
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
 					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[])
 			elif inputs.want_auto_masking==True:
+				maskregion=mask_str
 				mask_str=''
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[])
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],maskregion=maskregion)
 
 			if type(output_ISC)==tuple:				
 				msg_code,out_dict,negative_dyn_range=output_ISC
@@ -1509,9 +1545,6 @@ if __name__=='__main__':
 		console=logging.StreamHandler(sys.stdout)
 		console.setFormatter(formatter)
 		logger.addHandler(console)
-	print (str(options.workdir))
-	print (os.path.exists(str(options.workdir)))
-	print (os.path.exists(str(options.workdir)+'/Intensity_Selfcal.log'))
 	filehandle=logging.FileHandler(str(options.workdir)+'/Intensity_Selfcal.log')
 	filehandle.setFormatter(formatter)
 	logger.addHandler(filehandle)

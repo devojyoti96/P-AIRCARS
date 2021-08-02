@@ -61,15 +61,19 @@ for f in file_list:
 					os.system('rm -rf '+basedir+'/basedir_for_'+datestamp)		
 				prebasedir=basedir+'/basedir_for_'+datestamp
 			if eval(str(options.restart))==True:
-				os.system('rm -rf '+basedir+'/basedir_for_'+datestamp+'/.paircars* '+basedir+'/basedir_for_'+datestamp+'/.ref_timechan_done_*')		
+				os.system('rm -rf '+basedir+'/basedir_for_'+datestamp+'/.paircars* ')#+basedir+'/basedir_for_'+datestamp+'/.ref_timechan_done_*')		
 			if os.path.isdir(basedir+'/basedir_for_'+datestamp)==False:
 				os.makedirs(basedir+'/basedir_for_'+datestamp+'/data/')
 			if basedir+'/basedir_for_'+datestamp not in basedir_list:
 				basedir_list.append(basedir+'/basedir_for_'+datestamp)
+			measurement_set_list.append(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
 			if os.path.islink(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))==False:
 				print('Linking '+f+' to '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname)+'\n')
 				os.system('ln -s '+f+' '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
-			measurement_set_list.append(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
+			elif os.path.islink(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))==True:
+				if os.path.isdir(os.path.realpath(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname)))==False:
+					os.system('unlink '+basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
+					measurement_set_list.remove(basedir+'/basedir_for_'+datestamp+'/data/'+os.path.basename(msname))
 		except Exception as e: 
 			print ('Error occured : '+str(e)+'\n')
 if len(measurement_set_list)==0:

@@ -227,6 +227,26 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					if msg!=0 and msg!=8 and msg!=9:
 						os.system('rm -rf '+t)
 		touch_file_list=glob.glob(basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
+		# Removing .Finished files if error occured
+		###########################################
+		if len(touch_file_list)!=0:
+			for t in touch_file_list:
+				msg=t.split('_')[-1]
+				try:
+					msg=int(msg)
+				except:
+					pass
+				if type(msg)==str:
+					os.system('rm -rf '+t)
+					touch_file_list.remove(t)
+				else:
+					msg=int(msg)
+					if msg>100:
+						msg-=100
+					if msg!=0 and msg!=8 and msg!=9:
+						os.system('rm -rf '+t)
+						touch_file_list.remove(t)
+	
 		spawned_jobs=int(glob.glob(basedir+'/.Finished_spawned*'+str(ms_obsid)+'*'+basemsdir+'*')[0].split('_')[-1])
 		if len(touch_file_list)==spawned_jobs:
 			ms_mainlog.info('Calibration has already been done for ms : '+msname+'\n')
@@ -630,7 +650,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		else:
 			ref_time_grid=copy.deepcopy(ref_time_grid_copy)
 
-		ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from ref time grid if failed
+	#	ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from ref time grid if failed
 		AMref=AccessMS(ref_averaged_msname)
 		# Making reference time and channel and time frequency grid
 		##########################################################
@@ -701,44 +721,62 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				touch_file_list=glob.glob(basedir+'/.Finished_gcal*'+str(ms_obsid)+'*'+basemsdir+'*'+os.path.basename(ref_timechan_ms)+'*')
 				if reduce_flag_count==1: # Restarting calibration with more time averaging
 					if previous_caltable!='' and previous_record!='':
-						#try:
-						ms_mainlog.info('applycal(vis=\''+ref_timechan_ms+'\',gaintable=\''+previous_caltable+'\',applymode=\'calflag\',flagbackup=True)\n')
-						applycal(vis=ref_timechan_ms,gaintable=previous_caltable,applymode='calflag',flagbackup=True)
-						if os.path.isdir(cur_workdir+'/junk1.ms')==False:
+						try:
+							ms_mainlog.info('applycal(vis=\''+ref_timechan_ms+'\',gaintable=\''+previous_caltable+'\',applymode=\'calflag\',flagbackup=True)\n')
+							applycal(vis=ref_timechan_ms,gaintable=previous_caltable,applymode='calflag',flagbackup=True)
+							if os.path.isdir(cur_workdir+'/junk1.ms')==True:
+								os.system('rm -rf '+cur_workdir+'/junk1.ms')
+							ms_mainlog.info('cp -r '+ref_timechan_ms+' '+cur_workdir+'/junk1.ms\n')
 							os.system('cp -r '+ref_timechan_ms+' '+cur_workdir+'/junk1.ms')
-						if os.path.isdir(cur_workdir+'/junk1.cal')==False:
+							if os.path.isdir(cur_workdir+'/junk1.cal')==True:
+								os.system('rm -rf '+cur_workdir+'/junk1.cal')
+							ms_mainlog.info('cp -r '+previous_caltable+' '+cur_workdir+'/junk1.cal\n')
 							os.system('cp -r '+previous_caltable+' '+cur_workdir+'/junk1.cal')
-						if len(glob.glob(workdir+'/freq_*datetime*'))>0:
-							ms_mainlog.info('Copying previous round backup directories : '+str(glob.glob(workdir+'/freq_*datetime*'))+'\n')
-							os.system('cp -r '+workdir+'/freq_*datetime* '+cur_workdir)
-						num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
-							num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
-							ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time=np.load(previous_record,allow_pickle=True)
-						startmodel=''
-						startmask=''
-						if os.path.isfile(workdir+'/Intensity_selfcal_record.npy'):
-							os.system('rm -rf '+workdir+'/Intensity_selfcal_record.npy')
-						selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
-								num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,ra,dec,\
-								num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time],dtype='object')
-						np.save(cur_workdir+'/Intensity_selfcal_record',selfcal_record)
-						if prelog!='':
-							ms_mainlog.info('Copying previous log....\n')
-							os.system('cp -r '+prelog+' '+cur_workdir+'/Intensity_Selfcal.log')
-						if preverboselog!='':
-							ms_mainlog.info('Copying previous verbose log......\n')
-							os.system('cp -r '+preverboselog+' '+cur_workdir+'/Intensity_Selfcal_verbose.log')
-						if prerms!='':
-							ms_mainlog.info('Copying previous DR_rms record......\n')
-							os.system('cp -r '+prerms+' '+cur_workdir+'/DR_rms.npy')
-						if preneg!='':
-							ms_mainlog.info('Copying previous DR_neg record......\n')
-							os.system('cp -r '+preneg+' '+cur_workdir+'/DR_neg.npy')
-						os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+preneg+' '+\
-									workdir+'/freq_*datetime*')
-						fresh=False
-						#except:
-						#	fresh=True
+							print (glob.glob(workdir+'/presession_backup/freq_*datetime*'))
+							print (workdir+'/presession_backup/freq_*datetime*')
+							if len(glob.glob(workdir+'/presession_backup/freq_*datetime*'))>0:
+								ms_mainlog.info('Copying previous round backup directories : '+str(glob.glob(workdir+'/presession_backup/freq_*datetime*'))+'\n')
+								if os.path.isdir(cur_workdir+'/pre_backup')==False:
+									os.makedirs(cur_workdir+'/pre_backup')
+								pre_backups=glob.glob(workdir+'/freq_*datetime*')
+								total_prebackups=len(glob.glob(cur_workdir+'/pre_backup/'))
+								for i in range(len(pre_backups)):
+									j=pre_backups[i]
+									ms_mainlog.info('cp -r '+j+' '+cur_workdir+'/pre_backup/'+j+'_'+str(total_prebackups+1)+'\n')
+									os.system('cp -r '+j+' '+cur_workdir+'/pre_backup/'+j+'_'+str(total_prebackups+1))
+									total_prebackups+=1
+							num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
+								num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
+								ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time=np.load(previous_record,allow_pickle=True)
+							startmodel=''
+							startmask=''
+							if os.path.isfile(workdir+'/Intensity_selfcal_record.npy'):
+								os.system('rm -rf '+workdir+'/Intensity_selfcal_record.npy')
+							selfcal_record=np.array([num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
+									num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,ra,dec,\
+									num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time],dtype='object')
+							np.save(cur_workdir+'/Intensity_selfcal_record',selfcal_record)
+							if prelog!='':
+								ms_mainlog.info('Copying previous log....\n')
+								ms_mainlog.info('cp -r '+prelog+' '+cur_workdir+'/Intensity_Selfcal.log\n')
+								os.system('cp -r '+prelog+' '+cur_workdir+'/Intensity_Selfcal.log')
+							if preverboselog!='':
+								ms_mainlog.info('Copying previous verbose log......\n')
+								ms_mainlog.info('cp -r '+preverboselog+' '+cur_workdir+'/Intensity_Selfcal_verbose.log\n')
+								os.system('cp -r '+preverboselog+' '+cur_workdir+'/Intensity_Selfcal_verbose.log')
+							if prerms!='':
+								ms_mainlog.info('Copying previous DR_rms record......\n')
+								ms_mainlog.info('cp -r '+prerms+' '+cur_workdir+'/DR_rms.npy\n')
+								os.system('cp -r '+prerms+' '+cur_workdir+'/DR_rms.npy')
+							if preneg!='':
+								ms_mainlog.info('Copying previous DR_neg record......\n')
+								ms_mainlog.info('cp -r '+preneg+' '+cur_workdir+'/DR_neg.npy\n')
+								os.system('cp -r '+preneg+' '+cur_workdir+'/DR_neg.npy')
+							os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+previous_record+' '+preneg)
+				#+' '+\									workdir+'/freq_*datetime*')
+							fresh=False
+						except:
+							fresh=True
 					else:
 						fresh=True
 				else:
@@ -774,7 +812,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					ms_mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd=['-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=3 -x OMP_NUM_THREADS='+\
+					mpicmd=['-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=4 -x OMP_NUM_THREADS='+\
 						str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n']
 					mpicmd.append('-np 1 sleep 1\n')
 					ms_mainlog.info('MPI commands .....\n')
@@ -860,22 +898,36 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					try_reduce_flag=False
 					reduce_moreflag=False
 					reduce_flag_count+=1
-					os.system('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/prerecord.npy')					
-					os.system('cp -r '+cur_workdir+'/junk.precal '+workdir+'/precal.cal')
-					os.system('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/pre.log')
-					os.system('cp -r '+cur_workdir+'/DR_neg.npy '+workdir+'/pre_DR_neg.npy')
-					os.system('cp -r '+cur_workdir+'/DR_rms.npy '+workdir+'/pre_DR_rms.npy')
-					prerms=workdir+'/pre_DR_rms.npy'
-					preneg=workdir+'/pre_DR_neg.npy'
-					prelog=workdir+'/pre.log'
+					if os.path.exists(workdir+'/presession_backup')==False:
+						os.makedirs(workdir+'/presession_backup')
+					if os.path.exists(workdir+'/presession_backup/prerecord.npy')==True:
+						os.system('rm -rf '+workdir+'/presession_backup/prerecord.npy')
+					os.system('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/presession_backup/prerecord.npy')		
+					if os.path.exists(workdir+'/presession_backup/precal.cal')==True:
+						os.system('rm -rf '+workdir+'/presession_backup/precal.cal')			
+					os.system('cp -r '+cur_workdir+'/junk.precal '+workdir+'/presession_backup/precal.cal')
+					if os.path.exists(workdir+'/presession_backup/pre.log')==True:
+						os.system('rm -rf '+workdir+'/presession_backup/pre.log')
+					os.system('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/presession_backup/pre.log')
+					if os.path.exists(workdir+'/presession_backup/pre_DR_neg.npy')==True:
+						os.system('rm -rf '+workdir+'/presession_backup/pre_DR_neg.npy')
+					os.system('cp -r '+cur_workdir+'/DR_neg.npy '+workdir+'/presession_backup/pre_DR_neg.npy')
+					if os.path.exists(workdir+'/presession_backup/pre_DR_rms.npy')==True:
+						os.system('rm -rf '+workdir+'/presession_backup/pre_DR_rms.npy')
+					os.system('cp -r '+cur_workdir+'/DR_rms.npy '+workdir+'/presession_backup/pre_DR_rms.npy')
+					prerms=workdir+'/presession_backup/pre_DR_rms.npy'
+					preneg=workdir+'/presession_backup/pre_DR_neg.npy'
+					prelog=workdir+'/presession_backup/pre.log'
 					if os.path.exists(cur_workdir+'/Intensity_Selfcal_verbose.log')==True:
-						os.system('cp -r '+cur_workdir+'/Intensity_Selfcal_verbose.log '+workdir+'/preverbose.log')
-						preverboselog=workdir+'/preverbose.log'
+						if os.path.exists(workdir+'/presession_backup/preverbose.log')==True:
+							os.system('rm -rf '+workdir+'/presession_backup/preverbose.log')
+						os.system('cp -r '+cur_workdir+'/Intensity_Selfcal_verbose.log '+workdir+'/presession_backup/preverbose.log')
+						preverboselog=workdir+'/presession_backup/preverbose.log'
 					else:
 						preverboselog=''
 					os.system('rm -rf '+cur_workdir)
-					previous_caltable=workdir+'/precal.cal'
-					previous_record=workdir+'/prerecord.npy'
+					previous_caltable=workdir+'/presession_backup/precal.cal'
+					previous_record=workdir+'/presession_backup/prerecord.npy'
 					preworkdir=cur_workdir
 				for i in touch_file_list:
 					msg=i.split('_')[-1]
@@ -931,13 +983,13 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					os.system('rm -rf '+ref_timechan_dir)
 				if len(ref_time_grid)!=0:
 					ms_mainlog.info('Removing timestamp : '+str(ref_time)+' from time grid.\n')
-					ref_time_grid.remove(ref_time_copy)
+					ref_time_grid.remove(ref_time)
 					ref_index=int(len(ref_time_grid)/2)
 					ref_time=ref_time_grid[ref_index]
 					ms_mainlog.info('Trying for new timestamp :'+str(ref_time)+'\n')
 					if inputs.verbose==False:
 						os.system('rm -rf '+ref_timechan_dir)
-					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,metafits,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workfir\
+					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,metafits,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=workdir\
 									+'/selfcal_inputs.py',datacolumn='data')
 					cur_workdir=ref_timechan_dir
 					continue
@@ -951,7 +1003,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					if inputs.verbose==False:
 						os.system('rm -rf '+ref_timechan_dir)
 					ref_timechan_ms,ref_timechan_dir=spliting_timechan(ref_averaged_msname,metafits,ref_chan,ref_time,caltype='G',ref_timechan=True,input_file=\
-								workfir+'/selfcal_inputs.py',datacolumn='data')
+								workdir+'/selfcal_inputs.py',datacolumn='data')
 					cur_workdir=ref_timechan_dir
 					continue
 				else:
@@ -975,7 +1027,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				cur_spawned_casa_instances+=1	
 				if ref_time_freq==True:
 					np.save(basedir+'/Ref_time_cal_record',np.array([0,ref_time,ref_freq,ref_chan,cur_spawned_casa_instances,ref_freq_avg,ref_time_avg]))
-				ref_time_grid.remove(ref_time_copy)
+				ref_time_grid.remove(ref_time)
 				ref_channel_grid.remove(ref_chan)
 				break
 
@@ -1092,7 +1144,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				else:
 					ref_time_grid.remove(ref_time)
 			ref_time_grid_copy=copy.deepcopy(ref_time_grid)
-			ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from ref time grid if failed
+			#ref_time_copy=copy.deepcopy(ref_time) # Copy this timestamp to remove from ref time grid if failed
 			try:
 				del ref_time_grid
 			except:
@@ -1378,7 +1430,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					ms_mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=3 -x OMP_NUM_THREADS='+\
+					mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=4 -x OMP_NUM_THREADS='+\
 							str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n')
 					mpicmd.append('-np 1 sleep 1\n')
 				open_casa_instance+=1
@@ -1415,7 +1467,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						time.sleep(float(sleep_time))
 						mpicount+=1
 						mpicmd=[]
-					break
+				#	break
 			time.sleep(2.0)			
 		ms_mainlog.info('All gaincal jobs are spawned.\n')
 	else:
@@ -1432,6 +1484,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			else:
 				time.sleep(2.0)
 		ref_gaintable=[gtables[0]]
+		#if len(calibrator_caltable)!=0:
+		#	ref_gaintable=ref_gaintable+calibrator_caltable
 		
 	# Applying ref time solution
 	############################
@@ -1544,7 +1598,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					ms_mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=3 -x OMP_NUM_THREADS='+\
+					mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=4 -x OMP_NUM_THREADS='+\
 							str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n')
 					mpicmd.append('-np 1 sleep 1\n')
 				open_casa_instance+=1
@@ -1709,7 +1763,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					ms_mainlog.info('Command : '+cmd+'\n')
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 				elif mpi==0:
-					mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=3 -x OMP_NUM_THREADS='+\
+					mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=4 -x OMP_NUM_THREADS='+\
 							str(available_cpu_for_paircars)+' sh '+screen_batch_file+'\n')
 					mpicmd.append('-np 1 sleep 1\n')
 				open_casa_instance+=1
@@ -1789,7 +1843,7 @@ if __name__=='__main__':
 		calibrator_caltable=str(options.caltables).split(',')
 	else:
 		calibrator_caltable=[]			
-
+	ms_obsid=get_OBSID_from_metafits(options.metafits)
 	# Logger initiating
 	###################
 	formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
@@ -1802,27 +1856,43 @@ if __name__=='__main__':
 	filehandle.setFormatter(formatter)
 	ms_mainlog.addHandler(filehandle)
 	ms_mainlog.propagate = False	
-
-	#try:
-	ms_mainlog.info('Starting calibration for ms : '+str(options.chantime_msname)+'\n')		
-	ms_mainlog.info('run_paircars_ms(\''+str(options.chantime_msname)+'\',\''+str(options.metafits)+'\',\''+str(options.workdir)+'\',ref_freq_avg='+str(options.ref_freq_avg)+\
-					',ref_time_avg='+str(options.ref_time_avg)+',ref_time_freq='+str(options.ref_time_freq)+',do_bandpass='+str(options.do_bandpass)+\
-					',do_polcal='+str(options.do_polcal)+',calatten='+str(options.calatten)+',num_threads='+str(options.num_threads)+\
-					',calibrator_caltable='+str(calibrator_caltable)+')\n')
-	result=run_paircars_ms(str(options.chantime_msname),str(options.metafits),str(options.workdir),ref_freq_avg=int(options.ref_freq_avg),ref_time_avg=int(options.ref_time_avg),\
-			ref_time_freq=eval(str(options.ref_time_freq)),do_bandpass=eval(str(options.do_bandpass)),do_polcal=eval(str(options.do_polcal)),\
-			calatten=float(options.calatten),num_threads=int(options.num_threads),calibrator_caltable=calibrator_caltable)
-	result=list(result)
-	ms_obsid=get_OBSID_from_metafits(options.metafits)
-	if os.path.isfile(str(options.basedir)+'/Ref_time_freq_slice_output.npy')==False and eval(str(options.ref_time_freq))==True:
-		result.append(str(options.chantime_msname))
-		np.save(str(options.basedir)+'/Ref_time_freq_slice_output',np.array(result,dtype='object'))
-	elif eval(str(options.ref_time_freq))==True:
-		pre_result=np.load(str(options.basedir)+'/Ref_time_freq_slice_output.npy',allow_pickle=True)
-		result.append(str(options.chantime_msname))
-		result=np.append(pre_result,np.array(result))
-		np.save(str(options.basedir)+'/Ref_time_freq_slice_output',np.array(result,dtype='object'))
-	os.system('touch '+basedir+'/.Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_'+str(0))
-#	except:
-#		os.system('touch '+basedir+'/..Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_error')
+	basemsdir=os.path.basename(options.chantime_msname).split('.ms')[0]
+	try:
+		ms_mainlog.info('Starting calibration for ms : '+str(options.chantime_msname)+'\n')		
+		ms_mainlog.info('run_paircars_ms(\''+str(options.chantime_msname)+'\',\''+str(options.metafits)+'\',\''+str(options.workdir)+'\',ref_freq_avg='+str(options.ref_freq_avg)+\
+						',ref_time_avg='+str(options.ref_time_avg)+',ref_time_freq='+str(options.ref_time_freq)+',do_bandpass='+str(options.do_bandpass)+\
+						',do_polcal='+str(options.do_polcal)+',calatten='+str(options.calatten)+',num_threads='+str(options.num_threads)+\
+						',calibrator_caltable='+str(calibrator_caltable)+')\n')
+		result=run_paircars_ms(str(options.chantime_msname),str(options.metafits),str(options.workdir),ref_freq_avg=float(options.ref_freq_avg),ref_time_avg=float(options.ref_time_avg),\
+				ref_time_freq=eval(str(options.ref_time_freq)),do_bandpass=eval(str(options.do_bandpass)),do_polcal=eval(str(options.do_polcal)),\
+				calatten=float(options.calatten),num_threads=int(options.num_threads),calibrator_caltable=calibrator_caltable)
+		result=list(result)
+		result[0]=str(result[0])
+		result[2]=int(result[2])
+		result[3]=int(result[3])
+		result[4]=float(result[4])
+		result[5]=float(result[5])
+		if os.path.isfile(str(options.basedir)+'/Ref_time_freq_slice_output.npy')==False and eval(str(options.ref_time_freq))==True:
+			result.append(str(options.chantime_msname))
+			result=np.array([result],dtype='object')
+			np.save(str(options.basedir)+'/Ref_time_freq_slice_output',result)
+		elif eval(str(options.ref_time_freq))==True:
+			pre_result=np.load(str(options.basedir)+'/Ref_time_freq_slice_output.npy',allow_pickle=True)
+			result.append(str(options.chantime_msname))
+			result=np.array([result],dtype='object')
+			result=np.append(pre_result,result,axis=0)
+			np.save(str(options.basedir)+'/Ref_time_freq_slice_output',result)
+		if os.path.isfile(str(options.basedir)+'/Nonref_time_freq_slice_output.npy')==False and eval(str(options.ref_time_freq))==False:
+			result.append(str(options.chantime_msname))
+			result=np.array([result],dtype='object')
+			np.save(str(options.basedir)+'/Nonref_time_freq_slice_output',result)
+		elif eval(str(options.ref_time_freq))==False:
+			pre_result=np.load(str(options.basedir)+'/Nonref_time_freq_slice_output.npy',allow_pickle=True)
+			result.append(str(options.chantime_msname))
+			result=np.array([result],dtype='object')
+			result=np.append(pre_result,result,axis=0)
+			np.save(str(options.basedir)+'/Nonref_time_freq_slice_output',result)
+		os.system('touch '+basedir+'/.Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_'+str(0))
+	except:
+		os.system('touch '+basedir+'/.Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_error')
 

@@ -748,27 +748,27 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 	cal=CALIBRATE()
 	OBSID=int(fits.getheader(metafits)['GPSTIME'])
 	if verbose==False:
-		print ('Waiting for finishing '+str(total_spawned_jobs)+' calibration jobs for ms : '+msname+'\n')
-	obslog.info('Waiting for finishing '+str(total_spawned_jobs)+' calibration jobs for ms : '+msname+'\n')
+		print ('Waiting for spawning jobs for ms : '+msname+'\n')
+	obslog.info('Waiting for spawning jobs for ms : '+msname+'\n')
 	caltable_for_global_database=[]
 	caltable_for_local_database=[]
-	# Setting up different directory names
-	######################################
+
 	if basedir[-1]=='/':
 		basedir=basedir[:-1]
 	if msname[-1]=='/':
 		msname=msname[:-1]
-	if gaincal_modeldir[-1]=='/':
-		gaincal_modeldir=gaincal_modeldir[:-1]
-	if bandpass_modeldir[-1]=='/':
-		bandpass_modeldir=bandpass_modeldir[:-1]
-	if polcal_modeldir[-1]=='/':
-		polcal_modeldir=polcal_modeldir[:-1]
-	if localdatabase[-1]=='/':
-		localdatabase=localdatabase[:-1]
 
 	basemsdir=os.path.basename(msname).split('.ms')[0] # Base directory for the ms inside model directories
-	
+	while True:
+		spawned_file=glob.glob(basedir+'/.Finished_spawned_*'+str(OBSID)+'*_*'+os.path.basename(msname).split('.ms')[0]+'*')
+		if len(spawned_file)>0:
+			spawned_file=spawned_file[0]
+			total_spawned_jobs=int(spawned_file.split(os.path.basename(msname).split('.ms')[0]+'_')[-1])
+			if verbose==False:
+				print ('Waiting for finishing '+str(total_spawned_jobs)+' calibration jobs for ms : '+msname+'\n')
+			obslog.info('Waiting for finishing '+str(total_spawned_jobs)+' calibration jobs for ms : '+msname+'\n')
+			break
+
 	while True:  # Waiting for all jobs to finish
 		touch_files=len(glob.glob(basedir+'/.Finished*cal*'+str(OBSID)+'*'+basemsdir+'*'))
 		if touch_files>=total_spawned_jobs:
@@ -779,25 +779,50 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		else:
 			time.sleep(2.0)
 
-	batch_files=glob.glob(basedir+'/*.batch')
-	mpiapp_files=glob.glob(basedir+'/*mpicmd*')
-	if len(batch_files)!=0:
-		for i in batch_files:
-			if 'manage_database' not in i:
-				os.system('rm -rf '+i)
-	if len(mpiapp_files)!=0:
-		for j in mpiapp_files:
-			if 'manage_database' not in j:
-				os.system('rm -rf '+j)	
+	# Searching for nearest cal directories
+	#######################################
+	gcal_dirs=str(gaincal_modeldir).split(',')
+	bcal_dirs=str(bandpass_modeldir).split(',')
+	pcal_dirs=str(polcal_modeldir).split(',')
+	
+	for i in gcal_dirs:
+		if os.path.isdir(i)==False:
+			gcal_dirs.remove(i)
+	for i in bcal_dirs:
+		if os.path.isdir(i)==False:
+			bcal_dirs.remove(i)
+	for i in pcal_dirs:
+		if os.path.isdir(i)==False:
+			pcal_dirs.remove(i)
+	gcal_obsids=np.array([int(os.path.basename(i)) for i in gcal_dirs])
+	bcal_obsids=np.array([int(os.path.basename(i)) for i in bcal_dirs])
+	pcal_obsids=np.array([int(os.path.basename(i)) for i in pcal_dirs])
 
-	if inputs.clear_screen==True:
-		screen_list=[os.path.basename(i) for i in glob.glob('/var/run/screen/S-'+str(getpass.getuser())+'/*')]
-		for i in screen_list:
-			if str(OBSID)+'_' not in i or 'manage_database' in i:
-				screen_list.remove(i) 
+	if len(gcal_dirs)==0 or len(gcal_obsids)==0:
+		obslog.info('No gain calibration tables present.\n')
+		gaincal_modeldir=''
+	else:
+		gcal_obsid=gcal_obsids[np.argmin(abs(OBSID-gcal_obsids))]
+		gaincal_modeldir=gcal_dirs[np.argmin(abs(OBSID-gcal_obsids))]
 
-		for i in screen_list:
-			os.system('screen -S '+i+' -X quit')
+	if len(bcal_obsids)!=0:
+		bcal_obsid=bcal_obsids[np.argmin(abs(OBSID-bcal_obsids))]
+		bandpass_modeldir=bcal_dirs[np.argmin(abs(OBSID-pcal_obsids))]
+
+	if len(pcal_obsids)!=0:
+		pcal_obsid=pcal_obsids[np.argmin(abs(OBSID-pcal_obsids))]
+		polcal_modeldir=pcal_dirs[np.argmin(abs(OBSID-pcal_obsids))]
+
+	# Setting up different directory names
+	######################################
+	if gaincal_modeldir[-1]=='/':
+		gaincal_modeldir=gaincal_modeldir[:-1]
+	if bandpass_modeldir[-1]=='/':
+		bandpass_modeldir=bandpass_modeldir[:-1]
+	if polcal_modeldir[-1]=='/':
+		polcal_modeldir=polcal_modeldir[:-1]
+	if localdatabase[-1]=='/':
+		localdatabase=localdatabase[:-1]
 
 	if localdatabase=='' or os.path.isdir(localdatabase)==False: # If localdabase is available, making the localdatabase directory
 		obslog.error('Local data base not found. Making local database at basedir.\n')
@@ -935,6 +960,27 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		if len(caltable_for_global_database)!=0:
 			for j in caltable_for_global_database:
 				os.system('rm -rf '+j) # Deleting to local database for further copying to global database	
+		'''
+		batch_files=glob.glob(basedir+'/*.batch')
+		mpiapp_files=glob.glob(basedir+'/*mpicmd*')
+		if len(batch_files)!=0:
+			for i in batch_files:
+				if 'manage_database' not in i:
+					os.system('rm -rf '+i)
+		if len(mpiapp_files)!=0:
+			for j in mpiapp_files:
+				if 'manage_database' not in j:
+					os.system('rm -rf '+j)	
+
+		if inputs.clear_screen==True:
+			screen_list=[os.path.basename(i) for i in glob.glob('/var/run/screen/S-'+str(getpass.getuser())+'/*')]
+			for i in screen_list:
+				if str(OBSID)+'_' not in i or 'manage_database' in i:
+					screen_list.remove(i) 
+
+			for i in screen_list:
+				os.system('screen -S '+i+' -X quit')
+		'''
 		return gcal_msg,final_global_caltables,final_local_caltables
 
 def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals=[],residual_frac=0.1,\
@@ -1057,7 +1103,6 @@ if __name__=='__main__':
 	parser.add_option('--localdatabase',dest="localdatabase",default=None,help="Name of local database",metavar="Directory path")
 	parser.add_option('--freqavg',dest="freqavg",default=160,help="Frequency averaging during calibration in kHz",metavar="Float")
 	parser.add_option('--timeavg',dest="timeavg",default=2.0,help="Time averaging during calibration in second",metavar="Float")
-	parser.add_option('--cal_obsid',dest="cal_obsid",default=None,help="Caltable Observation ID",metavar="Integer")
 	parser.add_option('--inputfile',dest='inputfile',default=None,help='Path of the P-AIRCARS input file',metavar="File path")
 	parser.add_option('--verbose',dest='verbose',default=False,help='Verbose output',metavar="Boolean")
 	(options, args) = parser.parse_args()
@@ -1109,14 +1154,9 @@ filehandle.setFormatter(formatter)
 obslog.addHandler(filehandle)
 obslog.propagate = False
 
-if int(options.cal_obsid)==OBSID:
-	msg,caltable_for_global_database,caltable_for_local_database=managing_caldatabase(str(options.msname),str(options.metafits),int(options.num_jobs),str(options.basedir),\
-	str(options.gaincal_modeldir),str(options.bandpass_modeldir),str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),\
-	freq_avg=float(options.freqavg),time_avg=float(options.timeavg),pol_skip_freq=float(polskip),verbose=eval(str(options.verbose)))
-else:
-	obslog.info('Calibration was not performed for this MS. Applying solutions from nearest caltables.\n')
-	caltable_for_local_database=glob.glob(inputs.basedir+'/localdatabase/'+str(int(options.cal_obsid)))
-	caltable_for_global_database=[]
+msg,caltable_for_global_database,caltable_for_local_database=managing_caldatabase(str(options.msname),str(options.metafits),int(options.num_jobs),str(options.basedir),\
+str(options.gaincal_modeldir),str(options.bandpass_modeldir),str(options.polcal_modeldir),str(options.localdatabase),float(inputs.gain_minsnr),str(inputs.ref_ant),\
+freq_avg=float(options.freqavg),time_avg=float(options.timeavg),pol_skip_freq=float(polskip),verbose=eval(str(options.verbose)))
 
 if len(caltable_for_global_database)>0:
 	calarrays=[]

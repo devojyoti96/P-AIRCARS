@@ -88,7 +88,7 @@ def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_
 
 # This part will run the self calibration loops. If the code is imported in some other python code, this part will not be executed
 
-def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True):
+def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True,caltables=[]):
 	'''
 	Heart of the bandpass selfcal part of the PAIRCARS
 	This function performs the bandpass selfcal for PAIRCARS
@@ -102,6 +102,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	verbose = False, If True keep all intermediate selfcal records
 	interactive = False, If True perform interactive selfcal
 	start_fresh = True, start fresh selfcal rounds from scratch or start from last round
+	caltables = Previous caltables, comma separated
 	Return:
 	Meassages about the selfcal success or errors
 	'''
@@ -157,6 +158,19 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			os.system('rm -rf DR_rms.npy')
 		if os.path.isfile('DR_neg.npy')==True:
 			os.system('rm -rf DR_neg.npy')
+		if caltables!='':
+			caltable_list=caltables.split(',')
+			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=True)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
+			tb=table()
+			tb.open(msname,nomodify=False)
+			cor_data=tb.getcol('CORRECTED_DATA')
+			tb.putcol('DATA',cor_data)
+			tb.flush()
+			tb.close()
+		else:
+			caltable_list=[]
 		if os.path.isfile(msname+'/.usedby_paircars'):
 			try:
 				tb=table()
@@ -837,6 +851,7 @@ if __name__=='__main__':
 	parser.add_option('--verbose',dest="verbose",default=False,help="Verbose mode",metavar="Boolean")
 	parser.add_option('--interactive',dest="interactive",default=False,help="Interactive mode",metavar="Boolean")
 	parser.add_option('--fresh',dest="fresh",default=True,help="Start fresh self calibration loop",metavar="Boolean")
+	parser.add_option('--caltables',dest="caltables",default='',help="Previous caltables",metavar="String, comma separated")
 	(options, args) = parser.parse_args()
 	if (os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and eval(str(options.fresh))==True) or \
 		(os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and os.path.isdir(str(options.workdir)+'/junk1.ms')==False and eval(str(options.fresh))==False):
@@ -928,9 +943,9 @@ if __name__=='__main__':
 			os.system('rm -rf '+inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
 		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
 		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
-				+'\',interactive=\''+str(options.interactive)+'\',start_fresh=\''+str(options.fresh)+'\')\n')
+				+'\',interactive=\''+str(options.interactive)+'\',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)+'\')\n')
 		msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
-				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)))
+				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),caltables=str(options.caltables))
 		if type(msg)==int:
 			if msg>100:
 				msg1=msg-100

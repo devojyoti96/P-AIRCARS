@@ -37,7 +37,7 @@ do_polcal				=	True
 save_true_loc_image		=	False
 send_notification		=	True
 email					=	'devojyoti96@gmail.com'
-clear_screen			=	True
+clear_screen			=	False
 # Advanced options
 ##################
 # PAIRCARS will run with default options if we do not change these advanced options. 
