@@ -774,6 +774,7 @@ class IntensitySelfcal:
 		'''
 		AM=am.AccessMS(self.msname)
 		radec_str,radeg,decdeg=AM.get_phasecenter()
+		os.system('rm -rf convolved_phaseshift*')
 		imsmooth(imagename=imagename,outfile='convolved_phaseshift.image',beam={'major':'1920arcsec','minor':'1920arcsec','pa':'0deg'},targetres=False)
 		modelname=imagename.split('.image')[0]+'.model'
 		if bdsf_import==True:
@@ -798,18 +799,23 @@ class IntensitySelfcal:
 				return ra,dec,True
 		elif bdsf_import==False: # Using CASA imfit
 			rms=imstat(imagename='convolved_phaseshift.image',box=self.rms_box)['rms'][0]
-			ia=image()			
-			ia.open('convolved_phaseshift.image')
-			ia.calcmask('convolved_phaseshift.image>'+str(sigma*rms),'mymask')
-			ia.close()
-			imfit(imagename='convolved_phaseshift.image',summary='convolved_phaseshift.image.summary')
-			data=np.loadtxt('convolved_phaseshift.image.summary')
+			if os.path.isfile('convolved_phaseshift.fits')==True:
+				os.system('rm -rf convolved_phaseshift.fits')
+			exportfits(imagename='convolved_phaseshift.image',fitsimage='convolved_phaseshift.fits',dropdeg=True,dropstokes=True)
+			os.system('rm -rf convolved_phaseshift.image')
+			f=fits.open('convolved_phaseshift.fits')
+			data=f[0].data
+			data[data<=sigma*rms]=np.nan
+			pos=np.where(np.isnan(data)==False)
+			w=WCS(f[0].header)
+			x_cen,y_cen=w.all_pix2world(np.mean(pos[1]),np.mean(pos[0]),0)
+			ra=float(x_cen)
+			dec=float(y_cen)
+			fits.writeto('convolved_phaseshift.fits',data=data,header=f[0].header,overwrite=True)
 			if self.verbose:
-				os.system('cp -r convolved_phaseshift* freq_*datetime_*')
+				os.system('cp -r convolved_phaseshift.fits freq_*datetime_*')
 			os.system('rm -rf convolved_phaseshift*')
-			ra=data[5]
-			dec=data[6]
-			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<((5*float(self.cellsize))/3600.0):
+			if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)<((float(self.cellsize))/3600.0):
 				os.system('rm -rf casa*log')
 				return radeg,decdeg,False
 			else:
@@ -1380,7 +1386,7 @@ class IntensitySelfcal:
 		return modelname
 
 	def selfcal_iteration(self,num_iter,rms_thresh,sigma,maskstr,antenna_to_use,startmodel,startmask,ref_ant,minsnr,calmode,maskfile='',want_auto_masking=False,\
-							stokes='I',interactive=False,do_bandpass=False,solmode='R',correct_phasecenter=False,ra=0,dec=0,box_width=3,calibrator_caltable=[]):
+							stokes='I',interactive=False,do_bandpass=False,solmode='R',correct_phasecenter=False,ra=0,dec=0,box_width=3,calibrator_caltable=[],maskregion=''):
 		'''
 		Function to perform a self-calibration loop, make an image, put the model in the measurement set, and perform the calibration
 		Parameters:
@@ -1405,6 +1411,7 @@ class IntensitySelfcal:
 		dec = New DEC to change phasecenter
 		box_width = Negative box width around the maximum pixel in degree (default : 3 degree)
 		calibrator_caltable = List of calilbrator caltables
+		maskregion = Mask region in case of auto-masking
 		Return:
 		rms based dynamic range,negative based dynamic range, error message code
 		'''
@@ -1438,6 +1445,10 @@ class IntensitySelfcal:
 				weighting='natural',interactive=False,mask=maskfile,uvrange=self.calib_uvrange)
 		elif want_auto_masking==True and maskfile=='' and maskstr=='': # Use auto-masking
 			try_count=0
+			if startmodel!='': # Add auto masking safety
+				automask_trials=2
+			else:
+				automask_trials=10
 			while True:
 				if try_count==0:
 					self.log_verbose.info('Normal auto-masking.\n')
@@ -1446,11 +1457,13 @@ class IntensitySelfcal:
 						'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask='+\
 						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+',lownoisethreshold='+str(float(sigma/3.0))+\
-						',negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
+						',negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\',automask_trials='+\
+						str(automask_trials)+'maskregion=\''+maskregion+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
 					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=float(sigma),\
-					lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0,uvrange=self.calib_uvrange)
+					lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0,uvrange=self.calib_uvrange,\
+					automask_trials=automask_trials,maskregion=maskregion)
 				elif try_count==1:
 					self.log_verbose.info('Trying with auto-masking with no restriction of minimum beam fraction.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel\
@@ -1459,11 +1472,13 @@ class IntensitySelfcal:
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask=\''+\
 						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+\
 						',lownoisethreshold='+str(float(sigma/3.0))+',negativethreshold=0.0,smoothfactor=1.0,'+\
-						'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=\''+str(self.calib_uvrange)+'\')\n')
+						'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=\''+str(self.calib_uvrange)+'\',automask_trials='+str(automask_trials)+\
+						'maskregion=\''+maskregion+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
 					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,noisethreshold=float(sigma),\
-					lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=self.calib_uvrange)
+					lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=self.calib_uvrange,\
+					automask_trials=automask_trials,maskregion=maskregion)
 				elif try_count==2:
 					self.log_verbose.info('Trying without masking.\n')
 					self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''+\
@@ -1564,13 +1579,22 @@ class IntensitySelfcal:
 					self.bpass_solver(caltable_name,spw='',timerange='',calmode=calmode,uvrange=self.calib_uvrange,solnorm=True,refant=str(ref_ant),minsnr=minsnr,\
 									solmode=solmode,gaintable=calibrator_caltable) # Perform bandpass calibration
 				else:
-					self.log_verbose.info('Doing gaincal.....\n')
-					self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)
-							+',calmode=\''+calmode+'\',solnorm=True,uvrange=\''+self.calib_uvrange+'\',gaintype=\'G\',solmode=\''+solmode+'\',rmsthresh=[10,7,5,3.5],gaintable='+
-							str(calibrator_caltable)+')\n') 
-					gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=minsnr,calmode=calmode,solnorm=True,uvrange=self.calib_uvrange,\
-						gaintype='G',solmode=solmode,rmsthresh=[10,7,5,3.5],gaintable=calibrator_caltable) # Performing gain calibration
-					calc_flag_frac=B.calc_flag_fraction_caltable(caltable_name)
+					try_count=0
+					while try_count<5:
+						self.log_verbose.info('Doing gaincal.....\n')
+						self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(minsnr)
+								+',calmode=\''+calmode+'\',solnorm=True,uvrange=\''+self.calib_uvrange+'\',gaintype=\'G\',solmode=\''+solmode+'\',rmsthresh=[10,7,5,3.5],gaintable='+
+								str(calibrator_caltable)+')\n') 
+						gaincal(vis=self.msname,caltable=caltable_name,refant=str(ref_ant),minsnr=minsnr,calmode=calmode,solnorm=True,uvrange=self.calib_uvrange,\
+							gaintype='G',solmode=solmode,rmsthresh=[10,7,5,3.5],gaintable=calibrator_caltable) # Performing gain calibration
+						calc_flag_frac=B.calc_flag_fraction_caltable(caltable_name)
+						if calc_flag_frac>=0.4:
+							try_count+=1
+							self.log_verbose.info('Large antennas flagged. Retrying to calibrate...\n')
+							time.sleep(10)
+							continue
+						else:
+							break
 					if calc_flag_frac>=0.4:
 						self.log_verbose.info('Performing gaincal without robust calibration due large number of flagged solutions.\n')
 						self.log_verbose.info('gaincal(vis=\''+self.msname+'\',caltable=\''+caltable_name+'\',refant=\''+str(ref_ant)+'\',minsnr='+str(3)

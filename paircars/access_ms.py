@@ -138,10 +138,7 @@ class AccessMS:
 		Return:
 		Number of timestamps
 		'''
-		self.md.open(self.msname)
-		times=self.md.timesforfield(0)
-		self.md.close()
-		return len(times)
+		return len(self.get_timestamps_in_mjdsecs())
 
 	def get_num_channels(self):
 		'''
@@ -162,6 +159,9 @@ class AccessMS:
 		'''
 		self.md.open(self.msname)
 		mjds=self.md.timesforfield(0)
+		time_diff=np.ediff1d(mjds)
+		pos=np.where(time_diff<self.calc_timeres())
+		mjds=np.delete(mjds,pos)
 		self.md.close()
 		return mjds
 
@@ -424,22 +424,17 @@ class AccessMS:
 		'''
 		sun_radec_string,sunra_deg,sundec_deg=self.radec_sun()
 		radec_str,ra,dec=self.get_phasecenter()
-		IB=B.ImageBasic(self.msname)
-		psfsize=IB.calc_psf()
-		diff=(sunra_deg-ra)**2+(sundec_deg-dec)**2
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
-		if 'FIXVIS' not in code_list:
-			if len(code_list)==1 and code_list[0]=='':
-				code+='FIXVIS'
-			else:
-				code+=',FIXVIS'
-			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
-			if diff<(psfsize/3600.0)**2:
-				return 'Phasecenter shift is less than PSF size. No shift is required.\n' 
-			elif 'FIXVIS' not in code_list:
-				fixvis(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
-				return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
+		if abs(sunra_deg-ra)>0.0001 or abs(sundec_deg-dec)>0.0001:
+			if 'FIXVIS' not in code_list:
+				if len(code_list)==1 and code_list[0]=='':
+					code+='FIXVIS'
+				else:
+					code+=',FIXVIS'
+				vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
+			fixvis(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
+			return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
 		else:
 			return 'Phasecenter is already shifted to the Sun.\n'
 

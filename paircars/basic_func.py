@@ -9,6 +9,7 @@ from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+import matplotlib.pyplot as plt
 '''
 Code is written by Devojyoti Kansabanik, 05 Jan, 2021
 '''
@@ -132,9 +133,12 @@ class ImageBasic:
 		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/5))
 		max_uvpoints=np.max(uvlambda_hist[1])
 		cutpos1=np.min(np.where(uvlambda_hist[0]<max_uvpoints*0.1))
-		cutpos2=np.min(np.where(uvlambda_hist[0]==0))
 		uvlambda1=uvlambda_hist[1][cutpos1]
-		uvlambda2=uvlambda_hist[1][cutpos2]
+		try:
+			cutpos2=np.min(np.where(uvlambda_hist[0]==0))
+			uvlambda2=uvlambda_hist[1][cutpos2]
+		except:
+			uvlambda2=max(uvlambda_hist[1])*0.66
 		if uvlambda1>200 and uvlambda2<200:
 			uvmax=uvlambda1
 		elif uvlambda1<200 and uvlambda2>200:
@@ -163,9 +167,12 @@ class ImageBasic:
 		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/5))
 		max_uvpoints=np.max(uvlambda_hist[1])
 		cutpos1=np.min(np.where(uvlambda_hist[0]<max_uvpoints*0.1))
-		cutpos2=np.min(np.where(uvlambda_hist[0]==0))
 		uvlambda1=uvlambda_hist[1][cutpos1]
-		uvlambda2=uvlambda_hist[1][cutpos2]
+		try:
+			cutpos2=np.min(np.where(uvlambda_hist[0]==0))
+			uvlambda2=uvlambda_hist[1][cutpos2]
+		except:
+			uvlambda2=max(uvlambda_hist[1])*0.66
 		if uvlambda1>200 and uvlambda2<200:
 			uvmax=uvlambda1
 		elif uvlambda1<200 and uvlambda2>200:
@@ -594,15 +601,17 @@ def freq_to_MWA_coarse(freq):
 		if freq>=ch0 and freq<ch1:
 			return i 
 
-def update_mwa_obsids(obsid_file=''):
+def update_mwa_obsids(obsid_file='',verbose=False):
 	'''
 	Function to update MWA OBSIDs 
 	Parameter:
 	obsid_file = Name of the file to save MWA OBSIDs
+	verbose = False, verbose output
 	Return:
 	OBSID file name, update code 
 	'''
-	print ('Updating local MWA OBSid file......\n')
+	if verbose==True:
+		print ('Updating local MWA OBSid file......\n')
 	if obsid_file=='':
 		obsid_file=datadir+'/MWA_OBSids'
 	BASEURL='http://ws.mwatelescope.org/'
@@ -620,7 +629,8 @@ def update_mwa_obsids(obsid_file=''):
 	searchurl=BASEURL+'metadata/find?maxtime='+str(end_obsid)+'&page=20000000000000'
 	try:
 		end_obsid=json.load(urllib.request.urlopen(searchurl,timeout=10))[-1][0]
-		print ('Last OBSID in MWA metadata server : '+end_obsid+'\n')
+		if verbose==True:
+			print ('Last OBSID in MWA metadata server : '+str(end_obsid)+'\n')
 		while True:
 			searchurl=BASEURL+'metadata/find?mintime='+str(start_obsid)+'&maxtime='+str(start_obsid+432000)
 			try:
@@ -635,10 +645,16 @@ def update_mwa_obsids(obsid_file=''):
 			if start_obsid>=end_obsid:
 				break
 		np.save(obsid_file,temp_array)
+		if verbose==True:
+			print ('Updated successfully.\n')
+		os.system('rm -rf casa*log')
 		return obsid_file+'.npy',0
-	except:
+	except Exception as e:
+		if verbose==True:
+			print ('Error in update : '+str(e)+'\n')
+			print ('Update not successful.\n')
+		os.system('rm -rf casa*log')
 		return obsid_file+'.npy',1
-
 
 def get_OBSID_from_ms(msname):
 	'''
@@ -661,24 +677,26 @@ def get_OBSID_from_ms(msname):
 		utc_string=mjdsec_to_timestamp(obs_mjd_ms*24*3600,includedate=True,format=1)	
 		GPStime=int(Time(utc_string,format='isot',scale='utc').gps)
 		OBSid=obsids[np.argmin(abs(GPStime-obsids))]
+		os.system('rm -rf casa*log')
 		return OBSid
 	else:
 		c=0
 		while c<5:
 			try:
-				BASEURL='http://ws.mwatelescope.org/'
-				
+				BASEURL='http://ws.mwatelescope.org/'				
 				ms_path=os.path.dirname(os.path.realpath(msname))
 				searchurl=BASEURL+'metadata/tconv/?utciso='+utc_string
 				GPStime=json.load(urllib.request.urlopen(searchurl,timeout=10))
 				searchurl=BASEURL+'metadata/find?maxtime='+str(GPStime)+'&mintime='+str(GPStime-500)+'&page=20000000000000'
 				OBSid=json.load(urllib.request.urlopen(searchurl,timeout=15))[-1][0]
+				os.system('rm -rf casa*log')
 				return OBSid
 			except Exception as e:
 				print ('Error occured : '+str(e)+'\n')
 				c+=1
 				time.sleep(5.0)
 				if c>=5:
+					os.system('rm -rf casa*log')
 					return 0
 
 def get_OBSID_from_metafits(metafits):
@@ -730,6 +748,102 @@ def compress_files(filelist,outputfile):
 	np.savez_compressed(outputfile,a=np.array(file_array_list))
 	os.system('mv '+outputfile+'.npz '+outputfile)
 	return outputfile
+
+def multifreq_gaincal_interpolate(gaintables=[],output_gaintable='',outputfreq=0):
+	'''
+	Function to calculate linearly interpolated gain phase from a set of gaintables (at-least two) at multiple frequencies
+	Parameters:
+	gaintables = [], list of gaintables at multiple frequencies
+	output_gaintable = '', Name of the output gaintable 
+	outputfreq = 0, Output frequency in MHz
+	Return:
+	Output gaintable name
+	'''
+	if outputfreq==0:
+		print ('Output frequency is not given.\n')
+		return
+	elif len(gaintables)<2:
+		print ('Minimum two gaintables at different frequencies are required.\n')
+		return
+	else:
+		if output_gaintable=='':
+			output_gaintable='Gaintable_interp_'+str(outputfreq)+'MHz.gcal'
+		if output_gaintable[-1]=='/':
+			output_gaintable=output_gaintable[:-1]
+		tb=table()
+		freqs=[]
+		gains=[]
+		for g in gaintables:
+			tb.open(g+'/SPECTRAL_WINDOW')
+			freqs.append(tb.getcol('REF_FREQUENCY')[0])		
+			tb.close()
+			tb.open(g)
+			gains.append(tb.getcol('CPARAM'))
+			tb.close()
+		gains=np.array(gains)
+		if os.path.exists(output_gaintable)==True:
+			print ('Removing previous existing caltable :'+output_gaintable+'\n')
+			os.system('rm -rf '+output_gaintable)
+		os.system('cp -r '+gaintables[0]+' '+output_gaintable)
+		tb.open(output_gaintable)
+		interpolated_gains=tb.getcol('CPARAM')
+		tb.close()
+		for i in range(interpolated_gains.shape[0]):
+			for j in range(interpolated_gains.shape[-1]):
+				x=np.polyfit(freqs,np.angle(gains[:,i,0,j]),deg=1)
+				pq=np.poly1d(x,)
+				phase=pq(outputfreq*10**6)
+				interpolated_gains[i,0,j]=np.cos(phase)+1j*np.sin(phase)
+		tb.open(output_gaintable+'/SPECTRAL_WINDOW',nomodify=False)
+		chan_freq=tb.getcol('CHAN_FREQ')
+		chan_freq=chan_freq+(outputfreq*10**6-chan_freq[0])
+		tb.putcol('CHAN_FREQ',chan_freq)
+		ref_freq=tb.getcol('REF_FREQUENCY')
+		ref_freq[0]=outputfreq*10**6
+		tb.putcol('REF_FREQUENCY',ref_freq)
+		tb.flush()
+		tb.close()
+		tb.open(output_gaintable,nomodify=False)
+		tb.putcol('CPARAM',interpolated_gains)
+		tb.putkeyword('CALTYPE','p')
+		tb.flush()
+		tb.close()
+		return output_gaintable
+
+def get_caltable_metadata(caltable):
+	'''
+	Function to get caltable metadata
+	Parameter:
+	caltable = Name of the caltable
+	Return:
+	A python dictionary with keywords MSNAME, JonesType, Channel 0 frequency (MHz), Central channel frequency (MHz), Channel width (kHz), Bandwidth (MHz), Start time, End time
+	'''
+	tb=table()
+	tb.open(caltable)
+	caltype=tb.getkeywords()['VisCal']
+	msname=tb.getkeywords()['MSName']
+	tb.close()
+	tb.open(caltable+'/SPECTRAL_WINDOW')
+	ch0=(tb.getcol('REF_FREQUENCY')[0])/10**6 # In MHz
+	chanwidth=(tb.getcol('CHAN_WIDTH')[0]/10**3) # In kHz
+	freqlist=tb.getcol('CHAN_FREQ')
+	chm=(freqlist[int(len(freqlist)/2)]/10**6) # In MHz
+	bw=(tb.getcol('TOTAL-BANDWIDTH')[0]/10**6) # In MHz
+	tb.close()
+	tb.open(caltable+'/OBSERVATION')
+	timerange= tb.getcol('TIME_RANGE')
+	start_time=mjdsec_to_timestamp(timerange[0],includedate=True,format=0)
+	end_time=mjdsec_to_timestamp(timerange[-1],includedate=True,format=0)
+	tb.close()
+	result={'MSNAME':msname,'JonesType':caltype,'Channel 0 frequency (MHz)':ch0,'Central channel frequency (MHz)':chm,'Channel width (kHz)':chanwidth,'Bandwidth (MHz)':bw,\
+			'Start time':start_time,'End time':end_time}
+	return result
+
+
+
+
+
+
 
 
 
