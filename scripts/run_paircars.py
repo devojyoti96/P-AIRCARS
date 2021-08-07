@@ -1581,7 +1581,6 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					open_casa_instance-=(len(touch_file_list)-touch_count)
 					ms_mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')		
 			while len(bandpass_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
-
 				screen_name=bandpass_screen_list[0]
 				cmd=bandpass_cmd_list[0]
 				finished_file=bandpass_finished_file_list[0]
@@ -1620,7 +1619,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						mpifil.close()
 						os.system('chmod a+rwx '+mpicmd_file)
 						screen_cmd='mpirun --app '+mpicmd_file
-						os.system('screen -S '+str(ms_obsid)+'_'+basemsdir+'_bcal='+str(mpicount)+' -X quit')	
+						os.system('screen -S '+str(ms_obsid)+'_'+basemsdir+'_bcal'+str(mpicount)+' -X quit')	
 						time.sleep(0.5)
 						os.system('screen -mdS '+str(ms_obsid)+'_'+basemsdir+'_bcal_'+str(mpicount))
 						time.sleep(0.5)

@@ -211,7 +211,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'corrected\')\n')
 		split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='corrected') # Backup of gain calibrated ms
 		logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\')\n')
-		split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')
+		split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')	
 		os.system('rm -rf '+msname+' '+msname+'.flagversions')
 		logger.info('os.system(\'mv '+msname+'.temp '+msname+')\n')
 		os.system('mv '+msname+'.temp '+msname)
@@ -450,8 +450,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		file_str=os.path.basename(msname).split('.ms')[0]
 	
 		if inputs.maskfile=='' and inputs.maskstr=='':
-			mask_rad=int((60*60)/PSC.cellsize) # Creating a mask with 60 arcmin radius centered on the image
-			mask_str='circle[['+str(PSC.imsize/2)+'pix,'+str(PSC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
+			mask_rad=int((40*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
+			mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
+			ini_mask_rad=int((120*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
+			ini_mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 		elif inputs.maskstr!='':
 			mask_str=inputs.maskstr
 
@@ -534,6 +536,15 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			os.system('cp -r '+working_dir+'/Leakage_cor_gaincal.cal '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.lcal') 
 																															# Keeping new leakage corrected gaintable caltable		
 			logger.info('Gaincal using leakage corrected source model is done.\n')
+			'''
+			mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
+			if mwa_config=='MWAPhaseI':
+				crossphase=15
+			elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
+				crossphase=135
+			logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
+			PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
+			'''
 			if verbose==False:
 				os.system('rm -rf '+working_dir+'/Leakage_cor_gaincal.cal')
 			else:
@@ -600,8 +611,13 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 						',maxuv='+str(calib_uvrange_max)+',j=1,absmem=1)\n')
 				cal.calibrate(msname=msname,caltable=working_dir+'/Leakage_corrected.bin',minuv=calib_uvrange_min,quiet=verbose,\
 						maxuv=calib_uvrange_max,j=1,absmem=1)
-				logger.info('cal.applycal(msname=\''+msname+'\',gaintable=\''+working_dir+'/Leakage_corrected.bin\',applymode=\'calflag\',flagbackup=True)\n')
-				cal.applycal(msname=msname,gaintable=working_dir+'/Leakage_corrected.bin',applymode='calflag',flagbackup=True) # Applying the solution
+				#logger.info('PSC.cal_poldistortion(\''+working_dir+'/Leakage_corrected.bin\',poldistortion_matrix=\'UH\')\n')
+				#X,inv_X,H,inv_H,U,inv_U,poldist_file=PSC.cal_poldistortion(working_dir+'/Leakage_corrected.bin',poldistortion_matrix='UH')
+				#logger.info('PSC.correct_poldistortion(\''+working_dir+'/Leakage_corrected.bin\',\''+working_dir+'/Leakage_corrected.bin\',X)\n')
+				#corrected_gaintable=PSC.correct_poldistortion(working_dir+'/Leakage_corrected.bin',working_dir+'/Leakage_corrected.bin',X) # Correct for full poldistortion
+				corrected_gaintable=working_dir+'/Leakage_corrected.bin'
+				logger.info('cal.applycal(msname=\''+msname+'\',gaintable=\''+corrected_gaintable+'\',applymode=\'calflag\',flagbackup=True)\n')
+				cal.applycal(msname=msname,gaintable=corrected_gaintable,applymode='calflag',flagbackup=True) # Applying the solution
 				tb=table()
 				tb.open(msname)
 				leakage_cor_data=tb.getcol('CORRECTED_DATA')
@@ -615,7 +631,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 					os.system('mv '+working_dir+'/qucor* '+working_dir+'/'+file_str_prefix)
 				else:
 					os.system('rm -rf '+working_dir+'/Leakage_corrected.bin')
-					os.system('rm -rf '+working_dir+'/qu*cor*')
+					os.system('rm -rf '+working_dir+'/qucor*')
 			do_pbcor=False
 
 		####################
@@ -643,10 +659,25 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		# Selfcal loop
 		##############
 		while do_selfcal==True:
-			if gaincal_count<1 and done_qucor==False: 
-				do_poldist=True	
-				poldistortion_type='poldistortion'	
-		
+		#	if gaincal_count<1 and done_qucor==False: 
+			do_poldist=True	
+			poldistortion_type='poldistortion'	
+			
+			'''
+			if gaincal_count==1:
+				mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
+				if mwa_config=='MWAPhaseI':
+					crossphase=15
+				elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
+					crossphase=135
+				logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
+				PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
+				if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==True:
+					os.system('rm -rf '+working_dir+'/Backup_gaincaled.ms')
+				logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'corrected\')\n')
+				split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='corrected') # Backup of gain calibrated and cross hand phase calibrated ms
+			'''
+
 			if verbose==False:
 				print ('#####################\nPolarisation Selfcal iteration:'+str(num_iter)+'\n#####################\n')
 			logger.info('#####################\n')
@@ -662,12 +693,11 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				startmask=''
 
 			antenna_to_use=PSC.antenna_string(antenna_list,-1)
-			if done_qucor==False:
-				do_flag=False
-			else:
-				do_flag=True
-
 			#if done_qucor==False:
+			#	do_flag=False
+			#else:
+			do_flag=True
+
 			if num_iter==1:
 				previous_image='junk0.image'
 				previous_model='junk0.model'
@@ -678,25 +708,42 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				previous_image=''
 				previous_model=''		
 
+			if do_solarqu_cor==True:
+				mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
+				if mwa_config=='MWAPhaseI':
+					crossphase=15
+				elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
+					crossphase=135
+			else:
+				crossphase=-1
+
+			if num_iter_after_qucor>1:
+				use_ankflagger=True
+			else:
+				use_ankflagger=False
+
 			if inputs.maskfile!='': # Use user defined mask
 				mask_str=''
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
-				stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,crossphase=crossphase,\
+				stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor)  		
 			elif inputs.maskstr!='': # If mask user defined string is given
 				mask_str=inputs.maskstr
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
-					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,crossphase=crossphase,\
+					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor)
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto maksing is off, use default central mask
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
-					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
-					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor)
+					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
+					crossphase=crossphase)
 			elif inputs.want_auto_masking==True:
+				maskregion=mask_str
 				mask_str=''
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
-					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
-					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor)
+					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
+					crossphase=crossphase,maskregion=maskregion)
 
 			if type(output_PSC)==tuple:				
 				msg_code,out_dict,negative_dyn_range=output_PSC
@@ -1047,7 +1094,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				# If statement 2 (Exiting selfcal conditions)
 				if ((DR5>=inputs.max_DR and abs(FX3_I/FX1_I-1)<0.1 and abs(FX3_I/FX2_I-1)<0.1 and \
 					abs(FX3_Q/FX1_Q-1)<0.1 and abs(FX3_Q/FX2_Q-1)<0.1 and abs(FX3_U/FX1_U-1)<0.1 and abs(FX3_U/FX2_U-1)<0.1 and \
-						abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1) and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3))):
+						abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1) and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5))):
 					# Stokes I DR reached maximum limit and polarised flux converged
 					if gaincal_count==1 and done_qucor==True: # If QU correction has been done and new gaincal using leakage is done.
 						if verbose==False:
@@ -1108,7 +1155,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(FX3_I/FX1_I-1)<0.1 and \
 					abs(FX3_I/FX2_I-1)<0.1 and abs(FX3_Q/FX1_Q-1)<0.1 and abs(FX3_Q/FX2_Q-1)<0.1 and abs(FX3_U/FX1_U-1)<0.1 and \
 					abs(FX3_U/FX2_U-1)<0.1 and abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1): # If polarised flux converged
-					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3)):
+					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5)):
 						if gaincal_count<1 and done_qucor==False: # If QU correction and leakage corrected gaincal not done
 							sigma,pre_res=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,pre_residual=pre_res,residual_frac=inputs.residual_frac,\
 									stokes_list=['I','Q','U','V'])
@@ -1179,7 +1226,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				
 				if (abs(FX3_I/FX1_I-1)<0.1 and abs(FX3_I/FX2_I-1)<0.1 and \
 					abs(FX3_Q/FX1_Q-1)<0.1 and abs(FX3_Q/FX2_Q-1)<0.1 and abs(FX3_U/FX1_U-1)<0.1 and abs(FX3_U/FX2_U-1)<0.1 and \
-						abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1 and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min(min_iteration,3))):
+						abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1 and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5))):
 					startmodel='junk1.model'
 				else:
 					startmodel=''

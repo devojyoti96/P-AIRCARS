@@ -17,7 +17,7 @@ matplotlib.use('Agg')
 '''
 Code is written by Devojyoti Kansabanik, 01 Mar, 2021
 '''
-
+datadir = os.path.dirname(__file__)
 class PolSelfcal:
 	'''
 	Generic class to perform polarisation self-calibration (Using Andre Offringa's CALIBRATE code on based Mitchcal algorithm)
@@ -164,7 +164,7 @@ class PolSelfcal:
 			if (safety_factor==0):
 				min_num_iter_fixed_sigma=1
 				if (scratch==True):
-					min_iteration=1
+					min_iteration=2
 					max_iteration=20
 				else:
 					min_iteration=1
@@ -172,7 +172,7 @@ class PolSelfcal:
 			elif (safety_factor==1):
 				min_num_iter_fixed_sigma=1
 				if (scratch==True):
-					min_iteration=3
+					min_iteration=4
 					max_iteration=30
 				else:
 					min_iteration=1
@@ -180,7 +180,7 @@ class PolSelfcal:
 			else:
 				min_num_iter_fixed_sigma=1
 				if (scratch==True):
-					min_iteration=5
+					min_iteration=6
 					max_iteration=40
 				else:
 					min_iteration=1
@@ -190,7 +190,7 @@ class PolSelfcal:
 			if (safety_factor==0):
 				min_num_iter_fixed_sigma=2
 				if (scratch==True):
-					min_iteration=2
+					min_iteration=3
 					max_iteration=40
 				else:
 					min_iteration=2
@@ -198,7 +198,7 @@ class PolSelfcal:
 			elif (safety_factor==1):
 				min_num_iter_fixed_sigma=2
 				if (scratch==True):
-					min_iteration=4
+					min_iteration=5
 					max_iteration=50
 				else:
 					min_iteration=2
@@ -206,7 +206,7 @@ class PolSelfcal:
 			else:
 				min_num_iter_fixed_sigma=2
 				if (scratch==True):
-					min_iteration=6
+					min_iteration=7
 					max_iteration=60
 				else:
 					min_iteration=2
@@ -217,19 +217,19 @@ class PolSelfcal:
 				max_iteration=60
 				min_num_iter_fixed_sigma=3
 				if (scratch==True):
-					min_iteration=3
+					min_iteration=4
 				else:
 					min_iteration=3
 			elif (safety_factor==1):
 				min_num_iter_fixed_sigma=3
 				if (scratch==True):
-					min_iteration=5
+					min_iteration=6
 				else:
 					min_iteration=3
 			else:
 				min_num_iter_fixed_sigma=3
 				if (scratch==True):
-					min_iteration=7
+					min_iteration=8
 				else:
 					min_iteration=3
 		antenna_bin=1
@@ -280,10 +280,8 @@ class PolSelfcal:
 		d2=[x.H for x in jones_array]
 		d1_sum=np.matrix(np.sum(d1,axis=0))
 		d2_sum=np.matrix(np.sum(d2,axis=0))
-		x_inv=2*np.matmul(inv(d1_sum),d2_sum)
+		x_inv=np.matmul(inv(d1_sum),d2_sum)
 		x=inv(x_inv)
-		s=np.sqrt(det(x))
-		#x=x/s
 		if poldistortion_matrix=='UH':
 			U,H=polar(x,side='right')
 		else:
@@ -601,6 +599,25 @@ class PolSelfcal:
 			ia.close()
 			os.system('mv temp_org.image '+outfile)
 		os.system('rm -rf casa*log temp*')
+		return outfile
+
+	def correct_image_for_cross_phase(self,imagename,outfile,cross_phase=15,imagetype='FITS',outtype='FITS',pol_basis='Linear'):
+		'''
+		Correct Stokes IQUV image cube for full Stokes Beam Jones at a single pointing
+		Parameters:
+		imagename = Name of the image of model
+		outfile = Name of the beam corrected image or model
+		cross_phase = Cross hand phase in degree
+		imagetype= Type of the image, CASA or FITS
+		outtype = Output image type, CASA or FITS
+		pol_basis = Polarisation basis of the instrument, Linear or Circular
+		Return:
+		Cross hand phase corrected image or model
+		'''
+		self.pollog_verbose.info('Correcting Stokes images for cross hand phase : '+str(cross_phase)+' degree.\n')
+		cross_phase=np.deg2rad(cross_phase)/2.0
+		cross_jones=np.matrix([[np.cos(cross_phase)+1j*np.sin(cross_phase),0],[0,np.cos(cross_phase)-1j*np.sin(cross_phase)]])
+		outfile=self.correct_for_single_beam_jones(imagename,outfile,cross_jones,imagetype=imagetype,outtype=outtype,pol_basis=pol_basis)
 		return outfile
 
 	def uncorrect_for_single_beam_jones(self,imagename,outfile,inv_beam_jones,imagetype='FITS',outtype='FITS',pol_basis='Linear'): # TODO : Circular basis
@@ -1095,25 +1112,23 @@ class PolSelfcal:
 			for j in range(datai_mask.shape[1]):
 				if i<box_coords[0] or i>box_coords[2] or j<box_coords[1] or j>box_coords[3]:
 					datai_mask[i,j]=np.nan
-		if scale_tb_limit!=0:
-			s='%.2E' % (10**6/scale_tb_limit)
-			limit=int(float(s.split('E')[0]))*10**(int(float(s.split('E')[-1])))
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
-		else:
-			limit=10**6
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
+		tb_nonpos=np.where(datatb[:,:,0,0]<=0)
+		datatb[:,:,0,0][tb_nonpos]=np.nan
+		datatblog=np.log10(datatb[:,:,0,0])
+		pos=np.where(np.isnan(datatblog)==True)
+		datatblog=datatblog.astype('int64')
+		datatblog[pos]=0
+		postb=np.where(datatblog>6)
+		postb1=np.where(datatblog<6)
 		datai[posi]=np.nan
 		dataq[posi]=np.nan
 		datai[posq]=np.nan
 		dataq[posq]=np.nan
 		datai[postb]=np.nan
-		dataq[postb]=np.nan
+		dataq[postb]=np.nan	
+		datai[postb1]=np.nan
+		dataq[postb1]=np.nan
 		q_by_i=dataq/datai
-		pos_meanq=np.where(np.abs(q_by_i)>(np.nanmedian(np.abs(q_by_i))+0.02))
-		datai[pos_meanq]=np.nan
-		dataq[pos_meanq]=np.nan
 		q_by_i=dataq/datai
 		q_by_i=np.delete(q_by_i,np.where(np.isnan(q_by_i)))
 		x=[]
@@ -1142,10 +1157,9 @@ class PolSelfcal:
 		datau[posu]=np.nan
 		datai[postb]=np.nan
 		datau[postb]=np.nan
+		datai[postb1]=np.nan
+		datau[postb1]=np.nan
 		u_by_i=datau/datai
-		pos_meanu=np.where(np.abs(u_by_i)>(np.nanmedian(np.abs(u_by_i))+0.02))
-		datai[pos_meanu]=np.nan
-		datau[pos_meanu]=np.nan
 		u_by_i=datau/datai
 		u_by_i=np.delete(u_by_i,np.where(np.isnan(u_by_i)))
 		x=[]
@@ -1192,8 +1206,8 @@ class PolSelfcal:
 		plt.ylabel('DEC',fontsize=10)
 		ax.set_zlabel('Stokes Q (%)',fontsize=10)
 		ax.axis('tight')
-		plt.show()'''
-
+		plt.show()
+		'''
 		posq=np.where(np.abs(dataq_copy)<(sigma*rmsq))
 		posu=np.where(np.abs(datau_copy)<(sigma*rmsu))
 		data[:,:,0,0]=datai_copy
@@ -1212,15 +1226,32 @@ class PolSelfcal:
 					model_datau[k,l] -= (CU[4]*k**2. + CU[5]*l**2. + CU[3]*k*l + CU[1]*k + CU[2]*l + CU[0])*model_datai[k,l]
 		modelq=copy.deepcopy(model_dataq)
 		modelu=copy.deepcopy(model_datau)
-		modelq[postb1]=0
-		modelu[postb1]=0
 		modeldata[:,:,0,0]=model_datai
 		modeldata[:,:,1,0]=modelq
 		modeldata[:,:,2,0]=modelu
+		dataq_by_i=dataq_copy/datai_copy
+		datau_by_i=datau_copy/datai_copy
+		dataq_by_i[posi]=np.nan
+		dataq_by_i[posq]=np.nan
+		dataq_by_i[postb]=np.nan
+		dataq_by_i[postb1]=np.nan
+		datau_by_i[posi]=np.nan
+		datau_by_i[posu]=np.nan
+		datau_by_i[postb]=np.nan
+		datau_by_i[postb1]=np.nan
+		posqbyi=np.where(np.abs(dataq_by_i)<(sigma*rmsq/np.nanmean(datai)))
+		posubyi=np.where(np.abs(datau_by_i)<(sigma*rmsu/np.nanmean(datai)))
 		ia.open(modelname)
 		ia.putchunk(modeldata)
 		ia.close()
+		model_dataq[postb]=np.nan
+		model_dataq[postb1]=np.nan
+		model_dataq[posq]=np.nan
+		model_dataq[posqbyi]=np.nan
 		model_datau[postb]=np.nan
+		model_datau[postb1]=np.nan
+		model_datau[posu]=np.nan
+		model_datau[posubyi]=np.nan
 		if overwrite==True:
 			if os.path.isdir('qucor_surface.image')==True:
 				os.system('rm -rf qucor_surface.image')
@@ -1233,8 +1264,20 @@ class PolSelfcal:
 		del modeldata,data,datai_mask,dataq,datai,datau,model_datai,model_dataq,model_datau,datai_copy,dataq_copy,datau_copy
 		return imagename,modelname		
 
-	def mwa_solar_fluxcal(self,imagename,outfile): # TODO :Flux scale needs to include
-		immath(imagename=imagename,outfile=outfile,mode='evalexpr',expr='IM0*50')
+	def mwa_solar_fluxcal(self,imagename,outfile,atten=10):
+		'''
+		Function to flux calibrate MWA solar observations using method described in Mondal et al. 2021
+		Parameters:
+		imagename = Name of the image
+		outfile = Output file name
+		atten = 10, Attenuator gain value in dB
+		''' 
+		freq=imhead(imagename)['refval'][-1]/10**6 # MHz
+		fluxscale_poly=np.poly1d(np.load(datadir+'/flux_scale_polyfit.npy',allow_pickle=True)[0])
+		fluxscale=fluxscale_poly(freq)
+		if atten!=10: # Valuid for 10 and 14 dB, not tested for any other values and typically other values not used for solar observations
+			fluxscale=fluxscale*10**((atten-10)/100.0)
+		immath(imagename=imagename,outfile=outfile,mode='evalexpr',expr='IM0*'+str(fluxscale))
 		return outfile
 
 	def cal_solar_qu_leakage(self,imagename,sigma=10,do_fluxcal=False): 
@@ -1275,8 +1318,8 @@ class PolSelfcal:
 		datau=data[:,:,2,0]
 		datai=data[:,:,0,0]
 		posi=np.where(datai<(sigma*rmsi))
-		posq=np.where(dataq<(sigma*rmsq))
-		posu=np.where(datau<(sigma*rmsu))
+		posq=np.where(dataq<(5*rmsq))
+		posu=np.where(datau<(5*rmsu))
 		datai[posi]=np.nan
 		dataq[posi]=np.nan
 		datau[posi]=np.nan
@@ -1287,17 +1330,19 @@ class PolSelfcal:
 		ia.open(outfile_path+'/I_Tb.image')
 		datatb=ia.getchunk()
 		ia.close()
-		if scale_tb_limit!=0:
-			s='%.2E' % (10**6/scale_tb_limit)
-			limit=int(float(s.split('E')[0]))*10**(int(float(s.split('E')[-1])))
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
-		else:
-			limit=10**6
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
+		tb_nonpos=np.where(datatb[:,:,0,0]<=0)
+		datatb[:,:,0,0][tb_nonpos]=np.nan
+		datatblog=np.log10(datatb[:,:,0,0])
+		pos=np.where(np.isnan(datatblog)==True)
+		datatblog=datatblog.astype('int64')
+		datatblog[pos]=0
+		postb=np.where(datatblog>6)
+		postb1=np.where(datatblog<6)
 		datai[postb]=np.nan
 		dataq[postb]=np.nan
+		datau[postb]=np.nan
+		datai[postb1]=np.nan
+		dataq[postb1]=np.nan
 		datau[postb]=np.nan
 		i_flux=np.nanmean(datai)
 		leakage_list=[]		
@@ -1333,7 +1378,7 @@ class PolSelfcal:
 			np.save(outfile_path+'/'+os.path.basename(imagename)+'_'+stokes+'_leakage',np.array([x,y,leakage],dtype=object))
 			leakage_list.append(leakage)
 		os.system('rm -rf casa*log I*.image')
-		os.system('rm -rf '+outfile_path+'/I_*')
+		os.system('rm -rf '+outfile_path+'/I*')
 		self.pollog_verbose.info('Calculation of Stokes leakages has been done.\n')
 		return leakage_list[0],leakage_list[1]
 
@@ -1402,21 +1447,22 @@ class PolSelfcal:
 		ia.open(outfile_path+'/I_Tb.image')
 		datatb=ia.getchunk()
 		ia.close()
-		if scale_tb_limit!=0:
-			s='%.2E' % (10**6/scale_tb_limit)
-			limit=int(float(s.split('E')[0]))*10**(int(float(s.split('E')[-1])))
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
-		else:
-			limit=10**6
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
+		tb_nonpos=np.where(datatb[:,:,0,0]<=0)
+		datatb[:,:,0,0][tb_nonpos]=np.nan
+		datatblog=np.log10(datatb[:,:,0,0])
+		pos=np.where(np.isnan(datatblog)==True)
+		datatblog=datatblog.astype('int64')
+		datatblog[pos]=0
+		postb=np.where(datatblog>6)
+		postb1=np.where(datatblog<6)
 		datai[postb]=np.nan
 		datav[postb]=np.nan
+		datai[postb1]=np.nan
+		datav[postb1]=np.nan
 		mean_i_flux=np.nanmean(datai)
 		h,w=datav.shape[:2]
 		center=(int(h/2),int(w/2))
-		radius=int((16*60)/float(self.cellsize))
+		radius=int((32*60)/float(self.cellsize))
 		mask=self.create_circular_mask(h,w,center=center,radius=radius)
 		datav[~mask]=np.nan
 		datai[~mask]=np.nan
@@ -1427,7 +1473,7 @@ class PolSelfcal:
 			np.save(outfile_path+'/'+os.path.basename(imagename)+'_V_leakage',np.array([0,0,0],dtype=object))
 			leakage_list.append(0)
 			os.system('rm -rf casa*log I*.image')
-			os.system('rm -rf '+outfile_path+'/I_*')
+			os.system('rm -rf '+outfile_path+'/I*')
 			return 0	
 		step_range=[0.1,0.01,0.001]
 		start_range=-1
@@ -1451,14 +1497,13 @@ class PolSelfcal:
 		np.save(outfile_path+'/'+os.path.basename(imagename)+'_V_leakage',np.array([x,y,leakage],dtype=object))
 		leakage_list.append(leakage)
 		os.system('rm -rf casa*log I*.image')
-		os.system('rm -rf '+outfile_path+'/I_*')
+		os.system('rm -rf '+outfile_path+'/I*')
 		return leakage
 
 	def correct_solar_qu_leakage(self,imagename,modelname,sigma,overwrite=False):
 		'''
 		Function to correction for solar Stokes Q, U leakage 
 		(It is based on the fact that we do not expect any linear polarisation from the Quiet Sun emission)
-		(We also do expect less than 0.5% polarisation from Quiet Sun about 1 solar radio from disc center)
 		Parameters:
 		imagename = Name of image
 		modelname = Name of the model
@@ -1501,15 +1546,14 @@ class PolSelfcal:
 		ia.open(outfile_path+'/I_Tb.image')
 		datatb=ia.getchunk()
 		ia.close()
-		if scale_tb_limit!=0:
-			s='%.2E' % (10**6/scale_tb_limit)
-			limit=int(float(s.split('E')[0]))*10**(int(float(s.split('E')[-1])))
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
-		else:
-			limit=10**6
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
+		tb_nonpos=np.where(datatb[:,:,0,0]<=0)
+		datatb[:,:,0,0][tb_nonpos]=np.nan
+		datatblog=np.log10(datatb[:,:,0,0])
+		pos=np.where(np.isnan(datatblog)==True)
+		datatblog=datatblog.astype('int64')
+		datatblog[pos]=0
+		postb=np.where(datatblog>6)
+		postb1=np.where(datatblog<6)
 		ia.open(modelname) # Correcting model
 		datam=ia.getchunk()
 		im=datam[:,:,0,:]
@@ -1524,8 +1568,8 @@ class PolSelfcal:
 		rmsv=imstat(imagename=imagename,box=self.rms_box,stokes='V')['rms'][0]
 		rmsi=imstat(imagename=imagename,box=self.rms_box,stokes='I')['rms'][0]
 		posi=np.where(datai<(sigma*rmsi))
-		posq=np.where(np.abs(dataq)<(sigma*rmsq))
-		posu=np.where(np.abs(datau)<(sigma*rmsu))
+		posq=np.where(np.abs(dataq)<(1.5*sigma*rmsq))
+		posu=np.where(np.abs(datau)<(1.5*sigma*rmsu))
 		posv=np.where(np.abs(datav)<(sigma*rmsv))
 		qm[posi]=0
 		qm[posq]=0
@@ -1535,6 +1579,8 @@ class PolSelfcal:
 		vm[posv]=0
 		qm[postb]=0
 		um[postb]=0
+		qm[postb1]=0
+		um[postb1]=0
 		datam[:,:,1,:]=qm
 		datam[:,:,2,:]=um
 		datam[:,:,3,:]=vm
@@ -1548,12 +1594,12 @@ class PolSelfcal:
 			os.system('cp -r '+imagename+' qucor.image')
 			os.system('cp -r '+modelname+' qucor.model')
 		os.system('rm -rf casa*log qucor_surface*')
-		os.system('rm -rf '+outfile_path+'/I_*')
+		os.system('rm -rf '+outfile_path+'/I*')
 		return imagename,modelname
 
-	def compare_leakage_for_sun(self,present_image='',previous_image='',present_model='',previous_model='',outputfile_prefix='',overwrite=False):
+	def compare_leakages(self,present_image='',previous_image='',present_model='',previous_model='',outputfile_prefix='',overwrite=False,TB_limit=-1):
 		'''
-		Function to compare Stokes I to Stokes Q,U,V leakage from quiet Sun part with the previous image
+		Function to compare Stokes I to Stokes Q,U,V leakages with the previous image
 		Parameters:
 		present_image = Name of the present CASA image
 		previous_image = Name of the previous CASA image
@@ -1561,6 +1607,7 @@ class PolSelfcal:
 		previous_model = Name of the previous CASA model
 		outputfile_prefix = Final output file prefix name
 		overwrite = False, overwrite the present image or not
+		TB_limit = Brightness temperature limit to calculate polarised flux density
 		Return:
 		Output file name
 		'''
@@ -1597,44 +1644,41 @@ class PolSelfcal:
 		previous_data_copy=copy.deepcopy(previous_data)
 		present_model_copy=copy.deepcopy(present_modeldata)
 		previous_model_copy=copy.deepcopy(previous_modeldata)
-		imsubimage(imagename=present_image,outfile=outfile_path+'/I.image',stokes='I',dropdeg=False)
-		fluxcal_image=self.mwa_solar_fluxcal(imagename=outfile_path+'/I.image',outfile=outfile_path+'/I_fluxcal.image')
-		major=imhead(imagename=fluxcal_image)['restoringbeam']['major']['value'] # In arcsec
-		minor=imhead(imagename=fluxcal_image)['restoringbeam']['minor']['value'] # In arcsec
-		freq=imhead(imagename=fluxcal_image)['refval'][-1]/10**9 # In GHz
-		ref_beam_axes_multi=500000
-		beam_axes_multi=major*minor	
-		scale_tb_limit=(beam_axes_multi/ref_beam_axes_multi)
-		expr='1.222e6*IM0/'+str(freq)+'^2/('+str(major*minor)+')'
-		immath(imagename=fluxcal_image,outfile=outfile_path+'/I_Tb.image',mode='evalexpr',expr=expr)
-		imhead(imagename=outfile_path+'/I_Tb.image', mode='put', hdkey='bunit', hdvalue='K')
-		ia.open(outfile_path+'/I_Tb.image')
-		datatb=ia.getchunk()
-		ia.close()
-		if scale_tb_limit!=0:
-			s='%.2E' % (10**6/scale_tb_limit)
-			limit=int(float(s.split('E')[0]))*10**(int(float(s.split('E')[-1])))
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
-		else:
-			limit=10**6
-			postb=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6>=limit)
-			postb1=np.where(((datatb[:,:,0,0]/(10**6)).astype('int'))*10**6<limit)
-		postb=np.where(datatb[:,:,0,:]>=10**7)
-		present_data[:,:,1,:][postb]=0
-		present_data[:,:,2,:][postb]=0
-		present_data[:,:,3,:][postb]=0
-		previous_data[:,:,1,:][postb]=0
-		previous_data[:,:,2,:][postb]=0
-		previous_data[:,:,3,:][postb]=0
 		os.system('cp -r '+present_image+' '+outfile_path+'/'+os.path.basename(present_image)+'.temp')
 		os.system('cp -r '+previous_image+' '+outfile_path+'/'+os.path.basename(previous_image)+'.temp')
-		ia.open(outfile_path+'/'+os.path.basename(previous_image)+'.temp')
-		ia.putchunk(previous_data)
-		ia.close()
-		ia.open(outfile_path+'/'+os.path.basename(present_image)+'.temp')
-		ia.putchunk(present_data)
-		ia.close()
+		if TB_limit!=-1:
+			imsubimage(imagename=present_image,outfile=outfile_path+'/I.image',stokes='I',dropdeg=False)
+			fluxcal_image=self.mwa_solar_fluxcal(imagename=outfile_path+'/I.image',outfile=outfile_path+'/I_fluxcal.image')
+			major=imhead(imagename=fluxcal_image)['restoringbeam']['major']['value'] # In arcsec
+			minor=imhead(imagename=fluxcal_image)['restoringbeam']['minor']['value'] # In arcsec
+			freq=imhead(imagename=fluxcal_image)['refval'][-1]/10**9 # In GHz
+			ref_beam_axes_multi=500000
+			beam_axes_multi=major*minor	
+			expr='1.222e6*IM0/'+str(freq)+'^2/('+str(major*minor)+')'
+			immath(imagename=fluxcal_image,outfile=outfile_path+'/I_Tb.image',mode='evalexpr',expr=expr)
+			imhead(imagename=outfile_path+'/I_Tb.image', mode='put', hdkey='bunit', hdvalue='K')
+			ia.open(outfile_path+'/I_Tb.image')
+			datatb=ia.getchunk()
+			ia.close()
+			tb_nonpos=np.where(datatb[:,:,0,0]<=0)
+			datatb[:,:,0,0][tb_nonpos]=np.nan
+			datatblog=np.log10(datatb[:,:,0,0])
+			pos=np.where(np.isnan(datatblog)==True)
+			datatblog=datatblog.astype('int64')
+			datatblog[pos]=0
+			postb=np.where(datatblog>int(np.log10(TB_limit)))
+			present_data[:,:,1,:][postb]=0
+			present_data[:,:,2,:][postb]=0
+			present_data[:,:,3,:][postb]=0
+			previous_data[:,:,1,:][postb]=0
+			previous_data[:,:,2,:][postb]=0
+			previous_data[:,:,3,:][postb]=0
+			ia.open(outfile_path+'/'+os.path.basename(previous_image)+'.temp')
+			ia.putchunk(previous_data)
+			ia.close()
+			ia.open(outfile_path+'/'+os.path.basename(present_image)+'.temp')
+			ia.putchunk(present_data)
+			ia.close()
 		dyn_range_present=self.calc_dyn_range(outfile_path+'/'+os.path.basename(present_image)+'.temp',10,stokes_list=['I','Q','U','V'])
 		dyn_range_previous=self.calc_dyn_range(outfile_path+'/'+os.path.basename(previous_image)+'.temp',10,stokes_list=['I','Q','U','V'])
 		if (dyn_range_present[0]['Q'][-1]-dyn_range_previous[0]['Q'][-1])/dyn_range_previous[0]['Q'][-1]>0.05:
@@ -1670,8 +1714,202 @@ class PolSelfcal:
 			os.system('rm -rf casa*log '+outfile_path+'/I* '+outfile_path+'/'+os.path.basename(present_image)+'.temp '+outfile_path+'/'+os.path.basename(previous_image)+'.temp')
 			return outfile_path+'/'+outputfile_prefix+'.image',outfile_path+'/'+outputfile_prefix+'.model'
 
-	def polselfcal_iteration(self,num_iter,rms_thresh,mask_str,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
-							stokes='',interactive=False,use_ankflagger=False,do_flag=False,poldistortion_correction=True,poldistortion_type='poldistortion',\
+	def compare_leakage_for_sun(self,present_image='',previous_image='',present_model='',previous_model='',outputfile_prefix='',overwrite=False,qucor_step=False):
+		'''
+		Function to compare Stokes I to Stokes Q,U,V leakage from quiet Sun part with the previous image
+		Parameters:
+		present_image = Name of the present CASA image
+		previous_image = Name of the previous CASA image
+		present_model = Name of the present CASA model
+		previous_model = Name of the previous CASA model
+		outputfile_prefix = Final output file prefix name
+		overwrite = False, overwrite the present image or not
+		qucor_step = Performed images based Stokes Q, U correction at last selfcal iteration
+		Return:
+		Output file name
+		'''
+		if os.path.isdir(present_image)==False or os.path.isdir(previous_image)==False or os.path.isdir(present_model)==False or os.path.isdir(previous_model)==False:
+			if self.verbose==False:
+				print ('Either present or previous image or model is not present.\n')
+			self.pollog_verbose.info('Either present or previous image or model is not present.\n')
+			return 
+		self.pollog_verbose.info('Compairing solar images : '+present_image+' with '+previous_image+'\n')
+		self.pollog_verbose.info('QU correction step : '+str(qucor_step)+'\n')
+		if present_image[-1]=='/':
+			present_image=present_image[:-1]
+		if previous_image[-1]=='/':
+			previous_image=previous_image[:-1]
+		try:
+			outfile_path=os.path.basedir(present_image)
+		except:
+			outfile_path=os.getcwd()
+		os.system('rm -rf casa*log '+outfile_path+'/I* '+outfile_path+'/'+os.path.basename(present_image)+'.temp '+outfile_path+'/'+os.path.basename(previous_image)+'.temp')
+		ia=image()
+		ia.open(present_image)
+		present_data=ia.getchunk()
+		ia.close()
+		ia.open(previous_image)
+		previous_data=ia.getchunk()
+		ia.close()
+		ia=image()
+		ia.open(present_model)
+		present_modeldata=ia.getchunk()
+		ia.close()
+		ia.open(previous_model)
+		previous_modeldata=ia.getchunk()
+		ia.close()
+		present_data_copy=copy.deepcopy(present_data)
+		previous_data_copy=copy.deepcopy(previous_data)
+		present_model_copy=copy.deepcopy(present_modeldata)
+		previous_model_copy=copy.deepcopy(previous_modeldata)
+		os.system('cp -r '+present_image+' '+outfile_path+'/'+os.path.basename(present_image)+'.temp')
+		os.system('cp -r '+previous_image+' '+outfile_path+'/'+os.path.basename(previous_image)+'.temp')
+		if qucor_step==False:
+			imsubimage(imagename=present_image,outfile=outfile_path+'/I.image',stokes='I',dropdeg=False)
+			fluxcal_image=self.mwa_solar_fluxcal(imagename=outfile_path+'/I.image',outfile=outfile_path+'/I_fluxcal.image')
+			major=imhead(imagename=fluxcal_image)['restoringbeam']['major']['value'] # In arcsec
+			minor=imhead(imagename=fluxcal_image)['restoringbeam']['minor']['value'] # In arcsec
+			freq=imhead(imagename=fluxcal_image)['refval'][-1]/10**9 # In GHz
+			ref_beam_axes_multi=500000
+			beam_axes_multi=major*minor	
+			expr='1.222e6*IM0/'+str(freq)+'^2/('+str(major*minor)+')'
+			immath(imagename=fluxcal_image,outfile=outfile_path+'/I_Tb.image',mode='evalexpr',expr=expr)
+			imhead(imagename=outfile_path+'/I_Tb.image', mode='put', hdkey='bunit', hdvalue='K')	
+			scale_tb_limit=(beam_axes_multi/ref_beam_axes_multi)
+			ia.open(outfile_path+'/I_Tb.image')
+			datatb=ia.getchunk()
+			ia.close()
+			tb_nonpos=np.where(datatb[:,:,0,0]<=0)
+			datatb[:,:,0,0][tb_nonpos]=np.nan
+			datatblog=np.log10(datatb[:,:,0,0])
+			pos=np.where(np.isnan(datatblog)==True)
+			datatblog=datatblog.astype('int64')
+			datatblog[pos]=0
+			postb=np.where(datatblog>7)
+			present_data[:,:,1,:][postb]=0
+			present_data[:,:,2,:][postb]=0
+			present_data[:,:,3,:][postb]=0
+			previous_data[:,:,1,:][postb]=0
+			previous_data[:,:,2,:][postb]=0
+			previous_data[:,:,3,:][postb]=0
+			ia.open(outfile_path+'/'+os.path.basename(previous_image)+'.temp')
+			ia.putchunk(previous_data)
+			ia.close()
+			ia.open(outfile_path+'/'+os.path.basename(present_image)+'.temp')
+			ia.putchunk(present_data)
+			ia.close()
+		dyn_range_present=self.calc_dyn_range(outfile_path+'/'+os.path.basename(present_image)+'.temp',10,stokes_list=['I','Q','U','V'])
+		dyn_range_previous=self.calc_dyn_range(outfile_path+'/'+os.path.basename(previous_image)+'.temp',10,stokes_list=['I','Q','U','V'])
+		if qucor_step==False:
+			if (dyn_range_present[0]['Q'][-1]-dyn_range_previous[0]['Q'][-1])/dyn_range_previous[0]['Q'][-1]>0.1:
+				self.pollog_verbose.info('Q leakage increases.\n')
+				present_data_copy[:,:,1,:]=previous_data_copy[:,:,1,:]
+				present_model_copy[:,:,1,:]=previous_model_copy[:,:,1,:]
+			if (dyn_range_present[0]['U'][-1]-dyn_range_previous[0]['U'][-1])/dyn_range_previous[0]['U'][-1]>0.1:
+				self.pollog_verbose.info('U leakage increases.\n')
+				present_data_copy[:,:,2,:]=previous_data_copy[:,:,2,:]
+				present_model_copy[:,:,2,:]=previous_model_copy[:,:,2,:]
+		if (dyn_range_present[0]['V'][-1]-dyn_range_previous[0]['V'][-1])/dyn_range_previous[0]['V'][-1]>0.1:
+			self.pollog_verbose.info('V leakage increases.\n')
+			present_data_copy[:,:,3,:]=previous_data_copy[:,:,3,:]
+			present_model_copy[:,:,3,:]=previous_model_copy[:,:,3,:]
+		if overwrite==True or outputfile_prefix=='':
+			ia.open(present_image)
+			ia.putchunk(present_data_copy)
+			ia.close()
+			ia.open(present_model)
+			ia.putchunk(present_model_copy)
+			ia.close()
+			os.system('rm -rf casa*log '+outfile_path+'/I* '+outfile_path+'/'+os.path.basename(present_image)+'.temp '+outfile_path+'/'+os.path.basename(previous_image)+'.temp')
+			return present_image,present_model
+		else:
+			os.system('cp -r '+present_image+' '+outfile_path+'/'+outputfile_prefix+'.image')
+			os.system('cp -r '+present_model+' '+outfile_path+'/'+outputfile_prefix+'.model')
+			ia.open(outfile_path+'/'+outputfile_prefix+'.image')
+			ia.putchunk(present_data_copy)
+			ia.close()
+			ia.open(outfile_path+'/'+outputfile_prefix+'.model')
+			ia.putchunk(present_model_copy)
+			ia.close()		
+			os.system('rm -rf casa*log '+outfile_path+'/I* '+outfile_path+'/'+os.path.basename(present_image)+'.temp '+outfile_path+'/'+os.path.basename(previous_image)+'.temp')
+			return outfile_path+'/'+outputfile_prefix+'.image',outfile_path+'/'+outputfile_prefix+'.model'
+
+	def make_crosshand_phase_caltable(self,cross_phase=15,caltable='',polbasis='Linear'): # TODO : Implement circular basis as well
+		'''
+		Function to make cross hand phase Jones matrices
+		Parameters:
+		cross_phase = Cross hand phase different in degree
+		caltable = Name of the caltable to store cross hand Jones matrices
+		polbasis = 'Linear' or 'Circular'
+		Return:
+		Caltable name
+		'''
+		cross_phase=np.deg2rad(cross_phase)/2.0
+		cross_jones=np.matrix([[np.cos(cross_phase)+1j*np.sin(cross_phase),0],[0,np.cos(cross_phase)-1j*np.sin(cross_phase)]])
+		AM=AccessMS(self.msname)
+		nant=AM.get_num_antenna()
+		nchan=AM.get_num_channels()
+		nint=AM.get_num_timestamps()
+		freqs=AM.get_freqs()/10**6
+		start_freq=freqs[0]
+		end_freq=freqs[-1]
+		mjdsecs=AM.get_timestamps_in_mjdsecs()
+		startmjd=mjdsecs[0]
+		endmjd=mjdsecs[-1]
+		cwd=os.getcwd()
+		if caltable!='':
+			if os.path.dirname(caltable)=='':
+				caltable=cwd+'/'+caltable
+			header = struct.pack("8s",b"MWAOCAL")+struct.pack("i",0)+struct.pack("i",0)+struct.pack("i",int(nint))+struct.pack("i",int(nant))+struct.pack("i",int(nchan))+\
+					struct.pack("i",4)+struct.pack("d",0.0)+struct.pack("d",0.0)
+			jones_array=np.array([np.array([np.real(inv(cross_jones)).flatten(),np.imag(inv(cross_jones)).flatten()]).flatten(order='F') for a in range(nchan)])
+			jones_array=jones_array.reshape((1,1,jones_array.shape[0],jones_array.shape[-1]))
+			numpy_data=np.repeat(np.repeat(jones_array,nint,axis=0),nant,axis=1)
+			numpy_data=numpy_data.flatten(order='C')
+			fil=open(caltable,'wb')
+			fil.write(header)
+			fil.close()
+			with open(caltable,mode='ba+') as f:
+				numpy_data.tofile(f,format='np.float64')
+			bin_data=np.fromfile(caltable,dtype=np.float64)
+			os.system('rm -rf '+caltable)
+			np.save(caltable,np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,nint],dtype='object'))
+			os.system('mv '+caltable+'.npy '+caltable)
+			return caltable,cross_jones
+		else:
+			return None,cross_jones
+
+	def apply_cross_hand_phase(self,cross_phase=15,caltable='',polbasis='Linear',modify_datacolumn=False):
+		'''
+		Function to applycal cross hand phase solution
+		Parameters:
+		cross_phase = Cross hand phase different in degree
+		caltable = Name of the caltable to store cross hand Jones matrices
+		polbasis = 'Linear' or 'Circular'
+		modify_datacolumn = Modify the DATA column or not
+		Return:
+		Caltable name
+		'''	
+		if caltable=='':
+			caltable=os.getcwd()+'/cross_phase.temp'
+		self.pollog_verbose.info('make_crosshand_phase_caltable(cross_phase='+str(cross_phase)+',caltable=\''+caltable+'\',polbasis=\''+polbasis+'\')\n')
+		caltable_name,cross_jones=self.make_crosshand_phase_caltable(cross_phase=cross_phase,caltable=caltable,polbasis=polbasis)
+		cal=CALIBRATE()
+		self.pollog_verbose.info('cal.applycal(msname=\''+self.msname+'\',gaintable=\''+caltable_name+'\',applymode=\'calonly\')\n')
+		cal.applycal(msname=self.msname,gaintable=caltable_name,applymode='calonly') # Applying the solution
+		if modify_datacolumn==True:
+			tb=table()
+			tb.open(self.msname,nomodify=False)
+			cor_data=tb.getcol('CORRECTED_DATA')
+			tb.putcol('DATA',cor_data)
+			tb.flush()
+			tb.close()
+		if caltable=='':
+			os.system('rm -rf '+caltable_name)
+		return caltable_name
+
+	def polselfcal_iteration(self,num_iter,rms_thresh,mask_str,sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,TB_limit=-1,solar_imaging=True,\
+							stokes='',interactive=False,use_ankflagger=False,do_flag=False,poldistortion_correction=True,poldistortion_type='poldistortion',crossphase=-1,\
 							poldistortion_matrix='UH',do_solarqu_cor=False,box_width=3,previous_image='',previous_model='',calibrator_caltable=[],maskregion=''):
 		'''
 		Function to perform a polarisation self-calibration loop, make an image, put the model in the measurement set, and perform the calibration
@@ -1685,12 +1923,15 @@ class PolSelfcal:
 		startmodel = Model to start the CLEANing
 		startmask = Mask to start
 		want_auto_masking = False, if True use CASA auto-multithresh for auto masking
+		TB_limit = -1, Brightness temperature limit to calculate polarised flux to compare between two polarisation self-calibration rounds (Only for non MWA solar observations)
+		solar_imaging = Performing Solar image calibration
 		stokes = '', Stokes plane to image
 		interactive= False, Perform interactive CLEAN
 		use_ankflagger = False, use aNKflagger for flagging after each selfcal round
 		do_flag = False, flag after each selfcal round
 		poldistortion_correction = True, Correct poldistortion using the known ideal Jones matrix of the instrument
-		poldistortion_type = 'polconversion ; Stokes I to STOKES Q,U,V leakages' or 'polrotation; changes between Stokes Q,U,V' or 'poldistortion' (default : poldistortion)
+		poldistortion_type = 'polconversion ; Stokes I to STOKES Q,U,V leakages' or 'polrotation; changes between Stokes Q,U,V' or 'poldistortion' (default : poldistortion)		
+		crossphase = Cross hand phase in degree for image based correction
 		poldistortion_matrix = 'UH or HU ' , where H is polconversion and U is polrotation
 		do_solarqu_cor = False, correct solar Stokes I to Q,U imaged based leakage correction
 		box_width = Length of negative box width in degree (default : 3 degree)
@@ -1738,13 +1979,13 @@ class PolSelfcal:
 						'\',startmask=\''+startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
 						'arcsec\',niter=10000,gain=0.08,threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask='+\
-						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold='+str(float(sigma/2))+',noisethreshold='+str(float(sigma))+\
-						',lownoisethreshold='+str(float(sigma/2.0))+',negativethreshold='+str(float(sigma))+',smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,'+\
+						'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold='+str(float(3.0))+',noisethreshold='+str(float(sigma))+\
+						',lownoisethreshold='+str(float(5.0))+',negativethreshold='+str(float(sigma))+',smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,'+\
 						'minpercentchange=5.0,automask_trials='+str(automask_trials)+',maskregion=\''+maskregion+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 					cell=str(self.cellsize)+'arcsec',niter=10000,gain=0.08,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
-					uvtaper=self.uvtaper,weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=float(sigma/2.0),\
-					noisethreshold=float(sigma),lownoisethreshold=float(sigma/2.0),negativethreshold=float(sigma),smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,\
+					uvtaper=self.uvtaper,weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=float(3.0),\
+					noisethreshold=float(sigma),lownoisethreshold=float(5.0),negativethreshold=float(sigma),smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,\
 					minpercentchange=5.0,automask_trials=automask_trials,maskregion=maskregion)
 				elif try_count==1:
 					self.pollog_verbose.info('Trying with auto-masking with no restriction of minimum beam fraction.\n')
@@ -1752,13 +1993,13 @@ class PolSelfcal:
 						'\'startmask=\''+startmask+'\',,stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
 						'arcsec\',niter=10000,gain=0.08,threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 						',uvtaper=\''+str(self.uvtaper)+'\',weighting=\'natural\',interactive=False,usemask=\''+\
-						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold='+str(float(sigma/2.0))+',noisethreshold='+str(float(sigma))+\
-						',lownoisethreshold='+str(float(sigma/2.0))+',negativethreshold='+str(float(sigma))+\
+						'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold='+str(float(3.0))+',noisethreshold='+str(float(sigma))+\
+						',lownoisethreshold=5.0,negativethreshold='+str(float(sigma))+\
 						',smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,automask_trials=\''+str(automask_trials)+'\')\n')
 					poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
 					cell=str(self.cellsize)+'arcsec',niter=10000,gain=0.08,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
-					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=float(sigma/2.0),noisethreshold=float(sigma),\
-					lownoisethreshold=float(sigma/2.0),negativethreshold=float(sigma),smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,\
+					weighting='natural',interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=float(3.0),noisethreshold=float(sigma),\
+					lownoisethreshold=float(5.0),negativethreshold=float(sigma),smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,\
 					automask_trials=automask_trials,maskregion=maskregion)
 				elif try_count==2:
 					self.pollog_verbose.info('Trying without masking.\n')
@@ -1788,10 +2029,26 @@ class PolSelfcal:
 			self.pollog_verbose.info('Correcting solar Stokes I to Q,U leakage based on image : '+imagename+'.image\n')	
 			self.correct_solar_qu_leakage(imagename+'.image',imagename+'.model',sigma,overwrite=True)
 			poldistortion_correction=False
-		if previous_image!='' and previous_model!='':
-			self.compare_leakage_for_sun(present_image=imagename+'.image',previous_image=previous_image,present_model=imagename+'.model',previous_model=previous_model,overwrite=True)
+		if previous_image!='' and previous_model!='' and solar_imaging==True:
+			self.compare_leakage_for_sun(present_image=imagename+'.image',previous_image=previous_image,present_model=imagename+'.model',previous_model=previous_model,overwrite=True,\
+										qucor_step=do_solarqu_cor)
 			if do_solarqu_cor==True:
+				self.compare_leakage_for_sun(present_image='qucor.image',previous_image=previous_image,present_model='qucor.model',previous_model=previous_model,\
+						overwrite=True,qucor_step=True)
+		elif previous_image!='' and previous_model!='' and solar_imaging==False:
+			self.compare_leakages(present_image=imagename+'.image',previous_image=previous_image,present_model=imagename+'.model',previous_model=previous_model,overwrite=True,\
+				TB_limit=TB_limit)
+		if crossphase!=-1:
+			outimage=self.correct_image_for_cross_phase(imagename+'.image',imagename+'.image.temp',cross_phase=crossphase,imagetype='CASA',outtype='CASA',pol_basis='Linear')
+			outimage=self.correct_image_for_cross_phase(imagename+'.model',imagename+'.model.temp',cross_phase=crossphase,imagetype='CASA',outtype='CASA',pol_basis='Linear')
+			os.system('mv '+imagename+'.image.temp '+imagename+'.image')
+			os.system('mv '+imagename+'.model.temp '+imagename+'.model')
+			if do_solarqu_cor==True:
+				if os.path.isdir('qucor.image')==True:
+					os.system('rm -rf qucor.image')
 				os.system('cp -r '+imagename+'.image qucor.image')
+				if os.path.isdir('qucor.model')==True:
+					os.system('rm -rf qucor.model')
 				os.system('cp -r '+imagename+'.model qucor.model')
 		out_dict,negative_dyn_range=self.calc_dyn_range(imagename+'.image',sigma,box_width=box_width,stokes_list=['I','Q','U','V']) # Calculating the dynamic range of the image
 		out_dict_keys=out_dict.keys()
@@ -1868,29 +2125,8 @@ class PolSelfcal:
 				if poldistortion_correction==False:
 					self.pollog_verbose.info('cal.applycal(msname=\''+self.msname+'\',gaintable=\''+caltable_name+'\',applymode=\'calflag\',flagbackup=True)\n')
 					cal.applycal(msname=self.msname,gaintable=caltable_name,applymode='calflag',flagbackup=True) # Applying the solution
-					if use_ankflagger==True:
-						try:
-							self.pollog_verbose.info('do_uvsub_ankflag(\''+self.msname+'\',nthread=1,verbose='+str(False)+')\n')
-							fg.do_uvsub_ankflag(self.msname,nthread=1,verbose=False)
-						except Exception as e:
-							self.pollog_verbose.info('Error in aNKflagger : '+str(e)+'\n')
-							self.pollog_verbose.info('Error in running aNKflagger. Using rms threshold flagging.\n')
-							self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[15,10,8])\n')
-							fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[15,10,8])
-					else:
-						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[15,10,8])\n')
-						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[15,10,8])
-					if do_solarqu_cor==True:
-						tb=table()
-						tb.open(self.msname)
-						cor_data=tb.getcol('CORRECTED_DATA')
-						tb.close()
-						tb.open(self.msname,nomodify=False)
-						tb.putcol('DATA',cor_data)
-						tb.flush()
-						tb.close()
 				elif poldistortion_correction==True:
-					self.pollog_verbose.info('self.cal_poldistortion(\''+caltable_name+'\',poldistortion_matrix='+poldistortion_matrix+')\n')
+					self.pollog_verbose.info('cal_poldistortion(\''+caltable_name+'\',poldistortion_matrix='+poldistortion_matrix+')\n')
 					X,inv_X,H,inv_H,U,inv_U,poldist_file=self.cal_poldistortion(caltable_name,poldistortion_matrix=poldistortion_matrix)
 					if poldistortion_type=='polconversion':
 						self.pollog_verbose.info('poldistortion_type=\'polconversion\'\n')
@@ -1908,17 +2144,27 @@ class PolSelfcal:
 					self.pollog_verbose.info('Applying poldistortion corrected caltable ........\n')
 					self.pollog_verbose.info('cal.applycal(msname=\''+self.msname+'\',gaintable=\''+caltable_name+'\',applymode=\'calflag\',flagbackup=True)\n')
 					cal.applycal(msname=self.msname,gaintable=caltable_name,applymode='calflag',flagbackup=True) # Applying the solution
-					self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5])\n')
-					fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[10,7,5,3.5])
-					if do_solarqu_cor==True:
-						tb=table()
-						tb.open(self.msname)
-						cor_data=tb.getcol('CORRECTED_DATA')
-						tb.close()
-						tb.open(self.msname,nomodify=False)
-						tb.putcol('DATA',cor_data)
-						tb.flush()
-						tb.close()
+				if use_ankflagger==True:
+					try:
+						self.pollog_verbose.info('do_uvsub_ankflag(\''+self.msname+'\',nthread=1,verbose='+str(False)+')\n')
+						fg.do_uvsub_ankflag(self.msname,nthread=1,verbose=False)
+					except Exception as e:
+						self.pollog_verbose.info('Error in aNKflagger : '+str(e)+'\n')
+						self.pollog_verbose.info('Error in running aNKflagger. Using rms threshold flagging.\n')
+						self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[15,10,8])\n')
+						fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[15,10,8])
+				else:
+					self.pollog_verbose.info('do_uvsub_flagger(\''+self.msname+'\',mode=\'uvsub_flag\',rmsthresh=[15,10,8])\n')
+					fg.do_uvsub_flagger(self.msname,mode='uvsub_flag',rmsthresh=[15,10,8])
+				if do_solarqu_cor==True:
+					tb=table()
+					tb.open(self.msname)
+					cor_data=tb.getcol('CORRECTED_DATA')
+					tb.close()
+					tb.open(self.msname,nomodify=False)
+					tb.putcol('DATA',cor_data)
+					tb.flush()
+					tb.close()
 				self.pollog_verbose.info('DR_I:'+str(out_dict['I'][0])+', DR_Q:'+str(out_dict['Q'][0])+', DR_U:'+str(out_dict['U'][0])\
 												+', DR_V:'+str(out_dict['V'][0])+', DR_neg:'+str(negative_dyn_range)+'\n')
 				self.pollog_verbose.info('Success.\n')

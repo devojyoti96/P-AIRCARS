@@ -673,8 +673,9 @@ if len(measurement_set_list)!=0:
 					selfcal_fail=False
 					other_error=False
 					if len(touch_file_list)>0:
-						if touch_file_list[0] not in all_touch_files:
-							all_touch_files.append(touch_file_list[0])
+						for j in touch_file_list:
+							if j not in all_touch_files:
+								all_touch_files.append(j)
 						print (all_touch_files,ref_freq_time_msname)
 						i=touch_file_list[0]
 						if '_selfcalerror' in i:
@@ -866,6 +867,7 @@ if len(measurement_set_list)!=0:
 								output_gaintable=inputs.basedir+'/caltables/'+str(reftimefreq_ms_OBSID)+'/Interp_'+str(ms_freq)+'MHz.gcalp')
 				if len(caltable_list)!=0:
 					interpolated_caltable=interpolated_caltable+caltable_list
+				ms_obsid=get_OBSID_from_metafits(metafits)
 				ms_OBSIDs_gcal.append(ms_obsid)
 				if do_bandpass==True:
 					ms_OBSIDs_bcal.append(ms_obsid)
@@ -875,7 +877,6 @@ if len(measurement_set_list)!=0:
 					' --ref_freq_avg '+str(ref_freq_avg)+' --ref_time_avg '+str(ref_time_avg)+' --ref_time_freq False --do_bandpass '+str(do_bandpass)+\
 					' --do_polcal '+str(do_polcal)+' --num_threads '+str(available_cpu_for_paircars)+' --caltables '+interpolated_caltable
 				mainlog.info('Command : '+cmd+'\n')
-				ms_obsid=get_OBSID_from_metafits(metafits)
 				screen_name=str(ms_obsid)+'_'+str(os.path.basename(msname).split('.ms')[0])+'_runpaircars'
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(msname).split('.ms')[0])
 				screen_batch_file=casa_instance_runner(cmd,screen_name,finished_touch_file)

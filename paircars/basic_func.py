@@ -839,8 +839,35 @@ def get_caltable_metadata(caltable):
 			'Start time':start_time,'End time':end_time}
 	return result
 
-
-
+def get_MWA_phase(metafits):
+	'''
+	Function to get MWA phase
+	Parameters:
+	metafits = Name of the metafits file
+	Return:
+	MWA phase
+	'''
+	OBSID=get_OBSID_from_metafits(metafits)
+	try:
+		url='http://ws.mwatelescope.org/metadata/con?obs_id='+str(OBSID)+'&summary'
+		config=json.load(urllib.request.urlopen(url,timeout=15))[0]
+		if config=='PHASE1':
+			config='MWAPhaseI'
+		elif config=='LB':
+			config='MWAPhaseIILB'
+		elif config=='COMPACT':
+			config='MWAPhaseIICOMPACT'
+	except:
+		tilename=fits.getdata(metafits)['TileName']
+		LB=['LB' in i for i in tilename]
+		Hex=['Hex' in i for i in tilename]
+		if np.sum(LB)!=0:
+			config='MWAPhaseIILB'
+		elif np.sum(Hex)!=0:
+			config='MWAPhaseIICOMPACT'
+		else:
+			config='MWAPhaseI'
+	return config
 
 
 

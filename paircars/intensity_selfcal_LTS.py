@@ -313,7 +313,7 @@ class IntensitySelfcal:
 		'''
 		if bandpass_selfcal==True:
 			min_num_iter_fixed_sigma=1
-			min_iteration=3
+			min_iteration=5
 			max_iteration=100
 			antenna_bin=1
 		else:
