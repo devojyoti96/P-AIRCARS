@@ -1,374 +1,498 @@
-from threadpoolctl import threadpool_limits
-import numpy as np,os
+import numpy as np,os,glob
 from casatasks.private.imagerhelpers.imager_base import PySynthesisImager
 from casatasks.private.imagerhelpers.input_parameters import ImagerParameters
 from casatools import *
 from casatasks import casalog
 
-
 class Poltclean:
 	'''
 	Class to perform full stokes CASA tclean 
 	'''
-	with threadpool_limits(limits=1, user_api='openmp'):
-		def __init__(self):
-			self.ia=image()
-			self.msname=''
-			self.field=''
-			self.spw=''
-			self.timestr=''
-			self.uvdist=''
-			self.antenna=''
-			self.scan=''
-			self.obs=''
-			self.state=''
-			self.datacolumn='corrected'
-			self.imagename=''
-			self.imsize=[100, 100]
-			self.cell=[1.0,1.0]
-			self.phasecenter=''
-			self.stokes='I'
-			self.projection='SIN'
-			self.startmodel=''
-			self.specmode='mfs'
-			self.reffreq=''
-			self.nchan=1
-			self.start=''
-			self.width=''
-			self.outframe='LSRK'
-			self.veltype='radio'
-			self.restfreq=['']
-			self.sysvel=''
-			self.sysvelframe=''
-			self.interpolation='nearest'
-			self.perchanweightdensity=False
-			self.gridder='standard'
-			self.facets=1
-			self.chanchunks=1
-			self.wprojplanes=1
-			self.vptable=''
-			self.usepointing=False
-			self.mosweight=False
-			self.aterm=True
-			self.psterm=True
-			self.mterm=True
-			self.wbawp=True
-			self.cfcache=''
-			self.dopbcorr=True
-			self.conjbeams=True
-			self.computepastep=360.0
-			self.rotatepastep=360.0
-			self.pointingoffsetsigdev=[30.0, 30.0]
-			self.pblimit=0.02
-			self.normtype='flatnoise'
-			self.outlierfile=''
-			self.restart=True
-			self.weighting='natural'
-			self.robust=0.5
-			self.noise='0.0Jy'
-			self.npixels=0
-			self.uvtaper=[]
-			self.niter=0
-			self.cycleniter=0
-			self.loopgain=0.1
-			self.threshold=['0.0Jy'] # Stokes I,Q,U,V threshold
-			self.nsigma=0.0
-			self.cyclefactor=1.0
-			self.minpsffraction=0.1
-			self.maxpsffraction=0.8
-			self.interactive=False
-			self.deconvolver='hogbom'
-			self.scales=[]
-			self.nterms=1
-			self.scalebias=0.0
-			self.restoringbeam=[]
-			self.usemask='user'
-			self.mask=''
-			self.pbmask=0.0
-			self.maskthreshold=''
-			self.maskresolution=''
-			self.nmask=0
-			self.sidelobethreshold=5.0
-			self.noisethreshold=3.0
-			self.lownoisethreshold=3.0
-			self.negativethreshold=3.0
-			self.smoothfactor=1.0
-			self.minbeamfrac=0.3
-			self.cutthreshold=0.01
-			self.growiterations=100
-			self.dogrowprune=True
-			self.minpercentchange=-1.0
-			self.verbose=False
-			self.fastnoise=False
-			self.savemodel='none'
-			self.parallel=False
-			self.workdir=''
-			self.cflist=[]
-			self.gridfunction='SF'
-			self.convsupport=-1
-			self.truncate='-1'
-			self.gwidth='-1'
-			self.jwidth='-1'
-			self.pointingcolumntouse='direction'
-			self.minweight=0.0
-			self.clipminmax=False
-			
+	def __init__(self):
+		self.ia=image()
+		self.msname=''
+		self.field=''
+		self.spw=''
+		self.timestr=''
+		self.uvdist=''
+		self.antenna=''
+		self.scan=''
+		self.obs=''
+		self.state=''
+		self.datacolumn='corrected'
+		self.imagename=''
+		self.imsize=[100, 100]
+		self.cell=[1.0,1.0]
+		self.phasecenter=''
+		self.stokes='I'
+		self.projection='SIN'
+		self.startmodel=''
+		self.specmode='mfs'
+		self.reffreq=''
+		self.nchan=1
+		self.start=''
+		self.width=''
+		self.outframe='LSRK'
+		self.veltype='radio'
+		self.restfreq=['']
+		self.sysvel=''
+		self.sysvelframe=''
+		self.interpolation='nearest'
+		self.perchanweightdensity=False
+		self.gridder='standard'
+		self.facets=1
+		self.chanchunks=1
+		self.wprojplanes=1
+		self.vptable=''
+		self.usepointing=False
+		self.mosweight=False
+		self.aterm=True
+		self.psterm=True
+		self.mterm=True
+		self.wbawp=True
+		self.cfcache=''
+		self.dopbcorr=True
+		self.conjbeams=True
+		self.computepastep=360.0
+		self.rotatepastep=360.0
+		self.pointingoffsetsigdev=[30.0, 30.0]
+		self.pblimit=0.02
+		self.normtype='flatnoise'
+		self.outlierfile=''
+		self.restart=True
+		self.weighting='natural'
+		self.robust=0.5
+		self.noise='0.0Jy'
+		self.npixels=0
+		self.uvtaper=[]
+		self.niter=0
+		self.cycleniter=0
+		self.loopgain=0.1
+		self.threshold=['0.0Jy'] # Stokes I,Q,U,V threshold
+		self.nsigma=0.0
+		self.cyclefactor=1.0
+		self.minpsffraction=0.1
+		self.maxpsffraction=0.8
+		self.interactive=False
+		self.deconvolver='hogbom'
+		self.scales=[]
+		self.nterms=1
+		self.scalebias=0.0
+		self.restoringbeam=[]
+		self.usemask='user'
+		self.mask=''
+		self.pbmask=0.0
+		self.maskthreshold=''
+		self.maskresolution=''
+		self.nmask=0
+		self.sidelobethreshold=5.0
+		self.noisethreshold=3.0
+		self.lownoisethreshold=3.0
+		self.negativethreshold=3.0
+		self.smoothfactor=1.0
+		self.minbeamfrac=0.3
+		self.cutthreshold=0.01
+		self.growiterations=100
+		self.dogrowprune=True
+		self.minpercentchange=-1.0
+		self.verbose=False
+		self.fastnoise=False
+		self.savemodel='none'
+		self.parallel=False
+		self.workdir=''
+		self.cflist=[]
+		self.gridfunction='SF'
+		self.convsupport=-1
+		self.truncate='-1'
+		self.gwidth='-1'
+		self.jwidth='-1'
+		self.pointingcolumntouse='direction'
+		self.minweight=0.0
+		self.clipminmax=False
+		self.automask_trials=-1
+		self.maskregion=''
 		
-		def init_imager(self):
-			thresh_list=[]
-			for i in range(len(self.threshold)):
-				thresh=self.threshold[i]
-				if ('Jy' in thresh):
-					thresh_list.append(float(thresh.split('Jy')[0]))
-				elif ('mJy' in thresh):
-					thresh_list.append(float(thresh.split('mJy')[0]*(10**-3)))
-			minthresh=min(thresh_list)
-			paramList=ImagerParameters(
-				msname=self.msname,
-				field=self.field,
-				spw=self.spw,
-				timestr=self.timestr,
-				uvdist=self.uvdist,
-				antenna=self.antenna,
-				scan=self.scan,
-				obs=self.obs,
-				state=self.state,
-				datacolumn=self.datacolumn,
-				imagename=self.imagename,
-				imsize=self.imsize,
-				cell=self.cell,
-				phasecenter=self.phasecenter,
-				stokes=self.stokes,
-				projection=self.projection,
-				startmodel=self.startmodel,
-				specmode=self.specmode,
-				reffreq=self.reffreq,
-				nchan=self.nchan,
-				start=self.start,
-				width=self.width,
-				outframe=self.outframe,
-				veltype=self.veltype,
-				restfreq=self.restfreq,
-				sysvel=self.sysvel,
-				sysvelframe=self.sysvelframe,
-				interpolation=self.interpolation,
-				perchanweightdensity=self.perchanweightdensity,
-				gridder=self.gridder,
-				facets=self.facets,
-				chanchunks=self.chanchunks,
-				wprojplanes=self.wprojplanes,
-				vptable=self.vptable,
-				usepointing=self.usepointing,
-				mosweight=self.mosweight,
-				aterm=self.aterm,
-				psterm=self.psterm,
-				mterm=self.mterm,
-				wbawp=self.wbawp,
-				cfcache=self.cfcache,
-				dopbcorr=self.dopbcorr,
-				conjbeams=self.conjbeams,
-				computepastep=self.computepastep,
-				rotatepastep=self.rotatepastep,
-				pointingoffsetsigdev=self.pointingoffsetsigdev,
-				pblimit=self.pblimit,
-				normtype=self.normtype,
-				outlierfile=self.outlierfile,
-				restart=self.restart,
-				weighting=self.weighting,
-				robust=self.robust,
-				noise=self.noise,
-				npixels=self.npixels,
-				uvtaper=self.uvtaper,
-				niter=self.niter,
-				cycleniter=self.cycleniter,
-				loopgain=self.loopgain,
-				threshold=str(minthresh)+'Jy',
-				nsigma=self.nsigma,
-				cyclefactor=self.cyclefactor,
-				minpsffraction=self.minpsffraction,
-				maxpsffraction=self.maxpsffraction,
-				interactive=self.interactive,
-				deconvolver=self.deconvolver,
-				scales=self.scales,
-				nterms=self.nterms,
-				scalebias=self.scalebias,
-				restoringbeam=self.restoringbeam,
-				usemask=self.usemask,
-				mask=self.mask,
-				pbmask=self.pbmask,
-				maskthreshold=self.maskthreshold,
-				maskresolution=self.maskresolution,
-				nmask=self.nmask,
-				sidelobethreshold=self.sidelobethreshold,
-				noisethreshold=self.noisethreshold,
-				lownoisethreshold=self.lownoisethreshold,
-				negativethreshold=self.negativethreshold,
-				smoothfactor=self.smoothfactor,
-				minbeamfrac=self.minbeamfrac,
-				cutthreshold=self.cutthreshold,
-				growiterations=self.growiterations,
-				dogrowprune=self.dogrowprune,
-				minpercentchange=self.minpercentchange,
-				verbose=self.verbose,
-				fastnoise=self.fastnoise,
-				savemodel=self.savemodel,
-				parallel=self.parallel,
-				workdir=self.workdir,
-				cflist=self.cflist,
-				gridfunction=self.gridfunction,
-				convsupport=self.convsupport,
-				truncate=self.truncate,
-				gwidth=self.gwidth,
-				jwidth=self.jwidth,
-				pointingcolumntouse=self.pointingcolumntouse,
-				minweight=self.minweight,
-				clipminmax=self.clipminmax)
-			self.imager = PySynthesisImager(params=paramList)
-			
-		def get_image(self, imname=''):
-			'''
-			Function to return image pixel array
-			'''
-			stokes_list=self.get_stokes()
-			self.ia.open(imname)
-			pix_dic={}
-			for i in range(len(stokes_list)):
-				pix = self.ia.getchunk()[:,:,i,0]
-				pix_dic[stokes_list[i]]=pix
-			self.ia.close()
-			return pix_dic
+	def init_imager(self):
+		thresh_list=[]
+		for i in range(len(self.threshold)):
+			thresh=self.threshold[i]
+			if ('Jy' in thresh):
+				thresh_list.append(float(thresh.split('Jy')[0]))
+			elif ('mJy' in thresh):
+				thresh_list.append(float(thresh.split('mJy')[0]*(10**-3)))
+		minthresh=min(thresh_list)
+		paramList=ImagerParameters(
+			msname=self.msname,
+			field=self.field,
+			spw=self.spw,
+			timestr=self.timestr,
+			uvdist=self.uvdist,
+			antenna=self.antenna,
+			scan=self.scan,
+			obs=self.obs,
+			state=self.state,
+			datacolumn=self.datacolumn,
+			imagename=self.imagename,
+			imsize=self.imsize,
+			cell=self.cell,
+			phasecenter=self.phasecenter,
+			stokes=self.stokes,
+			projection=self.projection,
+			startmodel=self.startmodel,
+			specmode=self.specmode,
+			reffreq=self.reffreq,
+			nchan=self.nchan,
+			start=self.start,
+			width=self.width,
+			outframe=self.outframe,
+			veltype=self.veltype,
+			restfreq=self.restfreq,
+			sysvel=self.sysvel,
+			sysvelframe=self.sysvelframe,
+			interpolation=self.interpolation,
+			perchanweightdensity=self.perchanweightdensity,
+			gridder=self.gridder,
+			facets=self.facets,
+			chanchunks=self.chanchunks,
+			wprojplanes=self.wprojplanes,
+			vptable=self.vptable,
+			usepointing=self.usepointing,
+			mosweight=self.mosweight,
+			aterm=self.aterm,
+			psterm=self.psterm,
+			mterm=self.mterm,
+			wbawp=self.wbawp,
+			cfcache=self.cfcache,
+			dopbcorr=self.dopbcorr,
+			conjbeams=self.conjbeams,
+			computepastep=self.computepastep,
+			rotatepastep=self.rotatepastep,
+			pointingoffsetsigdev=self.pointingoffsetsigdev,
+			pblimit=self.pblimit,
+			normtype=self.normtype,
+			outlierfile=self.outlierfile,
+			restart=self.restart,
+			weighting=self.weighting,
+			robust=self.robust,
+			noise=self.noise,
+			npixels=self.npixels,
+			uvtaper=self.uvtaper,
+			niter=self.niter,
+			cycleniter=self.cycleniter,
+			loopgain=self.loopgain,
+			threshold=str(minthresh)+'Jy',
+			nsigma=self.nsigma,
+			cyclefactor=self.cyclefactor,
+			minpsffraction=self.minpsffraction,
+			maxpsffraction=self.maxpsffraction,
+			interactive=self.interactive,
+			deconvolver=self.deconvolver,
+			scales=self.scales,
+			nterms=self.nterms,
+			scalebias=self.scalebias,
+			restoringbeam=self.restoringbeam,
+			usemask=self.usemask,
+			mask=self.mask,
+			pbmask=self.pbmask,
+			maskthreshold=self.maskthreshold,
+			maskresolution=self.maskresolution,
+			nmask=self.nmask,
+			sidelobethreshold=self.sidelobethreshold,
+			noisethreshold=self.noisethreshold,
+			lownoisethreshold=self.lownoisethreshold,
+			negativethreshold=self.negativethreshold,
+			smoothfactor=self.smoothfactor,
+			minbeamfrac=self.minbeamfrac,
+			cutthreshold=self.cutthreshold,
+			growiterations=self.growiterations,
+			dogrowprune=self.dogrowprune,
+			minpercentchange=self.minpercentchange,
+			verbose=self.verbose,
+			fastnoise=self.fastnoise,
+			savemodel=self.savemodel,
+			parallel=self.parallel,
+			workdir=self.workdir,
+			cflist=self.cflist,
+			gridfunction=self.gridfunction,
+			convsupport=self.convsupport,
+			truncate=self.truncate,
+			gwidth=self.gwidth,
+			jwidth=self.jwidth,
+			pointingcolumntouse=self.pointingcolumntouse,
+			minweight=self.minweight,
+			clipminmax=self.clipminmax)
+		self.imager = PySynthesisImager(params=paramList)
+		
+	def get_image(self, imname=''):
+		'''
+		Function to return image pixel array
+		'''
+		stokes_list=self.get_stokes()
+		self.ia.open(imname)
+		pix_dic={}
+		for i in range(len(stokes_list)):
+			pix = self.ia.getchunk()[:,:,i,0]
+			pix_dic[stokes_list[i]]=pix
+		self.ia.close()
+		return pix_dic
 
-		def get_residual_and_mask(self):
-			'''
-			Function to return residual and mask array
-			'''
-			return self.get_image(self.imagename+'.residual'), self.get_image(self.imagename+'.mask')
+	def get_residual_and_mask(self):
+		'''
+		Function to return residual and mask array
+		'''
+		return self.get_image(self.imagename+'.residual'), self.get_image(self.imagename+'.mask')
 
-		def get_peak_residuals(self):
-			'''
-			Peak residual inside mask
-			'''
-			residual = self.get_image(self.imagename+'.residual')
-			mask = self.get_image(self.imagename+'.mask')
-			backup_mask=self.get_image(self.imagename+'_temp.mask')
-			residual_dic={}
-			masked_residual_dic={}
-			stokes_list=self.get_stokes()
-			for i in stokes_list:
-				residual_dic[i]=max(np.max(residual[i]*backup_mask[i]),abs(np.min(residual[i]*backup_mask[i])))
-			for i in stokes_list:
-				masked_residual_dic[i]=max(np.max(residual[i]*mask[i]),abs(np.min(residual[i]*mask[i])))
-			return residual_dic,masked_residual_dic
+	def get_peak_residuals(self):
+		'''
+		Peak residual inside mask
+		'''
+		residual = self.get_image(self.imagename+'.residual')
+		mask = self.get_image(self.imagename+'.mask')
+		backup_mask=self.get_image(self.imagename+'_temp.mask')
+		residual_dic={}
+		masked_residual_dic={}
+		stokes_list=self.get_stokes()
+		for i in stokes_list:
+			residual_dic[i]=max(np.max(residual[i]*backup_mask[i]),abs(np.min(residual[i]*backup_mask[i])))
+		for i in stokes_list:
+			masked_residual_dic[i]=max(np.max(residual[i]*mask[i]),abs(np.min(residual[i]*mask[i])))
+		return residual_dic,masked_residual_dic
 
-		def get_stokes(self):
-			stokes=self.stokes
-			if stokes=='I':
-				return ['I']
-			elif stokes=='Q':
-				return ['Q']
-			elif stokes=='U':
-				return ['U']
-			elif stokes=='V':
-				return ['V']
-			elif stokes=='IV':
-				return ['I','V']
-			elif stokes=='QU':
-				return ['Q','U']
-			elif stokes=='IQ':
-				return ['I','Q']
-			elif stokes=='UV':
-				rerun ['U','V']
-			elif stokes=='IQUV':
-				return ['I','Q','U','V']
-			elif stokes=='RR':
-				return ['RR']
-			elif stokes=='LL':
-				return ['LL']
-			elif stokes=='XX':
-				return ['XX']
-			elif stokes=='YY':
-				return ['YY']
-			elif stokes=='RRLL':
-				return ['RR','LL']
-			elif stokes=='XXYY':
-				return ['XX','YY']
+	def get_stokes(self):
+		stokes=self.stokes
+		if stokes=='I':
+			return ['I']
+		elif stokes=='Q':
+			return ['Q']
+		elif stokes=='U':
+			return ['U']
+		elif stokes=='V':
+			return ['V']
+		elif stokes=='IV':
+			return ['I','V']
+		elif stokes=='QU':
+			return ['Q','U']
+		elif stokes=='IQ':
+			return ['I','Q']
+		elif stokes=='UV':
+			rerun ['U','V']
+		elif stokes=='IQUV':
+			return ['I','Q','U','V']
+		elif stokes=='RR':
+			return ['RR']
+		elif stokes=='LL':
+			return ['LL']
+		elif stokes=='XX':
+			return ['XX']
+		elif stokes=='YY':
+			return ['YY']
+		elif stokes=='RRLL':
+			return ['RR','LL']
+		elif stokes=='XXYY':
+			return ['XX','YY']
+		else:
+			return
+
+	def make_observed_image(self):
+		casalog.post('Making inital image\n############################')
+		## Initialize modules major cycle modules
+		self.imager.initializeImagers()
+		self.imager.initializeNormalizers()
+		self.imager.setWeighting()
+		## Init minor cycle modules
+		self.imager.initializeDeconvolvers()
+		self.imager.initializeIterationControl() 
+		## (5) Make the initial images
+		self.imager.makePSF()
+		self.imager.makePB()
+		self.imager.runMajorCycle() # Make initial dirty / residual image
+		## (6) Make the initial clean mask
+		if self.imager.hasConverged() ==True:
+			self.stopcode=1
+		self.imager.updateMask()
+		
+	def make_maskregion(self):
+		paramList1=ImagerParameters(
+		msname=self.msname,
+		field=self.field,
+		spw=self.spw,
+		timestr=self.timestr,
+		uvdist=self.uvdist,
+		antenna=self.antenna,
+		scan=self.scan,
+		obs=self.obs,
+		state=self.state,
+		datacolumn=self.datacolumn,
+		imagename=self.imagename+'.maskregion',
+		imsize=self.imsize,
+		cell=self.cell,
+		phasecenter=self.phasecenter,
+		stokes=self.stokes,
+		projection=self.projection,
+		startmodel=self.startmodel,
+		specmode=self.specmode,
+		reffreq=self.reffreq,
+		nchan=self.nchan,
+		start=self.start,
+		width=self.width,
+		outframe=self.outframe,
+		veltype=self.veltype,
+		restfreq=self.restfreq,
+		sysvel=self.sysvel,
+		sysvelframe=self.sysvelframe,
+		interpolation=self.interpolation,
+		perchanweightdensity=self.perchanweightdensity,
+		gridder=self.gridder,
+		facets=self.facets,
+		chanchunks=self.chanchunks,
+		wprojplanes=self.wprojplanes,
+		vptable=self.vptable,
+		usepointing=self.usepointing,
+		mosweight=self.mosweight,
+		aterm=self.aterm,
+		psterm=self.psterm,
+		mterm=self.mterm,
+		wbawp=self.wbawp,
+		cfcache=self.cfcache,
+		dopbcorr=self.dopbcorr,
+		conjbeams=self.conjbeams,
+		computepastep=self.computepastep,
+		rotatepastep=self.rotatepastep,
+		pointingoffsetsigdev=self.pointingoffsetsigdev,
+		pblimit=self.pblimit,
+		normtype=self.normtype,
+		outlierfile=self.outlierfile,
+		restart=self.restart,
+		weighting=self.weighting,
+		robust=self.robust,
+		noise=self.noise,
+		npixels=self.npixels,
+		uvtaper=self.uvtaper,
+		niter=self.niter,
+		cycleniter=self.cycleniter,
+		loopgain=self.loopgain,
+		threshold='0Jy',
+		nsigma=self.nsigma,
+		usemask='user',
+		mask=self.maskregion)
+		imager1 = PySynthesisImager(params=paramList1)
+		casalog.post('Making inital image\n############################')
+		## Initialize modules major cycle modules
+		imager1.initializeImagers()
+		imager1.initializeNormalizers()
+		imager1.setWeighting()
+		## Init minor cycle modules
+		imager1.initializeDeconvolvers()
+		imager1.initializeIterationControl() 
+		## (5) Make the initial images
+		imager1.makePSF()
+		imager1.makePB()
+		imager1.runMajorCycle() # Make initial dirty / residual image
+		## (6) Make the initial clean mask
+		imager1.updateMask()
+		imager1.deleteTools()
+		os.system('rm -rf '+self.imagename+'.maskregion.image '+self.imagename+'.maskregion.model '+self.imagename+'.maskregion.residual '+self.imagename+'.maskregion.pb '+\
+					self.imagename+'.maskregion.sumwt '+self.imagename+'.maskregion.flux '+self.imagename+'.maskregion.psf')
+
+	def run_deconvolver(self):
+		i=0
+		j=0
+		if int(self.automask_trials)!=-1 and self.usemask=='auto-multithresh' and self.startmodel!='':
+			self.tryautomask=int(self.automask_trials)
+		elif int(self.automask_trials)!=-1 and self.usemask=='auto-multithresh' and self.startmodel=='':
+			if int(self.niter)>int(3*int(self.automask_trials)):
+				self.tryautomask=int(self.niter/3)
 			else:
-				return
-
-		def make_observed_image(self):
-			casalog.post('Making inital image\n############################')
-			## Initialize modules major cycle modules
-			self.imager.initializeImagers()
-			self.imager.initializeNormalizers()
-			self.imager.setWeighting()
-			## Init minor cycle modules
-			self.imager.initializeDeconvolvers()
-			self.imager.initializeIterationControl() 
-			## (5) Make the initial images
-			self.imager.makePSF()
-			self.imager.makePB()
-			self.imager.runMajorCycle() # Make initial dirty / residual image
-			## (6) Make the initial clean mask
-			if self.imager.hasConverged() ==True:
-				self.stopcode=1
+				self.tryautomask=0
+		else:
+			self.tryautomask=0
+		summask=0
+		while (not self.imager.hasConverged()):
+			if os.path.isdir(self.imagename+'.mask')==True and j>=1:
+				if os.path.isdir(self.imagename+'.pre.mask')==True:
+					os.system('rm -rf '+self.imagename+'.pre.mask')
+				os.system('cp -r '+self.imagename+'.mask '+self.imagename+'.pre.mask')
+			self.update_mask()
+			self.imager.runMinorCycle()
+			self.imager.runMajorCycle()
 			self.imager.updateMask()
-
-		def run_deconvolver(self):
-			i=1
-			while (not self.imager.hasConverged()):
-				self.update_mask()
-				self.imager.runMinorCycle()
-				self.imager.runMajorCycle()
-				self.imager.updateMask()
-				i+=1
-
-		def run_restore(self):
-			self.imager.restoreImages()
-			self.imager.deleteTools()
-
-		def update_mask(self):
-			stokes_list=self.get_stokes()
-			try:
-				last_peak_len=len(last_peak)
-			except:
-				last_peak=[0]*len(stokes_list)
-			if os.path.isdir(self.imagename+'_temp.mask')==False:
-				os.system('cp -r '+self.imagename+'.mask '+self.imagename+'_temp.mask')
-			threshold_dic={}
-			for i in range(len(stokes_list)):
-				stokes=stokes_list[i]
-				thresh=self.threshold[i]
-				if ('Jy' in thresh):
-					threshold_dic[stokes]=float(thresh.split('Jy')[0])
-				elif ('mJy' in thresh):
-					threshold_dic[stokes]=float(thresh.split('mJy')[0]*(10**-3))
-			peak,masked_peak=self.get_peak_residuals()
-			casalog_str='#####################################\nPeak residuals : '
-			for j in range(len(stokes_list)):
-				i=stokes_list[j]
-				if masked_peak[i]!=0:
-					casalog_str+=i+': '+str(masked_peak[i])+'Jy,'
-					last_peak[j]=masked_peak[i]
+			if self.tryautomask!=0:
+				x,summask=self.check_mask(summask)
+				if x==0:
+					i=0
 				else:
-					casalog_str+=i+': '+str(last_peak[j])+'Jy,'
-			casalog_str=casalog_str[:-1]+'\n#####################################'
-			casalog.post(casalog_str)
-			self.ia.open(self.imagename+'.mask')
-			ia1=image()
-			ia1.open(self.imagename+'_temp.mask')
-			temp_mask=ia1.getchunk()
-			pix = self.ia.getchunk()
-			for i in range(len(threshold_dic)):
-				peak_flux=masked_peak[stokes_list[i]]
-				thresh=threshold_dic[stokes_list[i]]
-				if peak_flux<thresh:
-					pix[:,:,i,:]=0.0
-				else:
-					temp_mask[:,:,i,:]=pix[:,:,i,:]		
-			self.ia.putchunk(pix)
-			self.ia.close()
-			ia1.putchunk(temp_mask)
-			ia1.close()
+					i+=1
+				if i>=self.tryautomask:
+					casalog.post('########################################\n')
+					casalog.post('Maximum auto masking attemnpts reached.\n')
+					casalog.post('########################################\n')
+					break
+			j+=1
+
+	def check_mask(self,summask):
+		maskfile=self.imagename+'.mask'
+		self.ia.open(maskfile)
+		maskdata=self.ia.getchunk()
+		self.ia.close()
+		if np.sum(maskdata)==0 or np.sum(maskdata)==summask:
+			return 1,np.sum(maskdata)
+		else:
+			return 0,np.sum(maskdata)		
+
+	def run_restore(self):
+		self.imager.restoreImages()
+		self.imager.deleteTools()
+
+	def update_mask(self):
+		stokes_list=self.get_stokes()
+		try:
+			last_peak_len=len(last_peak)
+		except:
+			last_peak=[0]*len(stokes_list)
+		if os.path.isdir(self.imagename+'_temp.mask')==False:
+			os.system('cp -r '+self.imagename+'.mask '+self.imagename+'_temp.mask')
+		threshold_dic={}
+		for i in range(len(stokes_list)):
+			stokes=stokes_list[i]
+			thresh=self.threshold[i]
+			if ('Jy' in thresh):
+				threshold_dic[stokes]=float(thresh.split('Jy')[0])
+			elif ('mJy' in thresh):
+				threshold_dic[stokes]=float(thresh.split('mJy')[0]*(10**-3))
+		peak,masked_peak=self.get_peak_residuals()
+		casalog_str='#####################################\nPeak residuals : '
+		for j in range(len(stokes_list)):
+			i=stokes_list[j]
+			if masked_peak[i]!=0:
+				casalog_str+=i+': '+str(masked_peak[i])+'Jy,'
+				last_peak[j]=masked_peak[i]
+			else:
+				casalog_str+=i+': '+str(last_peak[j])+'Jy,'
+		casalog_str=casalog_str[:-1]+'\n#####################################'
+		casalog.post(casalog_str)
+		self.ia.open(self.imagename+'.mask')
+		ia1=image()
+		ia1.open(self.imagename+'_temp.mask')
+		temp_mask=ia1.getchunk()
+		pix = self.ia.getchunk()
+		for i in range(len(threshold_dic)):
+			peak_flux=masked_peak[stokes_list[i]]
+			thresh=threshold_dic[stokes_list[i]]
+			if peak_flux<thresh:
+				pix[:,:,i,:]=0.0
+			else:
+				temp_mask[:,:,i,:]=pix[:,:,i,:]	
+		if self.maskregion!='':
+			ia=image()
+			ia.open(self.imagename+'.maskregion.mask')
+			maskregion=ia.getchunk()
+			ia.close()
+			pix=pix*maskregion
+			temp_mask=temp_mask*maskregion
+		self.ia.putchunk(pix)
+		self.ia.close()
+		ia1.putchunk(temp_mask)
+		ia1.close()
 
 
 def poltclean(vis="",selectdata=True,field="",spw="",timerange="",uvrange="",\
@@ -379,7 +503,7 @@ def poltclean(vis="",selectdata=True,field="",spw="",timerange="",uvrange="",\
 			normtype="flatnoise",deconvolver="hogbom",scales=[],nterms=2,smallscalebias=0.0,restoration=True,restoringbeam=[],pbcor=False,outlierfile="",\
 			weighting="natural",robust=0.5,noise="1.0Jy",npixels=0,uvtaper=[],niter=0,gain=0.1,threshold=["0Jy"],nsigma=0.0,cycleniter=-1,cyclefactor=1.0,\
 			minpsffraction=0.05,maxpsffraction=0.8,interactive=False,usemask="user",mask="",pbmask=0.0,sidelobethreshold=3.0,noisethreshold=5.0,\
-			lownoisethreshold=1.5,negativethreshold=3.0,smoothfactor=1.0,minbeamfrac=0.3,cutthreshold=0.01,growiterations=75,\
+			lownoisethreshold=1.5,negativethreshold=3.0,smoothfactor=1.0,minbeamfrac=0.3,cutthreshold=0.01,growiterations=75,automask_trials=-1,maskregion="",\
 			dogrowprune=True,minpercentchange=-1.0,verbose=False,fastnoise=True,restart=True,savemodel="none",calcres=True,calcpsf=True,parallel=False,casalogger=False):
 	'''
 	Full Stokes cube tclean with independent thresholding on each stokes plane
@@ -2080,6 +2204,9 @@ def poltclean(vis="",selectdata=True,field="",spw="",timerange="",uvrange="",\
 
 
 		   Default Value: 
+		automask_trials : Sub-parameter of usemask='auto-multithresh' : Number of auto-masking trials
+		
+		Default value : -1
 
 		pbmask:	Sub-parameter for usemask='auto-multithresh': primary beam mask
 
@@ -2432,21 +2559,30 @@ def poltclean(vis="",selectdata=True,field="",spw="",timerange="",uvrange="",\
 	pc.restart=restart           
 	pc.calcres=calcres        
 	pc.calcpsf=calcpsf        
-	pc.parallel=parallel       
+	pc.parallel=parallel 
+	pc.automask_trials=automask_trials   
+	pc.maskregion=maskregion   
 	casalog.showconsole(casalogger)
 	if startmask!='':
 		os.system('cp -r '+startmask+' '+imagename+'.mask')
 		mask=''
 	pc.mask=mask
 	pc.init_imager()
+	if maskregion!='':
+		pc.make_maskregion()
 	pc.make_observed_image()
 	pc.run_deconvolver()
 	pc.run_restore()
 	if os.path.isdir(imagename+'_temp.mask')==True:
-		os.system('rm -rf '+imagename+'.mask')
+		os.system('rm -rf '+imagename+'.mask '+imagename+'.prev.mask '+imagename+'.pre.mask')
 		os.system('mv '+imagename+'_temp.mask '+imagename+'.mask')
+	if maskregion!='':
+		maskregion_files=glob.glob(imagename+'.maskregion*')
+		if len(maskregion_files)!=0:
+			for i in maskregion_files:
+				os.system('rm -rf '+i)
 	casalog.post('####################################\nEnd task : poltclean\n################################')
- #TODO : rms based masking in the final model
+
 
 
 
