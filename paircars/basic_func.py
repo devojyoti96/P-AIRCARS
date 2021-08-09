@@ -144,7 +144,7 @@ class ImageBasic:
 		elif uvlambda1<200 and uvlambda2>200:
 			uvmax=uvlambda2
 		elif uvlambda1<max(uvlambda_hist[1])*0.7 and uvlambda2<max(uvlambda_hist[1])*0.7:
-			uvmax=max(uvlambda_hist[1])*0.9
+			uvmax=max(uvlambda_hist[1])*0.7
 		else:
 			uvmax=max(uvlambda1,uvlambda2)
 		uvmax=uvmax*wavelength

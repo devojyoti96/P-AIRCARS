@@ -724,27 +724,21 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						try:
 							ms_mainlog.info('applycal(vis=\''+ref_timechan_ms+'\',gaintable=\''+previous_caltable+'\',applymode=\'calflag\',flagbackup=True)\n')
 							applycal(vis=ref_timechan_ms,gaintable=previous_caltable,applymode='calflag',flagbackup=True)
-							if os.path.isdir(cur_workdir+'/junk1.ms')==True:
-								os.system('rm -rf '+cur_workdir+'/junk1.ms')
-							ms_mainlog.info('cp -r '+ref_timechan_ms+' '+cur_workdir+'/junk1.ms\n')
-							os.system('cp -r '+ref_timechan_ms+' '+cur_workdir+'/junk1.ms')
-							if os.path.isdir(cur_workdir+'/junk1.cal')==True:
-								os.system('rm -rf '+cur_workdir+'/junk1.cal')
-							ms_mainlog.info('cp -r '+previous_caltable+' '+cur_workdir+'/junk1.cal\n')
-							os.system('cp -r '+previous_caltable+' '+cur_workdir+'/junk1.cal')
-							print (glob.glob(workdir+'/presession_backup/freq_*datetime*'))
-							print (workdir+'/presession_backup/freq_*datetime*')
-							if len(glob.glob(workdir+'/presession_backup/freq_*datetime*'))>0:
-								ms_mainlog.info('Copying previous round backup directories : '+str(glob.glob(workdir+'/presession_backup/freq_*datetime*'))+'\n')
-								if os.path.isdir(cur_workdir+'/pre_backup')==False:
-									os.makedirs(cur_workdir+'/pre_backup')
-								pre_backups=glob.glob(workdir+'/freq_*datetime*')
-								total_prebackups=len(glob.glob(cur_workdir+'/pre_backup/'))
-								for i in range(len(pre_backups)):
-									j=pre_backups[i]
-									ms_mainlog.info('cp -r '+j+' '+cur_workdir+'/pre_backup/'+j+'_'+str(total_prebackups+1)+'\n')
-									os.system('cp -r '+j+' '+cur_workdir+'/pre_backup/'+j+'_'+str(total_prebackups+1))
-									total_prebackups+=1
+							if os.path.isdir(cur_workdir+'/junk1.ms')==False:
+								os.system('cp -r '+ref_timechan_ms+' '+cur_workdir+'/junk1.ms')
+							if os.path.isdir(cur_workdir+'/junk1.cal')==False:
+								os.system('cp -r '+previous_caltable+' '+cur_workdir+'/junk1.cal')
+							if len(prebackup_dirs)>0:
+								ms_mainlog.info('Copying previous round backup directories : '+str(prebackup_dirs)+'\n')
+								for i in prebackup_dirs:
+									if os.path.isdir(cur_workdir+'/'+os.path.basename(i))==True:
+										ms_mainlog.info('cp -r '+i+'/* '+cur_workdir+'/'+os.path.basename(i)+'\n')
+										os.system('cp -r '+i+'/* '+cur_workdir+'/'+os.path.basename(i))
+									else:
+										ms_mainlog.info('cp -r '+i+' '+cur_workdir+'\n')
+										os.system('cp -r '+i+' '+cur_workdir)
+									ms_mainlog.info('rm -rf '+i+'\n')
+									os.system('rm -rf '+i)
 							num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 								num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
 								ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time=np.load(previous_record,allow_pickle=True)
@@ -758,22 +752,18 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 							np.save(cur_workdir+'/Intensity_selfcal_record',selfcal_record)
 							if prelog!='':
 								ms_mainlog.info('Copying previous log....\n')
-								ms_mainlog.info('cp -r '+prelog+' '+cur_workdir+'/Intensity_Selfcal.log\n')
 								os.system('cp -r '+prelog+' '+cur_workdir+'/Intensity_Selfcal.log')
 							if preverboselog!='':
 								ms_mainlog.info('Copying previous verbose log......\n')
-								ms_mainlog.info('cp -r '+preverboselog+' '+cur_workdir+'/Intensity_Selfcal_verbose.log\n')
 								os.system('cp -r '+preverboselog+' '+cur_workdir+'/Intensity_Selfcal_verbose.log')
 							if prerms!='':
 								ms_mainlog.info('Copying previous DR_rms record......\n')
-								ms_mainlog.info('cp -r '+prerms+' '+cur_workdir+'/DR_rms.npy\n')
 								os.system('cp -r '+prerms+' '+cur_workdir+'/DR_rms.npy')
 							if preneg!='':
 								ms_mainlog.info('Copying previous DR_neg record......\n')
-								ms_mainlog.info('cp -r '+preneg+' '+cur_workdir+'/DR_neg.npy\n')
 								os.system('cp -r '+preneg+' '+cur_workdir+'/DR_neg.npy')
-							os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+previous_record+' '+preneg)
-				#+' '+\									workdir+'/freq_*datetime*')
+							ms_mainlog.info('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+preneg+'\n')
+							os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+preneg)
 							fresh=False
 						except:
 							fresh=True
@@ -898,36 +888,50 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					try_reduce_flag=False
 					reduce_moreflag=False
 					reduce_flag_count+=1
-					if os.path.exists(workdir+'/presession_backup')==False:
-						os.makedirs(workdir+'/presession_backup')
-					if os.path.exists(workdir+'/presession_backup/prerecord.npy')==True:
-						os.system('rm -rf '+workdir+'/presession_backup/prerecord.npy')
-					os.system('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/presession_backup/prerecord.npy')		
-					if os.path.exists(workdir+'/presession_backup/precal.cal')==True:
-						os.system('rm -rf '+workdir+'/presession_backup/precal.cal')			
-					os.system('cp -r '+cur_workdir+'/junk.precal '+workdir+'/presession_backup/precal.cal')
-					if os.path.exists(workdir+'/presession_backup/pre.log')==True:
-						os.system('rm -rf '+workdir+'/presession_backup/pre.log')
-					os.system('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/presession_backup/pre.log')
-					if os.path.exists(workdir+'/presession_backup/pre_DR_neg.npy')==True:
-						os.system('rm -rf '+workdir+'/presession_backup/pre_DR_neg.npy')
-					os.system('cp -r '+cur_workdir+'/DR_neg.npy '+workdir+'/presession_backup/pre_DR_neg.npy')
-					if os.path.exists(workdir+'/presession_backup/pre_DR_rms.npy')==True:
-						os.system('rm -rf '+workdir+'/presession_backup/pre_DR_rms.npy')
-					os.system('cp -r '+cur_workdir+'/DR_rms.npy '+workdir+'/presession_backup/pre_DR_rms.npy')
-					prerms=workdir+'/presession_backup/pre_DR_rms.npy'
-					preneg=workdir+'/presession_backup/pre_DR_neg.npy'
-					prelog=workdir+'/presession_backup/pre.log'
+					if os.path.isfile(cur_workdir+'/Intensity_selfcal_record.npy'):
+						ms_mainlog.info('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/prerecord.npy\n')
+						os.system('cp -r '+cur_workdir+'/Intensity_selfcal_record.npy '+workdir+'/prerecord.npy')	
+						previous_record=workdir+'/prerecord.npy'
+					else:
+						previous_record=''
+					if os.path.isdir(cur_workdir+'/junk.precal'):
+						ms_mainlog.info('cp -r '+cur_workdir+'/junk.precal '+workdir+'/precal.cal\n')				
+						os.system('cp -r '+cur_workdir+'/junk.precal '+workdir+'/precal.cal')
+						previous_caltable=workdir+'/precal.cal'
+					else:
+						previous_caltable=''
+					if os.path.isfile(cur_workdir+'/Intensity_Selfcal.log'):
+						ms_mainlog.info('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/pre.log\n')
+						os.system('cp -r '+cur_workdir+'/Intensity_Selfcal.log '+workdir+'/pre.log')
+						prelog=workdir+'/pre.log'
+					else:
+						prelog=''
+					if os.path.isfile(cur_workdir+'/DR_neg.npy'):
+						ms_mainlog.info('cp -r '+cur_workdir+'/DR_neg.npy '+workdir+'/pre_DR_neg.npy\n')
+						os.system('cp -r '+cur_workdir+'/DR_neg.npy '+workdir+'/pre_DR_neg.npy')
+						preneg=workdir+'/pre_DR_neg.npy'
+					else:
+						preneg=''
+					if os.path.isfile(cur_workdir+'/DR_rms.npy'):
+						ms_mainlog.info('cp -r '+cur_workdir+'/DR_rms.npy '+workdir+'/pre_DR_rms.npy\n')
+						os.system('cp -r '+cur_workdir+'/DR_rms.npy '+workdir+'/pre_DR_rms.npy')
+						prerms=workdir+'/pre_DR_rms.npy'
+					else:
+						prerms=''
 					if os.path.exists(cur_workdir+'/Intensity_Selfcal_verbose.log')==True:
-						if os.path.exists(workdir+'/presession_backup/preverbose.log')==True:
-							os.system('rm -rf '+workdir+'/presession_backup/preverbose.log')
-						os.system('cp -r '+cur_workdir+'/Intensity_Selfcal_verbose.log '+workdir+'/presession_backup/preverbose.log')
-						preverboselog=workdir+'/presession_backup/preverbose.log'
+						ms_mainlog.info('cp -r '+cur_workdir+'/Intensity_Selfcal_verbose.log '+workdir+'/preverbose.log\n')
+						os.system('cp -r '+cur_workdir+'/Intensity_Selfcal_verbose.log '+workdir+'/preverbose.log')
+						preverboselog=workdir+'/preverbose.log'
 					else:
 						preverboselog=''
+					backup_dir=glob.glob(cur_workdir+'/freq*datetime*')
+					prebackup_dirs=[]
+					if len(backup_dir)>0:
+						for i in range(len(backup_dir)):
+							ms_mainlog.info('cp -r '+backup_dir[i]+' '+inputs.basedir+'/'+os.path.basename(backup_dir[i])+'\n')
+							os.system('cp -r '+backup_dir[i]+' '+inputs.basedir+'/'+os.path.basename(backup_dir[i]))
+							prebackup_dirs.append(inputs.basedir+'/'+os.path.basename(backup_dir[i]))
 					os.system('rm -rf '+cur_workdir)
-					previous_caltable=workdir+'/presession_backup/precal.cal'
-					previous_record=workdir+'/presession_backup/prerecord.npy'
 					preworkdir=cur_workdir
 				for i in touch_file_list:
 					msg=i.split('_')[-1]

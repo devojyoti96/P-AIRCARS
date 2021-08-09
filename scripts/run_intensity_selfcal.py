@@ -712,15 +712,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
-							logger.info('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
-							os.system('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
-							backup_dir=glob.glob(working_dir+'/freq*datetime*')
-							if os.path.isdir(working_dir+'/presession_backup')==False:
-								os.makedirs(working_dir+'/presession_backup')
-							if len(backup_dir)>0:
-								for i in range(len(backup_dir)):
-									logger.info('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
-									os.system('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
+							os.system('cp -r junk0.cal junk.precal')
 							return msg_code
 				else:
 					if solmode=='L1R' or solmode=='L1':
@@ -750,15 +742,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 						if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 							os.system('touch '+start_time_file)
-						logger.info('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
-						os.system('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
-						if os.path.isdir(working_dir+'/presession_backup')==False:
-							os.makedirs(working_dir+'/presession_backup')
-						backup_dir=glob.glob(working_dir+'/freq*datetime*')
-						if len(backup_dir)>0:
-							for i in range(len(backup_dir)):
-								logger.info('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
-								os.system('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
+						os.system('cp -r junk0.cal junk.precal')
 						return msg_code
 
 			if num_iteration_after_ap>min_iteration:
@@ -789,15 +773,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							start_time_file=basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_'+str(start_time)
 							if len(glob.glob(basedir+'/.Starttime_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_*'))==0:
 								os.system('touch '+start_time_file)
-							logger.info('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
-							os.system('cp -r '+working_dir+'/junk0.cal '+working_dir+'/junk.precal')
-							backup_dir=glob.glob(working_dir+'/freq*datetime*')
-							if os.path.isdir(working_dir+'/presession_backup')==False:
-								os.makedirs(working_dir+'/presession_backup')
-							if len(backup_dir)>0:
-								for i in range(len(backup_dir)):
-									logger.info('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
-									os.system('cp -r '+backup_dir[i]+' '+working_dir+'/presession_backup/')
+							os.system('cp -r junk0.cal junk.precal')
 							return msg_code
 		
 			if (num_iter<10 and nomask_try_count<1): 

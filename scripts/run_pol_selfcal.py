@@ -348,6 +348,15 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	PSC=PolSelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive) # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 	cal=CALIBRATE()
+	'''
+	mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
+	if mwa_config=='MWAPhaseI':
+		crossphase=15
+	elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
+		crossphase=135
+	logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
+	PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
+	'''
 
 	###################
 	# Putting user defined inputs if exisis or go with default values
@@ -450,10 +459,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		file_str=os.path.basename(msname).split('.ms')[0]
 	
 		if inputs.maskfile=='' and inputs.maskstr=='':
-			mask_rad=int((40*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
-			mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
-			ini_mask_rad=int((120*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
-			ini_mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
+			mask_rad=int((120*60)/PSC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
+			mask_str='circle[['+str(PSC.imsize/2)+'pix,'+str(PSC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 		elif inputs.maskstr!='':
 			mask_str=inputs.maskstr
 
@@ -660,24 +667,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		##############
 		while do_selfcal==True:
 		#	if gaincal_count<1 and done_qucor==False: 
+		#	if num_iter_after_qucor<min(min_iteration,3) or done_qucor==False:
 			do_poldist=True	
 			poldistortion_type='poldistortion'	
 			
-			'''
-			if gaincal_count==1:
-				mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
-				if mwa_config=='MWAPhaseI':
-					crossphase=15
-				elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
-					crossphase=135
-				logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
-				PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
-				if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==True:
-					os.system('rm -rf '+working_dir+'/Backup_gaincaled.ms')
-				logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'corrected\')\n')
-				split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='corrected') # Backup of gain calibrated and cross hand phase calibrated ms
-			'''
-
 			if verbose==False:
 				print ('#####################\nPolarisation Selfcal iteration:'+str(num_iter)+'\n#####################\n')
 			logger.info('#####################\n')
@@ -693,10 +686,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				startmask=''
 
 			antenna_to_use=PSC.antenna_string(antenna_list,-1)
-			#if done_qucor==False:
-			#	do_flag=False
-			#else:
 			do_flag=True
+			use_ankflagger=False
+
 
 			if num_iter==1:
 				previous_image='junk0.image'
@@ -707,7 +699,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			else:
 				previous_image=''
 				previous_model=''		
-
+			
 			if do_solarqu_cor==True:
 				mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
 				if mwa_config=='MWAPhaseI':
@@ -716,34 +708,37 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 					crossphase=135
 			else:
 				crossphase=-1
-
-			if num_iter_after_qucor>1:
-				use_ankflagger=True
+			
+			#crossphase=-1
+			print ('Use ankflag :',use_ankflagger)
+			if do_solarqu_cor==False:
+				polmodel_threshold=start_sigma*1.5
 			else:
-				use_ankflagger=False
+				polmodel_threshold=start_sigma
 
 			if inputs.maskfile!='': # Use user defined mask
 				mask_str=''
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,crossphase=crossphase,\
 				stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
-						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor)  		
+						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
+						polmodel_threshold=polmodel_threshold)  		
 			elif inputs.maskstr!='': # If mask user defined string is given
 				mask_str=inputs.maskstr
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,crossphase=crossphase,\
 					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
-					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor)
+					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
+					polmodel_threshold=polmodel_threshold)
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto maksing is off, use default central mask
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
 					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					crossphase=crossphase)
+					crossphase=crossphase,polmodel_threshold=polmodel_threshold)
 			elif inputs.want_auto_masking==True:
 				maskregion=mask_str
-				mask_str=''
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,'',start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
 					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					crossphase=crossphase,maskregion=maskregion)
+					crossphase=crossphase,maskregion=maskregion,polmodel_threshold=polmodel_threshold)
 
 			if type(output_PSC)==tuple:				
 				msg_code,out_dict,negative_dyn_range=output_PSC
@@ -977,7 +972,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							flagversion=flaglist[key]['name']
 							logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
 							flagmanager(vis=msname,mode='delete',versionname=flagversion)
-						if use_ankflagger:
+						if inputs.use_ankflagger:
 							os.system('cp -r '+msname+' '+msname+'.backup')
 							try:
 								logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
