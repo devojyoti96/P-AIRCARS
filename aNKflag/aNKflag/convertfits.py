@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np,copy
 from astropy.io import fits
 import matplotlib.pyplot as plt
 from . import inputs
@@ -142,15 +142,14 @@ def uvfitstobinary(data,scratchdir,ugrids,vgrids,plotuv,npols,verbose):
 #
 #	----------------------------------------------------------------------------------------
 
-def uvfitsfrombinary(data,scratchdir,ugrids,vgrids,npols,verbose):
-		
+def uvfitsfrombinary(data,scratchdir,ugrids,vgrids,verbose,nchan,npols,ntime,nbaseline,extendpols=False,chantime_flagfrac=0.0):
 	for ug in range (0,ugrids):
 		for vg in range (0,vgrids):
 		
 			bindetails	=	np.loadtxt(scratchdir+'uvbindetails_%d_%d.txt'%(ug,vg))
 			recids		=	bindetails[:,0].astype('int32')
 			baselines	=	bindetails[:,4]
-			
+			#print ('REC ids',recids)
 			temparr	=	np.fromfile(scratchdir+'uvbin_%d_%d_f.array'%(ug,vg),dtype='float32',count=-1,sep="")
 			
 			if((len(temparr)%len(recids)) or (len(temparr)%npols) or (len(temparr)%3)):
@@ -171,7 +170,7 @@ def uvfitsfrombinary(data,scratchdir,ugrids,vgrids,npols,verbose):
 						np.copyto( data.data[ recids[l] ,0,0,0,:,p,d] , temparr[ p, d, l ] )	
 			if verbose:
 				print('Copied	%d %d	of	%d %d'%(ug,vg,ugrids,vgrids))
-
+	
 	return 0
 
 #	----------------------------------------------------------------------------------------

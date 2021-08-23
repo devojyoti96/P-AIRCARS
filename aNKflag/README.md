@@ -6,14 +6,19 @@ Flagger is written by Apurba Bera, NCRA-TIFR, Pune, India
 
 python3 wrapper is developed by Devojyoti Kansabanik, NCRA-TIFR, Pune, India
 
-aNKflag will only work in python3
+Requirements
+============
+
+aNKflag will only work in python3.6
 
 aNKflag requires GNU gsl library, which is provided locally
 
-Install
-=======
+aNKflag uses casa6, casa6 works only in python3.6 and need gfortran3.
 
-Automatically install with PAIRCARS
+Install aNKflag
+================
+
+python3 setup.py install --user
 
 Usuage
 =======

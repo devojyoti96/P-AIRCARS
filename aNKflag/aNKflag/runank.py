@@ -25,7 +25,7 @@ class ANKFLAG():
 		self.path=pathname
 		os.system('rm -rf casa*log')
 
-	def flag_params(self,flagmode):
+	def flag_params(self,flagmode,chanfrac=0.0,timefrac=0.0):
 		'''
 		Function to generate flag parameters based on number of channels and timeslices in the dataset
 		Parameters :
@@ -34,29 +34,36 @@ class ANKFLAG():
 			1 : Multi channel and single time slice data
 			2 : Single channel and multi timeslice data
 			3 : Multi channel and time slice data
+		chanfrac = Minimum fraction of channels flagged to extend the flags
+		timefrac = Minimum fraction of timess flagged to extend the flags
 		Return:
 		Flag parameters in list
 		''' 
 		os.system('rm -rf casa*log')
 		if flagmode==0:
-			return [['vis_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0]]
+			return [['vis_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','re',1.75,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.75,0.3,1,'',0,0,0.0,0.0]]
 		elif flagmode==1:
-			return [['chan_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['chan_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['vis_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0]]
+			return [['chan_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['chan_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['chan_ind','mean','median','re',1.75,0.3,1,'',0,0,0.0,0.0],['chan_ind','mean','median','im',1.75,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','re',1.75,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.75,0.3,1,'',0,0,0.0,0.0]]
 		elif flagmode==2:
-			return [['rec_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['rec_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['vis_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0]]
+			return [['rec_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['rec_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['rec_ind','mean','median','re',1.75,0.3,1,'',0,0,0.0,0.0],['rec_ind','mean','median','im',1.75,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','re',1.75,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean','median','im',1.75,0.3,1,'',0,0,0.0,0.0]]
 		else:
-			return [['chan_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['chan_ind','mean_rms','median','re',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['chan_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0],['chan_ind','mean_rms','median','im',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['rec_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['rec_ind','mean_rms','median','re',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['rec_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0],['rec_ind','mean_rms','median','im',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['vis_ind','mean','median','re',1.8,0.0,1,'',0,0,0.0,0.0],['vis_ind','mean_rms','median','re',1.8,0.0,1,'',0,0,0.0,0.0],\
-					['vis_ind','mean','median','im',1.8,0.0,1,'',0,0,0.0,0.0],['vis_ind','mean_rms','median','im',1.8,0.0,1,'',0,0,0.0,0.0]]
+			return [['chan_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['chan_ind','mean_rms','median','re',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['chan_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],['chan_ind','mean_rms','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['rec_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['rec_ind','mean_rms','median','re',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['rec_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],['rec_ind','mean_rms','median','im',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','re',1.8,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean_rms','median','re',1.8,0.3,1,'',0,0,0.0,0.0],\
+					['vis_ind','mean','median','im',1.8,0.3,1,'',0,0,0.0,0.0],['vis_ind','mean_rms','median','im',1.8,0.3,1,'',0,0,0.0,0.0]]
 
 
-	def runankflag(self,inpfilename,ANTS,THREADS,nchan,ntime,npols,inp_fileformat='ms',out_fileformat='ms',overwrite=False,automode=True,datacolumn='corrected',\
-					flagpars=[],verbose=False,logfile_path='',**kwargs):
+	def runankflag(self,inpfilename,ANTS,THREADS,nchan,nbaseline,ntime,npols,inp_fileformat='ms',out_fileformat='ms',overwrite=False,automode=True,datacolumn='corrected',\
+					flagpars=[],verbose=False,logfile_path='',extendpols=False,extendchan=0.0,extendtime=0.0,chantime_flagfrac=0.0,**kwargs):
 		'''
 		Function to run the aNKflag for full polarization data. Advanced options can be changed from aNKflag installed directory inputs.py file.
 		Parameters:
@@ -66,6 +73,7 @@ class ANKFLAG():
 		ANTS = Total number of antennas (Calculate using CASA msmd tool, do not use the number of antennas shown in listobs)
 		THREADS = Number of CPU threads to be used for flagging
 		nchan = Number of frequency channels of the dataset
+		nbaseline = Number of baselines
 		ntime = Number of time slices of the dataset
 		npols = Number of polarisations in dataset
 		automode = True, use default flagging settings
@@ -73,6 +81,10 @@ class ANKFLAG():
 		flagpars = [], use aNKflag specific flag parameters if automode=False
 		verbose = False, verbose output
 		logfile_path = If verbose True, path to save logfile (default : inputfile path)
+		extendpols = Extend flags to all polarisation if any polarisation is flagged
+		extendchan = Extend flag if more than this fraction of channels are flagged for a timeslice
+		extendtime = Extend flag if more than this fraction of times are flagged for a channel
+		chantime_flagfrac = Extend flag all baselines if more than this fraction of data flagged for a single time and channel.
 		###############################
 		Advanced options:
 		CLEARSCRATCH : True ,Clear the scratch directory (default : True)
@@ -87,7 +99,7 @@ class ANKFLAG():
 		SHOWBASE : SHOW baseline stats (1 for True or 0 for False) (default : 1)
 		SHOWTF : Show time-frequency plots (1 for True or 0 for False) (default : 1)
 		WRITEOUT : Write output (1 for True or 0 for False) (default : 1)
-		BLOCKPOW : Power low for Block non-Gaussianity (DON'T CHANGE UNLESS YOU KNOW WHAT IT IS !) (default : 0.8)
+		BLOCKPOW : Power law for Block non-Gaussianity (DON'T CHANGE UNLESS YOU KNOW WHAT IT IS !) (default : 0.8)
 		###############################
 		Return:
 		Flagged output file 
@@ -365,7 +377,7 @@ class ANKFLAG():
 			data2		=	infile2[0].data	
 
 			if (FLAGMODE==exmode[1]):
-				bintofits	=	cf.uvfitsfrombinary(data2,scratchdir,ugrids,vgrids,npols,verbose)
+				bintofits	=	cf.uvfitsfrombinary(data2,scratchdir,ugrids,vgrids,verbose,nchan,npols,ntime,nbaseline,extendpols=extendpols,chantime_flagfrac=chantime_flagfrac)
 
 			elif (FLAGMODE==exmode[0]):
 				cf.baselinesfrombinary(ANTS,data2,scratchdir,npols,verbose)
@@ -418,10 +430,98 @@ class ANKFLAG():
 
 		if (WRITEOUT):
 			if overwrite==True and inp_fileformat=='uvfits' and out_fileformat=='uvfits':
+				importuvfits(fitsfile=outfits,vis=outfits+'.temp.ms')
+				msflag=ms()
+				msflag.open(outfits+'.temp.ms',nomodify=False)
+				flag_data=msflag.getdata('flag',ifraxis=True)
+				flag=flag_data['flag']
+				if extendpols==True:
+					if verbose:
+						print ('Extending pol flags...\n')
+					pos=[]
+					for p in range(3):
+						pos.append(np.where(flag[p,:,:,:].flatten()==True))
+					for i in pos:
+						flag[i]=True
+
+				if chantime_flagfrac!=0:
+					shape=flag.shape
+					if len(shape)==3:
+						ntime=1
+						nchan=shape[1]
+					else:
+						ntime=shape[-1]
+						nchan=shape[1]
+					print ('Extending single channel time flag. Minimum flag fraction : '+str(chantime_flagfrac)+'\n')
+					if ntime!=1:
+						for i in range(ntime):
+							for j in range(nchan):
+								flag_frac=len(np.where(flag[:,j,:,i].flatten()==True)[0])/len(flag[:,j,:,i].flatten())
+								if flag_frac>=chantime_flagfrac:
+									if verbose:
+										print ('Extending flag for chan : '+str(j)+' and time index : '+str(i)+'\n')
+									flag[:,j,:,i]=flag[:,j,:,i]+True
+					else:
+						for j in range(nchan):
+							flag_frac=len(np.where(flag[:,j,:].flatten()==True)[0])/len(flag[:,j,:].flatten())
+							if flag_frac>=chantime_flagfrac:
+								if verbose:
+									print ('Extending flag for chan : '+str(j)+' and time index : '+str(0)+'\n')
+								flag[:,j,:]=flag[:,j,:]+True
+				flag_data['flag']=flag
+				msflag.putdata(flag_data)
+				msflag.close()
+				os.system('rm -rf '+outfits)
+				exportuvfits(vis=outfits+'.temp.ms',fitsfile=outfits)
+				os.system('rm -rf '+outfits+'.temp.ms')
 				os.system('mv '+outfits+' '+inpfits)
 				finalout=inpfits
 			else:
 				if (inp_fileformat=='uvfits' and out_fileformat=='uvfits') or (inp_fileformat=='ms' and out_fileformat=='uvfits'):
+					importuvfits(fitsfile=outfits,vis=outfits+'.temp.ms')
+					msflag=ms()
+					msflag.open(outfits+'.temp.ms',nomodify=False)
+					flag_data=msflag.getdata('flag',ifraxis=True)
+					flag=flag_data['flag']
+					if extendpols==True:
+						if verbose:
+							print ('Extending pol flags...\n')
+						pos=[]
+						for p in range(3):
+							pos.append(np.where(flag[p,:,:,:].flatten()==True))
+						for i in pos:
+							flag[i]=True
+
+					if chantime_flagfrac!=0:
+						shape=flag.shape
+						if len(shape)==3:
+							ntime=1
+							nchan=shape[1]
+						else:
+							ntime=shape[-1]
+							nchan=shape[1]
+						print ('Extending single channel time flag. Minimum flag fraction : '+str(chantime_flagfrac)+'\n')
+						if ntime!=1:
+							for i in range(ntime):
+								for j in range(nchan):
+									flag_frac=len(np.where(flag[:,j,:,i].flatten()==True)[0])/len(flag[:,j,:,i].flatten())
+									if flag_frac>=chantime_flagfrac:
+										if verbose:
+											print ('Extending flag for chan : '+str(j)+' and time index : '+str(i)+'\n')
+										flag[:,j,:,i]=flag[:,j,:,i]+True
+						else:
+							for j in range(nchan):
+								flag_frac=len(np.where(flag[:,j,:].flatten()==True)[0])/len(flag[:,j,:].flatten())
+								if flag_frac>=chantime_flagfrac:
+									if verbose:
+										print ('Extending flag for chan : '+str(j)+' and time index : '+str(0)+'\n')
+									flag[:,j,:]=flag[:,j,:]+True
+					flag_data['flag']=flag
+					msflag.putdata(flag_data)
+					msflag.close()
+					os.system('rm -rf '+outfits)
+					exportuvfits(vis=outfits+'.temp.ms',fitsfile=outfits)
+					os.system('rm -rf '+outfits+'.temp.ms')
 					finalout=inpfits+'.aNKoutfits'
 					os.system('mv '+outfits+' '+inpfits+'.aNKoutfits')
 					if verbose:
@@ -431,6 +531,46 @@ class ANKFLAG():
 						os.system('rm -rf '+inpfits+'.aNKoutms')
 					importuvfits(fitsfile=outfits,vis=inpfits+'.aNKoutms')
 					finalout=inpfits+'.aNKoutms'
+					msflag=ms()
+					msflag.open(finalout,nomodify=False)
+					flag_data=msflag.getdata('flag',ifraxis=True)
+					flag=flag_data['flag']
+					if extendpols==True:
+						if verbose:
+							print ('Extending pol flags...\n')
+						pos=[]
+						for p in range(3):
+							pos.append(np.where(flag[p,:,:,:].flatten()==True))
+						for i in pos:
+							flag[i]=True
+
+					if chantime_flagfrac!=0:
+						shape=flag.shape
+						if len(shape)==3:
+							ntime=1
+							nchan=shape[1]
+						else:
+							ntime=shape[-1]
+							nchan=shape[1]
+						print ('Extending single channel time flag. Minimum flag fraction : '+str(chantime_flagfrac)+'\n')
+						if ntime!=1:
+							for i in range(ntime):
+								for j in range(nchan):
+									flag_frac=len(np.where(flag[:,j,:,i].flatten()==True)[0])/len(flag[:,j,:,i].flatten())
+									if flag_frac>=chantime_flagfrac:
+										if verbose:
+											print ('Extending flag for chan : '+str(j)+' and time index : '+str(i)+'\n')
+										flag[:,j,:,i]=flag[:,j,:,i]+True
+						else:
+							for j in range(nchan):
+								flag_frac=len(np.where(flag[:,j,:].flatten()==True)[0])/len(flag[:,j,:].flatten())
+								if flag_frac>=chantime_flagfrac:
+									if verbose:
+										print ('Extending flag for chan : '+str(j)+' and time index : '+str(0)+'\n')
+									flag[:,j,:]=flag[:,j,:]+True
+					flag_data['flag']=flag
+					msflag.putdata(flag_data)
+					msflag.close()
 					if verbose:
 						logger.info('Final outputfile : '+inpfits+'.aNKoutms\n')
 				elif inp_fileformat=='ms' and out_fileformat=='ms':
@@ -460,11 +600,50 @@ class ANKFLAG():
 					tbank.putcol('FLAG',flag)
 					tbank.flush()
 					tbank.close()
-					if verbose:
-						logger.info('Final outputfile : '+inpfilename+'\n')
 					os.system('rm -rf '+outfits)
 					finalout=inpfilename
+					msflag=ms()
+					msflag.open(finalout,nomodify=False)
+					flag_data=msflag.getdata('flag',ifraxis=True)
+					flag=flag_data['flag']
+					if extendpols==True:
+						if verbose:
+							print ('Extending pol flags...\n')
+						pos=[]
+						for p in range(3):
+							pos.append(np.where(flag[p,:,:,:].flatten()==True))
+						for i in pos:
+							flag[i]=True
 
+					if chantime_flagfrac!=0:
+						shape=flag.shape
+						if len(shape)==3:
+							ntime=1
+							nchan=shape[1]
+						else:
+							ntime=shape[-1]
+							nchan=shape[1]
+						print ('Extending single channel time flag. Minimum flag fraction : '+str(chantime_flagfrac)+'\n')
+						if ntime!=1:
+							for i in range(ntime):
+								for j in range(nchan):
+									flag_frac=len(np.where(flag[:,j,:,i].flatten()==True)[0])/len(flag[:,j,:,i].flatten())
+									if flag_frac>=chantime_flagfrac:
+										if verbose:
+											print ('Extending flag for chan : '+str(j)+' and time index : '+str(i)+'\n')
+										flag[:,j,:,i]=flag[:,j,:,i]+True
+						else:
+							for j in range(nchan):
+								flag_frac=len(np.where(flag[:,j,:].flatten()==True)[0])/len(flag[:,j,:].flatten())
+								if flag_frac>=chantime_flagfrac:
+									if verbose:
+										print ('Extending flag for chan : '+str(j)+' and time index : '+str(0)+'\n')
+									flag[:,j,:]=flag[:,j,:]+True
+					flag_data['flag']=flag
+					msflag.putdata(flag_data)
+					msflag.close()
+					if verbose:
+						logger.info('Final outputfile : '+inpfilename+'\n')
 			if os.path.isfile(outfits):
 				os.system('rm -rf '+outfits)
 	
