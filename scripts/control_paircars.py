@@ -580,7 +580,8 @@ if len(measurement_set_list)!=0:
 			os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 			cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 				' --ref_freq_avg 0 --ref_time_avg 0 '+' --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
-				+' --num_threads '+str(available_cpu_for_paircars)+' --cal_attenuation '+str(1.0)+' --caltables '+str(','.join(caltable_list)) # TODO : Change calibrator attenuator
+				+' --num_threads '+str(available_cpu_for_paircars)+' --cal_attenuation '+str(1.0)+' --scratch True --caltables '+str(','.join(caltable_list))
+																														 # TODO : Change calibrator attenuator
 			screen_name=str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'_runpaircars'
 			finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(single_ref_freq_time_ms.split('.ms')[0])
 			screen_batch_file=casa_instance_runner(cmd,screen_name,finished_touch_file)
@@ -630,7 +631,7 @@ if len(measurement_set_list)!=0:
 								result=i
 								break
 						return_msg,ref_time,ref_chan,spawned_casa_instances,ref_freq_avg,ref_time_avg,ms=result 
-						spawned_ms_jobs[ref_freq_time_msname]=[ref_time,int(ref_chan),int(spawned_casa_instances),float(ref_freq_avg),float(ref_time_avg)]
+						spawned_ms_jobs[os.path.basename(ref_freq_time_msname)]=[ref_time,int(ref_chan),int(spawned_casa_instances),float(ref_freq_avg),float(ref_time_avg)]
 					break
 				else:
 					time.sleep(10.0)
@@ -652,7 +653,7 @@ if len(measurement_set_list)!=0:
 				os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 				cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 					' --ref_freq_avg 0 --ref_time_avg 0 --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
-					+' --num_threads '+str(available_cpu_for_paircars)
+					+' --num_threads '+str(available_cpu_for_paircars)+' --scratch True'
 				mainlog.info('Command : '+cmd+'\n')
 				screen_name=str(single_reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])+'_runpaircars'
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])
@@ -676,7 +677,6 @@ if len(measurement_set_list)!=0:
 						for j in touch_file_list:
 							if j not in all_touch_files:
 								all_touch_files.append(j)
-						print (all_touch_files,ref_freq_time_msname)
 						i=touch_file_list[0]
 						if '_selfcalerror' in i:
 							selfcal_fail=True
@@ -747,7 +747,7 @@ if len(measurement_set_list)!=0:
 						result=i
 						break
 				return_msg,ref_time,ref_chan,spawned_casa_instances,ref_freq_avg,ref_time_avg,ms=result 
-				spawned_ms_jobs[single_ref_freq_time_ms]=[ref_time,int(ref_chan),int(spawned_casa_instances),float(ref_freq_avg),float(ref_time_avg)]
+				spawned_ms_jobs[os.path.basename(single_ref_freq_time_ms)]=[ref_time,int(ref_chan),int(spawned_casa_instances),float(ref_freq_avg),float(ref_time_avg)]
 			ref_timechan_success=True
 			break
 
@@ -766,12 +766,15 @@ if len(measurement_set_list)!=0:
 				os.system('rm -rf '+inputs.basedir+'/.Finished_spawned_*'+os.path.basename(i).split('.ms')[0]+'*')
 				os.system('rm -rf '+inputs.basedir+'/.Finished_runpaircars_*'+os.path.basename(msname).split('.ms')[0]+'*')
 
+	time.sleep(10)
 	result_list=np.load(inputs.basedir+'/Ref_time_freq_slice_output.npy',allow_pickle=True)
 	keys=spawned_ms_jobs.keys()
+	print (keys,result_list)
 	for i in result_list:
 		return_msg,ref_time,ref_chan,spawned_instances,ref_freq_avg,ref_time_avg,ms=i
-		if ms not in keys:
-			spawned_ms_jobs[ms]=[ref_time,int(ref_chan),int(spawned_instances),float(ref_freq_avg),float(ref_time_avg)]
+		print (ms)
+		#if os.path.basename(ms) not in keys:
+		spawned_ms_jobs[os.path.basename(ms)]=[ref_time,int(ref_chan),int(spawned_instances),float(ref_freq_avg),float(ref_time_avg)]
 
 	mainlog.info('Remaining measurement sets : '+','.join(measurement_set_list)+'\n')
 	os.system('rm -rf '+inputs.basedir+'/Nonref_time_freq_slice_output.npy')
@@ -875,7 +878,7 @@ if len(measurement_set_list)!=0:
 					ms_OBSIDs_pcal.append(ms_obsid)
 				cmd='run_paircars --msname '+msname+' --metafits '+metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 					' --ref_freq_avg '+str(ref_freq_avg)+' --ref_time_avg '+str(ref_time_avg)+' --ref_time_freq False --do_bandpass '+str(do_bandpass)+\
-					' --do_polcal '+str(do_polcal)+' --num_threads '+str(available_cpu_for_paircars)+' --caltables '+interpolated_caltable
+					' --do_polcal '+str(do_polcal)+' --num_threads '+str(available_cpu_for_paircars)+' --scratch False --caltables '+interpolated_caltable
 				mainlog.info('Command : '+cmd+'\n')
 				screen_name=str(ms_obsid)+'_'+str(os.path.basename(msname).split('.ms')[0])+'_runpaircars'
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(msname).split('.ms')[0])
@@ -895,7 +898,7 @@ if len(measurement_set_list)!=0:
 				if do_polcal==True:
 					num_ms_jobs=+int(BW/skip_freq_pol)
 					spawned_casa_instances+=int(BW/skip_freq_pol)
-				spawned_ms_jobs[msname]=[ref_time,int(ref_chan),int(num_ms_jobs),float(ref_freq_avg),float(ref_time_avg)]
+				spawned_ms_jobs[os.path.basename(msname)]=[ref_time,int(ref_chan),int(num_ms_jobs),float(ref_freq_avg),float(ref_time_avg)]
 				available_casa_instance=casa_instance-spawned_casa_instances
 				basemsdir=os.path.basename(msname).split('.ms')[0]
 				touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(obsid)+'*'+basemsdir+'*')
@@ -934,27 +937,27 @@ if len(measurement_set_list)!=0:
 	# Spawning jobs for making final caltables and images
 	#####################################################
 	mpicmd=[]
+	print (spawned_ms_jobs)
 	for msname in ms_list: 
 		metafits=metafits_dic[msname.split('.ms')[0].split('_timesliced')[0].split('_ref')[0]]
 		OBSID=get_OBSID_from_metafits(metafits)
 		for i in glob.glob(inputs.basedir+'/imagemodels/*'):
 			if i not in ms_OBSIDs_gcal:
-				ms_OBSIDs_gcal.append(i)
+				ms_OBSIDs_gcal.append(int(os.path.basename(i)))
 		for i in glob.glob(inputs.basedir+'/bpimagemodels/*'):
 			if i not in ms_OBSIDs_bcal:
-				ms_OBSIDs_bcal.append(i)
+				ms_OBSIDs_bcal.append(int(os.path.basename(i)))
 		for i in glob.glob(inputs.basedir+'/polimagemodels/*'):
 			if i not in ms_OBSIDs_pcal:
-				ms_OBSIDs_pcal.append(i)
-		print (ms_OBSIDs_gcal,ms_OBSIDs_bcal,ms_OBSIDs_pcal)
+				ms_OBSIDs_pcal.append(int(os.path.basename(i)))
 		gaincal_modeldirs=','.join([inputs.basedir+'/imagemodels/'+str(i) for i in ms_OBSIDs_gcal])
 		bandpass_modeldirs=','.join([inputs.basedir+'/bpimagemodels/'+str(i) for i in ms_OBSIDs_bcal])
-		polcal_modeldir=','.join([inputs.basedir+'/polimagemodels/'+str(i) for i in ms_OBSIDs_pcal])
+		polcal_modeldirs=','.join([inputs.basedir+'/polimagemodels/'+str(i) for i in ms_OBSIDs_pcal])
 		mainlog.info('Making final calibration tables for : '+msname+'\n')
-		num_jobs=spawned_ms_jobs[msname][2]
-		freq_avg=spawned_ms_jobs[msname][3]
-		time_avg=spawned_ms_jobs[msname][4]
-		screen_name='screen_'+str(nearest_OBSID)+'_ms_'+str(os.path.basename(msname))
+		num_jobs=spawned_ms_jobs[os.path.basename(msname)][2]
+		freq_avg=spawned_ms_jobs[os.path.basename(msname)][3]
+		time_avg=spawned_ms_jobs[os.path.basename(msname)][4]
+		screen_name='screen_'+str(OBSID)+'_ms_'+str(os.path.basename(msname))+'_finalimage'
 		batch_file=inputs.basedir+'/'+screen_name+'.batch'
 		cmd_batch_file=inputs.basedir+'/'+screen_name+'_cmd.batch'
 		cmd='manage_database --msname '+msname+' --metafits '+metafits+' --num_jobs '+str(num_jobs)+' --basedir '+basedir+\
@@ -980,8 +983,8 @@ if len(measurement_set_list)!=0:
 			mainlog.info('Command : '+cmd+'\n')
 			os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 		elif mpi==0:
-			mpicmd.append('-np 1 --map-by ppr:'+str(int((available_cpu_for_paircars/3)/cpu_sockets))+':core:pe=2 -x OMP_NUM_THREADS='+\
-				str(available_cpu_for_paircars)+' sh '+batch_file+'\n')
+			mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=4 -x OMP_NUM_THREADS='+\
+						str(available_cpu_for_paircars)+' sh '+batch_file+'\n')
 			mpicmd.append('-np 1 sleep 1\n')
 	basemsdir=os.path.basename(msname).split('.ms')[0]
 	if updated_MWA_obsids==0:

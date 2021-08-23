@@ -9,7 +9,7 @@ This pipeline is written by Devojyoti Kansabanik, 30 Jan , 2021
 
 # Basic parameters #TODO : Different run mode, download data, download data and calib, only calinbration, etc.
 ##################
-basedir				=	'/data1/devojyoti/PhD/data/paircars_test_5'
+basedir				=	'/data1/devojyoti/PhD/data/paircars_test_6'
 msdir				=	'/data1/devojyoti/CME_project/test_data'
 timerange			=	''
 chanrange			=	''
@@ -69,6 +69,8 @@ DR_delta_neg	=	30.0
 min_DR			=	35
 max_DR			=	3500
 min_selfcal_snr	=	4
+extra_time		=	5 
+max_time_avg	=	10
 
 # Flagging parameters
 #####################

@@ -286,7 +286,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	# Calculating minimum number of iterations and antenna bin size
 	###############################################################
 	
-	min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin=ISC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch,bandpass_selfcal=True)
+	min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change=ISC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch,bandpass_selfcal=True)
 
 	logger.info('########################\n')
 	logger.info('Estimating the number of selfcal iterations\n')
@@ -327,12 +327,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		num_iter_fixed_ant=num_iter_fixed_ant
 		stokes=stokes
 
-	if inputs.maskfile=='' and inputs.maskstr=='':
-		mask_rad=int((40*60)/ISC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
-		mask_str='circle[['+str(ISC.imsize/2)+'pix,'+str(ISC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
-	elif inputs.maskstr!='':
-		mask_str=inputs.maskstr
-
+	mask_str=''
 	file_str=os.path.basename(msname).split('.ms')[0]
 
 	if os.path.exists(basedir+'/Ref_time_chan_sigma.npy')==True:
@@ -442,25 +437,14 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			if inputs.gain_minsnr>2 and calc_flag_frac>0.05:
 				inputs.gain_minsnr-=0.5
 
-		if inputs.maskfile!='': # Use user defined mask
-			mask_str=''
+		if inputs.want_auto_masking==True:
 			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
-				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile=inputs.maskfile,want_auto_masking=False,stokes=stokes,interactive=interactive,\
+				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
+							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])
+		else:
+			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,'',ISC.antenna_string(antenna_list,antenna_list_index),\
+				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=False,stokes=stokes,interactive=interactive,\
 							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])  # Performing selfcal iterations	
-		elif inputs.maskstr!='': # Use user defined mask string
-			mask_str=inputs.maskstr
-			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
-				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile=inputs.maskfile,want_auto_masking=False,stokes=stokes,interactive=interactive,\
-				do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])  # Performing selfcal iterations		
-		elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto masking off use a circular central mask
-			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
-				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
-							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])
-		elif inputs.want_auto_masking==True:
-			maskstr=''
-			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
-				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
-							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])
 
 		if type(output_ISC)==tuple:				
 			msg_code,out_dict,negative_dyn_range=output_ISC
@@ -585,7 +569,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						flagversion=flaglist[key]['name']
 						logger.info('flagmanager(vis=\''+msname+'\',mode=\'delete\',versionname=\''+flagversion+'\')')
 						flagmanager(vis=msname,mode='delete',versionname=flagversion)
-					if use_ankflagger:
+					if inputs.use_ankflagger:
 						os.system('cp -r '+msname+' '+msname+'.backup')
 						try:
 							logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
@@ -694,20 +678,20 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return 0
-			elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(DR5/DR3-1)<0.08) and\
-				 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and abs(DR6/DR4-1)<0.05):
+			elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(DR5/DR3-1)<frac_flux_change) and\
+				 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and abs(DR6/DR4-1)<frac_flux_change/2):
 			#  If DR does not increas more the DR delta in last two steps and DR does not increase 8% for rms based and 5% for negative based => Converge
 				if (num_iter_fixed_sigma>min_num_iter_fixed_sigma and num_iter_fixed_sigma>3) and num_iter>min_iteration:
-					sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,residual_frac=inputs.residual_frac,stokes_list=['XX','YY'])
+					sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,residual_frac=frac_flux_change,stokes_list=['XX','YY'])
 					if sigma<start_sigma: # If the next sigma is less than the present sigma
 						start_sigma=sigma	
 						num_iter_fixed_sigma=0
 					else:
 						if verbose==False:
 							print ('#################\nSelfcal converged. Residual flux inside the mask is less than : '+\
-									str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n##################\n') 	
+									str(frac_flux_change*100)+'%. Stopped sigma : '+str(start_sigma)+'\n##################\n') 	
 						logger.info('########################\n')							
-						logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(residual_frac*100)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
+						logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(frac_flux_change*100)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
 						logger.info('########################\n')								
 						end_selfcal=True
 						os.system('cp -r junk1.cal '+basedir+'/bpcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bcal')

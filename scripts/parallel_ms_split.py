@@ -41,9 +41,9 @@ def split_func(params):
 
 def split_ms_parallel(paramList):
 	'''
-	Function to run multiple split jobs in parallel from same or differenr measurement sets
+	Function to run multiple split jobs in parallel from same or different measurement sets
 	Parameters:
-	paramList = Lists of list of parameters fosr each split, format [[vis1,datacolumn1,spw1,timerange1,chanwidth1,timewidth1,casacals1,calibratecals1],\
+	paramList = Lists of list of parameters for each split, format [[vis1,datacolumn1,spw1,timerange1,chanwidth1,timewidth1,casacals1,calibratecals1],\
 	[vis2,datacolumn2,spw2,timerange2,chanwidth2,timewidth2,casacals2,calibratecals2],....]
 	Return:
 	List of splited ms

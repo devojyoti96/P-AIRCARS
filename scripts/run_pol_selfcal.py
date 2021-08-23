@@ -206,15 +206,18 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
 			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=False)\n')
 			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
-		if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==True:
-			os.system('rm -rf '+working_dir+'/Backup_gaincaled.ms')
-		logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'corrected\')\n')
-		split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='corrected') # Backup of gain calibrated ms
-		logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\')\n')
-		split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')	
+		flagged_chans,flag_frac=calc_flag_chans_caltable(bptable[0],flag_frac=1.0)
+		min_flagged_chan=np.argmin(flag_frac)
+		logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\',spw=\'0:'+str(min_flagged_chan)+'\')\n')
+		split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected',spw='0:'+str(min_flagged_chan))	
 		os.system('rm -rf '+msname+' '+msname+'.flagversions')
-		logger.info('os.system(\'mv '+msname+'.temp '+msname+')\n')
-		os.system('mv '+msname+'.temp '+msname)
+		if 'ref' in msname:
+			ref_time_chan=True
+		else:
+			ref_time_chan=False
+		msname=splited_ms_rename(msname+'.temp',ref_time_chan=ref_time_chan,change_msname=True)
+		logger.info('splited_ms_rename(\''+msname+'.temp\',ref_time_chan='+str(ref_time_chan)+',change_msname=True)\n')
+		logger.info('Polarisation calibration ms : '+msname+'\n')		
 
 	if msname[-1]=='/':
 		msname=msname[:-1]
@@ -347,17 +350,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	
 	PSC=PolSelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive) # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
-	cal=CALIBRATE()
-	'''
-	mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
-	if mwa_config=='MWAPhaseI':
-		crossphase=15
-	elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
-		crossphase=135
-	logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
-	PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
-	'''
-
+	
 	###################
 	# Putting user defined inputs if exisis or go with default values
 	###################
@@ -407,6 +400,51 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		done_qucor=done_qucor
 		pre_res=pre_res
 
+	try:
+		start_sigma=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0] # Starting with last gaincal start_sigma and threshold
+		rms_list=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
+		rms=np.mean(np.array(rms_list))/0.5 # TODO : calculate Stokes I beam and divide
+		rms_list=[rms]*4			
+	except:
+		logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
+		if verbose==False:
+			print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
+		os.chdir(cwd)
+		if __name__!='__main__':
+			touch_file=basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_12'
+			msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+\
+					os.path.basename(msname)+'\nMessage :'+error_msgs(12)+'\n\nBest regards,\nPAIRCARS developing team'
+			msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
+			if inputs.send_notification==True:
+				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
+			os.system('touch '+touch_file)
+			os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_gaincaled.ms')
+			end_time=time.time()
+			run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+			logger.info('Total runtime : '+str(run_time))
+			os.system('cp -r '+working_dir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+			if inputs.keep_logger and verbose==True:
+				os.system('cp -r '+working_dir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+			os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice* '+working_dir+'/I*image')
+		return 12
+
+	background_mask_rad=int((200*60)/PSC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
+	background_mask_str='circle[['+str(PSC.imsize/2)+'pix,'+str(PSC.imsize/2)+'pix],'+str(background_mask_rad)+'pix]'
+
+	subms,subtracted=PSC.subtract_background_sources('IQUV',rms_list,start_sigma/2,start_sigma,maskregion=background_mask_str,includeregion=False,overwrite=True,modify_datacolumn=True)
+	cal=CALIBRATE()
+	mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
+	if mwa_config=='MWAPhaseI':
+		crossphase=15
+	elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
+		crossphase=135
+	logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
+	PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
+	if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==True:
+		os.system('rm -rf '+working_dir+'/Backup_gaincaled.ms')
+	logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'data\')\n')
+	split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='data') # Backup of gain calibrated ms
+
 	while end_selfcal==False:
 		if os.path.isfile(msname+'/.usedby_paircars')==False:
 			os.system('touch '+msname+'/.usedby_paircars')
@@ -414,7 +452,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		###############################################################
 		# Calculating minimum number of iterations and antenna bin size
 		###############################################################
-		min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change=PSC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch)
+		min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change,pol_frac_change=PSC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch)
 		if verbose==False:
 			print ('########################\nEstimating the number of selfcal iterations\n########################\n')
 		logger.info('Estimating the minimum number of selfcal iterations\n')
@@ -428,6 +466,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		###########################
 		# Initiating loop variables
 		###########################
+		quvcor_stokes='QU'
 		if start_fresh:
 			do_selfcal=True
 			stokes='IQUV'
@@ -459,43 +498,11 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		file_str=os.path.basename(msname).split('.ms')[0]
 	
 		if inputs.maskfile=='' and inputs.maskstr=='':
-			mask_rad=int((120*60)/PSC.cellsize) # Creating a mask with 40 arcmin radius centered on the image
+			mask_rad=int((60*60)/PSC.cellsize) # Creating a mask with 60 arcmin radius centered on the image
 			mask_str='circle[['+str(PSC.imsize/2)+'pix,'+str(PSC.imsize/2)+'pix],'+str(mask_rad)+'pix]'
 		elif inputs.maskstr!='':
 			mask_str=inputs.maskstr
 
-		try:
-			start_sigma=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0] # Starting with last gaincal start_sigma and threshold
-			rms_list=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
-			rms=np.mean(np.array(rms_list))/0.5 # TODO : calculate Stokes I beam and divide
-			rms_list=[rms]*4			
-		except:
-			logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
-			if verbose==False:
-				print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
-			os.chdir(cwd)
-			if __name__!='__main__':
-				touch_file=basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+os.path.basename(msname)+'_12'
-				msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+\
-						os.path.basename(msname)+'\nMessage :'+error_msgs(12)+'\n\nBest regards,\nPAIRCARS developing team'
-				msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
-				if inputs.send_notification==True:
-					send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=[])
-				os.system('touch '+touch_file)
-				os.system('rm -rf '+working_dir+'/'+file_str+'* '+working_dir+'/Backup_gaincaled.ms')
-				end_time=time.time()
-				run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-				logger.info('Total runtime : '+str(run_time))
-				os.system('cp -r '+working_dir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
-				if inputs.keep_logger and verbose==True:
-					os.system('cp -r '+working_dir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
-				os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice* '+working_dir+'/I*image')
-			return 12
-		'''
-		if scratch==False and num_iter==0:
-			logger.info('applycal(vis=\''+msname+'\,gaintable='+str(nearest_freq_leakcal)+',calmode=\'calflag\',flagbackup=True)\n')
-			applycal(vis=msname,gaintable=nearest_freq_leakcal,applymode='calflag',flagbackup=True)
-		'''
 		###################
 		# Performing gaincal again using the new leakage corrected source model
 		###################
@@ -514,15 +521,15 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			mwapb=MWA_PrimaryBeam(msname,metafits,inverse_beam=True)  # Inverse beam jones
 			logger.info('mwapb.calc_beamjones_phasecenter(outputfile=\'\')\n')
 			inv_beam_jones=mwapb.calc_beamjones_phasecenter(outputfile='')[0]
-			os.system('cp -r '+working_dir+'/qucor.image '+working_dir+'/junk1.image')
-			os.system('cp -r '+working_dir+'/qucor.model '+working_dir+'/junk1.model')
-			logger.info('PSC.uncorrect_for_single_beam_jones(\''+working_dir+'/qucor.model\',\''+working_dir+'/qucor_pbuncor.model\','+\
+			os.system('cp -r '+working_dir+'/quvcor.image '+working_dir+'/junk1.image')
+			os.system('cp -r '+working_dir+'/quvcor.model '+working_dir+'/junk1.model')
+			logger.info('PSC.uncorrect_for_single_beam_jones(\''+working_dir+'/quvcor.model\',\''+working_dir+'/quvcor_pbuncor.model\','+\
 						'inv_beam_jones,imagetype=\'CASA\',outtype=\'CASA\',pol_basis=\'Linear\')\n')
-			PSC.uncorrect_for_single_beam_jones(working_dir+'/qucor.model',working_dir+'/qucor_pbuncor.model',inv_beam_jones,imagetype='CASA',outtype='CASA',pol_basis='Linear')
-			modelname=working_dir+'/qucor_pbuncor.model'
+			PSC.uncorrect_for_single_beam_jones(working_dir+'/quvcor.model',working_dir+'/quvcor_pbuncor.model',inv_beam_jones,imagetype='CASA',outtype='CASA',pol_basis='Linear')
+			modelname=working_dir+'/quvcor_pbuncor.model'
 			os.system('cp -r '+modelname+' '+basedir+'/polimagemodels/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'_leakage.model') # Keeping new leakage model		
-			logger.info('delmod(vis=\''+msname+'\',scr=True)\n')
-			delmod(vis=msname,scr=True)
+			logger.info('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
+			delmod(vis=msname,scr=True,otf=True)
 			logger.info('ft(vis=\''+msname+'\',model=\''+modelname+'\',usescratch=True)\n')
 			ft(vis=msname,model=modelname,usescratch=True)
 			IB=ImageBasic(msname)
@@ -543,15 +550,6 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			os.system('cp -r '+working_dir+'/Leakage_cor_gaincal.cal '+basedir+'/polcaltables/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.lcal') 
 																															# Keeping new leakage corrected gaintable caltable		
 			logger.info('Gaincal using leakage corrected source model is done.\n')
-			'''
-			mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
-			if mwa_config=='MWAPhaseI':
-				crossphase=15
-			elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
-				crossphase=135
-			logger.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
-			PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True)
-			'''
 			if verbose==False:
 				os.system('rm -rf '+working_dir+'/Leakage_cor_gaincal.cal')
 			else:
@@ -603,25 +601,21 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				pass
 			tb.flush()
 			tb.close()
-			os.system('cp -r '+msname+' '+basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/Beamcored.ms')
+			os.system('cp -r '+msname+' '+basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/Beamcorrected.ms')
 			if gaincal_count==1:
 				logger.info('Re-calibrating using Stokes Q,U corrected model.\n')
 				IB1=ImageBasic(msname)
 				calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
 				calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
 				clearcal(vis=msname,addmodel=True)
-				logger.info('delmod(vis=\''+msname+'\',scr=True)\n')
-				delmod(vis=msname,scr=True)
-				logger.info('ft(vis=\''+msname+'\',model=\''+working_dir+'/qucor.model\',usescratch=True)\n')
-				ft(vis=msname,model=working_dir+'/qucor.model',usescratch=True)
+				logger.info('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
+				delmod(vis=msname,scr=True,otf=True)
+				logger.info('ft(vis=\''+msname+'\',model=\''+working_dir+'/quvcor.model\',usescratch=True)\n')
+				ft(vis=msname,model=working_dir+'/quvcor.model',usescratch=True)
 				logger.info('cal.calibrate(msname=\''+msname+'\',caltable=\''+working_dir+'/Leakage_corrected.bin\',minuv='+str(calib_uvrange_min)+',quiet='+str(verbose)+\
 						',maxuv='+str(calib_uvrange_max)+',j=1,absmem=1)\n')
 				cal.calibrate(msname=msname,caltable=working_dir+'/Leakage_corrected.bin',minuv=calib_uvrange_min,quiet=verbose,\
 						maxuv=calib_uvrange_max,j=1,absmem=1)
-				#logger.info('PSC.cal_poldistortion(\''+working_dir+'/Leakage_corrected.bin\',poldistortion_matrix=\'UH\')\n')
-				#X,inv_X,H,inv_H,U,inv_U,poldist_file=PSC.cal_poldistortion(working_dir+'/Leakage_corrected.bin',poldistortion_matrix='UH')
-				#logger.info('PSC.correct_poldistortion(\''+working_dir+'/Leakage_corrected.bin\',\''+working_dir+'/Leakage_corrected.bin\',X)\n')
-				#corrected_gaintable=PSC.correct_poldistortion(working_dir+'/Leakage_corrected.bin',working_dir+'/Leakage_corrected.bin',X) # Correct for full poldistortion
 				corrected_gaintable=working_dir+'/Leakage_corrected.bin'
 				logger.info('cal.applycal(msname=\''+msname+'\',gaintable=\''+corrected_gaintable+'\',applymode=\'calflag\',flagbackup=True)\n')
 				cal.applycal(msname=msname,gaintable=corrected_gaintable,applymode='calflag',flagbackup=True) # Applying the solution
@@ -635,10 +629,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				tb.close()
 				if verbose:
 					os.system('mv '+working_dir+'/Leakage_corrected.bin '+working_dir+'/'+file_str_prefix)
-					os.system('mv '+working_dir+'/qucor* '+working_dir+'/'+file_str_prefix)
+					os.system('mv '+working_dir+'/quvcor* '+working_dir+'/'+file_str_prefix)
 				else:
 					os.system('rm -rf '+working_dir+'/Leakage_corrected.bin')
-					os.system('rm -rf '+working_dir+'/qucor*')
+					os.system('rm -rf '+working_dir+'/quvcor*')
 			do_pbcor=False
 
 		####################
@@ -647,17 +641,6 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		IB=ImageBasic(msname)
 		os.system('cp -r '+working_dir+'/Backup_beamcorrected.ms '+' '+working_dir+'/beamcor_backup.ms')
 		if num_iter==0:
-			'''
-			if scratch==False:
-				logger.info('cal.applycal(msname=\''+msname+'\',gaintable=\''+nearest_freq_polcal[0]+'\',applymode=\'calflag\')\n')
-				cal.applycal(msname=msname,gaintable=nearest_freq_polcal[0],applymode='calflag')
-				tb=table()
-				tb.open(msname,nomodify=False)
-				cor_data=tb.getcol('CORRECTED_DATA')
-				tb.putcol('DATA',cor_data)
-				tb.flush()
-				tb.close()
-			else:'''
 			if os.path.isdir(working_dir+'/beamcor_backup.ms') and gaincal_count<1:
 				os.system('rm -rf '+msname+' '+msname+'.flagversions')
 				os.system('mv '+working_dir+'/beamcor_backup.ms '+msname)
@@ -665,11 +648,15 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		##############
 		# Selfcal loop
 		##############
+		antenna_to_use=PSC.antenna_string(antenna_list,-1)
 		while do_selfcal==True:
-		#	if gaincal_count<1 and done_qucor==False: 
-		#	if num_iter_after_qucor<min(min_iteration,3) or done_qucor==False:
-			do_poldist=True	
+			if (gaincal_count<1 and done_qucor==False):
+				do_poldist=True
 			poldistortion_type='poldistortion'	
+			do_flag=True
+			if subtracted==True and num_iter<=1:
+				do_poldist=False
+				do_flag=True
 			
 			if verbose==False:
 				print ('#####################\nPolarisation Selfcal iteration:'+str(num_iter)+'\n#####################\n')
@@ -684,62 +671,59 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			if num_iter_after_qucor<2 and (do_solarqu_cor==True or done_qucor==True):
 				startmodel=''
 				startmask=''
-
-			antenna_to_use=PSC.antenna_string(antenna_list,-1)
-			do_flag=True
-			use_ankflagger=False
-
-
-			if num_iter==1:
-				previous_image='junk0.image'
-				previous_model='junk0.model'
-			elif num_iter>1:
-				previous_image='junk1.image'
-				previous_model='junk1.model'
-			else:
-				previous_image=''
-				previous_model=''		
+			if num_iter>min(min_iteration,5):
+				if num_iter==1:
+					previous_image='junk0.image'
+					previous_model='junk0.model'
+				elif num_iter>1:
+					previous_image='junk1.image'
+					previous_model='junk1.model'
+				else:
+					previous_image=''
+					previous_model=''		
 			
-			if do_solarqu_cor==True:
-				mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
-				if mwa_config=='MWAPhaseI':
-					crossphase=15
-				elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
-					crossphase=135
-			else:
-				crossphase=-1
-			
-			#crossphase=-1
-			print ('Use ankflag :',use_ankflagger)
-			if do_solarqu_cor==False:
-				polmodel_threshold=start_sigma*1.5
+			if done_qucor==False:
+				if num_iter<=min(min_iteration,2):
+					polmodel_threshold=start_sigma*1.5
+				else:
+					polmodel_threshold=start_sigma*1.2
 			else:
 				polmodel_threshold=start_sigma
 
+			if num_iter==min(min_iteration,5):
+				do_solarqu_cor=True
+				quvcor_stokes='QUV'
+				previous_image=''
+				previous_model=''		
+			
 			if inputs.maskfile!='': # Use user defined mask
 				mask_str=''
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,crossphase=crossphase,\
-				stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
+				stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-						polmodel_threshold=polmodel_threshold)  		
+						polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)  		
 			elif inputs.maskstr!='': # If mask user defined string is given
 				mask_str=inputs.maskstr
-				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,crossphase=crossphase,\
-					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
+					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					polmodel_threshold=polmodel_threshold)
+					polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto maksing is off, use default central mask
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
-					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					crossphase=crossphase,polmodel_threshold=polmodel_threshold)
+					polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)
 			elif inputs.want_auto_masking==True:
 				maskregion=mask_str
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,'',start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
-					stokes=stokes,interactive=interactive,use_ankflagger=use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
+					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					crossphase=crossphase,maskregion=maskregion,polmodel_threshold=polmodel_threshold)
-
+					maskregion=maskregion,polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)
+			
+			if num_iter==min(min_iteration,5) and do_solarqu_cor==True:
+				do_solarqu_cor=False
+				quvcor_stokes='QU'
+			
 			if type(output_PSC)==tuple:				
 				msg_code,out_dict,negative_dyn_range=output_PSC
 			else:
@@ -954,9 +938,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				
 				############## If statement 1 (DR decrease)
 
-				if (((DR5<0.85*DR3 and DR5<0.9*DR1 and DR3>DR1) and (DR6<0.85*DR4 and DR6<0.9*DR2 and DR4>DR2))\
-					or ((DR5<0.9*DR3 and DR1>1.5*DR3) and (DR6<0.9*DR4 and DR2>1.5*DR4)) and ((num_iteration_after_poldist>min_iteration and done_qucor==False)\
-					or (num_iter_after_qucor>min_iteration and done_qucor==True))):
+				if (((DR5<0.85*DR3 and DR5<0.9*DR1 and DR3>DR1) and (DR6<0.85*DR4 and DR6<0.9*DR2 and DR4>DR2))or ((DR5<0.9*DR3 and DR1>1.5*DR3) and (DR6<0.9*DR4 and DR2>1.5*DR4))\
+					 and ((num_iteration_after_poldist>min_iteration and done_qucor==False)	or (num_iter_after_qucor>min_iteration and done_qucor==True))):
 					# If DR decreases.
 					# Case 1: If DR decreases less than 90% and 85% of previous two rounds and all antennas are added. This is a check if the rms is diverging. 
 					# Case 2: If DR decreases less than 90% of previous round but DR increases more than 1.5 times in last two rounds and no new antennas are added
@@ -1004,8 +987,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								end_selfcal=True
 								logger.info('----------------------------------\n')
 								logger.info('Making final calibration table.\n')
-								logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True)\n')
-								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
+								logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True,otf=True)\n')
+								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk0.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk0.model',usescratch=True)
 								calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
@@ -1087,9 +1070,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				#######################################################
 
 				# If statement 2 (Exiting selfcal conditions)
-				if ((DR5>=inputs.max_DR and abs(FX3_I/FX1_I-1)<0.1 and abs(FX3_I/FX2_I-1)<0.1 and \
-					abs(FX3_Q/FX1_Q-1)<0.1 and abs(FX3_Q/FX2_Q-1)<0.1 and abs(FX3_U/FX1_U-1)<0.1 and abs(FX3_U/FX2_U-1)<0.1 and \
-						abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1) and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5))):
+				if ((DR5>=inputs.max_DR and abs(DR5/DR3-1)<frac_flux_change and abs(DR5/DR1-1)<frac_flux_change and abs(FX1_Q/FX1_I-FX3_Q/FX3_I)<pol_frac_change \
+					and abs(FX2_Q/FX2_I-FX1_Q/FX1_I)<pol_frac_change and abs(FX1_U/FX1_I-FX3_U/FX3_I)<pol_frac_change and abs(FX2_U/FX2_I-FX1_U/FX1_I)<pol_frac_change\
+					 and abs(FX1_V/FX1_I-FX3_V/FX3_I)<pol_frac_change and abs(FX2_V/FX2_I-FX1_V/FX1_I)<pol_frac_change) and\
+					 (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min_iteration)):
 					# Stokes I DR reached maximum limit and polarised flux converged
 					if gaincal_count==1 and done_qucor==True: # If QU correction has been done and new gaincal using leakage is done.
 						if verbose==False:
@@ -1099,8 +1083,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 						end_selfcal=True
 						logger.info('----------------------------------\n')
 						logger.info('Making final calibration table.\n')
-						logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True)\n')
-						delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
+						logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True,otf=True)\n')
+						delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 						logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 						ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
 						calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
@@ -1147,12 +1131,12 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							logger.info('Going for a image based Stokes I to Q,U leakage correction because Stokes I max DR reached and polarised flux converged.\n')
 							logger.info('####################\n')
 							continue				
-				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(FX3_I/FX1_I-1)<0.1 and \
-					abs(FX3_I/FX2_I-1)<0.1 and abs(FX3_Q/FX1_Q-1)<0.1 and abs(FX3_Q/FX2_Q-1)<0.1 and abs(FX3_U/FX1_U-1)<0.1 and \
-					abs(FX3_U/FX2_U-1)<0.1 and abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1): # If polarised flux converged
+				elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(FX1_Q/FX1_I-FX3_Q/FX3_I)<pol_frac_change and abs(FX2_Q/FX2_I-FX1_Q/FX1_I)<pol_frac_change and \
+					abs(FX1_U/FX1_I-FX3_U/FX3_I)<pol_frac_change and abs(FX2_U/FX2_I-FX1_U/FX1_I)<pol_frac_change and abs(FX1_V/FX1_I-FX3_V/FX3_I)<pol_frac_change and \
+					abs(FX2_V/FX2_I-FX1_V/FX1_I)<pol_frac_change): # If polarised flux converged
 					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5)):
 						if gaincal_count<1 and done_qucor==False: # If QU correction and leakage corrected gaincal not done
-							sigma,pre_res=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,pre_residual=pre_res,residual_frac=inputs.residual_frac,\
+							sigma,pre_res=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,pre_residual=pre_res,residual_frac=frac_flux_change,\
 									stokes_list=['I','Q','U','V'])
 							if sigma<start_sigma:						
 								start_sigma=sigma	
@@ -1169,14 +1153,14 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 									continue
 						else:
 							if verbose==False:
-								print ('Selfcal converged. Residual flux inside the mask is less than :'+str(residual_frac*100)+'%. Stopped sigma :'+str(start_sigma)+'\n') 	
-							logger.info('Selfcal converged. Residual flux inside the mask is less than :'+str(residual_frac*100)+'%. Stopped sigma :'+str(start_sigma)+'\n')	
+								print ('Selfcal converged. Residual flux inside the mask is less than :'+str(frac_flux_change*100)+'%. Stopped sigma :'+str(start_sigma)+'\n') 	
+							logger.info('Selfcal converged. Residual flux inside the mask is less than :'+str(frac_flux_change*100)+'%. Stopped sigma :'+str(start_sigma)+'\n')	
 							os.system('rm -rf beamcor_backup.ms')
 							end_selfcal=True
 							logger.info('----------------------------------\n')
 							logger.info('Making final calibration table.\n')
-							logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True)\n')
-							delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
+							logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True,otf=True)\n')
+							delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 							logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 							ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
 							calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
@@ -1219,9 +1203,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				# If statement 3 (Using last round model) 
 				#(If DR increases at least DR_delta and all antennas are added and number of iteration at fixed antenna is greater than 5)
 				
-				if (abs(FX3_I/FX1_I-1)<0.1 and abs(FX3_I/FX2_I-1)<0.1 and \
-					abs(FX3_Q/FX1_Q-1)<0.1 and abs(FX3_Q/FX2_Q-1)<0.1 and abs(FX3_U/FX1_U-1)<0.1 and abs(FX3_U/FX2_U-1)<0.1 and \
-						abs(FX3_V/FX1_V-1)<0.1 and abs(FX3_V/FX2_V-1)<0.1 and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5))):
+				if (abs(DR5/DR3-1)<frac_flux_change and abs(DR5/DR1-1)<frac_flux_change and abs(FX1_Q/FX1_I-FX3_Q/FX3_I)<pol_frac_change and abs(FX2_Q/FX2_I-FX1_Q/FX1_I)<pol_frac_change\
+					 and abs(FX1_U/FX1_I-FX3_U/FX3_I)<pol_frac_change and abs(FX2_U/FX2_I-FX1_U/FX1_I)<pol_frac_change and abs(FX1_V/FX1_I-FX3_V/FX3_I)<pol_frac_change\
+					 and abs(FX2_V/FX2_I-FX1_V/FX1_I)<pol_frac_change and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>min_iteration)):
 					startmodel='junk1.model'
 				else:
 					startmodel=''
@@ -1246,8 +1230,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								end_selfcal=True
 								logger.info('----------------------------------\n')
 								logger.info('Making final calibration table.\n')
-								logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True)\n')
-								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True)
+								logger.info('delmod(vis=\''+working_dir+'/Backup_beamcorrected.ms\',scr=True,otf=True)\n')
+								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
 								calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
@@ -1457,58 +1441,58 @@ if __name__=='__main__':
 		os.system('rm -rf '+options.workdir+'/*.log')
 		os._exit(0)
 
-	try:
-		previous_touch_list=glob.glob(inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-		if len(previous_touch_list)!=0:
-			os.system('rm -rf '+inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-		print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
-		print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
-				',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\')\n')
-		msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
-				start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
-		if type(msg)==int:
-			if msg>100:
-				msg1=msg-100
-				msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-				if msg1==10:
-					send_notification=False
-				else:
-					send_notification=True
-				if options.verbose==False:
-					print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-				logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+#	try:
+	previous_touch_list=glob.glob(inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+	if len(previous_touch_list)!=0:
+		os.system('rm -rf '+inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+	print ('\n\t##########################\n\tStarting Polarisation self-calibration.....\n\t##########################\n')
+	print ('run_pol_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+\
+			',start_fresh='+str(options.fresh)+',perform_gaincal='+str(options.gaincal)+',caltables=\''+str(options.caltables)+'\')\n')
+	msg=run_pol_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),interactive=eval(str(options.interactive)),\
+			start_fresh=eval(str(options.fresh)),perform_gaincal=eval(str(options.gaincal)),caltables=str(options.caltables))
+	if type(msg)==int:
+		if msg>100:
+			msg1=msg-100
+			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+			if msg1==10:
+				send_notification=False
 			else:
-				msg_str='Message : '+error_msgs(msg)+'\n'
-				if msg==10:
-					send_notification=False
-				else:
-					send_notification=True
-				if options.verbose==False:
-					print ('Message : '+error_msgs(msg)+'\n')
-				logger.info('Message : '+error_msgs(msg)+'\n')
-		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
-		end_time=time.time()
-		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-		logger.info('Total runtime : '+str(run_time))
-		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
-		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
-		if type(msg)==int:
-			if send_notification==True:
-				attachments=glob.glob(options.workdir+'/quick_image_*.png')
-				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-		os.system('touch '+touch_file)
-		file_str=msbasename.split('.ms')[0]
-		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
-			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
-			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
-		os.system('cp -r '+options.workdir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
-		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
-		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice* '+options.workdir+'/I*image')
-		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')	
-	except Exception as e:
+				send_notification=True
+			if options.verbose==False:
+				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+		else:
+			msg_str='Message : '+error_msgs(msg)+'\n'
+			if msg==10:
+				send_notification=False
+			else:
+				send_notification=True
+			if options.verbose==False:
+				print ('Message : '+error_msgs(msg)+'\n')
+			logger.info('Message : '+error_msgs(msg)+'\n')
+	touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
+	end_time=time.time()
+	run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+	logger.info('Total runtime : '+str(run_time))
+	msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+	msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
+	if type(msg)==int:
+		if send_notification==True:
+			attachments=glob.glob(options.workdir+'/quick_image_*.png')
+			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+	os.system('touch '+touch_file)
+	file_str=msbasename.split('.ms')[0]
+	if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+		os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+	if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+		os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+	os.system('cp -r '+options.workdir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+	if inputs.keep_logger and eval(str(options.verbose))==True:
+		os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+	os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice* '+options.workdir+'/I*image')
+	os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')	
+	'''except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_pcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -1535,4 +1519,4 @@ if __name__=='__main__':
 			os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
 		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice* '+options.workdir+'/I*image')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_*.ms')
-		pass
+		pass'''
