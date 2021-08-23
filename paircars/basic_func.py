@@ -376,7 +376,7 @@ def calc_flag_fraction(msname):
 
 def calc_flag_fraction_caltable(caltable):
 	'''
-	Calculate flagg fraction from caltable
+	Calculate flaged fraction from caltable
 	Parameters:
 	caltable = Name of the CASA caltable	
 	Return:
@@ -391,6 +391,29 @@ def calc_flag_fraction_caltable(caltable):
 	flagged_fraction=np.sum(flag)/float(flag.size)
 	return flagged_fraction
 
+def calc_flag_chans_caltable(caltable,flag_frac=1.0):
+	'''
+	Calculate flaged channels from caltable
+	Parameters:
+	caltable = Name of the CASA caltable
+	flag_frac = Minimum fraction of data flagged for a single channel	
+	Return:
+	Flagged channels list, flag fraction
+	'''
+	#TODO: As of now only based on CASA caltable, later CALIBRATE caltables also included
+	
+	tb=table()
+	tb.open(caltable)
+	flag=tb.getcol('FLAG')
+	tb.close()
+	y=(flag==True)
+	flag_ants=np.nansum(np.nansum(y,axis=-1),axis=0).astype('float')
+	flag1=flag+True
+	x=(flag1==True)
+	x_tot=np.nansum(np.nansum(x,axis=-1),axis=0).astype('float')
+	frac=flag_ants/x_tot
+	flagged_chans=np.where(frac>=flag_frac)[0].tolist()
+	return flagged_chans,frac
 ##############################################
 # General usuage functions #
 ##############################################

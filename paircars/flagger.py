@@ -91,11 +91,12 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True):
 	mdflag.open(msname)
 	nants=mdflag.nantennas()
 	nchan=mdflag.nchan(0)
+	nbaseline=mdflag.nbaselines(ac=True)
 	npols=mdflag.ncorrforpol()[0]
 	ntimes=mdflag.timesforfield(0).size
 	total_cpus=psutil.cpu_count()
 	if nthread==0:
-		available_cpus=int((total_cpus-(psutil.cpu_percent()*total_cpus))*0.25)
+		available_cpus=int((total_cpus-(psutil.cpu_percent()*total_cpus)))
 		if available_cpus<=0:
 			available_cpus=1
 	else:
@@ -106,12 +107,12 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True):
 		ft(vis=msname,model=model,usescratch=True)
 	uvsub(vis=msname,reverse=False)
 	ankflagger=runank.ANKFLAG()
-	print ('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\',out_fileformat=\'ms\','+\
-			'automode=True,datacolumn=\'corrected\',verbose=verbose,flagbackup=True)\n')
-	outfile=ankflagger.runankflag(msname,nants,available_cpus,nchan,ntimes,npols,inp_fileformat='ms',out_fileformat='ms',automode=True,datacolumn='corrected',\
-			verbose=verbose,flagbackup=True)
+	print ('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(nbaseline)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\','+\
+		'out_fileformat=\'ms\',automode=True,datacolumn=\'corrected\',verbose=verbose,flagbackup=True,extendpols=True,extendchan=0.0,extendtime=0.0,chantime_flagfrac=0.5)\n')
+	outfile=ankflagger.runankflag(msname,nants,available_cpus,nchan,nbaseline,ntimes,npols,inp_fileformat='ms',out_fileformat='ms',automode=True,datacolumn='corrected',\
+			verbose=verbose,flagbackup=True,extendpols=False,extendchan=0.0,extendtime=0.0,chantime_flagfrac=0.5)
 	uvsub(vis=msname,reverse=True)
-	os.system('rm -rf aNKflagger.log casa*log')
+	os.system('rm -rf aNKflagger.log casa*log ankflag.out '+msname.split('.ms')[0]+'.fits')
 	return outfile
 
 def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):

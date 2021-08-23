@@ -22,6 +22,19 @@ class AccessMS:
 		self.tb=table()
 		self.me=measures()
 
+	def get_nbaseline(self,autocor=True):
+		'''		
+		Function to get number of baselines
+		Parameters:
+		autocor = Include auto-correlations into account or not
+		Return:
+		Number of baselines
+		'''
+		self.md.open(self.msname)
+		nbs=self.md.nbaselines(ac=autocor)
+		self.md.close()
+		return nbs
+
 	def get_phasecenter(self):
 		'''
 		Get phasecenter of the measurement set
@@ -374,6 +387,27 @@ class AccessMS:
 			else:
 				model_chan.append(chan)
 		return model_chan,nomodel_chan
+
+	def get_antenna_id(self,antenna_name=''):
+		'''
+		Function to get antenna id from antenna name
+		Parameter:
+		antenna_name = Name of the antenna
+		Return:
+		Antenna id
+		'''
+		if antenna_name=='':
+			return None
+		self.md.open(self.msname)
+		antenna_names=self.md.antennanames()
+		antenna_ids=self.md.antennaids()
+		self.md.close()
+		if antenna_name not in antenna_names:
+			print ('Antenna name not in list.\n')
+		else:
+			pos=antenna_names.index(antenna_name)
+			antenna_id=antenna_ids[pos]
+			return antenna_id
 
 	def calc_meanfreq(self):
 		'''

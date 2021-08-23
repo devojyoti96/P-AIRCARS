@@ -309,15 +309,17 @@ class IntensitySelfcal:
 		scratch : True, whether start the selfcal from scratch or not
 		bandpass_selfcal = False, performinh bandpass selfcal or not
 		Return:
-		Minimum iteration at fixed sigma, Minimum iteration, Maximum iteration , Number of antenna bins
+		Minimum iteration at fixed sigma, Minimum iteration, Maximum iteration , Number of antenna bins, Fractional flux change
 		'''
 		if bandpass_selfcal==True:
 			min_num_iter_fixed_sigma=1
 			min_iteration=5
 			max_iteration=100
 			antenna_bin=1
+			frac_flux_change=0.15
 		else:
 			if quality_factor==0:     # Low quality (Quick look image making)
+				frac_flux_change=0.2
 				if (safety_factor==0):
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
@@ -349,6 +351,7 @@ class IntensitySelfcal:
 						max_iteration=60
 						antenna_bin=1
 			elif quality_factor==1:  # Medium quality imaging (Computing speed medium)
+				frac_flux_change=0.15
 				if (safety_factor==0):
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
@@ -380,6 +383,7 @@ class IntensitySelfcal:
 						max_iteration=550
 						antenna_bin=1
 			else:  # Best quality imaging (Computing slow)
+				frac_flux_change=0.1
 				if (safety_factor==0):
 					max_iteration=700
 					min_num_iter_fixed_sigma=0
@@ -414,7 +418,7 @@ class IntensitySelfcal:
 		self.log_verbose.info('Quality factor : '+str(quality_factor)+', Safety standard : '+str(safety_factor)+', Scratch : '+str(scratch)+\
 				', Minimum number of iteration at fixed sigma : '+str(min_num_iter_fixed_sigma)+', Minimum iteration : '+str(min_iteration)+', Antenna bins : '+str(antenna_bin)+'\n')
 		os.system('rm -rf casa*log')
-		return min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin
+		return min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change
 
 	def antenna_string(self,antenna_list,antenna_list_index):
 		'''
@@ -775,7 +779,8 @@ class IntensitySelfcal:
 		AM=am.AccessMS(self.msname)
 		radec_str,radeg,decdeg=AM.get_phasecenter()
 		os.system('rm -rf convolved_phaseshift*')
-		imsmooth(imagename=imagename,outfile='convolved_phaseshift.image',beam={'major':'1920arcsec','minor':'1920arcsec','pa':'0deg'},targetres=False)
+		#imsmooth(imagename=imagename,outfile='convolved_phaseshift.image',beam={'major':'1920arcsec','minor':'1920arcsec','pa':'0deg'},targetres=False)
+		os.system('cp -r '+imagename+' convolved_phaseshift.image')
 		modelname=imagename.split('.image')[0]+'.model'
 		if bdsf_import==True:
 			exportfits(imagename='convolved_phaseshift.image',fitsimage='convolved_phaseshift.fits')
@@ -834,71 +839,68 @@ class IntensitySelfcal:
 		AM=am.AccessMS(self.msname)
 		radec_str,radeg,decdeg=AM.get_phasecenter()
 		IB=B.ImageBasic(self.msname)
-		psf=IB.calc_psf()/3600.0
-		if np.sqrt((ra-radeg)**2+(dec-decdeg)**2)>psf:
+		if os.path.isfile('wcs_model.fits')==True:
+			os.system('rm -rf wcs_model.fits')
+		try:
+			exportfits(imagename=imagename,fitsimage='wcs_model.fits',dropdeg=True,dropstokes=True)
+			w=WCS('wcs_model.fits')
+			pix=np.nanmean(w.all_world2pix(np.array([[ra,dec],[ra,dec]]),0),axis=0)
+			print (pix)
+			ra_pix=int(pix[0])
+			dec_pix=int(pix[1])
+			os.system('rm -rf wcs_model.fits')
 			try:
-				exportfits(imagename=imagename,fitsimage='wcs_model.fits',dropdeg=True,dropstokes=True)
-				w=WCS('wcs_model.fits')
-				pix=np.mean(w.all_world2pix(np.array([[ra,dec],[ra,dec]]),0),axis=0)
-				ra_pix=int(pix[0])
-				dec_pix=int(pix[1])
-				os.system('rm -rf wcs_model.fits')
+				imsubimage(imagename=imagename,outfile='shift_model.model',stokes='I',dropdeg=False)
+				exportfits(imagename='shift_model.model',fitsimage='shift_model.fits',dropstokes=False,dropdeg=False)												 		
+				hdul=fits.open('shift_model.fits')
+				hdr=hdul[0].header
+				data=(hdul[0].data)
+				hdr['CRPIX1']=ra_pix
+				hdr['CRPIX2']=dec_pix
+				fits.writeto('shift_model.fits',data=data,header=hdr,overwrite=True)
+				os.system('rm -rf '+imagename+' shift_model.model')
+				importfits(fitsimage='shift_model.fits',imagename=imagename)
+				self.log_verbose.info('Image phase center shifted to , RA : '+str(radec_str[0])+', DEC : '+str(radec_str[1])+'\n')
+				os.system('rm -rf shift_model.fits')
+				os.system('rm -rf casa*log')
+				os.chdir(cwd)
+				return 0
+			except:
+				self.log_verbose.info('Image phase center could not be shifted. Please provide only Stokes I image.\n')
+		except:
+			try:
+				importfits(fitsimage=imagename,imagename=imagename+'.model')
 				try:
-					imsubimage(imagename=imagename,outfile='shift_model.model',stokes='I',dropdeg=False)
-					exportfits(imagename='shift_model.model',fitsimage='shift_model.fits',dropstokes=False,dropdeg=False)												 		
+					imsubimage(imagename=imagename+'.model',outfile='I.model',stokes='I',dropdeg=False)
+					os.system('rm -rf '+imagename+'.model')
+					exportfits(imagename='I.model',fitsimage='wcs_model.fits',dropdeg=True,dropstokes=True)
+					w=WCS('wcs_model.fits')
+					pix=np.mean(w.all_world2pix(np.array([[ra,dec],[ra,dec]]),0),axis=0)
+					ra_pix=int(pix[0])
+					dec_pix=int(pix[1])
+					os.system('rm -rf wcs_model.fits')
+					exportfits(imagename='I.model',fitsimage='shift_model.fits',dropstokes=False,dropdeg=False)												 		
 					hdul=fits.open('shift_model.fits')
 					hdr=hdul[0].header
 					data=(hdul[0].data)
 					hdr['CRPIX1']=ra_pix
 					hdr['CRPIX2']=dec_pix
 					fits.writeto('shift_model.fits',data=data,header=hdr,overwrite=True)
-					os.system('rm -rf '+imagename+' shift_model.model')
-					importfits(fitsimage='shift_model.fits',imagename=imagename)
+					os.system('rm -rf I.model shift_model.model '+imagename)
+					os.system('mv shift_model.fits '+imagename)
 					self.log_verbose.info('Image phase center shifted to , RA : '+str(radec_str[0])+', DEC : '+str(radec_str[1])+'\n')
 					os.system('rm -rf shift_model.fits')
 					os.system('rm -rf casa*log')
 					os.chdir(cwd)
 					return 0
 				except:
-					self.log_verbose.info('Image phase center could not be shifted. Please provide only Stokes I image.\n')
+					self.log_verbose.info('Image phase center could not be shifted. Please provide only Stokes I image.\n')	 
 			except:
-				try:
-					importfits(fitsimage=imagename,imagename=imagename+'.model')
-					try:
-						imsubimage(imagename=imagename+'.model',outfile='I.model',stokes='I',dropdeg=False)
-						os.system('rm -rf '+imagename+'.model')
-						exportfits(imagename='I.model',fitsimage='wcs_model.fits',dropdeg=True,dropstokes=True)
-						w=WCS('wcs_model.fits')
-						pix=np.mean(w.all_world2pix(np.array([[ra,dec],[ra,dec]]),0),axis=0)
-						ra_pix=int(pix[0])
-						dec_pix=int(pix[1])
-						os.system('rm -rf wcs_model.fits')
-						exportfits(imagename='I.model',fitsimage='shift_model.fits',dropstokes=False,dropdeg=False)												 		
-						hdul=fits.open('shift_model.fits')
-						hdr=hdul[0].header
-						data=(hdul[0].data)
-						hdr['CRPIX1']=ra_pix
-						hdr['CRPIX2']=dec_pix
-						fits.writeto('shift_model.fits',data=data,header=hdr,overwrite=True)
-						os.system('rm -rf I.model shift_model.model '+imagename)
-						os.system('mv shift_model.fits '+imagename)
-						self.log_verbose.info('Image phase center shifted to , RA : '+str(radec_str[0])+', DEC : '+str(radec_str[1])+'\n')
-						os.system('rm -rf shift_model.fits')
-						os.system('rm -rf casa*log')
-						os.chdir(cwd)
-						return 0
-					except:
-						self.log_verbose.info('Image phase center could not be shifted. Please provide only Stokes I image.\n')	 
-				except:
-					self.log_verbose.info('Image is not either in CASA or fits format.\n')
-					os.system('rm -rf casa*log')
-					os.chdir(cwd)
-					return 2
-		else:
-			os.system('rm -rf casa*log')
-			os.chdir(cwd)
-			return 1
-		
+				self.log_verbose.info('Image is not either in CASA or fits format.\n')
+				os.system('rm -rf casa*log')
+				os.chdir(cwd)
+				return 2
+
 	def image_source_true_loc(self,outdir,do_bandpass=False):
 		'''
 		Function to make quick image for finding source true location with respect to reference time and channel
@@ -1362,11 +1364,13 @@ class IntensitySelfcal:
 		os.system('rm -rf junk_IQUV*')
 		return caltable_name
 
-	def remove_model_negative(self,modelname,overwrite=False):
+	def remove_model_negative(self,imagename,modelname,sigma=10,overwrite=False):
 		'''
 		Function to remove negatives from model image
 		Parameters:
+		imagename = Name of the image
 		modelname = Name of the model
+		sigma = Sigma value for thresholding
 		overwrite = False, overwrite the model image or not
 		Return:
 		Model image without negatives
@@ -1376,12 +1380,21 @@ class IntensitySelfcal:
 			if os.path.isdir(modelname+'.nonegative')==True:
 				os.system('rm -rf '+modelname+'.nonegative')
 			os.system('cp -r '+modelname+' '+modelname+'.nonegative')
-			modelimage=modelname+'.nonegative'
+			modelname=modelname+'.nonegative'
+		ia.open(imagename)
+		data=ia.getchunk()
+		ia.close()
+		rmsi=imstat(imagename=imagename,box=self.rms_box)['rms'][0]		
+		sigma_pos=np.where(data>=(sigma*rmsi))
+		sigma_pos1=np.where(data<(sigma*rmsi))
 		ia.open(modelname)
 		data=ia.getchunk()
+		data_copy=copy.deepcopy(data)
+		data[sigma_pos]=0
 		pos=np.where(data<0)
-		data[pos]=0
-		ia.putchunk(data)
+		data_copy[pos]=0
+		data_copy[sigma_pos1]=0
+		ia.putchunk(data_copy)
 		ia.done()
 		return modelname
 
@@ -1556,7 +1569,7 @@ class IntensitySelfcal:
 				clearcal(vis=self.msname)
 				self.log_verbose.info('delmod(vis=\''+self.msname+'\',scr=True)\n') 
 				delmod(vis=self.msname,scr=True) # Clear the MODEL column
-				self.remove_model_negative(imagename+'.model',overwrite=True) # Removing negatives from model
+				self.remove_model_negative(imagename+'.image',imagename+'.model',sigma=sigma,overwrite=True) # Removing negatives from model
 				if correct_phasecenter==True:
 					if ra==0 or dec==0:
 						AM=am.AccessMS(self.msname)
