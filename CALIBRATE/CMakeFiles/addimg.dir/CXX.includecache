@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,15 +6,15 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/addimg.cpp
+/data1/mwa-reduce/addimg.cpp
 imageadder.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/imageadder.h
+/data1/mwa-reduce/imageadder.h
 string
 -
 iostream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -28,9 +28,9 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.cpp
+/data1/mwa-reduce/fitsiochecker.cpp
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 fitsio.h
 -
 sstream
@@ -38,15 +38,15 @@ sstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.cpp
+/data1/mwa-reduce/fitsreader.cpp
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 stdexcept
 -
 sstream
@@ -60,7 +60,7 @@ casacore/casa/Quanta/MVTime.h
 casacore/measures/Measures/MeasConvert.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 string
 -
 vector
@@ -68,17 +68,17 @@ vector
 fitsio.h
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.cpp
+/data1/mwa-reduce/fitswriter.cpp
 fitswriter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.h
+/data1/mwa-reduce/fitswriter.h
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 stdexcept
 -
 sstream
@@ -94,7 +94,7 @@ limits
 iostream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.h
+/data1/mwa-reduce/fitswriter.h
 fitsio.h
 -
 string
@@ -106,27 +106,27 @@ map
 cmath
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/image.h
+/data1/mwa-reduce/image.h
 cstring
 -
 wsclean/imagebufferallocator.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/wsclean/imagebufferallocator.h
+/data1/mwa-reduce/wsclean/imagebufferallocator.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/imageadder.h
+/data1/mwa-reduce/imageadder.h
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 fitswriter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.h
+/data1/mwa-reduce/fitswriter.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 image.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/image.h
+/data1/mwa-reduce/image.h
 vector
 -
 stdexcept
@@ -138,7 +138,7 @@ iostream
 memory
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 complex
 -
 stdexcept
@@ -148,11 +148,11 @@ set
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/wsclean/imagebufferallocator.h
+/data1/mwa-reduce/wsclean/imagebufferallocator.h
 complex
 -
 iostream
@@ -164,9 +164,9 @@ stdexcept
 mutex
 -
 logger.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/wsclean/logger.h
+/data1/mwa-reduce/wsclean/logger.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/wsclean/logger.h
+/data1/mwa-reduce/wsclean/logger.h
 sstream
 -
 iostream

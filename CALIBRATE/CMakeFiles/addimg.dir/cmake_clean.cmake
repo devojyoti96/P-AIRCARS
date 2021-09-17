@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/addimg.dir/addimg.cpp.o"
   "CMakeFiles/addimg.dir/fitsiochecker.cpp.o"
   "CMakeFiles/addimg.dir/fitsreader.cpp.o"
@@ -8,6 +8,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/addimg.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/addimg.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

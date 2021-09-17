@@ -206,8 +206,6 @@ peel: /usr/lib64/libm.so
 peel: /usr/local/lib/libcasa_scimath.so
 peel: /usr/local/lib/libcasa_measures.so
 peel: /usr/local/lib/libcasa_scimath_f.so
-peel: /usr/lib64/liblapack.so
-peel: /usr/lib64/libblas.so
 peel: /usr/local/lib/libcasa_tables.so
 peel: /usr/local/lib/libcasa_casa.so
 peel: /usr/lib64/libhdf5_cpp.so
@@ -233,8 +231,6 @@ peel: /usr/local/lib/libcasa_fits.so
 peel: /usr/local/lib/libcasa_scimath.so
 peel: /usr/local/lib/libcasa_measures.so
 peel: /usr/local/lib/libcasa_scimath_f.so
-peel: /usr/lib64/liblapack.so
-peel: /usr/lib64/libblas.so
 peel: /usr/local/lib/libcasa_tables.so
 peel: /usr/local/lib/libcasa_casa.so
 peel: /usr/lib64/libgsl.so

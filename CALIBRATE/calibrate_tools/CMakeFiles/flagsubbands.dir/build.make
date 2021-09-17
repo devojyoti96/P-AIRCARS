@@ -86,8 +86,6 @@ flagsubbands: /usr/lib64/libm.so
 flagsubbands: /usr/local/lib/libcasa_scimath.so
 flagsubbands: /usr/local/lib/libcasa_measures.so
 flagsubbands: /usr/local/lib/libcasa_scimath_f.so
-flagsubbands: /usr/lib64/liblapack.so
-flagsubbands: /usr/lib64/libblas.so
 flagsubbands: /usr/local/lib/libcasa_tables.so
 flagsubbands: /usr/local/lib/libcasa_casa.so
 flagsubbands: /usr/lib64/libhdf5_cpp.so
@@ -100,8 +98,6 @@ flagsubbands: /usr/lib64/libm.so
 flagsubbands: /usr/local/lib/libcasa_scimath.so
 flagsubbands: /usr/local/lib/libcasa_measures.so
 flagsubbands: /usr/local/lib/libcasa_scimath_f.so
-flagsubbands: /usr/lib64/liblapack.so
-flagsubbands: /usr/lib64/libblas.so
 flagsubbands: /usr/local/lib/libcasa_tables.so
 flagsubbands: /usr/local/lib/libcasa_casa.so
 flagsubbands: /usr/lib64/libhdf5_cpp.so

@@ -147,8 +147,6 @@ aegean2model: /usr/lib64/libm.so
 aegean2model: /usr/local/lib/libcasa_scimath.so
 aegean2model: /usr/local/lib/libcasa_measures.so
 aegean2model: /usr/local/lib/libcasa_scimath_f.so
-aegean2model: /usr/lib64/liblapack.so
-aegean2model: /usr/lib64/libblas.so
 aegean2model: /usr/local/lib/libcasa_tables.so
 aegean2model: /usr/local/lib/libcasa_casa.so
 aegean2model: /usr/lib64/libhdf5_cpp.so
@@ -166,8 +164,6 @@ aegean2model: /usr/lib64/libm.so
 aegean2model: /usr/local/lib/libcasa_scimath.so
 aegean2model: /usr/local/lib/libcasa_measures.so
 aegean2model: /usr/local/lib/libcasa_scimath_f.so
-aegean2model: /usr/lib64/liblapack.so
-aegean2model: /usr/lib64/libblas.so
 aegean2model: /usr/local/lib/libcasa_tables.so
 aegean2model: /usr/local/lib/libcasa_casa.so
 aegean2model: /usr/lib64/libhdf5_cpp.so
@@ -179,8 +175,6 @@ aegean2model: /usr/lib64/libm.so
 aegean2model: /usr/local/lib/libcasa_scimath.so
 aegean2model: /usr/local/lib/libcasa_measures.so
 aegean2model: /usr/local/lib/libcasa_scimath_f.so
-aegean2model: /usr/lib64/liblapack.so
-aegean2model: /usr/lib64/libblas.so
 aegean2model: /usr/local/lib/libcasa_tables.so
 aegean2model: /usr/local/lib/libcasa_casa.so
 aegean2model: /usr/lib64/libhdf5_cpp.so

@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/sedcombine.dir/experiments/sed/sedcombine.cpp.o"
   "CMakeFiles/sedcombine.dir/experiments/sed/sedanalyser.cpp.o"
   "CMakeFiles/sedcombine.dir/model/model.cpp.o"
@@ -15,6 +15,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/sedcombine.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/sedcombine.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

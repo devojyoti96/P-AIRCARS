@@ -147,8 +147,6 @@ collectionsolutions: /usr/lib64/libm.so
 collectionsolutions: /usr/local/lib/libcasa_scimath.so
 collectionsolutions: /usr/local/lib/libcasa_measures.so
 collectionsolutions: /usr/local/lib/libcasa_scimath_f.so
-collectionsolutions: /usr/lib64/liblapack.so
-collectionsolutions: /usr/lib64/libblas.so
 collectionsolutions: /usr/local/lib/libcasa_tables.so
 collectionsolutions: /usr/local/lib/libcasa_casa.so
 collectionsolutions: /usr/lib64/libhdf5_cpp.so
@@ -166,8 +164,6 @@ collectionsolutions: /usr/local/lib/libcasa_fits.so
 collectionsolutions: /usr/local/lib/libcasa_scimath.so
 collectionsolutions: /usr/local/lib/libcasa_measures.so
 collectionsolutions: /usr/local/lib/libcasa_scimath_f.so
-collectionsolutions: /usr/lib64/liblapack.so
-collectionsolutions: /usr/lib64/libblas.so
 collectionsolutions: /usr/local/lib/libcasa_tables.so
 collectionsolutions: /usr/local/lib/libcasa_casa.so
 collectionsolutions: /usr/lib64/libgsl.so

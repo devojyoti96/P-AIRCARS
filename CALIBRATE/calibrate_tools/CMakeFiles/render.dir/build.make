@@ -237,8 +237,6 @@ render: /usr/lib64/libm.so
 render: /usr/local/lib/libcasa_scimath.so
 render: /usr/local/lib/libcasa_measures.so
 render: /usr/local/lib/libcasa_scimath_f.so
-render: /usr/lib64/liblapack.so
-render: /usr/lib64/libblas.so
 render: /usr/local/lib/libcasa_tables.so
 render: /usr/local/lib/libcasa_casa.so
 render: /usr/lib64/libhdf5_cpp.so
@@ -260,8 +258,6 @@ render: /usr/lib64/libm.so
 render: /usr/local/lib/libcasa_scimath.so
 render: /usr/local/lib/libcasa_measures.so
 render: /usr/local/lib/libcasa_scimath_f.so
-render: /usr/lib64/liblapack.so
-render: /usr/lib64/libblas.so
 render: /usr/local/lib/libcasa_tables.so
 render: /usr/local/lib/libcasa_casa.so
 render: /usr/lib64/libhdf5_cpp.so
@@ -273,8 +269,6 @@ render: /usr/lib64/libm.so
 render: /usr/local/lib/libcasa_scimath.so
 render: /usr/local/lib/libcasa_measures.so
 render: /usr/local/lib/libcasa_scimath_f.so
-render: /usr/lib64/liblapack.so
-render: /usr/lib64/libblas.so
 render: /usr/local/lib/libcasa_tables.so
 render: /usr/local/lib/libcasa_casa.so
 render: /usr/lib64/libhdf5_cpp.so

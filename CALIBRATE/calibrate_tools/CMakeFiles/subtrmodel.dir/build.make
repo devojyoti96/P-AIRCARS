@@ -206,8 +206,6 @@ subtrmodel: /usr/lib64/libm.so
 subtrmodel: /usr/local/lib/libcasa_scimath.so
 subtrmodel: /usr/local/lib/libcasa_measures.so
 subtrmodel: /usr/local/lib/libcasa_scimath_f.so
-subtrmodel: /usr/lib64/liblapack.so
-subtrmodel: /usr/lib64/libblas.so
 subtrmodel: /usr/local/lib/libcasa_tables.so
 subtrmodel: /usr/local/lib/libcasa_casa.so
 subtrmodel: /usr/lib64/libhdf5_cpp.so
@@ -235,8 +233,6 @@ subtrmodel: /usr/local/lib/libcasa_fits.so
 subtrmodel: /usr/local/lib/libcasa_scimath.so
 subtrmodel: /usr/local/lib/libcasa_measures.so
 subtrmodel: /usr/local/lib/libcasa_scimath_f.so
-subtrmodel: /usr/lib64/liblapack.so
-subtrmodel: /usr/lib64/libblas.so
 subtrmodel: /usr/local/lib/libcasa_tables.so
 subtrmodel: /usr/local/lib/libcasa_casa.so
 subtrmodel: /usr/lib64/libfftw3.so

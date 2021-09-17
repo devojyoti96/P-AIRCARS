@@ -148,8 +148,6 @@ scaleimage: /usr/lib64/libm.so
 scaleimage: /usr/local/lib/libcasa_scimath.so
 scaleimage: /usr/local/lib/libcasa_measures.so
 scaleimage: /usr/local/lib/libcasa_scimath_f.so
-scaleimage: /usr/lib64/liblapack.so
-scaleimage: /usr/lib64/libblas.so
 scaleimage: /usr/local/lib/libcasa_tables.so
 scaleimage: /usr/local/lib/libcasa_casa.so
 scaleimage: /usr/lib64/libhdf5_cpp.so
@@ -165,8 +163,6 @@ scaleimage: /usr/lib64/libm.so
 scaleimage: /usr/local/lib/libcasa_scimath.so
 scaleimage: /usr/local/lib/libcasa_measures.so
 scaleimage: /usr/local/lib/libcasa_scimath_f.so
-scaleimage: /usr/lib64/liblapack.so
-scaleimage: /usr/lib64/libblas.so
 scaleimage: /usr/local/lib/libcasa_tables.so
 scaleimage: /usr/local/lib/libcasa_casa.so
 scaleimage: /usr/lib64/libhdf5_cpp.so
@@ -178,8 +174,6 @@ scaleimage: /usr/lib64/libm.so
 scaleimage: /usr/local/lib/libcasa_scimath.so
 scaleimage: /usr/local/lib/libcasa_measures.so
 scaleimage: /usr/local/lib/libcasa_scimath_f.so
-scaleimage: /usr/lib64/liblapack.so
-scaleimage: /usr/lib64/libblas.so
 scaleimage: /usr/local/lib/libcasa_tables.so
 scaleimage: /usr/local/lib/libcasa_casa.so
 scaleimage: /usr/lib64/libhdf5_cpp.so

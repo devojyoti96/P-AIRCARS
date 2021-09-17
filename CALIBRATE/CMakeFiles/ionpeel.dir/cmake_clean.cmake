@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/ionpeel.dir/ionpeel.cpp.o"
   "CMakeFiles/ionpeel.dir/imageweights.cpp.o"
   "CMakeFiles/ionpeel.dir/progressbar.cpp.o"
@@ -17,6 +17,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/ionpeel.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/ionpeel.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

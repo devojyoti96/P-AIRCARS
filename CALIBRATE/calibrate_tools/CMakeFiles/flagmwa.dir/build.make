@@ -86,8 +86,6 @@ flagmwa: /usr/lib64/libm.so
 flagmwa: /usr/local/lib/libcasa_scimath.so
 flagmwa: /usr/local/lib/libcasa_measures.so
 flagmwa: /usr/local/lib/libcasa_scimath_f.so
-flagmwa: /usr/lib64/liblapack.so
-flagmwa: /usr/lib64/libblas.so
 flagmwa: /usr/local/lib/libcasa_tables.so
 flagmwa: /usr/local/lib/libcasa_casa.so
 flagmwa: /usr/lib64/libhdf5_cpp.so
@@ -100,8 +98,6 @@ flagmwa: /usr/lib64/libm.so
 flagmwa: /usr/local/lib/libcasa_scimath.so
 flagmwa: /usr/local/lib/libcasa_measures.so
 flagmwa: /usr/local/lib/libcasa_scimath_f.so
-flagmwa: /usr/lib64/liblapack.so
-flagmwa: /usr/lib64/libblas.so
 flagmwa: /usr/local/lib/libcasa_tables.so
 flagmwa: /usr/local/lib/libcasa_casa.so
 flagmwa: /usr/lib64/libhdf5_cpp.so

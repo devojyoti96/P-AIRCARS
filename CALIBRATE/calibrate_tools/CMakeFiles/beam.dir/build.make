@@ -191,8 +191,6 @@ beam: /usr/lib64/libm.so
 beam: /usr/local/lib/libcasa_scimath.so
 beam: /usr/local/lib/libcasa_measures.so
 beam: /usr/local/lib/libcasa_scimath_f.so
-beam: /usr/lib64/liblapack.so
-beam: /usr/lib64/libblas.so
 beam: /usr/local/lib/libcasa_tables.so
 beam: /usr/local/lib/libcasa_casa.so
 beam: /usr/lib64/libhdf5_cpp.so
@@ -216,8 +214,6 @@ beam: /usr/local/lib/libcasa_fits.so
 beam: /usr/local/lib/libcasa_scimath.so
 beam: /usr/local/lib/libcasa_measures.so
 beam: /usr/local/lib/libcasa_scimath_f.so
-beam: /usr/lib64/liblapack.so
-beam: /usr/lib64/libblas.so
 beam: /usr/local/lib/libcasa_tables.so
 beam: /usr/local/lib/libcasa_casa.so
 beam: /usr/lib64/libgsl.so

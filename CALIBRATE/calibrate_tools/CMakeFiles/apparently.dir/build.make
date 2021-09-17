@@ -147,8 +147,6 @@ apparently: /usr/lib64/libm.so
 apparently: /usr/local/lib/libcasa_scimath.so
 apparently: /usr/local/lib/libcasa_measures.so
 apparently: /usr/local/lib/libcasa_scimath_f.so
-apparently: /usr/lib64/liblapack.so
-apparently: /usr/lib64/libblas.so
 apparently: /usr/local/lib/libcasa_tables.so
 apparently: /usr/local/lib/libcasa_casa.so
 apparently: /usr/lib64/libhdf5_cpp.so
@@ -166,8 +164,6 @@ apparently: /usr/lib64/libm.so
 apparently: /usr/local/lib/libcasa_scimath.so
 apparently: /usr/local/lib/libcasa_measures.so
 apparently: /usr/local/lib/libcasa_scimath_f.so
-apparently: /usr/lib64/liblapack.so
-apparently: /usr/lib64/libblas.so
 apparently: /usr/local/lib/libcasa_tables.so
 apparently: /usr/local/lib/libcasa_casa.so
 apparently: /usr/lib64/libhdf5_cpp.so
@@ -179,8 +175,6 @@ apparently: /usr/lib64/libm.so
 apparently: /usr/local/lib/libcasa_scimath.so
 apparently: /usr/local/lib/libcasa_measures.so
 apparently: /usr/local/lib/libcasa_scimath_f.so
-apparently: /usr/lib64/liblapack.so
-apparently: /usr/lib64/libblas.so
 apparently: /usr/local/lib/libcasa_tables.so
 apparently: /usr/local/lib/libcasa_casa.so
 apparently: /usr/lib64/libhdf5_cpp.so

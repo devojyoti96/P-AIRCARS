@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/cluster.dir/cluster.cpp.o"
   "CMakeFiles/cluster.dir/model/model.cpp.o"
   "CMakeFiles/cluster.dir/nlplfitter.cpp.o"
@@ -7,6 +7,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/cluster.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/cluster.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

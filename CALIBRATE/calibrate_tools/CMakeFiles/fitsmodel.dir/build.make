@@ -222,8 +222,6 @@ fitsmodel: /usr/lib64/libm.so
 fitsmodel: /usr/local/lib/libcasa_scimath.so
 fitsmodel: /usr/local/lib/libcasa_measures.so
 fitsmodel: /usr/local/lib/libcasa_scimath_f.so
-fitsmodel: /usr/lib64/liblapack.so
-fitsmodel: /usr/lib64/libblas.so
 fitsmodel: /usr/local/lib/libcasa_tables.so
 fitsmodel: /usr/local/lib/libcasa_casa.so
 fitsmodel: /usr/lib64/libhdf5_cpp.so
@@ -244,8 +242,6 @@ fitsmodel: /usr/lib64/libm.so
 fitsmodel: /usr/local/lib/libcasa_scimath.so
 fitsmodel: /usr/local/lib/libcasa_measures.so
 fitsmodel: /usr/local/lib/libcasa_scimath_f.so
-fitsmodel: /usr/lib64/liblapack.so
-fitsmodel: /usr/lib64/libblas.so
 fitsmodel: /usr/local/lib/libcasa_tables.so
 fitsmodel: /usr/local/lib/libcasa_casa.so
 fitsmodel: /usr/lib64/libhdf5_cpp.so
@@ -257,8 +253,6 @@ fitsmodel: /usr/lib64/libm.so
 fitsmodel: /usr/local/lib/libcasa_scimath.so
 fitsmodel: /usr/local/lib/libcasa_measures.so
 fitsmodel: /usr/local/lib/libcasa_scimath_f.so
-fitsmodel: /usr/lib64/liblapack.so
-fitsmodel: /usr/lib64/libblas.so
 fitsmodel: /usr/local/lib/libcasa_tables.so
 fitsmodel: /usr/local/lib/libcasa_casa.so
 fitsmodel: /usr/lib64/libhdf5_cpp.so

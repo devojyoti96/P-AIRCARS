@@ -6,27 +6,3 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
-cstring
--
-string
--
-fstream
--
-complex
--
-memory
--
-stdexcept
--
-vector
--
-stdint.h
--
-
-/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutiontool.cpp
-iostream
--
-solutionfile.h
-/data1/devojyoti/PhD/P-AIRCARS/CALIBRATE/solutionfile.h
-

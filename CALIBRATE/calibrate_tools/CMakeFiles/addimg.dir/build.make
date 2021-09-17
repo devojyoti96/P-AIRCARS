@@ -132,8 +132,6 @@ addimg: /usr/lib64/libm.so
 addimg: /usr/local/lib/libcasa_scimath.so
 addimg: /usr/local/lib/libcasa_measures.so
 addimg: /usr/local/lib/libcasa_scimath_f.so
-addimg: /usr/lib64/liblapack.so
-addimg: /usr/lib64/libblas.so
 addimg: /usr/local/lib/libcasa_tables.so
 addimg: /usr/local/lib/libcasa_casa.so
 addimg: /usr/lib64/libhdf5_cpp.so
@@ -151,8 +149,6 @@ addimg: /usr/lib64/libm.so
 addimg: /usr/local/lib/libcasa_scimath.so
 addimg: /usr/local/lib/libcasa_measures.so
 addimg: /usr/local/lib/libcasa_scimath_f.so
-addimg: /usr/lib64/liblapack.so
-addimg: /usr/lib64/libblas.so
 addimg: /usr/local/lib/libcasa_tables.so
 addimg: /usr/local/lib/libcasa_casa.so
 addimg: /usr/lib64/libhdf5_cpp.so
@@ -164,8 +160,6 @@ addimg: /usr/lib64/libm.so
 addimg: /usr/local/lib/libcasa_scimath.so
 addimg: /usr/local/lib/libcasa_measures.so
 addimg: /usr/local/lib/libcasa_scimath_f.so
-addimg: /usr/lib64/liblapack.so
-addimg: /usr/lib64/libblas.so
 addimg: /usr/local/lib/libcasa_tables.so
 addimg: /usr/local/lib/libcasa_casa.so
 addimg: /usr/lib64/libhdf5_cpp.so

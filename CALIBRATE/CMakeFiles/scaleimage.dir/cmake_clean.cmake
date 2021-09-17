@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/scaleimage.dir/scaleimage.cpp.o"
   "CMakeFiles/scaleimage.dir/fitsiochecker.cpp.o"
   "CMakeFiles/scaleimage.dir/fitsreader.cpp.o"
@@ -9,6 +9,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/scaleimage.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/scaleimage.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

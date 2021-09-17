@@ -236,8 +236,6 @@ calibrate: /usr/lib64/libm.so
 calibrate: /usr/local/lib/libcasa_scimath.so
 calibrate: /usr/local/lib/libcasa_measures.so
 calibrate: /usr/local/lib/libcasa_scimath_f.so
-calibrate: /usr/lib64/liblapack.so
-calibrate: /usr/lib64/libblas.so
 calibrate: /usr/local/lib/libcasa_tables.so
 calibrate: /usr/local/lib/libcasa_casa.so
 calibrate: /usr/lib64/libhdf5_cpp.so
@@ -265,8 +263,6 @@ calibrate: /usr/local/lib/libcasa_fits.so
 calibrate: /usr/local/lib/libcasa_scimath.so
 calibrate: /usr/local/lib/libcasa_measures.so
 calibrate: /usr/local/lib/libcasa_scimath_f.so
-calibrate: /usr/lib64/liblapack.so
-calibrate: /usr/lib64/libblas.so
 calibrate: /usr/local/lib/libcasa_tables.so
 calibrate: /usr/local/lib/libcasa_casa.so
 calibrate: /usr/lib64/libfftw3.so

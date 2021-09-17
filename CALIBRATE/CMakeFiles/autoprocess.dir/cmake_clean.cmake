@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/autoprocess.dir/autoprocess.cpp.o"
   "CMakeFiles/autoprocess.dir/calibrator.cpp.o"
   "CMakeFiles/autoprocess.dir/model/model.cpp.o"
@@ -14,6 +14,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/autoprocess.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/autoprocess.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

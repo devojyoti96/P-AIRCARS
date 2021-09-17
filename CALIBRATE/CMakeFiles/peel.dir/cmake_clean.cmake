@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/peel.dir/peel.cpp.o"
   "CMakeFiles/peel.dir/peeler.cpp.o"
   "CMakeFiles/peel.dir/beamevaluator.cpp.o"
@@ -12,6 +12,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/peel.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/peel.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

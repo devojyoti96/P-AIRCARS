@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -20,11 +20,11 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/applysolutions.cpp
+/data1/mwa-reduce/applysolutions.cpp
 solutionfile.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/solutionfile.h
+/data1/mwa-reduce/solutionfile.h
 solutionapplier.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/solutionapplier.h
+/data1/mwa-reduce/solutionapplier.h
 iostream
 -
 stdexcept
@@ -40,9 +40,9 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 stdint.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/stdint.h
+/data1/mwa-reduce/stdint.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/banddata.h
+/data1/mwa-reduce/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -52,7 +52,7 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/matrix2x2.h
+/data1/mwa-reduce/matrix2x2.h
 complex
 -
 limits
@@ -60,7 +60,7 @@ limits
 sstream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/solutionapplier.h
+/data1/mwa-reduce/solutionapplier.h
 complex
 -
 iostream
@@ -74,15 +74,15 @@ casacore/ms/MeasurementSets/MeasurementSet.h
 casacore/tables/Tables/ArrColDesc.h
 -
 banddata.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/banddata.h
+/data1/mwa-reduce/banddata.h
 solutionfile.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/solutionfile.h
+/data1/mwa-reduce/solutionfile.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 matrix2x2.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/matrix2x2.h
+/data1/mwa-reduce/matrix2x2.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/solutionfile.h
+/data1/mwa-reduce/solutionfile.h
 cstring
 -
 string
@@ -100,9 +100,9 @@ vector
 stdint.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h
@@ -1451,4 +1451,18 @@ fstream
 -
 vector
 -
+
+/usr/local/include/mpi.h
+stddef.h
+-
+mpi_portable_platform.h
+/usr/local/include/mpi_portable_platform.h
+openmpi/ompi/mpi/cxx/mpicxx.h
+/usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
+
+/usr/local/include/mpi_portable_platform.h
+omp.h
+/usr/local/include/omp.h
+omp.h
+/usr/local/include/omp.h
 

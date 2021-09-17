@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/ionspectrum.dir/experiments/ionspectrum/ionspectrum.cpp.o"
   "CMakeFiles/ionspectrum.dir/beamevaluator.cpp.o"
   "CMakeFiles/ionspectrum.dir/fluxaccumulator.cpp.o"
@@ -11,6 +11,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/ionspectrum.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/ionspectrum.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

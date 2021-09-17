@@ -132,8 +132,6 @@ pbcorrect: /usr/lib64/libm.so
 pbcorrect: /usr/local/lib/libcasa_scimath.so
 pbcorrect: /usr/local/lib/libcasa_measures.so
 pbcorrect: /usr/local/lib/libcasa_scimath_f.so
-pbcorrect: /usr/lib64/liblapack.so
-pbcorrect: /usr/lib64/libblas.so
 pbcorrect: /usr/local/lib/libcasa_tables.so
 pbcorrect: /usr/local/lib/libcasa_casa.so
 pbcorrect: /usr/lib64/libhdf5_cpp.so
@@ -151,8 +149,6 @@ pbcorrect: /usr/lib64/libm.so
 pbcorrect: /usr/local/lib/libcasa_scimath.so
 pbcorrect: /usr/local/lib/libcasa_measures.so
 pbcorrect: /usr/local/lib/libcasa_scimath_f.so
-pbcorrect: /usr/lib64/liblapack.so
-pbcorrect: /usr/lib64/libblas.so
 pbcorrect: /usr/local/lib/libcasa_tables.so
 pbcorrect: /usr/local/lib/libcasa_casa.so
 pbcorrect: /usr/lib64/libhdf5_cpp.so
@@ -164,8 +160,6 @@ pbcorrect: /usr/lib64/libm.so
 pbcorrect: /usr/local/lib/libcasa_scimath.so
 pbcorrect: /usr/local/lib/libcasa_measures.so
 pbcorrect: /usr/local/lib/libcasa_scimath_f.so
-pbcorrect: /usr/lib64/liblapack.so
-pbcorrect: /usr/lib64/libblas.so
 pbcorrect: /usr/local/lib/libcasa_tables.so
 pbcorrect: /usr/local/lib/libcasa_casa.so
 pbcorrect: /usr/lib64/libhdf5_cpp.so

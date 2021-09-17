@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/bbs2model.dir/bbs2model.cpp.o"
   "CMakeFiles/bbs2model.dir/model/model.cpp.o"
   "CMakeFiles/bbs2model.dir/nlplfitter.cpp.o"
@@ -7,6 +7,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/bbs2model.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/bbs2model.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

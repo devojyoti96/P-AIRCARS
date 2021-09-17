@@ -281,8 +281,6 @@ ionpeel: /usr/lib64/libm.so
 ionpeel: /usr/local/lib/libcasa_scimath.so
 ionpeel: /usr/local/lib/libcasa_measures.so
 ionpeel: /usr/local/lib/libcasa_scimath_f.so
-ionpeel: /usr/lib64/liblapack.so
-ionpeel: /usr/lib64/libblas.so
 ionpeel: /usr/local/lib/libcasa_tables.so
 ionpeel: /usr/local/lib/libcasa_casa.so
 ionpeel: /usr/lib64/libhdf5_cpp.so
@@ -311,8 +309,6 @@ ionpeel: /usr/local/lib/libcasa_fits.so
 ionpeel: /usr/local/lib/libcasa_scimath.so
 ionpeel: /usr/local/lib/libcasa_measures.so
 ionpeel: /usr/local/lib/libcasa_scimath_f.so
-ionpeel: /usr/lib64/liblapack.so
-ionpeel: /usr/lib64/libblas.so
 ionpeel: /usr/local/lib/libcasa_tables.so
 ionpeel: /usr/local/lib/libcasa_casa.so
 ionpeel: /usr/lib64/libgsl.so

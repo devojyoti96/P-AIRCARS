@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/apparently.dir/apparently.cpp.o"
   "CMakeFiles/apparently.dir/model/model.cpp.o"
   "CMakeFiles/apparently.dir/nlplfitter.cpp.o"
@@ -9,6 +9,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/apparently.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/apparently.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

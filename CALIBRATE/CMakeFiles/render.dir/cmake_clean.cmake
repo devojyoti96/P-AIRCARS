@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/render.dir/fftwmanager.cpp.o"
   "CMakeFiles/render.dir/render.cpp.o"
   "CMakeFiles/render.dir/modelrenderer.cpp.o"
@@ -15,6 +15,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/render.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/render.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

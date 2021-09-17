@@ -131,8 +131,6 @@ regridimg: /usr/lib64/libm.so
 regridimg: /usr/local/lib/libcasa_scimath.so
 regridimg: /usr/local/lib/libcasa_measures.so
 regridimg: /usr/local/lib/libcasa_scimath_f.so
-regridimg: /usr/lib64/liblapack.so
-regridimg: /usr/lib64/libblas.so
 regridimg: /usr/local/lib/libcasa_tables.so
 regridimg: /usr/local/lib/libcasa_casa.so
 regridimg: /usr/lib64/libhdf5_cpp.so
@@ -147,8 +145,6 @@ regridimg: /usr/lib64/libm.so
 regridimg: /usr/local/lib/libcasa_scimath.so
 regridimg: /usr/local/lib/libcasa_measures.so
 regridimg: /usr/local/lib/libcasa_scimath_f.so
-regridimg: /usr/lib64/liblapack.so
-regridimg: /usr/lib64/libblas.so
 regridimg: /usr/local/lib/libcasa_tables.so
 regridimg: /usr/local/lib/libcasa_casa.so
 regridimg: /usr/lib64/libhdf5_cpp.so

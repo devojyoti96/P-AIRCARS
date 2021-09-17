@@ -191,8 +191,6 @@ ionspectrum: /usr/lib64/libm.so
 ionspectrum: /usr/local/lib/libcasa_scimath.so
 ionspectrum: /usr/local/lib/libcasa_measures.so
 ionspectrum: /usr/local/lib/libcasa_scimath_f.so
-ionspectrum: /usr/lib64/liblapack.so
-ionspectrum: /usr/lib64/libblas.so
 ionspectrum: /usr/local/lib/libcasa_tables.so
 ionspectrum: /usr/local/lib/libcasa_casa.so
 ionspectrum: /usr/lib64/libhdf5_cpp.so
@@ -218,8 +216,6 @@ ionspectrum: /usr/local/lib/libcasa_fits.so
 ionspectrum: /usr/local/lib/libcasa_scimath.so
 ionspectrum: /usr/local/lib/libcasa_measures.so
 ionspectrum: /usr/local/lib/libcasa_scimath_f.so
-ionspectrum: /usr/lib64/liblapack.so
-ionspectrum: /usr/lib64/libblas.so
 ionspectrum: /usr/local/lib/libcasa_tables.so
 ionspectrum: /usr/local/lib/libcasa_casa.so
 ionspectrum: /usr/lib64/libgsl.so

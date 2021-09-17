@@ -236,8 +236,6 @@ combinespectra: /usr/lib64/libm.so
 combinespectra: /usr/local/lib/libcasa_scimath.so
 combinespectra: /usr/local/lib/libcasa_measures.so
 combinespectra: /usr/local/lib/libcasa_scimath_f.so
-combinespectra: /usr/lib64/liblapack.so
-combinespectra: /usr/lib64/libblas.so
 combinespectra: /usr/local/lib/libcasa_tables.so
 combinespectra: /usr/local/lib/libcasa_casa.so
 combinespectra: /usr/lib64/libhdf5_cpp.so
@@ -263,8 +261,6 @@ combinespectra: /usr/local/lib/libcasa_fits.so
 combinespectra: /usr/local/lib/libcasa_scimath.so
 combinespectra: /usr/local/lib/libcasa_measures.so
 combinespectra: /usr/local/lib/libcasa_scimath_f.so
-combinespectra: /usr/lib64/liblapack.so
-combinespectra: /usr/lib64/libblas.so
 combinespectra: /usr/local/lib/libcasa_tables.so
 combinespectra: /usr/local/lib/libcasa_casa.so
 combinespectra: /usr/lib64/libgsl.so

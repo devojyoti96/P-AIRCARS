@@ -236,8 +236,6 @@ sedcombine: /usr/lib64/libm.so
 sedcombine: /usr/local/lib/libcasa_scimath.so
 sedcombine: /usr/local/lib/libcasa_measures.so
 sedcombine: /usr/local/lib/libcasa_scimath_f.so
-sedcombine: /usr/lib64/liblapack.so
-sedcombine: /usr/lib64/libblas.so
 sedcombine: /usr/local/lib/libcasa_tables.so
 sedcombine: /usr/local/lib/libcasa_casa.so
 sedcombine: /usr/lib64/libhdf5_cpp.so
@@ -255,8 +253,6 @@ sedcombine: /usr/lib64/libboost_filesystem-mt.so
 sedcombine: /usr/local/lib/libcasa_scimath.so
 sedcombine: /usr/local/lib/libcasa_measures.so
 sedcombine: /usr/local/lib/libcasa_scimath_f.so
-sedcombine: /usr/lib64/liblapack.so
-sedcombine: /usr/lib64/libblas.so
 sedcombine: /usr/local/lib/libcasa_tables.so
 sedcombine: /usr/local/lib/libcasa_casa.so
 sedcombine: /usr/lib64/libhdf5_cpp.so

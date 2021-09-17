@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/ionsol.dir/experiments/ionspectrum/ionsol.cpp.o"
   "CMakeFiles/ionsol.dir/model/model.cpp.o"
   "CMakeFiles/ionsol.dir/nlplfitter.cpp.o"
@@ -7,6 +7,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/ionsol.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/ionsol.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

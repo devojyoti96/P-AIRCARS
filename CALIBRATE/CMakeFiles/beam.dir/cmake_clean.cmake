@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/beam.dir/beam.cpp.o"
   "CMakeFiles/beam.dir/fitsiochecker.cpp.o"
   "CMakeFiles/beam.dir/fitsreader.cpp.o"
@@ -11,6 +11,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/beam.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/beam.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

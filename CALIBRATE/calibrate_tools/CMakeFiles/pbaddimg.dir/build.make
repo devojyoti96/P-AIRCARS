@@ -132,8 +132,6 @@ pbaddimg: /usr/lib64/libm.so
 pbaddimg: /usr/local/lib/libcasa_scimath.so
 pbaddimg: /usr/local/lib/libcasa_measures.so
 pbaddimg: /usr/local/lib/libcasa_scimath_f.so
-pbaddimg: /usr/lib64/liblapack.so
-pbaddimg: /usr/lib64/libblas.so
 pbaddimg: /usr/local/lib/libcasa_tables.so
 pbaddimg: /usr/local/lib/libcasa_casa.so
 pbaddimg: /usr/lib64/libhdf5_cpp.so
@@ -151,8 +149,6 @@ pbaddimg: /usr/lib64/libm.so
 pbaddimg: /usr/local/lib/libcasa_scimath.so
 pbaddimg: /usr/local/lib/libcasa_measures.so
 pbaddimg: /usr/local/lib/libcasa_scimath_f.so
-pbaddimg: /usr/lib64/liblapack.so
-pbaddimg: /usr/lib64/libblas.so
 pbaddimg: /usr/local/lib/libcasa_tables.so
 pbaddimg: /usr/local/lib/libcasa_casa.so
 pbaddimg: /usr/lib64/libhdf5_cpp.so
@@ -164,8 +160,6 @@ pbaddimg: /usr/lib64/libm.so
 pbaddimg: /usr/local/lib/libcasa_scimath.so
 pbaddimg: /usr/local/lib/libcasa_measures.so
 pbaddimg: /usr/local/lib/libcasa_scimath_f.so
-pbaddimg: /usr/lib64/liblapack.so
-pbaddimg: /usr/lib64/libblas.so
 pbaddimg: /usr/local/lib/libcasa_tables.so
 pbaddimg: /usr/local/lib/libcasa_casa.so
 pbaddimg: /usr/lib64/libhdf5_cpp.so

@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -20,7 +20,7 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/banddata.h
+/data1/mwa-reduce/banddata.h
 stdexcept
 -
 casacore/ms/MeasurementSets/MeasurementSet.h
@@ -30,33 +30,33 @@ casacore/tables/Tables/ArrayColumn.h
 casacore/tables/Tables/ScalarColumn.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam.cpp
+/data1/mwa-reduce/beam.cpp
 beam/tilebeam.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam.h
+/data1/mwa-reduce/beam/tilebeam.h
 beam/tilebeam2013.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2013.h
+/data1/mwa-reduce/beam/tilebeam2013.h
 beam/tilebeam2014.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2014.h
+/data1/mwa-reduce/beam/tilebeam2014.h
 beam/tilebeam2016.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2016.h
+/data1/mwa-reduce/beam/tilebeam2016.h
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 fitswriter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.h
+/data1/mwa-reduce/fitswriter.h
 banddata.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/banddata.h
+/data1/mwa-reduce/banddata.h
 matrix2x2.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/matrix2x2.h
+/data1/mwa-reduce/matrix2x2.h
 numberlist.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/numberlist.h
+/data1/mwa-reduce/numberlist.h
 progressbar.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/progressbar.h
+/data1/mwa-reduce/progressbar.h
 units/imagecoordinates.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/imagecoordinates.h
+/data1/mwa-reduce/units/imagecoordinates.h
 mwa/metafitsfile.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/metafitsfile.h
+/data1/mwa-reduce/mwa/metafitsfile.h
 mwa/mwaconfig.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwaconfig.h
+/data1/mwa-reduce/mwa/mwaconfig.h
 casacore/ms/MeasurementSets/MeasurementSet.h
 -
 casacore/tables/Tables/ArrayColumn.h
@@ -78,7 +78,7 @@ casacore/measures/TableMeasures/ScalarMeasColumn.h
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/beam2016implementation.h
+/data1/mwa-reduce/beam/beam2016implementation.h
 algorithm
 -
 complex
@@ -100,23 +100,23 @@ boost/math/special_functions/legendre.hpp
 H5Cpp.h
 -
 factorialtable.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/factorialtable.h
+/data1/mwa-reduce/beam/factorialtable.h
 recursive_lock.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/recursive_lock.h
+/data1/mwa-reduce/beam/recursive_lock.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/factorialtable.h
+/data1/mwa-reduce/beam/factorialtable.h
 boost/math/special_functions/factorials.hpp
 -
 ../uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/lnaimpedance.h
+/data1/mwa-reduce/beam/lnaimpedance.h
 cstring
 -
 complex
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/recursive_lock.h
+/data1/mwa-reduce/beam/recursive_lock.h
 cstring
 -
 mutex
@@ -124,17 +124,17 @@ mutex
 system_error
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam.h
+/data1/mwa-reduce/beam/tilebeam.h
 tilebeam2016.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2016.h
+/data1/mwa-reduce/beam/tilebeam2016.h
 tilebeambase.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeambase.h
+/data1/mwa-reduce/beam/tilebeambase.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2013.h
+/data1/mwa-reduce/beam/tilebeam2013.h
 complex
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2014.h
+/data1/mwa-reduce/beam/tilebeam2014.h
 complex
 -
 map
@@ -142,11 +142,11 @@ map
 set
 -
 tileimpedance.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tileimpedance.h
+/data1/mwa-reduce/beam/tileimpedance.h
 lnaimpedance.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/lnaimpedance.h
+/data1/mwa-reduce/beam/lnaimpedance.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeam2016.h
+/data1/mwa-reduce/beam/tilebeam2016.h
 complex
 -
 map
@@ -154,15 +154,15 @@ map
 set
 -
 beam2016implementation.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/beam2016implementation.h
+/data1/mwa-reduce/beam/beam2016implementation.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tilebeambase.h
+/data1/mwa-reduce/beam/tilebeambase.h
 casacore/measures/Measures/MDirection.h
 -
 casacore/measures/Measures/MCDirection.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/beam/tileimpedance.h
+/data1/mwa-reduce/beam/tileimpedance.h
 complex
 -
 cstring
@@ -174,11 +174,11 @@ set
 vector
 -
 ../fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.cpp
+/data1/mwa-reduce/fitsiochecker.cpp
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 fitsio.h
 -
 sstream
@@ -186,15 +186,15 @@ sstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.cpp
+/data1/mwa-reduce/fitsreader.cpp
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 stdexcept
 -
 sstream
@@ -208,7 +208,7 @@ casacore/casa/Quanta/MVTime.h
 casacore/measures/Measures/MeasConvert.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 string
 -
 vector
@@ -216,17 +216,17 @@ vector
 fitsio.h
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.cpp
+/data1/mwa-reduce/fitswriter.cpp
 fitswriter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.h
+/data1/mwa-reduce/fitswriter.h
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 stdexcept
 -
 sstream
@@ -242,7 +242,7 @@ limits
 iostream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitswriter.h
+/data1/mwa-reduce/fitswriter.h
 fitsio.h
 -
 string
@@ -254,11 +254,11 @@ map
 cmath
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/matrix2x2.h
+/data1/mwa-reduce/matrix2x2.h
 complex
 -
 limits
@@ -266,13 +266,13 @@ limits
 sstream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/metafitsfile.cpp
+/data1/mwa-reduce/mwa/metafitsfile.cpp
 metafitsfile.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/metafitsfile.h
+/data1/mwa-reduce/mwa/metafitsfile.h
 mwaconfig.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwaconfig.h
+/data1/mwa-reduce/mwa/mwaconfig.h
 ../fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 iostream
 -
 stdexcept
@@ -282,17 +282,17 @@ sstream
 cmath
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/metafitsfile.h
+/data1/mwa-reduce/mwa/metafitsfile.h
 fitsio.h
 -
 vector
 -
 ../fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwaconfig.cpp
+/data1/mwa-reduce/mwa/mwaconfig.cpp
 mwaconfig.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwaconfig.h
+/data1/mwa-reduce/mwa/mwaconfig.h
 cstdlib
 -
 cmath
@@ -308,9 +308,9 @@ stdexcept
 casacore/casa/Quanta/MVTime.h
 -
 metafitsfile.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/metafitsfile.h
+/data1/mwa-reduce/mwa/metafitsfile.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwaconfig.h
+/data1/mwa-reduce/mwa/mwaconfig.h
 vector
 -
 cstring
@@ -320,21 +320,21 @@ string
 map
 -
 mwainput.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwainput.h
+/data1/mwa-reduce/mwa/mwainput.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/mwa/mwainput.h
+/data1/mwa-reduce/mwa/mwainput.h
 cstring
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/numberlist.h
+/data1/mwa-reduce/numberlist.h
 cstdlib
 -
 string
 -
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 complex
 -
 stdexcept
@@ -344,17 +344,17 @@ set
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/progressbar.cpp
+/data1/mwa-reduce/progressbar.cpp
 progressbar.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/progressbar.h
+/data1/mwa-reduce/progressbar.h
 iostream
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/progressbar.h
+/data1/mwa-reduce/progressbar.h
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/imagecoordinates.h
+/data1/mwa-reduce/units/imagecoordinates.h
 algorithm
 -
 cmath
@@ -362,9 +362,9 @@ cmath
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h
@@ -2339,4 +2339,18 @@ longnam.h
 /usr/local/include/longnam.h
 
 /usr/local/include/longnam.h
+
+/usr/local/include/mpi.h
+stddef.h
+-
+mpi_portable_platform.h
+/usr/local/include/mpi_portable_platform.h
+openmpi/ompi/mpi/cxx/mpicxx.h
+/usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
+
+/usr/local/include/mpi_portable_platform.h
+omp.h
+/usr/local/include/omp.h
+omp.h
+/usr/local/include/omp.h
 

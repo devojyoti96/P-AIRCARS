@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/collectionsolutions.dir/experiments/ionspectrum/collectionsolutions.cpp.o"
   "CMakeFiles/collectionsolutions.dir/beamevaluator.cpp.o"
   "CMakeFiles/collectionsolutions.dir/model/model.cpp.o"
@@ -8,6 +8,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/collectionsolutions.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/collectionsolutions.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

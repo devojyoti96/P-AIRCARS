@@ -254,8 +254,6 @@ editmodel: /usr/lib64/libm.so
 editmodel: /usr/local/lib/libcasa_scimath.so
 editmodel: /usr/local/lib/libcasa_measures.so
 editmodel: /usr/local/lib/libcasa_scimath_f.so
-editmodel: /usr/lib64/liblapack.so
-editmodel: /usr/lib64/libblas.so
 editmodel: /usr/local/lib/libcasa_tables.so
 editmodel: /usr/local/lib/libcasa_casa.so
 editmodel: /usr/lib64/libhdf5_cpp.so
@@ -281,8 +279,6 @@ editmodel: /usr/local/lib/libcasa_fits.so
 editmodel: /usr/local/lib/libcasa_scimath.so
 editmodel: /usr/local/lib/libcasa_measures.so
 editmodel: /usr/local/lib/libcasa_scimath_f.so
-editmodel: /usr/lib64/liblapack.so
-editmodel: /usr/lib64/libblas.so
 editmodel: /usr/local/lib/libcasa_tables.so
 editmodel: /usr/local/lib/libcasa_casa.so
 editmodel: /usr/lib64/libgsl.so

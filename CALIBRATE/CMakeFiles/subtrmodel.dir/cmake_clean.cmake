@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/subtrmodel.dir/beamevaluator.cpp.o"
   "CMakeFiles/subtrmodel.dir/fftwmanager.cpp.o"
   "CMakeFiles/subtrmodel.dir/subtrmodel.cpp.o"
@@ -12,6 +12,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/subtrmodel.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/subtrmodel.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

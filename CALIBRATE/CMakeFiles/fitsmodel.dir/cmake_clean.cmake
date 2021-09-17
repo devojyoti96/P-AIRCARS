@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/fitsmodel.dir/fitsmodel.cpp.o"
   "CMakeFiles/fitsmodel.dir/fitsiochecker.cpp.o"
   "CMakeFiles/fitsmodel.dir/fitsreader.cpp.o"
@@ -14,6 +14,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/fitsmodel.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/fitsmodel.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

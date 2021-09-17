@@ -161,8 +161,6 @@ phasecal: /usr/lib64/libm.so
 phasecal: /usr/local/lib/libcasa_scimath.so
 phasecal: /usr/local/lib/libcasa_measures.so
 phasecal: /usr/local/lib/libcasa_scimath_f.so
-phasecal: /usr/lib64/liblapack.so
-phasecal: /usr/lib64/libblas.so
 phasecal: /usr/local/lib/libcasa_tables.so
 phasecal: /usr/local/lib/libcasa_casa.so
 phasecal: /usr/lib64/libhdf5_cpp.so
@@ -186,8 +184,6 @@ phasecal: /usr/local/lib/libcasa_fits.so
 phasecal: /usr/local/lib/libcasa_scimath.so
 phasecal: /usr/local/lib/libcasa_measures.so
 phasecal: /usr/local/lib/libcasa_scimath_f.so
-phasecal: /usr/lib64/liblapack.so
-phasecal: /usr/lib64/libblas.so
 phasecal: /usr/local/lib/libcasa_tables.so
 phasecal: /usr/local/lib/libcasa_casa.so
 phasecal: /usr/lib64/libgsl.so

@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/mwareducebeam.dir/fitsiochecker.cpp.o"
   "CMakeFiles/mwareducebeam.dir/beam/joneslookupdipole.cpp.o"
   "CMakeFiles/mwareducebeam.dir/beam/system.cpp.o"
@@ -23,6 +23,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/mwareducebeam.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/mwareducebeam.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

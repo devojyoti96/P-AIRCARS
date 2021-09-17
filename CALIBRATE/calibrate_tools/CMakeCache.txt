@@ -24,7 +24,7 @@ BLAS_acml_LIBRARY:FILEPATH=BLAS_acml_LIBRARY-NOTFOUND
 BLAS_acml_mp_LIBRARY:FILEPATH=BLAS_acml_mp_LIBRARY-NOTFOUND
 
 //Path to a library.
-BLAS_blas_LIBRARY:FILEPATH=/usr/lib64/libblas.so
+BLAS_blas_LIBRARY:FILEPATH=BLAS_blas_LIBRARY-NOTFOUND
 
 //Path to a library.
 BLAS_blis_LIBRARY:FILEPATH=BLAS_blis_LIBRARY-NOTFOUND
@@ -46,6 +46,21 @@ BLAS_f77blas_LIBRARY:FILEPATH=BLAS_f77blas_LIBRARY-NOTFOUND
 
 //Path to a library.
 BLAS_goto2_LIBRARY:FILEPATH=BLAS_goto2_LIBRARY-NOTFOUND
+
+//Path to a library.
+BLAS_mkl_LIBRARY:FILEPATH=BLAS_mkl_LIBRARY-NOTFOUND
+
+//Path to a library.
+BLAS_mkl_em64t_LIBRARY:FILEPATH=BLAS_mkl_em64t_LIBRARY-NOTFOUND
+
+//Path to a library.
+BLAS_mkl_ia32_LIBRARY:FILEPATH=BLAS_mkl_ia32_LIBRARY-NOTFOUND
+
+//Path to a library.
+BLAS_mkl_intel_LIBRARY:FILEPATH=BLAS_mkl_intel_LIBRARY-NOTFOUND
+
+//Path to a library.
+BLAS_mkl_intel_lp64_LIBRARY:FILEPATH=BLAS_mkl_intel_lp64_LIBRARY-NOTFOUND
 
 //Path to a library.
 BLAS_openblas_LIBRARY:FILEPATH=BLAS_openblas_LIBRARY-NOTFOUND
@@ -402,24 +417,6 @@ HDF5_DIFF_EXECUTABLE:FILEPATH=/usr/bin/h5diff
 //The directory containing a CMake configuration file for HDF5.
 HDF5_DIR:PATH=HDF5_DIR-NOTFOUND
 
-//Path to a library.
-LAPACK_Accelerate_LIBRARY:FILEPATH=LAPACK_Accelerate_LIBRARY-NOTFOUND
-
-//Path to a library.
-LAPACK_flame_LIBRARY:FILEPATH=LAPACK_flame_LIBRARY-NOTFOUND
-
-//Path to a library.
-LAPACK_goto2_LIBRARY:FILEPATH=LAPACK_goto2_LIBRARY-NOTFOUND
-
-//Path to a library.
-LAPACK_lapack_LIBRARY:FILEPATH=/usr/lib64/liblapack.so
-
-//Path to a library.
-LAPACK_openblas_LIBRARY:FILEPATH=LAPACK_openblas_LIBRARY-NOTFOUND
-
-//Path to a library.
-LAPACK_vecLib_LIBRARY:FILEPATH=LAPACK_vecLib_LIBRARY-NOTFOUND
-
 //Path to a file.
 LIBXML2_INCLUDE_DIR:PATH=/usr/include/libxml2
 
@@ -463,10 +460,6 @@ BLAS_acml_LIBRARY-ADVANCED:INTERNAL=1
 BLAS_acml_mp_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: BLAS_blas_LIBRARY
 BLAS_blas_LIBRARY-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: BLAS_blas_WORKS
-BLAS_blas_WORKS-ADVANCED:INTERNAL=1
-//Have function sgemm_
-BLAS_blas_WORKS:INTERNAL=1
 //ADVANCED property for variable: BLAS_blis_LIBRARY
 BLAS_blis_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: BLAS_complib.sgimath_LIBRARY
@@ -481,6 +474,16 @@ BLAS_essl_LIBRARY-ADVANCED:INTERNAL=1
 BLAS_f77blas_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: BLAS_goto2_LIBRARY
 BLAS_goto2_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: BLAS_mkl_LIBRARY
+BLAS_mkl_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: BLAS_mkl_em64t_LIBRARY
+BLAS_mkl_em64t_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: BLAS_mkl_ia32_LIBRARY
+BLAS_mkl_ia32_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: BLAS_mkl_intel_LIBRARY
+BLAS_mkl_intel_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: BLAS_mkl_intel_lp64_LIBRARY
+BLAS_mkl_intel_lp64_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: BLAS_openblas_LIBRARY
 BLAS_openblas_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: BLAS_scsl_LIBRARY
@@ -690,8 +693,6 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
-//Details about finding BLAS
-FIND_PACKAGE_MESSAGE_DETAILS_BLAS:INTERNAL=[/usr/lib64/libblas.so][v()]
 //Details about finding CFITSIO
 FIND_PACKAGE_MESSAGE_DETAILS_CFITSIO:INTERNAL=[/usr/local/lib/libcfitsio.so][/usr/lib64/libm.so][/usr/local/include][v()]
 //Details about finding HDF5
@@ -718,22 +719,6 @@ HDF5_DIFF_EXECUTABLE-ADVANCED:INTERNAL=1
 HDF5_DIR-ADVANCED:INTERNAL=1
 //Test LANE11_COMPILES
 LANE11_COMPILES:INTERNAL=1
-//ADVANCED property for variable: LAPACK_Accelerate_LIBRARY
-LAPACK_Accelerate_LIBRARY-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: LAPACK_flame_LIBRARY
-LAPACK_flame_LIBRARY-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: LAPACK_goto2_LIBRARY
-LAPACK_goto2_LIBRARY-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: LAPACK_lapack_LIBRARY
-LAPACK_lapack_LIBRARY-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: LAPACK_lapack_WORKS
-LAPACK_lapack_WORKS-ADVANCED:INTERNAL=1
-//Have function cheev_
-LAPACK_lapack_WORKS:INTERNAL=1
-//ADVANCED property for variable: LAPACK_openblas_LIBRARY
-LAPACK_openblas_LIBRARY-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: LAPACK_vecLib_LIBRARY
-LAPACK_vecLib_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: LIBXML2_INCLUDE_DIR
 LIBXML2_INCLUDE_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: LIBXML2_LIBRARY

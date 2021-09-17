@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aegean2model.cpp
+/data1/mwa-reduce/aegean2model.cpp
 iostream
 -
 fstream
@@ -14,15 +14,15 @@ fstream
 string
 -
 model/model.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/model.h
+/data1/mwa-reduce/model/model.h
 units/angle.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/angle.h
+/data1/mwa-reduce/units/angle.h
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 boost/tokenizer.hpp
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 algorithm
 -
 cstring
@@ -36,9 +36,9 @@ utility
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.cpp
+/data1/mwa-reduce/fitsiochecker.cpp
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 fitsio.h
 -
 sstream
@@ -46,15 +46,15 @@ sstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 string
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.cpp
+/data1/mwa-reduce/fitsreader.cpp
 fitsreader.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 stdexcept
 -
 sstream
@@ -68,7 +68,7 @@ casacore/casa/Quanta/MVTime.h
 casacore/measures/Measures/MeasConvert.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsreader.h
+/data1/mwa-reduce/fitsreader.h
 string
 -
 vector
@@ -76,31 +76,31 @@ vector
 fitsio.h
 -
 polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 fitsiochecker.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/fitsiochecker.h
+/data1/mwa-reduce/fitsiochecker.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/measuredsed.h
+/data1/mwa-reduce/model/measuredsed.h
 map
 -
 measurement.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/measurement.h
+/data1/mwa-reduce/model/measurement.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/spectralenergydistribution.h
+/data1/mwa-reduce/model/spectralenergydistribution.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/measurement.h
+/data1/mwa-reduce/model/measurement.h
 cstring
 -
 ../polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/model.cpp
+/data1/mwa-reduce/model/model.cpp
 model.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/model.h
+/data1/mwa-reduce/model/model.h
 modelparser.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelparser.h
+/data1/mwa-reduce/model/modelparser.h
 ../units/radeccoord.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/radeccoord.h
+/data1/mwa-reduce/units/radeccoord.h
 algorithm
 -
 cstdlib
@@ -112,35 +112,35 @@ fstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/model.h
+/data1/mwa-reduce/model/model.h
 algorithm
 -
 vector
 -
 modelsource.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelsource.h
+/data1/mwa-reduce/model/modelsource.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelcomponent.h
+/data1/mwa-reduce/model/modelcomponent.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/spectralenergydistribution.h
+/data1/mwa-reduce/model/spectralenergydistribution.h
 measuredsed.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/measuredsed.h
+/data1/mwa-reduce/model/measuredsed.h
 powerlawsed.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/powerlawsed.h
+/data1/mwa-reduce/model/powerlawsed.h
 ../units/imagecoordinates.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/imagecoordinates.h
+/data1/mwa-reduce/units/imagecoordinates.h
 ../units/radeccoord.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/radeccoord.h
+/data1/mwa-reduce/units/radeccoord.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelparser.h
+/data1/mwa-reduce/model/modelparser.h
 model.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/model.h
+/data1/mwa-reduce/model/model.h
 modelsource.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelsource.h
+/data1/mwa-reduce/model/modelsource.h
 tokenizer.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/tokenizer.h
+/data1/mwa-reduce/model/tokenizer.h
 powerlawsed.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/powerlawsed.h
+/data1/mwa-reduce/model/powerlawsed.h
 cstdlib
 -
 fstream
@@ -148,7 +148,7 @@ fstream
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelsource.h
+/data1/mwa-reduce/model/modelsource.h
 algorithm
 -
 string
@@ -156,21 +156,21 @@ string
 sstream
 -
 modelcomponent.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/modelcomponent.h
+/data1/mwa-reduce/model/modelcomponent.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/powerlawsed.h
+/data1/mwa-reduce/model/powerlawsed.h
 spectralenergydistribution.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/spectralenergydistribution.h
+/data1/mwa-reduce/model/spectralenergydistribution.h
 ../polynomialfitter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polynomialfitter.h
+/data1/mwa-reduce/polynomialfitter.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/spectralenergydistribution.h
+/data1/mwa-reduce/model/spectralenergydistribution.h
 measurement.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/measurement.h
+/data1/mwa-reduce/model/measurement.h
 ../nlplfitter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/nlplfitter.h
+/data1/mwa-reduce/nlplfitter.h
 ../polarization.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 cmath
 -
 iostream
@@ -186,15 +186,15 @@ limits
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/model/tokenizer.h
+/data1/mwa-reduce/model/tokenizer.h
 fstream
 -
 stdexcept
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/nlplfitter.cpp
+/data1/mwa-reduce/nlplfitter.cpp
 nlplfitter.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/nlplfitter.h
+/data1/mwa-reduce/nlplfitter.h
 stdexcept
 -
 cmath
@@ -208,15 +208,15 @@ gsl/gsl_vector.h
 gsl/gsl_multifit_nlin.h
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/nlplfitter.h
+/data1/mwa-reduce/nlplfitter.h
 cmath
 -
 memory
 -
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polarization.h
+/data1/mwa-reduce/polarization.h
 complex
 -
 stdexcept
@@ -226,13 +226,13 @@ set
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/polynomialfitter.h
+/data1/mwa-reduce/polynomialfitter.h
 uvector.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 array
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/angle.h
+/data1/mwa-reduce/units/angle.h
 string
 -
 sstream
@@ -244,7 +244,7 @@ cmath
 boost/algorithm/string/case_conv.hpp
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/imagecoordinates.h
+/data1/mwa-reduce/units/imagecoordinates.h
 algorithm
 -
 cmath
@@ -252,7 +252,7 @@ cmath
 vector
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/units/radeccoord.h
+/data1/mwa-reduce/units/radeccoord.h
 string
 -
 sstream
@@ -264,9 +264,9 @@ cstdlib
 cmath
 -
 
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/uvector.h
+/data1/mwa-reduce/uvector.h
 aocommon/uvector_11.h
-/data1/devojyoti/PhD/PAIRCARS/CALIBRATE/mwa-reduce/aocommon/uvector_11.h
+/data1/mwa-reduce/aocommon/uvector_11.h
 
 /usr/local/include/casacore/casa/Arrays/Array.h
 casacore/casa/aips.h

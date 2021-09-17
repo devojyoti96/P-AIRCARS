@@ -207,8 +207,6 @@ applyion: /usr/lib64/libm.so
 applyion: /usr/local/lib/libcasa_scimath.so
 applyion: /usr/local/lib/libcasa_measures.so
 applyion: /usr/local/lib/libcasa_scimath_f.so
-applyion: /usr/lib64/liblapack.so
-applyion: /usr/lib64/libblas.so
 applyion: /usr/local/lib/libcasa_tables.so
 applyion: /usr/local/lib/libcasa_casa.so
 applyion: /usr/lib64/libhdf5_cpp.so
@@ -229,8 +227,6 @@ applyion: /usr/lib64/libm.so
 applyion: /usr/local/lib/libcasa_scimath.so
 applyion: /usr/local/lib/libcasa_measures.so
 applyion: /usr/local/lib/libcasa_scimath_f.so
-applyion: /usr/lib64/liblapack.so
-applyion: /usr/lib64/libblas.so
 applyion: /usr/local/lib/libcasa_tables.so
 applyion: /usr/local/lib/libcasa_casa.so
 applyion: /usr/lib64/libhdf5_cpp.so
@@ -242,8 +238,6 @@ applyion: /usr/lib64/libm.so
 applyion: /usr/local/lib/libcasa_scimath.so
 applyion: /usr/local/lib/libcasa_measures.so
 applyion: /usr/local/lib/libcasa_scimath_f.so
-applyion: /usr/lib64/liblapack.so
-applyion: /usr/lib64/libblas.so
 applyion: /usr/local/lib/libcasa_tables.so
 applyion: /usr/local/lib/libcasa_casa.so
 applyion: /usr/lib64/libhdf5_cpp.so

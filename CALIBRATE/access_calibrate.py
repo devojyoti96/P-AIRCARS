@@ -72,12 +72,15 @@ class CALIBRATE():
 				elif kwargs['calmode']=='rotation':
 					arg_str+=' -rotation '
 
-			if 'quiet' in kwords:
-				if kwargs['quiet']!=False:
-					arg_str+=' -quiet '
+			if 'verbose' in kwords:
+				verbose=eval(str(kwargs['verbose']))
 			else:
-				arg_str+=' -quiet'
+				verbose=False
 
+			if 'quiet' in kwords:
+				if kwargs['quiet']!=False or verbose==False:
+					arg_str+=' -quiet '
+			
 			if 'absmem' in kwords: # Absolute memory usuage
 				try:
 					absmem=float(kwargs.get('absmem'))
@@ -214,8 +217,12 @@ class CALIBRATE():
 				arg_str+=' -datacolumn DATA'
 				datacolumn='DATA'
 			if ('solmode' not in kwords or 'rmsthresh' not in kwords) or (kwargs['solmode']!='R' or len(kwargs['rmsthresh'])==0): 
-				print ('./calibrate '+arg_str+' '+msname+' '+caltable)
-				os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
+				print ('./calibrate '+arg_str+' '+msname+' '+caltable+'\n')
+				if verbose==False:
+					os.system('./calibrate '+arg_str+' '+msname+' '+caltable+'>'+msname.split('.ms')[0]+'_tmp_calibrate')
+					os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate')
+				else:
+					os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
 				bin_data=np.fromfile(caltable,dtype=np.float64)
 				np.save(caltable+'.temp_aocal',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
 				os.system('rm -rf '+caltable)
@@ -230,13 +237,17 @@ class CALIBRATE():
 					flagdata(vis=msname,antenna=bad_ants)
 					print ('flagdata(vis=\''+msname+',antenna=\''+bad_ants+'\')')
 					while c==0:
-						print ('./calibrate '+arg_str+' '+msname+' '+caltable)
-						os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
+						print ('./calibrate '+arg_str+' '+msname+' '+caltable+'\n')
+						if verbose==False:
+							os.system('./calibrate '+arg_str+' '+msname+' '+caltable+'>'+msname.split('.ms')[0]+'_tmp_calibrate')
+							os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate')
+						else:
+							os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
 						bin_data=np.fromfile(caltable,dtype=np.float64)
 						np.save(caltable+'.temp_aocal',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
 						os.system('rm -rf '+caltable)
 						os.system('mv '+caltable+'.temp_aocal.npy '+caltable)
-						self.applycal(msname=msname,gaintable=caltable,datacolumn=datacolumn,applymode='calflag',flagbackup=False)
+						self.applycal(msname=msname,gaintable=caltable,datacolumn=datacolumn,applymode='calflag',flagbackup=False,verbose=verbose)
 						num_flag,flag_fraction=self.flagger(msname,float(rms))
 						if int(num_flag)==0:
 							c=1				
@@ -277,9 +288,17 @@ class CALIBRATE():
 			if (os.path.isfile(gaintable)==False) and (os.path.isdir(gaintable)==False):
 				print ('Gaintable is not found.')
 				return 1
+			if 'verbose' in kwords:
+				verbose=eval(str(kwargs['verbose']))
+			else:
+				verbose=False
 			if 'datacolumn' in kwords: # Datacolumn 
 				datacolumn=kwargs.get('datacolumn')
-				if datacolumn=='DATA' or datacolumn=='CORRECTED_DATA':
+				if datacolumn=='DATA' or datacolumn=='CORRECTED_DATA' or datacolumn=='corrected' or datacolumn=='data' or datacolumn=='CORRECTED':
+					if datacolumn=='DATA' or datacolumn=='data':
+						datacolumn='DATA'
+					elif datacolumn=='CORRECECTED_DATA' or datacolumn=='CORRECTED' or datacolumn=='corrected':
+						datacolumn='CORRECTED_DATA'
 					arg_str+=' -datacolumn '+str(datacolumn)
 				else:
 					print ('Wrong datacolumn.')
@@ -321,8 +340,12 @@ class CALIBRATE():
 					dt_string = now.strftime("%d-%m-%Y %H:%M:%S")
 					af.saveflagversion('CALIBRATE_applycal_'+str(version_num),'Flags autosave on '+dt_string)
 					af.done()
-				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable)
-				os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
+				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable+'\n')
+				if verbose==False:
+					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable+'>'+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
+					os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
+				else:
+					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
 				tb=table()	
 				tb.open(msname,nomodify=False)
 				data=tb.getcol('DATA')
@@ -336,11 +359,15 @@ class CALIBRATE():
 				tb.flush()
 				tb.close()
 			else:		
-				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable)
-				os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
-			#os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
+				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable+'\n')
+				if verbose==False:
+					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable+'>'+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
+					os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
+				else:
+					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
+			os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		os.chdir(cwd)
-		#os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
+		os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		return 0
 			
 	def convert_gaintable_bin2npy(self,gaintable,outputfile):
@@ -505,45 +532,47 @@ class CALIBRATE():
 			os.chdir(cwd)
 			os.system('rm rf casa*log')
 			return 'Nosol'
-		for i in range(ntime):
-			mstime=times[i]
-			cal_time_diff=np.abs(np.array(cal_times)-mstime)
-			args_time=np.argsort(cal_time_diff)
-			min_cal_time=args_time[0]
-			for j in range(nchan):
-				cal_time_diff_copy=copy.deepcopy(cal_time_diff)
-				msfreq=freqs[j]
-				cal_freq_diff=np.abs(np.array(cal_freqs)-msfreq)
-				args_chan=np.argsort(cal_freq_diff)
-				cal_freq_diff_copy=copy.deepcopy(cal_freq_diff)
-				pos_nearest_cal_chan=[]
-				while True:
-					min_cal_chan=args_chan[0]
-					nearest_cal_chan=min_cal_chan
-					nearest_cal_time=min_cal_time
-					if [cal_times[nearest_cal_time],cal_freqs[nearest_cal_chan]] in bad_calchantime:
-						args_chan=np.delete(args_chan,np.where(args_chan==nearest_cal_chan))
-						cal_freq_diff_copy=np.delete(cal_freq_diff_copy,np.where(cal_freq_diff_copy==cal_freq_diff[nearest_cal_chan]))
-						if len(args_chan)==0:
-							args_time=np.delete(args_time,np.where(args_time==nearest_cal_time))	
-							cal_time_diff_copy=np.delete(cal_time_diff_copy,np.where(cal_time_diff_copy==cal_time_diff[nearest_cal_time]))					
-							break
+		if ntime!=cal_ntime or nchan!=cal_nchan:
+			for i in range(ntime):
+				mstime=times[i]
+				cal_time_diff=np.abs(np.array(cal_times)-mstime)
+				args_time=np.argsort(cal_time_diff)
+				min_cal_time=args_time[0]
+				for j in range(nchan):
+					cal_time_diff_copy=copy.deepcopy(cal_time_diff)
+					msfreq=freqs[j]
+					cal_freq_diff=np.abs(np.array(cal_freqs)-msfreq)
+					args_chan=np.argsort(cal_freq_diff)
+					cal_freq_diff_copy=copy.deepcopy(cal_freq_diff)
+					pos_nearest_cal_chan=[]
+					while True:
+						min_cal_chan=args_chan[0]
+						nearest_cal_chan=min_cal_chan
+						nearest_cal_time=min_cal_time
+						if [cal_times[nearest_cal_time],cal_freqs[nearest_cal_chan]] in bad_calchantime:
+							args_chan=np.delete(args_chan,np.where(args_chan==nearest_cal_chan))
+							cal_freq_diff_copy=np.delete(cal_freq_diff_copy,np.where(cal_freq_diff_copy==cal_freq_diff[nearest_cal_chan]))
+							if len(args_chan)==0:
+								args_time=np.delete(args_time,np.where(args_time==nearest_cal_time))	
+								cal_time_diff_copy=np.delete(cal_time_diff_copy,np.where(cal_time_diff_copy==cal_time_diff[nearest_cal_time]))					
+								break
+							else:
+								continue
 						else:
-							continue
-					else:
-						pos_nearest_cal_chan.append(nearest_cal_chan)
-						args_chan=np.delete(args_chan,np.where(args_chan==nearest_cal_chan))
-						cal_freq_diff_copy=np.delete(cal_freq_diff_copy,np.where(cal_freq_diff_copy==cal_freq_diff[nearest_cal_chan]))
-						if len(args_chan)==0:
-							args_time=np.delete(args_time,np.where(args_time==nearest_cal_time))	
-							cal_time_diff_copy=np.delete(cal_time_diff_copy,np.where(cal_time_diff_copy==cal_time_diff[nearest_cal_time]))					
-							break
-						else:
-							continue
-				cal_freq_diff_partial=np.abs(np.array(cal_freqs)[pos_nearest_cal_chan]-msfreq)
-				pos=np.where(cal_freq_diff==np.min(cal_freq_diff_partial))
-				new_data[i,:,j,:]=data[nearest_cal_time,:,pos,:]
-						
+							pos_nearest_cal_chan.append(nearest_cal_chan)
+							args_chan=np.delete(args_chan,np.where(args_chan==nearest_cal_chan))
+							cal_freq_diff_copy=np.delete(cal_freq_diff_copy,np.where(cal_freq_diff_copy==cal_freq_diff[nearest_cal_chan]))
+							if len(args_chan)==0:
+								args_time=np.delete(args_time,np.where(args_time==nearest_cal_time))	
+								cal_time_diff_copy=np.delete(cal_time_diff_copy,np.where(cal_time_diff_copy==cal_time_diff[nearest_cal_time]))					
+								break
+							else:
+								continue
+					cal_freq_diff_partial=np.abs(np.array(cal_freqs)[pos_nearest_cal_chan]-msfreq)
+					pos=np.where(cal_freq_diff==np.min(cal_freq_diff_partial))
+					new_data[i,:,j,:]=data[nearest_cal_time,:,pos,:]
+		else:
+			new_data=data
 		np.save(caltable+'.test',new_data)	
 		new_data_flattened=new_data.flatten(order='C')
 		if outfile_path=='':

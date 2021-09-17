@@ -86,8 +86,6 @@ flagantennae: /usr/lib64/libm.so
 flagantennae: /usr/local/lib/libcasa_scimath.so
 flagantennae: /usr/local/lib/libcasa_measures.so
 flagantennae: /usr/local/lib/libcasa_scimath_f.so
-flagantennae: /usr/lib64/liblapack.so
-flagantennae: /usr/lib64/libblas.so
 flagantennae: /usr/local/lib/libcasa_tables.so
 flagantennae: /usr/local/lib/libcasa_casa.so
 flagantennae: /usr/lib64/libhdf5_cpp.so
@@ -100,8 +98,6 @@ flagantennae: /usr/lib64/libm.so
 flagantennae: /usr/local/lib/libcasa_scimath.so
 flagantennae: /usr/local/lib/libcasa_measures.so
 flagantennae: /usr/local/lib/libcasa_scimath_f.so
-flagantennae: /usr/lib64/liblapack.so
-flagantennae: /usr/lib64/libblas.so
 flagantennae: /usr/local/lib/libcasa_tables.so
 flagantennae: /usr/local/lib/libcasa_casa.so
 flagantennae: /usr/lib64/libhdf5_cpp.so

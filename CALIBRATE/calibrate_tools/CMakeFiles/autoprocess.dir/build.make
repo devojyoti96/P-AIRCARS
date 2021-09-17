@@ -236,8 +236,6 @@ autoprocess: /usr/lib64/libm.so
 autoprocess: /usr/local/lib/libcasa_scimath.so
 autoprocess: /usr/local/lib/libcasa_measures.so
 autoprocess: /usr/local/lib/libcasa_scimath_f.so
-autoprocess: /usr/lib64/liblapack.so
-autoprocess: /usr/lib64/libblas.so
 autoprocess: /usr/local/lib/libcasa_tables.so
 autoprocess: /usr/local/lib/libcasa_casa.so
 autoprocess: /usr/lib64/libhdf5_cpp.so
@@ -263,8 +261,6 @@ autoprocess: /usr/local/lib/libcasa_fits.so
 autoprocess: /usr/local/lib/libcasa_scimath.so
 autoprocess: /usr/local/lib/libcasa_measures.so
 autoprocess: /usr/local/lib/libcasa_scimath_f.so
-autoprocess: /usr/lib64/liblapack.so
-autoprocess: /usr/lib64/libblas.so
 autoprocess: /usr/local/lib/libcasa_tables.so
 autoprocess: /usr/local/lib/libcasa_casa.so
 autoprocess: /usr/lib64/libgsl.so

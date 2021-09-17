@@ -86,8 +86,6 @@ flagbaselines: /usr/lib64/libm.so
 flagbaselines: /usr/local/lib/libcasa_scimath.so
 flagbaselines: /usr/local/lib/libcasa_measures.so
 flagbaselines: /usr/local/lib/libcasa_scimath_f.so
-flagbaselines: /usr/lib64/liblapack.so
-flagbaselines: /usr/lib64/libblas.so
 flagbaselines: /usr/local/lib/libcasa_tables.so
 flagbaselines: /usr/local/lib/libcasa_casa.so
 flagbaselines: /usr/lib64/libhdf5_cpp.so
@@ -100,8 +98,6 @@ flagbaselines: /usr/lib64/libm.so
 flagbaselines: /usr/local/lib/libcasa_scimath.so
 flagbaselines: /usr/local/lib/libcasa_measures.so
 flagbaselines: /usr/local/lib/libcasa_scimath_f.so
-flagbaselines: /usr/lib64/liblapack.so
-flagbaselines: /usr/lib64/libblas.so
 flagbaselines: /usr/local/lib/libcasa_tables.so
 flagbaselines: /usr/local/lib/libcasa_casa.so
 flagbaselines: /usr/lib64/libhdf5_cpp.so

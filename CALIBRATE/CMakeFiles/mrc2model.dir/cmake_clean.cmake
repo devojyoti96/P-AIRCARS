@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/mrc2model.dir/model/model.cpp.o"
   "CMakeFiles/mrc2model.dir/mrc2model.cpp.o"
   "CMakeFiles/mrc2model.dir/mrccatalogue.cpp.o"
@@ -8,6 +8,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/mrc2model.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/mrc2model.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)
