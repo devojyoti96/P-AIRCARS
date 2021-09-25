@@ -87,7 +87,8 @@ def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_
 
 # This part will run the self calibration loops. If the code is imported in some other python code, this part will not be executed
 
-def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verbose=False,interactive=False,start_fresh=True,reduce_moreflag=False,scratch=True,caltables=''):
+def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verbose=False,interactive=False,start_fresh=True,reduce_moreflag=False,scratch=True,caltables='',\
+						use_wsclean=True):
 	'''
 	Heart of the intensity selfcal part of the PAIRCARS
 	This function performs the intensity selfcal for PAIRCARS
@@ -105,6 +106,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	reduce_moreflag = Try to reduce flag solutions if it is more than 5%.
 	scratch = Start from scratch or not in case on reference time frequency slice
 	caltables = Previous caltables, comma separated
+	use_wsclean = Use WSClean for imaging or not
 	Return:
 	Meassages about the selfcal success or errors
 	'''
@@ -288,7 +290,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			print ('Reference time frequency slice imaging has been done. Starting imaging for time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
 	
-	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive) # Creating selfcal object 32 arcmin maximum scale size
+	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean) # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 
 	###################
@@ -1522,6 +1524,7 @@ if __name__=='__main__':
 	parser.add_option('--reduce_flags',dest="reduce_flags",default=False,help="Try to reduce flag solutions if it is more than 5%",metavar="Boolean")
 	parser.add_option('--scratch',dest="scratch",default=None,help="Start from scratch or not for reference time frequency slice",metavar="Boolean")
 	parser.add_option('--caltables',dest="caltables",default='',help="Previous caltables",metavar="String, comma separated")
+	parser.add_option('--wsclean',dest="use_wsclean",default=True,help="Use WSClean for imaging or not",metavar="Boolean")
 	(options, args) = parser.parse_args()
 	if (os.path.isfile(str(options.workdir)+'/Intensity_Selfcal.log') and eval(str(options.fresh))==True) or \
 			(os.path.isfile(str(options.workdir)+'/Intensity_Selfcal.log') and os.path.isdir(str(options.workdir)+'/junk1.ms')==False and eval(str(options.fresh))==False):
@@ -1634,64 +1637,65 @@ if __name__=='__main__':
 		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
 		os._exit(0)
 
-	#try:
-	previous_touch_list=glob.glob(inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-	if len(previous_touch_list)!=0:
-		os.system('rm -rf '+inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-	print ('\n\t##########################\n\tStarting Intensity self-calibration.....\n\t##########################\n')
-	print ('run_intensity_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',do_point_source='+str(options.do_point_source)+\
-			',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)+'\')\n')
-	msg=run_intensity_selfcal(options.chantime_msname,options.metafits,options.workdir,do_point_source=eval(str(options.do_point_source)),verbose=eval(str(options.verbose)),\
-			interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),reduce_moreflag=eval(str(options.reduce_flags)),\
-			scratch=eval(str(options.scratch)),caltables=str(options.caltables))
-	if type(msg)==int:
-		if msg>100:
-			msg1=msg-100
-			if msg1==10:
-				send_notification=False
+	try:
+		previous_touch_list=glob.glob(inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+		if len(previous_touch_list)!=0:
+			os.system('rm -rf '+inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+		print ('\n\t##########################\n\tStarting Intensity self-calibration.....\n\t##########################\n')
+		print ('run_intensity_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',do_point_source='+str(options.do_point_source)+\
+				',verbose='+str(options.verbose)+',interactive='+str(options.interactive)+',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)\
+				+'\'use_wsclean='+str(use_wsclean)+')\n')
+		msg=run_intensity_selfcal(options.chantime_msname,options.metafits,options.workdir,do_point_source=eval(str(options.do_point_source)),verbose=eval(str(options.verbose)),\
+				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),reduce_moreflag=eval(str(options.reduce_flags)),\
+				scratch=eval(str(options.scratch)),caltables=str(options.caltables),use_wsclean=eval(str(options.use_wsclean)))
+		if type(msg)==int:
+			if msg>100:
+				msg1=msg-100
+				if msg1==10:
+					send_notification=False
+				else:
+					send_notification=True				
+				msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+				if options.verbose==False:
+					print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+				logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
 			else:
-				send_notification=True				
-			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-			if options.verbose==False:
-				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-		else:
-			if msg==10:
-				send_notification=False
-			else:
-				send_notification=True
-			msg_str='Message : '+error_msgs(msg)+'\n'
-			if options.verbose==False:
-				print ('Message : '+error_msgs(msg)+'\n')
-			logger.info('Message : '+error_msgs(msg)+'\n')
-	touch_file=inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
-	end_time=time.time()
-	run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-	logger.info('#############################\n')
-	logger.info('Gain selfcal finished for ms : '+options.chantime_msname+'\n')
-	logger.info('Total runtime : '+str(run_time)+'\n')
-	logger.info('##############################\n')
-	while os.path.isfile(touch_file)==False:
-		os.system('touch '+touch_file)
-	file_str=msbasename.split('.ms')[0]
-	if type(msg)==int:
-		msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
-		msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
-		if send_notification==True:
-			attachments=glob.glob(options.workdir+'/quick_image_*.png')
-			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-	if type(msg)==int or (type(msg)!=int and msg!='moreflag'):
-		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
-			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
-			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
-		os.system('cp -r '+options.workdir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
-		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
-		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
-		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
-	'''except Exception as e:
+				if msg==10:
+					send_notification=False
+				else:
+					send_notification=True
+				msg_str='Message : '+error_msgs(msg)+'\n'
+				if options.verbose==False:
+					print ('Message : '+error_msgs(msg)+'\n')
+				logger.info('Message : '+error_msgs(msg)+'\n')
+		touch_file=inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Gain selfcal finished for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		while os.path.isfile(touch_file)==False:
+			os.system('touch '+touch_file)
+		file_str=msbasename.split('.ms')[0]
+		if type(msg)==int:
+			msg_str='Dear PAIRCARS user,\n\nIntensity self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+			msg_subject='Notification from PAIRCARS : Intensity Selfcal : OBSID = '+str(OBSID)
+			if send_notification==True:
+				attachments=glob.glob(options.workdir+'/quick_image_*.png')
+				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+		if type(msg)==int or (type(msg)!=int and msg!='moreflag'):
+			if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+				os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+			if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+				os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+			if inputs.keep_logger and eval(str(options.verbose))==True:
+				os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
+			os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+			os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
+	except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_gcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -1716,4 +1720,4 @@ if __name__=='__main__':
 			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.intlog')
 		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'* '+options.workdir+'/Backup_uncalib.ms')
-		pass'''
+		pass

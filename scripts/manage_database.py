@@ -13,6 +13,7 @@ from optparse import OptionParser
 from astropy.io import fits
 from CALIBRATE.access_calibrate import *
 from paircars.libpaircars import send_paircars_notification,send_to_database
+from multiprocessing import Process
 
 def fill_models(msname):
 	'''
@@ -38,27 +39,29 @@ def fill_models(msname):
 	print ('Fill models are done.\n')
 	return
 
-# MPI check
+# cpulimit check
 ###########
-def MPI_check():
-	a=subprocess.getstatusoutput('mpirun -h')[0]
-	if a==0:
+def CPULIMIT_check():
+	a=os.system('cpulimit -h > cpulimit_tmp')
+	if a==256:
+		os.system('rm -rf cpulimit_tmp')
 		return 0
 	else:
+		os.system('rm -rf cpulimit_tmp')
 		return 1
 
-def casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,num_thread,num_casa_instance):
+def casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,num_thread):
 	'''
 	Function to run a casa instance
 	Parameters:
 	cmd = Command to run
 	screen_name = Name of the screen
 	'''
-	mpi_check=MPI_check()
+	cpulimit_check=CPULIMIT_check()
 	if basedir[-1]=='/':
 		basedir=basedir[:-1]
-	if mpi_check==0:
-		cmd='mpirun -n 1 -x OMP_NUM_THREADS='+str(num_thread)+' -cpus-per-proc '+str(num_thread)+' '+cmd
+	if cpulimit_check==0:
+		cmd='cpulimit --limit '+str((num_thread*100)-50)+' -z '+cmd
 	cmd+=';wait; if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi; rm -rf '+basedir+'/'+screen_name+'.batch'
 	os.system('echo "'+cmd+'" > '+basedir+'/'+screen_name+'.batch')
 	screen_cmd='sh '+basedir+'/'+screen_name+'.batch'
@@ -73,7 +76,7 @@ def casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,num_thread,
 	return screen_name
 
 
-def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[]):
+def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[],verbose=False):
 	'''
 	Function to make final gain caltable
 	Parameters:
@@ -85,6 +88,7 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,timeavg=2
 	ref_ant = Reference antenna (default : 1)
 	gain_minsnr = Minimum gain SNR for calibration (default : 3)
 	modellist = [], list of gain calibration models
+	verbose = False, verbose output or not
 	Return:
 	0,1 (For success or failure), List of local caltables, List of global caltables
 	'''
@@ -215,11 +219,14 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,timeavg=2
 		IB1=ImageBasic(global_cal_ms)
 		calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
 		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
+		t=int(ntimes/len(modellist))
+		if t<=0:
+			t=1
 		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
 					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
-					str(int(ntimes/len(modellist)))+',j=3,ch=1)\n') # Making gaincal table for reference time and chan
+					str(t)+',j=3,ch=1,verbose='+str(verbose)+')\n') # Making gaincal table for reference time and chan
 		cal.calibrate(msname=global_cal_ms,caltable=global_caltable,calmode='diag',minuv=calib_uvrange_min,maxuv=calib_uvrange_max,\
-			quiet=True,a='0.001,0.0001',t=int(ntimes/len(modellist)),j=3,ch=1)
+			quiet=True,a='0.001,0.0001',t=t,j=3,ch=1,verbose=verbose)
 		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
 		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
 		if os.path.islink(msname_copy):
@@ -231,7 +238,7 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=160,timeavg=2
 		return 0,caltable_for_global_database,caltable_for_local_database
 
 
-def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[]):
+def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[],verbose=False):
 	'''
 	Function to make final bandpass caltable
 	Parameters:
@@ -242,6 +249,7 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 	ref_ant = Reference antenna (default : 1)
 	gain_minsnr = Minimum gain SNR for calibration (default : 3)
 	modellist = [], list of gain calibration models
+	verbose = False, verbose output or not
 	Return:
 	0,1 (For success or failure), List of local caltables, List of global caltables
 	'''
@@ -374,9 +382,9 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 				flagdata(vis=global_cal_ms,spw='0:'+flag_chan_str,flagbackup=False)
 		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
 					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
-					str(int(ntimes))+',j=3,ch=1)\n') # Making bandpass table for reference time
+					str(int(ntimes))+',j=3,ch=1,verbose='+str(verbose)+')\n') # Making bandpass table for reference time
 		cal.calibrate(msname=global_cal_ms,caltable=global_caltable,calmode='diag',minuv=calib_uvrange_min,maxuv=calib_uvrange_max,\
-			quiet=True,a='0.001,0.0001',t=int(ntimes),j=3,ch=1)
+			quiet=True,a='0.001,0.0001',t=int(ntimes),j=3,ch=1,verbose=verbose)
 		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
 		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
 		if os.path.islink(msname_copy):
@@ -387,7 +395,7 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 		caltable_for_local_database.append(local_caltable)
 		return 0,caltable_for_global_database,caltable_for_local_database
 
-def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[]):
+def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,ref_ant='1',gain_minsnr=3,modellist=[],verbose=False):
 	'''
 	Function to make final leakage corrected differential gain caltable
 	Parameters:
@@ -398,6 +406,7 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 	ref_ant = Reference antenna (default : 1)
 	gain_minsnr = Minimum gain SNR for calibration (default : 3)
 	modellist = [], list of gain calibration models
+	verbose = False, verbose output or not
 	Return:
 	0,1 (For success or failure), List of local caltables, List of global caltables
 	'''
@@ -537,9 +546,9 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
 		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
 					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
-					str(int(ntimes))+',j=3,ch=1)\n') # Making leakage corrected bandpass table for reference time and chan
+					str(int(ntimes))+',j=3,ch=1,verbose='+str(verbose)+')\n') # Making leakage corrected bandpass table for reference time and chan
 		cal.calibrate(msname=global_cal_ms,caltable=global_caltable,calmode='diag',minuv=calib_uvrange_min,maxuv=calib_uvrange_max,\
-			quiet=True,a='0.001,0.0001',t=int(ntimes),j=3,ch=1)
+			quiet=True,a='0.001,0.0001',t=int(ntimes),j=3,ch=1,verbose=verbose)
 		os.system('rm -rf '+local_cal_ms+' '+local_cal_ms+'.flagversions')
 		os.system('rm -rf '+global_cal_ms+' '+global_cal_ms+'.flagversions')
 		if os.path.islink(msname_copy):
@@ -550,7 +559,7 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 		caltable_for_local_database.append(local_caltable)
 		return 0,caltable_for_global_database,caltable_for_local_database
 
-def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,pol_skip_freq=1280,modellist=[]):
+def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],freqavg=160,timeavg=2.0,pol_skip_freq=1280,modellist=[],verbose=False):
 	'''
 	Function to make final gain caltable
 	Parameters:
@@ -561,6 +570,7 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 	gaintable = [] , previous gaincal table list	
 	pol_skip_freq = Frequency to skip polarisation calibration in kHz
 	modellist = [], list of gain calibration models
+	verbose = False, verbose output or not
 	Return:
 	0,1 (For success or failure), List of local caltables, List of global caltables
 	'''
@@ -643,13 +653,23 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 																																				 # Reference time ms
 		beamcal_ms=workdir+'/'+os.path.basename(msname)+'.beamcalms'
 		polcal_ms=workdir+'/'+os.path.basename(msname)+'.pcalms'
+
+		# Applying cross-hand phase correction
+		######################################
+		mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
+		PSC=PolSelfcal(beamcal_ms,metafits,32*60,verbose=False,interactive=False,savelog=False) # Performing ideal beam correction at phase center for every coarse channels
+		if mwa_config=='MWAPhaseI':
+			crossphase=15
+		elif mwa_config=='MWAPhaseIILB' or mwa_config=='MWAPhaseIICOMPACT':
+			crossphase=135
+		obslog.info('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
+		PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=True,datacolumn='DATA')
 	
 		# Perform ideal beam correction
 		###############################
 		obslog.info('Performing ideal beam correction......\n')
 		obslog.info('###########################################\n')
 		obslog.info('PolSelfcal(\''+beamcal_ms+'\',\''+metafits+'\','+str(32*60)+',verbose=False,interactive=False)\n')
-		PSC=PolSelfcal(beamcal_ms,metafits,32*60,verbose=False,interactive=False) # Performing ideal beam correction at phase center for every coarse channels
 		obslog.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,skip_freq='+str(pol_skip_freq)+',save_beamfile=\''+str(beam_caltable)+'\')\n')
 		PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,skip_freq=float(pol_skip_freq),save_beamfile=beam_caltable)
 		caltable_for_global_database.append(beam_caltable)
@@ -709,9 +729,9 @@ def make_final_polcal(msname,metafits,workdir,caltable_name_prefix,gaintable=[],
 		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
 		obslog.info('cal.calibrate(msname=\''+polcal_ms+'\',caltable=\''+polcal_caltable+'\',minuv='+\
 					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,a=\'0.001,0.0001\'t='+\
-					str(int(ntimes))+',j=3,ch=1)\n') # Making gaincal table for reference time and chan
+					str(int(ntimes))+',j=3,ch=1,verbose='+str(verbose)+')\n') # Making gaincal table for reference time and chan
 		cal.calibrate(msname=polcal_ms,caltable=polcal_caltable,minuv=calib_uvrange_min,maxuv=calib_uvrange_max,\
-			quiet=True,t=int(ntimes),j=3,ch=1)
+			quiet=True,t=int(ntimes),j=3,ch=1,verbose=verbose)
 		os.system('rm -rf '+beamcal_ms+' '+beamcal_ms+'.flagversions')
 		os.system('rm -rf '+polcal_ms+' '+polcal_ms+'.flagversions')
 		if os.path.islink(msname_copy):
@@ -858,8 +878,8 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		AM=AccessMS(msname)
 		antenna=AM.get_antenna_string()
 		unflagchan,flagchan=flag_MWA_coarse(msname,edgewidth=160,do_flag=False,force=False)
-		obslog.info('flagdata(vis=\''+msname+'\',mode=\'unflag\',antenna=\''+antenna+'\',spw=\''+unflagchan+'\')\n')
-		flagdata(vis=msname,mode='unflag',antenna=antenna,spw=unflagchan)
+		#obslog.info('flagdata(vis=\''+msname+'\',mode=\'unflag\',antenna=\''+antenna+'\',spw=\''+unflagchan+'\')\n')
+		#flagdata(vis=msname,mode='unflag',antenna=antenna,spw=unflagchan)
 		freqs=AM.get_freqs()/10**6
 		nchan_avg=int(freq_avg/AM.calc_freqres())
 		coarse_chan_0=freq_to_MWA_coarse(freqs[0])
@@ -868,7 +888,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		obslog.info('Searching gaincal models in model directory : '+gaincal_modeldir+'\n')
 		model_list=glob.glob(gaincal_modeldir+'/*.model') # Gaincal model list
 		gcal_msg,global_database_list,local_database_list=make_final_gaincal(msname,basedir,caltable_name_prefix,freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,\
-																				gain_minsnr=gain_minsnr,modellist=model_list)
+																				gain_minsnr=gain_minsnr,modellist=model_list,verbose=verbose)
 		caltable_for_local_database+=local_database_list
 		caltable_for_global_database+=global_database_list	
 	
@@ -882,7 +902,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				bp_msg=2
 			else:
 				bp_msg,global_database_list,local_database_list=make_final_bandpass(msname,basedir,caltable_name_prefix,gaintable=caltable_for_local_database,\
-								freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=bpmodel_list)
+								freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=bpmodel_list,verbose=verbose)
 				caltable_for_local_database+=local_database_list
 				caltable_for_global_database+=global_database_list	
 
@@ -900,7 +920,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				lcal_msg=2
 			else:
 				lcal_msg,global_database_list,local_database_list=make_final_leakcal(msname,basedir,caltable_name_prefix,gaintable=caltable_for_local_database,\
-								freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=lcal_model_list)
+								freqavg=freq_avg,timeavg=time_avg,ref_ant=ref_ant,gain_minsnr=gain_minsnr,modellist=lcal_model_list,verbose=verbose)
 				caltable_for_local_database+=local_database_list
 				caltable_for_global_database+=global_database_list	
 
@@ -917,7 +937,7 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 				pcal_msg=2
 			else:
 				pcal_msg,global_database_list,local_database_list=make_final_polcal(msname,metafits,basedir,caltable_name_prefix,\
-									gaintable=caltable_for_local_database,freqavg=freq_avg,timeavg=time_avg,pol_skip_freq=pol_skip_freq,modellist=polcalmodel_list)
+									gaintable=caltable_for_local_database,freqavg=freq_avg,timeavg=time_avg,pol_skip_freq=pol_skip_freq,modellist=polcalmodel_list,verbose=verbose)
 				caltable_for_local_database+=local_database_list
 				caltable_for_global_database+=global_database_list
 		else:
@@ -983,10 +1003,10 @@ def managing_caldatabase(msname,metafits,total_spawned_jobs,basedir,gaincal_mode
 		'''
 		return gcal_msg,final_global_caltables,final_local_caltables
 
-def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals=[],residual_frac=0.1,\
+def final_imaging_for_database(msname,metafits,basedir,mode,casacals=[],calibratecals=[],residual_frac=0.1,do_diffcal=False,\
 		quality_factor=1,inputfile='',localdatabase='',savedir='',cutoutbox='',want_automask=False,\
 		savemodel=False,saveres=False,use_ankflag=False,do_pol=False,mask='',freq_interval=160,\
-		time_interval=10.0,freq_width=160,time_width=10,sigma=10,thresh=[0.1]):
+		time_interval=10.0,freq_width=160,time_width=10,sigma=10,thresh=[0.1],use_wsclean=True):
 	'''
 	Function to make final images for database
 	Parameters:
@@ -997,6 +1017,11 @@ def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals
 	Return:
 	0 on success, 1 on failure
 	'''
+	total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
+	available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
+	total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
+	if available_cpu_for_paircars>total_cpu_frac:
+		available_cpu_for_paircars=total_cpu_frac
 	if len(casacals)!=0:
 		casa_caltables=','.join(casacals)
 	else:
@@ -1007,31 +1032,37 @@ def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals
 		calibrate_caltables=''
 	if basedir[-1]=='/':
 		basedir=basedir[:-1]
+	if savedir=='':
+		savedir=basedir+'/Final_images'
+
+	if time_width>=10:
+		time_avg=2
+	else:
+		time_avg=''
+
+	if freq_width>=160:
+		freq_avg=40
+	else:
+		freq_avg=''
+	
+	cmd_args=['--msname '+msname,'--savedir '+savedir,'--freq_interval '+str(freq_interval),'--time_interval '+str(time_interval),'--freq_width '+str(freq_width),\
+			'--time_width '+str(time_width)]
+	if time_avg!='':
+		cmd_args.append('--time_avg '+str(time_avg))
+	if freq_avg!='':
+		cmd_args.append('--freq_avg '+str(freq_avg))
 	if casa_caltables=='' and calibrate_caltables=='':
-		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected\n')
-		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected')
-	elif casa_caltables!='' and calibrate_caltables=='':
-		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables)
-		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables)
-	elif casa_caltables=='' and calibrate_caltables!='':
-		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --calibrate_caltables '+calibrate_caltables)
-		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --calibrate_caltables '+calibrate_caltables)
-	elif casa_caltables!='' and calibrate_caltables!='':
-		obslog.info('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables+' --calibrate_caltables '+calibrate_caltables)
-		a=os.system('parallel_ms_split --msname '+msname+' --savedir '+basedir+' --freq_interval '+str(freq_interval)+' --time_interval '+str(time_interval)+' --freq_width '+\
-						str(freq_width)+' --time_width '+str(time_width)+' --datacolumn corrected --casa_caltables '+casa_caltables+' --calibrate_caltables '+calibrate_caltables)
+		cmd_args.append('--datacolumn corrected')
+	else:
+		cmd_args.append('--datacolumn DATA')
+	obslog.info('parallel_ms_split '+' '.join(cmd_args)+'\n')
+	a=os.system('parallel_ms_split '+' '.join(cmd_args))	
+	
 	if os.WEXITSTATUS(a)!=0:
 		return 1
 	else:
 		obslog.info('Spliting of ms is done.\n')
-		splited_ms=glob.glob(basedir+'/splited_ms/*.ms')
+		splited_ms=glob.glob(savedir+'/splited_ms/*.ms')
 		splited_ms_copy=copy.deepcopy(splited_ms)
 		thresh=[str(i) for i in thresh]
 		if do_pol==True:
@@ -1052,42 +1083,77 @@ def final_imaging_for_database(msname,metafits,basedir,casacals=[],calibratecals
 		if available_cpu_for_paircars>total_cpu_frac:
 			available_cpu_for_paircars=total_cpu_frac
 		casa_instance=int(available_cpu_for_paircars/2)
-		finished_list=glob.glob(basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_*')
+		if casa_instance<=0:
+			casa_instace=1
+		finished_list=glob.glob(basedir+'/.Finished_final_imaging_*success')
 		for i in finished_list:
 			if 'nometa' in i or 'noms' in i:	
 				os.system('rm -rf '+i)
+		touch_files=glob.glob(basedir+'/.Finished_final_imaging_*success')
+		error_files=glob.glob(basedir+'/.Finished_final_imaging_*')
+		for e in error_files:
+			if e not in touch_files:
+				os.system('rm -rf '+e)
 		finished_num=0
+		touch_files=[]
+		imaging_list=[]
 		while True:	
 			for i in range(casa_instance):
 				ms=splited_ms[0]
 				if ms[-1]=='/':
 					ms=ms[:-1]
 				workdir=os.path.dirname(os.path.abspath(ms))+'/'+os.path.basename(ms).split('.ms')[0]
-				cmd='final_imaging --msname '+ms+' --metafits '+metafits+' --basedir '+basedir+' --workdir '+workdir+' --savedir '+savedir+' --savemodel '+str(savemodel)\
-					+' --saveres '+str(saveres)+' --stokes '+stokes+' --cutoutbox '+cutoutbox+' --sigma '+str(sigma)+' --threshold '+str(threshold)\
-					+' --want_automask '+str(want_automask)+' --maskfile '+str(mask)+' --quality_factor '+str(quality_factor)+' --inputfile '+str(inputfile)\
-						+' --use_ankflag '+str(use_ankflag)+' --residual_frac '+str(residual_frac)
-				screen_name='Final_imaging_'+os.path.basename(ms).split('.ms')[0]
+				cmd_args=['--msname '+ms,' --metafits '+metafits,' --basedir '+basedir,' --workdir '+workdir,' --savedir '+savedir,' --savemodel '+str(savemodel),\
+						' --saveres '+str(saveres),' --stokes '+stokes,' --sigma '+str(sigma),' --threshold '+str(threshold),' --wsclean '+str(use_wsclean)\
+						,' --want_automask '+str(want_automask),' --quality_factor '+str(quality_factor),' --use_ankflag '+str(use_ankflag),\
+						' --residual_frac '+str(residual_frac)]
+				if do_diffcal==True:
+					cmd_args.append(' --do_diffcal '+str(do_diffcal))
+				if casa_caltables!='':
+					cmd_args.append(' --casa_caltables '+casa_caltables)
+				if calibrate_caltables!='':
+					cmd_args.append(' --calibrate_caltables '+calibrate_caltables)
+				if mask!='':
+					cmd_args.append(' --maskfile '+str(mask))
+				if cutoutbox!='':
+					cmd_args.append(' --cutoutbox '+cutoutbox)
+				cmd='final_imaging '+' '.join(cmd_args)
+				screen_name=mode+'_final_imaging_'+os.path.basename(ms).split('.ms')[0]
 				finished_touch_file=basedir+'/.Finished_final_imaging_'+os.path.basename(ms)
-				if finished_touch_file in finished_list:
-					obslog.info('Imaging is already completed for ms : '+os.path.basename(ms))
+				if os.path.exists(finished_touch_file+'_success'):
+					touch_files.append(finished_touch_file+'_success')
+				imaging_list.append(finished_touch_file)
+				if finished_touch_file+'_success' in finished_list:
+					obslog.info('Imaging is already completed for ms : '+os.path.basename(ms)+'\n')
 				else:
-					casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,2,casa_instance)
+					obslog.info(cmd+'\n')
+					casa_instance_runner(cmd,screen_name,basedir,finished_touch_file,5)
 					touch_count+=1
+					time.sleep(1)
 				splited_ms.remove(ms)
-				if len(splited_ms)==0:
-					break
+			if len(splited_ms)==0:
+				break
 			obslog.info('Waiting for final imaging spawned to be finished for '+str(touch_count-finished_num)+' jobs......\n')
-			while True:
-				time.sleep(2.0)
-				touch_files=len(glob.glob(basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_*'))
-				if (touch_files-finished_num)>=1:
-					finished_num+=touch_files
+			if (touch_count-finished_num)==0:
 					break
-			if len(glob.glob(basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_*'))==len(splited_ms_copy):
+			while True:
+				if (touch_count-finished_num)==0:
+					break
+				time.sleep(2.0)
+				pre_touch_files=[]
+				for i in imaging_list:
+					if os.path.exists(i+'_success'):
+						pre_touch_files.append(i+'_success')
+				if (len(pre_touch_files)-len(touch_files))>=1:
+					casa_instance=len(pre_touch_files)-len(touch_files)
+					touch_files=pre_touch_files
+					finished_num=touch_count
+					break
+				elif len(touch_files)==len(splited_ms_copy):
+					break
+			if len(touch_files)==len(splited_ms_copy):
 				break
 		return 0
-
 
 from optparse import OptionParser
 if __name__=='__main__':
@@ -1105,6 +1171,7 @@ if __name__=='__main__':
 	parser.add_option('--timeavg',dest="timeavg",default=2.0,help="Time averaging during calibration in second",metavar="Float")
 	parser.add_option('--inputfile',dest='inputfile',default=None,help='Path of the P-AIRCARS input file',metavar="File path")
 	parser.add_option('--verbose',dest='verbose',default=False,help='Verbose output',metavar="Boolean")
+	parser.add_option('--wsclean',dest="use_wsclean",default=True,help="Use WSClean for imaging or not",metavar="Boolean")
 	(options, args) = parser.parse_args()
 	
 if os.path.isdir(str(options.msname))==False:
@@ -1127,12 +1194,7 @@ if inputfile[-1]=='/':
 	inputfile=inputfile[:-1]
 sys.path.append(os.path.dirname(os.path.abspath(inputfile)))
 import selfcal_inputs as inputs
-if inputs.quality_factor==0:
-	polskip=5.12
-elif inputs.quality_factor==1:
-	polskip=2.56
-else:
-	polskip=1.28
+polskip=1.28
 
 AM=AccessMS(str(options.msname))
 freqs=AM.get_freqs()/10**6
@@ -1179,7 +1241,7 @@ if len(caltable_for_global_database)>0:
 		attachments=[final_caltable]
 		msg='Dear PAIRCARS developers,\n\nCaltables for : OBSID : '+str(OBSID)+' Coarse channels : '+str(coarse_chan_0)+'-'+\
 								str(coarse_chan_1)+'\n\nBest,\nPAIRCARS developing team.\n'
-		print ('Sending caltables to database....\n')
+		obslog.info('Sending caltables to database....\n')
 		send_msg_code,send_msg=send_to_database('Caltables for : OBSID : '+str(OBSID)+' Coarse channels : '+str(coarse_chan_0)+'-'+\
 								str(coarse_chan_1),msg,attachments=attachments)
 		if send_msg_code==0:
@@ -1189,8 +1251,6 @@ if len(caltable_for_global_database)>0:
 			os.system('rm -rf '+final_caltable)	
 os.system('touch '+inputs.basedir+'/.Finished_final_cal_'+os.path.basename(str(options.msname)))
 
-
-'''
 # Appying solution to main ms
 #############################
 casa_gaintable=[]
@@ -1210,7 +1270,7 @@ for i in caltable_for_local_database:
 
 if inputs.calc_selfcalib_params==True:
 	calparams=CalcParams(str(options.msname),inputs.quality_factor,inputs.safety_factor)
-	residual_frac=float(calparams.calc_calibration_params()[2])
+	residual_frac=float(calparams.calc_calibration_params()[2])/2.0
 if inputs.maskfile!='':
 	mask=inputs.maskfile
 elif inputs.maskstr!='':
@@ -1221,13 +1281,45 @@ else:
 start_sigma=np.load(str(options.basedir)+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0]
 rms_list=np.load(str(options.basedir)+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
 
-result=final_imaging_for_database(str(options.msname),str(options.metafits),str(options.basedir),casacals=casa_gaintable,calibratecals=calibrate_gaintable,residual_frac=residual_frac,\
-		quality_factor=inputs.quality_factor,inputfile=inputfile,localdatabase=localdatabase,savedir=localdatabase+'/'+str(OBSID)+'/images',cutoutbox='3,3',\
-		want_automask=False,savemodel=False,saveres=False,use_ankflag=False,do_pol=inputs.do_polcal,mask=mask,\
-		freq_interval=1280,time_interval=30,freq_width=1280,time_width=30,sigma=start_sigma,thresh=rms_list)
-result=final_imaging_for_database(str(options.msname),str(options.metafits),basedir,casacals=casa_gaintable,calibratecals=calibrate_gaintable,residual_frac=residual_frac,\
-		quality_factor=inputs.quality_factor,inputfile=inputfile,localdatabase=localdatabase,savedir=inputs.savedir,cutoutbox=inputs.cutoutbox,want_automask=inputs.want_auto_masking,\
-		savemodel=inputs.savemodel,saveres=inputs.saveresidual,use_ankflag=inputs.use_ankflagger,do_pol=inputs.do_polcal,mask=mask,freq_interval=inputs.image_delta_freq,\
-		time_interval=image_delta_time,freq_width=inputs.image_freq,time_width=inputs.image_time,sigma=start_sigma,threshold=rms_thresh)
-'''
+obslog.info('Flagging MWA coarse channel edges.\n')
+flag_MWA_coarse(str(options.msname),edgewidth=160,do_flag=True,force=True)
+obslog.info('Flagging QUACK times.\n')
+quacktime=flag_MWA_quack(str(options.msname),str(options.metafits))
+obslog.info('Flagged '+str(quacktime)+' s at beginning and end.\n')
+
+obslog.info('Start making images for local database.\n')
+obslog.removeHandler(console)
+args=(str(options.msname),str(options.metafits),str(options.basedir),'Database_Imaging',)
+kwargs={'casacals':casa_gaintable,'calibratecals':calibrate_gaintable,'residual_frac':residual_frac,\
+		'quality_factor':inputs.quality_factor,'inputfile':inputfile,'localdatabase':localdatabase,'savedir':localdatabase+'/'+str(OBSID)+'/images','cutoutbox':'3,3',\
+		'want_automask':False,'savemodel':False,'saveres':False,'use_ankflag':inputs.use_ankflagger,'do_pol':inputs.do_polcal,'mask':mask,'do_diffcal':True,\
+		'freq_interval':1280,'time_interval':30,'freq_width':1280,'time_width':30,'sigma':start_sigma,'thresh':rms_list,'use_wsclean':eval(str(options.use_wsclean))}
+p = Process(target=final_imaging_for_database, args=args,kwargs=kwargs)
+p.start()
+
+try:
+	cutoutbox=inputs.cutoutbox
+except:
+	cutoutbox='3,3'
+
+print ('Start making final images.\n')
+obslog.info('Start making final images.\n')
+
+args=(str(options.msname),str(options.metafits),str(options.basedir),'Final_Imaging',)
+kwargs={'casacals':casa_gaintable,'calibratecals':calibrate_gaintable,'residual_frac':residual_frac,'quality_factor':inputs.quality_factor,'inputfile':inputfile,\
+		'localdatabase':localdatabase,'savedir':inputs.savedir,'cutoutbox':inputs.cutoutbox,'want_automask':inputs.want_auto_masking,'savemodel':inputs.savemodel,\
+		'saveres':inputs.saveresidual,'use_ankflag':inputs.use_ankflagger,'do_pol':inputs.do_polcal,'mask':mask,'freq_interval':inputs.image_delta_freq,'time_interval':\
+		inputs.image_delta_time,'freq_width':inputs.image_freq,'time_width':inputs.image_time,'sigma':start_sigma,'thresh':rms_list,'use_wsclean':eval(str(options.use_wsclean))}
+
+p1 = Process(target=final_imaging_for_database, args=args,kwargs=kwargs)
+p1.start()
+print ('Waiting for finishing imaging.......\n')
+while p.is_alive()==False:
+	print ('Imaging for database has finished.\n')
+	p.join()
+while p1.is_alive()=False:
+	print ('Final imaging has been finished.\n')
+	p1.join()
+print ('\n###########################\nAll imaging finished.\n###########################\n')
+
 

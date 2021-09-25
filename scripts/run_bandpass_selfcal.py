@@ -88,7 +88,7 @@ def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_
 
 # This part will run the self calibration loops. If the code is imported in some other python code, this part will not be executed
 
-def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True,caltables=[]):
+def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,start_fresh=True,caltables=[],use_wsclean=True):
 	'''
 	Heart of the bandpass selfcal part of the PAIRCARS
 	This function performs the bandpass selfcal for PAIRCARS
@@ -103,6 +103,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	interactive = False, If True perform interactive selfcal
 	start_fresh = True, start fresh selfcal rounds from scratch or start from last round
 	caltables = Previous caltables, comma separated
+	use_wsclean = Use WSClean for imaging or not
 	Return:
 	Meassages about the selfcal success or errors
 	'''
@@ -256,7 +257,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			print ('Reference time frequency slice imaging has been done. Starting imaging for time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
 	
-	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive) # Creating selfcal object 32 arcmin maximum scale size
+	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean) # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 
 	###################
@@ -548,6 +549,26 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			logger.info('Calmode : '+calmode+'\n')
 			logger.info('Scratch = '+str(scratch)+'\n')
 			logger.info('Sigma = '+str(start_sigma)+'\n')
+
+			if num_iter==min(min_iteration,3):
+				if inputs.use_ankflagger:
+					os.system('cp -r '+msname+' '+msname+'.backup')
+					try:
+						logger.info('Performing uvsub flagging using aNKflagger due to minimum iteration reached.\n')
+						logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False,extendpols=False)\n')
+						do_uvsub_ankflag(msname,model='junk1.model',nthread=1,verbose=verbose,flagbackup=False,extendpols=False)
+						os.system('rm -rf '+msname+'.backup')
+					except Exception as e:
+						os.system('mv '+msname+'.backup '+msname)
+						logger.error('Error in aNKflagger : '+str(e)+'\n')
+						logger.info('Error in running aNKflagger. Using rms threshold based flagging.\n')
+						logger.info('Performing uvsub flagging due to minimum iteration reached.\n')
+						logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk1.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
+						do_uvsub_flagger(msname,model='junk1.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
+				else:
+					logger.info('Performing uvsub flagging due to minimum iteration reached.\n')
+					logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk1.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
+					do_uvsub_flagger(msname,model='junk1.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
 		
 			############## 
 			# If statement 1 (DR decrease)
@@ -836,6 +857,7 @@ if __name__=='__main__':
 	parser.add_option('--interactive',dest="interactive",default=False,help="Interactive mode",metavar="Boolean")
 	parser.add_option('--fresh',dest="fresh",default=True,help="Start fresh self calibration loop",metavar="Boolean")
 	parser.add_option('--caltables',dest="caltables",default='',help="Previous caltables",metavar="String, comma separated")
+	parser.add_option('--wsclean',dest="use_wsclean",default=True,help="Use WSClean for imaging or not",metavar="Boolean")
 	(options, args) = parser.parse_args()
 	if (os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and eval(str(options.fresh))==True) or \
 		(os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and os.path.isdir(str(options.workdir)+'/junk1.ms')==False and eval(str(options.fresh))==False):
@@ -927,9 +949,9 @@ if __name__=='__main__':
 			os.system('rm -rf '+inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
 		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
 		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
-				+'\',interactive=\''+str(options.interactive)+'\',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)+'\')\n')
+				+'\',interactive=\''+str(options.interactive)+'\',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)+'\',use_wsclean='+str(use_wsclean)+')\n')
 		msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
-				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),caltables=str(options.caltables))
+				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),caltables=str(options.caltables),use_wsclean=eval(str(use_wsclean)))
 		if type(msg)==int:
 			if msg>100:
 				msg1=msg-100

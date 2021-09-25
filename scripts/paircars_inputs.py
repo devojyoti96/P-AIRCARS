@@ -31,13 +31,19 @@ image_delta_freq		=	160.0
 image_delta_time		=	2.0
 image_freq				=	160.0
 image_time				=	0.5
-cpu_frac				=	0.5
+cpu_frac				=	0.7
 do_bandpass				=	True
 do_polcal				=	True
-save_true_loc_image		=	False
 send_notification		=	True
 email					=	'devojyoti96@gmail.com'
 clear_screen			=	False
+use_wsclean				=	True
+savedir			=	''
+savemodel		=	True
+saveresidual	=	True
+cutoutbox		=	'3,3'
+hpc_environment =	False
+
 # Advanced options
 ##################
 # PAIRCARS will run with default options if we do not change these advanced options. 
@@ -61,9 +67,7 @@ min_sigma		=	8.0
 uvrange_to_cal	=	'>10klambda'
 skip_freq		=	160.0
 skip_time		=	2.0
-skip_freq		=	160.0
-skip_time		=	2.0
-gain_minsnr		=	4.0
+gain_minsnr		=	3.0
 DR_delta_rms	=	30.0
 DR_delta_neg	=	30.0
 min_DR			=	35
@@ -76,12 +80,6 @@ max_time_avg	=	10
 #####################
 want_uvsub_flag	=	True
 use_ankflagger	= 	True
-
-# Image export options
-######################
-savedir			=	''
-savemodel		=	False
-saveresidual	=	False
 
 
 

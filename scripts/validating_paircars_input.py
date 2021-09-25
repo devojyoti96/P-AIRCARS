@@ -180,8 +180,8 @@ if __name__=='__main__':
 
 	# Validating ref ant
 	####################
-	if type(ref_ant)==int and ref_ant>20:
-		mainlog.info('Reference antenna was chosen beyond core 20 antennas. Setting it to default value 1.\n')
+	if type(ref_ant)==int and ref_ant>30:
+		mainlog.info('Reference antenna was chosen beyond core 30 antennas. Setting it to default value 1.\n')
 		ref_ant=1
 		for i in range(len(lines)):
 			if 'ref_ant' in lines[i]:
@@ -269,15 +269,6 @@ if __name__=='__main__':
 		if 'do_polcal' in lines[i]:
 			lines[i]='do_polcal\t\t\t\t=\tTrue\n'
 
-	# Validating save_true_loc_image
-	################################
-	if type(save_true_loc_image)!=bool:
-		mainlog.info('save_true_loc_image was not boolean. Setting it to default value False.\n')
-		save_true_loc_image=False
-	for i in range(len(lines)):
-		if 'save_true_loc_image' in lines[i]:
-			lines[i]='save_true_loc_image\t\t=\tFalse\n'
-
 	# Validating send_notification and email address
 	################################################
 	if type(send_notification)!=bool or email=='':
@@ -303,6 +294,21 @@ if __name__=='__main__':
 		for i in range(len(lines)):
 			if 'clear_screen' in lines[i]:
 				lines[i]='clear_screen\t\t\t=\t'+str(clear_screen)+'\n'
+
+
+	# Validating use wsclean
+	########################
+	if type(use_wsclean)!=bool:
+		use_wsclean=True
+	if use_wsclean==True:
+		a=os.system('wsclean > wsclean_test')
+		if a!=0:
+			print('WSClean is not installed. Using CASA for imaging.\n')
+			use_wsclean=False
+		os.system('rm -rf wsclean_test')
+	for i in range(len(lines)):
+		if 'use_wsclean' in lines[i]:
+			lines[i]='use_wsclean\t\t\t\t=\t'+str(use_wsclean)+'\n'		
 
 	# Validating basic imaging parameters
 	######################################
@@ -359,7 +365,7 @@ if __name__=='__main__':
 		#
 		try:
 			start_sigma=float(start_sigma)
-			if start_sigma<8.0 and interactive==False:
+			if start_sigma<7.0 and interactive==False:
 				mainlog.info('Start sigma is very low at :'+str(start_sigma)+'. Setting it to default value 8.0.\n')
 				start_sigma=8.0
 				for i in range(len(lines)):

@@ -102,13 +102,16 @@ def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=
 			os.system('rm -rf '+timechan_dir+'/'+os.path.basename(timechan_ms)+'* '+timechan_dir+'/'+os.path.basename(timechan_ms)+'.flagversions')
 		os.system('mv '+timechan_ms+' '+timechan_dir+'/'+os.path.basename(timechan_ms))
 		return timechan_dir+'/'+os.path.basename(timechan_ms),timechan_dir
-# MPI check
+
+# cpulimit check
 ###########
-def MPI_check():
-	a=subprocess.getstatusoutput('mpirun -h')[0]
-	if a==0:
+def CPULIMIT_check():
+	a=os.system('cpulimit -h > cpulimit_tmp')
+	if a==256:
+		os.system('rm -rf cpulimit_tmp')
 		return 0
 	else:
+		os.system('rm -rf cpulimit_tmp')
 		return 1
 
 def casa_instance_runner(cmd,screen_name,finished_touch_file,prefix_cmds=[]):
@@ -155,8 +158,18 @@ if os.path.isdir(basedir+'/data')==False:
 os.chdir(basedir)
 sys.path.append(basedir)
 import selfcal_inputs as inputs
+if inputs.use_wsclean==True:
+	a=os.system('wsclean > wsclean_test')
+	if a!=0:
+		print('WSClean is not installed. Using CASA for imaging.\n')
+		use_wsclean=False
+	else:
+		use_wsclean=True
+	os.system('rm -rf wsclean_test')
+else:
+	use_wsclean=inputs.use_wsclean
 
-mpi=MPI_check()
+cpulimit_check=CPULIMIT_check()
 
 # Estimating total casa instances
 #################################
@@ -165,7 +178,6 @@ available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
 total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
 if available_cpu_for_paircars>total_cpu_frac:
 	available_cpu_for_paircars=total_cpu_frac
-cpu_sockets =  int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True))
 
 # Logger initiating
 ###################
@@ -580,8 +592,8 @@ if len(measurement_set_list)!=0:
 			os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 			cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 				' --ref_freq_avg 0 --ref_time_avg 0 '+' --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
-				+' --num_threads '+str(available_cpu_for_paircars)+' --cal_attenuation '+str(1.0)+' --scratch True --caltables '+str(','.join(caltable_list))
-																														 # TODO : Change calibrator attenuator
+				+' --num_threads '+str(available_cpu_for_paircars)+' --cal_attenuation '+str(1.0)+' --scratch True --caltables '+str(','.join(caltable_list))+' --wsclean '\
+				+str(use_wsclean)  # TODO : Change calibrator attenuator
 			screen_name=str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'_runpaircars'
 			finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(single_ref_freq_time_ms.split('.ms')[0])
 			screen_batch_file=casa_instance_runner(cmd,screen_name,finished_touch_file)
@@ -653,7 +665,7 @@ if len(measurement_set_list)!=0:
 				os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 				cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 					' --ref_freq_avg 0 --ref_time_avg 0 --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
-					+' --num_threads '+str(available_cpu_for_paircars)+' --scratch True'
+					+' --num_threads '+str(available_cpu_for_paircars)+' --scratch True --wsclean '+str(use_wsclean)
 				mainlog.info('Command : '+cmd+'\n')
 				screen_name=str(single_reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])+'_runpaircars'
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])
@@ -769,12 +781,10 @@ if len(measurement_set_list)!=0:
 	time.sleep(10)
 	result_list=np.load(inputs.basedir+'/Ref_time_freq_slice_output.npy',allow_pickle=True)
 	keys=spawned_ms_jobs.keys()
-	print (keys,result_list)
 	for i in result_list:
 		return_msg,ref_time,ref_chan,spawned_instances,ref_freq_avg,ref_time_avg,ms=i
-		print (ms)
-		#if os.path.basename(ms) not in keys:
-		spawned_ms_jobs[os.path.basename(ms)]=[ref_time,int(ref_chan),int(spawned_instances),float(ref_freq_avg),float(ref_time_avg)]
+		if os.path.basename(ms) not in keys:
+			spawned_ms_jobs[os.path.basename(ms)]=[ref_time,int(ref_chan),int(spawned_instances),float(ref_freq_avg),float(ref_time_avg)]
 
 	mainlog.info('Remaining measurement sets : '+','.join(measurement_set_list)+'\n')
 	os.system('rm -rf '+inputs.basedir+'/Nonref_time_freq_slice_output.npy')
@@ -803,7 +813,7 @@ if len(measurement_set_list)!=0:
 		num_ms_jobs=0
 		for i in range(len(measurement_set_list)):
 			casa_instance=int(available_cpu_for_paircars/2)
-			if mpi==1:
+			if cpulimit_check==1:
 				casa_instance/=2
 			msname=measurement_set_list[i]
 			obsid=ms_OBSIDs_cal[i]
@@ -876,9 +886,9 @@ if len(measurement_set_list)!=0:
 					ms_OBSIDs_bcal.append(ms_obsid)
 				if do_polcal==True:
 					ms_OBSIDs_pcal.append(ms_obsid)
-				cmd='run_paircars --msname '+msname+' --metafits '+metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
-					' --ref_freq_avg '+str(ref_freq_avg)+' --ref_time_avg '+str(ref_time_avg)+' --ref_time_freq False --do_bandpass '+str(do_bandpass)+\
-					' --do_polcal '+str(do_polcal)+' --num_threads '+str(available_cpu_for_paircars)+' --scratch False --caltables '+interpolated_caltable
+				cmd='run_paircars --msname '+msname+' --metafits '+metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+' --ref_freq_avg '+str(ref_freq_avg)+\
+					' --ref_time_avg '+str(ref_time_avg)+' --ref_time_freq False --do_bandpass '+str(do_bandpass)+' --do_polcal '+str(do_polcal)+' --num_threads '+\
+					str(available_cpu_for_paircars)+' --scratch False --caltables '+interpolated_caltable+' --wsclean '+str(use_wsclean)
 				mainlog.info('Command : '+cmd+'\n')
 				screen_name=str(ms_obsid)+'_'+str(os.path.basename(msname).split('.ms')[0])+'_runpaircars'
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(msname).split('.ms')[0])
@@ -927,7 +937,7 @@ if len(measurement_set_list)!=0:
 	# Estimating total casa instances
 	#################################
 	casa_instance=int(available_cpu_for_paircars/2)
-	if mpi==1:
+	if cpulimit_check==1:
 		casa_instance/=2
 	open_casa_instance=0
 	touch_count=0
@@ -936,8 +946,6 @@ if len(measurement_set_list)!=0:
 
 	# Spawning jobs for making final caltables and images
 	#####################################################
-	mpicmd=[]
-	print (spawned_ms_jobs)
 	for msname in ms_list: 
 		metafits=metafits_dic[msname.split('.ms')[0].split('_timesliced')[0].split('_ref')[0]]
 		OBSID=get_OBSID_from_metafits(metafits)
@@ -957,7 +965,7 @@ if len(measurement_set_list)!=0:
 		num_jobs=spawned_ms_jobs[os.path.basename(msname)][2]
 		freq_avg=spawned_ms_jobs[os.path.basename(msname)][3]
 		time_avg=spawned_ms_jobs[os.path.basename(msname)][4]
-		screen_name='screen_'+str(OBSID)+'_ms_'+str(os.path.basename(msname))+'_finalimage'
+		screen_name='screen_'+str(OBSID)+'_ms_'+str(os.path.basename(msname).split('.ms')[0])+'_finalimage'
 		batch_file=inputs.basedir+'/'+screen_name+'.batch'
 		cmd_batch_file=inputs.basedir+'/'+screen_name+'_cmd.batch'
 		cmd='manage_database --msname '+msname+' --metafits '+metafits+' --num_jobs '+str(num_jobs)+' --basedir '+basedir+\
@@ -972,45 +980,23 @@ if len(measurement_set_list)!=0:
 		fil.write(cmd)
 		fil.close()
 		os.system('chmod a+rwx '+batch_file)
-		if mpi==1:
+		if cpulimit_check==0 and use_wsclean==False:
+			screen_cmd='cpulimit --limit '+str((available_cpu_for_paircars*100)-50)+' -z sh '+batch_file
+		else:
 			screen_cmd='sh '+batch_file
-			os.system('screen -S '+screen_name+' -X quit')	
-			time.sleep(0.5)
-			os.system('screen -mdS '+screen_name)
-			time.sleep(0.5)
-			mainlog.info('########################\n')
-			mainlog.info('Made Screen : '+screen_name+'\n')
-			mainlog.info('Command : '+cmd+'\n')
-			os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
-		elif mpi==0:
-			mpicmd.append('-np 1 --bind-to core --map-by ppr:'+str(int(available_cpu_for_paircars))+':node:pe=4 -x OMP_NUM_THREADS='+\
-						str(available_cpu_for_paircars)+' sh '+batch_file+'\n')
-			mpicmd.append('-np 1 sleep 1\n')
+		os.system('screen -S '+screen_name+' -X quit')	
+		time.sleep(0.5)
+		os.system('screen -mdS '+screen_name)
+		time.sleep(0.5)
+		mainlog.info('########################\n')
+		mainlog.info('Made Screen : '+screen_name+'\n')
+		mainlog.info('Command : '+cmd+'\n')
+		os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 	basemsdir=os.path.basename(msname).split('.ms')[0]
 	if updated_MWA_obsids==0:
 		obsid_file,update_msg=update_mwa_obsids()
 		if update_msg==0:
 			updated_MWA_obsids=1
-	if mpi==0:
-		mpicmd_file=inputs.basedir+'/'+basemsdir+'.manage_database_mpicmd'
-		if os.path.exists(mpicmd_file):
-			os.system('rm -rf '+mpicmd_file)
-		mpifil=open(mpicmd_file,'w')
-		mainlog.info('MPI commands .....\n')
-		for i in mpicmd:
-			mainlog.info(i)
-		mpifil.writelines(mpicmd)
-		mpifil.close()
-		os.system('chmod a+rwx '+mpicmd_file)
-		screen_cmd='mpirun --app '+mpicmd_file
-		os.system('screen -S '+basemsdir+'_manage_database -X quit')	
-		time.sleep(0.5)
-		os.system('screen -mdS '+basemsdir+'_manage_database')
-		time.sleep(0.5)
-		mainlog.info('########################\n')
-		mainlog.info('Made Screen : '+basemsdir+'_manage_database\n')
-		mainlog.info('Command : '+cmd+'\n')
-		os.system('screen -S '+basemsdir+'_manage_database -X stuff \"'+screen_cmd+'\n"')	
 	if updated_MWA_obsids==0:
 		obsid_file,update_msg=update_mwa_obsids()
 		if update_msg==0:
