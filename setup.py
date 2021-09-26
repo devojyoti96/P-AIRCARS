@@ -10,27 +10,33 @@ os.system('cp -r scripts/manage_database.py scripts/manage_database')
 os.system('cp -r scripts/parallel_ms_split.py scripts/parallel_ms_split')
 os.system('cp -r scripts/final_imaging.py scripts/final_imaging')
 os.system('cp -r scripts/compress_caltables.py scripts/compress_caltables')
+os.system('cp -r scripts/run_paircars.py scripts/run_paircars')
+os.system('cp -r scripts/start_paircars.py scripts/start_paircars')
+os.system('cp -r scripts/go_paircars.py scripts/go_paircars')
+
 setup(
     name='paircars',
     version='1.1.0',
     packages=['paircars'],
-	package_data={'paircars':['libpaircars.so']},
+    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg']},
     author='Devojyoti Kansabanik',
-    author_email='Andrew.Williams@curtin.edu.au',
+    author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input','scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables'],
+    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
+			'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
+			'scripts/go_paircars'],
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
-os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables')
+os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go_paircars scripts/start_paircars')
 
 setup(
     name='paircars_casatasks',
     version='1.1.0',
     packages=['paircars_casatasks'],
     author='Devojyoti Kansabanik',
-    author_email='Andrew.Williams@curtin.edu.au',
+    author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
@@ -42,9 +48,11 @@ setup(
     packages=['CALIBRATE'],
     package_data={'CALIBRATE':['calibrate_tools/*']},
     author='Devojyoti Kansabanik',
-    author_email='Andrew.Williams@curtin.edu.au',
+    author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
+from paircars.basic_func import update_mwa_obsids
+obsid_file,msg=update_mwa_obsids(verbose=True)
