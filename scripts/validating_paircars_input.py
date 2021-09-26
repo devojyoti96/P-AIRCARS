@@ -615,11 +615,27 @@ if __name__=='__main__':
 	#################################
 	if savedir!='':
 		if os.path.isdir(savedir)==False:
-			mainlog.info('savedir is not present. Setting it to basedir.\n')
-			savedir=basedir
+			mainlog.info('savedir is not present. Making save directory.\n')
+			try:
+				os.makedirs(savedir)
+			except:
+				mainlog.info('Save directory is not made. Settings save directory to base directory.\n')
+				savedir=basedir
 		for i in range(len(lines)):
 			if 'savedir' in lines[i]:
-				lines[i]='savedir\t\t\t=\t'+str(savedir)+'\n'
+				lines[i]='savedir\t\t\t=\t\''+str(savedir)+'\'\n'
+
+	if final_image_dir!='':
+		if os.path.isdir(final_image_dir)==False:
+			mainlog.info('final_image_dir is not present. Making save directory.\n')
+			try:
+				os.makedirs(final_image_dir)
+			except:
+				mainlog.info('Save directory is not made. Settings save directory to base directory.\n')
+				final_image_dir=basedir
+		for i in range(len(lines)):
+			if 'final_image_dir' in lines[i]:
+				lines[i]='final_image_dir\t\t\t=\t\''+str(final_image_dir)+'\'\n'
 
 	if type(savemodel)!=bool:
 		mainlog.info('savemodel was not boolean. Set it default value False.\n')

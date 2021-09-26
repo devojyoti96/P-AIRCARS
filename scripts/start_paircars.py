@@ -1,5 +1,7 @@
-import os,time
-from paircars_inputs import *
+import os,time,sys
+os.chdir(os.getcwd())
+sys.path.append(os.getcwd())
+from selfcal_inputs import *
 from paircars.access_ms import *
 from paircars.basic_func import *
 

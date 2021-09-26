@@ -2,9 +2,9 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
-import os,copy,numpy as np,webbrowser,pickle
+import os,copy,numpy as np,webbrowser,pickle,paircars,glob,time
 from PIL import Image,ImageTk
-imagedir=os.path.abspath(os.path.dirname(__file__))
+imagedir=os.path.abspath(os.path.dirname(paircars.__file__))
 
 class PAIRCARS_inputs:
 	def __init__(self,root):
@@ -408,7 +408,7 @@ class PAIRCARS_inputs:
 		freqintervals=np.linspace(10,30000,int(30000/10))
 		freqintervals=["{:0.1f}".format(i) for i in freqintervals.tolist()]
 		self.freqint=DoubleVar()
-		self.freqint.set(freqintervals[3])
+		self.freqint.set(freqintervals[15])
 		freqint=Label(self.frame1,text='Frequency Interval (kHz)',bg='white',fg='Black',font=('times new roman',15))
 		freqint.place(x=10,y=440)
 		self.freqint_options=ttk.Combobox(self.frame1,textvariable=self.freqint,values=freqintervals,width=6)
@@ -428,7 +428,7 @@ class PAIRCARS_inputs:
 		freqwids=np.linspace(10,320,32)
 		freqwids=["{:0.1f}".format(i) for i in freqwids.tolist()]
 		self.freqwid=DoubleVar()
-		self.freqwid.set(freqwids[3])
+		self.freqwid.set(freqwids[15])
 		freqwid=Label(self.frame1,text='Frequency Width (kHz)',bg='white',fg='Black',font=('times new roman',15))
 		freqwid.place(x=10,y=470)
 		self.freqwid_options=ttk.Combobox(self.frame1,textvariable=self.freqwid,values=freqwids,width=6)
@@ -552,6 +552,31 @@ class PAIRCARS_inputs:
 		self.loadinput_entry.config(fg='gray45')
 		self.loadinput_entry.bind("<FocusIn>",delete_entry)
 		self.loadinput_entry.bind("<FocusOut>",restore_entry)
+
+
+		self.fresh=BooleanVar()
+		self.fresh.set(True)	
+		self.restart=BooleanVar()
+		self.restart.set(False)
+		# Restart
+		def onrestart():
+			if self.restart.get()==True:
+				self.fresh.set(False)
+		def onfresh():
+			if self.fresh.get()==True:
+				self.restart.set(False)
+		restart=Label(self.frame1,text='Restart P-AIRCARS',bg='white',fg='Black',font=('times new roman',15))
+		restart.place(x=10,y=630)	
+		c=Checkbutton(self.frame1,text='',bg='white',fg='Black',font=('times new roman',15),variable=self.restart,command=onrestart,onvalue=True,offvalue=False,\
+				highlightbackground = "white")
+		c.place(x=180,y=630)
+
+		# fresh start
+		fresh=Label(self.frame1,text='Fresh Start P-AIRCARS',bg='white',fg='Black',font=('times new roman',15))
+		fresh.place(x=330,y=630)
+		c=Checkbutton(self.frame1,text='',bg='white',fg='Black',font=('times new roman',15),variable=self.fresh,command=onfresh,onvalue=True,offvalue=False,\
+				highlightbackground = "white")
+		c.place(x=540,y=630)
 
 
 		# Frame 2
@@ -970,14 +995,16 @@ class PAIRCARS_inputs:
 		self.mask_entry.config(fg='black')
 
 	def fileopen1(self):
-		self.loadinput=filedialog.askopenfilename(filetypes =[('P-AIRCARS Input File', '*.paircars')],initialdir=os.getcwd(),title='Choose P-AIRCARS input file')
+		try:
+			self.loadinput=filedialog.askopenfilename(filetypes =[('P-AIRCARS Input File', '*.paircars')],initialdir=os.getcwd(),title='Choose P-AIRCARS input file')
+		except:
+			self.loadinput=''
 		if self.loadinput_entry.get()!='':
 			self.loadinput_entry.delete(0, "end") # delete all the text in the entry
 			self.loadinput_entry.insert(0, '') #Insert blank for user input
 		if self.loadinput!=None:
 			self.loadinput_entry.insert(END,self.loadinput)
 			self.loadinput_entry.config(fg='black')
-			print (self.loadinput)
 			if os.path.exists(self.loadinput)==False:
 				self.loadinput_entry.insert(0,'P-AIRCARS input file does not exists.')
 				self.loadinput_entry.config(fg='gray45')	
@@ -1036,7 +1063,7 @@ class PAIRCARS_inputs:
 				self.cpufrac_options.set(inputdic['cpu_frac'])
 				self.clearscreen.set(inputdic['clear_screen'])
 				self.xcut_entry.delete(0,"end")
-				self.xcut_entry.insert(END,float(inputdic['cutputbox'].split(',')[0]))
+				self.xcut_entry.insert(END,float(inputdic['cutoutbox'].split(',')[0]))
 				self.xcut_entry.config(fg='black')
 				self.savemodel.set(inputdic['savemodel'])
 				self.saveresiduals.set(inputdic['saveresidual'])
@@ -1089,14 +1116,16 @@ class PAIRCARS_inputs:
 			self.loadinput_entry.config(fg='gray45')
 	
 	def getdata(self):
+		if os.path.exists('inputs.py'):
+			os.system('rm -rf inputs.py')
 		fil=open('inputs.py','w')
-		if self.msdir!='Name of the directory of data.....':
+		if self.msdir_entry.get()!='Name of the directory of data.....':
 			msdir=self.msdir_entry.get()
 		else:
 			msdir=''
 		self.msdir_input=msdir
 		fil.write('msdir=\''+msdir+'\'\n')
-		if self.basedir!='Name of the base directory .....':
+		if self.basedir_entry.get()!='Name of the base directory .....':
 			basedir=self.basedir_entry.get()
 		else:
 			basedir=''
@@ -1112,14 +1141,15 @@ class PAIRCARS_inputs:
 		else:
 			chanrange=''
 		fil.write('chanrange=\''+chanrange+'\'\n')
-		if self.fimagedir!='Name of the directory to store final images .....':
+		if self.fimagedir_entry.get()!='Name of the directory to store final images .....':
 			final_image_dir=self.fimagedir_entry.get()
 			savedir=final_image_dir
 		else:
 			final_image_dir=''
-			savedir=final_image_dir
+			savedir=''
 		self.fimagedir_input=final_image_dir
 		fil.write('final_image_dir=\''+final_image_dir+'\'\n')
+		print ('savedir=\''+savedir+'\'\n')
 		fil.write('savedir=\''+savedir+'\'\n')
 		if self.caltable!='/path/to/caltable0,/path/to/caltable1,....':
 			calibrator_caltable=self.cal_entry.get().split(',')
@@ -1180,7 +1210,7 @@ class PAIRCARS_inputs:
 		fil.write('image_freq='+str(image_freq)+'\n')
 		image_time=self.timewid_options.get()
 		fil.write('image_time='+str(image_time)+'\n')
-		cpu_frac=self.cpufrac_options.get()
+		cpu_frac=self.cpufrac_options.get()/100.0
 		fil.write('cpu_frac='+str(cpu_frac)+'\n')
 		clear_screen=self.clearscreen.get()
 		fil.write('clear_screen='+str(clear_screen)+'\n')
@@ -1292,8 +1322,9 @@ class PAIRCARS_inputs:
 	def validate_input(self):
 		self.getdata()
 		self.get_advanced_data()
+		print (self.msdir_input,self.basedir_input,self.fimagedir_input)
 		if self.msdir_input=='' or self.basedir_input=='' or self.fimagedir_input=='':
-			messagebox.showerror("Missing mandatory inputs", "Either data directory, base directory or final image direcory path is missing")	
+			messagebox.showerror("Missing inputs", "Mandatory inputs are missing")	
 			return 1
 		else:	
 			return 0
@@ -1302,6 +1333,12 @@ class PAIRCARS_inputs:
 		validate=self.validate_input()
 		if validate==0:
 			cwd=os.getcwd()
+			if os.path.isdir(self.basedir_input)==False:
+				os.makedirs(self.basedir_input)
+			if self.fresh.get()==True:
+				os.system('rm -rf '+self.basedir_input+'/*')
+			if os.path.exists(self.basedir_input+'/selfcal_inputs.py'):
+				os.system('rm -rf '+self.basedir_input+'/selfcal_inputs.py')
 			a=os.system('cp -r inputs.py '+self.basedir_input+'/selfcal_inputs.py')
 			if os.WEXITSTATUS(a)!=0:
 				messagebox.showerror("Copy error", "Can not copy the input file in base directory. Check the write permission of the base directory.")	
@@ -1319,14 +1356,13 @@ class PAIRCARS_inputs:
 					messagebox.showerror('Data error','Data directory does not exist')
 					os.system('rm -rf inputs.py')
 					return
-				elif os.path.isdir(self.msdir_input):
+				else:	
 					msfiles=glob.glob(self.msdir_input+'/*.ms')
 					if len(msfiles)==0:
 						messagebox.showerror('No data','No measurement set present in data directory')
 						os.system('rm -rf inputs.py')
 						return
-				else:	
-					job_id_file=imagedir+'/job_id.p'
+					job_id_file=os.path.expanduser('~')+'/paircars_job_id.p'
 					job_ids=[]
 					if os.path.isfile(job_id_file)==False:
 						job_id=np.random.randint(100,100000)
@@ -1335,7 +1371,7 @@ class PAIRCARS_inputs:
 					else:
 						job_ids=pickle.load(open(job_id_file,'rb'))
 						while True:
-							job_id=np.random.randint(100,100000)
+							job_id=np.random.randint(10,10000000)
 							if job_id in job_ids:
 								continue
 							else:
@@ -1344,11 +1380,23 @@ class PAIRCARS_inputs:
 								break
 					fil=open(self.basedir_input+'/selfcal_inputs.py','a')
 					fil.write('job_id='+str(job_id)+'\n')
-					messagebox.showinfo('P-AIRCARS','P-AIRCARS has started. \nJob ID : '+str(job_id))
+					self.save_input(savefile=self.basedir+'/inputs.paircars')
+					os.chdir(self.basedir_input)
+					screen_name='P-AIRCARS_mainlog_'+str(job_id)
+					cmd='start_paircars --fresh '+str(self.fresh.get())+' --restart '+str(self.restart.get())
+					os.system('echo "'+cmd+'" > '+screen_name+'.batch')
+					screen_cmd='sh '+screen_name+'.batch'
+					os.system('screen -S '+screen_name+' -X quit')	
+					time.sleep(0.5)
+					os.system('screen -mdS '+screen_name)
+					time.sleep(0.5)
+					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
+					os.chdir(cwd)
 					os.system('rm -rf inputs.py')
+					messagebox.showinfo('P-AIRCARS','P-AIRCARS has started. \nJob ID : '+str(job_id))
 					return
 
-	def save_input(self):
+	def save_input(self,savefile=''):
 		dic={}
 		if self.msdir!='Name of the directory of data.....':
 			dic['msdir']=self.msdir
@@ -1366,8 +1414,8 @@ class PAIRCARS_inputs:
 			dic['chanrange']=self.chanrange_entry.get()
 		else:
 			dic['chanrange']=''
-		if self.fimagedir!='Name of the directory to store final images .....':
-			dic['final_image_dir']=self.fimagedir
+		if self.fimagedir_entry.get()!='Name of the directory to store final images .....':
+			dic['final_image_dir']=self.fimagedir_entry.get()
 			dic['savedir']=dic['final_image_dir']
 		else:
 			dic['final_image_dir']=''
@@ -1457,9 +1505,9 @@ class PAIRCARS_inputs:
 			else:
 				dic['DR_delta_rms']=float(self.drrms_entry.get())
 			if self.drneg_entry.get()=='DR negative step':
-				dic['DR_delta_negative']=30.0
+				dic['DR_delta_neg']=30.0
 			else:
-				dic['DR_delta_negative']=float(self.drneg_entry.get())
+				dic['DR_delta_neg']=float(self.drneg_entry.get())
 			if self.mindr_entry.get()=='Minimum DR':
 				dic['min_DR']=35
 			else:
@@ -1476,9 +1524,17 @@ class PAIRCARS_inputs:
 				dic['extra_time']=5.0
 			else:
 				dic['extra_time']=float(self.extra_entry.get())
-		paircars_input_file=self.save_file()
-		pickle.dump(dic,open(paircars_input_file,'wb'))
-		messagebox.showinfo("Input file save", "Input file saved as : "+paircars_input_file)
+		if savefile=='':
+			paircars_input_file=self.save_file()
+		else:
+			paircars_input_file=savefile
+		try:
+			pickle.dump(dic,open(paircars_input_file,'wb'))
+			if savefile=='':
+				messagebox.showinfo("Input file save", "Input file saved as : "+paircars_input_file)
+		except:
+			if savefile=='':
+				messagebox.showerror("Input file save error", "Could not save input file : "+paircars_input_file)
 		return
 		
 	def save_file(self):
@@ -1489,6 +1545,7 @@ class PAIRCARS_inputs:
 		self.input_file=filedialog.asksaveasfilename(initialfile=save_dir+'/inputs.paircars',defaultextension=".paircars",filetypes=[("P-AIRCARS input","*.paircars")])
 		return self.input_file
 		
+
 if __name__=='__main__':
 	root=Tk()
 	obs=PAIRCARS_inputs(root)
