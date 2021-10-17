@@ -1,0 +1,7 @@
+run\_bandpass\_selfcal module
+=============================
+
+.. automodule:: run_bandpass_selfcal
+   :members:
+   :undoc-members:
+   :show-inheritance:
