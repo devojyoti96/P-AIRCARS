@@ -77,6 +77,9 @@
 \phantomsection\label{\detokenize{index::doc}}
 
 
+\sphinxAtStartPar
+This is the official documentation of the P\sphinxhyphen{}AIRCARS. Source code can be found at : \sphinxurl{https://github.com/devojyoti96/P-AIRCARS.git}
+
 
 \chapter{Introduction}
 \label{\detokenize{intro:introduction}}\label{\detokenize{intro::doc}}
@@ -140,12 +143,29 @@ P\sphinxhyphen{}AIRCARS has been tested on two types of workstations with follow
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {} 
 \sphinxAtStartPar
-Intel Xeon Gold 6138 2 GHz 20C \sphinxhyphen{} 256 GB RAM
+Intel Xeon Gold 6138 2 GHz 40 CPUs \sphinxhyphen{} 256 GB RAM
 
 \sphinxAtStartPar
 4 x 10TB (RAID\sphinxhyphen{}0) 40TB , 2 sets of 3 x 10 TB (RAID\sphinxhyphen{}5) , 2 x 20 TB
 
 \item {} 
+\sphinxAtStartPar
+Boston Intel E5\sphinxhyphen{}2699 v3 2.30GHz, 72 CPUs
+\begin{quote}
+
+\sphinxAtStartPar
+256 GB (8 x 32) RAM \sphinxhyphen{} 2 x 300 GB SSD System
+
+\sphinxAtStartPar
+Data 41 TB (12 x 4 TB SATA with RAID\sphinxhyphen{}5, 256KB stripaize)
+
+\sphinxAtStartPar
+Data1 81 TB (12 x 8 TB SATA with RAID\sphinxhyphen{}5, 512KB stripaize)
+
+\sphinxAtStartPar
+960 GFLOPS
+\end{quote}
+
 \end{enumerate}
 
 
@@ -462,8 +482,145 @@ In this section the details of the P\sphinxhyphen{}AIRCARS inputs are given.
 \sphinxAtStartPar
 \sphinxstylestrong{CPU(\%)} : Percentage of total available cpus to be used. By default it is 50\%.
 
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Clear Virtual SCreens} : Clear the virtual screens opened during the P\sphinxhyphen{}AIRCARS run.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Save models} : If selected, save final model images. By default it is turned off.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Save residuals} : If selected, save final residual images. By default it is turned off.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{XY cutout} : Size of the final image cutout. Default size is 3 degree.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Perform Flagging} : Perform flagging during the calibration or not. By default it is on.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Use aNKflag} : If selected, use aNKflag for flagging. If aNKflag is not installed, do not use.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{HPC environment} : Switch on if running is high performance computing (HPC) environment. When it is on fill the settings for HPC environment.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Input file} : Load the P\sphinxhyphen{}AIRCARS inputs from previous saved P\sphinxhyphen{}AIRCARS input file. Extension of P\sphinxhyphen{}AIRCARS input file is ‘.paircars’. After loading inputs will be filled automatically.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Restart P\sphinxhyphen{}AIRCARS} : Restart P\sphinxhyphen{}AIRCARS from the interupted step. It is off by default.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Fresh start P\sphinxhyphen{}AIRCARS} : Start P\sphinxhyphen{}AIRCARS in fresh. If selected, all previous analysis in the same \sphinxstyleemphasis{Base Directory} will be deleted. By default it is switched on.
+
 \end{enumerate}
 
+
+\section{Advanced Inputs}
+\label{\detokenize{inputs:advanced-inputs}}
+\sphinxAtStartPar
+Advanced input block will be activated when \sphinxstyleemphasis{Auto\sphinxhyphen{}calculate Parameters} is switched off. Use \sphinxstyleemphasis{Advanced Inputs} carefully and suggest to use only by experienced users.
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Pixelsize} : Pixel size of the image in arcsec or arcmin, e.g. ‘20.0arcsec’ or ‘1.0arcmin’.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Number of pixels} : Total number of pixels in the image. Product of \sphinxstyleemphasis{Pixelsize} and \sphinxstyleemphasis{Number of pixels} determine the size of the field\sphinxhyphen{}of\sphinxhyphen{}view.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Multiscale scales} : Multiscale scales in units of number of pixels.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{UV\sphinxhyphen{}taper} : UV taper string in CASA format
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Start Sigma} : Starting value of sigma for rms based thresholding in self\sphinxhyphen{}calibration.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Sigma Step} : Stepsize to reduce the sigma value with self\sphinxhyphen{}calibration iterations.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Minimum Sigma} : Minimum value of sigma to reduce during self\sphinxhyphen{}calibration.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Residual Flux Fraction} : Fraction of flux remained in the residual image to stop the self\sphinxhyphen{}calibration.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{UV range} : UV range in CASA format for self\sphinxhyphen{}calibration.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Skip Frequency} :  Frequency step to skip during calibration. Calibration will be performed after \sphinxstyleemphasis{Skip Frequency} steps.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Skip Time} : Time step to skip during calibration. Calibration will be performed after \sphinxstyleemphasis{Skip Time} steps.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Gain Minimum SNR} : Minimum SNR of the gain solutions to be used. Gain solutions less than minimum SNR will be rejected.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{DR RMS step} : If rms based dynamic range increases less than this value, self\sphinxhyphen{}calibration converged.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{DR Negative step} : If negative based dynamic range increases less than this value, self\sphinxhyphen{}calibration converged.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Minimum DR} : Minimum dynamic range to save a final image.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Maximum DR} : Maximum dynamic range required. If the imaging dynamic range reached this value, self\sphinxhyphen{}calibration stopped.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Minimum Selfcal SNR} : Minimum antenna based SNR required to allow the self\sphinxhyphen{}calibration to start.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Extra time averaging} : If large calibration solutions flagged, average over \sphinxstyleemphasis{Extra time} to gain SNR. The value is in second.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{Maximum  average time} : Maximum allowed value of the \sphinxstyleemphasis{Extra time}.
+
+\end{enumerate}
+
+
+\section{High Performance Computing (HPC) settings}
+\label{\detokenize{inputs:high-performance-computing-hpc-settings}}
+
+\chapter{Robustness and Quality}
+\label{\detokenize{robust_quality:robustness-and-quality}}\label{\detokenize{robust_quality::doc}}
+\sphinxAtStartPar
+In this section two major input parameters for P\sphinxhyphen{}AIRCARS, \sphinxstyleemphasis{Robustness} and \sphinxstyleemphasis{Quality}, will be discussed.
+
+
+\section{Robustness}
+\label{\detokenize{robust_quality:robustness}}
 
 \chapter{paircars}
 \label{\detokenize{modules:paircars}}\label{\detokenize{modules::doc}}
