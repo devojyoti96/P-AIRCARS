@@ -1,0 +1,311 @@
+\begin{sphinxtheindex}
+\let\bigletter\sphinxstyleindexlettergroup
+\let\spxpagem \sphinxstyleindexpagemain
+\let\spxentry \sphinxstyleindexentry
+\let\spxextra \sphinxstyleindexextra
+
+  \bigletter A
+  \item \spxentry{AccessMS}\spxextra{class in paircars.access\_ms}, \hyperpage{11}
+  \item \spxentry{altaz\_to\_radec()}\spxextra{in module paircars.basic\_func}, \hyperpage{19}
+  \item \spxentry{antenna\_string()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{27}
+  \item \spxentry{antenna\_string()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{38}
+  \item \spxentry{apply\_acorr()}\spxextra{in module paircars.decor}, \hyperpage{23}
+  \item \spxentry{apply\_cross\_hand\_phase()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{27}
+
+  \indexspace
+  \bigletter B
+  \item \spxentry{B\_to\_IQUV()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{26}
+  \item \spxentry{bpass\_solver()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{39}
+
+  \indexspace
+  \bigletter C
+  \item \spxentry{cal\_norm\_crosscorr()}\spxextra{paircars.dynamic\_spectrum.DynamicSpectrum method}, 
+		\hyperpage{24}
+  \item \spxentry{cal\_poldistortion()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{27}
+  \item \spxentry{cal\_solar\_phaseshift()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{39}
+  \item \spxentry{cal\_solar\_qu\_leakage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{27}
+  \item \spxentry{cal\_solar\_v\_leakage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{28}
+  \item \spxentry{calc\_bandwidth()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{11}
+  \item \spxentry{calc\_calib\_uvrange()}\spxextra{paircars.basic\_func.ImageBasic method}, 
+		\hyperpage{17}
+  \item \spxentry{calc\_calibration\_params()}\spxextra{paircars.basic\_func.CalcParams method}, 
+		\hyperpage{17}
+  \item \spxentry{calc\_cellsize()}\spxextra{paircars.basic\_func.ImageBasic method}, 
+		\hyperpage{18}
+  \item \spxentry{calc\_dyn\_range()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{28}
+  \item \spxentry{calc\_dyn\_range()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{39}
+  \item \spxentry{calc\_flag\_chans\_caltable()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{19}
+  \item \spxentry{calc\_flag\_fraction()}\spxextra{in module paircars.basic\_func}, \hyperpage{19}
+  \item \spxentry{calc\_flag\_fraction\_caltable()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{19}
+  \item \spxentry{calc\_flagfrac()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{11}
+  \item \spxentry{calc\_freqres()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{11}
+  \item \spxentry{calc\_iter\_num()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{28}
+  \item \spxentry{calc\_iter\_num()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{40}
+  \item \spxentry{calc\_max\_baseline()}\spxextra{paircars.basic\_func.ImageBasic method}, 
+		\hyperpage{18}
+  \item \spxentry{calc\_meanfreq()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{11}
+  \item \spxentry{calc\_meanwavelength()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{11}
+  \item \spxentry{calc\_ncoarse()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{11}
+  \item \spxentry{calc\_psf()}\spxextra{paircars.basic\_func.ImageBasic method}, \hyperpage{18}
+  \item \spxentry{calc\_selfcal\_snr()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{40}
+  \item \spxentry{calc\_suntaper()}\spxextra{paircars.basic\_func.ImageBasic method}, 
+		\hyperpage{18}
+  \item \spxentry{calc\_timeres()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{12}
+  \item \spxentry{calc\_total\_time()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{12}
+  \item \spxentry{calc\_uvtaper()}\spxextra{paircars.basic\_func.ImageBasic method}, \hyperpage{18}
+  \item \spxentry{CalcParams}\spxextra{class in paircars.basic\_func}, \hyperpage{17}
+  \item \spxentry{casa\_instance\_runner()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{19}
+  \item \spxentry{change\_start\_sigma()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{40}
+  \item \spxentry{choose\_scales()}\spxextra{paircars.basic\_func.ImageBasic method}, 
+		\hyperpage{18}
+  \item \spxentry{compare\_leakage\_for\_sun()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{29}
+  \item \spxentry{compare\_leakages()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{29}
+  \item \spxentry{compress\_files()}\spxextra{in module paircars.basic\_func}, \hyperpage{20}
+  \item \spxentry{convert\_mwa\_to\_iau()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{12}
+  \item \spxentry{correct\_for\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{29}
+  \item \spxentry{correct\_image\_for\_cross\_phase()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{30}
+  \item \spxentry{correct\_poldistortion()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{30}
+  \item \spxentry{correct\_solar\_quv\_leakage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{30}
+  \item \spxentry{correct\_visibility\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{31}
+  \item \spxentry{create\_circular\_mask()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{31}
+
+  \indexspace
+  \bigletter D
+  \item \spxentry{decor()}\spxextra{in module paircars.decor}, \hyperpage{23}
+  \item \spxentry{dirty\_image()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{40}
+  \item \spxentry{do\_uvsub\_ankflag()}\spxextra{in module paircars.flagger}, \hyperpage{24}
+  \item \spxentry{do\_uvsub\_flagger()}\spxextra{in module paircars.flagger}, \hyperpage{24}
+  \item \spxentry{download\_metafits()}\spxextra{in module paircars.basic\_func}, \hyperpage{20}
+  \item \spxentry{DR\_delta()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{38}
+  \item \spxentry{DR\_record()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{38}
+  \item \spxentry{DynamicSpectrum}\spxextra{class in paircars.dynamic\_spectrum}, \hyperpage{24}
+
+  \indexspace
+  \bigletter E
+  \item \spxentry{error\_msgs()}\spxextra{in module paircars.basic\_func}, \hyperpage{20}
+  \item \spxentry{estimateSkyBrightnessMatrix()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{31}
+
+  \indexspace
+  \bigletter F
+  \item \spxentry{field\_of\_view()}\spxextra{paircars.basic\_func.ImageBasic method}, 
+		\hyperpage{18}
+  \item \spxentry{file\_remover\_and\_keeper()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{31}
+  \item \spxentry{file\_remover\_and\_keeper()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{41}
+  \item \spxentry{flag\_MWA\_coarse()}\spxextra{in module paircars.flagger}, \hyperpage{25}
+  \item \spxentry{flag\_MWA\_quack()}\spxextra{in module paircars.flagger}, \hyperpage{25}
+  \item \spxentry{freq\_to\_MWA\_coarse()}\spxextra{in module paircars.basic\_func}, \hyperpage{20}
+
+  \indexspace
+  \bigletter G
+  \item \spxentry{get\_altaz()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{12}
+  \item \spxentry{get\_antenna\_id()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{12}
+  \item \spxentry{get\_antenna\_string()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{12}
+  \item \spxentry{get\_available\_paircars\_instance()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{21}
+  \item \spxentry{get\_bad\_ants()}\spxextra{in module paircars.flagger}, \hyperpage{25}
+  \item \spxentry{get\_caltable\_metadata()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{21}
+  \item \spxentry{get\_final\_beam()}\spxextra{in module paircars.basic\_func}, \hyperpage{21}
+  \item \spxentry{get\_flag\_times\_mjd()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{12}
+  \item \spxentry{get\_flag\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{12}
+  \item \spxentry{get\_freqs()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{13}
+  \item \spxentry{get\_inst\_pols()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{32}
+  \item \spxentry{get\_IQUV()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{32}
+  \item \spxentry{get\_listobs()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{13}
+  \item \spxentry{get\_max\_baseline()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{13}
+  \item \spxentry{get\_model\_nomodel\_chan()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{13}
+  \item \spxentry{get\_MWA\_phase()}\spxextra{in module paircars.basic\_func}, \hyperpage{20}
+  \item \spxentry{get\_nbaseline()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{13}
+  \item \spxentry{get\_num\_antenna()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{13}
+  \item \spxentry{get\_num\_channels()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{13}
+  \item \spxentry{get\_num\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{13}
+  \item \spxentry{get\_obs\_startend\_time()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{13}
+  \item \spxentry{get\_observatory\_loc()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{14}
+  \item \spxentry{get\_OBSID\_from\_metafits()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{20}
+  \item \spxentry{get\_OBSID\_from\_ms()}\spxextra{in module paircars.basic\_func}, \hyperpage{21}
+  \item \spxentry{get\_parang()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{14}
+  \item \spxentry{get\_phasecenter()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{14}
+  \item \spxentry{get\_phasecenter\_parang()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{14}
+  \item \spxentry{get\_scan\_startend\_time()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{15}
+  \item \spxentry{get\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{15}
+  \item \spxentry{get\_timestamps\_in\_mjdsecs()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{15}
+  \item \spxentry{get\_unflag\_chan()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{15}
+  \item \spxentry{get\_unflag\_times\_mjd()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{15}
+  \item \spxentry{get\_unflag\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{16}
+  \item \spxentry{getnearpos()}\spxextra{in module paircars.basic\_func}, \hyperpage{21}
+
+  \indexspace
+  \bigletter I
+  \item \spxentry{image\_source\_true\_loc()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{41}
+  \item \spxentry{ImageBasic}\spxextra{class in paircars.basic\_func}, \hyperpage{17}
+  \item \spxentry{IMSTAT\_record()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{26}
+  \item \spxentry{initial\_bpass()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{41}
+  \item \spxentry{IntensitySelfcal}\spxextra{class in paircars.intensity\_selfcal\_LTS}, 
+		\hyperpage{38}
+
+  \indexspace
+  \bigletter M
+  \item \spxentry{make\_antenna\_list()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{16}
+  \item \spxentry{make\_crosshand\_phase\_caltable()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{32}
+  \item \spxentry{mjdsec\_to\_timestamp()}\spxextra{in module paircars.basic\_func}, \hyperpage{21}
+  \item \spxentry{module}
+    \subitem \spxentry{paircars.access\_ms}, \hyperpage{11}
+    \subitem \spxentry{paircars.basic\_func}, \hyperpage{17}
+    \subitem \spxentry{paircars.decor}, \hyperpage{23}
+    \subitem \spxentry{paircars.dynamic\_spectrum}, \hyperpage{24}
+    \subitem \spxentry{paircars.flagger}, \hyperpage{24}
+    \subitem \spxentry{paircars.fullpol\_selfcal\_LTS}, \hyperpage{26}
+    \subitem \spxentry{paircars.intensity\_selfcal\_LTS}, \hyperpage{38}
+  \item \spxentry{move\_phasecenter\_to\_source()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{16}
+  \item \spxentry{move\_phasecenter\_to\_sun()}\spxextra{paircars.access\_ms.AccessMS method}, 
+		\hyperpage{16}
+  \item \spxentry{multifreq\_gaincal\_interpolate()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{22}
+  \item \spxentry{mwa\_solar\_fluxcal()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{32}
+
+  \indexspace
+  \bigletter N
+  \item \spxentry{negative\_box()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{32}
+  \item \spxentry{negative\_box()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{41}
+  \item \spxentry{num\_pixels()}\spxextra{paircars.basic\_func.ImageBasic method}, \hyperpage{19}
+
+  \indexspace
+  \bigletter P
+  \item \spxentry{paircars.access\_ms}
+    \subitem \spxentry{module}, \hyperpage{11}
+  \item \spxentry{paircars.basic\_func}
+    \subitem \spxentry{module}, \hyperpage{17}
+  \item \spxentry{paircars.decor}
+    \subitem \spxentry{module}, \hyperpage{23}
+  \item \spxentry{paircars.dynamic\_spectrum}
+    \subitem \spxentry{module}, \hyperpage{24}
+  \item \spxentry{paircars.flagger}
+    \subitem \spxentry{module}, \hyperpage{24}
+  \item \spxentry{paircars.fullpol\_selfcal\_LTS}
+    \subitem \spxentry{module}, \hyperpage{26}
+  \item \spxentry{paircars.intensity\_selfcal\_LTS}
+    \subitem \spxentry{module}, \hyperpage{38}
+  \item \spxentry{pol\_model\_threshold()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{33}
+  \item \spxentry{PolSelfcal}\spxextra{class in paircars.fullpol\_selfcal\_LTS}, \hyperpage{26}
+  \item \spxentry{polselfcal\_iteration()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{33}
+
+  \indexspace
+  \bigletter R
+  \item \spxentry{radec\_con\_deg\_to\_hhmmss()}\spxextra{in module paircars.basic\_func}, 
+		\hyperpage{22}
+  \item \spxentry{radec\_sun()}\spxextra{paircars.access\_ms.AccessMS method}, \hyperpage{16}
+  \item \spxentry{radec\_to\_altaz()}\spxextra{in module paircars.basic\_func}, \hyperpage{22}
+  \item \spxentry{reduce\_sigma()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{34}
+  \item \spxentry{reduce\_sigma()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{42}
+  \item \spxentry{remove\_model\_negative()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{35}
+  \item \spxentry{remove\_model\_negative()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{42}
+
+  \indexspace
+  \bigletter S
+  \item \spxentry{selfcal\_iteration()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{42}
+  \item \spxentry{shift\_phasecenter()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{43}
+  \item \spxentry{solarcir\_pol\_minimise()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{35}
+  \item \spxentry{solarlin\_pol\_minimise()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{35}
+  \item \spxentry{splited\_ms\_rename()}\spxextra{in module paircars.access\_ms}, \hyperpage{16}
+  \item \spxentry{subtract\_background\_sources()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{35}
+  \item \spxentry{subtract\_leakage\_surface()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{36}
+  \item \spxentry{subtract\_stokesV\_solar\_leakage\_surface()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{36}
+
+  \indexspace
+  \bigletter T
+  \item \spxentry{timestamp\_to\_mjdsec()}\spxextra{in module paircars.basic\_func}, \hyperpage{22}
+
+  \indexspace
+  \bigletter U
+  \item \spxentry{uncorrect\_for\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{36}
+  \item \spxentry{uncorrect\_visibility\_model\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{37}
+  \item \spxentry{uncorrect\_visibility\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{37}
+  \item \spxentry{update\_mwa\_obsids()}\spxextra{in module paircars.basic\_func}, \hyperpage{23}
+
+  \indexspace
+  \bigletter W
+  \item \spxentry{wsclean\_to\_casaimage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}, 
+		\hyperpage{37}
+  \item \spxentry{wsclean\_to\_casaimage()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}, 
+		\hyperpage{43}
+
+\end{sphinxtheindex}

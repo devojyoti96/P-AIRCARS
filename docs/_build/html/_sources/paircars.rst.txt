@@ -1,18 +1,15 @@
-paircars package
-================
+paircars
+========
 
-Submodules
-----------
-
-paircars.access\_ms module
---------------------------
+paircars.access\_ms
+-------------------
 
 .. automodule:: paircars.access_ms
    :members:
    :undoc-members:
    :show-inheritance:
 
-paircars.basic\_func module
+paircars.basic\_func
 ---------------------------
 
 .. automodule:: paircars.basic_func
@@ -20,7 +17,7 @@ paircars.basic\_func module
    :undoc-members:
    :show-inheritance:
 
-paircars.decor module
+paircars.decor
 ---------------------
 
 .. automodule:: paircars.decor
@@ -28,7 +25,7 @@ paircars.decor module
    :undoc-members:
    :show-inheritance:
 
-paircars.dynamic\_spectrum module
+paircars.dynamic\_spectrum
 ---------------------------------
 
 .. automodule:: paircars.dynamic_spectrum
@@ -36,7 +33,7 @@ paircars.dynamic\_spectrum module
    :undoc-members:
    :show-inheritance:
 
-paircars.flagger module
+paircars.flagger
 -----------------------
 
 .. automodule:: paircars.flagger
@@ -44,7 +41,7 @@ paircars.flagger module
    :undoc-members:
    :show-inheritance:
 
-paircars.fullpol\_selfcal\_LTS module
+paircars.fullpol\_selfcal\_LTS
 -------------------------------------
 
 .. automodule:: paircars.fullpol_selfcal_LTS
@@ -52,7 +49,7 @@ paircars.fullpol\_selfcal\_LTS module
    :undoc-members:
    :show-inheritance:
 
-paircars.intensity\_selfcal\_LTS module
+paircars.intensity\_selfcal\_LTS
 ---------------------------------------
 
 .. automodule:: paircars.intensity_selfcal_LTS
@@ -60,18 +57,4 @@ paircars.intensity\_selfcal\_LTS module
    :undoc-members:
    :show-inheritance:
 
-paircars.libpaircars module
----------------------------
 
-.. automodule:: paircars.libpaircars
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: paircars
-   :members:
-   :undoc-members:
-   :show-inheritance:

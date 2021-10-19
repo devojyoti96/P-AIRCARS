@@ -13,8 +13,8 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.append('../paircars')
-
+sys.path.insert(0,os.path.abspath('../paircars'))
+sys.path.insert(0,os.path.abspath('../scripts'))
 # -- Project information -----------------------------------------------------
 
 project = 'P-AIRCARS'
@@ -28,8 +28,7 @@ author = 'Devojyoti Kansabanik'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-]
+    'sphinx.ext.autodoc','sphinx.ext.napoleon']
 
 version=u'1.0.0'
 release=u'1.0.0'
@@ -48,11 +47,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
-
+html_logo='../paircars/mwasun.jpeg'
+htmp_theme_options={'display_version': True}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
 
 
 # -- Extension configuration -------------------------------------------------
