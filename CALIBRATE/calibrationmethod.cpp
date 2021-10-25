@@ -351,9 +351,9 @@ void CalibrationMethod::Execute(double& precisionLimit, size_t& nIter)
 	double d[_nAntenna];
 	std:: fill(d,d+_nAntenna,1.0);
 	double stepsize = 0.5;
-	//double chisq=calculateChisq(_jonesSolutions.data());
-	//double chisq1 =0.0;
-	//double chidiff;
+	double chisq=calculateChisq(_jonesSolutions.data());
+	double chisq1 =0.0;
+	double chidiff;
 	double maxval;
 	double maxfro;
 	ao::uvector<bool> antennaResults(_nAntenna, false);
@@ -425,7 +425,7 @@ void CalibrationMethod::Execute(double& precisionLimit, size_t& nIter)
 		}
 		
 		continueIterating = false;
-		//chidiff= std::abs(chisq-chisq1)/chisq;
+		chidiff= std::abs(chisq-chisq1)/chisq;
 		maxval=my_maxfinder(tempchanges,_nAntenna);
 		maxfro=my_maxfinder(fro,_nAntenna);
 		//std :: cout<<"MAXfro: "<<maxfro<<"\n";

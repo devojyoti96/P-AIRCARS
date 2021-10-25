@@ -1,6 +1,9 @@
-import os,psutil,sys,struct,copy,numpy as np
+import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['OMP_NUM_THREADS'] = '1'
+import psutil,sys,struct,copy,numpy as np
 from datetime import datetime 
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from paircars.access_ms import *
 from paircars.basic_func import *
@@ -48,17 +51,17 @@ class CALIBRATE():
 				return
 			else:
 				ms_dirname=os.path.dirname(os.path.realpath(msname))
-				if os.path.isdir(msname.split('.ms')[0]+'.temp_aocal.ms'):
-					os.system('rm -rf '+msname.split('.ms')[0]+'.temp_aocal.ms')
-				os.system('cp -r '+msname+' '+msname.split('.ms')[0]+'.temp_aocal.ms')
-				msname=msname.split('.ms')[0]+'.temp_aocal.ms'
+				if os.path.isdir(msname.split('.ms')[0]+'.aocal.tempms'):
+					os.system('rm -rf '+msname.split('.ms')[0]+'.aocal.tempms')
+				os.system('cp -r '+msname+' '+msname.split('.ms')[0]+'.aocal.tempms')
+				msname=msname.split('.ms')[0]+'.aocal.tempms'
 			caltable=kwargs['caltable'] # Caltable name
 			
 			AM=AccessMS(msname)
 			freqs=AM.get_freqs()/10**6
 			start_freq=freqs[0]
 			end_freq=freqs[-1]
-			mjdsecs=AM.get_timestamps_in_mjdsecs()
+			mjdsecs=AM.get_timestamps_in_mjdsecs()[0]
 			startmjd=mjdsecs[0]
 			endmjd=mjdsecs[-1]
 			nchan=AM.get_num_channels()
@@ -217,11 +220,11 @@ class CALIBRATE():
 				arg_str+=' -datacolumn DATA'
 				datacolumn='DATA'
 			if ('solmode' not in kwords or 'rmsthresh' not in kwords) or (kwargs['solmode']!='R' or len(kwargs['rmsthresh'])==0): 
-				print ('./calibrate '+arg_str+' '+msname+' '+caltable+'\n')
 				if verbose==False:
 					os.system('./calibrate '+arg_str+' '+msname+' '+caltable+'>'+msname.split('.ms')[0]+'_tmp_calibrate')
 					os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate')
 				else:
+					print ('./calibrate '+arg_str+' '+msname+' '+caltable+'\n')
 					os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
 				bin_data=np.fromfile(caltable,dtype=np.float64)
 				np.save(caltable+'.temp_aocal',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
@@ -232,16 +235,18 @@ class CALIBRATE():
 				rmsthresh=kwargs['rmsthresh']
 				for rms in rmsthresh:
 					c=0
-					print ('Calibrating and flagging on threshold :'+str(rms)+' sigma\n')
+					if verbose:
+						print ('Calibrating and flagging on threshold :'+str(rms)+' sigma\n')
 					bad_ants=self.get_num_flag_baselines(msname,flagfrac=0.8)
 					flagdata(vis=msname,antenna=bad_ants)
-					print ('flagdata(vis=\''+msname+',antenna=\''+bad_ants+'\')')
+					if verbose:
+						print ('flagdata(vis=\''+msname+',antenna=\''+bad_ants+'\')')
 					while c==0:
-						print ('./calibrate '+arg_str+' '+msname+' '+caltable+'\n')
 						if verbose==False:
 							os.system('./calibrate '+arg_str+' '+msname+' '+caltable+'>'+msname.split('.ms')[0]+'_tmp_calibrate')
 							os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate')
 						else:
+							print ('./calibrate '+arg_str+' '+msname+' '+caltable+'\n')
 							os.system('./calibrate '+arg_str+' '+msname+' '+caltable)
 						bin_data=np.fromfile(caltable,dtype=np.float64)
 						np.save(caltable+'.temp_aocal',np.array([bin_data,start_freq,end_freq,startmjd,endmjd,nchan,ntime],dtype='object'))
@@ -340,11 +345,11 @@ class CALIBRATE():
 					dt_string = now.strftime("%d-%m-%Y %H:%M:%S")
 					af.saveflagversion('CALIBRATE_applycal_'+str(version_num),'Flags autosave on '+dt_string)
 					af.done()
-				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable+'\n')
 				if verbose==False:
 					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable+'>'+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
 					os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
 				else:
+					print ('./applysolutions '+arg_str+' '+msname+' '+gaintable+'\n')
 					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
 				tb=table()	
 				tb.open(msname,nomodify=False)
@@ -359,11 +364,11 @@ class CALIBRATE():
 				tb.flush()
 				tb.close()
 			else:		
-				print ('./applysolutions '+arg_str+' '+msname+' '+gaintable+'\n')
 				if verbose==False:
 					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable+'>'+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
 					os.system('rm -rf '+msname.split('.ms')[0]+'_tmp_calibrate_applycal')
 				else:
+					print ('./applysolutions '+arg_str+' '+msname+' '+gaintable+'\n')
 					os.system('./applysolutions '+arg_str+' '+msname+' '+gaintable)
 			os.system('rm -rf casa*log '+original_gaintable+'.temp_aocal_nchan_ntime.bin '+original_gaintable+'.test.npy')
 		os.chdir(cwd)
@@ -484,7 +489,7 @@ class CALIBRATE():
 		Return:
 		Modified caltable		
 		'''
-		print ('Arranging solutions to apply on the ms.........\n')
+		print ('Aranging solutions to apply on the ms.........\n')
 		cwd=os.getcwd()
 		gaintable_path=os.path.dirname(os.path.realpath(caltable))
 		outfile_path=os.path.dirname(outputname)
@@ -493,7 +498,7 @@ class CALIBRATE():
 		ntime=AM.get_num_timestamps()
 		nchan=AM.get_num_channels()
 		nant=AM.get_num_antenna()
-		times=AM.get_timestamps_in_mjdsecs()
+		times=AM.get_timestamps_in_mjdsecs()[0]
 		startmjd=times[0]
 		endmjd=times[-1]
 		freqs=AM.get_freqs()/10**6
@@ -538,10 +543,12 @@ class CALIBRATE():
 				cal_time_diff=np.abs(np.array(cal_times)-mstime)
 				args_time=np.argsort(cal_time_diff)
 				min_cal_time=args_time[0]
+				nearest_cal_time=np.argmin(cal_time_diff)
 				for j in range(nchan):
 					cal_time_diff_copy=copy.deepcopy(cal_time_diff)
 					msfreq=freqs[j]
 					cal_freq_diff=np.abs(np.array(cal_freqs)-msfreq)
+					cal_freq_diff_copy=copy.deepcopy(cal_freq_diff)
 					args_chan=np.argsort(cal_freq_diff)
 					cal_freq_diff_copy=copy.deepcopy(cal_freq_diff)
 					pos_nearest_cal_chan=[]
@@ -569,8 +576,12 @@ class CALIBRATE():
 							else:
 								continue
 					cal_freq_diff_partial=np.abs(np.array(cal_freqs)[pos_nearest_cal_chan]-msfreq)
-					pos=np.where(cal_freq_diff==np.min(cal_freq_diff_partial))
-					new_data[i,:,j,:]=data[nearest_cal_time,:,pos,:]
+					pos=np.where(cal_freq_diff==np.min(cal_freq_diff_partial))[0]
+					if pos>=data.shape[2] and pos>=1:
+						pos=data.shape[2]-1
+					if nearest_cal_time>=data.shape[0] and nearest_cal_time>=1:
+						nearest_cal_time=data.shape[0]-1
+					new_data[i,:,j,:]=data[nearest_cal_time,:,pos,:]					
 		else:
 			new_data=data
 		np.save(caltable+'.test',new_data)	
