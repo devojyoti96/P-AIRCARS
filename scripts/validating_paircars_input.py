@@ -1,6 +1,6 @@
 import os,sys
 sys.path.append(os.getcwd())
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 import selfcal_inputs as inputs
 from selfcal_inputs import *
@@ -12,7 +12,7 @@ from astropy.io import fits
 '''
 Code is written by Devojyoti Kansabanik, 01 Feb, 2021
 
-Code to validate the PAIRCARS input parameters
+Code to validate the P-AIRCARS input parameters
 #######################
 # Here we are validating the user given parameters. 
 # If some parameters are found to be unsuitable, code will take default suitable value or show error and stop.
@@ -20,15 +20,15 @@ Code to validate the PAIRCARS input parameters
 #######################
 '''
 if __name__=='__main__':
-	print ('#######################################\n')
-	print ('Starting PAIRCARS......................\n')
+	print ('\n#######################################\n')
+	print ('Starting P-AIRCARS......................\n')
 	print ('#######################################\n')
 
 	print ('Validating inputs........\n')
 	# Validating basedir path
 	#########################
 	if os.path.isfile('selfcal_inputs.py')==False:
-		print ('Input file does not exist. Exiting PAIRCARS......\n')
+		print ('Input file does not exist. Exiting P-AIRCARS......\n')
 		os.system('rm -rf casa*log')
 		os._exit(1)
 	else:
@@ -43,7 +43,7 @@ if __name__=='__main__':
 				os.system('rm -rf casa*log')
 				os._exit(1)
 		else:
-			print ('Base directory path is empty. Exititng PAIRCARS.....\n')
+			print ('Base directory path is empty. Exititng P-AIRCARS.....\n')
 			os.system('rm -rf casa*log')
 			os._exit(1)
 		
@@ -57,9 +57,6 @@ if __name__=='__main__':
 	if basedir[-1]=='/':
 		basedir=basedir[:-1]
 
-	if os.path.isdir(basedir+'/data')==False:
-		os.makedirs(basedir+'/data')
-
 	# Logger initiating
 	###################
 	formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
@@ -70,47 +67,34 @@ if __name__=='__main__':
 	mainlog.addHandler(console)
 	mainlog.propagate = False
 
-	# Starting PAIRCARS
+	# Starting P-AIRCARS
 	###################
 
 	if os.path.isfile(basedir+'/.paircars_running'):
-		mainlog.error('PAIRCARS is already running in this base directory. Choose a different directory. Exiting PAIRCARS......\n')
+		mainlog.error('P-AIRCARS is already running in this base directory. Choose a different directory. Exiting P-AIRCARS......\n')
 		os.system('rm -rf casa*log')
 		os._exit(1)
 	elif os.path.isfile(basedir+'/.paircars_finished'):
-		mainlog.error('PAIRCARS is already have final results in this base directory.\n')
+		mainlog.error('P-AIRCARS is already have final results in this base directory.\n')
 		want_to_continue=input('Do you want to run it again? Y/y/N/n')
 		if want_to_continue=='Y' or want_to_continue=='y':
-			os.system('mv '+basedir+'/PAIRCARS_mainlog.log temp.log')
+			os.system('mv '+basedir+'/P-AIRCARS_mainlog.log temp.log')
 			os.system('rm -rf '+basedir+'/*')
 			os.system('rm -rf '+basedir+'.paircars_failed')
-			loglist=len(glob.glob(basedir+'/PAIRCARS_mainlog*.log'))
-			os.system('mv temp.log '+basedir+'/PAIRCARS_mainlog_'+str(loglist)+'.log')
-			filehandle=logging.FileHandler(basedir+'/PAIRCARS_mainlog.log')
+			loglist=len(glob.glob(basedir+'/P-AIRCARS_mainlog*.log'))
+			os.system('mv temp.log '+basedir+'/P-AIRCARS_mainlog_'+str(loglist)+'.log')
+			filehandle=logging.FileHandler(basedir+'/P-AIRCARS_mainlog.log')
 			filehandle.setFormatter(formatter)
 			mainlog.addHandler(filehandle)
 		else:
 			mainlog.info('Exiting the code.\n')
 			os.system('rm -rf casa*log')
 			os._exit(1)
-	elif os.path.isfile(basedir+'/.paircars_failed'):
-		mainlog.error('PAIRCARS have failed in this base directory. Cleaning the base directory for fresh start up.\n')
-		os.system('mv '+basedir+'/PAIRCARS_mainlog.log temp.log')
-		file_list=glob.glob(basedir+'/*')
-		loglist=len(glob.glob(basedir+'/PAIRCARS_mainlog*.log'))
-		for f in file_list:
-			if f!=msdir or f!=nasedir+'/data':
-				os.system('rm -rf '+f)
-		os.system('rm -rf '+basedir+'.paircars_failed')
-		os.system('mv temp.log '+basedir+'/PAIRCARS_mainlog_'+str(loglist)+'.log')
-		filehandle=logging.FileHandler(basedir+'/PAIRCARS_mainlog.log')
-		filehandle.setFormatter(formatter)
-		mainlog.addHandler(filehandle)
 	else:
-		filehandle=logging.FileHandler(basedir+'/PAIRCARS_mainlog.log')
+		filehandle=logging.FileHandler(basedir+'/P-AIRCARS_mainlog.log')
 		filehandle.setFormatter(formatter)
 		mainlog.addHandler(filehandle)
-		mainlog.info('Starting PAIRCARS in fresh base directory.\n')
+		mainlog.info('Starting P-AIRCARS in fresh base directory.\n')
 
 
 	# Validating calibrator caltables
@@ -614,25 +598,49 @@ if __name__=='__main__':
 	# Validating image export options
 	#################################
 	if savedir!='':
+		basedir_path=basedir.split('/')
+		if 'basedir_for' in basedir_path[-1]:
+			save_basedir='/'.join(basedir_path[:-1])
+		else:
+			save_basedir=basedir
 		if os.path.isdir(savedir)==False:
 			mainlog.info('savedir is not present. Making save directory.\n')
 			try:
 				os.makedirs(savedir)
 			except:
 				mainlog.info('Save directory is not made. Settings save directory to base directory.\n')
-				savedir=basedir
+				savedir=save_basedir+'/final_images'
+				if os.path.isdir(savedir)==False:
+					os.makedirs(savedir)
+		else:
+			mainlog.info('Setting save directory to base directory.\n')
+			savedir=save_basedir+'/final_images'
+			if os.path.isdir(savedir)==False:
+				os.makedirs(savedir)
 		for i in range(len(lines)):
 			if 'savedir' in lines[i]:
 				lines[i]='savedir\t\t\t=\t\''+str(savedir)+'\'\n'
 
 	if final_image_dir!='':
+		basedir_path=basedir.split('/')
+		if 'basedir_for' in basedir_path[-1]:
+			save_basedir='/'.join(basedir_path[:-1])
+		else:
+			save_basedir=basedir
 		if os.path.isdir(final_image_dir)==False:
 			mainlog.info('final_image_dir is not present. Making save directory.\n')
 			try:
 				os.makedirs(final_image_dir)
 			except:
-				mainlog.info('Save directory is not made. Settings save directory to base directory.\n')
-				final_image_dir=basedir
+				mainlog.info('Save directory is not made. Setting save directory to base directory.\n')
+				final_image_dir=save_basedir+'/final_images'
+				if os.path.isdir(final_image_dir)==False:
+					os.makedirs(final_image_dir)
+		else:
+			mainlog.info('Setting save directory to base directory.\n')
+			final_image_dir=save_basedir+'/final_images'
+			if os.path.isdir(final_image_dir)==False:
+				os.makedirs(final_image_dir)
 		for i in range(len(lines)):
 			if 'final_image_dir' in lines[i]:
 				lines[i]='final_image_dir\t\t\t=\t\''+str(final_image_dir)+'\'\n'

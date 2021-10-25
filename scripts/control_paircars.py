@@ -4,7 +4,7 @@ Code is written by Devojyoti Kansabanik , 28 Jan, 2021
 
 from optparse import OptionParser
 if __name__=='__main__':
-	usage= ' PAIRCARS master controller for each day calibration'
+	usage= ' P-AIRCARS master controller for each day calibration'
 	parser = OptionParser(usage=usage)
 	parser.add_option('--basedir',dest="basedir",default=None,help="Name of base directory for a given day",metavar="Directory path")
 	(options, args) = parser.parse_args()
@@ -16,7 +16,7 @@ a=os.system('validating_paircars_input')
 if os.WEXITSTATUS(a)!=0:
 	os._exit(1)
 from selfcal_inputs import basedir
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 import logging,numpy as np,copy,glob,psutil,time,subprocess,getpass
 from paircars.basic_func import *
@@ -24,11 +24,12 @@ from paircars.access_ms import *
 from paircars.decor import *
 from paircars.flagger import *
 from astropy.io import fits
+from pathlib import Path
 from CALIBRATE.access_calibrate import *
 
 def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=False,input_file='',datacolumn='corrected'):
 	'''
-	Function to split specific time and frequency slice and keep the necessary files in one directory to run the PAIRCARS
+	Function to split specific time and frequency slice and keep the necessary files in one directory to run the P-AIRCARS
 	Parameters:
 	msname = Name of the source measurement set
 	metafits = Name of the metafits file
@@ -114,50 +115,19 @@ def CPULIMIT_check():
 		os.system('rm -rf cpulimit_tmp')
 		return 1
 
-def casa_instance_runner(cmd,screen_name,finished_touch_file,prefix_cmds=[]):
-	'''
-	Function to run a casa instance
-	Parameters:
-	cmd = Command to run
-	screen_name = Name of the screen
-	'''
-	batch_file=inputs.basedir+'/'+screen_name+'.batch'
-	cmd_batch=inputs.basedir+'/'+screen_name+'_cmd.batch'
-	cmd+=';sleep 2 ;if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi'
-	cmd='screen -S '+screen_name+' -X quit; sleep 2; screen -mdS '+screen_name+';sleep 2; echo \"'+cmd+'\" > '+cmd_batch+';sleep 2; chmod a+rwx '+cmd_batch+\
-			'; sleep 2; screen -S '+screen_name+' -X stuff \"sh '+cmd_batch+' \\n\"; sleep 2'
-	cmd=cmd.split(';')
-	cmds=[i+'\n' for i in cmd]
-	if os.path.exists(cmd_batch):
-		os.system('rm -rf '+cmd_batch)
-	if os.path.exists(batch_file):
-		os.system('rm -rf '+batch_file)
-	if os.path.isfile(batch_file):
-		fil=open(batch_file,'r+')
-	else:
-		fil=open(batch_file,'w')
-	if len(prefix_cmds)!=0:
-		fil.writelines(prefix_cmds)
-	fil.writelines(cmds)
-	fil.close()
-	os.system('chmod a+rwx '+batch_file)
-	del cmd,prefix_cmds
-	return inputs.basedir+'/'+screen_name+'.batch'
-
 
 # PAIRCARS master controller
 ############################
-
 basedir=str(options.basedir)
 if basedir[-1]=='/':
 	basedir=basedir[:-1]
 
-if os.path.isdir(basedir+'/data')==False:
-	os.makedirs(basedir+'/data')
-
 os.chdir(basedir)
 sys.path.append(basedir)
 import selfcal_inputs as inputs
+if os.path.isdir(inputs.basedir+'/data')==False:
+	os.makedirs(inputs.basedir+'/data')
+
 if inputs.use_wsclean==True:
 	a=os.system('wsclean > wsclean_test')
 	if a!=0:
@@ -173,11 +143,37 @@ cpulimit_check=CPULIMIT_check()
 
 # Estimating total casa instances
 #################################
-total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
-available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
-total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
-if available_cpu_for_paircars>total_cpu_frac:
-	available_cpu_for_paircars=total_cpu_frac
+available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+
+# Removing screen logs
+######################
+if inputs.basedir[-1]=='/':
+	inputs.basedir=inputs.basedir[:-1]
+paircars_base=os.path.dirname(inputs.basedir)
+if os.path.isdir(paircars_base+'/Logs_and_Errors/')==False:
+	os.makedirs(paircars_base+'/Logs_and_Errors/')
+else:
+	if os.path.isdir(paircars_base+'/Logs_and_Errors/Logs')==False:
+		os.makedirs(paircars_base+'/Logs_and_Errors/Logs')
+	else:
+		log_list=glob.glob(paircars_base+'/Logs_and_Errors/Logs/*')
+		if len(log_list)>0:
+			for logfile in log_list:
+				if 'Control_' in logfile and str(inputs.job_id) in logfile:
+					pass
+				else:
+					os.system('rm -rf '+logfile)
+	if os.path.isdir(paircars_base+'/Logs_and_Errors/Errors')==False:
+		os.makedirs(paircars_base+'/Logs_and_Errors/Errors')
+	else:
+		error_list=glob.glob(paircars_base+'/Logs_and_Errors/Errors/*')
+		if len(error_list)>0:
+			for errorfile in error_list:
+				if 'Control_' in errorfile and str(inputs.job_id) in errorfile:
+					pass
+				else:
+					os.system('rm -rf '+errorfile)
+
 
 # Logger initiating
 ###################
@@ -187,11 +183,12 @@ mainlog.setLevel(logging.DEBUG)
 console=logging.StreamHandler(sys.stdout)
 console.setFormatter(formatter)
 mainlog.addHandler(console)
-filehandle=logging.FileHandler(inputs.basedir+'/PAIRCARS_mainlog.log')
+filehandle=logging.FileHandler(paircars_base+'/Logs_and_Errors/Logs/P-AIRCARS_mainlog_'+str(os.path.basename(inputs.basedir))+'.log')
 filehandle.setFormatter(formatter)
 mainlog.addHandler(filehandle)
 mainlog.propagate = False	
 os.system('touch '+inputs.basedir+'/.paircars_running')
+is_internet=check_internet()
 
 # Deciding bandpass interval
 ############################
@@ -232,7 +229,7 @@ if inputs.timerange!='':
 		l=i.split('~')
 		for j in l:
 			time_list.append(j)
-	timerange_list_mjdsecs=sorted([float("{:.2f}".format(timestamp_to_mjdsec(i,format=2))) for i in time_list])
+	timerange_list_mjdsecs=sorted([float("{:.2f}".format(timestamp_to_mjdsec(i,format=0))) for i in time_list])
 	start_time_mjd=min(timerange_list_mjdsecs)
 	end_time_mjd=max(timerange_list_mjdsecs)
 else:
@@ -277,7 +274,7 @@ metafits_obsids=[int(os.path.basename(x).split('.metafits')[0]) for x in glob.gl
 for i in range(len(measurement_set_list)):
 	msname=measurement_set_list[i]
 	AMtimerange=AccessMS(msname)
-	mjdstamps=AMtimerange.get_timestamps_in_mjdsecs()
+	mjdstamps=AMtimerange.get_timestamps_in_mjdsecs()[0]
 	start_mjdtimestamp=min(mjdstamps)
 	end_mjdtimestamp=max(mjdstamps)
 	allow_ms=False
@@ -300,6 +297,10 @@ for i in range(len(measurement_set_list)):
 				if len(diff_gpstime)!=0:
 					obsid=np.min(np.array(diff_gpstime))
 					ms_OBSIDs.append(obsid)
+				elif is_internet==False:
+					mainlog.info('No local metafits file is present and no internet connection is available to download metafits file.'+\
+									' Either supply metafits file in Data Directory or connect to the internet. Exiting P-AIRCARS....\n')
+					os._exit(0)
 				else:
 					mainlog.info('Trying to download unavailable metafits for OBS ID :'+str(obsid)+' at : '+inputs.basedir+'/data/'+str(obsid)+'.metafits.\n')
 					metafits=download_metafits(msname,inputs.basedir+'/data')
@@ -313,7 +314,7 @@ for i in range(len(measurement_set_list)):
 						mstimes.remove(mstimes[i])
 						mstimes_iso.remove(mstimes_iso[i]) 
 			except:
-				mainlog.info('Could not connect to MWA metadata server. No metafits files are found in local data directory. Exiting PAIRCARS.....\n')
+				mainlog.info('Could not connect to MWA metadata server. No metafits files are found in local data directory. Exiting P-AIRCARS.....\n')
 				os._exit(0)
 		else:
 			ms_OBSIDs.append(obsid)
@@ -369,6 +370,7 @@ ms_gridpoints=[]
 ms_OBSIDs_gcal=[]
 ms_OBSIDs_bcal=[]
 ms_OBSIDs_pcal=[]
+final_image_dic={}
 if len(measurement_set_list)!=0:
 	metafits_dic={}
 	for i in range(len(measurement_set_list)):
@@ -439,17 +441,20 @@ if len(measurement_set_list)!=0:
 
 	screen_list=[os.path.basename(i) for i in glob.glob('/var/run/screen/S-'+str(getpass.getuser())+'/*')]
 	delete_screen_list=[]
-	for i in ms_OBSIDs_cal:
-		for j in screen_list:
-			if str(i)+'_' in j:
-				delete_screen_list.append(j) 
+	for j in screen_list:
+		if str(inputs.job_id) in j and 'P-AIRCARS_mainlog' not in j and 'screen_basedir_for' not in j:
+			delete_screen_list.append(j) 
 	for i in delete_screen_list:
 		os.system('screen -S '+i+' -X quit')
 
 	ref_timechan_done_list=glob.glob(inputs.basedir+'/.ref_timechan_done_*')
 	for i in ref_timechan_done_list:
-		ref_timechan_done_msg=int(i.split('_')[-1])
-		if ref_timechan_done_msg!=0:
+		try:
+			ref_timechan_done_msg=int(i.split('_')[-1])
+			if ref_timechan_done_msg!=0:
+				os.system('rm -rf '+i)
+				ref_timechan_done_list.remove(i)
+		except:
 			os.system('rm -rf '+i)
 			ref_timechan_done_list.remove(i)
 	if len(ref_timechan_done_list)>=2:
@@ -592,11 +597,11 @@ if len(measurement_set_list)!=0:
 			os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 			cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 				' --ref_freq_avg 0 --ref_time_avg 0 '+' --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
-				+' --num_threads '+str(available_cpu_for_paircars)+' --cal_attenuation '+str(1.0)+' --scratch True --caltables '+str(','.join(caltable_list))+' --wsclean '\
-				+str(use_wsclean)  # TODO : Change calibrator attenuator
-			screen_name=str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'_runpaircars'
+				+' --cal_attenuation '+str(1.0)+' --scratch True --caltables '+str(','.join(caltable_list))+' --wsclean '\
+				+str(use_wsclean)+' --cpu_frac '+str(inputs.cpu_frac)  # TODO : Change calibrator attenuator
+			screen_name=str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'_runpaircars_'+str(inputs.job_id)
 			finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(single_ref_freq_time_ms.split('.ms')[0])
-			screen_batch_file=casa_instance_runner(cmd,screen_name,finished_touch_file)
+			screen_batch_file=paircars_instance_runner(cmd,inputs.basedir,inputs.paircars_dir,screen_name,finished_touch_file,inputs.job_id)
 			screen_cmd='sh '+screen_batch_file
 			mainlog.info(screen_cmd+'\n')
 			os.system(screen_cmd)	
@@ -665,11 +670,11 @@ if len(measurement_set_list)!=0:
 				os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 				cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
 					' --ref_freq_avg 0 --ref_time_avg 0 --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
-					+' --num_threads '+str(available_cpu_for_paircars)+' --scratch True --wsclean '+str(use_wsclean)
+					+' --scratch True --wsclean '+str(use_wsclean)+' --cpu_frac '+str(inputs.cpu_frac)
 				mainlog.info('Command : '+cmd+'\n')
-				screen_name=str(single_reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])+'_runpaircars'
+				screen_name=str(single_reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])+'_runpaircars_'+str(inputs.job_id)
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])
-				screen_batch_file=casa_instance_runner(cmd,screen_name,finished_touch_file)
+				screen_batch_file=paircars_instance_runner(cmd,inputs.basedir,inputs.paircars_dir,screen_name,finished_touch_file,inputs.job_id)
 				screen_cmd='sh '+screen_batch_file
 				mainlog.info(screen_cmd+'\n')
 				os.system(screen_cmd)
@@ -812,9 +817,7 @@ if len(measurement_set_list)!=0:
 		c=0
 		num_ms_jobs=0
 		for i in range(len(measurement_set_list)):
-			casa_instance=int(available_cpu_for_paircars/2)
-			if cpulimit_check==1:
-				casa_instance/=2
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 			msname=measurement_set_list[i]
 			obsid=ms_OBSIDs_cal[i]
 			AMms=AccessMS(msname)
@@ -887,12 +890,12 @@ if len(measurement_set_list)!=0:
 				if do_polcal==True:
 					ms_OBSIDs_pcal.append(ms_obsid)
 				cmd='run_paircars --msname '+msname+' --metafits '+metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+' --ref_freq_avg '+str(ref_freq_avg)+\
-					' --ref_time_avg '+str(ref_time_avg)+' --ref_time_freq False --do_bandpass '+str(do_bandpass)+' --do_polcal '+str(do_polcal)+' --num_threads '+\
-					str(available_cpu_for_paircars)+' --scratch False --caltables '+interpolated_caltable+' --wsclean '+str(use_wsclean)
+					' --ref_time_avg '+str(ref_time_avg)+' --ref_time_freq False --do_bandpass '+str(do_bandpass)+' --do_polcal '+str(do_polcal)+\
+					' --scratch False --caltables '+interpolated_caltable+' --wsclean '+str(use_wsclean)+' --cpu_frac '+str(inputs.cpu_frac)
 				mainlog.info('Command : '+cmd+'\n')
-				screen_name=str(ms_obsid)+'_'+str(os.path.basename(msname).split('.ms')[0])+'_runpaircars'
+				screen_name=str(ms_obsid)+'_'+str(os.path.basename(msname).split('.ms')[0])+'_runpaircars_'+str(inputs.job_id)
 				finished_touch_file=inputs.basedir+'/.Finished_runpaircars_'+str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(msname).split('.ms')[0])
-				screen_batch_file=casa_instance_runner(cmd,screen_name,finished_touch_file)
+				screen_batch_file=paircars_instance_runner(cmd,inputs.basedir,inputs.paircars_dir,screen_name,finished_touch_file,inputs.job_id)
 				screen_cmd='sh '+screen_batch_file
 				mainlog.info(screen_cmd+'\n')
 				os.system(screen_cmd)
@@ -909,18 +912,19 @@ if len(measurement_set_list)!=0:
 					num_ms_jobs=+int(BW/skip_freq_pol)
 					spawned_casa_instances+=int(BW/skip_freq_pol)
 				spawned_ms_jobs[os.path.basename(msname)]=[ref_time,int(ref_chan),int(num_ms_jobs),float(ref_freq_avg),float(ref_time_avg)]
-				available_casa_instance=casa_instance-spawned_casa_instances
+				available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 				basemsdir=os.path.basename(msname).split('.ms')[0]
 				touch_file_list=glob.glob(inputs.basedir+'/.Finished_*cal*'+str(obsid)+'*'+basemsdir+'*')
 				c+=1	
 				if c>=len(measurement_set_list):
 					break
 				while True:
-					if available_casa_instance>1:
-						mainlog.info('At least 1 casa instance is available. Spawn new job...\n')
+					if available_paircars_instance>1:
+						print('Available P-AIRCARS instance : '+str(available_paircars_instance)+'\n')
+						mainlog.info('P-AIRCARS instance is available. Spawn new job...\n')
 						break
 					else:
-						available_casa_instance=len(touch_file_list)-len(glob.glob(inputs.basedir+'/.Finished_*cal*'+str(obsid)+'*'+basemsdir+'*'))
+						available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 						time.sleep(10.0)
 						if updated_MWA_obsids==0:
 							obsid_file,update_msg=update_mwa_obsids()
@@ -936,19 +940,29 @@ if len(measurement_set_list)!=0:
 
 	# Estimating total casa instances
 	#################################
-	casa_instance=int(available_cpu_for_paircars/2)
-	if cpulimit_check==1:
-		casa_instance/=2
-	open_casa_instance=0
-	touch_count=0
-	mainlog.info('Available cpus for P-AIRCARS: '+str(available_cpu_for_paircars)+'\n')
-	mainlog.info('Total number of available CASA instances : '+str(casa_instance)+'\n')
+	available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+	mainlog.info('Total number of available CASA instances : '+str(int(inputs.instance))+'\n')
+	mainlog.info('Available P-AIRCARS instances : '+str(int(available_paircars_instance))+'\n')
+	while True:
+		available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+		time.sleep(20)
+		print('Running P-AIRCARS instances : '+str(int(inputs.instance)-int(available_paircars_instance))+'\n')
+		if available_paircars_instance>1:
+			print('Available P-AIRCARS instance : '+str(available_paircars_instance)+'\n')
+			break
 
 	# Spawning jobs for making final caltables and images
 	#####################################################
 	for msname in ms_list: 
 		metafits=metafits_dic[msname.split('.ms')[0].split('_timesliced')[0].split('_ref')[0]]
 		OBSID=get_OBSID_from_metafits(metafits)
+		keys=final_image_dic.keys()
+		if OBSID not in keys:
+			final_image_dic[OBSID]=[msname]
+		else:
+			x=final_image_dic[OBSID]
+			x.append(msname)
+			final_image_dic[OBSID]=x
 		for i in glob.glob(inputs.basedir+'/imagemodels/*'):
 			if i not in ms_OBSIDs_gcal:
 				ms_OBSIDs_gcal.append(int(os.path.basename(i)))
@@ -965,33 +979,39 @@ if len(measurement_set_list)!=0:
 		num_jobs=spawned_ms_jobs[os.path.basename(msname)][2]
 		freq_avg=spawned_ms_jobs[os.path.basename(msname)][3]
 		time_avg=spawned_ms_jobs[os.path.basename(msname)][4]
-		screen_name='screen_'+str(OBSID)+'_ms_'+str(os.path.basename(msname).split('.ms')[0])+'_finalimage'
+		screen_name=str(OBSID)+'_'+str(os.path.basename(msname).split('.ms')[0])+'_final_'+str(inputs.job_id)
 		batch_file=inputs.basedir+'/'+screen_name+'.batch'
 		cmd_batch_file=inputs.basedir+'/'+screen_name+'_cmd.batch'
 		cmd='manage_database --msname '+msname+' --metafits '+metafits+' --num_jobs '+str(num_jobs)+' --basedir '+basedir+\
 			' --gaincal_modeldir '+gaincal_modeldirs+' --bandpass_modeldir '+bandpass_modeldirs+' --polcal_modeldir '+polcal_modeldirs+' --localdatabase '+local_caldatabase+\
 			' --freqavg '+str(freq_avg)+' --timeavg '+str(time_avg)+' --inputfile '+basedir+'/selfcal_inputs.py --verbose '+str(inputs.verbose)
-		cmd='screen -S '+screen_name+' -X quit;sleep 2; screen -mdS '+screen_name+'; sleep 2;echo \"'+cmd+'\" > '+cmd_batch_file+';sleep 2; chmod a+rwx '+cmd_batch_file+\
-			';sleep 2; screen -S '+screen_name+' -X stuff \"'+cmd_batch_file+'\\n\"; sleep 2'
+		outputfile_log=paircars_base+'/Logs_and_Errors/Logs/'+screen_name+'.log'
+		outputfile_error=paircars_base+'/Logs_and_Errors/Errors/'+screen_name+'.error'
+		cmd='echo \"'+cmd+'\" > '+cmd_batch_file+';sleep 2; chmod a+rwx '+cmd_batch_file+'; sleep 2; nohup sh '+cmd_batch_file+' > '+outputfile_log+' 2>'+\
+			outputfile_error+' < /dev/null &; sleep 2'
+		cmd=cmd.split(';')
+		cmds=[i+'\n' for i in cmd]
+		if os.path.exists(cmd_batch_file):
+			os.system('rm -rf '+cmd_batch_file)
+		if os.path.exists(batch_file):
+			os.system('rm -rf '+batch_file)
 		if os.path.isfile(batch_file):
 			fil=open(batch_file,'r+')
 		else:
 			fil=open(batch_file,'w')
-		fil.write(cmd)
+		fil.writelines(cmds)
 		fil.close()
 		os.system('chmod a+rwx '+batch_file)
-		if cpulimit_check==0 and use_wsclean==False:
-			screen_cmd='cpulimit --limit '+str((available_cpu_for_paircars*100)-50)+' -z sh '+batch_file
-		else:
-			screen_cmd='sh '+batch_file
-		os.system('screen -S '+screen_name+' -X quit')	
-		time.sleep(0.5)
-		os.system('screen -mdS '+screen_name)
-		time.sleep(0.5)
-		mainlog.info('########################\n')
-		mainlog.info('Made Screen : '+screen_name+'\n')
-		mainlog.info('Command : '+cmd+'\n')
-		os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
+		screen_cmd='sh '+batch_file
+		os.system(screen_cmd)
+		mainlog.info(screen_cmd+'\n')
+		while True:
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+			time.sleep(20)
+			print('Running P-AIRCARS instances : '+str(int(inputs.instance)-int(available_paircars_instance))+'\n')
+			if available_paircars_instance>1:
+				print('Available P-AIRCARS instance : '+str(available_paircars_instance)+'\n')
+				break
 	basemsdir=os.path.basename(msname).split('.ms')[0]
 	if updated_MWA_obsids==0:
 		obsid_file,update_msg=update_mwa_obsids()
@@ -1010,6 +1030,36 @@ else:
 		mainlog.info('No measurement set is present in the timerange : '+inputs.timerange+'\n')
 	else:
 		mainlog.info('No measurment set is found.\n')
+if inputs.send_notification:
+	keys=final_image_dic.keys()
+	for OBSID in keys:
+		ms_list=final_image_dic[OBSID]
+		cmd='track_final_imaging --basedir '+str(inputs.basedir)+' --savedir '+str(inputs.final_image_dir)+' --num_ms '+str(len(ms_list))+' --OBSID '+str(OBSID)\
+				+' --email '+str(inputs.email)
+		screen_name=str(OBSID)+'_track_final_imaging'
+		outputfile_log=paircars_base+'/Logs_and_Errors/Logs/'+screen_name+'.log'
+		outputfile_error=paircars_base+'/Logs_and_Errors/Errors/'+screen_name+'.error'
+		batch_file=inputs.basedir+'/'+screen_name+'.batch'
+		cmd_batch_file=inputs.basedir+'/'+screen_name+'_cmd.batch'
+		cmd='echo \"'+cmd+'\" > '+cmd_batch_file+';sleep 2; chmod a+rwx '+cmd_batch_file+'; sleep 2; nohup sh '+cmd_batch_file+' > '+outputfile_log+' 2>'+\
+			outputfile_error+' < /dev/null &; sleep 2'
+		cmd=cmd.split(';')
+		cmds=[i+'\n' for i in cmd]
+		if os.path.exists(cmd_batch_file):
+			os.system('rm -rf '+cmd_batch_file)
+		if os.path.exists(batch_file):
+			os.system('rm -rf '+batch_file)
+		if os.path.isfile(batch_file):
+			fil=open(batch_file,'r+')
+		else:
+			fil=open(batch_file,'w')
+		fil.writelines(cmds)
+		fil.close()
+		os.system('chmod a+rwx '+batch_file)
+		screen_cmd='sh '+batch_file
+		os.system(screen_cmd)
+		mainlog.info(screen_cmd+'\n')
+
 # Applying solution to whole ms
 ############################### 
 

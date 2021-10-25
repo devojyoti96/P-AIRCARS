@@ -1,28 +1,42 @@
-import numpy as np,os,psutil,copy,logging
+import os
+import numpy as np,psutil,copy,logging
 from . import access_ms as am
 from datetime import datetime 
 try:
 	from aNKflag import runank
 except:
 	pass
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
+from paircars.access_ms import *
+from astropy.io import fits
 '''
 Code is written by Devojyoti Kansabanik, 26 Jan ,2021
 '''
 
 def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False,flagbackup=True):
 	'''
-	A function to generate the list of coarse-channels edges + the 
+	A function to generate the list of coarse-channels edges and the 
 	central channel in each coarse channel to be flagged.
-	Parameters:
-	msname= Name of the masurement set
-	edgewidth = Flag edge channels width in kHz
-	do_flag = True, If true flag edge channels, otherwise return only the good channels list
-	force = False, If True flag again if even if the flag keyword is in header
-	flagbackup = True, keep flag backup or not
-	Return:
-	Unflagged channels, One central channel per coarse channel
+
+	Parameters
+	----------
+	msname : str 
+		Name of the masurement set
+	edgewidth : float 
+		Flag edge channels width in kHz
+	do_flag : bool 
+		If true flag edge channels, otherwise return only the good channels list
+	force : bool 
+		If True flag again if even if the flag keyword is in header
+	flagbackup : bool
+		Keep flag backup or not
+	Returns
+	-------
+	str
+		Unflagged channels
+	dict
+		One central channel per coarse channel
 	'''
 	# Function is written by Divya Oberoi, 07 Apr, 2016
 	# Modified by Devojyoti Kansabanik, 23 Jan, 2021
@@ -72,18 +86,73 @@ def flag_MWA_coarse(msname,edgewidth=80,do_flag=True,force=False,flagbackup=True
 			print ('Coarse channel edges are already flagged.\n')
 	return CHAN_UNFLAG_STR,channels_per_coarse
 
+def flag_MWA_quack(msname,metafits,quacktime=0.0,flagbackup=False,force=False):
+	'''
+	Function to flag MWA Quack times
 
-def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True): 
+	Parameters
+	----------
+	msname : str 
+		Name of the measurment set
+	metafits : str 
+		Name of the metafits file
+	quacktime : float
+		Quack time
+	flagbackup : bool
+		Backup flags or not
+	force : bool
+		If True flag again if even if the flag keyword is in header
+	Returns
+	-------
+	float
+		Quack time
+	'''
+	AM=AccessMS(msname)
+	timeres=AM.calc_timeres()
+	if timeres<1:
+		timeres=1
+	if quacktime==0:
+		quacktime=float(fits.getheader(metafits)['QUACKTIM'])+timeres
+	code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
+	code_list=code.split(',')
+	if 'QUACK_'+str(quacktime) not in code_list or force==True:
+		flagdata(vis=msname,mode='quack',quackinterval=quacktime,quackmode='beg',flagbackup=flagbackup)
+		flagdata(vis=msname,mode='quack',quackinterval=quacktime,quackmode='endb',flagbackup=flagbackup)
+		if len(code_list)==1 and code_list[0]=='':
+			code+='QUACK_'+str(quacktime)
+		else:
+			code+=',QUACK_'+str(quacktime)
+		vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
+	else:
+		print ('Quack times are already flagged.\n')
+	return quacktime
+
+def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True,extendpols=False,chantime_minfrac=0.5,casaflag=''): 
 	'''
 	Perform flagging on uv sub data using aNKflagger
-	Parameters:
-	msname = Name of the measurement set
-	model = Model image name, Keep blank if model is already in modelcolumn
-	nthread = Number of CPU threads to be used by aNKflag. If 0, it will use 25% of the total available CPU threads.
-	verbose = False, If True keep all records
-	flagbackup = True, Keep flagbackup
-	Return:
-	Flagged measurement set name
+
+	Parameters
+	----------
+	msname : str 
+		Name of the measurement set
+	model : str 
+		Model image name, Keep blank if model is already in modelcolumn
+	nthread : int 
+		Number of CPU threads to be used by aNKflag. If 0, it will use 25% of the total available CPU threads.
+	verbose : bool 
+		If True keep all records
+	flagbackup : bool
+		Keep flagbackup
+	extendpols : bool 
+		Extend flag if one polarisation is flagged
+	chantime_minfrac : float 
+		Minimum fraction of data flagged for a single channel and time to extend the flag
+	casaflag : str 
+		Perform CASA flags ('tfcrop' or 'rflag')
+	Returns
+	-------
+	str
+		Flagged measurement set name
 	'''
 	print ('Using aNKflagger....\n')
 	mdflag=msmetadata()
@@ -107,10 +176,56 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True):
 		ft(vis=msname,model=model,usescratch=True)
 	uvsub(vis=msname,reverse=False)
 	ankflagger=runank.ANKFLAG()
-	print ('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(nbaseline)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\','+\
-		'out_fileformat=\'ms\',automode=True,datacolumn=\'corrected\',verbose=verbose,flagbackup=True,extendpols=True,extendchan=0.0,extendtime=0.0,chantime_flagfrac=0.5)\n')
+	if verbose==True:
+		print ('ankflagger.runankflag('+msname+','+str(nants)+','+str(available_cpus)+','+str(nchan)+','+str(nbaseline)+','+str(ntimes)+','+str(npols)+',inp_fileformat=\'ms\','+\
+		'out_fileformat=\'ms\',automode=True,datacolumn=\'corrected\',verbose=verbose,flagbackup='+str(flagbackup)+',extendpols='+str(extendpols)+\
+		',extendchan=0.0,extendtime=0.0,chantime_flagfrac='+str(chantime_minfrac)+')\n')
 	outfile=ankflagger.runankflag(msname,nants,available_cpus,nchan,nbaseline,ntimes,npols,inp_fileformat='ms',out_fileformat='ms',automode=True,datacolumn='corrected',\
-			verbose=verbose,flagbackup=True,extendpols=False,extendchan=0.0,extendtime=0.0,chantime_flagfrac=0.5)
+			verbose=verbose,flagbackup=flagbackup,extendpols=extendpols,extendchan=0.0,extendtime=0.0,chantime_flagfrac=chantime_minfrac)
+	if casaflag!='' and (casaflag=='rflag' or casaflag=='tfcrop'):
+		if casaflag=='rflag' and (nchan>=30 or ntimes>=30):
+			if nchan<=30:
+				freqdevscale=100000
+				timedevscale=5.0
+			if ntimes<=30:
+				timedevscale=100000
+				freqdevscale=5.0
+			else:
+				freqdevscale=5.0
+				timedevscale=5.0
+			if verbose:
+				print ('flagdata(vis=\''+msname+'\',mode=\'rflag\',datacolumn=\'corrected\',extendflags=False,freqdevscale='+str(freqdevscale)+',timedevscale='+str(timedevscale)+\
+						',flagbackup='+str(flagbackup)+')\n')
+			try:
+				flagdata(vis=msname,mode=casaflag,datacolumn='corrected',extendflags=False,freqdevscale=freqdevscale,timedevscale=timedevscale,flagbackup=flagbackup)
+			except Exception as e:
+				print ('Error occured during CASA flag : '+str(e)+'\n')
+				pass
+		elif casaflag=='tfcrop' and (nchan>=30 or ntimes>=30):
+			if nchan<=30:
+				freqcutoff=100000
+				timecutoff=5.0
+				flagdimension='time'
+			if ntimes<=30:
+				flagdimension='freq'
+				timecutoff=100000
+				freqcutoff=5.0
+			else:
+				flagdimension='freqtime'
+				timecutoff=5.0
+				freqcutoff=5.0
+			if verbose:
+				print ('flagdata(vis=\''+msname+'\',mode=\'tfcrop\',datacolumn=\'corrected\',extendflags=False,freqcutoff='+str(freqcutoff)+',timecutoff='+str(timecutoff)+\
+						',flagdimension=\''+flagdimension+'\',flagbackup='+str(flagbackup)+')\n')
+			try:
+				flagdata(vis=msname,mode=casaflag,datacolumn='corrected',extendflags=False,freqcutoff=freqcutoff,timecutoff=timecutoff,flagdimension=flagdimension,flagbackup=flagbackup)
+			except Exception as e:
+				print ('Error occured during CASA flag : '+str(e)+'\n')
+				pass
+		else:
+			print ('Number of time and frequency slices is less than 30. Do not perform CASA flag.\n')
+	else:
+		print ('CASA flag should be either tfcrop or rflag.\n')
 	uvsub(vis=msname,reverse=True)
 	os.system('rm -rf aNKflagger.log casa*log ankflag.out '+msname.split('.ms')[0]+'.fits')
 	return outfile
@@ -118,13 +233,21 @@ def do_uvsub_ankflag(msname,model='',nthread=0,verbose=False,flagbackup=True):
 def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 	'''
 	Flagger on residual data
-	Parameters:
-	msname = Name of the measurement set
-	model = Name of the model image, keep blank if model is alrealy in modelcolumn
-	rmsthresh = [], rms threshold lists
-	flagbackup = True, keep flagbackup
-	Return:
-	New number of flaggs
+
+	Parameters
+	----------
+	msname : str 
+		Name of the measurement set
+	model : str 
+		Name of the model image, keep blank if model is alrealy in modelcolumn
+	rmsthresh : list
+		List of rms threshold 
+	flagbackup : bool
+		Keep flagbackup
+	Returns
+	-------
+	int
+		New number of flaggs
 	'''
 	tb=table()
 	md=msmetadata()
@@ -141,8 +264,6 @@ def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 		for i in range(nant):
 			antenna+=str(i)+','
 		antenna=antenna[:-1]
-		print ('flagdata(vis=\''+msname+'\',antenna=\''+antenna+'\',spw=\''+unflag_spws+'\',mode=\'unflag\')\n')
-		flagdata(vis=msname,antenna=antenna,spw=unflag_spws,mode='unflag')
 	# Keeping flag backup
 	if flagbackup==True:
 		af=agentflagger()
@@ -224,14 +345,20 @@ def do_uvsub_flagger(msname,model='',mode='',rmsthresh=[],flagbackup=True):
 	os.system('rm -rf casa*log')
 	return (new_flags-old_flags)
 
-def get_num_flag_baselines(msname,flagfrac=0.5):
+def get_bad_ants(msname,flagfrac=1.0):
 	'''
 	Function to get the antennas for which a certain amount of data are flagged
-	Parameters:
-	msname = Name of the measurement set
-	flagfrac = Fraction of data flagged to consider the antennas as bad (default : 0.5)
-	Return:
-	Bad antenna strings
+
+	Parameters
+	----------
+	msname : str 
+		Name of the measurement set
+	flagfrac : float 
+		Fraction of data flagged to consider the antennas as bad (default : 1.0)
+	Returns
+	--------
+	str
+		Bad antenna strings
 	'''
 	mstool=ms()
 	msmd=msmetadata()
@@ -256,67 +383,111 @@ def get_num_flag_baselines(msname,flagfrac=0.5):
 	bad_ants=bad_ants[:-1]
 	return bad_ants
 
-def flagger(msname,rms):
+def flag_zeros(msname,flagbackup=False,force=False):
 	'''
-	Function to flag real and imaginary part of visibility based on rms threshold
-	Parameters:
-	msname = Name of the measurement set
-	rmsthresh = RMS threshold for n-sigma flagging
-	Return:
-	Total flag points, new flag fraction
+	Function to flag zero data
+
+	Parameters
+	----------
+	msname : str
+		Name of the measurement set
+	flagbackup : bool
+		Backup flags or not
+	force : bool
+		Force to flag even if the header saying flagging is already done
 	'''
-	mstool=ms()
-	mstool.open(msname,nomodify=False)
-	res_data=mstool.getdata('residual_data')['residual_data']
-	flag=mstool.getdata('flag')
-	flag_data=flag['flag']
-	pos_flag=np.where(flag_data==True)
-	num_flag=np.nansum(flag_data)
-	res_data[pos_flag]=np.nan
-	xx=res_data[0,:,:]
-	xx_flag=flag_data[0,:,:]
-	xy=res_data[1,:,:]
-	xy_flag=flag_data[1,:,:]
-	yx=res_data[2,:,:]
-	yx_flag=flag_data[2,:,:]
-	yy=res_data[3,:,:]
-	yy_flag=flag_data[3,:,:]
+	code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
+	code_list=code.split(',')
+	if 'ZEROFLAG' not in code_list or force==True:
+		flagdata(vis=msname,mode='clip',clipzeros=True,flagbackup=flagbackup)
+		if len(code_list)==1 and code_list[0]=='':
+			code+='ZEROFLAG'
+		else:
+			code+=',ZEROFLAG'
+		vishead(vis=msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
+	else:
+		print ('Zero data flags are already flagged.\n')
+	return
 
-	sigma_xxre=np.nanstd(np.real(xx))
-	sigma_xxim=np.nanstd(np.imag(xx))
-	sigma_xyre=np.nanstd(np.real(xy))
-	sigma_xyim=np.nanstd(np.imag(xy))
-	sigma_yxre=np.nanstd(np.real(yx))
-	sigma_yxim=np.nanstd(np.imag(yx))
-	sigma_yyre=np.nanstd(np.real(yy))
-	sigma_yyim=np.nanstd(np.imag(yy))
-
-	pos_xxre=np.where(np.real(xx)>rms*sigma_xxre)
-	pos_xxim=np.where(np.imag(xx)>rms*sigma_xxim)
-	pos_xyre=np.where(np.real(xy)>rms*sigma_xyre)
-	pos_xyim=np.where(np.imag(xy)>rms*sigma_xyim)
-	pos_yxre=np.where(np.real(yx)>rms*sigma_yxre)
-	pos_yxim=np.where(np.imag(yx)>rms*sigma_yxim)
-	pos_yyre=np.where(np.real(yy)>rms*sigma_yyre)
-	pos_yyim=np.where(np.imag(yy)>rms*sigma_yyim)
-
-	pos_xx=np.append(pos_xxre,pos_xxim)
-	pos_xy=np.append(pos_xyre,pos_xyim)
-	pos_yx=np.append(pos_yxre,pos_yxim)
-	pos_yy=np.append(pos_yyre,pos_yyim)
-	pos=np.unique(np.append(np.append(np.append(pos_xx,pos_xy),pos_yx),pos_yy))
-	for i in pos:
-			flag_data[:,:,i]=True
-	flag['flag']=flag_data
-	final_num_flag=np.nansum(flag_data)-num_flag
-	mstool.putdata(flag)
-	mstool.close()
-	return final_num_flag
-
-
-
-
-
+def casa_autoflag(msname,mode='rflag',datacolumn='corrected',sigma_thresh=5.0,flagbackup=False,verbose=False):
+	'''
+	Function to perform CASA flag 
+	Parameters
+	----------
+	msname : str
+		Name of the measurement set
+	mode : str
+		CASA flag mode, 'rflag' or 'tfcrop'
+	datacolumn : str
+		Datacolumn to flag, 'data', 'corrected' or 'residual'
+	sigma_thresh : float
+		Flagging threshold
+	flagbackup : bool
+		Backup flags or not
+	verbose : bool
+		Verbose output
+	Returns
+	-------
+	int
+		Success code, 0 or 1
+	'''
+	mdflag=msmetadata()
+	mdflag.open(msname)
+	nants=mdflag.nantennas()
+	nchan=mdflag.nchan(0)
+	nbaseline=mdflag.nbaselines(ac=True)
+	npols=mdflag.ncorrforpol()[0]
+	ntimes=mdflag.timesforfield(0).size
+	mdflag.close()
+	if mode!='' and (mode=='rflag' or mode=='tfcrop'):
+		if mode=='rflag' and (nchan>=10 or ntimes>=10):
+			if nchan<=10:
+				freqdevscale=100000
+				timedevscale=sigma_thresh
+			if ntimes<=10:
+				timedevscale=100000
+				freqdevscale=sigma_thresh
+			else:
+				freqdevscale=sigma_thresh
+				timedevscale=sigma_thresh
+			if verbose:
+				print ('flagdata(vis=\''+msname+'\',mode=\''+str(mode)+'\',datacolumn=\''+datacolumn+'\',extendflags=False,freqdevscale='+\
+				str(freqdevscale)+',timedevscale='+str(timedevscale)+',flagbackup='+str(flagbackup)+')\n')
+			try:
+				flagdata(vis=msname,mode=mode,datacolumn=datacolumn,extendflags=False,freqdevscale=freqdevscale,timedevscale=timedevscale,flagbackup=flagbackup)
+				return 0
+			except Exception as e:
+				print ('Error occured during CASA flag : '+str(e)+'\n')
+				return 1
+				pass
+		elif mode=='tfcrop' and (nchan>=10 or ntimes>=10):
+			if nchan<=10:
+				freqcutoff=100000
+				timecutoff=sigma_thresh
+				flagdimension='time'
+			if ntimes<=10:
+				flagdimension='freq'
+				timecutoff=100000
+				freqcutoff=sigma_thresh
+			else:
+				flagdimension='freqtime'
+				timecutoff=sigma_thresh
+				freqcutoff=sigma_thresh
+			if verbose:
+				print ('flagdata(vis=\''+msname+'\',mode=\''+str(mode)+'\',datacolumn=\''+datacolumn+'\',extendflags=False,freqcutoff='+str(freqcutoff)+',timecutoff='+str(timecutoff)+\
+						',flagdimension=\''+flagdimension+'\',flagbackup='+str(flagbackup)+')\n')
+			try:
+				flagdata(vis=msname,mode=mode,datacolumn=datacolumn,extendflags=False,freqcutoff=freqcutoff,timecutoff=timecutoff,flagdimension=flagdimension,flagbackup=flagbackup)
+				return 0
+			except Exception as e:
+				print ('Error occured during CASA flag : '+str(e)+'\n')
+				return 1
+		else:
+			print ('Number of time and frequency slices is less than 10. Do not perform CASA flag.\n')
+			return 1
+	else:
+		print ('CASA flag should be either tfcrop or rflag.\n')
+		return 1
 
 
 

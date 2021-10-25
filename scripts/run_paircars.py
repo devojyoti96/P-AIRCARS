@@ -1,9 +1,9 @@
 '''
 Code is written by Devojyoti Kansabanik , 28 Jan, 2021
 '''
-
 from optparse import OptionParser
-import os,sys
+import os,sys,psutil
+from pathlib import Path
 if __name__=='__main__':
 	usage= ' Perform self calibration of a single time and frequency slice'
 	parser = OptionParser(usage=usage)
@@ -17,18 +17,25 @@ if __name__=='__main__':
 	parser.add_option('--do_bandpass',dest="do_bandpass",default=True,help="Perform bandpass calibration or not",metavar="Boolean")
 	parser.add_option('--do_polcal',dest="do_polcal",default=True,help="Perform polarisation calibration or not",metavar="Boolean")
 	parser.add_option('--cal_attenuation',dest="calatten",default=1.0,help="Attenuation in dB for calibrator observation",metavar="Float")
-	parser.add_option('--num_threads',dest="num_threads",default=0,help="Number of processing threads to use",metavar="Integer")
 	parser.add_option('--caltables',dest="caltables",default=None,help="Previous calibration tables",metavar="Comma separated string")
 	parser.add_option('--scratch',dest="scratch",default=None,help="Start from scratch or not for reference time frequency slice",metavar="Boolean")
 	parser.add_option('--wsclean',dest="use_wsclean",default=True,help="Use WSClean for imaging or not",metavar="Boolean")
+	parser.add_option('--cpu_frac',dest='cpu_frac',default=0.5,help='Fraction of cpu to use',metavar="Float")
 	(options, args) = parser.parse_args()
 	if options.scratch==None:
 		options.scratch=True
 
+while True:
+	available_cpu=int(psutil.cpu_count()*(1-(psutil.cpu_percent()/100.0))*float(options.cpu_frac))
+	if available_cpu>0:
+		break
+os.environ['OPENBLAS_NUM_THREADS'] = str(available_cpu)
+os.environ['OMP_NUM_THREADS'] = str(available_cpu)
+
 os.chdir(options.basedir)
 sys.path.append(os.getcwd())
 from selfcal_inputs import basedir
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 import logging,numpy as np,copy,glob,psutil,time,subprocess,getpass
 from paircars.basic_func import *
@@ -183,37 +190,7 @@ def CPULIMIT_check():
 		os.system('rm -rf cpulimit_tmp')
 		return 1
 
-def casa_instance_runner(cmd,basedir,screen_name,finished_touch_file,prefix_cmds=[]):
-	'''
-	Function to run a casa instance
-	Parameters:
-	cmd = Command to run
-	screen_name = Name of the screen
-	'''
-	batch_file=basedir+'/'+screen_name+'.batch'
-	cmd_batch=basedir+'/'+screen_name+'_cmd.batch'
-	cmd+=';sleep 2 ;if ! ls '+finished_touch_file+'_* ; then  touch '+finished_touch_file+'_error ;  fi'
-	cmd='screen -S '+screen_name+' -X quit; sleep 2; screen -mdS '+screen_name+';sleep 2; echo \"'+cmd+'\" > '+cmd_batch+';sleep 2; chmod a+rwx '+cmd_batch+\
-			'; sleep 2; screen -S '+screen_name+' -X stuff \"sh '+cmd_batch+' \\n\"; sleep 2'
-	cmd=cmd.split(';')
-	cmds=[i+'\n' for i in cmd]
-	if os.path.exists(cmd_batch):
-		os.system('rm -rf '+cmd_batch)
-	if os.path.exists(batch_file):
-		os.system('rm -rf '+batch_file)
-	if os.path.isfile(batch_file):
-		fil=open(batch_file,'r+')
-	else:
-		fil=open(batch_file,'w')
-	if len(prefix_cmds)!=0:
-		fil.writelines(prefix_cmds)
-	fil.writelines(cmds)
-	fil.close()
-	os.system('chmod a+rwx '+batch_file)
-	del cmd,prefix_cmds
-	return basedir+'/'+screen_name+'.batch'
-
-def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_time_freq=False,do_bandpass=False,do_polcal=False,calatten=1.0,num_threads=0,scratch=True,\
+def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_time_freq=False,do_bandpass=False,do_polcal=False,calatten=1.0,scratch=True,\
 					calibrator_caltable=[],use_wsclean=True): #TODO: XY phasecal
 	'''
 	Function to run paircars on a measurement set
@@ -242,25 +219,22 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	inttime=float(fits.getheader(metafits)['INTTIME'])/2
 	AM=AccessMS(msname)
 	antenna=AM.get_antenna_string()
-	unflagchan,flagchan=flag_MWA_coarse(msname,edgewidth=160,do_flag=False,force=False)
+	unflagchan,flagchan=flag_MWA_coarse(msname,edgewidth=280,do_flag=False,force=False)
 	ms_mainlog.info('flagdata(vis=\''+msname+'\',mode=\'unflag\',spw=\''+unflagchan+'\',antenna=\''+antenna+'\')\n')
 	flagdata(vis=msname,mode='unflag',spw=unflagchan,antenna=antenna)
-	cpu_sockets =  int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True))
-
-	open_casa_instance=0
+	available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 	ms_obsid=get_OBSID_from_metafits(metafits)
 	obs_atten=float(fits.getheader(metafits)['ATTEN_DB'])
 	basemsdir=os.path.basename(msname).split('.ms')[0]
-
+	open_casa_instance=0
 	last_selfcal_msg=1
 	ref_time_freq_copy=copy.deepcopy(ref_time_freq)
 	try:
-		last_selfcal_msg,ref_time,ref_freq,ref_chan,spawned_casa_instances,ref_freq_avg,ref_time_avg=np.load(basedir+'/Ref_time_cal_record.npy')
+		last_selfcal_msg,ref_time,ref_freq,ref_chan,ref_freq_avg,ref_time_avg=np.load(basedir+'/Ref_time_cal_record.npy')
 		last_selfcal_msg=int(last_selfcal_msg)
 		ref_time=str(ref_time)
 		ref_chan=int(ref_chan)
 		ref_freq=float(ref_freq)
-		spawned_casa_instances=int(spawned_casa_instances)
 		ref_freq_avg=float(ref_freq_avg)
 		ref_time_avg=float(ref_time_avg)
 		if last_selfcal_msg==1:
@@ -532,17 +506,19 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 	# Flagging coarse channel edges and center
 	##########################################
-	ms_mainlog.info('flag_MWA_coarse(\''+msname+'\',edgewidth=160,do_flag=True)\n')
-	good_channels,channel_per_coarse=flag_MWA_coarse(msname,edgewidth=160,do_flag=True)
+	ms_mainlog.info('flag_MWA_coarse(\''+msname+'\',edgewidth=280,do_flag=True,force=True)\n')
+	good_channels,channel_per_coarse=flag_MWA_coarse(msname,edgewidth=280,do_flag=True,force=True)
 	unflag_channels=np.array(AM.get_unflag_chan(flagfrac=1))
 	new_chan_list=np.array(new_chan_list.split(','),dtype='int')
 	new_unflag_chan_list=np.intersect1d(unflag_channels,new_chan_list)
 	start_chan=np.min(new_unflag_chan_list)
 	end_chan=np.max(new_unflag_chan_list)
 	ms_mainlog.info('Flagging QUACK times.\n')
-	quacktime=flag_MWA_quack(msname,metafits)
-	ms_mainlog.info('flag_MWA_quack(\''+msname+'\',\''+metafits+'\')\n')
+	ms_mainlog.info('flag_MWA_quack(\''+msname+'\',\''+metafits+'\',force=True)\n')
+	quacktime=flag_MWA_quack(msname,metafits,force=True)
 	ms_mainlog.info('Flagged '+str(quacktime)+' s at beginning and end.\n')
+	ms_mainlog.info('flag_zeros(\''+msname+'\',flagbackup=False)\n')
+	flag_zeros(msname,flagbackup=False)
 
 	# Spliting timeranges for reference times
 	#########################################
@@ -615,12 +591,11 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					msg-=100
 				if msg!=0 and msg!=9:
 					os.system('rm -rf '+t)
-
-	ref_time_chan_loop_count=0 # Counter for total number of referece time channel image
-
 	spawned_casa_instances=len(glob.glob(basedir+'/.Finished*cal*'+str(ms_obsid)+'*'+basemsdir+'*/*'+os.path.basename(msname).split('.ms')[0]+'*'))
 																				 # Total casa instances already spawned or done
 	cur_spawned_casa_instances=spawned_casa_instances
+
+	ref_time_chan_loop_count=0 # Counter for total number of referece time channel image
 	pass_flag=False # Pass the while loop if True and failed to selfcal with all time and frequency averaging
 	try_reduce_flag=True # Try to reduce flag solutions by increasing time averaging
 	reduce_moreflag=True # Try to reduce more number of solutions flag
@@ -663,7 +638,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						str(chan_width)+',timerange=\''+new_timerange+'\',timebin=\''+str(ref_time_avg)+'s\',datacolumn=\'data\')\n')
 			split(vis=ref_timesliced_measurement_set,outputvis=ref_averaged_msname,width=chan_width,timerange=new_timerange,timebin=str(ref_time_avg)+'s',datacolumn='data')
 			if ref_time_freq==True:
-				np.save(basedir+'/Ref_time_cal_record',np.array([0,ref_time,ref_freq,ref_chan,cur_spawned_casa_instances,ref_freq_avg,ref_time_avg]))
+				np.save(basedir+'/Ref_time_cal_record',np.array([0,ref_time,ref_freq,ref_chan,ref_freq_avg,ref_time_avg]))
 			do_averaging=True
 		else:
 			ms_mainlog.info('No averaging is required.\n')
@@ -680,7 +655,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				os.unlink(ref_averaged_msname)
 			os.system('ln -s '+ref_timesliced_measurement_set+' '+ref_averaged_msname)
 			if ref_time_freq==True:
-				np.save(basedir+'/Ref_time_cal_record',np.array([0,ref_time,ref_freq,ref_chan,cur_spawned_casa_instances,ref_freq_avg,ref_time_avg]))
+				np.save(basedir+'/Ref_time_cal_record',np.array([0,ref_time,ref_freq,ref_chan,ref_freq_avg,ref_time_avg]))
 
 		AMref=AccessMS(ref_averaged_msname)
 		# Making reference time and channel and time frequency grid
@@ -758,24 +733,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 		ms_mainlog.info('Reference frequency : '+str(ref_freqs[ref_chan])+' MHz.\n')
 		ms_mainlog.info('Reference time : '+str(ref_time)+'\n')
 
-		# Estimating total casa instances
-		#################################
-		if num_threads==0:
-			total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
-			available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
-			total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
-			if available_cpu_for_paircars>total_cpu_frac:
-				available_cpu_for_paircars=total_cpu_frac
-		else:
-			available_cpu_for_paircars=num_threads
-		casa_instance=int(available_cpu_for_paircars/3)
-		if cpulimit_check==1: # If cpulimit is not available could not restrict cpu usuage, thus using half of the available casa instances
-			casa_instance/=2
-		if casa_instance<1:
-			casa_instance=1
-		touch_count=0
-		ms_mainlog.info('Available cpus for P-AIRCARS: '+str(available_cpu_for_paircars)+'\n')
-		ms_mainlog.info('Total number of available CASA instances : '+str(casa_instance)+'\n')
+		ms_mainlog.info('Total number of available P-AIRCARS instances : '+str(inputs.instance)+'\n')
+		ms_mainlog.info('Available P-AIRCARS instances : '+str(available_paircars_instance)+'\n')
 
 		# Spliting ref time chan ms
 		###########################
@@ -851,21 +810,15 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				else:
 					cmd='run_intensity_selfcal --msname '+ref_timechan_ms+' --metafits '+metafits+' --workdir '+cur_workdir+' --dopoint True --verbose '+str(inputs.verbose)+\
 						' --interactive '+str(inputs.interactive)+' --reduce_flags '+str(reduce_moreflag)+' --fresh '+str(fresh)+' --scratch '+str(scratch)+' --wsclean '+str(use_wsclean)
-				screen_name=str(ms_obsid)+'_'+os.path.basename(ref_timechan_ms).split('.ms')[0]+'_screen_refG'
+				screen_name=str(ms_obsid)+'_'+os.path.basename(ref_timechan_ms).split('.ms')[0]+'_G_'+str(inputs.job_id)
 				finished_touch_file=basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(ref_timechan_ms)
-				screen_batch_file=casa_instance_runner(cmd,basedir,screen_name,finished_touch_file)
-				if cpulimit_check==0 and use_wsclean==False: # If cpulimit is not available spawned screens serially
-					screen_cmd='cpulimit --limit '+str(250)+' -z sh '+screen_batch_file+'\n'
+				screen_batch_file=paircars_instance_runner(cmd,basedir,inputs.paircars_dir,screen_name,finished_touch_file,inputs.job_id)
+				if cpulimit_check==0 and use_wsclean==False: 
+					screen_cmd='cpulimit --limit '+str(500)+' -z sh '+screen_batch_file+'\n'
 				else:
 					screen_cmd='sh '+screen_batch_file+'\n'
-				os.system('screen -S '+screen_name+' -X quit')	
-				time.sleep(0.5)
-				os.system('screen -mdS '+screen_name)
-				time.sleep(0.5)
-				ms_mainlog.info('########################\n')
-				ms_mainlog.info('Made Screen : '+screen_name+'\n')
-				ms_mainlog.info('Command : '+cmd+'\n')
-				os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
+				os.system(screen_cmd)
+				time.sleep(1.0)
 				ms_mainlog.info('Self calibration for ms : '+ref_timechan_ms+' is spawned in screen : '+screen_name+'\n')
 				ms_mainlog.info('Waiting to finish self calibration for reference time frequency ms :'+ref_timechan_ms+'................\n') 
 				while True:
@@ -1435,22 +1388,9 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 
 	# Estimating total casa instances
 	#################################
-	if num_threads==0:
-		total_available_cpu=psutil.cpu_count()-(psutil.cpu_count()*psutil.cpu_percent()/100.0)
-		available_cpu_for_paircars=int(total_available_cpu*inputs.cpu_frac)
-		total_cpu_frac=int(psutil.cpu_count()*inputs.cpu_frac)
-		if available_cpu_for_paircars>total_cpu_frac:
-			available_cpu_for_paircars=total_cpu_frac
-	else:
-		available_cpu_for_paircars=num_threads
-	casa_instance=int(available_cpu_for_paircars/2)
-	if cpulimit_check==1:
-		casa_instance/=2
-	if casa_instance<1:
-		casa_instance=1
-	touch_count=0
-	ms_mainlog.info('Available cpus for P-AIRCARS: '+str(available_cpu_for_paircars)+'\n')
-	ms_mainlog.info('Total number of available CASA instances : '+str(casa_instance)+'\n')
+	available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+	ms_mainlog.info('Total number of available P-AIRCARS instances : '+str(inputs.instance)+'\n')
+	ms_mainlog.info('Available P-AIRCARS instances : '+str(available_paircars_instance)+'\n')
 
 	# Spliting gaincal measurement set
 	##################################
@@ -1476,41 +1416,35 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				cmd='run_intensity_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --dopoint True --verbose '+str(inputs.verbose)+\
 					' --interactive '+str(inputs.interactive)+' --fresh True --reduce_flags True --caltables '+calstring+' --scratch False --wsclean '+str(use_wsclean)
 				gaincal_cmd_list.append(cmd)
-				gaincal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_G')
+				gaincal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_G_'+str(inputs.job_id))
 				gaincal_finished_file_list.append(basedir+'/.Finished_gcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
 		while len(gaincal_cmd_list)!=0:  # Loop while all gaincal cmds are spawned
 			touch_file_list=glob.glob(basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			if (len(touch_file_list)-touch_count)>0:
-				if open_casa_instance>1:
-					open_casa_instance-=(len(touch_file_list)-touch_count)
-					ms_mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')
-			while len(gaincal_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+			if available_paircars_instance>1:
+				ms_mainlog.info('New P-AIRCARS instance available : '+str(available_paircars_instance)+'\n')
+			while len(gaincal_screen_list)!=0 and available_paircars_instance>=1:
 				screen_name=gaincal_screen_list[0]
 				cmd=gaincal_cmd_list[0]
 				finished_file=gaincal_finished_file_list[0]
-				screen_batch_file=casa_instance_runner(cmd,basedir,screen_name,finished_file)
+				screen_batch_file=paircars_instance_runner(cmd,basedir,inputs.paircars_dir,screen_name,finished_file,inputs.job_id)
 				batch_file_list.append(screen_batch_file)
-				touch_count+=1
 				if cpulimit_check==0 and use_wsclean==False:
-					screen_cmd='cpulimit --limit '+str(250)+' -z sh '+screen_batch_file+'\n'
+					screen_cmd='cpulimit --limit '+str(300)+' -z sh '+screen_batch_file+'\n'
 				else:
 					screen_cmd='sh '+screen_batch_file
-				os.system('screen -S '+screen_name+' -X quit')	
-				time.sleep(0.5)
-				os.system('screen -mdS '+screen_name)
-				time.sleep(0.5)
-				ms_mainlog.info('########################\n')
-				ms_mainlog.info('Made Screen : '+screen_name+'\n')
-				ms_mainlog.info('Command : '+cmd+'\n')
-				os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')						
+				os.system(screen_cmd)	
+				time.sleep(1)			
 				open_casa_instance+=1
 				cur_spawned_casa_instances+=1
 				gaincal_screen_list.remove(screen_name)
 				gaincal_cmd_list.remove(cmd)
 				gaincal_finished_file_list.remove(finished_file)
-				if open_casa_instance>=casa_instance or len(gaincal_screen_list)==0:
-					ms_mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')
+				available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+				if available_paircars_instance<=0 or len(gaincal_screen_list)==0:
+					ms_mainlog.info('Maximum P-AIRCARS instances spawned. Waiting for complete those jobs.\n')
 			time.sleep(2.0)			
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 		ms_mainlog.info('All gaincal jobs are spawned.\n')
 	else:
 		ms_mainlog.info('No timestamp is left for calibration.\n')
@@ -1597,7 +1531,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 				cmd='run_bandpass_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+\
 				' --verbose '+str(inputs.verbose)+' --interactive '+str(inputs.interactive)+' --fresh True --wsclean '+str(use_wsclean)
 				bandpass_cmd_list.append(cmd)
-				bandpass_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_B')
+				bandpass_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_B_'+str(inputs.job_id))
 				bandpass_finished_file_list.append(basedir+'/.Finished_bcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
 			if end_chan>=nchan:
 				break
@@ -1611,40 +1545,34 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			bandpass_finished_file_list=[]
 			finished_bandpass=True
 		else:
-			ms_mainlog.info('Waiting for available casa instance.....\n')
+			ms_mainlog.info('Waiting for available P-AIRCARS instance.....\n')
 		while finished_bandpass==False:
 			touch_file_list=glob.glob(basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			if (len(touch_file_list)-touch_count)>0:
-				if open_casa_instance>1:
-					open_casa_instance-=(len(touch_file_list)-touch_count)
-					ms_mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')		
-			while len(bandpass_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+			if available_paircars_instance>1:
+				ms_mainlog.info('New P-AIRCARS instance available : '+str(available_paircars_instance)+'\n')		
+			while len(bandpass_screen_list)!=0 and available_paircars_instance>=1:
 				screen_name=bandpass_screen_list[0]
 				cmd=bandpass_cmd_list[0]
 				finished_file=bandpass_finished_file_list[0]
-				screen_batch_file=casa_instance_runner(cmd,basedir,screen_name,finished_file)
-				touch_count+=1
+				screen_batch_file=paircars_instance_runner(cmd,basedir,inputs.paircars_dir,screen_name,finished_file,inputs.job_id)
 				if use_wsclean==False and cpulimit_check==0:
-					screen_cmd='cpulimit --limit '+str(250)+' -z sh '+screen_batch_file
+					screen_cmd='cpulimit --limit '+str(300)+' -z sh '+screen_batch_file
 				else:
 					screen_cmd='sh '+screen_batch_file
-				os.system('screen -S '+screen_name+' -X quit')	
-				time.sleep(0.5)
-				os.system('screen -mdS '+screen_name)
-				time.sleep(0.5)
-				ms_mainlog.info('########################\n')
-				ms_mainlog.info('Made Screen : '+screen_name+'\n')
-				ms_mainlog.info('Command : '+cmd+'\n')
-				os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
+				os.system(screen_cmd)
+				time.sleep(1)
 				open_casa_instance+=1
 				cur_spawned_casa_instances+=1
 				bandpass_screen_list.remove(screen_name)
 				bandpass_cmd_list.remove(cmd)
 				bandpass_finished_file_list.remove(finished_file)
-				if open_casa_instance>=casa_instance or len(bandpass_screen_list)==0:
-					ms_mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')
+				available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+				if available_paircars_instance<=0 or len(bandpass_screen_list)==0:
+					ms_mainlog.info('Maximum P-AIRCARS instances spawned. Waiting for complete those jobs.\n')
 					break
 			time.sleep(2.0)
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 			bp_finish_list=glob.glob(basedir+'/.Finished_*bcal*'+str(ms_obsid)+'*'+basemsdir+'*')
 			if len(bandpass_cmd_list)==0:
 				ms_mainlog.info('All bandpass tasks are spawned for all spectral slices.\n')
@@ -1735,7 +1663,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 					cmd='run_pol_selfcal --msname '+splited_msname+' --metafits '+metafits+' --workdir '+splited_msdir+' --verbose '+str(inputs.verbose)+\
 					' --interactive '+str(inputs.interactive)+' --fresh True --gaincal True --wsclean '+str(use_wsclean)+' --caltables '+calstring+',\"$y\"'
 					polcal_cmd_list.append(cmd)
-					polcal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_screen_P')
+					polcal_screen_list.append(str(ms_obsid)+'_'+os.path.basename(splited_msname).split('.ms')[0]+'_P_'+str(inputs.job_id))
 					polcal_finished_file_list.append(basedir+'/.Finished_pcal_'+str(ms_obsid)+'_'+basemsdir+'_'+os.path.basename(splited_msname))
 		num_pol=len(polcal_screen_list)
 		finished_polcal=False
@@ -1746,40 +1674,34 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 			polcal_cmd_list=[]
 			polcal_finished_file_list=[]
 			finished_polcal=True
-		ms_mainlog.info('Waiting for available casa instance......\n')
+		ms_mainlog.info('Waiting for available P-AIRCARS instance......\n')
 		while finished_polcal==False:	
 			touch_file_list=glob.glob(basedir+'/.Finished_*cal*'+str(ms_obsid)+'*'+basemsdir+'*')
-			if (len(touch_file_list)-touch_count)>0:
-				if open_casa_instance>1:
-					open_casa_instance-=(len(touch_file_list)-touch_count)
-					ms_mainlog.info('New CASA instance available : '+str((len(touch_file_list)-touch_count))+'\n')
-			while len(polcal_screen_list)!=0 and (casa_instance-open_casa_instance)>=1:
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+			if available_paircars_instance>1:
+				ms_mainlog.info('New P-AIRCARS instance available : '+str(available_paircars_instance)+'\n')
+			while len(polcal_screen_list)!=0 and available_paircars_instance>=1:
 				screen_name=polcal_screen_list[0]
 				cmd=polcal_cmd_list[0]
 				finished_file=polcal_finished_file_list[0]
-				screen_batch_file=casa_instance_runner(cmd,basedir,screen_name,finished_file,prefix_cmds=prefix_cmds)
-				touch_count+=1
+				screen_batch_file=paircars_instance_runner(cmd,basedir,inputs.paircars_dir,screen_name,finished_file,inputs.job_id,prefix_cmds=prefix_cmds)
 				if cpulimit_check==0 and use_wsclean==False:
-					screen_cmd='cpulimit --limit '+str(450)+' -z sh '+screen_batch_file
+					screen_cmd='cpulimit --limit '+str(500)+' -z sh '+screen_batch_file
 				else:
 					screen_cmd='sh '+screen_batch_file
-				os.system('screen -S '+screen_name+' -X quit')	
-				time.sleep(0.5)
-				os.system('screen -mdS '+screen_name)
-				time.sleep(0.5)
-				ms_mainlog.info('########################\n')
-				ms_mainlog.info('Made Screen : '+screen_name+'\n')
-				ms_mainlog.info('Command : '+cmd+'\n')
-				os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
+				os.system(screen_cmd)
+				time.sleep(1)
 				open_casa_instance+=1
 				cur_spawned_casa_instances+=1
 				polcal_screen_list.remove(screen_name)
 				polcal_cmd_list.remove(cmd)
 				polcal_finished_file_list.remove(finished_file)
-				if open_casa_instance>=casa_instance or len(polcal_screen_list)==0:
-					ms_mainlog.info('Maximum casa instances spawned. Waiting for complete those jobs.\n')	
+				available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
+				if available_paircars_instance<=0 or len(polcal_screen_list)==0:
+					ms_mainlog.info('Maximum P-AIRCARS instances spawned. Waiting for complete those jobs.\n')	
 					break
 			time.sleep(2.0)
+			available_paircars_instance=get_available_paircars_instance(inputs.paircars_dir,inputs.job_id,inputs.instance)
 			if len(polcal_cmd_list)==0:
 				polcal_screen_list=[]
 				polcal_cmd_list=[]
@@ -1839,11 +1761,11 @@ if __name__=='__main__':
 		ms_mainlog.info('Starting calibration for ms : '+str(options.chantime_msname)+'\n')		
 		ms_mainlog.info('run_paircars_ms(\''+str(options.chantime_msname)+'\',\''+str(options.metafits)+'\',\''+str(options.workdir)+'\',ref_freq_avg='+str(options.ref_freq_avg)+\
 						',ref_time_avg='+str(options.ref_time_avg)+',ref_time_freq='+str(options.ref_time_freq)+',do_bandpass='+str(options.do_bandpass)+\
-						',do_polcal='+str(options.do_polcal)+',calatten='+str(options.calatten)+',num_threads='+str(options.num_threads)+\
-						',calibrator_caltable='+str(calibrator_caltable)+',use_wsclean='+str(use_wsclean)+')\n')
+						',do_polcal='+str(options.do_polcal)+',calatten='+str(options.calatten)+\
+						',calibrator_caltable='+str(calibrator_caltable)+',use_wsclean='+str(eval(str(options.use_wsclean)))+')\n')
 		parfil=run_paircars_ms(str(options.chantime_msname),str(options.metafits),str(options.workdir),ref_freq_avg=float(options.ref_freq_avg),ref_time_avg=float(options.ref_time_avg),\
 				ref_time_freq=eval(str(options.ref_time_freq)),do_bandpass=eval(str(options.do_bandpass)),do_polcal=eval(str(options.do_polcal)),\
-				calatten=float(options.calatten),num_threads=int(options.num_threads),calibrator_caltable=calibrator_caltable,use_wsclean=eval(str(options.use_wsclean)))
+				calatten=float(options.calatten),calibrator_caltable=calibrator_caltable,use_wsclean=eval(str(options.use_wsclean)))
 		ms_mainlog.info('Self-calibration parameters saved in : '+parfil+'\n')
 		os.system('touch '+basedir+'/.Finished_runpaircars_'+str(ms_obsid)+'_'+basemsdir+'_'+str(0))
 	except Exception as e:

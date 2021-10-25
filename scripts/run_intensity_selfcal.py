@@ -1,5 +1,6 @@
-import numpy as np,os,sys,matplotlib.pyplot as plt,time,logging,matplotlib,json,urllib.request,glob
-from casatools import *
+import os
+import numpy as np,sys,matplotlib.pyplot as plt,time,logging,matplotlib,json,urllib.request,glob
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from paircars.access_ms import *
 from paircars.basic_func import *
@@ -162,7 +163,10 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 		if os.path.isdir(working_dir+'/Backup_uncalib.ms')==True:
 			os.system('rm -rf '+working_dir+'/Backup_uncalib.ms')
 		logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_uncalib.ms\',datacolumn=\'data\')\n')
-		split(vis=msname,outputvis=working_dir+'/Backup_uncalib.ms',datacolumn='data') # Backup of uncalibrated ms
+		try:
+			split(vis=msname,outputvis=working_dir+'/Backup_uncalib.ms',datacolumn='data') # Backup of uncalibrated ms
+		except Exception as e:
+			logger.info('Split error : '+str(e)+'\n')
 		caltable_list=[]
 	else:
 		start_fresh=True
@@ -186,12 +190,15 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			if os.path.isdir(working_dir+'/Backup_uncalib.ms')==True:
 				os.system('rm -rf '+working_dir+'/Backup_uncalib.ms')
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_uncalib.ms\',datacolumn=\'data\')\n')
-			split(vis=msname,outputvis=working_dir+'/Backup_uncalib.ms',datacolumn='data') # Backup of uncalibrated ms
+			try:
+				split(vis=msname,outputvis=working_dir+'/Backup_uncalib.ms',datacolumn='data') # Backup of uncalibrated ms
+			except Exception as e:
+				logger.info('Split error : '+str(e)+'\n')
 		if caltables!='':
 			caltable_list=caltables.split(',')
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=True)\n')
-			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',calwt=[False],flagbackup=True)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',calwt=[False],flagbackup=True)
 			tb=table()
 			tb.open(caltable_list[0])
 			try:
@@ -290,7 +297,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			print ('Reference time frequency slice imaging has been done. Starting imaging for time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
 	
-	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean) # Creating selfcal object 32 arcmin maximum scale size
+	if inputs.quality_factor==0:
+		num_pixel_in_psf=3
+	elif inputs.quality_factor==1:
+		num_pixel_in_psf=5
+	else:
+		num_pixel_in_psf=7
+
+	ISC=IntensitySelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=12,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,\
+						savelog=inputs.keep_logger)
+				 # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 
 	###################
@@ -306,6 +322,18 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 			ISC.multiscale_scales=inputs.multiscale_scales
 		if uvtaper!='':
 			ISC.uvtaper=inputs.uvtaper
+		if inputs.weight=='' or (inputs.weight!='uniform' and inputs.weight!='natural' and inputs.weight!='briggs'):
+			weight='briggs'
+		else:
+			weight=inputs.weight
+		if weight=='briggs':
+			if inputs.robust<-1.0 or inputs.robust>1.0:
+				robust=1.0
+			else:
+				robust=inputs.robust
+	else:
+		weight='briggs'
+		robust=0.8
 	
 	if calc_selfcalib_params==False:
 		if inputs.uvrange_to_cal!='':
@@ -459,7 +487,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 								print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
 										' Making dirty map to get rms threshold.\n')
 							start_sigma=inputs.start_sigma
-							msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+							msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index),\
+																			weight=weight,robust=robust)
 							ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=False)
 							if msg_code==0:
 								logger.info('Initial selfcal SNR : '+str(selfcal_snr)+'\n')
@@ -497,7 +526,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
 									' Making dirty map to get rms threshold.\n')
 						start_sigma=inputs.start_sigma
-						msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+						msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index),\
+																						weight=weight,robust=robust)
 						ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=False)
 						if msg_code==0:
 							logger.info('Initial selfcal SNR : '+str(selfcal_snr)+'\n')
@@ -542,7 +572,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					logger.info('Start sigma : '+str(start_sigma)+'\n')
 					if verbose==False:
 						print('Start sigma : '+str(start_sigma)+'\n')
-					msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+					msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index),\
+																					weight=weight,robust=robust)
 					if 'ref' in msname:					
 						ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=True)
 					else:
@@ -659,16 +690,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						if verbose==False:
 							print('Dirty image is made successfully.\n')
 						break
-			elif save_true_loc_image==True: # Save source true location images with respect to the reference time and channel
-				logger.info('Source true location imaging is being done.\n')
-				if verbose==False:
-					print('Source true location imaging is being done.\n')
-				if savedir=='':
-					outdir=basedir+'/All_gaincal_source_true_loc_images'
-				else:
-					outdir=savedir+'/All_gaincal_source_true_loc_images'
-				ISC.image_source_true_loc(outdir,do_bandpass=False)
-
+		
 		##############
 		# Selfcal loop
 		##############
@@ -791,12 +813,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					# Use a circular mask of the size of the Sun if calmode=='p' and no mask is provided by user. This is to keep th phasecenter fixed
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=False,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[])  # Performing selfcal iterations
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],weight=weight,robust=robust)  
+																																	# Performing selfcal iterations
 			elif inputs.maskfile!='' and try_nomask==False: # Use user defined mask
 				mask_str=''
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile=inputs.maskfile,want_auto_masking=False,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[]) # Performing selfcal iterations	
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],weight=weight,robust=robust)
+												 # Performing selfcal iterations	
 			elif inputs.maskstr!='' and try_nomask==False: # Use user defined mask string
 				if num_iter<=1:
 					mask_str=ini_mask_str
@@ -804,12 +828,14 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					mask_str=inputs.maskstr
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile=inputs.maskfile,want_auto_masking=False,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[]) # Performing selfcal iterations	
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],weight=weight,robust=robust) 
+																								# Performing selfcal iterations	
 			elif try_nomask==True: # Using no mask to pickup flux from over the field
 				mask_str=''
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=False,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[])  # Performing selfcal iterations
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],weight=weight,robust=robust)  
+																							# Performing selfcal iterations
 				try_nomask=False
 				nomask_try_count+=1
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto masking off use a circular central mask
@@ -819,7 +845,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					mask_str=mask_str
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[])
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],weight=weight,robust=robust)
 			elif inputs.want_auto_masking==True:
 				if do_ap==False:
 					if num_iter<=1:
@@ -831,7 +857,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 				mask_str=''
 				output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 					startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
-					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],maskregion=maskregion)
+					do_bandpass=False,correct_phasecenter=phasecenter_changed,ra=ra,dec=dec,box_width=3,calibrator_caltable=[],maskregion=maskregion,weight=weight,robust=robust)
 
 			if type(output_ISC)==tuple:				
 				msg_code,out_dict,negative_dyn_range=output_ISC
@@ -882,8 +908,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							logger.info('gaincal(vis=\''+msname+'\',caltable=\'point_source_try.cal\',refant=\''+str(ref_ant)+'\',calmode=\'p\','+\
 										'minsnr='+str(gain_minsnr)+',uvrange=\''+uvrange+'\',solint=\'inf\')\n')
 							gaincal(vis=msname,caltable='point_source_try.cal',refant=str(ref_ant),calmode='p',minsnr=gain_minsnr,uvrange=uvrange,solint='inf')
-							logger.info('applycal(vis=\''+msname+'\',gaintable=[\'point_source_try.cal\'],applymode=\'calflag\',flagbackup=True)\n')
-							applycal(vis=msname,gaintable=['point_source_try.cal'],applymode='calflag',flagbackup=True)
+							logger.info('applycal(vis=\''+msname+'\',gaintable=[\'point_source_try.cal\'],applymode=\'calflag\',calwt=[False],flagbackup=True)\n')
+							applycal(vis=msname,gaintable=['point_source_try.cal'],applymode='calflag',calwt=[False],flagbackup=True)
 							point_source_trial_count+=1
 							continue
 						else:
@@ -1102,8 +1128,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 							os.system('cp -r '+msname+' '+msname+'.backup')
 							try:
 								logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
-								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
-								do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
+								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,chantime_minfrac=0.9,verbose='+str(verbose)+',flagbackup=True)\n')
+								do_uvsub_ankflag(msname,model='junk0.model',nthread=1,chantime_minfrac=0.9,verbose=verbose,flagbackup=True)
 								os.system('rm -rf '+msname+'.backup')
 							except Exception as e:
 								os.system('rm -rf '+msname)
@@ -1341,7 +1367,26 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_iteration))): # New antenna addition or calmode change
 				# If fractional change of DR is less than 8% in last two steps and number of iterations at fixed antenna is greater than 5.
 					if (num_ant_current_iteration<num_ant):
-						antenna_list_index+=1
+						if inputs.quality_factor==0:
+							if DR5<(0.3*inputs.max_DR):
+								antenna_list_index+=1
+							elif DR5<(0.7*inputs.max_DR) and DR5>=(0.3*inputs.max_DR):
+								antenna_list_index+=2
+							else:
+								antenna_list_index+=3
+								if antenna_list_index>len(antenna_list):
+									antenna_list_index=-1
+						elif inputs.quality_factor==1:
+							if DR5<(0.7*inputs.max_DR):
+								antenna_list_index+=1
+							else:
+								antenna_list_index+=2
+								if antenna_list_index>len(antenna_list):
+									antenna_list_index=-1
+						else:
+							antenna_list_index+=1
+							if antenna_list_index>len(antenna_list):
+								antenna_list_index=-1
 						num_iter_fixed_ant=0
 						antenna_added=True	
 						if (nomask_try_count>=1 and scratch==True and antenna_list_index==1) or (scratch==False and num_iter>min_iteration): #TODO : testing
@@ -1353,6 +1398,8 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						if do_ap==False and phasecenter_change_done==False:
 							ra,dec,phasecenter_changed=ISC.cal_solar_phaseshift('junk1.image',sigma=start_sigma)
 							logger.info('Phase center changed required : '+str(phasecenter_changed)+'\n')
+							if verbose==False:
+								print ('Phase center changed required : '+str(phasecenter_changed)+'\n')
 							if phasecenter_changed==True:							
 								logger.info('New phasecenter : RA = '+str(ra)+' deg, DEC = '+str(dec)+' deg.\n')
 							else:
@@ -1512,7 +1559,7 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 # Function to run the script stand alone from command line
 if __name__=='__main__':
 	start_time=time.time()
-	usage= ' Perform self calibration of a single time and frequency slice'
+	usage= ' Perform intensity self calibration of a single time and frequency slice'
 	parser = OptionParser(usage=usage)
 	parser.add_option('--msname',dest="chantime_msname",default=None,help="Name of measurement set of a single time anf frequency slice",metavar="Measurement Set")
 	parser.add_option('--metafits',dest="metafits",default=None,help="Name of metafits file of the observation",metavar="Metafits file")

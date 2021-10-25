@@ -2,7 +2,10 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
-import os,copy,numpy as np,webbrowser,pickle,paircars,glob,time
+from multiprocessing import Process
+from paircars.basic_func import *
+from paircars.access_ms import *
+import os,copy,numpy as np,webbrowser,pickle,paircars,glob,time,getpass,tkinter as tk,subprocess,psutil
 from PIL import Image,ImageTk
 imagedir=os.path.abspath(os.path.dirname(paircars.__file__))
 
@@ -25,13 +28,13 @@ class PAIRCARS_inputs:
 		self.image_left1=self.image_left1.resize((120,120),Image.ANTIALIAS)
 		self.left1=ImageTk.PhotoImage(self.image_left1)
 		self.ncra_link=Button(self.root,command=self.open_ncra,image=self.left1)
-		self.ncra_link.place(x=800,y=700)
+		self.ncra_link.place(x=800,y=630)
 		# MWA link
 		self.image_left2=Image.open(imagedir+'/MWA_logo.jpeg')
 		self.image_left2=self.image_left2.resize((120,120),Image.ANTIALIAS)
 		self.left2=ImageTk.PhotoImage(self.image_left2)
 		self.mwa_link=Button(self.root,command=self.open_mwa,image=self.left2)
-		self.mwa_link.place(x=650,y=700)
+		self.mwa_link.place(x=650,y=630)
 
 		# Frame 1
 		self.frame1=Frame(self.root,bg='white',highlightthickness=3)
@@ -99,7 +102,7 @@ class PAIRCARS_inputs:
 				self.fimagedir_entry.insert(0,self.msdir)
 				self.fimagedir_entry.config(fg='gray45')
 		self.fimagedir='Name of the directory to store final images .....'
-		fimagedir=Label(self.frame1,text='Image Directory *',bg='white',fg='Black',font=('times new roman',15))
+		fimagedir=Label(self.frame1,text='Image Directory',bg='white',fg='Black',font=('times new roman',15))
 		fimagedir.place(x=10,y=110)
 		self.button=ttk.Button(self.frame1,text='browse',command=self.diropen3)
 		self.button.place(x=500,y=110)
@@ -112,17 +115,17 @@ class PAIRCARS_inputs:
 		
 		# Timerange
 		def delete_entry(event):
-			if self.tmrange_entry.get()=='hh0:mm0:ss0.ff0~hh1:mm1:ss1.ff1,hh2:mm2:ss2.ff2~....':
+			if self.tmrange_entry.get()=='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2~....':
 				self.tmrange_entry.delete(0, "end")
 				self.timerange=''
 				self.tmrange_entry.config(fg='black')
 		def restore_entry(event):
 			if self.tmrange_entry.get()=='':
 				self.tmrange_entry.delete(0, "end")
-				self.timerange='hh0:mm0:ss0.ff0~hh1:mm1:ss1.ff1,hh2:mm2:ss2.ff2~....'
+				self.timerange='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2~....'
 				self.tmrange_entry.insert(0,self.timerange)
 				self.tmrange_entry.config(fg='gray45')
-		self.timerange='hh0:mm0:ss0.ff0~hh1:mm1:ss1.ff1,hh2:mm2:ss2.ff2~....'
+		self.timerange='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2~....'
 		timerange=Label(self.frame1,text='Time range',bg='white',fg='Black',font=('times new roman',15))
 		timerange.place(x=10,y=140)
 		self.tmrange_entry=Entry(self.frame1,bg='lightgray',textvariable=self.timerange)
@@ -215,7 +218,7 @@ class PAIRCARS_inputs:
 		interactive.place(x=165,y=260)
 		self.interactive=BooleanVar()
 		self.interactive.set(False)
-		c=Checkbutton(self.frame1,text='',bg='white',fg='Black',font=('times new roman',15),variable=self.logger,onvalue=True,offvalue=False,highlightbackground = "white")
+		c=Checkbutton(self.frame1,text='',bg='white',fg='Black',font=('times new roman',15),variable=self.interactive,onvalue=True,offvalue=False,highlightbackground = "white")
 		c.place(x=265,y=260)
 
 		# Decor
@@ -465,7 +468,7 @@ class PAIRCARS_inputs:
 		self.savemodel=BooleanVar()
 		self.savemodel.set(False)
 		c=Checkbutton(self.frame1,text='',bg='white',fg='Black',font=('times new roman',15),variable=self.savemodel,onvalue=True,offvalue=False,highlightbackground = "white")
-		c.place(x=105,y=540)
+		c.place(x=115,y=540)
 
 		# saveresiduals
 		saveresiduals=Label(self.frame1,text='Save residuals',bg='white',fg='Black',font=('times new roman',15))
@@ -578,10 +581,13 @@ class PAIRCARS_inputs:
 				highlightbackground = "white")
 		c.place(x=540,y=630)
 
+		# Open log
+		self.log_button=Button(self.root,text='Open Log',command=self.logview,font=('times new roman',15))
+		self.log_button.place(x=660,y=770)
 
 		# Frame 2
 		self.frame2=Frame(self.root,bg='white',highlightthickness=3)
-		self.frame2.place(x=970,y=40,width=600,height=410)
+		self.frame2.place(x=970,y=40,width=600,height=450)
 		title2=Label(self.frame2,text='ADVANCED INPUTS',bg='white',fg='black',font=('times new roman',25)).place(relx=0.5,y=20,anchor=CENTER)
 		
 		# Cell size
@@ -741,7 +747,7 @@ class PAIRCARS_inputs:
 		freqintervals=np.linspace(10,2000,int(2000/10))
 		freqintervals=["{:0.1f}".format(i) for i in freqintervals.tolist()]
 		self.skipfreq=DoubleVar()
-		self.skipfreq.set(freqintervals[3])
+		self.skipfreq.set(freqintervals[127])
 		skipfreq=Label(self.frame2,text='Skip Frequency (kHz)',bg='white',fg='Black',font=('times new roman',15))
 		skipfreq.place(x=10,y=215)
 		self.skipfreq_options=ttk.Combobox(self.frame2,textvariable=self.skipfreq,values=freqintervals,width=6)
@@ -751,7 +757,7 @@ class PAIRCARS_inputs:
 		timeintervals=np.linspace(0.5,240,480)
 		timeintervals=timeintervals.tolist()
 		self.skiptime=DoubleVar()
-		self.skiptime.set(timeintervals[0])
+		self.skiptime.set(timeintervals[239])
 		skiptime=Label(self.frame2,text='Skip Time (s)',bg='white',fg='Black',font=('times new roman',15))
 		skiptime.place(x=370,y=215)
 		self.skiptime_options=ttk.Combobox(self.frame2,textvariable=self.skiptime,values=timeintervals,width=6)
@@ -760,7 +766,7 @@ class PAIRCARS_inputs:
 		# Gain minsnr
 		minsnrs=["{:0.1f}".format(i) for i in np.arange(3,5.5,0.5).tolist()]
 		self.minsnr=DoubleVar()
-		self.minsnr.set(timeintervals[0])
+		self.minsnr.set(minsnrs[2])
 		minsnr=Label(self.frame2,text='Gain Minimum SNR',bg='white',fg='Black',font=('times new roman',15))
 		minsnr.place(x=10,y=255)
 		self.minsnr_options=ttk.Combobox(self.frame2,textvariable=self.minsnr,values=minsnrs,width=4)
@@ -928,6 +934,38 @@ class PAIRCARS_inputs:
 		self.maxtime_entry.bind("<FocusIn>",delete_entry)
 		self.maxtime_entry.bind("<FocusOut>",restore_entry)
 
+		# weight
+		def delete_entry(event):
+			if self.weight_entry.get()=='uniform/natural/briggs':
+				self.weight_entry.delete(0, "end")
+				self.weight=''
+				self.weight_entry.config(fg='black')
+		def restore_entry(event):
+			if self.weight_entry.get()=='':
+				self.weight_entry.delete(0, "end")
+				self.weight='uniform/natural/briggs'
+				self.weight_entry.insert(0,self.weight)
+				self.weight_entry.config(fg='gray45')
+		self.weight=StringVar()
+		self.weight='uniform/natural/briggs'
+		weight=Label(self.frame2,text='Weighting mode',bg='white',fg='Black',font=('times new roman',15))
+		weight.place(x=10,y=405)
+		self.weight_entry=Entry(self.frame2,bg='lightgray',textvariable=self.weight)
+		self.weight_entry.place(x=160,y=410,width=155)
+		self.weight_entry.insert(0,self.weight)
+		self.weight_entry.config(fg='gray45')
+		self.weight_entry.bind("<FocusIn>",delete_entry)
+		self.weight_entry.bind("<FocusOut>",restore_entry)
+
+		# robust
+		robusts=[float("{:0.1f}".format(i)) for i in np.arange(-1.0,1.1,0.1).tolist()]
+		self.robust=DoubleVar()
+		self.robust.set(robusts[-3])
+		robust=Label(self.frame2,text='Robust',bg='white',fg='Black',font=('times new roman',15))
+		robust.place(x=450,y=405)
+		self.robust_options=ttk.Combobox(self.frame2,textvariable=self.robust,values=robusts,width=4,state='readonly')
+		self.robust_options.place(x=525,y=410)
+
 		for child in self.frame2.winfo_children():
 			child.configure(state='disable')
 
@@ -936,7 +974,7 @@ class PAIRCARS_inputs:
 
 		# Frame 3
 		self.frame3=Frame(self.root,bg='white',highlightthickness=3)
-		self.frame3.place(x=970,y=470,width=600,height=410)
+		self.frame3.place(x=970,y=500,width=600,height=410)
 		title3=Label(self.frame3,text='HPC SETTINGS',bg='white',fg='black',font=('times new roman',25)).place(relx=0.5,y=20,anchor=CENTER)
 
 
@@ -994,15 +1032,23 @@ class PAIRCARS_inputs:
 		self.mask_entry.insert(END,self.maskfile)
 		self.mask_entry.config(fg='black')
 
-	def fileopen1(self):
-		try:
-			self.loadinput=filedialog.askopenfilename(filetypes =[('P-AIRCARS Input File', '*.paircars')],initialdir=os.getcwd(),title='Choose P-AIRCARS input file')
-		except:
-			self.loadinput=''
-		if self.loadinput_entry.get()!='':
-			self.loadinput_entry.delete(0, "end") # delete all the text in the entry
-			self.loadinput_entry.insert(0, '') #Insert blank for user input
+	def fileopen1(self,filename=''):
+		if filename=='':
+			if os.path.exists(self.loadinput_entry.get())==False:
+				try:
+					self.loadinput=filedialog.askopenfilename(filetypes =[('P-AIRCARS Input File', '*.paircars')],initialdir=os.getcwd(),title='Choose P-AIRCARS input file')
+				except:
+					self.loadinput=''
+				if self.loadinput_entry.get()!='':
+					self.loadinput_entry.delete(0, "end") # delete all the text in the entry
+					self.loadinput_entry.insert(0, '') #Insert blank for user input
+			else:
+				self.loadinput=self.loadinput_entry.get()
+		else:
+			self.loadinput=filename
 		if self.loadinput!=None:
+			if self.loadinput_entry.get()=='Load P-AIRCARS input file.....' or self.loadinput_entry.get()!='':
+				self.loadinput_entry.delete(0,"end")
 			self.loadinput_entry.insert(END,self.loadinput)
 			self.loadinput_entry.config(fg='black')
 			if os.path.exists(self.loadinput)==False:
@@ -1111,6 +1157,13 @@ class PAIRCARS_inputs:
 					self.extra_entry.delete(0,"end")
 					self.extra_entry.insert(END,inputdic['extra_time'])
 					self.extra_entry.config(fg='black')
+					self.maxtime_entry.delete(0,"end")
+					self.maxtime_entry.insert(END,inputdic['max_time_avg'])
+					self.maxtime_entry.config(fg='black')
+					self.weight_entry.delete(0,"end")
+					self.weight_entry.insert(END,inputdic['weight'])
+					self.weight_entry.config(fg='black')
+					self.robust_options.set(inputdic['robust'])
 		else:
 			self.loadinput_entry.insert(0,'Load P-AIRCARS input file.....')
 			self.loadinput_entry.config(fg='gray45')
@@ -1131,15 +1184,34 @@ class PAIRCARS_inputs:
 			basedir=''
 		self.basedir_input=basedir
 		fil.write('basedir=\''+basedir+'\'\n')
-		if self.tmrange_entry.get()!='hh0:mm0:ss0.ff0~hh1:mm1:ss1.ff1,hh2:mm2:ss2.ff2~....':
+		fil.write('paircars_dir=\''+basedir+'\'\n')
+		if self.tmrange_entry.get()!='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2~....':
 			timerange=self.tmrange_entry.get()
 		else:
 			timerange=''
+		if timerange!='':
+			try:
+				time_list=[]
+				for i in timerange.split(','):
+					l=i.split('~')
+					for j in l:
+						time_list.append(j)
+				timerange_list_mjdsecs=sorted([float("{:.2f}".format(timestamp_to_mjdsec(i,format=0))) for i in time_list])
+			except:
+				timerange=''
 		fil.write('timerange=\''+timerange+'\'\n')
 		if self.chanrange_entry.get()!='ch0~ch1,ch2~ch3,....':
 			chanrange=self.chanrange_entry.get()
 		else:
 			chanrange=''
+		if chanrange!='':
+			try:
+				chanrange_list=chanrange.split(',')
+				for chan in chanrange_list:
+					s_chan=int(chan.split('~')[0])
+					e_chan=int(chan.split('~')[-1])
+			except:
+				chanrange=''
 		fil.write('chanrange=\''+chanrange+'\'\n')
 		if self.fimagedir_entry.get()!='Name of the directory to store final images .....':
 			final_image_dir=self.fimagedir_entry.get()
@@ -1149,7 +1221,6 @@ class PAIRCARS_inputs:
 			savedir=''
 		self.fimagedir_input=final_image_dir
 		fil.write('final_image_dir=\''+final_image_dir+'\'\n')
-		print ('savedir=\''+savedir+'\'\n')
 		fil.write('savedir=\''+savedir+'\'\n')
 		if self.caltable!='/path/to/caltable0,/path/to/caltable1,....':
 			calibrator_caltable=self.cal_entry.get().split(',')
@@ -1212,6 +1283,7 @@ class PAIRCARS_inputs:
 		fil.write('image_time='+str(image_time)+'\n')
 		cpu_frac=self.cpufrac_options.get()/100.0
 		fil.write('cpu_frac='+str(cpu_frac)+'\n')
+		fil.write('instance='+str(int((psutil.cpu_count()*cpu_frac)/1.5))+'\n')
 		clear_screen=self.clearscreen.get()
 		fil.write('clear_screen='+str(clear_screen)+'\n')
 		if self.xcut_entry==3 or self.xcut_entry.get()=='':
@@ -1250,7 +1322,7 @@ class PAIRCARS_inputs:
 		if self.scales_entry.get()=='0,3,6,9' or self.scales_entry.get()=='':
 			multiscale_scales=[0,3,6,9]
 		else:
-			multiscale_scales=self.scales_entry.get().split(',')
+			multiscale_scales=[int(i) for i in self.scales_entry.get().split(',')]
 		fil.write('multiscale_scales='+str(multiscale_scales)+'\n')
 		if self.uvtaper_entry.get()=='xxlambda or xxklambda':
 			uvtaper=''
@@ -1306,6 +1378,18 @@ class PAIRCARS_inputs:
 		else:
 			extra_time=float(self.extra_entry.get())
 		fil.write('extra_time='+str(extra_time)+'\n')
+		if self.weight_entry.get()=='uniform/natural/briggs':
+			weight='briggs'
+		else:
+			weight=float(self.weight_entry.get())
+		fil.write('weight=\''+str(weight)+'\'\n')
+		robust=float(self.robust_options.get())
+		fil.write('robust='+str(robust)+'\n')
+		if self.maxtime_entry.get()=='Max time':
+			maxtime_entry=5.0
+		else:
+			maxtime_entry=float(self.maxtime_entry.get())
+		fil.write('max_time_avg='+str(maxtime_entry)+'\n')
 		fil.seek(0)
 		fil.close()
 
@@ -1319,25 +1403,70 @@ class PAIRCARS_inputs:
 		webbrowser.open(self.mwalink, new=2)
 		return
 
-	def validate_input(self):
+	def validate_input(self,show_message=True):
 		self.getdata()
 		self.get_advanced_data()
-		print (self.msdir_input,self.basedir_input,self.fimagedir_input)
-		if self.msdir_input=='' or self.basedir_input=='' or self.fimagedir_input=='':
-			messagebox.showerror("Missing inputs", "Mandatory inputs are missing")	
+		if self.msdir_input=='' or self.basedir_input=='' or self.msdir_input=='Name of the directory of data.....' or self.basedir_input=='Name of the base directory .....':
+			messagebox.showerror("Validate inputs", "Mandatory inputs are missing")	
 			return 1
-		else:	
+		else:
+			if show_message:	
+				messagebox.showinfo("Validate inputs", "Inputs are correct")
 			return 0
 
-	def run_paircars(self):
-		validate=self.validate_input()
+	def run(self):	
+		cwd=os.getcwd()
+		validate=self.validate_input(show_message=False)
 		if validate==0:
 			cwd=os.getcwd()
 			if os.path.isdir(self.basedir_input)==False:
 				os.makedirs(self.basedir_input)
-			if self.fresh.get()==True:
-				os.system('rm -rf '+self.basedir_input+'/*')
-			if os.path.exists(self.basedir_input+'/selfcal_inputs.py'):
+		res='go'
+		if len(glob.glob(self.basedir_input+'/.*paircars_running'))>0:
+			res=messagebox.askquestion('P-AIRCARS Running', 'P-AIRCARS already running in the base directory. Do you really want to over run?')
+		return res
+
+	def run_paircars(self):
+		keyres=self.run()
+		cwd=os.getcwd()
+		if keyres=='no':
+			messagebox.showinfo("Run P-AIRCARS", "P-AIRCARS is not started.")
+			return
+		else:
+			if self.clearscreen.get()==True:
+				running_jobids=[i.split('/')[-1].split('_paircars_running')[0][1:] for i in glob.glob(self.basedir_input+'/.*paircars_running')]
+				screen_list=[os.path.basename(i) for i in glob.glob('/var/run/screen/S-'+str(getpass.getuser())+'/*')]
+				paircars_homedir=os.path.expanduser('~')+'/.paircars'
+				job_id_file=os.path.expanduser('~')+'/paircars_job_id.p'
+				if os.path.isfile(job_id_file)==False:
+					job_ids=[]
+				else:
+					job_ids=pickle.load(open(job_id_file,'rb'))
+				for jobs in running_jobids:
+					if os.path.exists(self.basedir_input+'/'+str(jobs)+'_pids.log'):
+						pids=np.loadtxt(self.basedir_input+'/'+str(jobs)+'_pids.log',unpack=True).astype('int')
+						if pids.shape==():
+							pids=np.array([int(pids)])
+						if len(pids)>0:
+							for pid in pids:
+								a=os.system('kill -0 '+str(int(pid))+' >/dev/null 2>&1')
+								if a==0:
+									os.system('kill -0 '+str(int(pid))+' >/dev/null 2>&1')
+								else:
+									pass
+					for screen_name in screen_list:
+						if jobs in screen_name:
+							a=os.system('screen -S '+screen_name+' -X quit >/dev/null 2>&1')
+							if a!=0:
+								a=os.system('screen -wipe '+screen_name+' >/dev/null 2>&1')
+					if int(jobs) in job_ids:
+						job_ids.remove(int(jobs))
+						if os.path.isfile(paircars_homedir+'/'+str(jobs)+'_inputs.paircars'):
+							os.system('rm -rf '+paircars_homedir+'/'+str(jobs)+'_inputs.paircars')
+				pickle.dump(job_ids,open(job_id_file,'wb'))							
+			os.system('rm -rf '+self.basedir_input+'/.Finished* '+self.basedir_input+'/.*_paircars_running '+self.basedir_input\
+						+'/*P-AIRCARS_mainlog_* '+self.basedir_input+'/*.batch '+self.basedir_input+'/*.log')
+			if os.path.isfile(self.basedir_input+'/selfcal_inputs.py'):
 				os.system('rm -rf '+self.basedir_input+'/selfcal_inputs.py')
 			a=os.system('cp -r inputs.py '+self.basedir_input+'/selfcal_inputs.py')
 			if os.WEXITSTATUS(a)!=0:
@@ -1365,13 +1494,13 @@ class PAIRCARS_inputs:
 					job_id_file=os.path.expanduser('~')+'/paircars_job_id.p'
 					job_ids=[]
 					if os.path.isfile(job_id_file)==False:
-						job_id=np.random.randint(100,100000)
+						job_id=np.random.randint(10,1000)
 						job_ids.append(job_id)
 						pickle.dump(job_ids,open(job_id_file,'wb'))
 					else:
 						job_ids=pickle.load(open(job_id_file,'rb'))
 						while True:
-							job_id=np.random.randint(10,10000000)
+							job_id=np.random.randint(10,1000)
 							if job_id in job_ids:
 								continue
 							else:
@@ -1380,7 +1509,13 @@ class PAIRCARS_inputs:
 								break
 					fil=open(self.basedir_input+'/selfcal_inputs.py','a')
 					fil.write('job_id='+str(job_id)+'\n')
-					self.save_input(savefile=self.basedir+'/inputs.paircars')
+					fil.seek(0)
+					fil.close()
+					save_input_file=self.save_input(savefile=self.basedir_input+'/inputs.paircars')
+					paircars_homedir=os.path.expanduser('~')+'/.paircars'
+					if os.path.isdir(paircars_homedir)==False:
+						os.makedirs(paircars_homedir)
+					os.system('cp -r '+save_input_file+' '+paircars_homedir+'/'+str(job_id)+'_inputs.paircars')
 					os.chdir(self.basedir_input)
 					screen_name='P-AIRCARS_mainlog_'+str(job_id)
 					cmd='start_paircars --fresh '+str(self.fresh.get())+' --restart '+str(self.restart.get())
@@ -1398,15 +1533,15 @@ class PAIRCARS_inputs:
 
 	def save_input(self,savefile=''):
 		dic={}
-		if self.msdir!='Name of the directory of data.....':
-			dic['msdir']=self.msdir
+		if self.msdir_input!='Name of the directory of data.....':
+			dic['msdir']=self.msdir_input
 		else:
 			dic['msdir']=''
-		if self.basedir!='Name of the base directory .....':
-			dic['basedir']=self.basedir
+		if self.basedir_input!='Name of the base directory .....':
+			dic['basedir']=self.basedir_entry.get()
 		else:
 			dic['basedir']=''
-		if self.tmrange_entry.get()!='hh0:mm0:ss0.ff0~hh1:mm1:ss1.ff1,hh2:mm2:ss2.ff2~....':
+		if self.tmrange_entry.get()!='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2~....':
 			dic['timerange']=self.tmrange_entry.get()
 		else:
 			dic['timerange']=''
@@ -1524,6 +1659,15 @@ class PAIRCARS_inputs:
 				dic['extra_time']=5.0
 			else:
 				dic['extra_time']=float(self.extra_entry.get())
+			if self.maxtime_entry.get()=='Max time':
+				dic['max_time_avg']=5.0
+			else:
+				dic['max_time_avg']=float(self.maxtime_entry.get())
+			if self.weight_entry.get()=='uniform/natural/briggs':
+				dic['weight']='briggs'
+			else:
+				dic['weight']=float(self.weight_entry.get())
+			dic['robust']=float(self.robust_options.get())
 		if savefile=='':
 			paircars_input_file=self.save_file()
 		else:
@@ -1535,7 +1679,7 @@ class PAIRCARS_inputs:
 		except:
 			if savefile=='':
 				messagebox.showerror("Input file save error", "Could not save input file : "+paircars_input_file)
-		return
+		return paircars_input_file
 		
 	def save_file(self):
 		if self.basedir=='Name of the base directory .....':
@@ -1544,9 +1688,59 @@ class PAIRCARS_inputs:
 			save_dir=self.basedir
 		self.input_file=filedialog.asksaveasfilename(initialfile=save_dir+'/inputs.paircars',defaultextension=".paircars",filetypes=[("P-AIRCARS input","*.paircars")])
 		return self.input_file
-		
 
+	def open_logger(self):
+		subprocess.call(["log_viewer",self.basedir_entry.get()+'/Logs_and_Errors'])
+		return
+
+	def close_win(self,top):
+		top.destroy()
+	
+	def insert_val(self,e):
+		e.insert(0,0)
+
+	def popupwin(self):
+		top= Toplevel(self.root)
+		top.geometry("350x250")
+		self.root.eval(f'tk::PlaceWindow {str(top)} center')
+		label=Label(top,text='P-AIRCARS Job ID')
+		label.pack(pady=20)
+		self.popentry=IntVar()
+		self.pop_entry= Entry(top,width= 15,textvariable=self.popentry)
+		self.pop_entry.pack()
+		var=tk.IntVar()
+		button= Button(top, text="Ok", command=lambda:[var.set(1),self.close_win(top)])
+		button.pack(pady=35, side= TOP)
+		button.wait_variable(var)
+		return self.popentry.get()
+		
+	def logview(self):
+		if self.basedir_entry.get()=='Name of the base directory .....' or self.basedir_entry.get()=='':
+			paircars_homedir=os.path.expanduser('~')+'/.paircars'
+			job_id=self.popupwin()
+			if os.path.isfile(paircars_homedir+'/'+str(job_id)+'_inputs.paircars'):
+				self.fileopen1(paircars_homedir+'/'+str(job_id)+'_inputs.paircars')
+				if os.path.isdir(self.basedir_entry.get()+'/Logs_and_Errors')==False:
+					messagebox.showerror('No Logs','No logs available for P-AIRCARS Job with Job ID : '+str(job_id)+'\n')
+					return
+				else:
+					p=Process(target=self.open_logger)
+					p.start()
+			else:
+				messagebox.showerror('No Jobs','No P-AIRCARS Job running for Job ID : '+str(job_id)+'\n')
+				return
+		else:
+			if os.path.isdir(self.basedir_entry.get()+'/Logs_and_Errors')==False:
+				os.makedirs(self.basedir_entry.get()+'/Logs_and_Errors')
+			p=Process(target=self.open_logger)
+			p.start()
+		return
+		
+		
 if __name__=='__main__':
+	paircars_homedir=os.path.expanduser('~')+'/.paircars'
+	if os.path.isdir(paircars_homedir)==False:
+		os.makedirs(paircars_homedir)
 	root=Tk()
 	obs=PAIRCARS_inputs(root)
 	root.mainloop()

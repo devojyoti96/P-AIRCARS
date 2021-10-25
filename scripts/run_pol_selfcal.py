@@ -1,5 +1,6 @@
-import numpy as np,os,sys,matplotlib.pyplot as plt,time,logging,matplotlib,json,urllib.request,glob
-from casatools import *
+import os,psutil
+import numpy as np,sys,matplotlib.pyplot as plt,time,logging,matplotlib,json,urllib.request,glob
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from paircars.access_ms import *
 from paircars.basic_func import *
@@ -36,7 +37,7 @@ def get_OBSID(metafits):
 	OBSid=fits.getheader(metafits)['GPSTIME']
 	return OBSid  
 
-def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_view=2): #TODO : for full stokes
+def get_quicklook_image(imagename,outfile,freq,timestamp,DR_rms,DR_neg,field_of_view=2): 
 	'''
 	Function to get a quick look image
 	Parameters:
@@ -205,12 +206,15 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 						caltable_list.remove(i)
 			caltables=','.join(caltable_list)
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=False)\n')
-			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',calwt=[False],flagbackup=False)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',calwt=[False],flagbackup=True)
 		flagged_chans,flag_frac=calc_flag_chans_caltable(bptable,flag_frac=1.0)
 		min_flagged_chan=np.argmin(flag_frac)
 		logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\',spw=\'0:'+str(min_flagged_chan)+'\')\n')
-		split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected',spw='0:'+str(min_flagged_chan))	
+		try:
+			split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected',spw='0:'+str(min_flagged_chan))
+		except Exception as e:
+			logger.info('Split error : '+str(e)+'\n')	
 		os.system('rm -rf '+msname+' '+msname+'.flagversions')
 		if 'ref' in msname:
 			ref_time_chan=True
@@ -349,7 +353,15 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			print('####################################\n')
 			print ('Scratch = '+str(scratch)+'\n')
 	
-	PSC=PolSelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean) # Creating selfcal object 32 arcmin maximum scale size
+	if inputs.quality_factor==0:
+		num_pixel_in_psf=3
+	elif inputs.quality_factor==1:
+		num_pixel_in_psf=5
+	else:
+		num_pixel_in_psf=7
+			
+	PSC=PolSelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=12,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,savelog=inputs.keep_logger) 
+						# Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 	
 	###################
@@ -365,7 +377,19 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			PSC.multiscale_scales=inputs.multiscale_scales
 		if uvtaper!='':
 			PSC.uvtaper=inputs.uvtaper
-	
+		if inputs.weight=='' or (inputs.weight!='uniform' and inputs.weight!='natural' and inputs.weight!='briggs'):
+			weight='briggs'
+		else:
+			weight=inputs.weight
+		if weight=='briggs':
+			if inputs.robust<-1.0 or inputs.robust>1.0:
+				robust=1.0
+			else:
+				robust=inputs.robust
+	else:
+		weight='briggs'
+		robust=0.8
+		
 	if calc_selfcalib_params==False:
 		if uvrange_to_cal!='':
 			if '~' in uvrange_to_cal:
@@ -404,7 +428,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	try:
 		start_sigma=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0] # Starting with last gaincal start_sigma and threshold
 		rms_list=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
-		rms=np.mean(np.array(rms_list))/0.5 # TODO : calculate Stokes I beam and divide
+		rms=np.mean(np.array(rms_list)) # TODO : calculate Stokes I beam and divide
 		rms_list=[rms]*4			
 	except:
 		logger.info('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.\n')
@@ -432,8 +456,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	background_mask_rad=int((200*60)/PSC.cellsize) # Creating a mask with 3deg radius centered on the image
 	background_mask_str='circle[['+str(PSC.imsize/2)+'pix,'+str(PSC.imsize/2)+'pix],'+str(background_mask_rad)+'pix]'
 
-	subms,subtracted=PSC.subtract_background_sources('IQUV',rms_list,5*start_sigma,5*start_sigma,maskregion=background_mask_str,includeregion=False,\
-													overwrite=True,modify_datacolumn=True)
+	subms,subtracted=PSC.subtract_background_sources('IQUV',rms_list,start_sigma+1.5,start_sigma+1.5,maskregion=background_mask_str,includeregion=False,\
+													overwrite=True,modify_datacolumn=True,weight=weight,robust=robust)
 	cal=CALIBRATE()
 	mwa_config=get_MWA_phase(metafits) # TODO : Include from cross phase cal solutions
 	if mwa_config=='MWAPhaseI':
@@ -445,7 +469,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	if os.path.isdir(working_dir+'/Backup_gaincaled.ms')==True:
 		os.system('rm -rf '+working_dir+'/Backup_gaincaled.ms')
 	logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/Backup_gaincaled.ms\',datacolumn=\'data\')\n')
-	split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='data') # Backup of gain calibrated ms
+	try:
+		split(vis=msname,outputvis=working_dir+'/Backup_gaincaled.ms',datacolumn='data') # Backup of gain calibrated ms
+	except Exception as e:
+		logger.info('Split error : '+str(e)+'\n')
 
 	while end_selfcal==False:
 		if os.path.isfile(msname+'/.usedby_paircars')==False:
@@ -512,7 +539,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			os.system('rm -rf '+msname+' '+msname+'.flagversions')
 			logger.info('Spliting from gaincaled backup ms.....\n')
 			logger.info('split(vis=\'Backup_gaincaled.ms\',outputvis=\''+msname+'\',datacolumn=\'data\')\n')
-			split(vis='Backup_gaincaled.ms',outputvis=msname,datacolumn='data')
+			try:
+				split(vis='Backup_gaincaled.ms',outputvis=msname,datacolumn='data')
+			except Exception as e:
+				logger.info('Split error : '+str(e)+'\n')
 			os.system('cp -r '+msname+' '+basedir+'/polms/'+str(OBSID)+'/'+basemsdir+'/Gaincaled.ms')
 			if os.path.isfile(msname+'/.usedby_paircars')==False:
 				os.system('touch '+msname+'/.usedby_paircars')
@@ -537,14 +567,16 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			IB=ImageBasic(msname)
 			uvrange=IB.calc_calib_uvrange(12)[0]
 			logger.info('bandpass(vis=\''+msname+'\',caltable=\''+working_dir+'/Leakage_cor_gaincal.cal\',refant='+str(inputs.ref_ant)+',minsnr='+str(inputs.gain_minsnr)+','+\
-					'solnorm=True,uvrange=\''+uvrange+'\',bandtype=\'B\')\n')
-			bandpass(vis=msname,caltable=working_dir+'/Leakage_cor_gaincal.cal',refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr,\
-					solnorm=True,uvrange=uvrange,bandtype='B') # Performing gain calibration
+					',uvrange=\''+uvrange+'\',bandtype=\'B\')\n')
+			bandpass(vis=msname,caltable=working_dir+'/Leakage_cor_gaincal.cal',refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr,uvrange=uvrange,bandtype='B')
 			applycal_caltable=[working_dir+'/Leakage_cor_gaincal.cal']
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(applycal_caltable)+',applymode=\'calflag\',flagbackup=False)\n')
-			applycal(vis=msname,gaintable=applycal_caltable,applymode='calflag',flagbackup=False)
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(applycal_caltable)+',applymode=\'calflag\',calwt=[False],flagbackup=False)\n')
+			applycal(vis=msname,gaintable=applycal_caltable,applymode='calflag',calwt=[False],flagbackup=False)
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+msname+'.temp\',datacolumn=\'corrected\')\n')
-			split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')
+			try:
+				split(vis=msname,outputvis=msname+'.temp',datacolumn='corrected')
+			except Exception as e:
+				logger.info('Split error : '+str(e)+'\n')
 			os.system('rm -rf '+msname+' '+msname+'.flagversions')
 			logger.info('os.system(\'mv '+msname+'.temp '+msname+')\n')
 			os.system('mv '+msname+'.temp '+msname)
@@ -580,13 +612,16 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				force=True
 			logger.info('PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force='+str(force)+',skip_freq=1.28,save_beamfile=\''+str(save_beamfile)+'\')\n')
 			PSC.correct_visibility_single_beam_jones(modify_datacolumn=False,force=force,skip_freq=1.28,save_beamfile=save_beamfile) # Single pointing beam correction on visibility data
+			if os.path.isdir(working_dir+'/temp_beamcorrected.ms'):
+				os.system('rm -rf '+working_dir+'/temp_beamcorrected.ms')			
 			logger.info('split(vis=\''+msname+'\',outputvis=\''+working_dir+'/temp_beamcorrected.ms\',datacolumn=\'corrected\')\n')
-			a=split(vis=msname,outputvis=working_dir+'/temp_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
-			if a==True:
+			try:
+				split(vis=msname,outputvis=working_dir+'/temp_beamcorrected.ms',datacolumn='corrected') # Backup beam corrected visibility
 				if os.path.isdir(working_dir+'/Backup_beamcorrected.ms'):
 					os.system('rm -rf '+working_dir+'/Backup_beamcorrected.ms')
 				os.system('mv '+working_dir+'/temp_beamcorrected.ms '+working_dir+'/Backup_beamcorrected.ms')
-			else:
+			except Exception as e:
+				logger.error('Error occured in spliting : '+str(e)+'\n')
 				os.system('rm -rf '+working_dir+'/temp_beamcorrected.ms')
 			tb=table()
 			tb.open('Backup_beamcorrected.ms')
@@ -652,8 +687,10 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		##############
 		antenna_to_use=PSC.antenna_string(antenna_list,-1)
 		while do_selfcal==True:
-			if num_iter<=min(min_iteration,10):
+			if num_iter==min(min_iteration,10):
 				do_poldist=True
+			else:
+				do_poldist=False
 			poldistortion_type='poldistortion'	
 			do_flag=True
 			if subtracted==True and num_iter<=1:
@@ -703,26 +740,26 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 				stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 						poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-						polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)  		
+						polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes,weight=weight,robust=robust)  		
 			elif inputs.maskstr!='': # If mask user defined string is given
 				mask_str=inputs.maskstr
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=False,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)
+					polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes,weight=weight,robust=robust)
 			elif inputs.maskfile=='' and inputs.maskstr=='' and inputs.want_auto_masking==False: # If no mask is given and auto maksing is off, use default central mask
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,mask_str,start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)
+					polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes,weight=weight,robust=robust)
 			elif inputs.want_auto_masking==True:
 				maskregion=mask_str
 				output_PSC=PSC.polselfcal_iteration(num_iter,rms_list,'',start_sigma,maskfile,antenna_to_use,startmodel,startmask,want_auto_masking=inputs.want_auto_masking,\
 					stokes=stokes,interactive=interactive,use_ankflagger=inputs.use_ankflagger,do_flag=do_flag,poldistortion_correction=do_poldist,poldistortion_type=poldistortion_type,\
 					poldistortion_matrix='UH',calibrator_caltable=[],box_width=3,previous_image=previous_image,previous_model=previous_model,do_solarqu_cor=do_solarqu_cor,\
-					maskregion=maskregion,polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes)
+					maskregion=maskregion,polmodel_threshold=polmodel_threshold,quvcor_stokes=quvcor_stokes,weight=weight,robust=robust)
 			
-			if num_iter==min(min_iteration,5) and do_solarqu_cor==True:
+			if num_iter>min(min_iteration,10) and do_solarqu_cor==True:
 				do_solarqu_cor=False
 				quvcor_stokes='QU'
 			
@@ -896,7 +933,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 				if verbose==False:
 					print ('RMS based dynamic ranges : \n'+str(DR1)+','+str(DR3)+','+str(DR5)+'\n')
 					print ('Negative based dynamic ranges : \n'+str(DR2)+','+str(DR4)+','+str(DR6)+'\n')
-					PRINT ('Total flux based dynamic ranges :.\n')
+					print ('Total flux based dynamic ranges :.\n')
 					print ('Stokes I : '+str(FX1_I)+', '+str(FX2_I)+', '+str(FX3_I)+'\n')
 					print ('Stokes Q : '+str(FX1_Q)+', '+str(FX2_Q)+', '+str(FX3_Q)+'\n')
 					print ('Stokes U : '+str(FX1_U)+', '+str(FX2_U)+', '+str(FX3_U)+'\n')
@@ -961,8 +998,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							os.system('cp -r '+msname+' '+msname+'.backup')
 							try:
 								logger.info('Performing uvsub flagging using aNKflagger due to DR decrease.\n')
-								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=True)\n')
-								do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=True)
+								logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk0.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False)\n')
+								do_uvsub_ankflag(msname,model='junk0.model',nthread=1,verbose=verbose,flagbackup=False)
 								os.system('rm -rf '+msname+'.backup')
 							except Exception as e:
 								os.system('rm -rf '+msname)
@@ -970,12 +1007,12 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								logger.error('Error in aNKflagger : '+str(e)+'\n')
 								logger.info('Error in running aNKflagger. Using rms threshold flagging.\n')
 								logger.info('Performing uvsub flagging due to DR decrease.\n')
-								logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[15,10,8],flagbackup=True)\n')
-								do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[15,10,8],flagbackup=True)
+								logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[15,10,8],flagbackup=False)\n')
+								do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[15,10,8],flagbackup=False)
 						else:
 							logger.info('Performing uvsub flagging due to DR decrease.\n')
-							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[15,10,8],flagbackup=True)\n')
-							do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[15,10,8],flagbackup=True)
+							logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk0.model\',mode=\'uvsub_flag\',rmsthresh=[15,10,8],flagbackup=False)\n')
+							do_uvsub_flagger(msname,model='junk0.model',mode='uvsub_flag',rmsthresh=[15,10,8],flagbackup=False)
 						uvsub_flag_count+=1
 						os.system('rm -rf junk1.model')
 						os.system('cp -r junk0.model junk1.model')
@@ -1342,7 +1379,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 # Function to run the script stand alone from command line
 if __name__=='__main__':
 	start_time=time.time()
-	usage= ' Perform self calibration of a single time and frequency slice'
+	usage= ' Perform polarisation self calibration of a single time and frequency slice'
 	parser = OptionParser(usage=usage)
 	parser.add_option('--msname',dest="chantime_msname",default=None,help="Name of measurement set of a single time anf frequency slice",metavar="Measurement Set")
 	parser.add_option('--metafits',dest="metafits",default=None,help="Name of metafits file",metavar="Metafits file")

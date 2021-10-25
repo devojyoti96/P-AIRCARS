@@ -1,5 +1,6 @@
-import numpy as np,os,sys,matplotlib.pyplot as plt,time,logging,matplotlib,json,urllib.request,glob
-from casatools import *
+import os
+import numpy as np,sys,matplotlib.pyplot as plt,time,logging,matplotlib,json,urllib.request,glob
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from paircars.access_ms import *
 from paircars.basic_func import *
@@ -162,8 +163,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		if caltables!='':
 			caltable_list=caltables.split(',')
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',flagbackup=True)\n')
-			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',flagbackup=True)
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',calwt=[False],flagbackup=True)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',calwt=[False],flagbackup=True)
 			tb=table()
 			tb.open(msname,nomodify=False)
 			cor_data=tb.getcol('CORRECTED_DATA')
@@ -256,8 +257,16 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				print('Restarting selfcal from selfcal round : '+str(num_iter)+'\n')
 			print ('Reference time frequency slice imaging has been done. Starting imaging for time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
-	
-	ISC=IntensitySelfcal(msname,metafits,32*60,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean) # Creating selfcal object 32 arcmin maximum scale size
+	if inputs.quality_factor==0:
+		num_pixel_in_psf=3
+	elif inputs.quality_factor==1:
+		num_pixel_in_psf=5
+	else:
+		num_pixel_in_psf=7
+
+	ISC=IntensitySelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=12,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,\
+						savelog=inputs.keep_logger)
+			 # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 
 	###################
@@ -273,6 +282,18 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			ISC.multiscale_scales=inputs.multiscale_scales
 		if uvtaper!='':
 			ISC.uvtaper=inputs.uvtaper
+		if inputs.weight=='' or (inputs.weight!='uniform' and inputs.weight!='natural' and inputs.weight!='briggs'):
+			weight='briggs'
+		else:
+			weight=inputs.weight
+		if weight=='briggs':
+			if inputs.robust<-1.0 or inputs.robust>1.0:
+				robust=1.0
+			else:
+				robust=inputs.robust
+	else:
+		weight='briggs'
+		robust=0.8
 	
 	if calc_selfcalib_params==False:
 		if uvrange_to_cal!='':
@@ -345,7 +366,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
 							' Making dirty map to get rms threshold.\n')
 				start_sigma=inputs.start_sigma
-				msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+				msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index),\
+																	weight=weight,robust=robust)
 				ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=False)
 				if msg_code==0:
 					logger.info('Initial selfcal SNR : '+str(selfcal_snr)+'\n')
@@ -380,7 +402,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				print('Start sigma and threshold information for last intensity selfcal round for reference time channel is not found.'+\
 						' Making dirty map to get rms threshold.\n')
 			start_sigma=inputs.start_sigma
-			msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index))
+			msg_code,out_dict,negative_dyn_range,selfcal_snr=ISC.dirty_image(start_sigma,antenna_to_use=ISC.antenna_string(antenna_list,antenna_list_index),\
+																weight=weight,robust=robust)
 			ISC.file_remover_and_keeper('dirty',msg_code,do_bandpass=False,ref_time_chan=False)
 			if msg_code==0:
 				logger.info('Initial selfcal SNR : '+str(selfcal_snr)+'\n')
@@ -407,16 +430,6 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 				os.system('rm -rf '+working_dir+'/'+file_str+'*')
 			return 12	
-
-	if save_true_loc_image==True: # Save source true location images with respect to the reference time and channel
-		logger.info('Source true location imaging is being done.\n')
-		if verbose==False:
-			print('Source true location imaging is being done.\n')
-		if savedir=='':
-			outdir=basedir+'/All_bandpass_source_true_loc_images'
-		else:
-			outdir=savedir+'/All_bandpass_source_true_loc_images'
-		ISC.image_source_true_loc(outdir,do_bandpass=True)
 	
 	while end_selfcal==False:
 			
@@ -441,11 +454,11 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		if inputs.want_auto_masking==True:
 			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
-							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])
+							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[],weight=weight,robust=robust)
 		else:
 			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,'',ISC.antenna_string(antenna_list,antenna_list_index),\
 				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=False,stokes=stokes,interactive=interactive,\
-							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[])  # Performing selfcal iterations	
+							do_bandpass=True,correct_phasecenter=False,box_width=3,calibrator_caltable=[],weight=weight,robust=robust)  # Performing selfcal iterations	
 
 		if type(output_ISC)==tuple:				
 			msg_code,out_dict,negative_dyn_range=output_ISC

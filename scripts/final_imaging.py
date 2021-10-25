@@ -1,15 +1,59 @@
+import os,time,psutil
+from optparse import OptionParser
+
+cwd=os.getcwd()
+start_time=time.time()
+usage= ' Perform final imaging\n'
+parser = OptionParser(usage=usage)
+parser.add_option('--msname',dest="msname",default=None,help="Name of measurement set of a single time anf frequency slice",metavar="Measurement Set")
+parser.add_option('--metafits',dest='metafits',default=None,help='Name of the metafits file',metavar='Metafits file')
+parser.add_option('--basedir',dest='basedir',default=None,help='Name of the base directory',metavar='Directory path')
+parser.add_option('--workdir',dest='workdir',default=None,help='Name of the working directory',metavar='Directory path')
+parser.add_option('--savedir',dest='savedir',default=None,help='Directory name to save final images',metavar="Directory path")
+parser.add_option('--savemodel',dest='savemodel',default=False,help='Want to save final models',metavar="Boolean")
+parser.add_option('--saveres',dest="saveresidual",default=False,help="Want to save residual images",metavar="Boolean")
+parser.add_option('--stokes',dest='stokes',default='pseudoI',help='Stokes planes to image',metavar="String")
+parser.add_option('--cutoutbox',dest='cutoutbox',default='',help='Cutout box \'X_width,Y_width\' in degree',metavar="Comma separated string")
+parser.add_option('--threshold',dest='threshold',default=0.1,help='RMS threshold for cleaning for each Stokes plane',metavar="Comma separated string")
+parser.add_option('--sigma',dest='sigma',default=10,help='Sigma value for thresholding',metavar="Float")
+parser.add_option('--want_automask',dest='want_automask',default=False,help='Want auto masking or not',metavar="Boolean")
+parser.add_option('--maskfile',dest='maskfile',default=None,help='Mask for imaging when auto masking is off',metavar="Maskfile or CASA mask string")
+parser.add_option('--quality_factor',dest='quality_factor',default=1,help='Quality factor of imaging',metavar="Integer")
+parser.add_option('--use_ankflag',dest='use_ankflag',default=False,help='Use aNKflag for flagging or not',metavar="Boolean")
+parser.add_option('--residual_frac',dest='resfrac',default=0.1,help='Residual flux fraction',metavar="Float")
+parser.add_option('--casa_caltables',dest='casacals',default='',help='CASA caltables',metavar="Comma separated string")
+parser.add_option('--calibrate_caltables',dest='calibratecals',default='',help='CALIBRATE caltables',metavar="Comma separated string")
+parser.add_option('--wsclean',dest="use_wsclean",default=True,help="Use WSClean for imaging or not",metavar="Boolean")
+parser.add_option('--do_diffcal',dest="do_diffcal",default=False,help="Use WSClean for imaging or not",metavar="Boolean")
+parser.add_option('--cpu_frac',dest='cpu_frac',default=0.5,help='Fraction of cpu to use',metavar="Float")
+parser.add_option('--imaging_mode',dest='mode',default='final',help='Imaging for database or final imaging',metavar="String")
+parser.add_option('--inputfile',dest='inputfile',default=None,help='Path of the P-AIRCARS input file',metavar="File path")
+parser.add_option('--major_axis',dest='maj',default=None,help='Final image restoring beam major axis (FWHM) in arcsec',metavar="Float")
+parser.add_option('--minor_axis',dest='minor',default=None,help='Final image restoring beam minor axis (FWHM) in arcsec',metavar="Float")
+parser.add_option('--pa',dest='pa',default=None,help='Final image restoring beam position angle in degree',metavar="Float")
+(options, args) = parser.parse_args()
+
+while True:
+	available_cpu=int(psutil.cpu_count()*(1-(psutil.cpu_percent()/100.0))*float(options.cpu_frac))
+	if available_cpu>0:
+		break
+os.environ['OPENBLAS_NUM_THREADS'] = str(available_cpu)
+os.environ['OMP_NUM_THREADS'] = str(available_cpu)
 from casatasks import *
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms,imager
 from paircars.basic_func import *
 from paircars.access_ms import *
 from paircars_casatasks.poltclean import *
-from optparse import OptionParser
 from paircars.flagger import *
 from astropy.io import fits
 from CALIBRATE.access_calibrate import *
 from paircars.fullpol_selfcal_LTS import *
 import time
-
+inputfile=str(options.inputfile)
+if inputfile[-1]=='/':
+	inputfile=inputfile[:-1]
+sys.path.append(os.path.dirname(os.path.abspath(inputfile)))
+import selfcal_inputs as inputs
 
 def calc_residual_flux(imagename,residual,nsigma,rms_box,stokes_list=['I']):
 	'''
@@ -205,7 +249,8 @@ def get_stokes(stokes):
 
 
 def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_automask=False,maskfile='',quality_factor=1,threshold=[0.1],do_diffcal=False,\
-				savemodel=False,saveresidual=False,cutoutbox='',use_ankflagger=False,residual_frac=0.1,use_wsclean=True,cpus=3,absmem=5): #TODO : Wide FOV Differential beam correction
+				savemodel=False,saveresidual=False,cutoutbox='',use_ankflagger=False,residual_frac=0.1,use_wsclean=True,cpus=3,absmem=5,\
+				clean_beam=[]): #TODO : Wide FOV Differential beam correction
 	'''
 	Function to make final images
 	Parameters:		
@@ -229,6 +274,7 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 	use_wsclean = True, use wsclean or not
 	cpus = Number of cpus to use in wsclean
 	absmem = Absolute memory in GB for wsclean
+	clean_beam = [], clean beam [maj,min,pa]
 	Result:
 	Name of final image,model,residual
 	'''
@@ -255,190 +301,265 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 	else:
 		cpus=3
 	AM=AccessMS(msname)
-	freqs=AM.calc_meanfreq()/10**6	
-	OBSID=str(fits.getheader(metafits)['GPSTIME'])	
-	file_str=workdir+'/'+os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False)).split('.ms')[0]
-	if quality_factor==0:
-		gain=0.3
-	elif quality_factor==1:
-		gain=0.15
-	else:
-		gain=0.1				
-	stokes_list=get_stokes(stokes)
-	mask=file_str+'.mask'
-	PSC=PolSelfcal(options.msname,options.metafits,32*60,verbose=False,interactive=False,use_wsclean=use_wsclean,savelog=False) 
-	cal=CALIBRATE()
-	IB=ImageBasic(msname)
-	uvrange=IB.calc_calib_uvrange(12)[0]	
-	imaging_minuv=IB.calc_calib_uvrange(12)[3]
-	imaging_maxuv=IB.calc_calib_uvrange(12)[4]
-	cell=IB.calc_cellsize(3) # Assuming 3 pixels in one PSF
-	imsize=IB.num_pixels(3)
-	scales=IB.choose_scales(3,32*60)
-	uvtaper=IB.calc_uvtaper()
-	rms_box='50,50,'+str(imsize-50)+','+str(int(imsize/4))
-	os.system('rm -rf '+file_str+'.image '+file_str+'.model '+file_str+'.mask '+file_str+'.psf '+file_str+'.pb '+file_str+'.sumwt '+file_str+'.flux '+file_str+'.residual '+\
-					file_str+'*.fits')
-	count=0
-	clean_continue=False
-	while True:
-		AM=AccessMS(msname)
-		flagfrac=AM.calc_flagfrac()
-		if flagfrac<=0.95:
-			try:
-				if use_wsclean==False:
-					casa_imagename=file_str+'.image'
-					casa_residualname=file_str+'.residual'
-					casa_modelname=file_str+'.model'
-					if len(threshold)!=len(stokes_list):	
-						threshold=[threshold[0]]*len(stokes_list)
-					if maskfile=='':
-						mask_rad=int((60*60)/float(cell)) # Creating a mask with 60 arcmin radius centered on the image
-						mask_str='circle[['+str(imsize/2)+'pix,'+str(imsize/2)+'pix],'+str(mask_rad)+'pix]'
-					else:
-						mask_str=maskfile
-					threshold_list=[str(rms*5)+'Jy' for rms in threshold]
-					if os.path.isdir(mask)==True:
-						imaging_cmd='poltclean(vis=\''+msname+'\',selectdata=True,datacolumn="corrected",uvrange=\''+str(uvrange)+'\',imagename=\''+file_str+'\',imsize=['+str(imsize)+\
-						'],cell=\''+str(cell)+'\',stokes=\''+str(stokes)+'\',gridder=\'standard\',pblimit=-1,deconvolver="multiscale",scales='+str(scales)\
-						+',nterms=1,weighting="briggs",robust=1.0,uvtaper=\''+str(uvtaper)+'\',casalogger='+str(casalog)+',niter=100000000000,gain='+str(gain)+',threshold='+\
-						str(threshold_list)+',interactive=False,usemask="user",startmask='+str(mask)+',savemodel=\'modelcolumn\')'
-						print (imaging_cmd+'\n')
-						poltclean(vis=msname,selectdata=True,datacolumn="corrected",uvrange=uvrange,imagename=file_str,imsize=[imsize],cell=cell,stokes=stokes,gridder='standard',\
-						pblimit=-1,deconvolver="multiscale",scales=scales,nterms=1,weighting="briggs",robust=1.0,uvtaper=uvtaper,casalogger=casalog,\
-						niter=100000000000,gain=gain,threshold=threshold_list,interactive=False,usemask="user",startmask=mask,savemodel='modelcolumn')
-					elif want_automask==True and maskfile=='':
-						imaging_cmd='poltclean(vis=\''+msname+'\',selectdata=True,datacolumn="corrected",imagename=\''+file_str+'\',imsize=['+str(imsize)+'],cell=\''+str(cell)+\
-						'\',stokes=\''+stokes+'\',gridder=\'standard\',pblimit=-1,deconvolver="multiscale",scales='+str(scales)+',nterms=1,weighting="natural",uvtaper='+\
-						str(uvtaper)+',niter=100000000000,gain='+str(gain)+',casalogger='+str(casalog)+',threshold='+str(threshold_list)+\
-						',interactive=False,usemask=\'auto-multithresh\',negativethreshold=3.0,savemodel=\'modelcolumn\')'
-						print (imaging_cmd+'\n')
-						poltclean(vis=msname,selectdata=True,datacolumn="corrected",uvrange=uvrange,imagename=file_str,imsize=[imsize],cell=cell,stokes=stokes,gridder='standard',\
-						pblimit=-1,deconvolver="multiscale",scales=scales,nterms=1,weighting="briggs",robust=1.0,uvtaper=uvtaper,niter=100000000000,gain=gain,casalogger=casalog,\
-						threshold=threshold_list,interactive=False,usemask='auto-multithresh',negativethreshold=3.0,savemodel='modelcolumn')
-					else:
-						imaging_cmd='poltclean(vis=\''+msname+'\',selectdata=True,datacolumn="corrected",imagename=\''+str(file_str)+'\',imsize=['+str(imsize)+'],cell=\''+str(cell)+\
-						'\',stokes=\''+str(stokes)+'\',gridder=\'standard\',pblimit=-1,deconvolver="multiscale",scales='+str(scales)+',nterms=1,weighting="briggs",robust=1.0,uvtaper=\''+\
-						str(uvtaper)+'\',casalogger='+str(casalog)+',niter=100000000000,threshold='+str(threshold_list)+',interactive=False,usemask="user",mask=\''+str(mask_str)+\
-						',savemodel=\'modelcolumn\')'
-						print (imaging_cmd+'\n')
-						poltclean(vis=msname,selectdata=True,datacolumn="corrected",uvrange=uvrange,imagename=file_str,imsize=[imsize],cell=cell,stokes=stokes,gridder='standard',\
-						pblimit=-1,deconvolver="multiscale",scales=scales,nterms=1,weighting="briggs",robust=1.0,uvtaper=uvtaper,casalogger=casalog,\
-						niter=100000000000,threshold=threshold_list,interactive=False,usemask="user",mask=mask_str,savemodel='modelcolumn')
+	try_count=0
+	done_imaging=False
+	while done_imaging==False:
+		try:
+			freqs=AM.calc_meanfreq()/10**6	
+			OBSID=str(fits.getheader(metafits)['GPSTIME'])	
+			file_str=workdir+'/'+os.path.basename(splited_ms_rename(msname,ref_time_chan=False,change_msname=False)).split('.ms')[0]
+			if quality_factor==0:
+				gain=0.2
+				mgain=0.8
+				multiscale_gain=0.12
+			elif quality_factor==1:
+				gain=0.1
+				mgain=0.75
+				multiscale_gain=0.1
+			else:
+				gain=0.08	
+				mgain=0.7
+				multiscale_gain=0.07			
+			stokes_list=get_stokes(stokes)
+			mask=file_str+'.mask'
+			PSC=PolSelfcal(options.msname,options.metafits,32*60,verbose=False,interactive=False,use_wsclean=use_wsclean,savelog=False) 
+			cal=CALIBRATE()
+			IB=ImageBasic(msname)
+			if inputs.calc_image_parameters==True:
+				uvrange=IB.calc_calib_uvrange(12)[0]	
+				imaging_minuv=IB.calc_calib_uvrange(12)[3]
+				imaging_maxuv=IB.calc_calib_uvrange(12)[4]
+				cell=IB.calc_cellsize(5) # Assuming 5 pixels in one PSF
+				imsize=IB.num_pixels(5)
+				scales=IB.choose_scales(5,32*60)
+				uvtaper=IB.calc_uvtaper()
+				if inputs.weight=='' or (inputs.weight!='uniform' and inputs.weight!='natural' and inputs.weight!='briggs'):
+					weight='briggs'
 				else:
-					if stokes=='I':
-						pol='i'
-					elif stokes=='RR':
-						pol='rr'
-					elif stokes=='LL':
-						pol='ll'
-					elif stokes=='XX':
-						pol='xx'
-					elif stokes=='YY':
-						pol='yy'
-					elif stokes=='RRLL':
-						pol='rrll'
-					elif stokes=='XXYY':
-						pol='xxyy'
-					elif stokes=='IQUV':
-						pol='iquv'
-					scales=[str(i) for i in scales]
-					wsclean_args=['-scale '+str(cell)+'asec','-size '+str(imsize)+' '+str(imsize),'-no-dirty','-j '+str(cpus),'-abs-mem '+str(absmem),'-weight briggs 0.8',\
-					'-taper-tukey 10','-name '+str(file_str),'-nwlayers 1','-pol '+str(pol),'-maxuv-l '+str(imaging_maxuv),\
-					'-minuv-l '+str(imaging_minuv),'-niter 1000000','-mgain 0.9','-quiet','-auto-threshold '+str(sigma),'-auto-mask '+str(sigma+0.5),\
-					'-gain 0.1','-multiscale','-multiscale-scales '+','.join(scales)]
-					if clean_continue==True:
-						wsclean_args.append('-continue')
-					imaging_cmd='wsclean '+' '.join(wsclean_args)+' '+msname
-					print (imaging_cmd+'\n')			
-					os.system('wsclean '+' '.join(wsclean_args)+' '+msname)
-					wsclean_images=glob.glob(file_str+'*image*.fits')
-					wsclean_models=glob.glob(file_str+'*model*.fits')
-					wsclean_residuals=glob.glob(file_str+'*residual*.fits')
-					print ('Converting WSClean images : '+','.join([os.path.basename(i) for i in wsclean_images])+' to CASA image : '+file_str+'.image\n')
-					casa_imagename=PSC.wsclean_to_casaimage(wsclean_images=wsclean_images,casaimage_prefix=file_str,imagetype='image',keep_wsclean_images=True)
-					print ('Converting WSClean models : '+','.join([os.path.basename(i) for i in wsclean_models])+' to CASA model : '+file_str+'.model\n')
-					casa_modelname=PSC.wsclean_to_casaimage(wsclean_images=wsclean_models,casaimage_prefix=file_str,imagetype='model',keep_wsclean_images=True)
-					print ('Converting WSClean residuals : '+','.join([os.path.basename(i) for i in wsclean_residuals])+' to CASA residual : '+file_str+'.residual\n')
-					casa_residualname=PSC.wsclean_to_casaimage(wsclean_images=wsclean_residuals,casaimage_prefix=file_str,imagetype='residual',keep_wsclean_images=True)
-				if count==0:
-					qucor_image,qucor_model,qchange,uchange,vchange=PSC.correct_solar_quv_leakage(casa_imagename,casa_modelname,sigma,overwrite=False)
-					qucor_image,qucor_model=PSC.pol_model_threshold(qucor_image,qucor_model,sigma,1)
-					casa_modelname=qucor_model
-					if qchange>=0.05 or uchange>=0.05 or vchange>=0.05 or do_diffcal==True:
-						if do_diffcal==True:
-							cal_cause='Differential calibration'
-						elif qchange>=0.05 or uchange>=0.05 or vchange>=0.05:
-							cal_cause='Stokes leakage decreases.'
-						print ('Performing differential calibration because : '+cal_cause+'\n')
-						delmod(vis=msname,scr=True,otf=True)
-						ft(vis=msname,model=casa_modelname,usescratch=True)
-						AM=AccessMS(msname)
-						timeres=AM.calc_timeres()
-						tstamps=AM.get_num_timestamps()
-						tintg=int((timeres*tstamps)/10)
-						cal.calibrate(msname=msname,caltable=file_str+'.cal',verbose=False,j=3,t=tintg,a='0.001,0.0001')
-						cal.applycal(msname=msname,gaintable=file_str+'.cal')
-					do_uvsub_ankflag(msname,model=casa_modelname,verbose=False,nthread=3,extendpols=True,chantime_minfrac=0.8,casaflag='rflag')
-					count+=1
-					if qchange>=0.05 or uchange>=0.05 or vchange>=0.05 or do_diffcal==True:
-						clean_continue=False
+					weight=inputs.weight
+				if weight=='briggs':
+					if inputs.robust<-1.0 or inputs.robust>1.0:
+						robust=1.0
 					else:
-						clean_continue=True
-					continue
-				median_res_frac,threshold=calc_residual_flux(casa_imagename,casa_residualname,5,rms_box,stokes_list=stokes_list)
-				if median_res_frac>=residual_frac and sigma>=5 and count>=1:
-					print ('Continuing CLEANing, since residual fraction is more than '+str(residual_frac*100)+'%\n')
-					clean_continue=True
-					sigma-=1.0
-					count+=1
-					continue
+						robust=inputs.robust
+			else:
+				uvrange_to_cal=inputs.uvrange_to_cal
+				uvrange=uvrange_to_cal
+				if uvrange_to_cal!='':
+					if '~' in uvrange_to_cal:
+						uvrange=uvrange_to_cal.split('~')
+						imaging_minuv=float(uvrange[0])
+						imaging_maxuv=float(uvrange[1])
+					elif '>' in uvrange_to_cal:
+						uvrange=uvrange_to_cal.split('>')
+						imaging_minuv=float(uvrange[1])
+						imaging_maxuv=AM.get_max_baseline()/AM.calc_meanwavelength()
+					elif '<' in uvrange_to_cal:
+						uvrange=uvrange_to_cal.split('<')
+						imaging_minuv=0
+						imaging_maxuv=float(uvrange[1])
 				else:
-					break
-			except Exception as e:
-				print ('Error occured in final imaging : '+str(e)+'\n')
+					uvrange=IB.calc_calib_uvrange(12)[0]	
+					imaging_minuv=IB.calc_calib_uvrange(12)[3]
+					imaging_maxuv=IB.calc_calib_uvrange(12)[4]	
+				cell=inputs.cellsize
+				imsize=inputs.imsize[0]
+				scales=inputs.multiscale_scales		
+				if inputs.uvtaper!='':
+					uvtaper=inputs.uvtaper
+				else:
+					uvtaper=IB.calc_uvtaper()
+				weight='briggs'
+				robust=1.0
+			rms_box='50,50,'+str(imsize-50)+','+str(int(imsize/4))
+			os.system('rm -rf '+file_str+'.image '+file_str+'.model '+file_str+'.mask '+file_str+'.psf '+file_str+'.pb '+file_str+'.sumwt '+file_str+'.flux '+file_str+'.residual '+\
+							file_str+'*.fits')
+			count=0
+			clean_continue=False
+			while True:
+				AM=AccessMS(msname)
+				flagfrac=AM.calc_flagfrac()
+				if flagfrac<=0.95:
+					try:
+						if use_wsclean==False:
+							casa_imagename=file_str+'.image'
+							casa_residualname=file_str+'.residual'
+							casa_modelname=file_str+'.model'
+							if len(threshold)!=len(stokes_list):	
+								threshold=[threshold[0]]*len(stokes_list)
+							if maskfile=='':
+								mask_rad=int((60*60)/float(cell)) # Creating a mask with 60 arcmin radius centered on the image
+								mask_str='circle[['+str(imsize/2)+'pix,'+str(imsize/2)+'pix],'+str(mask_rad)+'pix]'
+							else:
+								mask_str=maskfile
+							threshold_list=[str(rms*5)+'Jy' for rms in threshold]
+							if len(clean_beam)==3:
+								restoring_beam=[str(clean_beam[0])+'arcsec',str(clean_beam[1])+'arcsec',str(clean_beam[2])+'deg']
+							else:
+								restoring_beam=[]
+							if os.path.isdir(mask)==True:
+								imaging_cmd='poltclean(vis=\''+msname+'\',selectdata=True,datacolumn="corrected",uvrange=\''+str(uvrange)+'\',imagename=\''+file_str+\
+								'\',imsize=['+str(imsize)+'],cell=\''+str(cell)+'\',stokes=\''+str(stokes)+'\',gridder=\'standard\',pblimit=-1,deconvolver="multiscale",scales='+\
+								str(scales)+',nterms=1,weighting=\''+weight+'\',robust='+str(robust)+',uvtaper=\''+str(uvtaper)+'\',casalogger='+\
+								str(casalog)+',niter=100000000000,gain='+str(gain)+',threshold='+str(threshold_list)+',interactive=False,usemask="user",startmask='+\
+								str(mask)+',savemodel=\'modelcolumn\',restoringbeam='+str(restoring_beam)+')'
+								print (imaging_cmd+'\n')
+								poltclean(vis=msname,selectdata=True,datacolumn="corrected",uvrange=uvrange,imagename=file_str,imsize=[imsize],cell=cell,stokes=stokes,gridder='standard',\
+								pblimit=-1,deconvolver="multiscale",scales=scales,nterms=1,weighting=weight,robust=robust,uvtaper=uvtaper,casalogger=casalog,\
+								niter=100000000000,gain=gain,threshold=threshold_list,interactive=False,usemask="user",startmask=mask,savemodel='modelcolumn',restoringbeam=restoring_beam)
+							elif want_automask==True and maskfile=='':
+								imaging_cmd='poltclean(vis=\''+msname+'\',selectdata=True,datacolumn="corrected",imagename=\''+file_str+'\',imsize=['+str(imsize)+'],cell=\''+str(cell)+\
+								'\',stokes=\''+stokes+'\',gridder=\'standard\',pblimit=-1,deconvolver="multiscale",scales='+str(scales)+',nterms=1,weighting=\''+weight+'\',robust='+\
+								str(robust)+'uvtaper='+str(uvtaper)+',niter=100000000000,gain='+str(gain)+',casalogger='+str(casalog)+',threshold='+str(threshold_list)+\
+								',interactive=False,usemask=\'auto-multithresh\',negativethreshold=3.0,savemodel=\'modelcolumn\',restoringbeam='+str(restoring_beam)+')'
+								print (imaging_cmd+'\n')
+								poltclean(vis=msname,selectdata=True,datacolumn="corrected",uvrange=uvrange,imagename=file_str,imsize=[imsize],cell=cell,stokes=stokes,gridder='standard',\
+								pblimit=-1,deconvolver="multiscale",scales=scales,nterms=1,weighting=weight,robust=robust,uvtaper=uvtaper,niter=100000000000,gain=gain,casalogger=casalog,\
+								threshold=threshold_list,interactive=False,usemask='auto-multithresh',negativethreshold=3.0,savemodel='modelcolumn',restoringbeam=restoring_beam)
+							else:
+								imaging_cmd='poltclean(vis=\''+msname+'\',selectdata=True,datacolumn="corrected",imagename=\''+str(file_str)+'\',imsize=['+str(imsize)+'],cell=\''+\
+								str(cell)+'\',stokes=\''+str(stokes)+'\',gridder=\'standard\',pblimit=-1,deconvolver="multiscale",scales='+str(scales)+\
+								',nterms=1,weighting=\''+weight+'\',robust='+str(robust)+',uvtaper=\''+str(uvtaper)+'\',casalogger='+str(casalog)+\
+								',niter=100000000000,threshold='+str(threshold_list)+',interactive=False,usemask="user",mask=\''+str(mask_str)+\
+								',savemodel=\'modelcolumn\',restoringbeam='+str(restoring_beam)+')'
+								print (imaging_cmd+'\n')
+								poltclean(vis=msname,selectdata=True,datacolumn="corrected",uvrange=uvrange,imagename=file_str,imsize=[imsize],cell=cell,stokes=stokes,gridder='standard',\
+								pblimit=-1,deconvolver="multiscale",scales=scales,nterms=1,weighting=weight,robust=robust,uvtaper=uvtaper,casalogger=casalog,\
+								niter=100000000000,threshold=threshold_list,interactive=False,usemask="user",mask=mask_str,savemodel='modelcolumn',restoringbeam=restoring_beam)
+						else:
+							if stokes=='I':
+								pol='i'
+							elif stokes=='RR':
+								pol='rr'
+							elif stokes=='LL':
+								pol='ll'
+							elif stokes=='XX':
+								pol='xx'
+							elif stokes=='YY':
+								pol='yy'
+							elif stokes=='RRLL':
+								pol='rrll'
+							elif stokes=='XXYY':
+								pol='xxyy'
+							elif stokes=='IQUV':
+								pol='iquv'
+							scales=[str(i) for i in scales]
+							if weight=='briggs':
+								weight=weight+' '+str(robust)
+							wsclean_args=['-scale '+str(cell)+'asec','-size '+str(imsize)+' '+str(imsize),'-no-dirty','-j '+str(cpus),'-abs-mem '+str(absmem),'-weight '+weight,\
+							'-taper-tukey 10','-name '+str(file_str),'-nwlayers 1','-pol '+str(pol),'-maxuv-l '+str(imaging_maxuv),'-minuv-l '+str(imaging_minuv),'-niter 1000000',\
+							'-mgain '+str(mgain),'-quiet','-auto-threshold '+str(sigma),'-auto-mask '+str(sigma+0.1),'-multiscale-gain '+str(multiscale_gain),\
+							'-multiscale-scale-bias 0.7','-gain '+str(gain),'-multiscale','-multiscale-scales '+','.join(scales)]
+							if clean_continue==True:
+								wsclean_args.append('-continue')
+							if len(clean_beam)==3:
+								wsclean_args.append('-beam-shape '+str(clean_beam[0])+' '+str(clean_beam[1])+' '+str(clean_beam[2]))
+							imaging_cmd='wsclean '+' '.join(wsclean_args)+' '+msname
+							print (imaging_cmd+'\n')			
+							os.system('wsclean '+' '.join(wsclean_args)+' '+msname)
+							time.sleep(2)
+							wsclean_images=glob.glob(file_str+'*image.fits')
+							wsclean_models=glob.glob(file_str+'*model.fits')
+							wsclean_residuals=glob.glob(file_str+'*residual.fits')
+							print ('Converting WSClean images : '+','.join([os.path.basename(i) for i in wsclean_images])+' to CASA image : '+file_str+'.image\n')
+							casa_imagename=PSC.wsclean_to_casaimage(wsclean_images=wsclean_images,casaimage_prefix=file_str,imagetype='image',keep_wsclean_images=True)
+							print ('Converting WSClean models : '+','.join([os.path.basename(i) for i in wsclean_models])+' to CASA model : '+file_str+'.model\n')
+							casa_modelname=PSC.wsclean_to_casaimage(wsclean_images=wsclean_models,casaimage_prefix=file_str,imagetype='model',keep_wsclean_images=True)
+							print ('Converting WSClean residuals : '+','.join([os.path.basename(i) for i in wsclean_residuals])+' to CASA residual : '+file_str+'.residual\n')
+							casa_residualname=PSC.wsclean_to_casaimage(wsclean_images=wsclean_residuals,casaimage_prefix=file_str,imagetype='residual',keep_wsclean_images=True)
+						if count==0:
+							qucor_image,qucor_model,qchange,uchange,vchange=PSC.correct_solar_quv_leakage(casa_imagename,casa_modelname,sigma,overwrite=False)
+							qucor_image,qucor_model=PSC.pol_model_threshold(qucor_image,qucor_model,sigma,1)
+							if qchange>=0.01 or uchange>=0.01 or vchange>=0.01 or do_diffcal==True:
+								casa_modelname=qucor_model
+								if do_diffcal==True:
+									cal_cause='Differential calibration'
+								elif qchange>=0.01 or uchange>=0.01 or vchange>=0.01:
+									cal_cause='Stokes leakage decreases.'
+								print ('Performing differential calibration because : '+cal_cause+'\n')
+								print ('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
+								delmod(vis=msname,scr=True,otf=True)
+								print ('ft(vis=\''+msname+'\',model=\''+casa_modelname+'\',usescratch=True)\n')
+								ft(vis=msname,model=casa_modelname,usescratch=True)
+								if stokes!='I':
+									print ('cal.calibrate(msname=\''+msname+'\',caltable=\''+file_str+'.cal\',verbose=False,j=3,'+\
+									',datacolumn=\'data\')\n')
+									cal.calibrate(msname=msname,caltable=file_str+'.cal',verbose=False,j=3,datacolumn='data')
+									print ('cal.applycal(msname=\''+msname+'\',gaintable=\''+file_str+'.cal\',datacolumn=\'data\')\n')
+									cal.applycal(msname=msname,gaintable=file_str+'.cal',datacolumn='data')
+							else:
+								print ('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
+								delmod(vis=msname,scr=True,otf=True)
+								print ('ft(vis=\''+msname+'\',model=\''+casa_modelname+'\',usescratch=True)\n')
+								ft(vis=msname,model=casa_modelname,usescratch=True)
+							if inputs.use_ankflagger:
+								do_uvsub_ankflag(msname,model=casa_modelname,verbose=False,nthread=3,extendpols=False,chantime_minfrac=0.8,casaflag='tfcrop')
+							else:
+								do_uvsub_flagger(msname,model=casa_modelname,rmsthresh=[10,7,5])
+							count+=1
+							continue
+						median_res_frac,threshold=calc_residual_flux(casa_imagename,casa_residualname,sigma,rms_box,stokes_list=stokes_list)
+						if median_res_frac>=residual_frac and sigma>=inputs.min_sigma and count>=1:
+							print ('Continuing CLEANing, since residual fraction is more than '+str(residual_frac*100)+'%\n')
+							clean_continue=True
+							sigma-=inputs.sigma_step
+							count+=1
+							if quality_factor==0 and count>=1:
+								done_imaging=True
+								break
+							elif quality_factor==0 and count>=5:
+								done_imaging=True
+								break
+							elif quality_factor==2 and count>=9:
+								done_imaging=True
+								break
+							else:
+								continue
+						else:
+							done_imaging=True
+							break
+					except Exception as e:
+						print ('Error occured in final imaging : '+str(e)+'\n')
+						if try_count>=2:
+							print ('Maximum 2 tries failed. Quit.\n')
+							done_imaging=True
+							return 2
+						else:
+							antenna=AM.get_antenna_string()
+							flagdata(vis=msname,mode='unflag',antenna=antenna)
+							flag_MWA_coarse(msname,edgewidth=280,do_flag=True,force=True,flagbackup=False)
+							try_count+=1
+							print ('Trying count " '+str(try_count)+'\n')
+							continue
+			else:
+				done_imaging=True
+				return 1
+		except Exception as e:
+			print ('Error occured in final imaging : '+str(e)+'\n')
+			if try_count>=2:
+				print ('Maximum 2 tries failed. Quit.\n')
+				done_imaging=True
 				return 2
-		else:
-			return 1
+			else:
+				antenna=AM.get_antenna_string()
+				flagdata(vis=msname,mode='unflag',antenna=antenna)
+				flag_MWA_coarse(msname,edgewidth=280,do_flag=True,force=True,flagbackup=False)
+				try_count+=1
+				print ('Trying count " '+str(try_count)+'\n')
+				continue
+			
 	# Exporting images
 	##################		
 	output=export_images(file_str,OBSID,cell,imsize,imaging_cmd=imaging_cmd,savedir=savedir,savemodel=savemodel,saveresidual=saveresidual,cutoutbox=cutoutbox,astrometry=False)
-	os.system('rm -rf *.image *.model *pb *psf* *.sumwt *.flux *.fits')
-	os.system('rm -rf '+file_str+'*')	
+	#os.system('rm -rf *.image *.model *pb *psf* *.sumwt *.flux *.fits')
+	#os.system('rm -rf '+file_str+'*')	
 	os.system('cd ../')	
-	if savedir!=workdir:
-		os.system('rm -rf '+workdir)
+	#if savedir!=workdir:
+	#	os.system('rm -rf '+workdir)
 	os.chdir(cwd)		
 	return 0
-	
-# Function to run the script stand alone from command line
-if __name__=='__main__':
-	cwd=os.getcwd()
-	start_time=time.time()
-	usage= ' Perform final imaging\n'
-	parser = OptionParser(usage=usage)
-	parser.add_option('--msname',dest="msname",default=None,help="Name of measurement set of a single time anf frequency slice",metavar="Measurement Set")
-	parser.add_option('--metafits',dest='metafits',default=None,help='Name of the metafits file',metavar='Metafits file')
-	parser.add_option('--basedir',dest='basedir',default=None,help='Name of the base directory',metavar='Directory path')
-	parser.add_option('--workdir',dest='workdir',default=None,help='Name of the working directory',metavar='Directory path')
-	parser.add_option('--savedir',dest='savedir',default=None,help='Directory name to save final images',metavar="Directory path")
-	parser.add_option('--savemodel',dest='savemodel',default=False,help='Want to save final models',metavar="Boolean")
-	parser.add_option('--saveres',dest="saveresidual",default=False,help="Want to save residual images",metavar="Boolean")
-	parser.add_option('--stokes',dest='stokes',default='pseudoI',help='Stokes planes to image',metavar="String")
-	parser.add_option('--cutoutbox',dest='cutoutbox',default='',help='Cutout box \'X_width,Y_width\' in degree',metavar="Comma separated string")
-	parser.add_option('--threshold',dest='threshold',default=0.1,help='RMS threshold for cleaning for each Stokes plane',metavar="Comma separated string")
-	parser.add_option('--sigma',dest='sigma',default=10,help='Sigma value for thresholding',metavar="Float")
-	parser.add_option('--want_automask',dest='want_automask',default=False,help='Want auto masking or not',metavar="Boolean")
-	parser.add_option('--maskfile',dest='maskfile',default=None,help='Mask for imaging when auto masking is off',metavar="Maskfile or CASA mask string")
-	parser.add_option('--quality_factor',dest='quality_factor',default=1,help='Quality factor of imaging',metavar="Integer")
-	parser.add_option('--use_ankflag',dest='use_ankflag',default=False,help='Use aNKflag for flagging or not',metavar="Boolean")
-	parser.add_option('--residual_frac',dest='resfrac',default=0.15,help='Residual flux fraction',metavar="Float")
-	parser.add_option('--casa_caltables',dest='casacals',default='',help='CASA caltables',metavar="Comma separated string")
-	parser.add_option('--calibrate_caltables',dest='calibratecals',default='',help='CALIBRATE caltables',metavar="Comma separated string")
-	parser.add_option('--wsclean',dest="use_wsclean",default=True,help="Use WSClean for imaging or not",metavar="Boolean")
-	parser.add_option('--do_diffcal',dest="do_diffcal",default=False,help="Use WSClean for imaging or not",metavar="Boolean")
-	(options, args) = parser.parse_args()
 
+try:
 	if str(options.msname)[-1]=='/':
 		msname=str(options.msname)[:-1]
 	else:
@@ -446,11 +567,11 @@ if __name__=='__main__':
 
 	if os.path.isdir(str(options.msname))==False or options.msname==None:
 		print ('Measurement set is not present.\n')
-		os.system('touch '+cwd+'/.Finished_final_imaging_'+os.path.basename(str(msname))+'_noms')
+		os.system('touch '+cwd+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(str(msname))+'_noms')
 		os._exit(1)
 	elif os.path.isfile(str(options.metafits))==False or options.metafits==None:
 		print ('Metafits file is not present.\n')
-		os.system('touch '+cwd+'/.Finished_final_imaging_'+os.path.basename(str(msname))+'_nometa')
+		os.system('touch '+cwd+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(str(msname))+'_nometa')
 		os._exit(1)
 	else:
 		if os.path.isdir(options.workdir+'/imaging_data')==False:
@@ -464,6 +585,8 @@ if __name__=='__main__':
 			else:
 				calibratecaltables=str(options.calibratecals).split(',')
 			print ('Applying gain calibration.....\n')
+			print ('clearcal(vis=\''+options.msname+'\')\n')
+			clearcal(vis=options.msname)
 			if len(casacaltables)!=0 or len(calibratecaltables)!=0:
 				cal=CALIBRATE()
 				casacals=[]
@@ -474,8 +597,8 @@ if __name__=='__main__':
 				for i in calibratecaltables:
 					os.system('cp -r '+i+' '+options.workdir+'/imaging_data/')
 					calibratecals.append(options.workdir+'/imaging_data/'+os.path.basename(i))
-				print ('applycal(vis=\''+options.msname+'\',gaintable='+str(casacals)+',applymode=\'calflag\',flagbackup=False)\n')
-				a=applycal(vis=options.msname,gaintable=casacals,applymode='calflag',flagbackup=False)
+				print ('applycal(vis=\''+options.msname+'\',gaintable='+str(casacals)+',applymode=\'calflag\',calwt=[False],flagbackup=False)\n')
+				a=applycal(vis=options.msname,gaintable=casacals,applymode='calflag',calwt=[False],flagbackup=False)
 				
 				# Applying cross-hand phase correction
 				######################################
@@ -487,9 +610,13 @@ if __name__=='__main__':
 					crossphase=135
 				print('Applying cross hand phase solution. Cross hand phase : '+str(crossphase)+' deg.\n')
 				PSC.apply_cross_hand_phase(cross_phase=crossphase,caltable='',polbasis='Linear',modify_datacolumn=False,datacolumn='CORRECTED')
+				print ('Applying ideal beam correction..\n')
+				PSC.correct_visibility_single_beam_jones(datacolumn='CORRECTED_DATA',modify_datacolumn=False,force=True,skip_freq=1.28)
 				for i in calibratecals:
-					print ('cal.applycal(msname=\''+options.msname+'\',gaintable=\''+str(i)+'\',applymode=\'calflag\',flagbackup=False,verbose=False)\n')
-					cal.applycal(msname=options.msname,gaintable=i,applymode='calflag',flagbackup=False,verbose=False,datacolumn='corrected')
+					if '.beam' not in i: 
+						print ('cal.applycal(msname=\''+options.msname+'\',gaintable=\''+str(i)+'\',applymode=\'calflag\',flagbackup=False,verbose=False)\n')
+						cal.applycal(msname=options.msname,gaintable=i,applymode='calflag',flagbackup=False,verbose=False,datacolumn='corrected')
+				casa_autoflag(options.msname,mode='rflag',datacolumn='corrected',sigma_thresh=10.0,flagbackup=False,verbose=False)
 			os.system('rm -rf '+options.workdir+'/imaging_data')
 
 		print ('#############################\nStart imaging for ms : '+str(msname)+'\n')
@@ -519,11 +646,11 @@ if __name__=='__main__':
 		if os.path.isdir(savedir)==False:
 			os.makedirs(savedir)
 		
-		error_files=glob.glob(basedir+'/.Finished_final_imaging_*error*')
+		error_files=glob.glob(basedir+'/.Finished_final_imaging_'+str(options.mode)+'_*error*')
 		for i in error_files:
 			os.system('rm -rf '+i)
-		touch_file=basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_success'
-		touch_file_moreflag=basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_moreflag'
+		touch_file=basedir+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(msname)+'_success'
+		touch_file_moreflag=basedir+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(msname)+'_moreflag'
 		if os.path.exists(touch_file) or os.path.exists(touch_file_moreflag):
 			print ('Imaging is already done or attempted.\n#############################\n')
 			os._exit(0)
@@ -540,22 +667,35 @@ if __name__=='__main__':
 		else:
 			maskfile=str(options.maskfile)
 
+		if options.maj!=None and options.minor!=None and options.pa!=None:
+			clean_beam=[float(options.maj),float(options.minor),float(options.pa)]
+		else:
+			clean_beam=[]
 		output=make_image(str(options.msname),str(options.metafits),str(workdir),sigma=float(options.sigma),stokes=str(options.stokes),savedir=str(savedir),threshold=threshold,\
 				want_automask=eval(str(options.want_automask)),maskfile=maskfile,quality_factor=int(options.quality_factor),savemodel=eval(str(options.savemodel)),\
 				saveresidual=eval(str(options.saveresidual)),cutoutbox=str(options.cutoutbox),use_ankflagger=eval(str(options.use_ankflag)),residual_frac=float(options.resfrac),\
-				use_wsclean=eval(str(options.use_wsclean)),do_diffcal=eval(str(options.do_diffcal)))
+				use_wsclean=eval(str(options.use_wsclean)),do_diffcal=eval(str(options.do_diffcal)),clean_beam=clean_beam)
 		if output==0:
 			print ('\nImaging finished.\n#############################\n')
 			os.system('touch '+touch_file)
 		elif output==1:
 			print ('More than 95% data are flagged. Image is not made.\n############################\n')
-			touch_file=basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_moreflag'
+			touch_file=basedir+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(msname)+'_moreflag'
 			os.system('touch '+touch_file)
 		elif output==2:
 			print ('Error occured during final imaging.\n############################\n')
-			touch_file=basedir+'/.Finished_final_imaging_'+os.path.basename(msname)+'_error'
+			touch_file=basedir+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(msname)+'_error'
 			os.system('touch '+touch_file)
+	#	os.system('rm -rf '+str(msname)+' '+str(msname)+'*')
 		print ('Total run time : '+str(time.time()-start_time)+' s\n#############################\n')
+except Exception as e:
+	print ('Error occured during final imaging. Error : '+str(e)+'\n############################\n')
+	touch_file=basedir+'/.Finished_final_imaging_'+str(options.mode)+'_'+os.path.basename(msname)+'_error'
+	os.system('touch '+touch_file)
+	#os.system('rm -rf '+str(msname)+' '+str(msname)+'*')
+	print ('Total run time : '+str(time.time()-start_time)+' s\n#############################\n')
+
+
 
 
 

@@ -1,6 +1,7 @@
-import numpy as np,os,copy,glob
+import os
+import numpy as np,copy,glob,julian
 from datetime import datetime as dt, timedelta
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater
 from casatasks import *
 from astropy.time import Time
 from astropy.coordinates import get_sun
@@ -13,8 +14,11 @@ Code is written by Devojyoti Kansabanik, 06 Jan, 2021
 class AccessMS:
 	'''
 	Generic class to perform measurement set related operation
-	Attribute:
-	msname = Name of the measurement set
+	
+	Parameters
+	----------
+	msname : str 
+		Name of the measurement set
 	'''
 	def __init__(self,msname):
 		self.msname=msname
@@ -25,10 +29,15 @@ class AccessMS:
 	def get_nbaseline(self,autocor=True):
 		'''		
 		Function to get number of baselines
-		Parameters:
-		autocor = Include auto-correlations into account or not
-		Return:
-		Number of baselines
+
+		Parameters
+		----------
+		autocor : bool 
+			Include auto-correlations into account or not
+		Returns
+		-------
+		int
+			Number of baselines
 		'''
 		self.md.open(self.msname)
 		nbs=self.md.nbaselines(ac=autocor)
@@ -38,8 +47,15 @@ class AccessMS:
 	def get_phasecenter(self):
 		'''
 		Get phasecenter of the measurement set
-		Return:
-		Phasecenter of the measurement set in ['RA','DEC'] in hh mm ss dd mm ss format, RA in degree, DEC in degree 
+
+		Returns
+		-------
+		str
+			Phasecenter of the measurement set in ['RA','DEC'] in hh mm ss dd mm ss format
+		float 
+			RA in degree
+		float 
+			DEC in degree 
 		'''
 		self.md.open(self.msname)
 		phasecenter=self.md.phasecenter()
@@ -54,8 +70,11 @@ class AccessMS:
 		'''
 		Convert the data from MWA coordinate (X=E->W and Y=N->S) to IAU coordinate (X=S->N,Y=W->E) system.
 		Thus X=>-Y, and Y=>-X. So, XX=>YY,YY=>XX,XY=>YX,YX=>XY
-		Returns:
-		Measurement set in IAU convention and confirms the measurement set convention
+
+		Returns
+		------
+		str
+ 			Confirmation message of coordinate conversion the measurement set
 		'''
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
@@ -85,8 +104,11 @@ class AccessMS:
 	def calc_ncoarse(self):
 		'''
 		Calculate the number of MWA coarse channels in the measurement set
-		Return:
-		Number of coarse channel in the measurement set
+
+		Returns
+		-------
+		int
+			Number of coarse channel in the measurement set
 		'''
 		self.md.open(self.msname)
 		ncoarse=int(self.md.bandwidths()[0]/(1.28*10**6))
@@ -96,8 +118,11 @@ class AccessMS:
 	def calc_freqres(self):
 		'''
 		Return frequency resolution of the data
-		Return:
-		Frequency resolution in kHz
+	
+		Returns
+		-------
+		float
+			Frequency resolution in kHz
 		'''
 		self.md.open(self.msname)
 		freqres=self.md.chanres(0)[0]/10**3
@@ -107,8 +132,11 @@ class AccessMS:
 	def calc_bandwidth(self):
 		'''
 		Function to calculate bandwidth of the data
-		Return:
-		Bandwidth in Hz
+		
+		Returns
+		-------
+		float
+			Bandwidth in Hz
 		'''
 		self.md.open(self.msname)
 		bandwidth=self.md.bandwidths()[0]
@@ -118,8 +146,11 @@ class AccessMS:
 	def calc_total_time(self):
 		'''
 		Function to calculate total time of the measurement set
-		Return:
-		Total time in seceond
+
+		Returns
+		-------
+		float
+			Total time in seceond
 		'''
 		self.md.open(self.msname)
 		times=self.md.timesforfield(0)
@@ -133,8 +164,11 @@ class AccessMS:
 	def calc_timeres(self):
 		'''
 		Function to calculate time resolution of the measurement set
-		Return :
-		Time resolution in second
+
+		Returns
+		-------
+		float
+			Time resolution in second
 		'''
 		self.md.open(self.msname)
 		times=self.md.timesforfield(0)
@@ -148,16 +182,22 @@ class AccessMS:
 	def get_num_timestamps(self):
 		'''
 		Function to calculate number of timestamps
-		Return:
-		Number of timestamps
+
+		Returns
+		-------
+		int
+			Number of timestamps
 		'''
-		return len(self.get_timestamps_in_mjdsecs())
+		return len(self.get_timestamps_in_mjdsecs()[0])
 
 	def get_num_channels(self):
 		'''
 		Function to calculate number of channels
-		Return:
-		Number of channels
+
+		Returns
+		-------
+		int
+			Number of channels
 		'''
 		self.md.open(self.msname)
 		nchan=self.md.nchan(0)
@@ -167,33 +207,60 @@ class AccessMS:
 	def get_timestamps_in_mjdsecs(self):
 		'''
 		Function to return list of timestamps
-		Return:
-		List of timestamps in MJD seconds
+	
+		Returns
+		-------
+		list
+			List of timestamps in MJD seconds
+		list
+			List of timestamps with errors
 		'''
 		self.md.open(self.msname)
 		mjds=self.md.timesforfield(0)
 		time_diff=np.ediff1d(mjds)
-		pos=np.where(time_diff<self.calc_timeres())
+		pos=np.where(time_diff<self.calc_timeres()/2.0)
+		wrong_timestamps=[]
+		if len(pos[0])!=0:
+			for p in pos[0]:
+				try:
+					wrong_timestamps.append(B.mjdsec_to_timestamp(mjds[p],includedate=True,format=0)+'~'+B.mjdsec_to_timestamp(mjds[p+1],includedate=True,format=0))
+				except:
+					wrong_timestamps.append(B.mjdsec_to_timestamp(mjds[p],includedate=True,format=0))			
 		mjds=np.delete(mjds,pos)
 		self.md.close()
-		return mjds
+		return mjds,wrong_timestamps
 
 	def get_timestamps(self,format=0):
 		'''
 		Function to return list of timestamps
-		Parameter:
-		format = Datetime string format (0 : 'YYYY/MM/DD/hh:mm:ss', 1: 'YYYY-MM-DDThh:mm:ss', 2: 'YYYY-MM-DD hh:mm:ss', 3: 'YYYY_MM_DD_hh_mm_ss') 
-		Return:
-		List of timestamps in UTC at the format 'YYYY/MM/DD/hh:mm:ss'
+
+		Parameters
+		----------
+		format : int 
+			Datetime string format 
+				(0 : 'YYYY/MM/DD/hh:mm:ss', 1: 'YYYY-MM-DDThh:mm:ss', 2: 'YYYY-MM-DD hh:mm:ss', 3: 'YYYY_MM_DD_hh_mm_ss') 
+		Returns
+		-------
+		list
+			List of timestamps in UTC at the format 'YYYY/MM/DD/hh:mm:ss'
 		'''
-		timestamps=[B.mjdsec_to_timestamp(mjdsec,includedate=True,format=format) for mjdsec in self.get_timestamps_in_mjdsecs()]	
+		timestamps=[B.mjdsec_to_timestamp(mjdsec,includedate=True,format=format) for mjdsec in self.get_timestamps_in_mjdsecs()[0]]	
 		return timestamps	
 	
 	def get_obs_startend_time(self):
 		'''
 		Function to get observation start time
-		Return:
-		Observation start time and end time in 'YYYY/MM/DD/hh:mm:ss' format, start_mjdsec, end_mjdsec
+
+		Returns
+		-------
+		str
+			Observation start time in 'YYYY/MM/DD/hh:mm:ss' format
+		str 
+			Observation end time in 'YYYY/MM/DD/hh:mm:ss' format
+		float
+			Observation start time in MJD second
+		float
+			Observation end time in MJD second
 		'''
 		self.md.open(self.msname)
 		start_mjdsec=self.md.timerangeforobs(0)['begin']['m0']['value']*24*3600.0
@@ -203,11 +270,60 @@ class AccessMS:
 		end=B.mjdsec_to_timestamp(end_mjdsec,includedate=True,format=0)
 		return start,end,start_mjdsec,end_mjdsec
 
+	def get_obs_date(self,format=0):
+		'''
+		Function to get observation date
+
+		Parameters
+		----------
+		format : str
+			Date string format 
+				0: 'YYYY/MM/DD'
+
+				1: 'YYYY-MM-DD'
+ 
+				2: 'YYYY_MM_DD'
+		Returns
+		-------
+		str
+			Observation start date
+		str
+			Observation end date
+		'''
+		start,end,start_mjdsec,end_mjdsec=self.get_obs_startend_time()
+		start_mjd=start_mjdsec/(24*3600.0)
+		end_mjd=end_mjdsec/(24*3600.0)
+		start_year=julian.from_jd(start_mjd+2400000.5,fmt='jd').date().year
+		start_month=julian.from_jd(start_mjd+2400000.5,fmt='jd').date().month
+		start_day=julian.from_jd(start_mjd+2400000.5,fmt='jd').date().day
+		end_year=julian.from_jd(end_mjd+2400000.5,fmt='jd').date().year
+		end_month=julian.from_jd(end_mjd+2400000.5,fmt='jd').date().month
+		end_day=julian.from_jd(end_mjd+2400000.5,fmt='jd').date().day
+		if format==0:
+			start_date=str(start_year)+'/'+str(start_month)+'/'+str(start_day)
+			end_date=str(end_year)+'/'+str(end_month)+'/'+str(end_day)
+		elif format==1:
+			start_date=str(start_year)+'-'+str(start_month)+'-'+str(start_day)
+			end_date=str(end_year)+'-'+str(end_month)+'-'+str(end_day)
+		else:
+			start_date=str(start_year)+'_'+str(start_month)+'_'+str(start_day)
+			end_date=str(end_year)+'_'+str(end_month)+'_'+str(end_day)
+		return start_date,end_date
+
 	def get_scan_startend_time(self):
 		'''
 		Function to get scan start time
-		Return:
-		Scan start time and end time in 'YYYY/MM/DD/hh:mm:ss' format, start_mjdsec, end_mjdsec
+
+		Returns
+		-------
+		str
+			Scan start time in 'YYYY/MM/DD/hh:mm:ss' format
+		str 
+			Scan end time in 'YYYY/MM/DD/hh:mm:ss' format
+		float
+			Scan start time in MJD second
+		float
+			Scan end time in MJD second
 		'''
 		self.md.open(self.msname)
 		time_list=self.md.timesforfield(0)
@@ -220,9 +336,12 @@ class AccessMS:
 
 	def get_num_antenna(self):
 		'''
-		Function to get total number of antennas in the ms
-		Return:
-		Number of antennas
+		Function to get total number of antennas in the measurement set
+
+		Returns
+		-------
+		int
+			Number of antennas
 		'''
 		self.md.open(self.msname)
 		nant=int(self.md.nantennas())
@@ -232,8 +351,11 @@ class AccessMS:
 	def get_antenna_string(self):
 		'''
 		Function to get total antenna string
-		Return:
-		Antenna string
+
+		Returns
+		-------
+		str
+			Antenna string
 		'''
 		nant=self.get_num_antenna()
 		ant=''
@@ -245,8 +367,11 @@ class AccessMS:
 	def get_freqs(self):
 		'''
 		Function to return list of channel frequencies
-		Return:
-		List of frequencies in Hz
+
+		Returns
+		-------
+		list
+			List of frequencies in Hz
 		'''
 		self.md.open(self.msname)
 		freqs=self.md.chanfreqs(0)
@@ -256,10 +381,15 @@ class AccessMS:
 	def get_unflag_chan(self,flagfrac=1):
 		'''
 		Function to get the unflagged channels if flag fraction is less than certain value
-		Parameter:
-		flagfrac = Flag fraction per channel (default : 1)
-		Return:
-		List of unflagged channels
+
+		Parameters
+		----------
+		flagfrac : float 
+			Flag fraction per channel (default : 1.0)
+		Returns
+		-------
+		list
+			List of unflagged channels
 		'''
 		self.tb.open(self.msname)
 		flag=self.tb.getcol('FLAG')
@@ -277,10 +407,15 @@ class AccessMS:
 	def get_unflag_times_mjd(self,flagfrac=1):
 		'''
 		Function to get the unflagged timestamps in MJD seconds if flag fraction is less than certain value
-		Parameter:
-		flagfrac = Flag fraction per channel (default : 1)
-		Return:
-		List of unflagged times in MJD seconds
+
+		Parameters
+		----------
+		flagfrac : float 
+			Flag fraction per channel (default : 1.0)
+		Returns
+		-------
+		list
+			List of unflagged times in MJD second
 		'''
 		self.tb.open(self.msname)
 		flag=self.tb.getcol('FLAG')
@@ -301,17 +436,22 @@ class AccessMS:
 			flagged_data=float(np.sum(flagged_data.flatten()))
 			if (flagged_data/total_data)<flagfrac:
 				unflagged_time.append(t)
-		timestamps=self.get_timestamps_in_mjdsecs()
+		timestamps=self.get_timestamps_in_mjdsecs()[0]
 		unflagged_times_mjd=[float(timestamps[i]) for i in unflagged_time]
 		return unflagged_times_mjd
 
 	def get_unflag_timestamps(self,flagfrac=1):
 		'''
 		Function to get the unflagged timestamps in MJD seconds if flag fraction is less than certain value
-		Parameter:
-		flagfrac = Flag fraction per channel (default : 1)
-		Return:
-		List of unflagged channels
+
+		Parameters
+		----------
+		flagfrac : float 
+			Flag fraction per channel (default : 1.0)
+		Returns
+		-------
+		list
+			List of unflagged channels
 		'''
 		self.tb.open(self.msname)
 		flag=self.tb.getcol('FLAG')
@@ -339,10 +479,15 @@ class AccessMS:
 	def get_flag_timestamps(self,flagfrac=1):
 		'''
 		Function to get the flagged timestamps in MJD seconds if flag fraction is less than certain value
-		Parameter:
-		flagfrac = Flag fraction per channel (default : 1)
-		Return:
-		List of flagged timestamps
+
+		Parameters
+		----------
+		flagfrac : float
+ 			Flag fraction per channel (default : 1.0)
+		Returns
+		-------
+		list
+			List of flagged timestamps
 		'''
 		unflagged_time=self.get_unflag_timestamps()
 		timestamps=self.get_timestamps()
@@ -355,13 +500,18 @@ class AccessMS:
 	def get_flag_times_mjd(self,flagfrac=1):
 		'''
 		Function to get the flagged timestamps in MJD seconds if flag fraction is less than certain value
-		Parameter:
-		flagfrac = Flag fraction per channel (default : 1)
-		Return:
-		List of flagged times in MJD seconds
+	
+		Parameters
+		----------
+		flagfrac : float 
+			Flag fraction per channel (default : 1.0)
+		Returns
+		-------
+		list
+			List of flagged times in MJD seconds
 		'''
 		unflagged_time=self.get_unflag_times_mjd()
-		timestamps=self.get_timestamps_in_mjdsecs()
+		timestamps=self.get_timestamps_in_mjdsecs()[0]
 		flagged_times=[]
 		for i in timestamps:
 			if i not in unflagged_time:
@@ -370,9 +520,12 @@ class AccessMS:
 
 	def get_model_nomodel_chan(self):
 		'''
-		Function to get the channels wioth no model data.
-		Return:
-		List of model and nomodel channels
+		Function to get the channels wioth no model data
+
+		Returns
+		-------
+		list
+			List of model and nomodel channels
 		'''
 		self.tb.open(self.msname)
 		model=self.tb.getcol('MODEL_DATA')
@@ -391,10 +544,15 @@ class AccessMS:
 	def get_antenna_id(self,antenna_name=''):
 		'''
 		Function to get antenna id from antenna name
-		Parameter:
-		antenna_name = Name of the antenna
-		Return:
-		Antenna id
+
+		Parameters
+		----------
+		antenna_name : str 
+			Name of the antenna
+		Returns
+		-------
+		int
+			Antenna id
 		'''
 		if antenna_name=='':
 			return None
@@ -412,8 +570,11 @@ class AccessMS:
 	def calc_meanfreq(self):
 		'''
 		Function to return central frequency of the measurement set (Only MS with single SPW)
-		Return:
-		Central frequency in Hz
+
+		Returns
+		-------
+		float
+			Central frequency in Hz
 		'''
 		self.md.open(self.msname)
 		cent_freq=self.md.meanfreq(0)
@@ -422,19 +583,44 @@ class AccessMS:
 
 	def calc_meanwavelength(self):
 		'''
-		Function to return central wavelength of the measurement set in metre
-		Return:
-		Central wavelength in metre
+		Function to return central wavelength of the measurement set in meter
+	
+		Returns
+		-------		
+		float
+			Central wavelength in metre
 		'''
 		freq=self.calc_meanfreq()
 		wavelength=299792458.0/freq
 		return wavelength
 
+	def calc_flagfrac(self):
+		'''
+		Function to calculate flag fraction
+
+		Returns
+		-------
+		float
+			Fraction of the data flagged
+		'''
+		self.tb.open(self.msname)
+		flag=self.tb.getcol('FLAG')
+		flag_frac=np.nansum(flag)/len(flag.flatten())
+		self.tb.close()
+		return flag_frac
+
 	def radec_sun(self):
 		'''
 		RA DEC of the Sun at the middle of the measurement set
-		Return:
-		RA DEC of the Sun in J2000, RA in degree and DEC in degree
+
+		Returns
+		-------
+		str
+			RA DEC of the Sun in J2000
+		float
+			RA in degree 
+		float
+			DEC in degree
 		'''
 		self.md.open(self.msname)
 		start_end_time=self.md.timerangeforobs(0)
@@ -452,22 +638,24 @@ class AccessMS:
 		
 	def move_phasecenter_to_sun(self):
 		'''
-		Move the phasecenter of the measurement set at the center of the Sun.
-		Return:
-		Measurement set at phase center at the center of the Sun
+		Move the phasecenter of the measurement set at the center of the Sun
+
+		Returns
+		-------
+		str
+			Message of the measurement set phase center chaged at the center of the Sun
 		'''
 		sun_radec_string,sunra_deg,sundec_deg=self.radec_sun()
 		radec_str,ra,dec=self.get_phasecenter()
 		code=vishead(vis=self.msname,mode='get',hdkey='fld_code')[0][0]
 		code_list=code.split(',')
-		if abs(sunra_deg-ra)>0.0001 or abs(sundec_deg-dec)>0.0001:
-			if 'FIXVIS' not in code_list:
-				if len(code_list)==1 and code_list[0]=='':
-					code+='FIXVIS'
-				else:
-					code+=',FIXVIS'
-				vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
-			fixvis(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
+		if 'FIXVIS' not in code_list:
+			if len(code_list)==1 and code_list[0]=='':
+				code+='FIXVIS'
+			else:
+				code+=',FIXVIS'
+			phaseshift(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
+			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 			return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
 		else:
 			return 'Phasecenter is already shifted to the Sun.\n'
@@ -475,10 +663,15 @@ class AccessMS:
 	def move_phasecenter_to_source(self,radec=''):
 		'''
 		Function to move the phasecenter of measurement set at particular RA-DEC
-		Parameters:
-		radec = RA DEC string, format \'J2000 00h00m00s +00d00m00s\'
-		Return:
-		Phasecenter of the measurement set is moved to the new phasecenter
+
+		Parameters
+		----------
+		radec : str 
+			RA DEC string, format 'J2000 00h00m00s +00d00m00s'
+		Returns
+		-------
+		str
+			Message of the phasecenter of the measurement set is moved to the new phasecenter
 		'''
 		if radec=='':
 			return 'No RA-DEC is given'
@@ -491,7 +684,7 @@ class AccessMS:
 					if 'FIXVIS' in code_list[i]:
 						code_list.remove(code_list[i])
 				code=','.join(code_list)
-				fixvis(vis=self.msname,outputvis=self.msname,phasecenter=radec)
+				phaseshift(vis=self.msname,outputvis=self.msname,phasecenter=radec)
 				if len(code_list)==1 and code_list[0]=='':
 					code+='FIXVIS_'+radec_string
 				else:
@@ -505,21 +698,37 @@ class AccessMS:
 	def get_max_baseline(self):
 		'''
 		Get the maximum baseline in meter
-		Return:
-		Maximum baseline length in meter
+
+		Returns
+		-------
+		float
+			Maximum baseline length in meter
 		'''
 		self.tb.open(self.msname)
 		uvw=self.tb.getcol('UVW')
+		flag=self.tb.getcol('FLAG')
+		flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
 		self.tb.close()
+		for i in range(3):
+			uvw[i][flag]=np.nan
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
+		nanpos=np.where(np.isnan(uvdist)==True)
+		uvdist=np.delete(uvdist,nanpos)
 		return int(np.max(uvdist))
 
 	def get_listobs(self,listobsfile=''):
 		'''
 		Function to save listobs
-		Return:
-		listobs file name
+	
+		Parameters
+		----------
+		listobsfile : str
+			File name to save listobs output
+		Returns
+		-------
+		str
+			listobs file name
 		'''
 		if listobsfile=='':
 			listobsfile=self.msname.split('.ms')[0]+'.listobs'
@@ -530,12 +739,18 @@ class AccessMS:
 
 	def make_antenna_list(self,num_bins=5,antenna_list_file=''):
 		'''
-		Make the antenna addition list
-		Parameters:
-		num_bin = Number of antenna bins
-		antenna_list_file = Name of the file to save antenna list (Keep blank to avoid save)
-		Return:
-		Lists of antennas to be added in steps
+		Make the antenna addition list splited in number of bins
+
+		Parameters
+		----------
+		num_bin : int 
+			Number of antenna bins
+		antenna_list_file : str
+ 			Name of the file to save antenna list (Keep blank to avoid save)
+		Returns
+		-------
+		list
+			Lists of antennas to be added in steps
 		'''
 		listobs_file=self.msname.split('.ms')[0]+'.listobs'
 		if os.path.isfile(listobs_file)==False:
@@ -574,31 +789,40 @@ class AccessMS:
 	def get_observatory_loc(self):
 		'''
 		Give the observatory geodetic location
-		Return:
-		Latitude, Longitude in degree and Altitude in meter
+
+		Returns
+		-------
+		float
+			Latitude in degree
+		float 
+			Longitude in degree
+		float
+			Altitude in meter
 		'''
-		self.tb.open(self.msname+'::ANTENNA')
-		pos = self.tb.getcol('POSITION')
-		meanpos = np.mean(pos, axis=1)
-		frame = self.tb.getcolkeyword('POSITION','MEASINFO')['Ref']
-		units = self.tb.getcolkeyword('POSITION','QuantumUnits')
-		mpos  = self.me.position(frame,str(meanpos[0])+units[0],str(meanpos[1])+units[1],str(meanpos[2])+units[2])
-		self.me.doframe(mpos)
-		self.tb.close()
-		loc=self.me.measure(mpos,'WGS84')
-		LAT=np.rad2deg(loc['m1']['value'])
-		LON=np.rad2deg(loc['m0']['value'])
-		ALT=loc['m2']['value']/2
+		self.md.open(self.msname)
+		pos=self.md.observatoryposition()
+		LON=round(np.rad2deg(pos['m0']['value']),2)
+		LAT=round(np.rad2deg(pos['m1']['value']),2)
+		ALT=pos['m2']['value']
+		self.md.close()
 		return LAT,LON,ALT
 
 	def get_altaz(self,source_field=0,source_scan=1):
 		'''
 		Calculate alt az of the phasecenter
-		Parameters:
-		source_field = FIELD ID of the source
-		source_scan = Scan number 
-		Return:
-		Alt,Az in radian
+
+		Parameters
+		----------
+		source_field : int 
+			FIELD ID of the source
+		source_scan : int 
+			Scan number 
+		Returns
+		-------
+		float
+			Altitude in radian
+		float
+			Azimuth in radian
 		''' 
 		LAT,LON,ALT=self.get_observatory_loc()
 		radec_str,radeg,decdeg=self.get_phasecenter()
@@ -619,16 +843,24 @@ class AccessMS:
 
 	def get_phasecenter_parang(self,source_field=0,combine='field'):
 		'''
-		Calculate parallactic for phasecenter at a given Earth location
-		Parameters:
-		source_file = FIELD id of the source
-		combine = 'field' or 'scan' or '' for no combine
-		Note : Parallactic angle is defined as the orientation of the sky in telescope coordinate. All angles are defined positive in IAU defined sky coordiunate (North to East).
-			   So, the rotation of the sky with respect to telescope is negative in the sky coordinate. To account this effect parallactic angle is given in 360-parang form.
-		Return:
-		1. combine = 'field', A single parallactic angle for the entire field in degree
-		2. combine = 'scan', A python dictionary {'scan':parang} format
-		3. combine = '', A list of parang for all timestamps
+		Calculate parallactic for phasecenter at a given Earth location.
+		Note = Parallactic angle is defined as the orientation of the sky in telescope coordinate. All angles are defined positive in IAU defined sky coordiunate (North to East).
+		So, the rotation of the sky with respect to telescope is negative in the sky coordinate. To account this effect parallactic angle is given in 360-parang form.
+
+		Parameters
+		----------
+		source_field : int 
+			FIELD id of the source
+		combine : str 
+			Combine 'field' or 'scan'  for calculating parallactic angle or '' for no combine
+		Returns
+		-------
+		float	
+			1. combine = 'field', A single parallactic angle for the entire field in degree
+		dict
+			2. combine = 'scan', A python dictionary {'scan':parang} format
+		list
+			3. combine = '', A list of parang for all timestamps
 		'''
 		LAT,LON,ALT=self.get_observatory_loc()
 		radec_str,radeg,decdeg=self.get_phasecenter()
@@ -674,21 +906,34 @@ class AccessMS:
 				self.md.close()
 			return parang 
 
-	def get_parang(self,ra,dec):# TODO : Finish this function
+	def get_parang(self,ra,dec,source_field=0,combine='field'):
 		'''
-		Calculate parallactic for phasecenter at a given Earth location
-		Parameters:
-		source_file = FIELD id of the source
-		combine = 'field' or 'scan' or '' for no combine
-		Note : Parallactic angle is defined as the orientation of the sky in telescope coordinate. All angles are defined positive in IAU defined sky coordiunate (North to East).
-			   So, the rotation of the sky with respect to telescope is negative in the sky coordinate. To account this effect parallactic angle is given in 360-parang form.
-		Return:
-		1. combine = 'field', A single parallactic angle for the entire field in degree
-		2. combine = 'scan', A python dictionary {'scan':parang} format
-		3. combine = '', A list of parang for all timestamps
+		Calculate parallactic for phasecenter at a given Earth location for a given RA DEC
+		Note = Parallactic angle is defined as the orientation of the sky in telescope coordinate. All angles are defined positive in IAU defined sky coordiunate (North to East).
+		So, the rotation of the sky with respect to telescope is negative in the sky coordinate. To account this effect parallactic angle is given in 360-parang form.
+
+		Parameters
+		----------
+		ra : float
+			RA in degree
+		dec : float
+			DEC in degree
+		source_field : int 
+			FIELD id of the source
+		combine : str 
+			Combine 'field' or 'scan' for calculating parallactic angle or '' for no combine
+		Returns
+		-------
+		float
+			1. combine = 'field', A single parallactic angle for the entire field in degree
+		dict
+			2. combine = 'scan', A python dictionary {'scan':parang} format
+		list
+			3. combine = '', A list of parang for all timestamps
 		'''
 		LAT,LON,ALT=self.get_observatory_loc()
-		radec_str,radeg,decdeg=self.get_phasecenter()
+		radeg=ra
+		decdeg=dec
 		self.md.open(self.msname)
 		if combine=='field':
 			mjd=np.mean(self.md.timesforfield(source_field))
@@ -734,12 +979,19 @@ class AccessMS:
 def splited_ms_rename(msname,ref_time_chan=True,change_msname=True):
 	'''
 	Convert the name of a splited measurement set according to its frequency and timestamp
-	Parameters:
-	msname = Name of the measurement set
-	ref_time_chan = True, whether the time and frequency slice is refernce
-	change_msname = True, change the msname or just return the name
-	Return:
-	Chnage the name of the measurement set at return its changed name
+
+	Parameters
+	----------
+	msname : str 
+		Name of the measurement set
+	ref_time_chan : bool 
+		Whether the time and frequency slice is refernce
+	change_msname : bool
+		Change the msname or just return the name
+	Returns
+	-------
+	str
+		Modified name of the measurement set
 	'''
 	md=msmetadata()
 	md.open(msname)

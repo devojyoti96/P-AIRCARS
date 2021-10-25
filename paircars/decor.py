@@ -2,15 +2,38 @@ import sys,os,numpy as np,glob,time,copy
 from astropy.io import fits
 from casatools import ms as mstools,quanta,msmetadata
 from casatasks import *
-'''
-Code is written by Leonid Benkevitch and Surajit Mondal
-Code is modified for python3 and CASA6 by Devojyoti Kansabanik, 05 Jan, 2021
-'''
+#Code is written by Leonid Benkevitch and Surajit Mondal
+#Code is modified for python3 and CASA6 by Devojyoti Kansabanik, 05 Jan, 2021
+
 def apply_acorr(dat, ants1, ants2, idx_ant, elen, tile, uvw, BW, fout):
-    """
-    Amplitude correction for the beamformer-to-receiver cable length
-    differences (""decorrelation"")
-    """
+    '''
+	Amplitude correction for the beamformer-to-receiver cable length differences ('decorrelation')
+
+	Parameters
+	----------
+	dat : numpy.array
+		Data array
+	ants1 : numpy.array
+		Antenna 1 array
+	ants2 : numpy.array
+		Antenna 2 array
+	idx_ant : numpy.array
+		Antenna indices
+	elen : numpy.array
+		Electronic length of the tiles
+	tile : numpy.array
+		Tile names
+	uvw : numpy.array
+		UVW array
+	BW : float
+		Channel width
+	fout : str
+		File to wrire correction factors
+	Returns
+	-------
+	numpy.array
+		Amplitude corrected data array
+    '''
     c_speed_of_light = 299792458. # In m/s
     tauw_sign = +1.
     iau = np.where(ants1 == ants2)[0] # Pointers into ants where a1 == a2
@@ -67,11 +90,6 @@ def apply_acorr(dat, ants1, ants2, idx_ant, elen, tile, uvw, BW, fout):
         
         tau = tau2 - tau1 + tauw_sign*tauw
 
-        #
-        # The correction factor, acor, is the result of integration:
-        #
-        # acor = {1/BW}\int_{-BW/2}^{+BW/2} cos(2\pi f tau) df = sinc(BW tau).
-        #
         acor = np.sinc(BW*tau)
 
         line = '%4d %4d %9.2f  %12.5e %4d %4d %9.2f  %12.5e ' \
@@ -82,22 +100,26 @@ def apply_acorr(dat, ants1, ants2, idx_ant, elen, tile, uvw, BW, fout):
 
         fout.write(line)
         
-        #print 'tau2=%g, tau1=%g, tauw=%g, w=%g, tau=%g, acor=%g' % \
-        #      (tau2, tau1, tauw, w[idat], tau, acor)
-        
         cdat[:,:,idat] = dat[:,:,idat]/acor
      
     return cdat
 
-def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write block: how many individual times in it
+def decor(msname,metafits,n_tblk,single_time):	
 	'''
 	Function to correct the MS for amplitude decorrelation. MS convention is also converted from MWA coordinate (X=E->W and Y=N->S) to IAU coordinate (X=S->N, Y=W->E).
-	parameters:
-	msname : Name of the measurement set
-	metafits : Name of the metafits file of the observation
-	n_tblk : Integer, number of time block for one round to avoid memory load in case of large dataset
-	single_time : Single time block or not, True or False
-	Return:
+	
+	Parameters
+	----------
+	msname : str 
+		Name of the measurement set
+	metafits : str
+		Name of the metafits file of the observation
+	n_tblk : int
+		Number of time block for one round to avoid memory load in case of large dataset
+	single_time : bool 
+		Single time block or not
+	Returns
+	-------
 	Decorrelation corrected measurement set in IAU convention
 	'''
 	code=vishead(vis=msname,mode='get',hdkey='fld_code')[0][0]
@@ -168,13 +190,11 @@ def decor(msname,metafits,n_tblk,single_time):	# n_tblk: Size of a read/write bl
 			ymds.append(ymd)
 
 
-		cwids = md.chanwidths(0)       # Hz, 64 channel widths (40000.Hz = 4 kHz)
+		cwids = md.chanwidths(0)  
 		cwid = cwids[0]
-		#cwid0 = 40000.                 # Hz, channel width (40000.Hz = 4 kHz)
 		IntgTime = md.exposuretime(scan=1,  spwid=0,  polid=0)
 		tintg = IntgTime['value']     # Integration time. IntgTime['unit'] = 's' 
 		an_samp = cwid*tintg       # = 20000, cplx samples in 0.5s of 40kHz channel
-		#an_samp = cwid0*tintg       # = 20000, cplx samples in 0.5s of 40kHz channel
 		n_samp = int(an_samp)
 		ms.selectinit(datadescid=0)  # Untranslatable CASA dirty swearword
 
