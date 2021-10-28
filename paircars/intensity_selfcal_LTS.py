@@ -55,12 +55,12 @@ class IntensitySelfcal:
 		self.imsize=IB.num_pixels(self.num_pixel_in_psf)
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(self.num_pixel_in_psf,self.max_size)
-		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange=IB.calc_calib_uvrange(largest_scale)[0] # Short baselines sensitive to larger than 12 deg are excluded 
-		self.imaging_uvrange=IB.calc_calib_uvrange(largest_scale)[0]
-		self.imaging_minuv=IB.calc_calib_uvrange(largest_scale)[3]
-		self.imaging_maxuv=IB.calc_calib_uvrange(largest_scale)[4]
-		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
+		self.uvtaper=IB.calc_uvtaper(includeflag=True)
+		calib_uvrange=IB.calc_calib_uvrange(largest_scale,includeflag=True) # Short baselines sensitive to larger than 12 deg are excluded 
+		self.calib_uvrange=calib_uvrange[0]
+		self.imaging_uvrange=calib_uvrange[0]
+		self.imaging_minuv=calib_uvrange[3]
+		self.imaging_maxuv=calib_uvrange[4]
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -135,57 +135,60 @@ class IntensitySelfcal:
 		file_str=self.msname.split('.ms')[0]+'_'+str(num_iter) # File string prefix
 		ia=image()
 		imagename=file_str+'.image'
-		if os.path.isdir(imagename):
-			imageheader=imhead(imagename=imagename,mode='summary')
-			if imageheader['ndim']>2 and imageheader['ndim']==4:
-				out_dict={}
-				neg_dyn=0
-				for stokes in stokes_list:
-					if stokes=='I' or stokes=='XX' or stokes =='YY':
-						maxpos=imstat(imagename=imagename,stokes=stokes)['maxpos']
-						negative_box=self.negative_box(maxpos,box_width=box_width)
-						max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
-						rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
-						min_pix=imstat(imagename=imagename,box=negative_box,stokes=stokes)['min'][0]
-						rms_dyn_range=max_pix/rms
-						if min_pix!=0:
-							neg_dyn+=max_pix/abs(min_pix)
+		try:
+			if os.path.isdir(imagename):
+				imageheader=imhead(imagename=imagename,mode='summary')
+				if imageheader['ndim']>2 and imageheader['ndim']==4:
+					out_dict={}
+					neg_dyn=0
+					for stokes in stokes_list:
+						if stokes=='I' or stokes=='XX' or stokes =='YY':
+							maxpos=imstat(imagename=imagename,stokes=stokes)['maxpos']
+							negative_box=self.negative_box(maxpos,box_width=box_width)
+							max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
+							rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
+							min_pix=imstat(imagename=imagename,box=negative_box,stokes=stokes)['min'][0]
+							rms_dyn_range=max_pix/rms
+							if min_pix!=0:
+								neg_dyn+=max_pix/abs(min_pix)
+							else:
+								neg_dyn=rms_dyn_range
+							ia.open(imagename)
+							ia.calcmask('\"'+imagename+'\">'+str(sigma*rms),'mymask')
+							ia.close()
+							try:
+								total_flux=imstat(imagename=imagename,stokes=stokes)['flux'][0]
+								out_dict[stokes]=[rms_dyn_range,rms,total_flux]							
+							except:
+								out_dict[stokes]=[rms_dyn_range,rms,np.nan]
+							makemask(mode='delete',inpmask=imagename+':mymask')
 						else:
-							neg_dyn=rms_dyn_range
-						ia.open(imagename)
-						ia.calcmask('\"'+imagename+'\">'+str(sigma*rms),'mymask')
-						ia.close()
-						try:
-							total_flux=imstat(imagename=imagename,stokes=stokes)['flux'][0]
-							out_dict[stokes]=[rms_dyn_range,rms,total_flux]							
-						except:
-							out_dict[stokes]=[rms_dyn_range,rms,np.nan]
-						makemask(mode='delete',inpmask=imagename+':mymask')
-					else:
-						max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
-						min_pix=imstat(imagename=imagename,stokes=stokes)['min'][0]
-						rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
-						if abs(min_pix)>max_pix:
-							max_pix=abs(min_pix)
-						rms_dyn_range=max_pix/rms
-						if os.path.isdir(stokes+'.image'):
-							os.system('rm -rf '+stokes+'.image')
-						immath(imagename=imagename,outfile=stokes+'.image',mode='evalexpr',expr='abs(IM0)',stokes=stokes)
-						ia.open(stokes+'.image')
-						ia.calcmask(stokes+'.image'+'>'+str(sigma*rms),'mymask')
-						ia.close()
-						try:
-							total_flux=imstat(imagename=stokes+'.image',stokes=stokes)['flux'][0]
-							out_dict[stokes]=[rms_dyn_range,rms,total_flux]
-						except:
-							out_dict[stokes]=[rms_dyn_range,rms,np.nan]	
-						os.system('rm -rf '+stokes+'.image')			
-		else:
-			out_dict={}
-			rms_dyn_range=np.nan
-			neg_dyn=np.nan
+							max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
+							min_pix=imstat(imagename=imagename,stokes=stokes)['min'][0]
+							rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
+							if abs(min_pix)>max_pix:
+								max_pix=abs(min_pix)
+							rms_dyn_range=max_pix/rms
+							if os.path.isdir(stokes+'.image'):
+								os.system('rm -rf '+stokes+'.image')
+							immath(imagename=imagename,outfile=stokes+'.image',mode='evalexpr',expr='abs(IM0)',stokes=stokes)
+							ia.open(stokes+'.image')
+							ia.calcmask(stokes+'.image'+'>'+str(sigma*rms),'mymask')
+							ia.close()
+							try:
+								total_flux=imstat(imagename=stokes+'.image',stokes=stokes)['flux'][0]
+								out_dict[stokes]=[rms_dyn_range,rms,total_flux]
+							except:
+								out_dict[stokes]=[rms_dyn_range,rms,np.nan]	
+							os.system('rm -rf '+stokes+'.image')			
+			else:
+				out_dict={}
+				neg_dyn=np.nan
+				out_dict['NAN']=[np.nan,np.nan]
+			negative_dyn_range=neg_dyn/len(stokes_list)
+		except:
+			negative_dyn_range=np.nan
 			out_dict['NAN']=[np.nan,np.nan]
-		negative_dyn_range=neg_dyn/len(stokes_list)
 		os.system('rm -rf casa*log')
 		return out_dict,negative_dyn_range
 
@@ -291,8 +294,8 @@ class IntensitySelfcal:
 				image_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.image')['sum'][0]
 				residual_pix_sum=imstat(imagename='reduce_sigma_'+stokes+'.residual')['sum'][0]
 			except:
-				image_pix_sum=0
-				residual_pix_sum=1
+				image_pix_sum=1
+				residual_pix_sum=0
 			try:
 				maxval=imstat(imagename='reduce_sigma_'+stokes+'.residual')['max'][0]
 			except:
@@ -1152,8 +1155,8 @@ class IntensitySelfcal:
 
 	def wsclean_to_casaimage(self,wsclean_images=[],casaimage_prefix='CASA_',imagetype='image',keep_wsclean_images=True):
 		'''
-		Function to convert WSClean image in CASA image 
-		(Stokes modes : 'I')
+		Function to convert WSClean image to CASA image 
+		(Stokes modes : 'I' and 'XX,YY')
 
 		Parameters
 		----------
@@ -1183,7 +1186,7 @@ class IntensitySelfcal:
 		stokes=sorted(stokes)
 		if stokes!=['I'] and stokes!=['XX','YY']:
 			if self.verbose:
-				self.log_verbose.info('Stokes axes are not in \'I\',\'XX,YY\'\n')
+				self.log_verbose.error('Stokes axes are not in \'I\',\'XX,YY\'\n')
 			else:
 				print('Stokes axes are not in \'I\',\'XX,YY\'\n')
 		elif stokes==['I']:
@@ -1218,10 +1221,104 @@ class IntensitySelfcal:
 				for i in wsclean_images:
 					os.system('rm -rf '+i)
 			return imagename
-	
+
+	def casaimage_to_wsclean(self,casaimage='',wsclean_imagename='',imagetype='image',wsclean_imsize=1024,keep_casaimage=True):
+		'''
+		Function to convert CASA image to WSClean image 
+		(Stokes modes : 'I' and 'XX,YY')
+
+		Parameters
+		----------
+		casaimage : str
+			Name of the CASA image or model
+		wsclean_imagename : str
+			WSClean imagename prefix
+		imagetype : str
+			Image type, 'image', 'model' or 'residual'
+		wsclean_imsize : int
+			WSClean image size, CASA image size should be larger than that
+		keep_casaimage : bool
+			Keep CASA image or not
+		Returns
+		--------
+		list
+			Output WSClean images
+		int
+			WSClean image size
+		list
+			WSClean image stokes axes
+		'''
+		if casaimage[-1]=='/':
+			casaimage=casaimage[:-1]
+		if casaimage=='' or wsclean_imagename=='':
+			if self.verbose:
+				self.log_verbose.error('CASA image name or WSClean imagename is not given.\n')
+			else:
+				print('CASA image name or WSClean imagename is not given.\n')
+			return [],0,[]
+		if imagetype!='image' and imagetype!='model' and imagetype!='residual':
+			if self.verbose:
+				self.log_verbose.error('Image type should be \'image\', \'model\' or \'residual\'\n')
+			else:
+				print('Image type should be \'image\', \'model\' or \'residual\'\n')
+			return [],0,[]
+		subimages=[]
+		outimages=[]
+		outstokes=[]
+		x_cen=int(imhead(casaimage,mode='list')['crpix1'])
+		y_cen=int(imhead(casaimage,mode='list')['crpix2'])
+		casa_imsize=max([2*x_cen,2*y_cen])
+		if casa_imsize<wsclean_imsize:
+			if self.verbose:
+				self.log_verbose.error('Requested WSClean image size : '+str(wsclean_imsize)+' is more than CASA image size : '+str(casa_imsize)+'\n')
+			else:
+				print('Requested WSClean image size : '+str(wsclean_imsize)+' is more than CASA image size : '+str(casa_imsize)+'\n')
+			os.system('rm -rf casa*log *.stokes*')
+			return [],0,[]
+		else:
+			box=str(int(x_cen-wsclean_imsize/2))+','+str(int(y_cen-wsclean_imsize/2))+','+str(int(x_cen+wsclean_imsize/2))+','+str(int(y_cen+wsclean_imsize/2))
+		if wsclean_imsize==casa_imsize:
+			box=''
+		try:
+			if self.verbose:
+				self.log_verbose.info('imsubimage(imagename=\''+casaimage+'\',outfile=\''+casaimage+'.stokesI\',stokes=\'I\',box=\''+box+'\')\n')
+			imsubimage(imagename=casaimage,outfile=casaimage+'.stokesI',stokes='I',box=box)
+			subimages.append(casaimage+'.stokesI')
+		except:
+			subimages=[]
+			try:
+				if self.verbose:
+					self.log_verbose.info('imsubimage(imagename=\''+casaimage+'\',outfile=\''+casaimage+'.stokesXX\',stokes=\'XX\',box=\''+box+'\')\n')
+				imsubimage(imagename=casaimage,outfile=casaimage+'.stokesXX',stokes='XX',box=box)
+				subimages.append(casaimage+'.stokesXX')
+				if self.verbose:
+					self.log_verbose.info('imsubimage(imagename=\''+casaimage+'\',outfile=\''+casaimage+'.stokesYY\',stokes=\'YY\',box=\''+box+'\')\n')
+				imsubimage(imagename=casaimage,outfile=casaimage+'.stokesYY',stokes='YY',box=box)
+				subimages.append(casaimage+'.stokesYY')
+			except:
+				if self.verbose:
+					self.log_verbose.error('Stokes axes are not either \'I\' or \'XX,YY\'\n')
+				else:
+					print('Stokes axes are not either \'I\' or \'XX,YY\'\n')
+				os.system('rm -rf casa*log *.stokes*')
+				return [],0,[]
+		for i in subimages:
+			stokes=i.split('.stokes')[-1]
+			outstokes.append(stokes)
+			if stokes=='I':
+				exportfits(imagename=i,fitsimage=wsclean_imagename+'-'+imagetype+'.fits',stokeslast=True,history=False)
+				outimages.append(wsclean_imagename+'-'+imagetype+'.fits')
+			else:
+				exportfits(imagename=i,fitsimage=wsclean_imagename+'-'+str(stokes)+'-'+imagetype+'.fits',stokeslast=True,history=False)
+				outimages.append(wsclean_imagename+'-'+str(stokes)+'-'+imagetype+'.fits')
+		os.system('rm -rf casa*log *.stokes*')
+		if keep_casaimage==False:
+			os.system('rm -rf '+casaimage)
+		return outimages,wsclean_imsize,outstokes
+
 	def selfcal_iteration(self,num_iter,rms_thresh,sigma,maskstr,antenna_to_use,startmodel,startmask,ref_ant,minsnr,calmode,maskfile='',want_auto_masking=False,cpus=5,absmem=10,\
 							wlayers=1,stokes='I',interactive=False,do_bandpass=False,solmode='R',correct_phasecenter=False,ra=0,dec=0,box_width=3,calibrator_caltable=[],maskregion='',\
-							weight='briggs',robust=0.5):
+							weight='briggs',robust=0.5,optimized_imsize=True):
 		'''
 		Function to perform a self-calibration loop, make an image, put the model in the measurement set, and perform the calibration
 
@@ -1238,7 +1335,7 @@ class IntensitySelfcal:
 		antenna_to_use : list 
 			List of antennas for CLEANing
 		startmodel : str 
-			CASA model to start the CLEANing (For CASA only)
+			CASA model to start the CLEANing (For both CASA imager and WSClean, for WSClean imager, CASA models will be converted to WSClean models)
 		startmask :  str
 			CASA mask to start (For CASA only)
 		ref_ant : int
@@ -1281,6 +1378,8 @@ class IntensitySelfcal:
 			Visibility weighting during imaging , 'uniform', 'natural' or 'briggs'. Default is 'briggs'
 		robust : float
 			Robust parameter for briggs weighting, default : 0.5
+		optimized_imsize : bool
+			Optimize image size choosing with calibration mode for faster self-calibration
 		Returns
 		-------
 		float
@@ -1415,6 +1514,17 @@ class IntensitySelfcal:
 			'-abs-mem '+str(absmem),'-weight '+weight,'-taper-tukey 10','-name '+imagename,'-nwlayers '+str(wlayers),'-pol '+str(pol),\
 			'-maxuv-l '+str(self.imaging_maxuv),'-minuv-l '+str(self.imaging_minuv),'-niter 100000','-mgain 0.8','-auto-threshold '+str(sigma),'-auto-mask '+str(0.5+sigma),\
 			'-gain '+str(clean_gain),'-multiscale','-multiscale-scales '+','.join(scales)]
+			if startmodel!='':
+				if self.verbose:
+					self.log_verbose.info('casaimage_to_wsclean(casaimage=\''+startmodel+'\',wsclean_imagename=\''+imagename+'\',imagetype=\'model\',wsclean-imsize='\
+										+str(self.imsize)+',keep_casaimage=True)\n')
+				wsclean_startmodels,wsclean_imsize,wsclean_stokes=self.casaimage_to_wsclean(casaimage=startmodel,wsclean_imagename=imagename,imagetype='model',\
+										wsclean_imsize=self.imsize,keep_casaimage=True)
+				if len(wsclean_startmodels)==len(stokes_list) and wsclean_imsize==self.imsize and wsclean_stokes==stokes_list:
+					wsclean_args.append('-continue')
+				elif len(wsclean_startmodels)!=0:
+					for i in wsclean_startmodels:
+						os.system('rm -rf '+i)
 			wsclean_args.append('-quiet')
 			if self.verbose:
 				self.log_verbose.info('wsclean '+' '.join(wsclean_args)+' '+self.msname)			

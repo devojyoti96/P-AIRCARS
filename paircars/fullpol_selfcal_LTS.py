@@ -46,7 +46,7 @@ class PolSelfcal:
 		Use WSClean or not
 	'''
 	
-	def __init__(self,msname,metafits,maximum_emission_scale,num_of_pixels_in_psf=5,largest_scale=12,verbose=False,interactive=False,savelog=True,use_wsclean=True):
+	def __init__(self,msname,metafits,maximum_emission_scale,num_pixel_in_psf=5,largest_scale=12,verbose=False,interactive=False,savelog=True,use_wsclean=True):
 		self.cwd=os.getcwd()
 		if msname[-1]=='/':
 			self.msname=msname[:-1]
@@ -57,17 +57,18 @@ class PolSelfcal:
 		IB=B.ImageBasic(self.msname)
 		self.metafits=metafits
 		self.max_baseline=AM.get_max_baseline()
-		self.num_pixel_in_psf=int(num_of_pixels_in_psf)
+		self.num_pixel_in_psf=int(num_pixel_in_psf)
 		self.cellsize=IB.calc_cellsize(self.num_pixel_in_psf) 
 		self.imsize=IB.num_pixels(self.num_pixel_in_psf)
 		self.max_size=maximum_emission_scale
 		self.multiscale_scales=IB.choose_scales(self.num_pixel_in_psf,self.max_size)
 		self.uvtaper=IB.calc_uvtaper()
-		self.calib_uvrange_min=IB.calc_calib_uvrange(largest_scale)[1]
-		self.calib_uvrange_max=IB.calc_calib_uvrange(largest_scale)[2]
-		self.imaging_uvrange=IB.calc_calib_uvrange(largest_scale)[0]
-		self.imaging_minuv=IB.calc_calib_uvrange(largest_scale)[3]
-		self.imaging_maxuv=IB.calc_calib_uvrange(largest_scale)[4]
+		calib_uvrange_min=IB.calc_calib_uvrange(largest_scale)
+		self.calib_uvrange_min=calib_uvrange_min[1]
+		self.calib_uvrange_max=calib_uvrange_min[2]
+		self.imaging_uvrange=calib_uvrange_min[0]
+		self.imaging_minuv=calib_uvrange_min[3]
+		self.imaging_maxuv=calib_uvrange_min[4]
 		self.rms_box='50,50,'+str(self.imsize-50)+','+str(int(self.imsize/4)) # CASA box to calculate the rms
 		self.verbose=verbose
 		self.interactive=interactive
@@ -140,58 +141,62 @@ class PolSelfcal:
 			negative dynamic range for Stokes I
 		'''
 		ia=image()
-		if os.path.isdir(imagename):
-			imageheader=imhead(imagename=imagename,mode='summary')
-			if imageheader['ndim']>2 and imageheader['ndim']==4:
-				out_dict={}
-				neg_dyn=0
-				for stokes in stokes_list:
-					if stokes=='I' or stokes=='XX' or stokes =='YY':
-						if os.path.isdir('I.image')==True:
-							os.system('rm -rf I.image')
-						immath(imagename=imagename,outfile='I.image',mode='evalexpr',stokes=stokes)
-						maxpos=imstat(imagename='I.image',stokes=stokes)['maxpos']
-						negative_box=self.negative_box(maxpos,box_width=box_width)
-						max_pix=imstat(imagename='I.image',stokes=stokes)['max'][0]
-						rms=imstat(imagename='I.image',box=self.rms_box,stokes=stokes)['rms'][0]
-						min_pix=imstat(imagename='I.image',box=negative_box,stokes=stokes)['min'][0]
-						rms_dyn_range=max_pix/rms
-						if min_pix!=0:
-							neg_dyn+=max_pix/abs(min_pix)
+		try:
+			if os.path.isdir(imagename):
+				imageheader=imhead(imagename=imagename,mode='summary')
+				if imageheader['ndim']>2 and imageheader['ndim']==4:
+					out_dict={}
+					neg_dyn=0
+					for stokes in stokes_list:
+						if stokes=='I' or stokes=='XX' or stokes =='YY':
+							if os.path.isdir('I.image')==True:
+								os.system('rm -rf I.image')
+							immath(imagename=imagename,outfile='I.image',mode='evalexpr',stokes=stokes)
+							maxpos=imstat(imagename='I.image',stokes=stokes)['maxpos']
+							negative_box=self.negative_box(maxpos,box_width=box_width)
+							max_pix=imstat(imagename='I.image',stokes=stokes)['max'][0]
+							rms=imstat(imagename='I.image',box=self.rms_box,stokes=stokes)['rms'][0]
+							min_pix=imstat(imagename='I.image',box=negative_box,stokes=stokes)['min'][0]
+							rms_dyn_range=max_pix/rms
+							if min_pix!=0:
+								neg_dyn+=max_pix/abs(min_pix)
+							else:
+								neg_dyn=rms_dyn_range
+							ia.open('I.image')
+							ia.calcmask('\"I.image\">'+str(sigma*rms),'mymask')
+							ia.close()
+							try:
+								total_flux=imstat(imagename='I.image',stokes=stokes)['flux'][0]
+								out_dict[stokes]=[rms_dyn_range,rms,total_flux]							
+							except:
+								out_dict[stokes]=[rms_dyn_range,rms,np.nan]
 						else:
-							neg_dyn=rms_dyn_range
-						ia.open('I.image')
-						ia.calcmask('\"I.image\">'+str(sigma*rms),'mymask')
-						ia.close()
-						try:
-							total_flux=imstat(imagename='I.image',stokes=stokes)['flux'][0]
-							out_dict[stokes]=[rms_dyn_range,rms,total_flux]							
-						except:
-							out_dict[stokes]=[rms_dyn_range,rms,np.nan]
-					else:
-						max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
-						min_pix=imstat(imagename=imagename,stokes=stokes)['min'][0]
-						rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
-						if abs(min_pix)>max_pix:
-							max_pix=abs(min_pix)
-						rms_dyn_range=max_pix/rms
-						if os.path.isdir(stokes+'.image'):
-							os.system('rm -rf '+stokes+'.image')
-						immath(imagename=imagename,outfile=stokes+'.image',mode='evalexpr',expr='abs(IM0)',stokes=stokes)
-						makemask(inpimage='I.image',inpmask='I.image:mymask',output=stokes+'.image:mymask',mode='copy')
-						try:
-							total_flux=imstat(imagename=stokes+'.image',stokes=stokes)['flux'][0]
-							out_dict[stokes]=[rms_dyn_range,rms,total_flux]
-						except:
-							out_dict[stokes]=[rms_dyn_range,rms,np.nan]	
-						os.system('rm -rf '+stokes+'.image')		
-				os.system('rm -rf I.image')		
-		else:
-			out_dict={}
-			rms_dyn_range=np.nan
-			neg_dyn=np.nan
+							max_pix=imstat(imagename=imagename,stokes=stokes)['max'][0]
+							min_pix=imstat(imagename=imagename,stokes=stokes)['min'][0]
+							rms=imstat(imagename=imagename,box=self.rms_box,stokes=stokes)['rms'][0]
+							if abs(min_pix)>max_pix:
+								max_pix=abs(min_pix)
+							rms_dyn_range=max_pix/rms
+							if os.path.isdir(stokes+'.image'):
+								os.system('rm -rf '+stokes+'.image')
+							immath(imagename=imagename,outfile=stokes+'.image',mode='evalexpr',expr='abs(IM0)',stokes=stokes)
+							makemask(inpimage='I.image',inpmask='I.image:mymask',output=stokes+'.image:mymask',mode='copy')
+							try:
+								total_flux=imstat(imagename=stokes+'.image',stokes=stokes)['flux'][0]
+								out_dict[stokes]=[rms_dyn_range,rms,total_flux]
+							except:
+								out_dict[stokes]=[rms_dyn_range,rms,np.nan]	
+							os.system('rm -rf '+stokes+'.image')		
+					os.system('rm -rf I.image')		
+			else:
+				out_dict={}
+				rms_dyn_range=np.nan
+				neg_dyn=np.nan
+				out_dict['NAN']=[np.nan,np.nan]
+			negative_dyn_range=neg_dyn/len(stokes_list)
+		except:
+			negative_dyn_range=np.nan
 			out_dict['NAN']=[np.nan,np.nan]
-		negative_dyn_range=neg_dyn/len(stokes_list)
 		os.system('rm -rf casa*log')
 		return out_dict,negative_dyn_range
 
@@ -1157,8 +1162,8 @@ class PolSelfcal:
 					image_pix_sum=imstat(imagename='reduce_sigma_I.image')['sum'][0]
 					residual_pix_sum=imstat(imagename='reduce_sigma_I.residual')['sum'][0]
 				except:
-					image_pix_sum=0
-					residual_pix_sum=1
+					image_pix_sum=1
+					residual_pix_sum=0
 				try:
 					maxval=imstat(imagename='reduce_sigma_I.residual')['max'][0]
 				except:

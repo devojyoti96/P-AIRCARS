@@ -27,15 +27,17 @@ class ImageBasic:
 	----------
 	msname : str 
 		Name of the measurement set
+	includeflag : bool
+			Include flag data or not whilw calculating maximum baseline
 	'''
-	def __init__(self,msname):
+	def __init__(self,msname,includeflag=False):
 		self.msname=msname
 		self.md=msmetadata()
 		self.md.open(msname)
 		self.freq=self.md.meanfreq(0)
 		self.md.close()
 		self.tb=table()
-		self.max_baseline=self.calc_max_baseline()
+		self.max_baseline=self.calc_max_baseline(includeflag=includeflag)
 
 	############################################
 	# Imaging related #
@@ -143,12 +145,13 @@ class ImageBasic:
 		'''
 		FOV=self.field_of_view(freq=freq)
 		cellsize=self.calc_cellsize(num_pixel_in_psf,freq=freq)
-		num	=	FOV/cellsize
-		pow2	=	int(np.log2(num))
-		possibility=	np.array([2**(pow2-1)*3,2**(pow2-2)*5,2**(pow2-2)*7,2**(pow2+1)])
-		return int(possibility[getnearpos(possibility,num)[0]])
+		num=FOV/cellsize
+		pow2=round(np.log2(num),0)
+		possibility=np.array([2**(pow2),2**(pow2)*2,2**(pow2)*3,2**(pow2)*4,2**(pow2)*5,2**(pow2)*6,2**(pow2)*7,2**(pow2)*8,2**(pow2)*9,2**(pow2)*10])
+		argmin=np.argmin(np.abs(possibility-num))
+		return int(possibility[argmin])
 
-	def calc_calib_uvrange(self,max_angular_scale,uvbin=10):
+	def calc_calib_uvrange(self,max_angular_scale,uvbin=10,includeflag=False):
 		'''
 		This function calculate the uvrange to be used for calibration. 
 	
@@ -158,6 +161,8 @@ class ImageBasic:
 			Maximum angular scale to exclude short baselines from calibration
 		uvbin : float
 			Binning in uv-lambda
+		includeflag : bool
+			Include flag data or not whilw calculating maximum baseline
 		Returns
 		-------
 		str
@@ -176,17 +181,18 @@ class ImageBasic:
 		uvmin=uvmin_lambda*wavelength
 		self.tb.open(self.msname)
 		uvw=self.tb.getcol('UVW')
-		flag=self.tb.getcol('FLAG')
-		flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+		if includeflag==False:
+			flag=self.tb.getcol('FLAG')
+			flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+			for i in range(3):
+				uvw[i][flag]=np.nan
 		self.tb.close()
-		for i in range(3):
-			uvw[i][flag]=np.nan
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
 		nanpos=np.where(np.isnan(uvdist)==True)
 		uvdist=np.delete(uvdist,nanpos)
 		uvlambda=uvdist/wavelength
-		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/5))
+		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/uvbin))
 		max_uvpoints=np.max(uvlambda_hist[1])
 		cutpos1=np.min(np.where(uvlambda_hist[0]<max_uvpoints*0.1))
 		uvlambda1=uvlambda_hist[1][cutpos1]
@@ -207,10 +213,15 @@ class ImageBasic:
 		uvmax_lambda=uvmax/wavelength
 		return str(int(uvmin_lambda))+'~'+str(int(uvmax_lambda))+'lambda',int(uvmin),int(uvmax),int(uvmin_lambda),int(uvmax_lambda)
 
-	def calc_uvtaper(self):
+	def calc_uvtaper(self,uvbin=10,includeflag=False):
 		'''
 		Function return uv-taper value
-
+		Parameters
+		----------
+		uvbin : float
+			Binning in uv-lambda
+		includeflag : bool
+			Include flag data or not whilw calculating maximum baseline
 		Returns
 		-------
 		str
@@ -219,17 +230,18 @@ class ImageBasic:
 		wavelength=299792458.0/self.freq
 		self.tb.open(self.msname)
 		uvw=self.tb.getcol('UVW')
-		flag=self.tb.getcol('FLAG')
-		flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+		if includeflag==False:
+			flag=self.tb.getcol('FLAG')
+			flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+			for i in range(3):
+				uvw[i][flag]=np.nan
 		self.tb.close()
-		for i in range(3):
-			uvw[i][flag]=np.nan
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
 		nanpos=np.where(np.isnan(uvdist)==True)
 		uvdist=np.delete(uvdist,nanpos)
 		uvlambda=uvdist/wavelength
-		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/5))
+		uvlambda_hist=np.histogram(uvlambda,bins=int(max(uvlambda)/uvbin))
 		max_uvpoints=np.max(uvlambda_hist[1])
 		cutpos1=np.min(np.where(uvlambda_hist[0]<max_uvpoints*0.1))
 		uvlambda1=uvlambda_hist[1][cutpos1]
@@ -250,22 +262,30 @@ class ImageBasic:
 		uvmax_lambda=uvmax/wavelength
 		return str(uvmax_lambda)+'lambda'
 
-	def calc_suntaper(self):
+	def calc_suntaper(self,uvbin=10,includeflag=False):
 		'''
 		Function return uv-taper value to treat Sun as a point source of size 16 arcmin
-
+		Parameters
+		----------
+		uvbin : float
+			Binning in uv-lambda
+		includeflag : bool
+			Include flag data or not whilw calculating maximum baseline
 		Returns
 		-------
 		str
 			UV taper (uvtaper lambda)
 		'''
-		uvlimstring,umin,umax,uvminlambda,uvmaxlambda=self.calc_calib_uvrange(16/60.0)
+		uvlimstring,umin,umax,uvminlambda,uvmaxlambda=self.calc_calib_uvrange(16/60.0,uvbin=uvbin,includeflag=includeflag)
 		return str(uvminlambda)+'lambda'
 
-	def calc_max_baseline(self):
+	def calc_max_baseline(self,includeflag=False):
 		'''
 		Get the maximum baseline in meter
-
+		Parameters
+		----------
+		includeflag : bool
+			Include flag data or not whilw calculating maximum baseline
 		Returns
 		-------
 		float
@@ -273,11 +293,12 @@ class ImageBasic:
 		'''
 		self.tb.open(self.msname)
 		uvw=self.tb.getcol('UVW')
-		flag=self.tb.getcol('FLAG')
-		flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+		if includeflag==False:
+			flag=self.tb.getcol('FLAG')
+			flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+			for i in range(3):
+				uvw[i][flag]=np.nan
 		self.tb.close()
-		for i in range(3):
-			uvw[i][flag]=np.nan
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
 		return int(np.nanmax(uvdist))
@@ -1287,7 +1308,7 @@ def get_final_psf(msname,imager='wsclean',weight='briggs',robust=0.5):
 		Position angle in degree
 	'''
 	imagename=msname.split('.ms')[0]+'_test_image'
-	IB=ImageBasic(msname)
+	IB=ImageBasic(msname,includeflag=True)
 	cell=IB.calc_cellsize(3) # Assuming 3 pixels in one PSF
 	imsize=int(IB.num_pixels(3)/4)
 	if imsize>100:
@@ -1296,12 +1317,11 @@ def get_final_psf(msname,imager='wsclean',weight='briggs',robust=0.5):
 	if imager=='wsclean':
 		if weight=='briggs':
 			weight=weight+' '+str(robust)
-		wsclean_args=['-scale '+str(cell)+'asec','-size '+str(imsize)+' '+str(imsize),'-no-dirty','-baseline-averaging 20','-no-update-model-required','-j 3','-weight '+weight,\
-					'-name '+str(imagename),'-nwlayers 1','-niter 1']
+		wsclean_args=['-scale '+str(cell)+'asec','-size '+str(imsize)+' '+str(imsize),'-no-dirty','-quiet','-j 3','-weight '+weight,'-name '+str(imagename),'-nwlayers 1','-niter 1']
 		os.system('wsclean '+' '.join(wsclean_args)+' '+msname)
 		header=fits.getheader(imagename+'-image.fits')
-		maj=(header['BMAJ']*3600)-20
-		minor=(header['BMIN']*3600)-20
+		maj=(header['BMAJ']*3600)
+		minor=(header['BMIN']*3600)
 		pa=header['BPA']
 		os.system('rm -rf '+imagename+'*')
 		return maj,minor,pa

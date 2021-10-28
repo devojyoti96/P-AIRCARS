@@ -21,6 +21,8 @@ class AccessMS:
 		Name of the measurement set
 	'''
 	def __init__(self,msname):
+		if msname[-1]=='/':
+			msname=msname[:-1]
 		self.msname=msname
 		self.md=msmetadata()
 		self.tb=table()
@@ -654,7 +656,10 @@ class AccessMS:
 				code+='FIXVIS'
 			else:
 				code+=',FIXVIS'
-			phaseshift(vis=self.msname,outputvis=self.msname,phasecenter=sun_radec_string)
+			phaseshift(vis=self.msname,outputvis=self.msname+'.phaseshift',phasecenter=sun_radec_string)
+			if os.path.isdir(self.msname):
+				os.system('rm -rf '+self.msname)
+			os.system('mv '+self.msname+'.phaseshift '+self.msname)
 			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 			return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
 		else:
@@ -684,7 +689,10 @@ class AccessMS:
 					if 'FIXVIS' in code_list[i]:
 						code_list.remove(code_list[i])
 				code=','.join(code_list)
-				phaseshift(vis=self.msname,outputvis=self.msname,phasecenter=radec)
+				phaseshift(vis=self.msname,outputvis=self.msname+'.phaseshift',phasecenter=radec)
+				if os.path.isdir(self.msname):
+					os.system('rm -rf '+self.msname)
+				os.system('mv '+self.msname+'.phaseshift '+self.msname)
 				if len(code_list)==1 and code_list[0]=='':
 					code+='FIXVIS_'+radec_string
 				else:
@@ -695,10 +703,13 @@ class AccessMS:
 				return 'Phasecenter is already at :'+radec+'.\n'
 		return
 			
-	def get_max_baseline(self):
+	def get_max_baseline(self,includeflag=False):
 		'''
 		Get the maximum baseline in meter
-
+		Parameters
+		----------
+		includeflag : bool
+			Include flag data or not whilw calculating maximum baseline
 		Returns
 		-------
 		float
@@ -706,11 +717,12 @@ class AccessMS:
 		'''
 		self.tb.open(self.msname)
 		uvw=self.tb.getcol('UVW')
-		flag=self.tb.getcol('FLAG')
-		flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+		if includeflag==False:
+			flag=self.tb.getcol('FLAG')
+			flag=np.prod(np.prod(flag,axis=0,dtype='bool'),axis=0,dtype='bool')
+			for i in range(3):
+				uvw[i][flag]=np.nan
 		self.tb.close()
-		for i in range(3):
-			uvw[i][flag]=np.nan
 		u,v,w=[uvw[i, :] for i in range(3)]
 		uvdist=np.sqrt(u**2+v**2)
 		nanpos=np.where(np.isnan(uvdist)==True)
@@ -736,6 +748,33 @@ class AccessMS:
 			os.system('rm -rf '+listobsfile)
 		listobs(vis=self.msname,listfile=listobsfile)
 		return listobsfile
+
+	def model_imported(self):
+		'''
+		Fuction to check whether model imported or model column exists or not
+		Returns
+		-------
+		bool
+			True if model exists and False if does not
+		''' 
+		self.tb.open(self.msname)
+		try:
+			model=self.tb.getcol('MODEL_DATA')
+			if model.shape[0]==2:
+				if np.nansum(np.real(model))==model.flatten().shape[0]:
+					return False
+				else:
+					return True
+			elif model.shape[0]==4:
+				if np.nansum(np.real(model))==model.flatten().shape[0]/2:
+					return False
+				else:
+					return True
+			else:
+				return False
+		except:
+			self.tb.close()
+			return False		
 
 	def make_antenna_list(self,num_bins=5,antenna_list_file=''):
 		'''
