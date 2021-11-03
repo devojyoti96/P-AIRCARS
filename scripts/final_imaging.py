@@ -95,8 +95,8 @@ def calc_residual_flux(imagename,residual,nsigma,rms_box,stokes_list=['I']):
 				image_pix_sum=imstat(imagename=imagename_prefix+'.reduce_sigma_I.image')['sum'][0]
 				residual_pix_sum=imstat(imagename=imagename_prefix+'.reduce_sigma_I.residual')['sum'][0]
 			except:
-				image_pix_sum=0
-				residual_pix_sum=1
+				image_pix_sum=1
+				residual_pix_sum=0
 		else:
 			immath(imagename=imagename,mode='evalexpr',stokes=stokes,expr='abs(IM0)',outfile=imagename_prefix+'.reduce_sigma_'+stokes+'.image')
 			immath(imagename=residual,mode='evalexpr',stokes=stokes,outfile=imagename_prefix+'.reduce_sigma_'+stokes+'.residual')
@@ -113,7 +113,10 @@ def calc_residual_flux(imagename,residual,nsigma,rms_box,stokes_list=['I']):
 			except:
 				image_pix_sum=1
 				residual_pix_sum=0
-		residual_frac_list.append(residual_pix_sum/image_pix_sum)
+		if image_pix_sum==0:
+			residual_frac_list.append(0)
+		else:
+			residual_frac_list.append(residual_pix_sum/image_pix_sum)
 	os.system('rm -rf '+imagename_prefix+'.reduce_sigma_*')
 	os.chdir(cwd)
 	residual_frac_median=np.median(np.array(residual_frac_list))
@@ -279,6 +282,10 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 	Name of final image,model,residual
 	'''
 	print ('Making image.....\n')
+	if msname[-1]=='/':
+		msname=msname[:-1]
+	os.system('cp -r '+msname+' '+msname+'.backup')
+	backup_ms=msname+'.backup'
 	wsclean_check_count=0
 	if use_wsclean==True:
 		a=os.system('wsclean > wsclean_test')
@@ -289,6 +296,9 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 			else:
 				time.sleep(1.0)
 		os.system('rm -rf wsclean_test')
+		tempdir=workdir+'/tempdir'
+		if os.path.isdir(tempdir)==False:
+			os.makedirs(tempdir)
 	casalog=False
 	cwd=os.getcwd()
 	os.chdir(workdir)
@@ -325,13 +335,18 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 			PSC=PolSelfcal(options.msname,options.metafits,32*60,verbose=False,interactive=False,use_wsclean=use_wsclean,savelog=False) 
 			cal=CALIBRATE()
 			IB=ImageBasic(msname)
+			if inputs.quality_factor==0 and inputs.safety_factor==0:
+				num_pixel_in_psf=3
+			else:
+				num_pixel_in_psf=5
 			if inputs.calc_image_parameters==True:
-				uvrange=IB.calc_calib_uvrange(12)[0]	
-				imaging_minuv=IB.calc_calib_uvrange(12)[3]
-				imaging_maxuv=IB.calc_calib_uvrange(12)[4]
-				cell=IB.calc_cellsize(5) # Assuming 5 pixels in one PSF
-				imsize=IB.num_pixels(5)
-				scales=IB.choose_scales(5,32*60)
+				calc_calib_uvrange=IB.calc_calib_uvrange(12,includeflag=False)
+				uvrange=calc_calib_uvrange[0]	
+				imaging_minuv=calc_calib_uvrange[3]
+				imaging_maxuv=calc_calib_uvrange[4]	
+				cell=IB.calc_cellsize(num_pixel_in_psf) 
+				imsize=IB.num_pixels(num_pixel_in_psf)
+				scales=IB.choose_scales(num_pixel_in_psf,32*60)
 				uvtaper=IB.calc_uvtaper()
 				if inputs.weight=='' or (inputs.weight!='uniform' and inputs.weight!='natural' and inputs.weight!='briggs'):
 					weight='briggs'
@@ -359,9 +374,10 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 						imaging_minuv=0
 						imaging_maxuv=float(uvrange[1])
 				else:
-					uvrange=IB.calc_calib_uvrange(12)[0]	
-					imaging_minuv=IB.calc_calib_uvrange(12)[3]
-					imaging_maxuv=IB.calc_calib_uvrange(12)[4]	
+					calc_calib_uvrange=IB.calc_calib_uvrange(12,includeflag=False)
+					uvrange=calc_calib_uvrange[0]	
+					imaging_minuv=calc_calib_uvrange[3]
+					imaging_maxuv=calc_calib_uvrange[4]	
 				cell=inputs.cellsize
 				imsize=inputs.imsize[0]
 				scales=inputs.multiscale_scales		
@@ -449,7 +465,7 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 							wsclean_args=['-scale '+str(cell)+'asec','-size '+str(imsize)+' '+str(imsize),'-no-dirty','-j '+str(cpus),'-abs-mem '+str(absmem),'-weight '+weight,\
 							'-taper-tukey 10','-name '+str(file_str),'-nwlayers 1','-pol '+str(pol),'-maxuv-l '+str(imaging_maxuv),'-minuv-l '+str(imaging_minuv),'-niter 1000000',\
 							'-mgain '+str(mgain),'-quiet','-auto-threshold '+str(sigma),'-auto-mask '+str(sigma+0.1),'-multiscale-gain '+str(multiscale_gain),\
-							'-multiscale-scale-bias 0.7','-gain '+str(gain),'-multiscale','-multiscale-scales '+','.join(scales)]
+							'-multiscale-scale-bias 0.7','-gain '+str(gain),'-multiscale','-multiscale-scales '+','.join(scales),'-temp-dir '+tempdir]
 							if clean_continue==True:
 								wsclean_args.append('-continue')
 							if len(clean_beam)==3:
@@ -458,9 +474,9 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 							print (imaging_cmd+'\n')			
 							os.system('wsclean '+' '.join(wsclean_args)+' '+msname)
 							time.sleep(2)
-							wsclean_images=glob.glob(file_str+'*image.fits')
-							wsclean_models=glob.glob(file_str+'*model.fits')
-							wsclean_residuals=glob.glob(file_str+'*residual.fits')
+							wsclean_images=sorted(glob.glob(file_str+'*image.fits'))
+							wsclean_models=sorted(glob.glob(file_str+'*model.fits'))
+							wsclean_residuals=sorted(glob.glob(file_str+'*residual.fits'))
 							print ('Converting WSClean images : '+','.join([os.path.basename(i) for i in wsclean_images])+' to CASA image : '+file_str+'.image\n')
 							casa_imagename=PSC.wsclean_to_casaimage(wsclean_images=wsclean_images,casaimage_prefix=file_str,imagetype='image',keep_wsclean_images=True)
 							print ('Converting WSClean models : '+','.join([os.path.basename(i) for i in wsclean_models])+' to CASA model : '+file_str+'.model\n')
@@ -479,14 +495,32 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 								print ('Performing differential calibration because : '+cal_cause+'\n')
 								print ('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
 								delmod(vis=msname,scr=True,otf=True)
-								print ('ft(vis=\''+msname+'\',model=\''+casa_modelname+'\',usescratch=True)\n')
-								ft(vis=msname,model=casa_modelname,usescratch=True)
+								k=0
+								while True:
+									if k>3:
+										print ('Model import tried three times. Model import failed.\n')
+										return 2
+									print ('ft(vis=\''+msname+'\',model=\''+casa_modelname+'\',usescratch=True)\n')
+									ft(vis=msname,model=casa_modelname,usescratch=True)
+									AMmodel=AccessMS(msname)
+									model_imported=AM.model_imported()
+									if model_imported==True:
+										return 2
+									else:
+										print ('Try to import model. Trial number : '+str(k)+'\n')
+										time.sleep(1.0)
+									k+=1
 								if stokes!='I':
 									print ('cal.calibrate(msname=\''+msname+'\',caltable=\''+file_str+'.cal\',verbose=False,j=3,'+\
 									',datacolumn=\'data\')\n')
 									cal.calibrate(msname=msname,caltable=file_str+'.cal',verbose=False,j=3,datacolumn='data')
 									print ('cal.applycal(msname=\''+msname+'\',gaintable=\''+file_str+'.cal\',datacolumn=\'data\')\n')
 									cal.applycal(msname=msname,gaintable=file_str+'.cal',datacolumn='data')
+								else:
+									print ('gaincal(vis=\''+msname+'\',caltable=\''+file_str+'.cal\',solmode=\'R\',rmsthresh=[10,7,5,3.5])\n')
+									gaincal(vis=msname,caltable=file_str+'.cal',solmode='R',rmsthresh=[10,7,5,3.5])
+									print ('applycal(vis=\''+msname+'\',gaintable=[\''+file_str+'.cal\'],applymode=\'calflag\')\n')
+									applycal(vis=msname,gaintable=[file_str+'.cal'],applymode='calflag')
 							else:
 								print ('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
 								delmod(vis=msname,scr=True,otf=True)
@@ -541,11 +575,10 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 				done_imaging=True
 				return 2
 			else:
-				antenna=AM.get_antenna_string()
-				flagdata(vis=msname,mode='unflag',antenna=antenna)
-				flag_MWA_coarse(msname,edgewidth=280,do_flag=True,force=True,flagbackup=False)
+				os.system('rm -rf '+msname+' '+msname+'.flagversions')
+				os.system('cp -r '+backup_ms+' '+msname)
 				try_count+=1
-				print ('Trying count " '+str(try_count)+'\n')
+				print ('Trying count : '+str(try_count)+'\n')
 				continue
 			
 	# Exporting images

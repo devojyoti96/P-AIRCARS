@@ -360,7 +360,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 	else:
 		num_pixel_in_psf=7
 			
-	PSC=PolSelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=12,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,savelog=inputs.keep_logger) 
+	PSC=PolSelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=20,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,savelog=inputs.keep_logger) 
 						# Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
 	
@@ -387,8 +387,8 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			else:
 				robust=inputs.robust
 	else:
-		weight='briggs'
-		robust=0.8
+		weight=inputs.weight
+		robust=inputs.robust
 		
 	if calc_selfcalib_params==False:
 		if uvrange_to_cal!='':
@@ -454,7 +454,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 		return 12
 
 	background_mask_rad=int((200*60)/PSC.cellsize) # Creating a mask with 3deg radius centered on the image
-	background_mask_str='circle[['+str(PSC.imsize/2)+'pix,'+str(PSC.imsize/2)+'pix],'+str(background_mask_rad)+'pix]'
+	background_mask_str='circle[['+str(int(PSC.imsize/2))+'pix,'+str(int(PSC.imsize/2))+'pix],'+str(background_mask_rad)+'pix]'
 
 	subms,subtracted=PSC.subtract_background_sources('IQUV',rms_list,start_sigma+1.5,start_sigma+1.5,maskregion=background_mask_str,includeregion=False,\
 													overwrite=True,modify_datacolumn=True,weight=weight,robust=robust)
@@ -565,7 +565,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			logger.info('ft(vis=\''+msname+'\',model=\''+modelname+'\',usescratch=True)\n')
 			ft(vis=msname,model=modelname,usescratch=True)
 			IB=ImageBasic(msname)
-			uvrange=IB.calc_calib_uvrange(12)[0]
+			uvrange=IB.calc_calib_uvrange(12,includeflag=True)[0]
 			logger.info('bandpass(vis=\''+msname+'\',caltable=\''+working_dir+'/Leakage_cor_gaincal.cal\',refant='+str(inputs.ref_ant)+',minsnr='+str(inputs.gain_minsnr)+','+\
 					',uvrange=\''+uvrange+'\',bandtype=\'B\')\n')
 			bandpass(vis=msname,caltable=working_dir+'/Leakage_cor_gaincal.cal',refant=str(inputs.ref_ant),minsnr=inputs.gain_minsnr,uvrange=uvrange,bandtype='B')
@@ -642,8 +642,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 			if gaincal_count==1:
 				logger.info('Re-calibrating using Stokes Q,U corrected model.\n')
 				IB1=ImageBasic(msname)
-				calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
-				calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
+				calib_uvrange=IB1.calc_calib_uvrange(12,includeflag=True)
+				calib_uvrange_min=calib_uvrange[1]
+				calib_uvrange_max=calib_uvrange[2]
 				clearcal(vis=msname,addmodel=True)
 				logger.info('delmod(vis=\''+msname+'\',scr=True,otf=True)\n')
 				delmod(vis=msname,scr=True,otf=True)
@@ -1030,8 +1031,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk0.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk0.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
+								calib_uvrange=IB.calc_calib_uvrange(12,includeflag=True)
+								calib_uvrange_min=calib_uvrange[1]
+								calib_uvrange_max=calib_uvrange[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -1126,8 +1128,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 						delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 						logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 						ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-						calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
-						calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
+						calib_uvrange=IB.calc_calib_uvrange(12,includeflag=True)
+						calib_uvrange_min=calib_uvrange[1]
+						calib_uvrange_max=calib_uvrange[2]
 						logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 								str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 						cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -1175,7 +1178,7 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 					abs(FX2_V/FX2_I-FX1_V/FX1_I)<pol_frac_change): # If polarised flux converged
 					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and (num_iteration_after_poldist>min_iteration or num_iter_after_qucor>max(min_iteration,5)):
 						if gaincal_count<1 and done_qucor==False: # If QU correction and leakage corrected gaincal not done
-							sigma,pre_res=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,pre_residual=pre_res,residual_frac=frac_flux_change,\
+							sigma,pre_res=PSC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,min_sigma,pre_residual=pre_res,residual_frac=frac_flux_change,\
 									stokes_list=['I','Q','U','V'])
 							if sigma<start_sigma:						
 								start_sigma=sigma	
@@ -1202,8 +1205,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 							delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 							logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 							ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-							calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
-							calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
+							calib_uvrange=IB.calc_calib_uvrange(12,includeflag=True)
+							calib_uvrange_min=calib_uvrange[1]
+							calib_uvrange_max=calib_uvrange[2]
 							logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 									str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 							cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -1273,8 +1277,9 @@ def run_pol_selfcal(msname,metafits,working_dir,verbose=False,interactive=False,
 								delmod(vis=working_dir+'/Backup_beamcorrected.ms',scr=True,otf=True)
 								logger.info('ft(vis=\''+working_dir+'/Backup_beamcorrected.ms\',model=\'junk1.model\',usescratch=True)\n')
 								ft(vis=working_dir+'/Backup_beamcorrected.ms',model=working_dir+'/junk1.model',usescratch=True)
-								calib_uvrange_min=IB.calc_calib_uvrange(12)[1]
-								calib_uvrange_max=IB.calc_calib_uvrange(12)[2]
+								calib_uvrange=IB.calc_calib_uvrange(12,includeflag=True)
+								calib_uvrange_min=calib_uvrange[1]
+								calib_uvrange_max=calib_uvrange[2]
 								logger.info('cal.calibrate(msname=\''+working_dir+'/Backup_beamcorrected.ms\',caltable=\''+working_dir+'/junk_final.bin\',minuv=\''+\
 										str(calib_uvrange_min)+',maxuv=\''+str(calib_uvrange_max)+',j=1,absmem=1,solmode=\'R\',rmsthresh=[15,10,8],quiet='+str(verbose)+')\n')
 								cal.calibrate(msname=working_dir+'/Backup_beamcorrected.ms',caltable=working_dir+'/junk_final.bin',minuv=calib_uvrange_min,\
@@ -1458,10 +1463,39 @@ if __name__=='__main__':
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
 		logger.info('#############################\n')
-		logger.info('Gain selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Polarisation selfcal failed for ms : '+options.chantime_msname+'\n')
 		logger.info('Total runtime : '+str(run_time)+'\n')
 		logger.info('##############################\n')
 		msg_str='Dear PAIRCARS user,\n\nPolarisation self-calibration for : '+msbasename+'\nMessage : No metafits file is present\nTotal runtime : '+\
+					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
+		if inputs.send_notification==True:
+			send_paircars_notification(inputs.email,msg_subject,msg_str)
+		os.system('touch '+touch_file)
+		os.system('rm -rf '+options.workdir+'/TempLattice*')
+		file_str=msbasename.split('.ms')[0]
+		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+		os.system('cp -r '+options.workdir+'/Pol_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+		if inputs.keep_logger and eval(str(options.verbose))==True:
+			os.system('cp -r '+options.workdir+'/Pol_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.pollog')
+		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
+		os.system('rm -rf '+options.workdir+'/*.log')
+		os._exit(0)
+
+	AM=AccessMS(options.chantime_msname)
+	npol=AM.get_pol()
+	if npol!=4:
+		logger.info('Number of polarisation products is not equals to 4. Can not perform polarisation calibration.\n')
+		end_time=time.time()
+		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+		logger.info('#############################\n')
+		logger.info('Polarisation selfcal failed for ms : '+options.chantime_msname+'\n')
+		logger.info('Total runtime : '+str(run_time)+'\n')
+		logger.info('##############################\n')
+		msg_str='Dear PAIRCARS user,\n\nPolarisatioin self-calibration for : '+msbasename+'\nMessage : Number of correlation product is less than 4.\nTotal runtime : '+\
 					str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
 		msg_subject='Notification from PAIRCARS : Polarisation Selfcal : OBSID = '+str(OBSID)
 		if inputs.send_notification==True:

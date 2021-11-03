@@ -1,7 +1,7 @@
 '''
 Code is written by Devojyoti Kansabanik , 28 Jan, 2021
 '''
-
+import os,sys
 from optparse import OptionParser
 if __name__=='__main__':
 	usage= ' P-AIRCARS master controller for each day calibration'
@@ -9,7 +9,6 @@ if __name__=='__main__':
 	parser.add_option('--basedir',dest="basedir",default=None,help="Name of base directory for a given day",metavar="Directory path")
 	(options, args) = parser.parse_args()
 
-import os,sys
 os.chdir(options.basedir)
 sys.path.append(os.getcwd())
 a=os.system('validating_paircars_input')
@@ -271,8 +270,13 @@ if len(metafits_obsids_msdir)!=0:
 		os.system('cp -r '+metafits+' '+inputs.basedir+'/data/'+os.path.basename(metafits))
 metafits_obsids=[int(os.path.basename(x).split('.metafits')[0]) for x in glob.glob(inputs.basedir+'/data/*.metafits')]
 
-for i in range(len(measurement_set_list)):
-	msname=measurement_set_list[i]
+print (measurement_set_list)
+if len(measurement_set_list)==0:
+	mainlog.info('No measurement set present for the given time range. Please check your time range or the data directory if measurement set exists or not.\n')
+	os._exit(0)
+measurement_set_list_copy=copy.deepcopy(measurement_set_list)
+for i in range(len(measurement_set_list_copy)):
+	msname=measurement_set_list_copy[i]
 	AMtimerange=AccessMS(msname)
 	mjdstamps=AMtimerange.get_timestamps_in_mjdsecs()[0]
 	start_mjdtimestamp=min(mjdstamps)
@@ -320,6 +324,9 @@ for i in range(len(measurement_set_list)):
 			ms_OBSIDs.append(obsid)
 	else:
 		measurement_set_list.remove(msname)
+if len(measurement_set_list)==0:
+	mainlog.info('No measurement set present for the given time range. Please check your time range or the data directory if measurement set exists or not.\n')
+	os._exit(0)
 
 if inputs.calc_selfcalib_params==True:
 	if inputs.quality_factor==0:
@@ -596,7 +603,7 @@ if len(measurement_set_list)!=0:
 				os.makedirs(workdir)
 			os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 			cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
-				' --ref_freq_avg 0 --ref_time_avg 0 '+' --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
+				' --ref_freq_avg '+str(40)+' --ref_time_avg '+str(2)+' --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
 				+' --cal_attenuation '+str(1.0)+' --scratch True --caltables '+str(','.join(caltable_list))+' --wsclean '\
 				+str(use_wsclean)+' --cpu_frac '+str(inputs.cpu_frac)  # TODO : Change calibrator attenuator
 			screen_name=str(reftimefreq_ms_OBSID)+'_'+str(os.path.basename(ref_freq_time_msname).split('.ms')[0])+'_runpaircars_'+str(inputs.job_id)
@@ -669,7 +676,7 @@ if len(measurement_set_list)!=0:
 					os.makedirs(workdir)
 				os.system('cp -r selfcal_inputs.py '+workdir+'/selfcal_inputs.py')
 				cmd='run_paircars --msname '+single_ref_freq_time_ms+' --metafits '+single_ref_freq_time_metafits+' --basedir '+inputs.basedir+' --workdir '+workdir+\
-					' --ref_freq_avg 0 --ref_time_avg 0 --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
+					' --ref_freq_avg '+str(40)+' --ref_time_avg '+str(2)+' --ref_time_freq True --do_bandpass '+str(inputs.do_bandpass)+' --do_polcal '+str(inputs.do_polcal)\
 					+' --scratch True --wsclean '+str(use_wsclean)+' --cpu_frac '+str(inputs.cpu_frac)
 				mainlog.info('Command : '+cmd+'\n')
 				screen_name=str(single_reftimefreq_ms_OBSID)+'_'+str(os.path.basename(single_ref_freq_time_ms).split('.ms')[0])+'_runpaircars_'+str(inputs.job_id)

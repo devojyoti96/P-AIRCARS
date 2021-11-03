@@ -1,8 +1,8 @@
 '''
 Code is written by Devojyoti Kansabanik , 28 Jan, 2021
 '''
-from optparse import OptionParser
 import os,sys,psutil
+from optparse import OptionParser
 from pathlib import Path
 if __name__=='__main__':
 	usage= ' Perform self calibration of a single time and frequency slice'
@@ -64,6 +64,7 @@ def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=
 	md=msmetadata()
 	md.open(msname)
 	freqlist=md.chanfreqs(0)
+	freqres=md.chanres(0)[0]/10**3
 	md.close()
 	inttime=float(fits.getheader(metafits)['INTTIME'])/2
 	if type(channel)==str:
@@ -72,12 +73,20 @@ def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=
 			ch1=int(channel.split('~')[1])
 			ch=int((ch0+ch1)/2.0)
 			spw='0:'+channel
+			width=1
 		else:
 			ch=int(channel)
 			spw='0:'+str(channel)
+			width=1
 	else:
-		spw='0:'+str(channel)
-		ch=channel
+		if caltype=='G' and freqres<160:
+			num_chan_multi=int(160/freqres)
+			spw='0:'+str(channel-num_chan_multi)+'~'+str(channel+num_chan_multi)
+			width=num_chan_multi
+		else:
+			spw='0:'+str(channel)
+			ch=channel
+			width=1
 	mjd=timestamp_to_mjdsec(timestamp,format=0)
 	t0=mjdsec_to_timestamp(mjd-inttime)
 	t1=mjdsec_to_timestamp(mjd+inttime)
@@ -93,9 +102,9 @@ def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=
 		ms_mainlog.info('Spliting reference time and channel..............\n')	
 		if os.path.isdir(cwd+'/reftimechan.ms')==True:
 			os.system('rm -rf '+cwd+'/reftimechan.ms* '+cwd+'/reftimechan.ms.flagversions')
-		split(vis=msname,outputvis=cwd+'/reftimechan.ms',datacolumn=datacolumn,spw=spw,timerange=timestamp,correlation=corr)
+		split(vis=msname,outputvis=cwd+'/reftimechan.ms',datacolumn=datacolumn,spw=spw,timerange=timestamp,correlation=corr,width=width)
 		ms_mainlog.info('split(vis=\''+msname+'\',outputvis=\''+cwd+'/reftimechan.ms\',datacolumn=\''+datacolumn+'\',spw=\''+spw+'\',timerange=\''+timestamp+'\',correlation=\''+\
-						corr+'\')\n')
+						corr+'\',width='+str(width)+')\n')
 		ref_timechan_ms=splited_ms_rename(cwd+'/reftimechan.ms',ref_time_chan=True,change_msname=True)
 		ref_timechan_dir=cwd+'/'+os.path.basename(ref_timechan_ms).split('.ms')[0]+'_'+caltype
 		if os.path.isdir(ref_timechan_dir)==True:
@@ -113,9 +122,9 @@ def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=
 		ms_mainlog.info('Spliting measurement set for time : '+timestamp+' and frequency : '+str(freqlist[ch]/10**6)+' MHz ............\n')
 		if os.path.isdir(cwd+'/timechan.ms')==True:
 			os.system('rm -rf '+cwd+'/timechan.ms* '+cwd+'/timechan.ms.flagversions')
-		split(vis=msname,outputvis=cwd+'/timechan.ms',datacolumn=datacolumn,spw=spw,timerange=timestamp,correlation=corr)
+		split(vis=msname,outputvis=cwd+'/timechan.ms',datacolumn=datacolumn,spw=spw,timerange=timestamp,correlation=corr,width=width)
 		ms_mainlog.info('split(vis=\''+msname+'\',outputvis=\''+cwd+'/timechan.ms\',datacolumn=\''+datacolumn+'\',spw=\''+spw+'\',timerange=\''+timestamp+'\',correlation=\''+\
-						corr+'\')\n')
+						corr+'\',width='+str(width)+')\n')
 		timechan_ms=splited_ms_rename(cwd+'/timechan.ms',ref_time_chan=False,change_msname=True)
 		timechan_dir=cwd+'/'+os.path.basename(timechan_ms).split('.ms')[0]+'_'+caltype
 		if os.path.isdir(timechan_dir):
@@ -199,7 +208,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	metafits = Name of the metafits file
 	workdir = Name of the working directory
 	ref_freq_avg = Frequency average in kHz used in reference time. (default : 0 to take frequency resolution of the data)
-	ref_time_avg = Temporal average in secind used in reference time. (default : 0 to take time resolution of the data)
+	ref_time_avg = Temporal average in second used in reference time. (default : 0 to take time resolution of the data)
 	ref_time_freq = False, reference time frequency ms
 	do_bandpass = False, perform bandpass or not
 	do_polcal = False, perform polcal or not
@@ -218,6 +227,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	
 	inttime=float(fits.getheader(metafits)['INTTIME'])/2
 	AM=AccessMS(msname)
+	npol=AM.get_npol()
+	if npol!=4 and do_polcal==True:
+		ms_mainlog.error('Number of correlation product is less than 4. Do not perform polarisation calibration imaging.\n')
+		do_polcal=False
 	antenna=AM.get_antenna_string()
 	unflagchan,flagchan=flag_MWA_coarse(msname,edgewidth=280,do_flag=False,force=False)
 	ms_mainlog.info('flagdata(vis=\''+msname+'\',mode=\'unflag\',spw=\''+unflagchan+'\',antenna=\''+antenna+'\')\n')
@@ -313,9 +326,10 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 	####################################################
 
 	AM=AccessMS(msname)
+	freqres=AM.calc_freqres()
 	output=AM.move_phasecenter_to_sun()  # Moving the phasecenter to the Sun
 	ms_mainlog.info(output)
-	if inputs.do_decor_correction: # Performing decorrelation correction and IAU convention change
+	if inputs.do_decor_correction and freqres<=40: # Performing decorrelation correction and IAU convention change (TODO: need to fix decor code for high bandwidth)
 		ms_mainlog.info('Performing de-correlation correction and IAU convention correction for ms : '+msname+'\n')
 		decor(msname,metafits,10,False)
 	else: # If user do not want decorrelation correction perform only IAU convention

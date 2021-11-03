@@ -428,7 +428,7 @@ class PAIRCARS_inputs:
 		self.timeint_options.place(x=515,y=445)
 
 		# Image frequency width
-		freqwids=np.linspace(10,320,32)
+		freqwids=np.linspace(10,30000,int(30000/10))
 		freqwids=["{:0.1f}".format(i) for i in freqwids.tolist()]
 		self.freqwid=DoubleVar()
 		self.freqwid.set(freqwids[15])
@@ -960,7 +960,7 @@ class PAIRCARS_inputs:
 		# robust
 		robusts=[float("{:0.1f}".format(i)) for i in np.arange(-1.0,1.1,0.1).tolist()]
 		self.robust=DoubleVar()
-		self.robust.set(robusts[-3])
+		self.robust.set(robusts[-1])
 		robust=Label(self.frame2,text='Robust',bg='white',fg='Black',font=('times new roman',15))
 		robust.place(x=450,y=405)
 		self.robust_options=ttk.Combobox(self.frame2,textvariable=self.robust,values=robusts,width=4,state='readonly')
@@ -1660,7 +1660,7 @@ class PAIRCARS_inputs:
 			else:
 				dic['extra_time']=float(self.extra_entry.get())
 			if self.maxtime_entry.get()=='Max time':
-				dic['max_time_avg']=5.0
+				dic['max_time_avg']=10.0
 			else:
 				dic['max_time_avg']=float(self.maxtime_entry.get())
 			if self.weight_entry.get()=='uniform/natural/briggs':

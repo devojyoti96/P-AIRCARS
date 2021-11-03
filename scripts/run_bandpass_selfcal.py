@@ -135,8 +135,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		if (os.path.isfile(working_dir+'/Bandpass_Selfcal.log') and start_fresh==True) or \
 				(os.path.isfile(working_dir+'/Bandpass_Selfcal.log') and os.path.isdir(working_dir+'/junk1.ms')==False and start_fresh==False):
 			os.system('rm -rf '+working_dir+'/Bandpass_Selfcal.log')
-		if os.path.isfile(working_dir+'/Bandpass_Selfcal_verbose.log') and verbose==True:
-				os.system('rm -rf '+working_dir+'/Bandpass_Selfcal_verbose.log')
+		if os.path.isfile(working_dir+'/Intensity_Selfcal_verbose.log') and verbose==True:
+			os.system('rm -rf '+working_dir+'/Intensity_Selfcal_verbose.log')
 		formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 	logger = logging.getLogger('bandpass_selfcal_log')
 	if __name__!='__main__':
@@ -163,28 +163,24 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		if caltables!='':
 			caltable_list=caltables.split(',')
 			logger.info('Applying solutions from previous calibrations : '+str(caltables)+'\n')
-			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',calwt=[False],flagbackup=True)\n')
-			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',calwt=[False],flagbackup=True)
+			logger.info('applycal(vis=\''+msname+'\',gaintable='+str(caltable_list)+',applymode=\'calflag\',calwt=[False],flagbackup=False)\n')
+			applycal(vis=msname,gaintable=caltable_list,applymode='calflag',calwt=[False],flagbackup=False)
 			tb=table()
 			tb.open(msname,nomodify=False)
 			cor_data=tb.getcol('CORRECTED_DATA')
 			tb.putcol('DATA',cor_data)
 			tb.flush()
 			tb.close()
+			cal_metadata=get_caltable_metadata(caltable_list[0])
+			cal_bw=cal_metadata['Bandwidth (MHz)']
+			calstart_time=timestamp_to_mjdsec(cal_metadata['Start time'],format=0)
+			calend_time=timestamp_to_mjdsec(cal_metadata['End time'],format=0)
+			cal_tw=abs(calend_time-calstart_time)
 		else:
 			caltable_list=[]
-		if os.path.isfile(msname+'/.usedby_paircars'):
-			try:
-				tb=table()
-				tb.open(msname,nomodify=False)
-				flag=tb.getcol('FLAG')
-				flag*=False
-				tb.putcol('FLAG',flag)
-				tb.flush()
-				tb.close()
-				os.system('rm -rf '+msname+'.flagversions')	
-			except:
-				pass		
+			cal_bw=0
+			cal_tw=0
+				
 
 	if msname[-1]=='/':
 		msname=msname[:-1]
@@ -234,7 +230,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 
 	if start_fresh==False:
 		num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,num_iter_fixed_sigma,num_iter_fixed_ant,stokes,startmodel,\
-					startmask,uvsub_flag_count=np.load('Bandpass_selfcal_record.npy',allow_pickle=True)		
+					startmask,uvsub_flag_count=np.load('Bandpass_selfcal_record.npy',allow_pickle=True)	
+	
 	
 	scratch=False # For bandpass selfcal scratch is always False, since gain calibration is already applied
 	if 'ref' in msname:
@@ -257,6 +254,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				print('Restarting selfcal from selfcal round : '+str(num_iter)+'\n')
 			print ('Reference time frequency slice imaging has been done. Starting imaging for time : '+str(datestr)+' and frequency : '+str(freqstr)+' MHz\n')
 			print ('Scratch = '+str(scratch)+'\n')
+	
 	if inputs.quality_factor==0:
 		num_pixel_in_psf=3
 	elif inputs.quality_factor==1:
@@ -264,10 +262,12 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	else:
 		num_pixel_in_psf=7
 
-	ISC=IntensitySelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=12,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,\
+	ISC=IntensitySelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=20,verbose=verbose,interactive=interactive,use_wsclean=use_wsclean,\
 						savelog=inputs.keep_logger)
 			 # Creating selfcal object 32 arcmin maximum scale size
 	AM=AccessMS(msname)
+	ms_bw=AM.calc_bandwidth()/10**6
+	ms_tw=AM.calc_total_time()
 
 	###################
 	# Putting user defined inputs if exisis or go with default values
@@ -292,8 +292,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			else:
 				robust=inputs.robust
 	else:
-		weight='briggs'
-		robust=0.8
+		weight=inputs.weight
+		robust=inputs.robust
 	
 	if calc_selfcalib_params==False:
 		if uvrange_to_cal!='':
@@ -308,7 +308,11 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	# Calculating minimum number of iterations and antenna bin size
 	###############################################################
 	
-	min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change=ISC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch,bandpass_selfcal=True)
+	min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change,min_sigma=\
+			ISC.calc_iter_num(inputs.safety_factor,inputs.quality_factor,scratch=scratch,bandpass_selfcal=True)
+
+	if calc_selfcalib_params==False:
+		min_sigma=inputs.min_sigma
 
 	logger.info('########################\n')
 	logger.info('Estimating the number of selfcal iterations\n')
@@ -323,7 +327,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 	###########################
 
 	if start_fresh:
-		stokes='XXYY'
+		stokes='I'
 		calmode='ap'
 		antenna_list_index=-1
 		num_iter=0
@@ -356,6 +360,8 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 		try:
 			start_sigma=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[0] # Starting with last gaincal start_sigma and threshold
 			rms_list=np.load(basedir+'/Ref_time_chan_sigma.npy',allow_pickle=True)[1]
+			if min_sigma>start_sigma:
+				min_sigma=start_sigma
 			if len(rms_list)!=2:
 				rms_list.append(rms_list[0])
 		except:
@@ -390,7 +396,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					logger.info('Total runtime : '+str(run_time))
 					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					if inputs.keep_logger and verbose==True:
-						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+						os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return 12
@@ -426,11 +432,21 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 				logger.info('Total runtime : '+str(run_time))
 				os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 				if inputs.keep_logger and verbose==True:
-					os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+					os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 				os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 				os.system('rm -rf '+working_dir+'/'+file_str+'*')
-			return 12	
-	
+			return 12
+
+	if cal_bw!=0 and cal_tw!=0:
+		if ms_bw>cal_bw:
+			bw_mult=ms_bw/cal_bw
+			for i in range(len(rms_list)):
+				rms_list[i]=0.8*float(rms_list[i])/np.sqrt(bw_mult)
+		if ms_tw>cal_tw:
+			tw_mult=ms_tw/cal_tw
+			for i in range(len(rms_list)):
+				rms_list[i]=0.8*float(rms_list[i])/np.sqrt(tw_mult)
+
 	while end_selfcal==False:
 			
 		##############
@@ -448,9 +464,9 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			startmask=''
 		if num_iter>min_iteration:
 			calc_flag_frac=calc_flag_fraction_caltable(working_dir+'/junk1.cal')
-			if inputs.gain_minsnr>2 and calc_flag_frac>0.05:
+			if inputs.gain_minsnr>=3.5 and calc_flag_frac>0.1:
 				inputs.gain_minsnr-=0.5
-
+		
 		if inputs.want_auto_masking==True:
 			output_ISC=ISC.selfcal_iteration(num_iter,rms_list,start_sigma,mask_str,ISC.antenna_string(antenna_list,antenna_list_index),\
 				startmodel,startmask,inputs.ref_ant,inputs.gain_minsnr,calmode,maskfile='',want_auto_masking=inputs.want_auto_masking,stokes=stokes,interactive=interactive,\
@@ -489,7 +505,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					logger.info('Total runtime : '+str(run_time))
 					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					if inputs.keep_logger and verbose==True:
-						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+						os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return msg_code+100
@@ -508,14 +524,19 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					logger.info('Total runtime : '+str(run_time))
 					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					if inputs.keep_logger and verbose==True:
-						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+						os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return msg_code
 		else:	
-			dyn1=(out_dict['XX'][0]+out_dict['YY'][0])/2.0
-			dyn2=negative_dyn_range
-			rms_list=[out_dict['XX'][1],out_dict['YY'][1]]				
+			try:
+				dyn1=(out_dict['XX'][0]+out_dict['YY'][0])/2.0
+				dyn2=negative_dyn_range
+				rms_list=[out_dict['XX'][1],out_dict['YY'][1]]
+			except:
+				dyn1=out_dict['I'][0]
+				dyn2=negative_dyn_range
+				rms_list=[out_dict['I'][1]]			
 			if num_iter==0:
 				DR5=DR3=DR1=dyn1
 				DR6=DR4=DR2=dyn2
@@ -563,13 +584,13 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 			logger.info('Scratch = '+str(scratch)+'\n')
 			logger.info('Sigma = '+str(start_sigma)+'\n')
 
-			if num_iter==min(min_iteration,3):
+			if num_iter>=min_iteration and want_uvsub_flag==True and calmode=='ap' and uvsub_flag_count<1:
 				if inputs.use_ankflagger:
 					os.system('cp -r '+msname+' '+msname+'.backup')
 					try:
 						logger.info('Performing uvsub flagging using aNKflagger due to minimum iteration reached.\n')
-						logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False,extendpols=False)\n')
-						do_uvsub_ankflag(msname,model='junk1.model',nthread=1,verbose=verbose,flagbackup=False,extendpols=False)
+						logger.info('do_uvsub_ankflag(\''+msname+'\',model=\'junk1.model\',nthread=1,verbose='+str(verbose)+',flagbackup=False,extendpols=False,casaflag=\'rflag\')\n')
+						do_uvsub_ankflag(msname,model='junk1.model',nthread=1,verbose=verbose,flagbackup=False,extendpols=False,casaflag='rflag')
 						os.system('rm -rf '+msname+'.backup')
 					except Exception as e:
 						os.system('mv '+msname+'.backup '+msname)
@@ -582,7 +603,9 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					logger.info('Performing uvsub flagging due to minimum iteration reached.\n')
 					logger.info('do_uvsub_flagger(\''+msname+'\',model=\'junk1.model\',mode=\'uvsub_flag\',rmsthresh=[10,7,5,3.5],flagbackup=False)\n')
 					do_uvsub_flagger(msname,model='junk1.model',mode='uvsub_flag',rmsthresh=[10,7,5,3.5],flagbackup=False)
-		
+				uvsub_flag_count+=1
+				continue
+
 			############## 
 			# If statement 1 (DR decrease)
 
@@ -654,7 +677,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							logger.info('Total runtime : '+str(run_time))
 							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							if inputs.keep_logger and verbose==True:
-								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 108
@@ -674,7 +697,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							logger.info('Total runtime : '+str(run_time))
 							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							if inputs.keep_logger and verbose==True:
-								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 8
@@ -708,15 +731,15 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 					logger.info('Total runtime : '+str(run_time))
 					os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					if inputs.keep_logger and verbose==True:
-						os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+						os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 					os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 					os.system('rm -rf '+working_dir+'/'+file_str+'*')
 				return 0
 			elif (abs(DR5-DR3)<DR_delta_rms and abs(DR5-DR1)<DR_delta_rms and abs(DR5/DR3-1)<frac_flux_change) and\
 				 (abs(DR6-DR4)<DR_delta_neg and abs(DR6-DR2)<DR_delta_neg and abs(DR6/DR4-1)<frac_flux_change/2):
 			#  If DR does not increas more the DR delta in last two steps and DR does not increase 8% for rms based and 5% for negative based => Converge
-				if (num_iter_fixed_sigma>min_num_iter_fixed_sigma and num_iter_fixed_sigma>3) and num_iter>min_iteration:
-					sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,inputs.min_sigma,residual_frac=frac_flux_change,stokes_list=['XX','YY'])
+				if (num_iter_fixed_sigma>min_num_iter_fixed_sigma) and num_iter>min_iteration:
+					sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,min_sigma,residual_frac=frac_flux_change,stokes_list=['I'])
 					if sigma<start_sigma: # If the next sigma is less than the present sigma
 						start_sigma=sigma	
 						num_iter_fixed_sigma=0
@@ -753,7 +776,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							logger.info('Total runtime : '+str(run_time))
 							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							if inputs.keep_logger and verbose==True:
-								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 0
@@ -808,7 +831,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							logger.info('Total runtime : '+str(run_time))
 							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							if inputs.keep_logger and verbose==True:
-								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 109		
@@ -828,7 +851,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 							logger.info('Total runtime : '+str(run_time))
 							os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							if inputs.keep_logger and verbose==True:
-								os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+								os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 							os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 							os.system('rm -rf '+working_dir+'/'+file_str+'*')
 						return 9
@@ -853,7 +876,7 @@ def run_bandpass_selfcal(msname,metafits,working_dir,verbose=False,interactive=F
 						logger.info('Total runtime : '+str(run_time))
 						os.system('cp -r '+working_dir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 						if inputs.keep_logger and verbose==True:
-							os.system('cp -r '+working_dir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+							os.system('cp -r '+working_dir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 						os.system('rm -rf '+working_dir+'/*.log '+working_dir+'/TempLattice*')
 						os.system('rm -rf '+working_dir+'/'+file_str+'*')
 					return 13
@@ -875,8 +898,8 @@ if __name__=='__main__':
 	if (os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and eval(str(options.fresh))==True) or \
 		(os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal.log') and os.path.isdir(str(options.workdir)+'/junk1.ms')==False and eval(str(options.fresh))==False):
 		os.system('rm -rf '+str(options.workdir)+'/Bandpass_Selfcal.log')
-	if os.path.isfile(str(options.workdir)+'/Bandpass_Selfcal_verbose.log') and eval(str(options.verbose))==True:
-			os.system('rm -rf '+str(options.workdir)+'/Bandpass_Selfcal_verbose.log')
+	if os.path.isfile(str(options.workdir)+'/Intensity_Selfcal_verbose.log') and eval(str(options.verbose))==True:
+			os.system('rm -rf '+str(options.workdir)+'/Intensity_Selfcal_verbose.log')
 	formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 	logger = logging.getLogger('bandpass_selfcal_log')
 	logger.setLevel(logging.DEBUG)
@@ -924,7 +947,7 @@ if __name__=='__main__':
 			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
 		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
@@ -951,66 +974,66 @@ if __name__=='__main__':
 			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
 		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
 		os._exit(0)
 
-	try:
-		previous_touch_list=glob.glob(inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-		if len(previous_touch_list)!=0:
-			os.system('rm -rf '+inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
-		print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
-		print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
-				+'\',interactive=\''+str(options.interactive)+'\',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)+'\',use_wsclean='+str(use_wsclean)+')\n')
-		msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
-				interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),caltables=str(options.caltables),use_wsclean=eval(str(use_wsclean)))
-		if type(msg)==int:
-			if msg>100:
-				msg1=msg-100
-				if msg1==10:
-					send_notification=False
-				else:
-					send_notification=True
-				msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
-				if options.verbose==False:
-					print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
-				logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+	#try:
+	previous_touch_list=glob.glob(inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+	if len(previous_touch_list)!=0:
+		os.system('rm -rf '+inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_*')
+	print ('\n\t##########################\n\tStarting Bandpass self-calibration.....\n\t##########################\n')
+	print ('run_bandpass_selfcal(\''+options.chantime_msname+'\',\''+options.metafits+'\',\''+options.workdir+'\',verbose=\''+str(options.verbose)\
+			+'\',interactive=\''+str(options.interactive)+'\',start_fresh='+str(options.fresh)+',caltables=\''+str(options.caltables)+'\',use_wsclean='+str(options.use_wsclean)+')\n')
+	msg=run_bandpass_selfcal(options.chantime_msname,options.metafits,options.workdir,verbose=eval(str(options.verbose)),\
+			interactive=eval(str(options.interactive)),start_fresh=eval(str(options.fresh)),caltables=str(options.caltables),use_wsclean=eval(str(options.use_wsclean)))
+	if type(msg)==int:
+		if msg>100:
+			msg1=msg-100
+			if msg1==10:
+				send_notification=False
 			else:
-				if msg==10:
-					send_notification=False
-				else:
-					send_notification=True
-				msg_str='Message : '+error_msgs(msg)+'\n'
-				if options.verbose==False:
-					print ('Message : '+error_msgs(msg)+'\n')
-				logger.info('Message : '+error_msgs(msg)+'\n')
-		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
-		end_time=time.time()
-		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
-		logger.info('#############################\n')
-		logger.info('Bandpass selfcal finished for ms : '+options.chantime_msname+'\n')
-		logger.info('Total runtime : '+str(run_time)+'\n')
-		logger.info('##############################\n')
-		msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
-		msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
-		if type(msg)==int:
-			if send_notification==True:
-				attachments=glob.glob(options.workdir+'/quick_image_*.png')
-				send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
-				os.system('rm -rf '+options.workdir+'/quick_image_*.png')
-		os.system('touch '+touch_file)
-		file_str=msbasename.split('.ms')[0]
-		if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
-			os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
-		if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
-			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
-		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
-		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
-		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
-		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-	except Exception as e:
+				send_notification=True
+			msg_str='Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n'
+			if options.verbose==False:
+				print ('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+			logger.info('Message : '+error_msgs(100)+', '+error_msgs(msg1)+'\n')
+		else:
+			if msg==10:
+				send_notification=False
+			else:
+				send_notification=True
+			msg_str='Message : '+error_msgs(msg)+'\n'
+			if options.verbose==False:
+				print ('Message : '+error_msgs(msg)+'\n')
+			logger.info('Message : '+error_msgs(msg)+'\n')
+	touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str(msg)
+	end_time=time.time()
+	run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
+	logger.info('#############################\n')
+	logger.info('Bandpass selfcal finished for ms : '+options.chantime_msname+'\n')
+	logger.info('Total runtime : '+str(run_time)+'\n')
+	logger.info('##############################\n')
+	msg_str='Dear PAIRCARS user,\n\nBandpass self-calibration for : '+msbasename+'\n'+msg_str+'\nTotal runtime : '+str(run_time)+'\n\nBest regards,\nPAIRCARS developing team'
+	msg_subject='Notification from PAIRCARS : Bandpass Selfcal : OBSID = '+str(OBSID)
+	if type(msg)==int:
+		if send_notification==True:
+			attachments=glob.glob(options.workdir+'/quick_image_*.png')
+			send_paircars_notification(inputs.email,msg_subject,msg_str,attachments=attachments)
+			os.system('rm -rf '+options.workdir+'/quick_image_*.png')
+	os.system('touch '+touch_file)
+	file_str=msbasename.split('.ms')[0]
+	if os.path.isdir(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)==False:
+		os.makedirs(basedir+'/logs/'+str(OBSID)+'/'+basemsdir)
+	if os.path.isdir(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)==False and inputs.keep_logger==True and eval(str(options.verbose)):
+		os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
+	os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+	if inputs.keep_logger and eval(str(options.verbose))==True:
+		os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+	os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
+	os.system('rm -rf '+options.workdir+'/'+file_str+'*')
+	'''except Exception as e:
 		touch_file=inputs.basedir+'/.Finished_bcal_'+str(OBSID)+'_'+basemsdir+'_'+msbasename+'_'+str('error')
 		end_time=time.time()
 		run_time=time.strftime('%Hh %Mm %Ss',time.gmtime(end_time-start_time))
@@ -1034,7 +1057,7 @@ if __name__=='__main__':
 			os.makedirs(basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir)
 		os.system('cp -r '+options.workdir+'/Bandpass_Selfcal.log '+basedir+'/logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 		if inputs.keep_logger and eval(str(options.verbose))==True:
-			os.system('cp -r '+options.workdir+'/Bandpass_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
+			os.system('cp -r '+options.workdir+'/Intensity_Selfcal_verbose.log '+basedir+'/verbose_logs/'+str(OBSID)+'/'+basemsdir+'/'+file_str+'.bpasslog')
 		os.system('rm -rf '+options.workdir+'/*.log '+options.workdir+'/TempLattice*')
 		os.system('rm -rf '+options.workdir+'/'+file_str+'*')
-		pass
+		pass'''

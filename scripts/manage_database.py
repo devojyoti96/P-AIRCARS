@@ -176,7 +176,7 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=10,timeavg=0.
 		# Iteratively add models, perform gaincal, append them in a single caltable for all times 
 		#########################################################################################
 		IB=ImageBasic(local_cal_ms)
-		uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
+		uvrange_to_cal=IB.calc_calib_uvrange(12,includeflag=True)[0]
 		for i in range(len(modellist)): # Importing model for all times dequentially for reference chan and calibrating 
 			modelname=modellist[i]
 			modelbasename=os.path.basename(modelname)
@@ -197,8 +197,8 @@ def make_final_gaincal(msname,workdir,caltable_name_prefix,freqavg=10,timeavg=0.
 		ntimes=AMgcal.get_num_timestamps()
 		nchan=AMgcal.get_num_channels()
 		IB1=ImageBasic(global_cal_ms)
-		calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
-		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
+		calib_uvrange_min=IB1.calc_calib_uvrange(12,includeflag=True)[1]
+		calib_uvrange_max=IB1.calc_calib_uvrange(12,includeflag=True)[2]
 		t=int(ntimes/len(modellist))
 		if t<=0:
 			t=1
@@ -336,7 +336,7 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 		# Perform bandpass in a single caltable
 		#######################################
 		IB=ImageBasic(local_cal_ms)
-		uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
+		uvrange_to_cal=IB.calc_calib_uvrange(12,includeflag=True)[0]
 		obslog.info('bandpass(vis=\''+local_cal_ms+'\',caltable='+str(local_caltable)+',solnorm=True,refant=\''\
 					+str(ref_ant)+'\',minsnr='+str(gain_minsnr)+',uvrange=\''+uvrange_to_cal+'\')')
 		bandpass(vis=local_cal_ms,caltable=local_caltable,solnorm=True,refant=str(ref_ant),minsnr=gain_minsnr,uvrange=uvrange_to_cal) # Performing bandpass
@@ -347,8 +347,8 @@ def make_final_bandpass(msname,workdir,caltable_name_prefix,gaintable=[],freqavg
 		ntimes=AMgcal.get_num_timestamps()
 		nchan=AMgcal.get_num_channels()
 		IB1=ImageBasic(global_cal_ms)
-		calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
-		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
+		calib_uvrange_min=IB1.calc_calib_uvrange(12,includeflag=True)[1]
+		calib_uvrange_max=IB1.calc_calib_uvrange(12,includeflag=True)[2]
 		model_chan,nomodel_chan=AMgcal.get_model_nomodel_chan()
 		if len(nomodel_chan)!=0:
 			flagchans=[str(i) for i in nomodel_chan]
@@ -496,7 +496,7 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 		# Perform leakage corrected differential bandpass in a single caltable
 		######################################################################
 		IB=ImageBasic(local_cal_ms)
-		uvrange_to_cal=IB.calc_calib_uvrange(12)[0]
+		uvrange_to_cal=IB.calc_calib_uvrange(12,includeflag=True)[0]
 	
 		obslog.info('bandpass(vis=\''+local_cal_ms+'\',caltable='+str(local_caltable)+'\',refant=\''\
 				+str(ref_ant)+'\',minsnr='+str(gain_minsnr)+',uvrange=\''+uvrange_to_cal+'\')')
@@ -525,8 +525,8 @@ def make_final_leakcal(msname,workdir,caltable_name_prefix,gaintable=[],freqavg=
 				flag_chan_str=';'.join(flagchans)
 				obslog.info('flagdata(vis=\''+global_cal_ms+'\',spw=\'0:'+flag_chan_str+'\',flagbackup=False)\n')
 				flagdata(vis=global_cal_ms,spw='0:'+flag_chan_str,flagbackup=False)
-		calib_uvrange_min=IB1.calc_calib_uvrange(12)[1]
-		calib_uvrange_max=IB1.calc_calib_uvrange(12)[2]
+		calib_uvrange_min=IB1.calc_calib_uvrange(12,includeflag=True)[1]
+		calib_uvrange_max=IB1.calc_calib_uvrange(12,includeflag=True)[2]
 		obslog.info('cal.calibrate(msname=\''+global_cal_ms+'\',caltable=\''+global_caltable+'\',calmode=\'diag\',minuv='+\
 					str(calib_uvrange_min)+',maxuv='+str(calib_uvrange_max)+',quiet=True,j=3,ch=1,verbose='+str(verbose)+')\n') 
 							# Making leakage corrected bandpass table for reference time and chan
@@ -1213,10 +1213,16 @@ def final_imaging(msname,metafits,basedir,mode,casacals=[],calibratecals=[],resi
 							if glob.glob(i+'_*')[0] in finished_touch_files_for_ms:
 								pre_touch_files.append(glob.glob(i+'_*')[0])
 							if mode=='Final_Imaging':
-								fil=open(savedir+'/Final_Image_logs.log','a')
+								fil=open(savedir+'/Final_Image_logs.log','r+')
+								lines=fil.readlines()
 								x=os.path.basename(glob.glob(i+'_*')[0]).split('.Finished_final_imaging_'+str(imaging_mode)+'_')[-1].split('.ms')[0]
 								y=os.path.basename(glob.glob(i+'_*')[0]).split('.Finished_final_imaging_'+str(imaging_mode)+'_')[-1].split('.ms_')[1]
-								fil.write(x+' : '+y+'\n')
+								for i in range(len(lines)):
+									if x in lines[i]:
+										lines[i]=x+' : '+y+'\n'
+									else:
+										lines.append(x+' : '+y+'\n')
+								fil.writelines(lines)
 								fil.seek(0)
 								fil.close()
 					break		
@@ -1457,7 +1463,19 @@ else:
 	obslog.info('Flagging QUACK times.\n')
 	quacktime=flag_MWA_quack(str(options.msname),str(options.metafits))
 	obslog.info('Flagged '+str(quacktime)+' s at beginning and end.\n')
-
+	AM=AccessMS(str(options.msname))
+	npol=AM.get_npol()
+	if npol!=4 and inputs.do_polcal==True:
+		do_polcal=False
+	else:
+		do_polcal=inputs.do_polcal
+		c=0
+		for i in calibrate_gaintable:
+			if 'pcal' in i:
+				c+=1
+		if c==0:
+			do_polcal=False
+	
 	if is_internet:
 		obslog.info('Start making images for global MWA solar database.\n')
 		c=0
@@ -1472,10 +1490,9 @@ else:
 		a=final_imaging(str(options.msname),str(options.metafits),str(options.basedir),'Database_Imaging',casacals=casa_gaintable,calibratecals=calibrate_gaintable,\
 				residual_frac=residual_frac,quality_factor=inputs.quality_factor,inputfile=inputfile,localdatabase=localdatabase,time_avg=float(options.timeavg),\
 				freq_avg=float(options.freqavg),savedir=localdatabase+'/'+str(OBSID)+'/images',cutoutbox='3,3',want_automask=False,savemodel=False,saveres=False,\
-				use_ankflag=inputs.use_ankflagger,do_pol=inputs.do_polcal,mask=mask,do_diffcal=True,freq_interval=1280,time_interval=30,freq_width=1280,\
+				use_ankflag=inputs.use_ankflagger,do_pol=do_polcal,mask=mask,do_diffcal=True,freq_interval=1280,time_interval=30,freq_width=1280,\
 				time_width=30,sigma=start_sigma,thresh=rms_list,use_wsclean=eval(str(options.use_wsclean)))
 
-		AM=AccessMS(str(options.msname))
 		ms_freq=AM.calc_meanfreq()/10**6	
 		if inputs.send_notification==True:
 			while True:
@@ -1515,7 +1532,7 @@ else:
 	obslog.info('Waiting for finishing final imaging.......\n')
 	a=final_imaging(str(options.msname),str(options.metafits),str(options.basedir),'Final_Imaging',casacals=casa_gaintable,calibratecals=calibrate_gaintable,\
 			residual_frac=residual_frac,quality_factor=inputs.quality_factor,inputfile=inputfile,localdatabase=localdatabase,savedir=inputs.savedir,cutoutbox=inputs.cutoutbox,\
-			want_automask=inputs.want_auto_masking,savemodel=inputs.savemodel,saveres=inputs.saveresidual,use_ankflag=inputs.use_ankflagger,do_pol=inputs.do_polcal,mask=mask,\
+			want_automask=inputs.want_auto_masking,savemodel=inputs.savemodel,saveres=inputs.saveresidual,use_ankflag=inputs.use_ankflagger,do_pol=do_polcal,mask=mask,\
 			freq_interval=inputs.image_delta_freq,time_interval=inputs.image_delta_time,freq_width=inputs.image_freq,time_width=inputs.image_time,sigma=start_sigma,thresh=rms_list,\
 			use_wsclean=eval(str(options.use_wsclean)),time_avg=float(options.timeavg),freq_avg=float(options.freqavg))
 	obslog.info('\n###########################\nFinal imaging finished.\n###########################\n')
