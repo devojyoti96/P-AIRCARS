@@ -66,7 +66,20 @@ class AccessMS:
 		radeg=np.rad2deg(phasecenter['m0']['value'])
 		decdeg=np.rad2deg(phasecenter['m1']['value'])
 		radec_str=B.radec_con_deg_to_hhmmss(radeg,decdeg)
-		return radec_str,radeg,decdeg		
+		return radec_str,radeg,decdeg
+
+	def get_pol(self):
+		'''
+		Function to get number of polarisations 
+		Returns
+		-------
+		int
+			Number of correlation products
+		'''
+		self.md.open(self.msname)
+		npol=self.md.ncorrforpol()[0]
+		self.md.close()
+		return npol		
 
 	def convert_mwa_to_iau(self):
 		'''
@@ -656,10 +669,19 @@ class AccessMS:
 				code+='FIXVIS'
 			else:
 				code+=',FIXVIS'
-			phaseshift(vis=self.msname,outputvis=self.msname+'.phaseshift',phasecenter=sun_radec_string)
-			if os.path.isdir(self.msname):
-				os.system('rm -rf '+self.msname)
-			os.system('mv '+self.msname+'.phaseshift '+self.msname)
+			if os.path.islink(self.msname):
+				msdir=os.path.realpath(self.msname)
+				os.unlink(self.msname)
+				linked_path=True
+			else:
+				msdir=self.msname
+				linked_path=False
+			phaseshift(vis=msdir,outputvis=msdir+'.phaseshift',phasecenter=sun_radec_string)
+			if os.path.isdir(msdir):
+				os.system('rm -rf '+msdir)
+			os.system('mv '+msdir+'.phaseshift '+msdir)
+			if linked_path:
+				os.system('ln -s '+msdir+' '+self.msname)
 			vishead(vis=self.msname,mode='put',hdkey='fld_code',hdvalue=np.array([code]))
 			return 'Phasecenter of the observation is moved to Sun center at :'+sun_radec_string+'.\n'
 		else:
@@ -689,10 +711,19 @@ class AccessMS:
 					if 'FIXVIS' in code_list[i]:
 						code_list.remove(code_list[i])
 				code=','.join(code_list)
-				phaseshift(vis=self.msname,outputvis=self.msname+'.phaseshift',phasecenter=radec)
-				if os.path.isdir(self.msname):
-					os.system('rm -rf '+self.msname)
-				os.system('mv '+self.msname+'.phaseshift '+self.msname)
+				if os.path.islink(self.msname):
+					msdir=os.path.realpath(self.msname)
+					os.unlink(self.msname)
+					linked_path=True
+				else:
+					msdir=self.msname
+					linked_path=False
+				phaseshift(vis=msdir,outputvis=msdir+'.phaseshift',phasecenter=sun_radec_string)
+				if os.path.isdir(msdir):
+					os.system('rm -rf '+msdir)
+				os.system('mv '+msdir+'.phaseshift '+msdir)
+				if linked_path:
+					os.system('ln -s '+msdir+' '+self.msname)
 				if len(code_list)==1 and code_list[0]=='':
 					code+='FIXVIS_'+radec_string
 				else:
@@ -774,8 +805,9 @@ class AccessMS:
 				return False
 		except:
 			self.tb.close()
-			return False		
+			return False	
 
+	
 	def make_antenna_list(self,num_bins=5,antenna_list_file=''):
 		'''
 		Make the antenna addition list splited in number of bins
@@ -785,12 +817,20 @@ class AccessMS:
 		num_bin : int 
 			Number of antenna bins
 		antenna_list_file : str
- 			Name of the file to save antenna list (Keep blank to avoid save)
+ 			Name of the file to save antenna list. If an antenna list file given, antenna list will be loaded from that file
 		Returns
 		-------
 		list
 			Lists of antennas to be added in steps
+		int 
+			Number of antenna
 		'''
+		if antenna_list_file!='':
+			try:
+				tag,num_ant,antenna_list=np.load(antenna_list_file,allow_pickle=True)
+			except:
+				tag,num_ant,antenna_list=np.load(antenna_list_file+'.npy',allow_pickle=True)
+			return antenna_list,num_ant
 		listobs_file=self.msname.split('.ms')[0]+'.listobs'
 		if os.path.isfile(listobs_file)==False:
 			listobs(vis=self.msname,listfile=listobs_file)
@@ -798,15 +838,20 @@ class AccessMS:
 			pass
 		fil=open(listobs_file,'r')
 		lines=fil.readlines()
+		fil.close()
 		start_line_num=0
 		for i in range(len(lines)):
 			if 'East' in lines[i] and 'North' in lines[i] and 'Elevation' in lines[i]:
 				start_line_num=i
 			if 'Observation:' in lines[i]:
 				instrument=lines[i].split('Observation:')[-1].split('\n')[0].split(' ')[-1]
-		coords=np.loadtxt(listobs_file,skiprows=start_line_num+1,usecols=(-6,-5,0))
-		antenna_ids=coords[:,-1]
-		dist=np.sqrt(coords[:,0]**2+coords[:,1]**2)	
+		for i in range(len(lines)):
+			if 'Offset from array center' in lines[i]:
+				start_line_num=i+2
+		coords=np.genfromtxt(listobs_file,skip_header=start_line_num)[:,6:9]
+		cm_coords=np.median(coords,axis=0)
+		rel_coords=coords-cm_coords
+		dist=np.sqrt(rel_coords[:,0]**2+rel_coords[:,1]**2)	
 		pos=np.argsort(dist)
 		while num_bins>=1:
 			val,bins=np.histogram(dist,num_bins)
@@ -818,13 +863,13 @@ class AccessMS:
 		antenna_list=[]
 		start=0
 		for elem in val:
-			antenna_list.append(np.sort(antenna_ids[0:start+elem].astype('int')+1))
+			antenna_list.append(np.sort(pos[0:start+elem].astype('int')+1))
 			start+=elem
 		if antenna_list_file!='':
 			antenna_list_file=antenna_list_file.split('.')[0]
 			np.save(antenna_list_file,np.array(['Antennafile',len(coords),antenna_list]))
 		return antenna_list,len(coords)
-	
+
 	def get_observatory_loc(self):
 		'''
 		Give the observatory geodetic location

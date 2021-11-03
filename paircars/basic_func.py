@@ -388,10 +388,10 @@ class CalcParams:
 			uvrange for calibration
 		'''
 		if self.quality_factor==0:
+			residual_frac	=	0.03
 			if self.safety_factor==0:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.2
 				min_sigma		=	6
 				gain_minsnr		=	3.0		
 				DR_delta_rms	=	25
@@ -399,12 +399,11 @@ class CalcParams:
 				min_DR			=	20
 				max_DR			=	100
 				min_selfcal_snr	=	2.5
-				skip_time		=	960
+				skip_time		=	480
 				skip_freq		=	2560
 			elif self.safety_factor==1:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.17
 				min_sigma		=	7
 				gain_minsnr		=	3.0		
 				DR_delta_rms	=	22
@@ -412,12 +411,11 @@ class CalcParams:
 				min_DR			=	25
 				max_DR			=	500
 				min_selfcal_snr	=	2.5
-				skip_time		=	720
+				skip_time		=	240
 				skip_freq		=	2560
 			else:
 				start_sigma		=	9.0
 				sigma_step		=	1.0
-				residual_frac	=	0.15
 				min_sigma		=	8
 				gain_minsnr		=	3.0		
 				DR_delta_rms	=	20
@@ -425,13 +423,13 @@ class CalcParams:
 				min_DR			=	30
 				max_DR			=	1000
 				min_selfcal_snr	=	2.5
-				skip_time		=	480
+				skip_time		=	120
 				skip_freq		=	2560
 		elif self.quality_factor==1:
+			residual_frac	=	0.015
 			if self.safety_factor==0:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.17
 				min_sigma		=	7
 				gain_minsnr		=	4		
 				DR_delta_rms	=	20
@@ -439,12 +437,11 @@ class CalcParams:
 				min_DR			=	30
 				max_DR			=	1000
 				min_selfcal_snr	=	3
-				skip_time		=	240
+				skip_time		=	120
 				skip_freq		=	1280
 			elif self.safety_factor==1:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.15
 				min_sigma		=	8
 				gain_minsnr		=	4		
 				DR_delta_rms	=	18
@@ -452,12 +449,11 @@ class CalcParams:
 				min_DR			=	35
 				max_DR			=	5000
 				min_selfcal_snr	=	3
-				skip_time		=	120
+				skip_time		=	60
 				skip_freq		=	1280
 			else:
 				start_sigma		=	10.0
 				sigma_step		=	0.5
-				residual_frac	=	0.12
 				min_sigma		=	9
 				gain_minsnr		=	4		
 				DR_delta_rms	=	15
@@ -465,13 +461,13 @@ class CalcParams:
 				min_DR			=	40
 				max_DR			=	10000
 				min_selfcal_snr	=	3
-				skip_time		=	60
+				skip_time		=	30
 				skip_freq		=	1280
 		else:
+			residual_frac	=	0.01
 			if self.safety_factor==0:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
-				residual_frac	=	0.15
 				min_sigma		=	8
 				gain_minsnr		=	4.5		
 				DR_delta_rms	=	18
@@ -479,12 +475,11 @@ class CalcParams:
 				min_DR			=	40
 				max_DR			=	10000
 				min_selfcal_snr	=	3
-				skip_time		=	80
+				skip_time		=	15
 				skip_freq		=	640
 			elif self.safety_factor==1:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
-				residual_frac	=	0.1
 				min_sigma		=	9
 				gain_minsnr		=	4.5		
 				DR_delta_rms	=	15
@@ -492,12 +487,11 @@ class CalcParams:
 				min_DR			=	45
 				max_DR			=	50000
 				min_selfcal_snr	=	3
-				skip_time		=	60
+				skip_time		=	12
 				skip_freq		=	640
 			else:
 				start_sigma		=	11.0
 				sigma_step		=	0.25
-				residual_frac	=	0.07
 				min_sigma		=	10
 				gain_minsnr		=	4.5		
 				DR_delta_rms	=	12
@@ -505,7 +499,7 @@ class CalcParams:
 				min_DR			=	50
 				max_DR			=	100000
 				min_selfcal_snr	=	3
-				skip_time		=	30
+				skip_time		=	10
 				skip_freq		=	640
 		uvrange_to_cal=''
 		if skip_freq<self.AM.calc_freqres():

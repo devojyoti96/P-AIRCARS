@@ -224,11 +224,14 @@ class PolSelfcal:
 			Number of antenna bins
 		float
 			Fraction change in flux for convergence
+		float
+			Minimum value of allowed sigma
 		'''
 		if quality_factor==0:     # Low quality (Quick look image making)
-			frac_flux_change=0.2
+			frac_flux_change=0.03
 			pol_frac_change=0.1
 			if (safety_factor==0):
+				min_sigma=9.0
 				min_num_iter_fixed_sigma=1
 				if (scratch==True):
 					min_iteration=2
@@ -237,6 +240,7 @@ class PolSelfcal:
 					min_iteration=1
 					max_iteration=10
 			elif (safety_factor==1):
+				min_sigma=8.0
 				min_num_iter_fixed_sigma=1
 				if (scratch==True):
 					min_iteration=4
@@ -245,6 +249,7 @@ class PolSelfcal:
 					min_iteration=1
 					max_iteration=20
 			else:
+				min_sigma=7.0
 				min_num_iter_fixed_sigma=1
 				if (scratch==True):
 					min_iteration=6
@@ -253,9 +258,10 @@ class PolSelfcal:
 					min_iteration=1
 					max_iteration=30
 		elif quality_factor==1:  # Medium quality imaging (Computing speed medium)
-			frac_flux_change=0.15
+			frac_flux_change=0.015
 			pol_frac_change=0.08
 			if (safety_factor==0):
+				min_sigma=8.0
 				min_num_iter_fixed_sigma=2
 				if (scratch==True):
 					min_iteration=3
@@ -264,6 +270,7 @@ class PolSelfcal:
 					min_iteration=2
 					max_iteration=30
 			elif (safety_factor==1):
+				min_sigma=7.0
 				min_num_iter_fixed_sigma=2
 				if (scratch==True):
 					min_iteration=5
@@ -272,6 +279,7 @@ class PolSelfcal:
 					min_iteration=2
 					max_iteration=40
 			else:
+				min_sigma=6.0
 				min_num_iter_fixed_sigma=2
 				if (scratch==True):
 					min_iteration=7
@@ -280,9 +288,10 @@ class PolSelfcal:
 					min_iteration=2
 					max_iteration=50
 		else:  # Best quality imaging (Computing slow)
-			frac_flux_change=0.1
+			frac_flux_change=0.01
 			pol_frac_change=0.05
 			if (safety_factor==0):
+				min_sigma=7.0
 				max_iteration=60
 				min_num_iter_fixed_sigma=3
 				if (scratch==True):
@@ -290,12 +299,14 @@ class PolSelfcal:
 				else:
 					min_iteration=3
 			elif (safety_factor==1):
+				min_sigma=6.0
 				min_num_iter_fixed_sigma=3
 				if (scratch==True):
 					min_iteration=6
 				else:
 					min_iteration=3
 			else:
+				min_sigma=5.0
 				min_num_iter_fixed_sigma=3
 				if (scratch==True):
 					min_iteration=8
@@ -306,7 +317,7 @@ class PolSelfcal:
 				', Minimum number of iteration at fixed sigma : '+str(min_num_iter_fixed_sigma)+', Minimum iteration :'+str(min_iteration)+', Antenna bins :'+str(antenna_bin)+\
 				', Fraction flux change for convergence : '+str(frac_flux_change)+'\n')
 		os.system('rm -rf casa*log')
-		return min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change,pol_frac_change
+		return min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change,pol_frac_change,min_sigma
 
 	def antenna_string(self,antenna_list,antenna_list_index):
 		'''
@@ -1107,7 +1118,7 @@ class PolSelfcal:
 		os.system('rm -rf casa*log')
 		return IMSTAT_array
 
-	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.1,stokes_list=['I']):
+	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.01,stokes_list=['I']):
 		'''
 		Function to determine whether reduce the CLEAN sigma or not
 
@@ -1124,13 +1135,15 @@ class PolSelfcal:
 		pre_residual : float 
 			Previous residual fraction to compare (default : 0.0)
 		residual_frac : float 
-			Residual flux fraction to reduce sigma (default : 0.1)
+			Residual flux fraction to reduce sigma (default : 0.01)
 		stokes_list : list 		
 			Stokes plane list
 		Returns
 		-------
 		float
-			Reduced value of n-sigma and median residual fraction if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.
+			Reduced value of n-sigma and median residual fraction if residual flux is more than given percentage (default : 1%) of the total flux in Stokes I or in all Stokes Q,U,V.
+		float
+			Median residual flux fraction over all stokes planes
 		'''
 		imagename=imagename
 		residual=imagename.split('.image')[0]+'.residual'
@@ -1211,13 +1224,14 @@ class PolSelfcal:
 				else:
 					min_frac_diff=0
 			residual_frac_list.append(residual_pix_sum/image_pix_sum)
-			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) or ((max_frac_diff>0 and max_frac_diff>residual_frac) or \
-				((min_frac_diff>=0 and min_frac_diff>residual_frac) and stokes!='I' and stokes!='XX' and stokes!='YY')) :
-				do_reduce_list.append(1)
+			if (residual_pix_sum/image_pix_sum>residual_frac) or ((max_frac_diff>0 and max_frac_diff>residual_frac) or ((min_frac_diff>=0 and min_frac_diff>residual_frac) \
+					and stokes!='I' and stokes!='XX' and stokes!='YY')):
+				if (pre_residual>0 and residual_pix_sum/image_pix_sum<pre_residual) or pre_residual==0:
+					do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
 		residual_frac_median=np.median(np.array(residual_frac_list))
-		if int(np.sum(np.array(do_reduce_list)))>1:
+		if int(np.sum(np.array(do_reduce_list)))>=1:
 			if sigma_step>1.0:
 				self.pollog_verbose.info('WARNING : Choosing sigma step 1 is too risky. Selfcal may diverge\n')
 				if self.verbose==False:

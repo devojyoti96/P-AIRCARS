@@ -38,7 +38,7 @@ class IntensitySelfcal:
 	use_wsclean : bool
 		Use WSClean or not
 	'''
-	def __init__(self,msname,metafits,maximum_emission_scale,num_pixel_in_psf=5,largest_scale=12,verbose=False,interactive=False,use_wsclean=True,savelog=True):
+	def __init__(self,msname,metafits,maximum_emission_scale,num_pixel_in_psf=5,largest_scale=20,verbose=False,interactive=False,use_wsclean=True,savelog=True):
 		self.cwd=os.getcwd()
 		if msname[-1]=='/':
 			self.msname=msname[:-1]
@@ -246,7 +246,7 @@ class IntensitySelfcal:
 		os.system('rm -rf casa*log')
 		return nsigma
 		
-	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.1,stokes_list=['I']):
+	def reduce_sigma(self,imagename,nsigma,sigma_step,minsigma,pre_residual=0.0,residual_frac=0.01,stokes_list=['I']):
 		'''
 		Function to determine whether reduce the CLEAN sigma or not
 
@@ -263,13 +263,13 @@ class IntensitySelfcal:
 		pre_residual : float 
 			Previous residual fraction to compare (default : 0.0)
 		residual_frac : float 
-			Residual flux fraction to reduce sigma
+			Residual flux fraction to reduce sigma (default : 0.01)
 		stokes_list : list 
 			Stokes plane list
 		Returns
 		-------
 		float
-			Reduced value of n-sigma if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.
+			Reduced value of n-sigma if residual flux is more than given percentage (default : 1%) of the total flux in Stokes I or in all Stokes Q,U,V.
 		'''
 		imagename=imagename
 		residual=imagename.split('.image')[0]+'.residual'
@@ -308,12 +308,12 @@ class IntensitySelfcal:
 				max_frac_diff=(maxval-(nsigma-sigma_step)*rms)/maxval
 			else:
 				max_frac_diff=0
-			if (residual_pix_sum/image_pix_sum>residual_frac and residual_pix_sum/image_pix_sum<pre_residual) and \
-				(max_frac_diff>0 and max_frac_diff>residual_frac and abs(minval)<(nsigma-sigma_step)*rms and ((maxval-abs(minval))/((nsigma-sigma_step)*rms))>residual_frac):
-				do_reduce_list.append(1)
+			if ((residual_pix_sum/image_pix_sum>residual_frac or (max_frac_diff>0 and max_frac_diff>residual_frac)) and abs(minval)<(nsigma-sigma_step)*rms):
+				if (pre_residual>0 and residual_pix_sum/image_pix_sum<pre_residual) or pre_residual==0:
+					do_reduce_list.append(1)
 		os.system('rm -rf reduce_sigma_*')
 		os.chdir(cwd)
-		if int(np.sum(np.array(do_reduce_list)))>=2:
+		if int(np.sum(np.array(do_reduce_list)))>=1:
 			if sigma_step>1.0:
 				self.log_verbose.info('WARNING : Choosing sigma step 1 is too risky. Selfcal may diverge\n')
 				if self.verbose==False:
@@ -387,17 +387,34 @@ class IntensitySelfcal:
 			Number of antenna bins
 		float
 			Fractional flux change
+		float
+			Minimum allowed sigma
 		'''
 		if bandpass_selfcal==True:
-			min_num_iter_fixed_sigma=1
-			min_iteration=5
-			max_iteration=100
 			antenna_bin=1
-			frac_flux_change=0.15
+			if quality_factor==0:
+				min_sigma=8.0
+				min_num_iter_fixed_sigma=3
+				min_iteration=3
+				max_iteration=100
+				frac_flux_change=0.03
+			elif quality_factor==1:
+				min_sigma=7.0
+				min_num_iter_fixed_sigma=5
+				min_iteration=5
+				max_iteration=150
+				frac_flux_change=0.015
+			else:
+				min_sigma=6.0
+				min_num_iter_fixed_sigma=7
+				min_iteration=7
+				max_iteration=200
+				frac_flux_change=0.01
 		else:
 			if quality_factor==0:     # Low quality (Quick look image making)
-				frac_flux_change=0.2
+				frac_flux_change=0.03
 				if (safety_factor==0):
+					min_sigma=9.0
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
 						min_iteration=3
@@ -408,6 +425,7 @@ class IntensitySelfcal:
 						max_iteration=10
 						antenna_bin=1
 				elif (safety_factor==1):
+					min_sigma=8.0
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
 						min_iteration=5
@@ -418,6 +436,7 @@ class IntensitySelfcal:
 						max_iteration=30
 						antenna_bin=1
 				else:
+					min_sigma=7.0
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
 						min_iteration=7
@@ -428,8 +447,9 @@ class IntensitySelfcal:
 						max_iteration=60
 						antenna_bin=1
 			elif quality_factor==1:  # Medium quality imaging (Computing speed medium)
-				frac_flux_change=0.15
+				frac_flux_change=0.015
 				if (safety_factor==0):
+					min_sigma=8.0
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
 						min_iteration=5
@@ -440,6 +460,7 @@ class IntensitySelfcal:
 						max_iteration=150
 						antenna_bin=1
 				elif (safety_factor==1):
+					min_sigma=7.0
 					min_num_iter_fixed_sigma=5
 					if (scratch==True):
 						min_iteration=7
@@ -450,6 +471,7 @@ class IntensitySelfcal:
 						max_iteration=350
 						antenna_bin=1
 				else:
+					min_sigma=6.0
 					min_num_iter_fixed_sigma=10
 					if (scratch==True):
 						min_iteration=10
@@ -460,9 +482,10 @@ class IntensitySelfcal:
 						max_iteration=550
 						antenna_bin=1
 			else:  # Best quality imaging (Computing slow)
-				frac_flux_change=0.1
+				frac_flux_change=0.01
 				if (safety_factor==0):
 					max_iteration=700
+					min_sigma=7.0
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
 						min_iteration=7
@@ -474,6 +497,7 @@ class IntensitySelfcal:
 						antenna_bin=1
 				elif (safety_factor==1):
 					min_num_iter_fixed_sigma=5
+					min_sigma=6.0
 					if (scratch==True):
 						max_iteration=650
 						min_iteration=10
@@ -483,6 +507,7 @@ class IntensitySelfcal:
 						min_iteration=7
 						antenna_bin=1
 				else:
+					min_sigma=5.0
 					min_num_iter_fixed_sigma=10
 					if (scratch==True):
 						max_iteration=700
@@ -495,7 +520,7 @@ class IntensitySelfcal:
 		self.log_verbose.info('Quality factor : '+str(quality_factor)+', Safety standard : '+str(safety_factor)+', Scratch : '+str(scratch)+\
 				', Minimum number of iteration at fixed sigma : '+str(min_num_iter_fixed_sigma)+', Minimum iteration : '+str(min_iteration)+', Antenna bins : '+str(antenna_bin)+'\n')
 		os.system('rm -rf casa*log')
-		return min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change
+		return min_num_iter_fixed_sigma,min_iteration,max_iteration,antenna_bin,frac_flux_change,min_sigma
 
 	def antenna_string(self,antenna_list,antenna_list_index):
 		'''
@@ -1139,16 +1164,17 @@ class IntensitySelfcal:
 		ia.open(imagename)
 		data=ia.getchunk()
 		ia.close()
-		rmsi=imstat(imagename=imagename,box=self.rms_box)['rms'][0]		
-		sigma_pos=np.where(data>=(sigma*rmsi))
-		sigma_pos1=np.where(data<(sigma*rmsi))
 		ia.open(modelname)
 		data=ia.getchunk()
 		data_copy=copy.deepcopy(data)
-		data[sigma_pos]=0
+		if sigma!=0:
+			rmsi=imstat(imagename=imagename,box=self.rms_box)['rms'][0]		
+			sigma_pos=np.where(abs(data)>=(sigma*rmsi))
+			sigma_pos1=np.where(data<(sigma*rmsi))
+			data[sigma_pos]=0
+			data_copy[sigma_pos1]=0
 		pos=np.where(data<0)
-		data_copy[pos]=0
-		data_copy[sigma_pos1]=0
+		data_copy[pos]=0		
 		ia.putchunk(data_copy)
 		ia.done()
 		return modelname
@@ -1176,7 +1202,7 @@ class IntensitySelfcal:
 		stokes=[]
 		wsclean_images=sorted(wsclean_images)
 		for i in wsclean_images:
-			name_split=i.split('.fits')[0].split('-')
+			name_split=os.path.basename(i).split('.fits')[0].split('-')
 			if len(name_split)>=3:
 				if name_split[-2] not in stokes:
 					stokes.append(name_split[-2])
@@ -1200,7 +1226,7 @@ class IntensitySelfcal:
 			return imagename
 		elif stokes==['XX','YY']:
 			for i in wsclean_images:
-				if i.split('-')[1]=='XX':
+				if os.path.basename(i).split('-')[1]=='XX':
 					data=fits.getdata(i)
 					header=fits.getheader(i)
 				else:
@@ -1208,6 +1234,7 @@ class IntensitySelfcal:
 						data=np.append(data,fits.getdata(i),axis=0)
 					except:
 						pass
+					header=fits.getheader(i)
 			header['NAXIS4']=2.
 			header['CRVAL4']=-5.
 			header['CDELT4']=-1.
@@ -1318,7 +1345,7 @@ class IntensitySelfcal:
 
 	def selfcal_iteration(self,num_iter,rms_thresh,sigma,maskstr,antenna_to_use,startmodel,startmask,ref_ant,minsnr,calmode,maskfile='',want_auto_masking=False,cpus=5,absmem=10,\
 							wlayers=1,stokes='I',interactive=False,do_bandpass=False,solmode='R',correct_phasecenter=False,ra=0,dec=0,box_width=3,calibrator_caltable=[],maskregion='',\
-							weight='briggs',robust=0.5,optimized_imsize=True):
+							weight='briggs',robust=0.5):
 		'''
 		Function to perform a self-calibration loop, make an image, put the model in the measurement set, and perform the calibration
 
@@ -1378,8 +1405,6 @@ class IntensitySelfcal:
 			Visibility weighting during imaging , 'uniform', 'natural' or 'briggs'. Default is 'briggs'
 		robust : float
 			Robust parameter for briggs weighting, default : 0.5
-		optimized_imsize : bool
-			Optimize image size choosing with calibration mode for faster self-calibration
 		Returns
 		-------
 		float
@@ -1456,7 +1481,7 @@ class IntensitySelfcal:
 							',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+',interactive=False,usemask='+\
 							'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+',lownoisethreshold='+str(float(sigma/3.0))+\
 							',negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\',automask_trials='+\
-							str(automask_trials)+'maskregion=\''+maskregion+'\')\n')
+							str(automask_trials)+',maskregion=\''+maskregion+'\')\n')
 						poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,\
 						imsize=[self.imsize],cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
 						uvtaper=self.uvtaper,weighting=weight,robust=robust,interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,\
@@ -1471,7 +1496,7 @@ class IntensitySelfcal:
 							'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+\
 							',lownoisethreshold='+str(float(sigma/3.0))+',negativethreshold=0.0,smoothfactor=1.0,'+\
 							'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=\''+str(self.calib_uvrange)+'\',automask_trials='+str(automask_trials)+\
-							'maskregion=\''+maskregion+'\')\n')
+							',maskregion=\''+maskregion+'\')\n')
 						poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,\
 						imsize=[self.imsize],cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
 						uvtaper=self.uvtaper,weighting=weight,robust=robust,interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,\
@@ -1510,9 +1535,9 @@ class IntensitySelfcal:
 			scales=[str(i) for i in self.multiscale_scales]
 			if weight=='briggs':
 				weight=weight+' '+str(robust)
-			wsclean_args=['-scale '+str(self.cellsize)+'asec','-size '+str(self.imsize)+' '+str(self.imsize),'-no-dirty','-j '+str(cpus),\
+			wsclean_args=['-scale '+str(self.cellsize)+'asec','-size '+str(self.imsize)+' '+str(self.imsize),'-no-dirty','-no-negative','-j '+str(cpus),\
 			'-abs-mem '+str(absmem),'-weight '+weight,'-taper-tukey 10','-name '+imagename,'-nwlayers '+str(wlayers),'-pol '+str(pol),\
-			'-maxuv-l '+str(self.imaging_maxuv),'-minuv-l '+str(self.imaging_minuv),'-niter 100000','-mgain 0.8','-auto-threshold '+str(sigma),'-auto-mask '+str(0.5+sigma),\
+			'-maxuv-l '+str(self.imaging_maxuv),'-minuv-l '+str(self.imaging_minuv),'-niter 100000','-mgain 0.8','-auto-threshold '+str(sigma),'-auto-mask '+str(0.05+sigma),\
 			'-gain '+str(clean_gain),'-multiscale','-multiscale-scales '+','.join(scales)]
 			if startmodel!='':
 				if self.verbose:
@@ -1527,13 +1552,16 @@ class IntensitySelfcal:
 						os.system('rm -rf '+i)
 			wsclean_args.append('-quiet')
 			if self.verbose:
-				self.log_verbose.info('wsclean '+' '.join(wsclean_args)+' '+self.msname)			
+				self.log_verbose.info('wsclean '+' '.join(wsclean_args)+' '+self.msname+'\n')			
 			os.system('wsclean '+' '.join(wsclean_args)+' '+self.msname)			
 			wsclean_images=glob.glob(imagename+'*image.fits')
 			wsclean_models=glob.glob(imagename+'*model.fits')
 			wsclean_residuals=glob.glob(imagename+'*residual.fits')
+			self.log_verbose.info('wsclean_to_casaimage(wsclean_images='+str(wsclean_images)+',casaimage_prefix=\''+imagename+'\',imagetype=\'image\',keep_wsclean_images=False)\n')
 			casa_imagename=self.wsclean_to_casaimage(wsclean_images=wsclean_images,casaimage_prefix=imagename,imagetype='image',keep_wsclean_images=False)
+			self.log_verbose.info('wsclean_to_casaimage(wsclean_images='+str(wsclean_models)+',casaimage_prefix=\''+imagename+'\',imagetype=\'model\',keep_wsclean_images=False)\n')
 			casa_modelname=self.wsclean_to_casaimage(wsclean_images=wsclean_models,casaimage_prefix=imagename,imagetype='model',keep_wsclean_images=False)
+			self.log_verbose.info('wsclean_to_casaimage(wsclean_images='+str(wsclean_residuals)+',casaimage_prefix=\''+imagename+'\',imagetype=\'residual\',keep_wsclean_images=False)\n')
 			casa_residualname=self.wsclean_to_casaimage(wsclean_images=wsclean_residuals,casaimage_prefix=imagename,imagetype='residual',keep_wsclean_images=False)
 		out_dict,negative_dyn_range=self.calc_dyn_range(num_iter,sigma,box_width=box_width,stokes_list=stokes_list) # Calculating the dynamic range of the image
 		out_dict_keys=out_dict.keys()
@@ -1574,7 +1602,11 @@ class IntensitySelfcal:
 				clearcal(vis=self.msname)
 				self.log_verbose.info('delmod(vis=\''+self.msname+'\',scr=True)\n') 
 				delmod(vis=self.msname,scr=True) # Clear the MODEL column
-				self.remove_model_negative(casa_imagename,casa_modelname,sigma=sigma,overwrite=True) # Removing negatives from model
+				if self.wsclean==False:
+					if do_bandpass==False:
+						self.remove_model_negative(casa_imagename,casa_modelname,sigma=3,overwrite=True) # Removing negatives from model and less than 3 sigma regions
+					else:
+						self.remove_model_negative(casa_imagename,casa_modelname,sigma=0,overwrite=True) # Removing negatives only from the model
 				if correct_phasecenter==True:
 					if ra==0 or dec==0:
 						AM=am.AccessMS(self.msname)

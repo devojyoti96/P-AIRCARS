@@ -128,7 +128,7 @@ def decor(msname,metafits,n_tblk,single_time):
 		c_speed_of_light = 299792458. # m/s
 		# Definging CASA6 casatools
 		ms=mstools()
-		#md=ms.msmetadata()
+		md=msmetadata()
 		qa=quanta()
 		#
 		# The sign of geometric delay term
@@ -141,6 +141,9 @@ def decor(msname,metafits,n_tblk,single_time):
 		# from the metafits file.
 		#
 		ms_dir	=	msname
+		md.open(msname)
+		num_ant=md.nantennas()
+		md.close()
 		hl = fits.open(metafits)
 		#
 		# The second HDU is a fits table with 256 (nPol*nTile) rows.
@@ -207,7 +210,7 @@ def decor(msname,metafits,n_tblk,single_time):
 			ants2 = ms.getdata(['antenna2'])['antenna2']
 			tims =  ms.getdata(['time'])['time']
 			uvw =   ms.getdata(['uvw'])['uvw']
-			idx_ant = 999999*np.ones(512, dtype=int) # Fill with 999999 where empty
+			idx_ant = np.arange(0,num_ant,1) # Fill with 999999 where empty
 			
 			cdat = apply_acorr(dat, ants1, ants2, idx_ant, elen, tile, \
 					       uvw, cwid, fout)
@@ -273,7 +276,7 @@ def decor(msname,metafits,n_tblk,single_time):
 				ibt = np.where(np.diff(blktims) != 0)[0] + 1
 				ibt = np.hstack((0, ibt, len(blkants1)))
 
-				idx_ant = 999999*np.ones(512, dtype=int) # Fill with 999999 where empty
+				idx_ant = np.arange(0,num_ant,1) # Fill with 999999 where empty
 
 				#raise  SystemExit
 				#sys.exit(0)
