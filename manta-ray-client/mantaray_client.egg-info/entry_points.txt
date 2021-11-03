@@ -1,3 +1,0 @@
-[console_scripts]
-mwa_client = mantaray.scripts.mwa_client:main
-
