@@ -1,1 +1,0 @@
-/bin/c++   -O3 -ggdb -Wvla -Wall -DNDEBUG -march=native -std=c++0x -pthread    CMakeFiles/solutiontool.dir/solutiontool.cpp.o  -o solutiontool -rdynamic -lpthread 
