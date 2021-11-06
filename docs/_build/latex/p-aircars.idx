@@ -1,0 +1,154 @@
+\indexentry{module@\spxentry{module}!paircars.access\_ms@\spxentry{paircars.access\_ms}|hyperpage}{17}
+\indexentry{paircars.access\_ms@\spxentry{paircars.access\_ms}!module@\spxentry{module}|hyperpage}{17}
+\indexentry{AccessMS (class in paircars.access\_ms)@\spxentry{AccessMS}\spxextra{class in paircars.access\_ms}|hyperpage}{17}
+\indexentry{calc\_bandwidth() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_bandwidth()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{17}
+\indexentry{calc\_flagfrac() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_flagfrac()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{17}
+\indexentry{calc\_freqres() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_freqres()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{17}
+\indexentry{calc\_meanfreq() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_meanfreq()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{17}
+\indexentry{calc\_meanwavelength() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_meanwavelength()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{17}
+\indexentry{calc\_ncoarse() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_ncoarse()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{17}
+\indexentry{calc\_timeres() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_timeres()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{calc\_total\_time() (paircars.access\_ms.AccessMS method)@\spxentry{calc\_total\_time()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{convert\_mwa\_to\_iau() (paircars.access\_ms.AccessMS method)@\spxentry{convert\_mwa\_to\_iau()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{get\_altaz() (paircars.access\_ms.AccessMS method)@\spxentry{get\_altaz()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{get\_antenna\_id() (paircars.access\_ms.AccessMS method)@\spxentry{get\_antenna\_id()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{get\_antenna\_string() (paircars.access\_ms.AccessMS method)@\spxentry{get\_antenna\_string()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{get\_flag\_times\_mjd() (paircars.access\_ms.AccessMS method)@\spxentry{get\_flag\_times\_mjd()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{get\_flag\_timestamps() (paircars.access\_ms.AccessMS method)@\spxentry{get\_flag\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{18}
+\indexentry{get\_freqs() (paircars.access\_ms.AccessMS method)@\spxentry{get\_freqs()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_listobs() (paircars.access\_ms.AccessMS method)@\spxentry{get\_listobs()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_max\_baseline() (paircars.access\_ms.AccessMS method)@\spxentry{get\_max\_baseline()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_model\_nomodel\_chan() (paircars.access\_ms.AccessMS method)@\spxentry{get\_model\_nomodel\_chan()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_nbaseline() (paircars.access\_ms.AccessMS method)@\spxentry{get\_nbaseline()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_num\_antenna() (paircars.access\_ms.AccessMS method)@\spxentry{get\_num\_antenna()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_num\_channels() (paircars.access\_ms.AccessMS method)@\spxentry{get\_num\_channels()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_num\_timestamps() (paircars.access\_ms.AccessMS method)@\spxentry{get\_num\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_obs\_startend\_time() (paircars.access\_ms.AccessMS method)@\spxentry{get\_obs\_startend\_time()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{19}
+\indexentry{get\_observatory\_loc() (paircars.access\_ms.AccessMS method)@\spxentry{get\_observatory\_loc()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{20}
+\indexentry{get\_parang() (paircars.access\_ms.AccessMS method)@\spxentry{get\_parang()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{20}
+\indexentry{get\_phasecenter() (paircars.access\_ms.AccessMS method)@\spxentry{get\_phasecenter()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{20}
+\indexentry{get\_phasecenter\_parang() (paircars.access\_ms.AccessMS method)@\spxentry{get\_phasecenter\_parang()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{20}
+\indexentry{get\_scan\_startend\_time() (paircars.access\_ms.AccessMS method)@\spxentry{get\_scan\_startend\_time()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{21}
+\indexentry{get\_timestamps() (paircars.access\_ms.AccessMS method)@\spxentry{get\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{21}
+\indexentry{get\_timestamps\_in\_mjdsecs() (paircars.access\_ms.AccessMS method)@\spxentry{get\_timestamps\_in\_mjdsecs()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{21}
+\indexentry{get\_unflag\_chan() (paircars.access\_ms.AccessMS method)@\spxentry{get\_unflag\_chan()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{21}
+\indexentry{get\_unflag\_times\_mjd() (paircars.access\_ms.AccessMS method)@\spxentry{get\_unflag\_times\_mjd()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{21}
+\indexentry{get\_unflag\_timestamps() (paircars.access\_ms.AccessMS method)@\spxentry{get\_unflag\_timestamps()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{22}
+\indexentry{make\_antenna\_list() (paircars.access\_ms.AccessMS method)@\spxentry{make\_antenna\_list()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{22}
+\indexentry{move\_phasecenter\_to\_source() (paircars.access\_ms.AccessMS method)@\spxentry{move\_phasecenter\_to\_source()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{22}
+\indexentry{move\_phasecenter\_to\_sun() (paircars.access\_ms.AccessMS method)@\spxentry{move\_phasecenter\_to\_sun()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{22}
+\indexentry{radec\_sun() (paircars.access\_ms.AccessMS method)@\spxentry{radec\_sun()}\spxextra{paircars.access\_ms.AccessMS method}|hyperpage}{22}
+\indexentry{splited\_ms\_rename() (in module paircars.access\_ms)@\spxentry{splited\_ms\_rename()}\spxextra{in module paircars.access\_ms}|hyperpage}{22}
+\indexentry{module@\spxentry{module}!paircars.basic\_func@\spxentry{paircars.basic\_func}|hyperpage}{23}
+\indexentry{paircars.basic\_func@\spxentry{paircars.basic\_func}!module@\spxentry{module}|hyperpage}{23}
+\indexentry{CalcParams (class in paircars.basic\_func)@\spxentry{CalcParams}\spxextra{class in paircars.basic\_func}|hyperpage}{23}
+\indexentry{calc\_calibration\_params() (paircars.basic\_func.CalcParams method)@\spxentry{calc\_calibration\_params()}\spxextra{paircars.basic\_func.CalcParams method}|hyperpage}{23}
+\indexentry{ImageBasic (class in paircars.basic\_func)@\spxentry{ImageBasic}\spxextra{class in paircars.basic\_func}|hyperpage}{23}
+\indexentry{calc\_calib\_uvrange() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_calib\_uvrange()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{23}
+\indexentry{calc\_cellsize() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_cellsize()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{calc\_max\_baseline() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_max\_baseline()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{calc\_psf() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_psf()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{calc\_suntaper() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_suntaper()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{calc\_uvtaper() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_uvtaper()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{choose\_scales() (paircars.basic\_func.ImageBasic method)@\spxentry{choose\_scales()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{field\_of\_view() (paircars.basic\_func.ImageBasic method)@\spxentry{field\_of\_view()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{24}
+\indexentry{num\_pixels() (paircars.basic\_func.ImageBasic method)@\spxentry{num\_pixels()}\spxextra{paircars.basic\_func.ImageBasic method}|hyperpage}{25}
+\indexentry{altaz\_to\_radec() (in module paircars.basic\_func)@\spxentry{altaz\_to\_radec()}\spxextra{in module paircars.basic\_func}|hyperpage}{25}
+\indexentry{calc\_flag\_chans\_caltable() (in module paircars.basic\_func)@\spxentry{calc\_flag\_chans\_caltable()}\spxextra{in module paircars.basic\_func}|hyperpage}{25}
+\indexentry{calc\_flag\_fraction() (in module paircars.basic\_func)@\spxentry{calc\_flag\_fraction()}\spxextra{in module paircars.basic\_func}|hyperpage}{25}
+\indexentry{calc\_flag\_fraction\_caltable() (in module paircars.basic\_func)@\spxentry{calc\_flag\_fraction\_caltable()}\spxextra{in module paircars.basic\_func}|hyperpage}{25}
+\indexentry{casa\_instance\_runner() (in module paircars.basic\_func)@\spxentry{casa\_instance\_runner()}\spxextra{in module paircars.basic\_func}|hyperpage}{25}
+\indexentry{compress\_files() (in module paircars.basic\_func)@\spxentry{compress\_files()}\spxextra{in module paircars.basic\_func}|hyperpage}{26}
+\indexentry{download\_metafits() (in module paircars.basic\_func)@\spxentry{download\_metafits()}\spxextra{in module paircars.basic\_func}|hyperpage}{26}
+\indexentry{error\_msgs() (in module paircars.basic\_func)@\spxentry{error\_msgs()}\spxextra{in module paircars.basic\_func}|hyperpage}{26}
+\indexentry{freq\_to\_MWA\_coarse() (in module paircars.basic\_func)@\spxentry{freq\_to\_MWA\_coarse()}\spxextra{in module paircars.basic\_func}|hyperpage}{26}
+\indexentry{get\_MWA\_phase() (in module paircars.basic\_func)@\spxentry{get\_MWA\_phase()}\spxextra{in module paircars.basic\_func}|hyperpage}{26}
+\indexentry{get\_OBSID\_from\_metafits() (in module paircars.basic\_func)@\spxentry{get\_OBSID\_from\_metafits()}\spxextra{in module paircars.basic\_func}|hyperpage}{26}
+\indexentry{get\_OBSID\_from\_ms() (in module paircars.basic\_func)@\spxentry{get\_OBSID\_from\_ms()}\spxextra{in module paircars.basic\_func}|hyperpage}{27}
+\indexentry{get\_available\_paircars\_instance() (in module paircars.basic\_func)@\spxentry{get\_available\_paircars\_instance()}\spxextra{in module paircars.basic\_func}|hyperpage}{27}
+\indexentry{get\_caltable\_metadata() (in module paircars.basic\_func)@\spxentry{get\_caltable\_metadata()}\spxextra{in module paircars.basic\_func}|hyperpage}{27}
+\indexentry{get\_final\_beam() (in module paircars.basic\_func)@\spxentry{get\_final\_beam()}\spxextra{in module paircars.basic\_func}|hyperpage}{27}
+\indexentry{getnearpos() (in module paircars.basic\_func)@\spxentry{getnearpos()}\spxextra{in module paircars.basic\_func}|hyperpage}{27}
+\indexentry{mjdsec\_to\_timestamp() (in module paircars.basic\_func)@\spxentry{mjdsec\_to\_timestamp()}\spxextra{in module paircars.basic\_func}|hyperpage}{27}
+\indexentry{multifreq\_gaincal\_interpolate() (in module paircars.basic\_func)@\spxentry{multifreq\_gaincal\_interpolate()}\spxextra{in module paircars.basic\_func}|hyperpage}{28}
+\indexentry{radec\_con\_deg\_to\_hhmmss() (in module paircars.basic\_func)@\spxentry{radec\_con\_deg\_to\_hhmmss()}\spxextra{in module paircars.basic\_func}|hyperpage}{28}
+\indexentry{radec\_to\_altaz() (in module paircars.basic\_func)@\spxentry{radec\_to\_altaz()}\spxextra{in module paircars.basic\_func}|hyperpage}{28}
+\indexentry{timestamp\_to\_mjdsec() (in module paircars.basic\_func)@\spxentry{timestamp\_to\_mjdsec()}\spxextra{in module paircars.basic\_func}|hyperpage}{28}
+\indexentry{update\_mwa\_obsids() (in module paircars.basic\_func)@\spxentry{update\_mwa\_obsids()}\spxextra{in module paircars.basic\_func}|hyperpage}{29}
+\indexentry{module@\spxentry{module}!paircars.decor@\spxentry{paircars.decor}|hyperpage}{29}
+\indexentry{paircars.decor@\spxentry{paircars.decor}!module@\spxentry{module}|hyperpage}{29}
+\indexentry{apply\_acorr() (in module paircars.decor)@\spxentry{apply\_acorr()}\spxextra{in module paircars.decor}|hyperpage}{29}
+\indexentry{decor() (in module paircars.decor)@\spxentry{decor()}\spxextra{in module paircars.decor}|hyperpage}{29}
+\indexentry{module@\spxentry{module}!paircars.dynamic\_spectrum@\spxentry{paircars.dynamic\_spectrum}|hyperpage}{30}
+\indexentry{paircars.dynamic\_spectrum@\spxentry{paircars.dynamic\_spectrum}!module@\spxentry{module}|hyperpage}{30}
+\indexentry{DynamicSpectrum (class in paircars.dynamic\_spectrum)@\spxentry{DynamicSpectrum}\spxextra{class in paircars.dynamic\_spectrum}|hyperpage}{30}
+\indexentry{cal\_norm\_crosscorr() (paircars.dynamic\_spectrum.DynamicSpectrum method)@\spxentry{cal\_norm\_crosscorr()}\spxextra{paircars.dynamic\_spectrum.DynamicSpectrum method}|hyperpage}{30}
+\indexentry{module@\spxentry{module}!paircars.flagger@\spxentry{paircars.flagger}|hyperpage}{30}
+\indexentry{paircars.flagger@\spxentry{paircars.flagger}!module@\spxentry{module}|hyperpage}{30}
+\indexentry{do\_uvsub\_ankflag() (in module paircars.flagger)@\spxentry{do\_uvsub\_ankflag()}\spxextra{in module paircars.flagger}|hyperpage}{30}
+\indexentry{do\_uvsub\_flagger() (in module paircars.flagger)@\spxentry{do\_uvsub\_flagger()}\spxextra{in module paircars.flagger}|hyperpage}{30}
+\indexentry{flag\_MWA\_coarse() (in module paircars.flagger)@\spxentry{flag\_MWA\_coarse()}\spxextra{in module paircars.flagger}|hyperpage}{31}
+\indexentry{flag\_MWA\_quack() (in module paircars.flagger)@\spxentry{flag\_MWA\_quack()}\spxextra{in module paircars.flagger}|hyperpage}{31}
+\indexentry{get\_bad\_ants() (in module paircars.flagger)@\spxentry{get\_bad\_ants()}\spxextra{in module paircars.flagger}|hyperpage}{31}
+\indexentry{module@\spxentry{module}!paircars.fullpol\_selfcal\_LTS@\spxentry{paircars.fullpol\_selfcal\_LTS}|hyperpage}{32}
+\indexentry{paircars.fullpol\_selfcal\_LTS@\spxentry{paircars.fullpol\_selfcal\_LTS}!module@\spxentry{module}|hyperpage}{32}
+\indexentry{PolSelfcal (class in paircars.fullpol\_selfcal\_LTS)@\spxentry{PolSelfcal}\spxextra{class in paircars.fullpol\_selfcal\_LTS}|hyperpage}{32}
+\indexentry{B\_to\_IQUV() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{B\_to\_IQUV()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{32}
+\indexentry{IMSTAT\_record() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{IMSTAT\_record()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{32}
+\indexentry{antenna\_string() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{antenna\_string()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{33}
+\indexentry{apply\_cross\_hand\_phase() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{apply\_cross\_hand\_phase()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{33}
+\indexentry{cal\_poldistortion() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{cal\_poldistortion()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{33}
+\indexentry{cal\_solar\_qu\_leakage() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{cal\_solar\_qu\_leakage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{33}
+\indexentry{cal\_solar\_v\_leakage() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{cal\_solar\_v\_leakage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{34}
+\indexentry{calc\_dyn\_range() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{calc\_dyn\_range()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{34}
+\indexentry{calc\_iter\_num() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{calc\_iter\_num()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{34}
+\indexentry{compare\_leakage\_for\_sun() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{compare\_leakage\_for\_sun()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{35}
+\indexentry{compare\_leakages() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{compare\_leakages()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{35}
+\indexentry{correct\_for\_single\_beam\_jones() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{correct\_for\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{35}
+\indexentry{correct\_image\_for\_cross\_phase() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{correct\_image\_for\_cross\_phase()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{36}
+\indexentry{correct\_poldistortion() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{correct\_poldistortion()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{36}
+\indexentry{correct\_solar\_quv\_leakage() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{correct\_solar\_quv\_leakage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{36}
+\indexentry{correct\_visibility\_single\_beam\_jones() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{correct\_visibility\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{37}
+\indexentry{create\_circular\_mask() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{create\_circular\_mask()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{37}
+\indexentry{estimateSkyBrightnessMatrix() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{estimateSkyBrightnessMatrix()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{37}
+\indexentry{file\_remover\_and\_keeper() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{file\_remover\_and\_keeper()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{37}
+\indexentry{get\_IQUV() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{get\_IQUV()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{38}
+\indexentry{get\_inst\_pols() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{get\_inst\_pols()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{38}
+\indexentry{make\_crosshand\_phase\_caltable() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{make\_crosshand\_phase\_caltable()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{38}
+\indexentry{mwa\_solar\_fluxcal() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{mwa\_solar\_fluxcal()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{38}
+\indexentry{negative\_box() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{negative\_box()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{38}
+\indexentry{pol\_model\_threshold() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{pol\_model\_threshold()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{39}
+\indexentry{polselfcal\_iteration() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{polselfcal\_iteration()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{39}
+\indexentry{reduce\_sigma() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{reduce\_sigma()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{40}
+\indexentry{remove\_model\_negative() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{remove\_model\_negative()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{41}
+\indexentry{solarcir\_pol\_minimise() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{solarcir\_pol\_minimise()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{41}
+\indexentry{solarlin\_pol\_minimise() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{solarlin\_pol\_minimise()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{41}
+\indexentry{subtract\_background\_sources() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{subtract\_background\_sources()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{41}
+\indexentry{subtract\_leakage\_surface() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{subtract\_leakage\_surface()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{42}
+\indexentry{subtract\_stokesV\_solar\_leakage\_surface() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{subtract\_stokesV\_solar\_leakage\_surface()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{42}
+\indexentry{uncorrect\_for\_single\_beam\_jones() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{uncorrect\_for\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{42}
+\indexentry{uncorrect\_visibility\_model\_single\_beam\_jones() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{uncorrect\_visibility\_model\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{43}
+\indexentry{uncorrect\_visibility\_single\_beam\_jones() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{uncorrect\_visibility\_single\_beam\_jones()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{43}
+\indexentry{wsclean\_to\_casaimage() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{wsclean\_to\_casaimage()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}|hyperpage}{43}
+\indexentry{module@\spxentry{module}!paircars.intensity\_selfcal\_LTS@\spxentry{paircars.intensity\_selfcal\_LTS}|hyperpage}{44}
+\indexentry{paircars.intensity\_selfcal\_LTS@\spxentry{paircars.intensity\_selfcal\_LTS}!module@\spxentry{module}|hyperpage}{44}
+\indexentry{IntensitySelfcal (class in paircars.intensity\_selfcal\_LTS)@\spxentry{IntensitySelfcal}\spxextra{class in paircars.intensity\_selfcal\_LTS}|hyperpage}{44}
+\indexentry{DR\_delta() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{DR\_delta()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{44}
+\indexentry{DR\_record() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{DR\_record()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{44}
+\indexentry{antenna\_string() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{antenna\_string()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{44}
+\indexentry{bpass\_solver() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{bpass\_solver()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{45}
+\indexentry{cal\_solar\_phaseshift() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{cal\_solar\_phaseshift()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{45}
+\indexentry{calc\_dyn\_range() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{calc\_dyn\_range()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{45}
+\indexentry{calc\_iter\_num() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{calc\_iter\_num()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{46}
+\indexentry{calc\_selfcal\_snr() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{calc\_selfcal\_snr()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{46}
+\indexentry{change\_start\_sigma() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{change\_start\_sigma()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{46}
+\indexentry{dirty\_image() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{dirty\_image()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{46}
+\indexentry{file\_remover\_and\_keeper() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{file\_remover\_and\_keeper()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{47}
+\indexentry{image\_source\_true\_loc() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{image\_source\_true\_loc()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{47}
+\indexentry{initial\_bpass() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{initial\_bpass()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{47}
+\indexentry{negative\_box() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{negative\_box()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{47}
+\indexentry{reduce\_sigma() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{reduce\_sigma()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{48}
+\indexentry{remove\_model\_negative() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{remove\_model\_negative()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{48}
+\indexentry{selfcal\_iteration() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{selfcal\_iteration()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{48}
+\indexentry{shift\_phasecenter() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{shift\_phasecenter()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{49}
+\indexentry{wsclean\_to\_casaimage() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{wsclean\_to\_casaimage()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}|hyperpage}{49}

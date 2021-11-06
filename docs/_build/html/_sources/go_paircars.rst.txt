@@ -1,0 +1,7 @@
+go\_paircars module
+===================
+
+.. automodule:: go_paircars
+   :members:
+   :undoc-members:
+   :show-inheritance:

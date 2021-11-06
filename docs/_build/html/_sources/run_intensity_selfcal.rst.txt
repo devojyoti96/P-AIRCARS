@@ -1,0 +1,7 @@
+run\_intensity\_selfcal module
+==============================
+
+.. automodule:: run_intensity_selfcal
+   :members:
+   :undoc-members:
+   :show-inheritance:

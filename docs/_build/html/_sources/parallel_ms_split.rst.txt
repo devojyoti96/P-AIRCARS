@@ -1,0 +1,7 @@
+parallel\_ms\_split module
+==========================
+
+.. automodule:: parallel_ms_split
+   :members:
+   :undoc-members:
+   :show-inheritance:
