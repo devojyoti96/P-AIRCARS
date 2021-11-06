@@ -7,9 +7,9 @@ P-AIRCARS is an automated calibration and imaging routine for polarimetric calib
 
 P-AIRCARS uses CASA (Common Astronomy Software Application) https://casa.nrao.edu for intensity and bandpass self-calibration and polarisation calibration is performed by our own implementation of the full Jones calibration algorithm described by Mitchell et al. 2008 https://doi.org/10.1109/JSTSP.2008.2005327.
 
-Imaging at P-AIRCARS is performed by WSClean https://wsclean.readthedocs.io. If WSClean is not installed P-AIRCARS performs imaging by CASA. When CASA is used for imaging the computation speed is slow.
+Imaging at P-AIRCARS is performed by WSClean https://wsclean.readthedocs.io. If WSClean is not installed, P-AIRCARS performs imaging by CASA. When CASA is used for imaging the computation speed is slow.
 
-Basic philosophy of P-AIRCARS is self-calibration and use the instrumental model to perform the precise solar calibration. Details of the algorithm and implementation can be found in the follwoing papers
+Basic philosophy of P-AIRCARS is the self-calibration and use the instrumental model to perform the precise calibration. Details of the algorithm and implementation can be found in the follwoing papers
 
 	1.AIRCARS (Mondal et al. 2020) https://doi.org/10.3847/1538-4357/ab0a01
 
