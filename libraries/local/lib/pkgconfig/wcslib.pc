@@ -1,0 +1,11 @@
+prefix=/data1/devojyoti/PhD/P-AIRCARS/libraries/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/wcslib
+
+Name: WCSLIB
+Description: An implementation of the FITS World Coordinate System standard
+Version: 4.24
+Requires:
+Libs: -L${libdir} -lwcs -lm
+Cflags: -I${includedir}
