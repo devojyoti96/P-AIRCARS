@@ -1,7 +1,0 @@
-start\_paircars module
-======================
-
-.. automodule:: start_paircars
-   :members:
-   :undoc-members:
-   :show-inheritance:
