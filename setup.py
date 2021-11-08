@@ -27,7 +27,7 @@ setup(
              'scripts/plot_skymap.py',
              'scripts/primarybeammap_tant_test.py',
              'scripts/track_and_suppress.py'],
-    install_requires=["numpy>=1.19.0", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake","extension-helpers"],
+    install_requires=["numpy>=1.19.0", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake","extension_helpers"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
@@ -49,7 +49,7 @@ setup(name='mantaray-client',
       entry_points={'console_scripts': [
           'mwa_client = mantaray.scripts.mwa_client:main']
       })
-'''
+
 cwd=os.getcwd()
 # Installing Libraries locally
 if os.path.isdir('libraries')==False:
@@ -275,7 +275,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-)'''
+)
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
 os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
