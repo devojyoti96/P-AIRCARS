@@ -6,10 +6,6 @@
 P-AIRCARS documentation
 =======================
 This is the official documentation of the P-AIRCARS. Source code can be found at : https://github.com/devojyoti96/P-AIRCARS.git
-.. image:: https://readthedocs.org/projects/p-aircars/badge/
-    :alt: Documentation Status
-    :scale: 100%
-    :target: http://p-aircars.readthedocs.io
 
 .. toctree:: 
    :maxdepth: 3
