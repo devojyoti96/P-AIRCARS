@@ -27,7 +27,7 @@ setup(
              'scripts/plot_skymap.py',
              'scripts/primarybeammap_tant_test.py',
              'scripts/track_and_suppress.py'],
-    install_requires=["numpy>=1.19.0", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["numpy>=1.19.0", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake","extension-helpers"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
