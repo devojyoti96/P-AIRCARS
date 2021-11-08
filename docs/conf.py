@@ -12,11 +12,6 @@
 #
 import os
 import sys
-import mock
- 
-MOCK_MODULES = ["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake","paircars.basic_func","paircars.access_ms"]
-for mod_name in MOCK_MODULES:
-	sys.modules[mod_name] = mock.Mock()
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0,os.path.abspath('../paircars'))
 sys.path.insert(0,os.path.abspath('../scripts'))
