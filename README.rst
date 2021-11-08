@@ -2,7 +2,7 @@ Introduction
 ============
 P-AIRCARS (Polarimetry using Automated Imaging Routine for Compact Arrays of the Radio Sun)
 *******************************************************************************************
-.. |Docs Badge| image:: https://readthedocs.org/projects/p-aircars/badge/
+..  image:: https://readthedocs.org/projects/p-aircars/badge/
     :alt: Documentation Status
     :scale: 100%
     :target: http://p-aircars.readthedocs.io
