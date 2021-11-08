@@ -3,38 +3,6 @@ import os,sys,shutil,subprocess,glob
 
 os.environ['PATH']='/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/sbin:/usr/sbin'
 
-os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
-os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
-os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
-os.system('cp -r scripts/control_paircars.py scripts/control_paircars')
-os.system('cp -r scripts/validating_paircars_input.py scripts/validating_paircars_input')
-os.system('cp -r scripts/manage_database.py scripts/manage_database')
-os.system('cp -r scripts/parallel_ms_split.py scripts/parallel_ms_split')
-os.system('cp -r scripts/final_imaging.py scripts/final_imaging')
-os.system('cp -r scripts/compress_caltables.py scripts/compress_caltables')
-os.system('cp -r scripts/run_paircars.py scripts/run_paircars')
-os.system('cp -r scripts/start_paircars.py scripts/start_paircars')
-os.system('cp -r scripts/go_paircars.py scripts/go-paircars')
-os.system('cp -r scripts/log_viewer.py scripts/log_viewer')
-os.system('cp -r scripts/track_final_imaging.py scripts/track_final_imaging')
-os.system('cp -r scripts/download_mwa_data.py scripts/download_mwa_data')
-
-setup(
-    name='paircars',
-    version='1.0.0',
-    packages=['paircars'],
-    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg']},
-    author='Devojyoti Kansabanik',
-    author_email='dkansabanik@ncra.tifr.res.in',
-    description='PAIRCARS',
-    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
-			'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
-			'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging'],
-    install_requires=["numpy>=1.19.0", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"]
-)
-
-os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go-paircars scripts/start_paircars scripts/log_viewer scripts/track_final_imaging scripts/download_mwa_data')
-
 cwd=os.getcwd()
 os.chdir('mwa_pb/data')
 os.system('wget -q -c http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5 --no-check-certificate')
@@ -313,7 +281,38 @@ setup(
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
+os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
+os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
+os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
+os.system('cp -r scripts/control_paircars.py scripts/control_paircars')
+os.system('cp -r scripts/validating_paircars_input.py scripts/validating_paircars_input')
+os.system('cp -r scripts/manage_database.py scripts/manage_database')
+os.system('cp -r scripts/parallel_ms_split.py scripts/parallel_ms_split')
+os.system('cp -r scripts/final_imaging.py scripts/final_imaging')
+os.system('cp -r scripts/compress_caltables.py scripts/compress_caltables')
+os.system('cp -r scripts/run_paircars.py scripts/run_paircars')
+os.system('cp -r scripts/start_paircars.py scripts/start_paircars')
+os.system('cp -r scripts/go_paircars.py scripts/go-paircars')
+os.system('cp -r scripts/log_viewer.py scripts/log_viewer')
+os.system('cp -r scripts/track_final_imaging.py scripts/track_final_imaging')
+os.system('cp -r scripts/download_mwa_data.py scripts/download_mwa_data')
+os.system('cp -r scripts/start_download.py scripts/start_download')
 
+setup(
+    name='paircars',
+    version='1.0.0',
+    packages=['paircars'],
+    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg']},
+    author='Devojyoti Kansabanik',
+    author_email='dkansabanik@ncra.tifr.res.in',
+    description='PAIRCARS',
+    scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
+			'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
+			'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download'],
+    install_requires=["numpy>=1.19.0", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"]
+)
+
+os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go-paircars scripts/start_paircars scripts/log_viewer scripts/track_final_imaging scripts/download_mwa_data scripts/start_download')
 from paircars.basic_func import update_mwa_obsids
 obsid_file,msg=update_mwa_obsids(verbose=True)
 
