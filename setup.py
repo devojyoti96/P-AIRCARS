@@ -308,8 +308,5 @@ setup(
 			'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
 			'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download','scripts/download_mwa_data'],
 )
-
 os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go-paircars scripts/start_paircars scripts/log_viewer scripts/track_final_imaging scripts/download_mwa_data scripts/start_download')
-from paircars.basic_func import update_mwa_obsids
-obsid_file,msg=update_mwa_obsids(verbose=True)
 
