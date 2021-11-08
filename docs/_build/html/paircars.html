@@ -293,8 +293,10 @@ Thus X=&gt;-Y, and Y=&gt;-X. So, XX=&gt;YY,YY=&gt;XX,XY=&gt;YX,YX=&gt;XY</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.access_ms.AccessMS.get_max_baseline">
-<span class="sig-name descname"><span class="pre">get_max_baseline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.access_ms.AccessMS.get_max_baseline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the maximum baseline in meter</p>
+<span class="sig-name descname"><span class="pre">get_max_baseline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">includeflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.access_ms.AccessMS.get_max_baseline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the maximum baseline in meter
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>Maximum baseline length in meter</p>
@@ -374,6 +376,30 @@ Thus X=&gt;-Y, and Y=&gt;-X. So, XX=&gt;YY,YY=&gt;XX,XY=&gt;YX,YX=&gt;XY</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paircars.access_ms.AccessMS.get_obs_date">
+<span class="sig-name descname"><span class="pre">get_obs_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.access_ms.AccessMS.get_obs_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get observation date</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>format</strong> (<em>str</em>) – <dl>
+<dt>Date string format</dt><dd><p>0: ‘YYYY/MM/DD’</p>
+<p>1: ‘YYYY-MM-DD’</p>
+<p>2: ‘YYYY_MM_DD’</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>str</em> – Observation start date</p></li>
+<li><p><em>str</em> – Observation end date</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -502,6 +528,14 @@ So, the rotation of the sky with respect to telescope is negative in the sky coo
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="paircars.access_ms.AccessMS.get_pol">
+<span class="sig-name descname"><span class="pre">get_pol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.access_ms.AccessMS.get_pol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get number of polarisations
+:returns: Number of correlation products
+:rtype: int</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="paircars.access_ms.AccessMS.get_scan_startend_time">
 <span class="sig-name descname"><span class="pre">get_scan_startend_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.access_ms.AccessMS.get_scan_startend_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to get scan start time</p>
@@ -613,16 +647,25 @@ So, the rotation of the sky with respect to telescope is negative in the sky coo
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>num_bin</strong> (<em>int</em>) – Number of antenna bins</p></li>
-<li><p><strong>antenna_list_file</strong> (<em>str</em>) – Name of the file to save antenna list (Keep blank to avoid save)</p></li>
+<li><p><strong>antenna_list_file</strong> (<em>str</em>) – Name of the file to save antenna list. If an antenna list file given, antenna list will be loaded from that file</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Lists of antennas to be added in steps</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>list</em> – Lists of antennas to be added in steps</p></li>
+<li><p><em>int</em> – Number of antenna</p></li>
+</ul>
+</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paircars.access_ms.AccessMS.model_imported">
+<span class="sig-name descname"><span class="pre">model_imported</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.access_ms.AccessMS.model_imported" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuction to check whether model imported or model column exists or not
+:returns: True if model exists and False if does not
+:rtype: bool</p>
 </dd></dl>
 
 <dl class="py method">
@@ -743,23 +786,27 @@ For details read the documentation of quality_factor and safety_factor</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="paircars.basic_func.ImageBasic">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">ImageBasic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">ImageBasic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Generic class to calculate different imaging related parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>msname</strong> (<em>str</em>) – Name of the measurement set</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msname</strong> (<em>str</em>) – Name of the measurement set</p></li>
+<li><p><strong>includeflag</strong> (<em>bool</em>) – Include flag data or not whilw calculating maximum baseline</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.basic_func.ImageBasic.calc_calib_uvrange">
-<span class="sig-name descname"><span class="pre">calc_calib_uvrange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_angular_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uvbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_calib_uvrange" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_calib_uvrange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_angular_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uvbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_calib_uvrange" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function calculate the uvrange to be used for calibration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>max_angular_scale</strong> (<em>float</em>) – Maximum angular scale to exclude short baselines from calibration</p></li>
 <li><p><strong>uvbin</strong> (<em>float</em>) – Binning in uv-lambda</p></li>
+<li><p><strong>includeflag</strong> (<em>bool</em>) – Include flag data or not whilw calculating maximum baseline</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -797,14 +844,32 @@ For details read the documentation of quality_factor and safety_factor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.basic_func.ImageBasic.calc_max_baseline">
-<span class="sig-name descname"><span class="pre">calc_max_baseline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_max_baseline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the maximum baseline in meter</p>
+<span class="sig-name descname"><span class="pre">calc_max_baseline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">includeflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_max_baseline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the maximum baseline in meter
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>Maximum baseline length in meter</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paircars.basic_func.ImageBasic.calc_max_uvw">
+<span class="sig-name descname"><span class="pre">calc_max_uvw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_max_uvw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the maximum u,v,w</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>float</em> – Maximum U</p></li>
+<li><p><em>float</em> – Maximum V</p></li>
+<li><p><em>float</em> – Maximum W</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -828,8 +893,12 @@ For details read the documentation of quality_factor and safety_factor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.basic_func.ImageBasic.calc_suntaper">
-<span class="sig-name descname"><span class="pre">calc_suntaper</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_suntaper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function return uv-taper value to treat Sun as a point source of size 16 arcmin</p>
+<span class="sig-name descname"><span class="pre">calc_suntaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uvbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_suntaper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function return uv-taper value to treat Sun as a point source of size 16 arcmin
+:param uvbin: Binning in uv-lambda
+:type uvbin: float
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>UV taper (uvtaper lambda)</p>
@@ -842,8 +911,12 @@ For details read the documentation of quality_factor and safety_factor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.basic_func.ImageBasic.calc_uvtaper">
-<span class="sig-name descname"><span class="pre">calc_uvtaper</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_uvtaper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function return uv-taper value</p>
+<span class="sig-name descname"><span class="pre">calc_uvtaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uvbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.ImageBasic.calc_uvtaper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function return uv-taper value
+:param uvbin: Binning in uv-lambda
+:type uvbin: float
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>UV taper (uvtaper lambda)</p>
@@ -994,15 +1067,17 @@ For details read the documentation of quality_factor and safety_factor</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="paircars.basic_func.casa_instance_runner">
-<span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">casa_instance_runner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basedir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screen_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finished_touch_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_cmds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.casa_instance_runner" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to run a casa instance</p>
+<dt class="sig sig-object py" id="paircars.basic_func.check_internet">
+<span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">check_internet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.check_internet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to check internet connection
+:param url: An URL to check internet connectivity. (default : <a class="reference external" href="https://www.google.com">https://www.google.com</a>)
+:type url: str</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cmd</strong> (<em>str</em>) – Command to run</p></li>
-<li><p><strong>screen_name</strong> (<em>str</em>) – Name of the screen</p></li>
-</ul>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether internet connection is available or not</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1099,6 +1174,27 @@ For details read the documentation of quality_factor and safety_factor</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="paircars.basic_func.get_OBSID_for_timerange">
+<span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">get_OBSID_for_timerange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timerange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">caldata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_ID</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'G0002'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.get_OBSID_for_timerange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get MWA observation IDs for a given time range
+:param timerange: Time range to search, format ‘yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2~….’
+:type timerange: str
+:param caldata: Whether search for calibrator observations also or not
+:type caldata: bool
+:param project_ID: Project ID to search data
+:type project_ID: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>list</em> – OBSID list</p></li>
+<li><p><em>list</em> – Calibration OBSID list</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="paircars.basic_func.get_OBSID_from_metafits">
 <span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">get_OBSID_from_metafits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metafits</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.get_OBSID_from_metafits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to return OBSID of an MWA observation</p>
@@ -1171,14 +1267,16 @@ For details read the documentation of quality_factor and safety_factor</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="paircars.basic_func.get_final_beam">
-<span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">get_final_beam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imager</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wsclean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.get_final_beam" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to get a common final beam parameters</p>
+<dt class="sig sig-object py" id="paircars.basic_func.get_final_psf">
+<span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">get_final_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imager</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wsclean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'briggs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.get_final_psf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get a common final psf parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>msname</strong> (<em>str</em>) – Name of the measurement set</p></li>
 <li><p><strong>imager</strong> (<em>str</em>) – Imager, ‘wsclean’ or ‘CASA’</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Visibility weighting for imaging</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – Robust parameter for ‘briggs’ weighting</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1221,11 +1319,11 @@ For details read the documentation of quality_factor and safety_factor</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mjdsec</strong> (<em>float</em>) – CASA MJD seconds</p></li>
 <li><p><strong>includedate</strong> (<em>bool</em>) – Include date in timestamp</p></li>
-<li><p><strong>format</strong> (<em>int</em>) – <dl class="simple">
-<dt>Datetime string format</dt><dd><p>0 : ‘YYYY/MM/DD/hh:mm:ss’
-1: ‘YYYY-MM-DDThh:mm:ss’
-2: ‘YYYY-MM-DD hh:mm:ss’
-3: ‘YYYY_MM_DD_hh_mm_ss’</p>
+<li><p><strong>format</strong> (<em>int</em>) – <dl>
+<dt>Datetime string format</dt><dd><p>0: ‘YYYY/MM/DD/hh:mm:ss’</p>
+<p>1: ‘YYYY-MM-DDThh:mm:ss’</p>
+<p>2: ‘YYYY-MM-DD hh:mm:ss’</p>
+<p>3: ‘YYYY_MM_DD_hh_mm_ss’</p>
 </dd>
 </dl>
 </p></li>
@@ -1257,6 +1355,23 @@ For details read the documentation of quality_factor and safety_factor</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="paircars.basic_func.paircars_instance_runner">
+<span class="sig-prename descclassname"><span class="pre">paircars.basic_func.</span></span><span class="sig-name descname"><span class="pre">paircars_instance_runner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">basedir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paircars_basedir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screen_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finished_touch_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_cmds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.basic_func.paircars_instance_runner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to run a P-AIRCARS instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmd</strong> (<em>str</em>) – Command to run</p></li>
+<li><p><strong>basedir</strong> (<em>str</em>) – Base directory of the measurement set</p></li>
+<li><p><strong>paircars_basedir</strong> (<em>str</em>) – Base directory for a particular P-AIRCARS job</p></li>
+<li><p><strong>screen_name</strong> (<em>str</em>) – Name of the screen</p></li>
+<li><p><strong>finished_touch_file</strong> (<em>str</em>) – Hidden file to generate at the base directory after finishing the instance</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1314,11 +1429,11 @@ For details read the documentation of quality_factor and safety_factor</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>timestamp</strong> (<em>str</em>) – Time stamp to convert</p></li>
-<li><p><strong>format</strong> (<em>int</em>) – <dl class="simple">
-<dt>Datetime string format</dt><dd><p>0 : ‘YYYY/MM/DD/hh:mm:ss’
-1: ‘YYYY-MM-DDThh:mm:ss’
-2: ‘YYYY-MM-DD hh:mm:ss’
-3: ‘YYYY_MM_DD_hh_mm_ss’</p>
+<li><p><strong>format</strong> (<em>int</em>) – <dl>
+<dt>Datetime string format</dt><dd><p>0: ‘YYYY/MM/DD/hh:mm:ss’</p>
+<p>1: ‘YYYY-MM-DDThh:mm:ss’</p>
+<p>2: ‘YYYY-MM-DD hh:mm:ss’</p>
+<p>3: ‘YYYY_MM_DD_hh_mm_ss’</p>
 </dd>
 </dl>
 </p></li>
@@ -1425,6 +1540,32 @@ For details read the documentation of quality_factor and safety_factor</p>
 <section id="module-paircars.flagger">
 <span id="paircars-flagger"></span><h2>paircars.flagger<a class="headerlink" href="#module-paircars.flagger" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="paircars.flagger.casa_autoflag">
+<span class="sig-prename descclassname"><span class="pre">paircars.flagger.</span></span><span class="sig-name descname"><span class="pre">casa_autoflag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rflag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datacolumn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'corrected'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagbackup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.flagger.casa_autoflag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to perform CASA flag
+:param msname: Name of the measurement set
+:type msname: str
+:param mode: CASA flag mode, ‘rflag’ or ‘tfcrop’
+:type mode: str
+:param datacolumn: Datacolumn to flag, ‘data’, ‘corrected’ or ‘residual’
+:type datacolumn: str
+:param sigma_thresh: Flagging threshold
+:type sigma_thresh: float
+:param flagbackup: Backup flags or not
+:type flagbackup: bool
+:param verbose: Verbose output
+:type verbose: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Success code, 0 or 1</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="paircars.flagger.do_uvsub_ankflag">
 <span class="sig-prename descclassname"><span class="pre">paircars.flagger.</span></span><span class="sig-name descname"><span class="pre">do_uvsub_ankflag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nthread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagbackup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extendpols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chantime_minfrac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">casaflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.flagger.do_uvsub_ankflag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform flagging on uv sub data using aNKflagger</p>
@@ -1521,6 +1662,21 @@ central channel in each coarse channel to be flagged.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="paircars.flagger.flag_zeros">
+<span class="sig-prename descclassname"><span class="pre">paircars.flagger.</span></span><span class="sig-name descname"><span class="pre">flag_zeros</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagbackup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.flagger.flag_zeros" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to flag zero data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msname</strong> (<em>str</em>) – Name of the measurement set</p></li>
+<li><p><strong>flagbackup</strong> (<em>bool</em>) – Backup flags or not</p></li>
+<li><p><strong>force</strong> (<em>bool</em>) – Force to flag even if the header saying flagging is already done</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="paircars.flagger.get_bad_ants">
 <span class="sig-prename descclassname"><span class="pre">paircars.flagger.</span></span><span class="sig-name descname"><span class="pre">get_bad_ants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagfrac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.flagger.get_bad_ants" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to get the antennas for which a certain amount of data are flagged</p>
@@ -1545,7 +1701,7 @@ central channel in each coarse channel to be flagged.</p>
 <span id="paircars-fullpol-selfcal-lts"></span><h2>paircars.fullpol_selfcal_LTS<a class="headerlink" href="#module-paircars.fullpol_selfcal_LTS" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="paircars.fullpol_selfcal_LTS.PolSelfcal">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">paircars.fullpol_selfcal_LTS.</span></span><span class="sig-name descname"><span class="pre">PolSelfcal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metafits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_emission_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">largest_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savelog</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_wsclean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">paircars.fullpol_selfcal_LTS.</span></span><span class="sig-name descname"><span class="pre">PolSelfcal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metafits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_emission_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pixel_in_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">largest_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savelog</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_wsclean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Generic class to perform polarisation self-calibration (Using Andre Offringa’s CALIBRATE code on based Mitchcal algorithm)</p>
 <dl class="field-list simple">
@@ -1553,6 +1709,7 @@ central channel in each coarse channel to be flagged.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>msname</strong> (<em>str</em>) – Name of the measurement set</p></li>
 <li><p><strong>metafits</strong> (<em>str</em>) – Name of the MWA metafits file</p></li>
+<li><p><strong>num_pixel_in_psf</strong> (<em>int</em>) – Number of pixels side one point-spread-funtion</p></li>
 <li><p><strong>maximum_emission_scale</strong> (<em>float</em>) – Maximum scale of the emission present in the image</p></li>
 <li><p><strong>largest_scale</strong> (<em>float</em>) – Largest spatial scale in degree used for self calibration</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – If True keep all the intermediate images, model, residuals, caltables and details of the log to detailed analysis</p></li>
@@ -1766,6 +1923,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><em>int</em> – Maximum iteration</p></li>
 <li><p><em>int</em> – Number of antenna bins</p></li>
 <li><p><em>float</em> – Fraction change in flux for convergence</p></li>
+<li><p><em>float</em> – Minimum value of allowed sigma</p></li>
 </ul>
 </p>
 </dd>
@@ -2130,7 +2288,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.fullpol_selfcal_LTS.PolSelfcal.polselfcal_iteration">
-<span class="sig-name descname"><span class="pre">polselfcal_iteration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rms_thresh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_to_use</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmodel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">want_auto_masking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TB_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solar_imaging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ankflagger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poldistortion_correction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poldistortion_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'poldistortion'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossphase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poldistortion_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_solarqu_cor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibrator_caltable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quvcor_stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'QUV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polmodel_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absmem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wlayers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal.polselfcal_iteration" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">polselfcal_iteration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rms_thresh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_to_use</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmodel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">want_auto_masking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TB_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solar_imaging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ankflagger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poldistortion_correction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poldistortion_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'poldistortion'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossphase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poldistortion_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_solarqu_cor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibrator_caltable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quvcor_stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'QUV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polmodel_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absmem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wlayers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'briggs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal.polselfcal_iteration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to perform a polarisation self-calibration loop, make an image, put the model in the measurement set, and perform the calibration</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2165,6 +2323,8 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>cpus</strong> (<em>int</em>) – Number of cpu threads to use</p></li>
 <li><p><strong>absmem</strong> (<em>float</em>) – Memory in GB to use</p></li>
 <li><p><strong>wlayers</strong> (<em>int</em>) – Number of w-stacking layers (For wsclean only)</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – Robust parameter for briggs weighting, default : 0.5</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2180,7 +2340,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.fullpol_selfcal_LTS.PolSelfcal.reduce_sigma">
-<span class="sig-name descname"><span class="pre">reduce_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imagename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_residual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['I']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal.reduce_sigma" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reduce_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imagename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_residual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['I']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal.reduce_sigma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to determine whether reduce the CLEAN sigma or not</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2190,15 +2350,16 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>sigma_step</strong> (<em>float</em>) – Step to reduce sigma value</p></li>
 <li><p><strong>minsigma</strong> (<em>float</em>) – Minimum allowed sigma</p></li>
 <li><p><strong>pre_residual</strong> (<em>float</em>) – Previous residual fraction to compare (default : 0.0)</p></li>
-<li><p><strong>residual_frac</strong> (<em>float</em>) – Residual flux fraction to reduce sigma (default : 0.1)</p></li>
+<li><p><strong>residual_frac</strong> (<em>float</em>) – Residual flux fraction to reduce sigma (default : 0.01)</p></li>
 <li><p><strong>stokes_list</strong> (<em>list</em>) – Stokes plane list</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Reduced value of n-sigma and median residual fraction if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>float</em> – Reduced value of n-sigma and median residual fraction if residual flux is more than given percentage (default : 1%) of the total flux in Stokes I or in all Stokes Q,U,V.</p></li>
+<li><p><em>float</em> – Median residual flux fraction over all stokes planes</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2270,7 +2431,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.fullpol_selfcal_LTS.PolSelfcal.subtract_background_sources">
-<span class="sig-name descname"><span class="pre">subtract_background_sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stokes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rms_thresh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modelthres</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modify_datacolumn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absmem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal.subtract_background_sources" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">subtract_background_sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stokes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rms_thresh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modelthres</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modify_datacolumn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absmem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'briggs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.fullpol_selfcal_LTS.PolSelfcal.subtract_background_sources" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to subtract background sources outside the mask region</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2283,6 +2444,8 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>includeregion</strong> (<em>bool</em>) – Include the maskregion for subtraction (True) or exclude the mask region for subtraction (False).</p></li>
 <li><p><strong>overwrite</strong> (<em>bool</em>) – Overwrite the corrected datacolumn with the subtracted visibilities.</p></li>
 <li><p><strong>modelify_datacolumn</strong> (<em>bool</em>) – Modify the datacolumn</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – Robust parameter for briggs weighting, default : 0.5</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2440,7 +2603,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <span id="paircars-intensity-selfcal-lts"></span><h2>paircars.intensity_selfcal_LTS<a class="headerlink" href="#module-paircars.intensity_selfcal_LTS" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">paircars.intensity_selfcal_LTS.</span></span><span class="sig-name descname"><span class="pre">IntensitySelfcal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metafits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_emission_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">largest_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_wsclean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savelog</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">paircars.intensity_selfcal_LTS.</span></span><span class="sig-name descname"><span class="pre">IntensitySelfcal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metafits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_emission_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pixel_in_psf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">largest_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_wsclean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savelog</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Generic class to perform intensity self-calibration</p>
 <dl class="field-list simple">
@@ -2448,6 +2611,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>msname</strong> (<em>str</em>) – Name of the measurement set</p></li>
 <li><p><strong>metafits</strong> (<em>str</em>) – Name of the metafits file</p></li>
+<li><p><strong>num_pixel_in_psf</strong> (<em>int</em>) – Number of pixels side one point-spread-funtion</p></li>
 <li><p><strong>maximum_emission_scale</strong> (<em>float</em>) – Maximum scale of the emission present in the image in arcsec</p></li>
 <li><p><strong>largest_scale</strong> (<em>float</em>) – Largest spatial scale in degree used for self calibration</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – If True keep all the intermediate images, model, residuals, caltables and details of the log to detailed analysis</p></li>
@@ -2614,6 +2778,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><em>int</em> – Maximum iteration</p></li>
 <li><p><em>int</em> – Number of antenna bins</p></li>
 <li><p><em>float</em> – Fractional flux change</p></li>
+<li><p><em>float</em> – Minimum allowed sigma</p></li>
 </ul>
 </p>
 </dd>
@@ -2642,6 +2807,32 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.casaimage_to_wsclean">
+<span class="sig-name descname"><span class="pre">casaimage_to_wsclean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">casaimage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wsclean_imagename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imagetype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wsclean_imsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_casaimage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.casaimage_to_wsclean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to convert CASA image to WSClean image
+(Stokes modes : ‘I’ and ‘XX,YY’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>casaimage</strong> (<em>str</em>) – Name of the CASA image or model</p></li>
+<li><p><strong>wsclean_imagename</strong> (<em>str</em>) – WSClean imagename prefix</p></li>
+<li><p><strong>imagetype</strong> (<em>str</em>) – Image type, ‘image’, ‘model’ or ‘residual’</p></li>
+<li><p><strong>wsclean_imsize</strong> (<em>int</em>) – WSClean image size, CASA image size should be larger than that</p></li>
+<li><p><strong>keep_casaimage</strong> (<em>bool</em>) – Keep CASA image or not</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>list</em> – Output WSClean images</p></li>
+<li><p><em>int</em> – WSClean image size</p></li>
+<li><p><em>list</em> – WSClean image stokes axes</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.change_start_sigma">
 <span class="sig-name descname"><span class="pre">change_start_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_sigma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.change_start_sigma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to calculate start sigma</p>
@@ -2664,7 +2855,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.dirty_image">
-<span class="sig-name descname"><span class="pre">dirty_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_to_use</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.dirty_image" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dirty_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_to_use</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'briggs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.dirty_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function make dirty image</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2672,6 +2863,8 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>start_sigma</strong> (<em>float</em>) – Start sigma</p></li>
 <li><p><strong>box_width</strong> (<em>float</em>) – Negative box width around the maximum pixel in degree (default : 3 degree)</p></li>
 <li><p><strong>antenna_to_use</strong> (<em>list</em>) – List of antennas</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – Robust parameter for briggs weighting, default : 0.5</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2704,13 +2897,15 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.image_source_true_loc">
-<span class="sig-name descname"><span class="pre">image_source_true_loc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_bandpass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.image_source_true_loc" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">image_source_true_loc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_bandpass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'briggs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.image_source_true_loc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to make quick image for finding source true location with respect to reference time and channel</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>Outdir</strong> (<em>str</em>) – Output directory</p></li>
 <li><p><strong>do_bandpass</strong> (<em>bool</em>) – Source true location for bandpass self-calibration or not</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – Robust parameter for briggs weighting, default : 0.5</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2768,7 +2963,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.reduce_sigma">
-<span class="sig-name descname"><span class="pre">reduce_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imagename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_residual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['I']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.reduce_sigma" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reduce_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imagename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minsigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_residual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['I']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.reduce_sigma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to determine whether reduce the CLEAN sigma or not</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2778,12 +2973,12 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>sigma_step</strong> (<em>float</em>) – Step to reduce sigma value</p></li>
 <li><p><strong>minsigma</strong> (<em>float</em>) – Minimum allowed sigma</p></li>
 <li><p><strong>pre_residual</strong> (<em>float</em>) – Previous residual fraction to compare (default : 0.0)</p></li>
-<li><p><strong>residual_frac</strong> (<em>float</em>) – Residual flux fraction to reduce sigma</p></li>
+<li><p><strong>residual_frac</strong> (<em>float</em>) – Residual flux fraction to reduce sigma (default : 0.01)</p></li>
 <li><p><strong>stokes_list</strong> (<em>list</em>) – Stokes plane list</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Reduced value of n-sigma if residual flux is more than given percentage (default : 10%) of the total flux in Stokes I or in all Stokes Q,U,V.</p>
+<dd class="field-even"><p>Reduced value of n-sigma if residual flux is more than given percentage (default : 1%) of the total flux in Stokes I or in all Stokes Q,U,V.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>float</p>
@@ -2815,7 +3010,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.selfcal_iteration">
-<span class="sig-name descname"><span class="pre">selfcal_iteration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rms_thresh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskstr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_to_use</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmodel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_ant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minsnr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calmode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">want_auto_masking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absmem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wlayers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'I'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_bandpass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solmode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'R'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correct_phasecenter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibrator_caltable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.selfcal_iteration" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">selfcal_iteration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rms_thresh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskstr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_to_use</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmodel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startmask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_ant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minsnr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calmode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">want_auto_masking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absmem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wlayers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'I'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_bandpass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solmode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'R'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correct_phasecenter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibrator_caltable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskregion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'briggs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.selfcal_iteration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to perform a self-calibration loop, make an image, put the model in the measurement set, and perform the calibration</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2825,7 +3020,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>sigma</strong> (<em>float</em>) – Threshold sigma</p></li>
 <li><p><strong>maskstr</strong> (<em>str</em>) – CASA mask string for CLEANing (For CASA only)</p></li>
 <li><p><strong>antenna_to_use</strong> (<em>list</em>) – List of antennas for CLEANing</p></li>
-<li><p><strong>startmodel</strong> (<em>str</em>) – CASA model to start the CLEANing (For CASA only)</p></li>
+<li><p><strong>startmodel</strong> (<em>str</em>) – CASA model to start the CLEANing (For both CASA imager and WSClean, for WSClean imager, CASA models will be converted to WSClean models)</p></li>
 <li><p><strong>startmask</strong> (<em>str</em>) – CASA mask to start (For CASA only)</p></li>
 <li><p><strong>ref_ant</strong> (<em>int</em>) – Reference antenna</p></li>
 <li><p><strong>minsnr</strong> (<em>float</em>) – Minimum SNR of gain solutions</p></li>
@@ -2845,6 +3040,8 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li><p><strong>box_width</strong> (<em>float</em>) – Negative box width around the maximum pixel in degree (default : 3 degree)</p></li>
 <li><p><strong>calibrator_caltable</strong> (<em>list</em>) – List of calilbrator caltables</p></li>
 <li><p><strong>maskregion</strong> (<em>str</em>) – Mask region in case of auto-masking (Only for CASA)</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’</p></li>
+<li><p><strong>robust</strong> (<em>float</em>) – Robust parameter for briggs weighting, default : 0.5</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2882,8 +3079,8 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <dl class="py method">
 <dt class="sig sig-object py" id="paircars.intensity_selfcal_LTS.IntensitySelfcal.wsclean_to_casaimage">
 <span class="sig-name descname"><span class="pre">wsclean_to_casaimage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wsclean_images</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">casaimage_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CASA_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imagetype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'image'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_wsclean_images</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#paircars.intensity_selfcal_LTS.IntensitySelfcal.wsclean_to_casaimage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to convert WSClean image in CASA image
-(Stokes modes : ‘I’)</p>
+<dd><p>Function to convert WSClean image to CASA image
+(Stokes modes : ‘I’ and ‘XX,YY’)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -2933,6 +3130,7 @@ Note : Saved X matrix is for B’=XBX^dagger, which is inverse of poldistortion_
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tut.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Details of Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="robust_quality.html">Robustness and Quality</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Module details</span></p>
 <ul class="current">
