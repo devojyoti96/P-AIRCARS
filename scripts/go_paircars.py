@@ -585,6 +585,10 @@ class PAIRCARS_inputs:
 		self.log_button=Button(self.root,text='Open Log',command=self.logview,font=('times new roman',15))
 		self.log_button.place(x=660,y=770)
 
+		# Download data
+		self.download_button=Button(self.root,text='Download Data',command=self.download_data,font=('times new roman',15))
+		self.download_button.place(x=785,y=770)
+
 		# Frame 2
 		self.frame2=Frame(self.root,bg='white',highlightthickness=3)
 		self.frame2.place(x=970,y=40,width=600,height=450)
@@ -993,6 +997,198 @@ class PAIRCARS_inputs:
 		self.button=Button(self.root,text='Run P-AIRCARS',font=('times new roman',18),command=self.run_paircars,height=2,width=15)
 		self.button.place(x=420,y=770)
 
+	def download_data(self):
+		self.popupwin1()
+			
+	def popupwin1(self):
+		self.top_window= Toplevel(self.root)
+		self.top_window.overrideredirect(True) # turns off title bar, geometry
+		self.top_window.geometry('900x350+30+100') # set new geometry
+		self.root.withdraw()
+		# make a frame for the title bar
+		title_bar = Frame(self.top_window, relief='raised', bd=0)
+		label=Label(title_bar,text='Download MWA data',font=('times new roman',25))
+		label.pack(side=TOP,pady=5)
+		# a canvas for the main area of the window
+		global top1
+		top1 = Canvas(self.top_window)
+		# put a close button on the title bar
+		var=tk.IntVar()
+		close_button = Button(top1, text='Close this Window', command=lambda:[var.set(1),self.close_win(self.top_window)])
+		# pack the widgets
+		title_bar.pack(pady=5,side=TOP,fill="x")
+		close_button.pack(side=BOTTOM)
+		top1.pack(expand=1, fill="both")
+
+		def delete_entry(event):
+			if self.apikey_entry.get()=='MWA ASVO API key':
+				self.apikey_entry.delete(0, "end")
+				self.apikey=''
+				self.apikey_entry.config(fg='black')
+		def restore_entry(event):
+			if self.apikey_entry.get()=='':
+				self.apikey_entry.delete(0, "end")
+				self.apikey='MWA ASVO API key'
+				self.apikey_entry.insert(0,self.apikey)
+				self.apikey_entry.config(fg='gray45')
+		self.apikey='MWA ASVO API key'
+		apikey=Label(top1,text='MWA ASVO API key *',fg='Black',font=('times new roman',15))
+		apikey.place(x=10,y=10)
+		self.apikey_entry=Entry(top1,bg='lightgray',textvariable=self.apikey)
+		self.apikey_entry.place(x=230,y=13,width=650)
+		if self.apikey_entry.get()=='':
+			self.apikey_entry.insert(0,self.apikey)
+		self.apikey_entry.config(fg='gray45')
+		self.apikey_entry.bind("<FocusIn>",delete_entry)
+		self.apikey_entry.bind("<FocusOut>",restore_entry)
+		
+		# Data directory
+		def delete_entry(event):
+			if self.datadir_entry.get()=='Name of the directory of data':
+				self.datadir_entry.delete(0, "end")
+				self.datadir=''
+				self.datadir_entry.config(fg='black')
+		def restore_entry(event):
+			if self.datadir_entry.get()=='':
+				self.datadir_entry.delete(0, "end")
+				self.datadir='Name of the directory of data'
+				self.datadir_entry.insert(0,self.datadir)
+				self.datadir_entry.config(fg='gray45')
+		self.datadir='Name of the directory of data'
+		datadir=Label(top1,text='Data Directory *',fg='Black',font=('times new roman',15))
+		datadir.place(x=10,y=50)
+		button2=ttk.Button(top1,text='browse',command=self.diropen5)
+		button2.place(x=800,y=50)
+		self.datadir_entry=Entry(top1,bg='lightgray',textvariable=self.datadir)
+		self.datadir_entry.place(x=180,y=55,width=600)
+		if self.datadir_entry.get()=='':
+			self.datadir_entry.insert(0,self.datadir)
+		self.datadir_entry.config(fg='gray45')
+		self.datadir_entry.bind("<FocusIn>",delete_entry)
+		self.datadir_entry.bind("<FocusOut>",restore_entry)
+
+		# Timerange
+		def delete_entry(event):
+			if self.timerange_entry.get()=='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1':
+				self.timerange_entry.delete(0, "end")
+				self.timerange1=''
+				self.tmrange_entry.config(fg='black')
+		def restore_entry(event):
+			if self.timerange_entry.get()=='':
+				self.timerange_entry.delete(0, "end")
+				self.timerange='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1'
+				self.timerange_entry.insert(0,self.timerange1)
+				self.timerange_entry.config(fg='gray45')
+		self.timerange1='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1'
+		timerange1=Label(top1,text='Time range *',fg='Black',font=('times new roman',15))
+		timerange1.place(x=10,y=90)
+		self.timerange_entry=Entry(top1,bg='lightgray',textvariable=self.timerange1)
+		self.timerange_entry.place(x=180,y=95,width=700)
+		if self.timerange_entry.get()=='':
+			self.timerange_entry.insert(0,self.timerange1)
+		self.timerange_entry.config(fg='gray45')
+		self.timerange_entry.bind("<FocusIn>",delete_entry)
+		self.timerange_entry.bind("<FocusOut>",restore_entry)
+
+		# Cal download
+		caldownload=Label(top1,text='Download calibration data',fg='Black',font=('times new roman',15))
+		caldownload.place(x=10,y=130)
+		self.caldownload=BooleanVar()
+		self.caldownload.set(True)
+		c=Checkbutton(top1,text='',fg='Black',font=('times new roman',15),variable=self.caldownload,onvalue=True,offvalue=False,highlightbackground = "white")
+		c.place(x=245,y=130)
+
+		# Project ID
+		def delete_entry(event):
+			if self.projectid_entry.get()=='G0002':
+				self.projectid_entry.delete(0, "end")
+				self.projectid=''
+				self.projectid_entry.config(fg='black')
+		def restore_entry(event):
+			if self.projectid_entry.get()=='':
+				self.projectid_entry.delete(0, "end")
+				self.projectid='G0002'
+				self.projectid_entry.insert(0,self.projectid)
+				self.projectid_entry.config(fg='gray45')
+		self.projectid='G0002'
+		projectid=Label(top1,text='Project ID',fg='Black',font=('times new roman',15))
+		projectid.place(x=300,y=130)
+		self.projectid_entry=Entry(top1,bg='lightgray',textvariable=self.projectid)
+		self.projectid_entry.place(x=400,y=135,width=100)
+		if self.projectid_entry.get()=='':
+			self.projectid_entry.insert(0,self.projectid)
+		self.projectid_entry.config(fg='gray45')
+		self.projectid_entry.bind("<FocusIn>",delete_entry)
+		self.projectid_entry.bind("<FocusOut>",restore_entry)
+
+
+		# Obs ID
+		def delete_entry(event):
+			if self.obsid_entry.get()=='OBSID1,OBSID2':
+				self.obsid_entry.delete(0, "end")
+				self.obsid=''
+				self.obsid_entry.config(fg='black')
+		def restore_entry(event):
+			if self.obsid_entry.get()=='':
+				self.obsid_entry.delete(0, "end")
+				self.obsid='OBSID1,OBSID2'
+				self.obsid_entry.insert(0,self.obsid)
+				self.obsid_entry.config(fg='gray45')
+		self.obsid='OBSID1,OBSID2'
+		obsid=Label(top1,text='Observation ID',fg='Black',font=('times new roman',15))
+		obsid.place(x=520,y=130)
+		self.obsid_entry=Entry(top1,bg='lightgray',textvariable=self.obsid)
+		self.obsid_entry.place(x=660,y=135,width=220)
+		if self.obsid_entry.get()=='':
+			self.obsid_entry.insert(0,self.obsid)
+		self.obsid_entry.config(fg='gray45')
+		self.obsid_entry.bind("<FocusIn>",delete_entry)
+		self.obsid_entry.bind("<FocusOut>",restore_entry)
+
+
+		var=tk.IntVar()
+		button1= Button(top1, text="Start download", command=lambda:[var.set(1),self.start_download()])
+		button1.pack(side=BOTTOM,pady=5)
+		button1=close_button
+		button1.wait_variable(var)
+		self.root.deiconify()
+		del self.datadir,self.apikey
+		return
+
+	def start_download(self):
+		data_dir=''
+		time_range=''
+		api_key=''
+		cal_download=True
+		project_id='G0002'
+		obs_id=''
+
+		if self.apikey_entry.get()!='' and self.apikey_entry.get()!='MWA ASVO API key':
+			api_key=self.apikey_entry.get()
+
+		if self.datadir_entry.get()!='' and self.datadir_entry.get()!='Name of the directory of data':
+			data_dir=self.datadir_entry.get()
+
+		if self.timerange_entry.get()!='' and self.timerange_entry.get()!='yy0/mm0/dd0/hh0:mm0:ss0.ff0~yy1/mm1/dd1/hh1:mm1:ss1.ff1':
+			time_range=self.timerange_entry.get()
+
+		project_id=self.projectid_entry.get()
+		cal_download=self.caldownload.get()
+		if self.obsid_entry.get()!='' and self.obsid_entry.get()!='OBSID1,OBSID2':
+			obs_id=self.obsid_entry.get()
+		if api_key=='':
+			messagebox.showerror("No API key", "Please provide API key")
+		elif data_dir=='':
+			messagebox.showerror("No Data Directory", "Please provide data directory")
+		elif time_range=='':
+			messagebox.showerror("No time range", "Please provide time range")
+		else:
+			subprocess.call(["start_download",api_key,data_dir,time_range,project_id,obs_id,str(cal_download)])
+			self.close_win(self.top_window)
+			self.root.deiconify()
+		return 
+			
+
 	def _resize_image(self,event):
 		new_width = event.width
 		new_height = event.height
@@ -1031,6 +1227,15 @@ class PAIRCARS_inputs:
 			self.mask_entry.insert(0, '') #Insert blank for user input
 		self.mask_entry.insert(END,self.maskfile)
 		self.mask_entry.config(fg='black')
+
+	def diropen5(self):
+		self.datadir=filedialog.askdirectory(initialdir='/',title='Choose Data Directory')
+		if self.datadir_entry.get()!='':
+			self.datadir_entry.delete(0, "end") # delete all the text in the entry
+			self.datadir_entry.insert(0, '') #Insert blank for user input
+		self.datadir_entry.insert(END,self.datadir)
+		self.datadir_entry.config(fg='black')
+	
 
 	def fileopen1(self,filename=''):
 		if filename=='':
