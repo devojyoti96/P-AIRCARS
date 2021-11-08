@@ -49,7 +49,7 @@ setup(name='mantaray-client',
       entry_points={'console_scripts': [
           'mwa_client = mantaray.scripts.mwa_client:main']
       })
-
+'''
 cwd=os.getcwd()
 # Installing Libraries locally
 if os.path.isdir('libraries')==False:
@@ -275,7 +275,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-)
+)'''
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
 os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
