@@ -1183,7 +1183,7 @@ class PAIRCARS_inputs:
 		elif time_range=='':
 			messagebox.showerror("No time range", "Please provide time range")
 		else:
-			subprocess.call(["start_download",api_key,data_dir,time_range,project_id,obs_id,str(cal_download)])
+			subprocess.Popen(["start_download",api_key,data_dir,time_range,project_id,obs_id,str(cal_download)])
 			self.close_win(self.top_window)
 			self.root.deiconify()
 		return 

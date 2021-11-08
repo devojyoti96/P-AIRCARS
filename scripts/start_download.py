@@ -23,8 +23,13 @@ class DisplaySubprocessOutputDemo:
 		self.root.title('MWA data download')
 		self.root.geometry('1000x800')
 		# start dummy subprocess to generate some output
-		self.process = Popen(['download_mwa_data','--API_key='+str(apikey),'--dest_dir='+str(destdir),\
-		 '--timerange='+str(timerange),'--cal_download='+str(cal_download),'--cal_obsids='+str(obsid),'--project_ID='+str(projectid)], stdout=PIPE)
+		process_list=['download_mwa_data','--API_key='+str(apikey),'--dest_dir='+str(destdir),\
+		 '--timerange='+str(timerange),'--cal_download='+str(cal_download)]
+		if obsid!='':
+			process_list.append('--cal_obsids='+str(obsid))
+		if projectid!='':
+			process_list.append('--project_ID='+str(projectid))
+		self.process = Popen(process_list, stdout=PIPE)
 
 		# launch thread to read the subprocess output
 		#   (put the subprocess output into the queue in a background thread,
