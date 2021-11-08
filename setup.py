@@ -47,9 +47,7 @@ setup(name='mantaray-client',
       install_requires=['requests>=2.18.3',
                         'websocket_client',
                         'colorama'],
-	      install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
-      entry_points={'console_scripts': [
-          'mwa_client = mantaray.scripts.mwa_client:main']
+ entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']
       })
 
 cwd=os.getcwd()
