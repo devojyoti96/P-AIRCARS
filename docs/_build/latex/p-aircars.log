@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.10.19)  19 OCT 2021 23:27
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.10.19)  9 NOV 2021 01:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -824,29 +824,29 @@ LaTeX Font Info:    Trying to load font information for TS1+qtm on input line 8
  (/usr/local/texlive/2021/texmf-dist/tex/latex/tex-gyre/ts1qtm.fd
 File: ts1qtm.fd 2009/09/25 v1.2 font definition file for TS1/qtm
 ) [18]
-[19] [20] [21] [22] [23] [24] [25]
-Underfull \hbox (badness 10000) in paragraph at lines 2159--2162
+[19] [20] [21] [22] [23] [24] [25] [26]
+Underfull \hbox (badness 10000) in paragraph at lines 2279--2282
 []\T1/qtm/m/n/10 Com-pressed file name (Com-pressed file have ar-rays in for-ma
 t [orig-i-
  []
 
-[26] [27] [28] [29] [30] [31] [32]
-Underfull \hbox (badness 10000) in paragraph at lines 3205--3207
+[27] [28] [29] [30] [31] [32] [33] [34]
+Underfull \hbox (badness 10000) in paragraph at lines 3471--3473
 []\T1/txtt/bx/n/10 datacolumn \T1/qtm/m/n/10 (\T1/txtt/m/sl/10 str\T1/qtm/m/n/1
 0 ) ^^U Dat-a-col-umn to ap-ply the so-lu-tion (`DATA', or `COR-
  []
 
-[33] [34] [35] [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47]
-[48] [49] [50]
+[35] [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49]
+[50] [51] [52]
 Chapter 7.
-[51
+[53
 
-] [52] [53] [54
+] [54] [55] [56
 
-] [55
+] [57
 
 
-] (./p-aircars.ind [56
+] (./p-aircars.ind [58
 
 
 ]
@@ -1039,720 +1039,754 @@ Underfull \hbox (badness 10000) in paragraph at lines 59--61
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 61--62
+Underfull \hbox (badness 10000) in paragraph at lines 61--63
+[]\T1/txtt/m/n/10 calc_max_uvw() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.basi
+c_func.ImageBasic
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 63--64
 []\T1/txtt/m/n/10 calc_meanfreq() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.acc
 ess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 62--64
+Underfull \hbox (badness 10000) in paragraph at lines 64--66
 []\T1/txtt/m/n/10 calc_meanwavelength() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 64--65
+Underfull \hbox (badness 10000) in paragraph at lines 66--67
 []\T1/txtt/m/n/10 calc_ncoarse() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.acce
 ss_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 66--68
+Underfull \hbox (badness 10000) in paragraph at lines 68--70
 []\T1/txtt/m/n/10 calc_selfcal_snr() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 66--68
+Underfull \hbox (badness 10000) in paragraph at lines 68--70
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 68--70
+Underfull \hbox (badness 10000) in paragraph at lines 70--72
 []\T1/txtt/m/n/10 calc_suntaper() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.bas
 ic_func.ImageBasic
  []
 
+[59
 
-Underfull \hbox (badness 10000) in paragraph at lines 70--71
+]
+Underfull \hbox (badness 10000) in paragraph at lines 72--73
 []\T1/txtt/m/n/10 calc_timeres() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.acce
 ss_ms.AccessMS
  []
 
-[57
 
-]
-Underfull \hbox (badness 10000) in paragraph at lines 71--73
+Underfull \hbox (badness 10000) in paragraph at lines 73--75
 []\T1/txtt/m/n/10 calc_total_time() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.a
 ccess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 73--74
+Underfull \hbox (badness 10000) in paragraph at lines 75--76
 []\T1/txtt/m/n/10 calc_uvtaper() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.basi
 c_func.ImageBasic
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 75--77
-[]\T1/txtt/m/n/10 casa_instance_runner() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod
--ule pair-
+Underfull \hbox (badness 10000) in paragraph at lines 78--80
+[]\T1/txtt/m/n/10 casaimage_to_wsclean() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 77--79
-[]\T1/txtt/m/n/10 change_start_sigma() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 77--79
+Underfull \hbox (badness 10000) in paragraph at lines 78--80
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 79--81
+Underfull \hbox (badness 10000) in paragraph at lines 80--82
+[]\T1/txtt/m/n/10 change_start_sigma() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 80--82
+\T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 83--85
 []\T1/txtt/m/n/10 choose_scales() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.bas
 ic_func.ImageBasic
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 81--83
+Underfull \hbox (badness 10000) in paragraph at lines 85--87
 []\T1/txtt/m/n/10 compare_leakage_for_sun() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pai
 r-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 81--83
+Underfull \hbox (badness 10000) in paragraph at lines 85--87
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--85
+Underfull \hbox (badness 10000) in paragraph at lines 87--89
 []\T1/txtt/m/n/10 compare_leakages() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--85
+Underfull \hbox (badness 10000) in paragraph at lines 87--89
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 86--88
+Underfull \hbox (badness 10000) in paragraph at lines 90--92
 []\T1/txtt/m/n/10 convert_mwa_to_iau() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 88--90
+Underfull \hbox (badness 10000) in paragraph at lines 92--94
 []\T1/txtt/m/n/10 correct_for_single_beam_jones() \T1/qtm/m/n/10 (\T1/qtm/m/it/
 10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 88--90
+Underfull \hbox (badness 10000) in paragraph at lines 92--94
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 90--92
+Underfull \hbox (badness 10000) in paragraph at lines 94--96
 []\T1/txtt/m/n/10 correct_image_for_cross_phase() \T1/qtm/m/n/10 (\T1/qtm/m/it/
 10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 90--92
+Underfull \hbox (badness 10000) in paragraph at lines 94--96
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 92--94
+Underfull \hbox (badness 10000) in paragraph at lines 96--98
 []\T1/txtt/m/n/10 correct_poldistortion() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 92--94
+Underfull \hbox (badness 10000) in paragraph at lines 96--98
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 94--96
+Underfull \hbox (badness 10000) in paragraph at lines 98--100
 []\T1/txtt/m/n/10 correct_solar_quv_leakage() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 p
 air-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 94--96
+Underfull \hbox (badness 10000) in paragraph at lines 98--100
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 6575) in paragraph at lines 96--98
+Underfull \hbox (badness 6575) in paragraph at lines 100--102
 []\T1/txtt/m/n/10 correct_visibility_single_beam_jones() \T1/qtm/m/n/10 (\T1/qt
 m/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 98--100
+Underfull \hbox (badness 10000) in paragraph at lines 102--104
 []\T1/txtt/m/n/10 create_circular_mask() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 98--100
+Underfull \hbox (badness 10000) in paragraph at lines 102--104
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Overfull \hbox (29.19232pt too wide) in paragraph at lines 104--106
+Overfull \hbox (29.19232pt too wide) in paragraph at lines 108--110
 []\T1/txtt/m/n/10 dirty_image() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.inten
 sity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 108--109
+Underfull \hbox (badness 10000) in paragraph at lines 112--113
 []\T1/txtt/m/n/10 download_metafits() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod-ul
 e pair-
  []
 
 
-Overfull \hbox (13.44237pt too wide) in paragraph at lines 109--111
+Overfull \hbox (13.44237pt too wide) in paragraph at lines 113--115
 []\T1/txtt/m/n/10 DR_delta() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.intensit
 y_selfcal_LTS.IntensitySelfcal
  []
 
 
-Overfull \hbox (18.69235pt too wide) in paragraph at lines 111--113
+Overfull \hbox (18.69235pt too wide) in paragraph at lines 115--117
 []\T1/txtt/m/n/10 DR_record() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.intensi
 ty_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 113--114
+Underfull \hbox (badness 10000) in paragraph at lines 117--118
 []\T1/txtt/m/n/10 DynamicSpectrum \T1/qtm/m/n/10 (\T1/qtm/m/it/10 class in pair
 -
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 118--120
+Underfull \hbox (badness 10000) in paragraph at lines 122--124
 []\T1/txtt/m/n/10 estimateSkyBrightnessMatrix() \T1/qtm/m/n/10 (\T1/qtm/m/it/10
  pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 118--120
+Underfull \hbox (badness 10000) in paragraph at lines 122--124
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 123--125
+Underfull \hbox (badness 10000) in paragraph at lines 127--129
 []\T1/txtt/m/n/10 field_of_view() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.bas
 ic_func.ImageBasic
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 125--127
+Underfull \hbox (badness 10000) in paragraph at lines 129--131
 []\T1/txtt/m/n/10 file_remover_and_keeper() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pai
 r-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 125--127
+Underfull \hbox (badness 10000) in paragraph at lines 129--131
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 127--129
+Underfull \hbox (badness 10000) in paragraph at lines 131--133
 []\T1/txtt/m/n/10 file_remover_and_keeper() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pai
 r-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 127--129
+Underfull \hbox (badness 10000) in paragraph at lines 131--133
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 131--132
+Underfull \hbox (badness 10000) in paragraph at lines 136--137
 []\T1/txtt/m/n/10 freq_to_MWA_coarse() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod-u
 le pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 136--137
+Underfull \hbox (badness 10000) in paragraph at lines 141--142
 []\T1/txtt/m/n/10 get_antenna_id() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.ac
 cess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 137--139
+Underfull \hbox (badness 10000) in paragraph at lines 142--144
 []\T1/txtt/m/n/10 get_antenna_string() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 139--141
+Underfull \hbox (badness 10000) in paragraph at lines 144--146
 []\T1/txtt/m/n/10 get_available_paircars_instance() \T1/qtm/m/n/10 (\T1/qtm/m/i
 t/10 in mod-ule
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 142--144
+Underfull \hbox (badness 10000) in paragraph at lines 147--149
 []\T1/txtt/m/n/10 get_caltable_metadata() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mo
 d-ule pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 145--147
+Underfull \hbox (badness 10000) in paragraph at lines 150--152
 []\T1/txtt/m/n/10 get_flag_times_mjd() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 147--149
+Underfull \hbox (badness 10000) in paragraph at lines 152--154
 []\T1/txtt/m/n/10 get_flag_timestamps() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 150--152
+Underfull \hbox (badness 10000) in paragraph at lines 155--157
 []\T1/txtt/m/n/10 get_inst_pols() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 150--152
+Underfull \hbox (badness 10000) in paragraph at lines 155--157
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 152--154
+Underfull \hbox (badness 10000) in paragraph at lines 157--159
 []\T1/txtt/m/n/10 get_IQUV() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.fullpol_
 selfcal_LTS.PolSelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 154--155
+Underfull \hbox (badness 10000) in paragraph at lines 159--160
 []\T1/txtt/m/n/10 get_listobs() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.acces
 s_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 155--157
+Underfull \hbox (badness 10000) in paragraph at lines 160--162
 []\T1/txtt/m/n/10 get_max_baseline() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.
 access_ms.AccessMS
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 157--159
+[60]
+Underfull \hbox (badness 10000) in paragraph at lines 162--164
 []\T1/txtt/m/n/10 get_model_nomodel_chan() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair
 -
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 160--161
+Underfull \hbox (badness 10000) in paragraph at lines 165--166
 []\T1/txtt/m/n/10 get_nbaseline() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.acc
 ess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 161--163
+Underfull \hbox (badness 10000) in paragraph at lines 166--168
 []\T1/txtt/m/n/10 get_num_antenna() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.a
 ccess_ms.AccessMS
  []
 
-[58]
-Underfull \hbox (badness 10000) in paragraph at lines 163--165
+
+Underfull \hbox (badness 10000) in paragraph at lines 168--170
 []\T1/txtt/m/n/10 get_num_channels() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.
 access_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 165--167
+Underfull \hbox (badness 10000) in paragraph at lines 170--172
 []\T1/txtt/m/n/10 get_num_timestamps() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 167--169
+Underfull \hbox (badness 10000) in paragraph at lines 172--173
+[]\T1/txtt/m/n/10 get_obs_date() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.acce
+ss_ms.AccessMS
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 173--175
 []\T1/txtt/m/n/10 get_obs_startend_time() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 169--171
+Underfull \hbox (badness 10000) in paragraph at lines 175--177
 []\T1/txtt/m/n/10 get_observatory_loc() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 171--173
+Underfull \hbox (badness 10000) in paragraph at lines 177--179
+[]\T1/txtt/m/n/10 get_OBSID_for_timerange() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in 
+mod-ule pair-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 179--181
 []\T1/txtt/m/n/10 get_OBSID_from_metafits() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in 
 mod-ule pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 173--174
+Underfull \hbox (badness 10000) in paragraph at lines 181--182
 []\T1/txtt/m/n/10 get_OBSID_from_ms() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod-ul
 e pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 175--176
+Underfull \hbox (badness 10000) in paragraph at lines 183--184
 []\T1/txtt/m/n/10 get_phasecenter() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.a
 ccess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 176--178
+Underfull \hbox (badness 10000) in paragraph at lines 184--186
 []\T1/txtt/m/n/10 get_phasecenter_parang() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair
 -
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 178--180
+Underfull \hbox (badness 10000) in paragraph at lines 187--189
 []\T1/txtt/m/n/10 get_scan_startend_time() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair
 -
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 180--181
+Underfull \hbox (badness 10000) in paragraph at lines 189--190
 []\T1/txtt/m/n/10 get_timestamps() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.ac
 cess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 181--183
+Underfull \hbox (badness 10000) in paragraph at lines 190--192
 []\T1/txtt/m/n/10 get_timestamps_in_mjdsecs() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 p
 air-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 183--185
+Underfull \hbox (badness 10000) in paragraph at lines 192--194
 []\T1/txtt/m/n/10 get_unflag_chan() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.a
 ccess_ms.AccessMS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 185--187
+Underfull \hbox (badness 10000) in paragraph at lines 194--196
 []\T1/txtt/m/n/10 get_unflag_times_mjd() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 187--189
+Underfull \hbox (badness 10000) in paragraph at lines 196--198
 []\T1/txtt/m/n/10 get_unflag_timestamps() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 193--195
+Underfull \hbox (badness 10000) in paragraph at lines 202--204
 []\T1/txtt/m/n/10 image_source_true_loc() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 193--195
+Underfull \hbox (badness 10000) in paragraph at lines 202--204
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 196--198
+Underfull \hbox (badness 10000) in paragraph at lines 205--207
 []\T1/txtt/m/n/10 IMSTAT_record() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 196--198
+Underfull \hbox (badness 10000) in paragraph at lines 205--207
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 198--200
+Underfull \hbox (badness 10000) in paragraph at lines 207--209
 []\T1/txtt/m/n/10 initial_bpass() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 198--200
+Underfull \hbox (badness 10000) in paragraph at lines 207--209
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 200--202
+Underfull \hbox (badness 10000) in paragraph at lines 209--211
 []\T1/txtt/m/n/10 IntensitySelfcal \T1/qtm/m/n/10 (\T1/qtm/m/it/10 class in pai
 r-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 207--209
+Underfull \hbox (badness 10000) in paragraph at lines 216--218
 []\T1/txtt/m/n/10 make_crosshand_phase_caltable() \T1/qtm/m/n/10 (\T1/qtm/m/it/
 10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 207--209
+Underfull \hbox (badness 10000) in paragraph at lines 216--218
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 209--210
+Underfull \hbox (badness 10000) in paragraph at lines 218--219
 []\T1/txtt/m/n/10 mjdsec_to_timestamp() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod-
 ule pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 218--220
+Underfull \hbox (badness 10000) in paragraph at lines 219--220
+[]\T1/txtt/m/n/10 model_imported() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.ac
+cess_ms.AccessMS
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 228--230
 []\T1/txtt/m/n/10 move_phasecenter_to_source() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 
 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 220--222
+Underfull \hbox (badness 10000) in paragraph at lines 230--232
 []\T1/txtt/m/n/10 move_phasecenter_to_sun() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pai
 r-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 224--226
+Underfull \hbox (badness 10000) in paragraph at lines 234--236
 []\T1/txtt/m/n/10 mwa_solar_fluxcal() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 224--226
+Underfull \hbox (badness 10000) in paragraph at lines 234--236
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 229--231
+Underfull \hbox (badness 10000) in paragraph at lines 239--241
 []\T1/txtt/m/n/10 negative_box() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 229--231
+Underfull \hbox (badness 10000) in paragraph at lines 239--241
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 231--233
+Underfull \hbox (badness 10000) in paragraph at lines 241--243
 []\T1/txtt/m/n/10 negative_box() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 231--233
+Underfull \hbox (badness 10000) in paragraph at lines 241--243
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 233--234
+Underfull \hbox (badness 10000) in paragraph at lines 243--244
 []\T1/txtt/m/n/10 num_pixels() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.basic_
 func.ImageBasic
  []
 
+[61]
+Underfull \hbox (badness 10000) in paragraph at lines 261--263
+[]\T1/txtt/m/n/10 paircars_instance_runner() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in
+ mod-ule pair-
+ []
 
-Underfull \hbox (badness 10000) in paragraph at lines 251--253
+
+Underfull \hbox (badness 10000) in paragraph at lines 263--265
 []\T1/txtt/m/n/10 pol_model_threshold() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 251--253
+Underfull \hbox (badness 10000) in paragraph at lines 263--265
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 254--256
+Underfull \hbox (badness 10000) in paragraph at lines 266--268
 []\T1/txtt/m/n/10 polselfcal_iteration() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 254--256
+Underfull \hbox (badness 10000) in paragraph at lines 266--268
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 259--261
+Underfull \hbox (badness 10000) in paragraph at lines 271--273
 []\T1/txtt/m/n/10 radec_con_deg_to_hhmmss() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in 
 mod-ule pair-
  []
 
-[59]
-Underfull \hbox (badness 10000) in paragraph at lines 263--265
+
+Underfull \hbox (badness 10000) in paragraph at lines 275--277
 []\T1/txtt/m/n/10 reduce_sigma() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 263--265
+Underfull \hbox (badness 10000) in paragraph at lines 275--277
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 265--267
+Underfull \hbox (badness 10000) in paragraph at lines 277--279
 []\T1/txtt/m/n/10 reduce_sigma() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 265--267
+Underfull \hbox (badness 10000) in paragraph at lines 277--279
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 267--269
+Underfull \hbox (badness 10000) in paragraph at lines 279--281
 []\T1/txtt/m/n/10 remove_model_negative() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 267--269
+Underfull \hbox (badness 10000) in paragraph at lines 279--281
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 269--271
+Underfull \hbox (badness 10000) in paragraph at lines 281--283
 []\T1/txtt/m/n/10 remove_model_negative() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 269--271
+Underfull \hbox (badness 10000) in paragraph at lines 281--283
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 274--276
+Underfull \hbox (badness 10000) in paragraph at lines 286--288
 []\T1/txtt/m/n/10 selfcal_iteration() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 274--276
+Underfull \hbox (badness 10000) in paragraph at lines 286--288
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 276--278
+Underfull \hbox (badness 10000) in paragraph at lines 288--290
 []\T1/txtt/m/n/10 shift_phasecenter() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 276--278
+Underfull \hbox (badness 10000) in paragraph at lines 288--290
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 278--280
+Underfull \hbox (badness 10000) in paragraph at lines 290--292
 []\T1/txtt/m/n/10 solarcir_pol_minimise() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 278--280
+Underfull \hbox (badness 10000) in paragraph at lines 290--292
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 280--282
+Underfull \hbox (badness 10000) in paragraph at lines 292--294
 []\T1/txtt/m/n/10 solarlin_pol_minimise() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 280--282
+Underfull \hbox (badness 10000) in paragraph at lines 292--294
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 283--285
+Underfull \hbox (badness 10000) in paragraph at lines 295--297
 []\T1/txtt/m/n/10 subtract_background_sources() \T1/qtm/m/n/10 (\T1/qtm/m/it/10
  pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 283--285
+Underfull \hbox (badness 10000) in paragraph at lines 295--297
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 285--287
+Underfull \hbox (badness 10000) in paragraph at lines 297--299
 []\T1/txtt/m/n/10 subtract_leakage_surface() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pa
 ir-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 285--287
+Underfull \hbox (badness 10000) in paragraph at lines 297--299
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 287--289
+Underfull \hbox (badness 10000) in paragraph at lines 299--301
 []\T1/txtt/m/n/10 subtract_stokesV_solar_leakage_surface()
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 287--289
+Underfull \hbox (badness 10000) in paragraph at lines 299--301
 \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.fullpol_selfcal_LTS.PolSelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 292--293
+Underfull \hbox (badness 10000) in paragraph at lines 304--305
 []\T1/txtt/m/n/10 timestamp_to_mjdsec() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod-
 ule pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 296--298
+Underfull \hbox (badness 10000) in paragraph at lines 308--310
 []\T1/txtt/m/n/10 uncorrect_for_single_beam_jones() \T1/qtm/m/n/10 (\T1/qtm/m/i
 t/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 296--298
+Underfull \hbox (badness 10000) in paragraph at lines 308--310
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Overfull \hbox (11.6218pt too wide) in paragraph at lines 298--300
+Overfull \hbox (11.6218pt too wide) in paragraph at lines 310--312
 []\T1/txtt/m/n/10 uncorrect_visibility_model_single_beam_jones()
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 298--300
+Underfull \hbox (badness 10000) in paragraph at lines 310--312
 \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.fullpol_selfcal_LTS.PolSelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 300--302
+Underfull \hbox (badness 10000) in paragraph at lines 312--314
 []\T1/txtt/m/n/10 uncorrect_visibility_single_beam_jones()
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 300--302
+Underfull \hbox (badness 10000) in paragraph at lines 312--314
 \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-cars.fullpol_selfcal_LTS.PolSelfcal
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 302--303
+Underfull \hbox (badness 10000) in paragraph at lines 314--315
 []\T1/txtt/m/n/10 update_mwa_obsids() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 in mod-ul
 e pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 306--308
+Underfull \hbox (badness 10000) in paragraph at lines 318--320
 []\T1/txtt/m/n/10 wsclean_to_casaimage() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 306--308
+Underfull \hbox (badness 10000) in paragraph at lines 318--320
 \T1/qtm/m/it/10 cars.fullpol_selfcal_LTS.PolSelfcal method\T1/qtm/m/n/10 ),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 308--310
+Underfull \hbox (badness 10000) in paragraph at lines 320--322
 []\T1/txtt/m/n/10 wsclean_to_casaimage() \T1/qtm/m/n/10 (\T1/qtm/m/it/10 pair-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 308--310
+Underfull \hbox (badness 10000) in paragraph at lines 320--322
 \T1/qtm/m/it/10 cars.intensity_selfcal_LTS.IntensitySelfcal
  []
 
-[60]) (./p-aircars.aux)
+[62]) (./p-aircars.aux)
 Package rerunfilecheck Info: File `p-aircars.out' has not changed.
-(rerunfilecheck)             Checksum: 28DDBB34C65B8B935C0D71316EE82BBC;6637.
+(rerunfilecheck)             Checksum: F1926841D831D9518F01298EDF2E657A;6637.
  ) 
 Here is how much of TeX's memory you used:
- 14380 strings out of 478599
- 219631 string characters out of 5854099
- 561464 words of memory out of 5000000
- 31563 multiletter control sequences out of 15000+600000
+ 14400 strings out of 478599
+ 220217 string characters out of 5854099
+ 561916 words of memory out of 5000000
+ 31572 multiletter control sequences out of 15000+600000
  454794 words of font info for 68 fonts, out of 8000000 for 9000
  1142 hyphenation exceptions out of 8191
- 72i,12n,80p,2417b,682s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 72i,12n,80p,2590b,756s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/tex-gyre/q-ec.enc}{/usr/l
 ocal/texlive/2021/texmf-dist/fonts/enc/dvips/tex-gyre/q-ts1.enc}</usr/local/tex
 live/2021/texmf-dist/fonts/type1/public/tex-gyre/qhvb.pfb></usr/local/texlive/2
@@ -1764,10 +1798,10 @@ pe1/public/tex-gyre/qtmri.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/p
 ublic/txfonts/t1xbtt.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public
 /txfonts/t1xtt.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/txfon
 ts/t1xtt.pfb>
-Output written on p-aircars.pdf (64 pages, 1546557 bytes).
+Output written on p-aircars.pdf (66 pages, 1554257 bytes).
 PDF statistics:
- 1018 PDF objects out of 1200 (max. 8388607)
- 924 compressed objects within 10 object streams
- 334 named destinations out of 1000 (max. 500000)
+ 1048 PDF objects out of 1200 (max. 8388607)
+ 952 compressed objects within 10 object streams
+ 345 named destinations out of 1000 (max. 500000)
  362 words of extra memory for PDF output out of 10000 (max. 10000000)
 

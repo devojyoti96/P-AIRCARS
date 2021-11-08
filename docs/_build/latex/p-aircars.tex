@@ -61,7 +61,7 @@
 
 
 \title{P\sphinxhyphen{}AIRCARS}
-\date{Oct 19, 2021}
+\date{Nov 09, 2021}
 \release{1.0.0}
 \author{Devojyoti Kansabanik}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -985,9 +985,11 @@ str
 \index{get\_max\_baseline() (paircars.access\_ms.AccessMS method)@\spxentry{get\_max\_baseline()}\spxextra{paircars.access\_ms.AccessMS method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.access_ms.AccessMS.get_max_baseline}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{get\_max\_baseline}}}{}{}
+\phantomsection\label{\detokenize{paircars:paircars.access_ms.AccessMS.get_max_baseline}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{get\_max\_baseline}}}{\emph{\DUrole{n}{includeflag}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
 \sphinxAtStartPar
 Get the maximum baseline in meter
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool
 \begin{quote}\begin{description}
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
@@ -1095,6 +1097,47 @@ Number of timestamps
 \item[{Return type}] \leavevmode
 \sphinxAtStartPar
 int
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_obs\_date() (paircars.access\_ms.AccessMS method)@\spxentry{get\_obs\_date()}\spxextra{paircars.access\_ms.AccessMS method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.access_ms.AccessMS.get_obs_date}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{get\_obs\_date}}}{\emph{\DUrole{n}{format}\DUrole{o}{=}\DUrole{default_value}{0}}}{}
+\sphinxAtStartPar
+Function to get observation date
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{format}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} \begin{description}
+\item[{Date string format}] \leavevmode
+\sphinxAtStartPar
+0: ‘YYYY/MM/DD’
+
+\sphinxAtStartPar
+1: ‘YYYY\sphinxhyphen{}MM\sphinxhyphen{}DD’
+
+\sphinxAtStartPar
+2: ‘YYYY\_MM\_DD’
+
+\end{description}
+
+
+\item[{Returns}] \leavevmode
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{str} \textendash{} Observation start date
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{str} \textendash{} Observation end date
+
+\end{itemize}
+
 
 \end{description}\end{quote}
 
@@ -1329,6 +1372,17 @@ combine = ‘’, A list of parang for all timestamps
 
 \end{fulllineitems}
 
+\index{get\_pol() (paircars.access\_ms.AccessMS method)@\spxentry{get\_pol()}\spxextra{paircars.access\_ms.AccessMS method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.access_ms.AccessMS.get_pol}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{get\_pol}}}{}{}
+\sphinxAtStartPar
+Function to get number of polarisations
+:returns: Number of correlation products
+:rtype: int
+
+\end{fulllineitems}
+
 \index{get\_scan\_startend\_time() (paircars.access\_ms.AccessMS method)@\spxentry{get\_scan\_startend\_time()}\spxextra{paircars.access\_ms.AccessMS method}}
 
 \begin{fulllineitems}
@@ -1499,19 +1553,36 @@ Make the antenna addition list splited in number of bins
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{antenna\_list\_file}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the file to save antenna list (Keep blank to avoid save)
+\sphinxstyleliteralstrong{\sphinxupquote{antenna\_list\_file}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the file to save antenna list. If an antenna list file given, antenna list will be loaded from that file
 
 \end{itemize}
 
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
-Lists of antennas to be added in steps
-
-\item[{Return type}] \leavevmode
+\begin{itemize}
+\item {} 
 \sphinxAtStartPar
-list
+\sphinxstyleemphasis{list} \textendash{} Lists of antennas to be added in steps
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{int} \textendash{} Number of antenna
+
+\end{itemize}
+
 
 \end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{model\_imported() (paircars.access\_ms.AccessMS method)@\spxentry{model\_imported()}\spxextra{paircars.access\_ms.AccessMS method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.access_ms.AccessMS.model_imported}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{model\_imported}}}{}{}
+\sphinxAtStartPar
+Fuction to check whether model imported or model column exists or not
+:returns: True if model exists and False if does not
+:rtype: bool
 
 \end{fulllineitems}
 
@@ -1728,22 +1799,29 @@ For details read the documentation of quality\_factor and safety\_factor
 \index{ImageBasic (class in paircars.basic\_func)@\spxentry{ImageBasic}\spxextra{class in paircars.basic\_func}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{ImageBasic}}}{\emph{\DUrole{n}{msname}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{ImageBasic}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{includeflag}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
 \sphinxAtStartPar
 Bases: \sphinxcode{\sphinxupquote{object}}
 
 \sphinxAtStartPar
 Generic class to calculate different imaging related parameters
 \begin{quote}\begin{description}
-\item[{Parameters}] \leavevmode
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{msname}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the measurement set
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{includeflag}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Include flag data or not whilw calculating maximum baseline
+
+\end{itemize}
 
 \end{description}\end{quote}
 \index{calc\_calib\_uvrange() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_calib\_uvrange()}\spxextra{paircars.basic\_func.ImageBasic method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_calib_uvrange}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_calib\_uvrange}}}{\emph{\DUrole{n}{max\_angular\_scale}}, \emph{\DUrole{n}{uvbin}\DUrole{o}{=}\DUrole{default_value}{10}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_calib_uvrange}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_calib\_uvrange}}}{\emph{\DUrole{n}{max\_angular\_scale}}, \emph{\DUrole{n}{uvbin}\DUrole{o}{=}\DUrole{default_value}{10}}, \emph{\DUrole{n}{includeflag}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
 \sphinxAtStartPar
 This function calculate the uvrange to be used for calibration.
 \begin{quote}\begin{description}
@@ -1755,6 +1833,10 @@ This function calculate the uvrange to be used for calibration.
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{uvbin}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Binning in uv\sphinxhyphen{}lambda
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{includeflag}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Include flag data or not whilw calculating maximum baseline
 
 \end{itemize}
 
@@ -1821,9 +1903,11 @@ float
 \index{calc\_max\_baseline() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_max\_baseline()}\spxextra{paircars.basic\_func.ImageBasic method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_max_baseline}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_max\_baseline}}}{}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_max_baseline}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_max\_baseline}}}{\emph{\DUrole{n}{includeflag}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
 \sphinxAtStartPar
 Get the maximum baseline in meter
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool
 \begin{quote}\begin{description}
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
@@ -1832,6 +1916,35 @@ Maximum baseline length in meter
 \item[{Return type}] \leavevmode
 \sphinxAtStartPar
 float
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{calc\_max\_uvw() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_max\_uvw()}\spxextra{paircars.basic\_func.ImageBasic method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_max_uvw}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_max\_uvw}}}{}{}
+\sphinxAtStartPar
+Get the maximum u,v,w
+\begin{quote}\begin{description}
+\item[{Returns}] \leavevmode
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{float} \textendash{} Maximum U
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{float} \textendash{} Maximum V
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{float} \textendash{} Maximum W
+
+\end{itemize}
+
 
 \end{description}\end{quote}
 
@@ -1863,9 +1976,13 @@ float
 \index{calc\_suntaper() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_suntaper()}\spxextra{paircars.basic\_func.ImageBasic method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_suntaper}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_suntaper}}}{}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_suntaper}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_suntaper}}}{\emph{\DUrole{n}{uvbin}\DUrole{o}{=}\DUrole{default_value}{10}}, \emph{\DUrole{n}{includeflag}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
 \sphinxAtStartPar
 Function return uv\sphinxhyphen{}taper value to treat Sun as a point source of size 16 arcmin
+:param uvbin: Binning in uv\sphinxhyphen{}lambda
+:type uvbin: float
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool
 \begin{quote}\begin{description}
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
@@ -1882,9 +1999,13 @@ str
 \index{calc\_uvtaper() (paircars.basic\_func.ImageBasic method)@\spxentry{calc\_uvtaper()}\spxextra{paircars.basic\_func.ImageBasic method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_uvtaper}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_uvtaper}}}{}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.ImageBasic.calc_uvtaper}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{calc\_uvtaper}}}{\emph{\DUrole{n}{uvbin}\DUrole{o}{=}\DUrole{default_value}{10}}, \emph{\DUrole{n}{includeflag}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
 \sphinxAtStartPar
 Function return uv\sphinxhyphen{}taper value
+:param uvbin: Binning in uv\sphinxhyphen{}lambda
+:type uvbin: float
+:param includeflag: Include flag data or not whilw calculating maximum baseline
+:type includeflag: bool
 \begin{quote}\begin{description}
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
@@ -2116,23 +2237,22 @@ float
 
 \end{fulllineitems}
 
-\index{casa\_instance\_runner() (in module paircars.basic\_func)@\spxentry{casa\_instance\_runner()}\spxextra{in module paircars.basic\_func}}
+\index{check\_internet() (in module paircars.basic\_func)@\spxentry{check\_internet()}\spxextra{in module paircars.basic\_func}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.casa_instance_runner}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{casa\_instance\_runner}}}{\emph{\DUrole{n}{cmd}}, \emph{\DUrole{n}{basedir}}, \emph{\DUrole{n}{screen\_name}}, \emph{\DUrole{n}{finished\_touch\_file}}, \emph{\DUrole{n}{jobid}}, \emph{\DUrole{n}{prefix\_cmds}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.check_internet}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{check\_internet}}}{\emph{\DUrole{n}{url}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}}{}
 \sphinxAtStartPar
-Function to run a casa instance
+Function to check internet connection
+:param url: An URL to check internet connectivity. (default : \sphinxurl{https://www.google.com})
+:type url: str
 \begin{quote}\begin{description}
-\item[{Parameters}] \leavevmode\begin{itemize}
-\item {} 
+\item[{Returns}] \leavevmode
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{cmd}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Command to run
+Whether internet connection is available or not
 
-\item {} 
+\item[{Return type}] \leavevmode
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{screen\_name}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the screen
-
-\end{itemize}
+bool
 
 \end{description}\end{quote}
 
@@ -2267,6 +2387,37 @@ str
 
 \end{fulllineitems}
 
+\index{get\_OBSID\_for\_timerange() (in module paircars.basic\_func)@\spxentry{get\_OBSID\_for\_timerange()}\spxextra{in module paircars.basic\_func}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.get_OBSID_for_timerange}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{get\_OBSID\_for\_timerange}}}{\emph{\DUrole{n}{timerange}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{caldata}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{project\_ID}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}G0002\textquotesingle{}}}}{}
+\sphinxAtStartPar
+Function to get MWA observation IDs for a given time range
+:param timerange: Time range to search, format ‘yy0/mm0/dd0/hh0:mm0:ss0.ff0\textasciitilde{}yy1/mm1/dd1/hh1:mm1:ss1.ff1,yy2/mm2/dd2/hh2:mm2:ss2.ff2\textasciitilde{}….’
+:type timerange: str
+:param caldata: Whether search for calibrator observations also or not
+:type caldata: bool
+:param project\_ID: Project ID to search data
+:type project\_ID: str
+\begin{quote}\begin{description}
+\item[{Returns}] \leavevmode
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{list} \textendash{} OBSID list
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{list} \textendash{} Calibration OBSID list
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 \index{get\_OBSID\_from\_metafits() (in module paircars.basic\_func)@\spxentry{get\_OBSID\_from\_metafits()}\spxextra{in module paircars.basic\_func}}
 
 \begin{fulllineitems}
@@ -2370,12 +2521,12 @@ dict
 
 \end{fulllineitems}
 
-\index{get\_final\_beam() (in module paircars.basic\_func)@\spxentry{get\_final\_beam()}\spxextra{in module paircars.basic\_func}}
+\index{get\_final\_psf() (in module paircars.basic\_func)@\spxentry{get\_final\_psf()}\spxextra{in module paircars.basic\_func}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.basic_func.get_final_beam}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{get\_final\_beam}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{imager}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}wsclean\textquotesingle{}}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.get_final_psf}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{get\_final\_psf}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{imager}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}wsclean\textquotesingle{}}}, \emph{\DUrole{n}{weight}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}briggs\textquotesingle{}}}, \emph{\DUrole{n}{robust}\DUrole{o}{=}\DUrole{default_value}{0.5}}}{}
 \sphinxAtStartPar
-Function to get a common final beam parameters
+Function to get a common final psf parameters
 \begin{quote}\begin{description}
 \item[{Parameters}] \leavevmode\begin{itemize}
 \item {} 
@@ -2385,6 +2536,14 @@ Function to get a common final beam parameters
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{imager}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Imager, ‘wsclean’ or ‘CASA’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weight}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Visibility weighting for imaging
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{robust}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Robust parameter for ‘briggs’ weighting
 
 \end{itemize}
 
@@ -2461,9 +2620,15 @@ Convert CASA MJD seceonds to CASA timestamp
 \sphinxstyleliteralstrong{\sphinxupquote{format}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} \begin{description}
 \item[{Datetime string format}] \leavevmode
 \sphinxAtStartPar
-0 : ‘YYYY/MM/DD/hh:mm:ss’
+0: ‘YYYY/MM/DD/hh:mm:ss’
+
+\sphinxAtStartPar
 1: ‘YYYY\sphinxhyphen{}MM\sphinxhyphen{}DDThh:mm:ss’
+
+\sphinxAtStartPar
 2: ‘YYYY\sphinxhyphen{}MM\sphinxhyphen{}DD hh:mm:ss’
+
+\sphinxAtStartPar
 3: ‘YYYY\_MM\_DD\_hh\_mm\_ss’
 
 \end{description}
@@ -2512,6 +2677,40 @@ Output gaintable name
 \item[{Return type}] \leavevmode
 \sphinxAtStartPar
 str
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{paircars\_instance\_runner() (in module paircars.basic\_func)@\spxentry{paircars\_instance\_runner()}\spxextra{in module paircars.basic\_func}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.basic_func.paircars_instance_runner}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.basic\_func.}}\sphinxbfcode{\sphinxupquote{paircars\_instance\_runner}}}{\emph{\DUrole{n}{cmd}}, \emph{\DUrole{n}{basedir}}, \emph{\DUrole{n}{paircars\_basedir}}, \emph{\DUrole{n}{screen\_name}}, \emph{\DUrole{n}{finished\_touch\_file}}, \emph{\DUrole{n}{jobid}}, \emph{\DUrole{n}{prefix\_cmds}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}}{}
+\sphinxAtStartPar
+Function to run a P\sphinxhyphen{}AIRCARS instance
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cmd}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Command to run
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{basedir}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Base directory of the measurement set
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{paircars\_basedir}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Base directory for a particular P\sphinxhyphen{}AIRCARS job
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{screen\_name}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the screen
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{finished\_touch\_file}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Hidden file to generate at the base directory after finishing the instance
+
+\end{itemize}
 
 \end{description}\end{quote}
 
@@ -2616,9 +2815,15 @@ Convert timestamp to mjd second
 \sphinxstyleliteralstrong{\sphinxupquote{format}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} \begin{description}
 \item[{Datetime string format}] \leavevmode
 \sphinxAtStartPar
-0 : ‘YYYY/MM/DD/hh:mm:ss’
+0: ‘YYYY/MM/DD/hh:mm:ss’
+
+\sphinxAtStartPar
 1: ‘YYYY\sphinxhyphen{}MM\sphinxhyphen{}DDThh:mm:ss’
+
+\sphinxAtStartPar
 2: ‘YYYY\sphinxhyphen{}MM\sphinxhyphen{}DD hh:mm:ss’
+
+\sphinxAtStartPar
 3: ‘YYYY\_MM\_DD\_hh\_mm\_ss’
 
 \end{description}
@@ -2797,7 +3002,38 @@ Function to obtain normalised cross correlation amplitude
 
 
 \subsection{paircars.flagger}
-\label{\detokenize{paircars:module-paircars.flagger}}\label{\detokenize{paircars:paircars-flagger}}\index{module@\spxentry{module}!paircars.flagger@\spxentry{paircars.flagger}}\index{paircars.flagger@\spxentry{paircars.flagger}!module@\spxentry{module}}\index{do\_uvsub\_ankflag() (in module paircars.flagger)@\spxentry{do\_uvsub\_ankflag()}\spxextra{in module paircars.flagger}}
+\label{\detokenize{paircars:module-paircars.flagger}}\label{\detokenize{paircars:paircars-flagger}}\index{module@\spxentry{module}!paircars.flagger@\spxentry{paircars.flagger}}\index{paircars.flagger@\spxentry{paircars.flagger}!module@\spxentry{module}}\index{casa\_autoflag() (in module paircars.flagger)@\spxentry{casa\_autoflag()}\spxextra{in module paircars.flagger}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.flagger.casa_autoflag}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.flagger.}}\sphinxbfcode{\sphinxupquote{casa\_autoflag}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{mode}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}rflag\textquotesingle{}}}, \emph{\DUrole{n}{datacolumn}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}corrected\textquotesingle{}}}, \emph{\DUrole{n}{sigma\_thresh}\DUrole{o}{=}\DUrole{default_value}{5.0}}, \emph{\DUrole{n}{flagbackup}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
+\sphinxAtStartPar
+Function to perform CASA flag
+:param msname: Name of the measurement set
+:type msname: str
+:param mode: CASA flag mode, ‘rflag’ or ‘tfcrop’
+:type mode: str
+:param datacolumn: Datacolumn to flag, ‘data’, ‘corrected’ or ‘residual’
+:type datacolumn: str
+:param sigma\_thresh: Flagging threshold
+:type sigma\_thresh: float
+:param flagbackup: Backup flags or not
+:type flagbackup: bool
+:param verbose: Verbose output
+:type verbose: bool
+\begin{quote}\begin{description}
+\item[{Returns}] \leavevmode
+\sphinxAtStartPar
+Success code, 0 or 1
+
+\item[{Return type}] \leavevmode
+\sphinxAtStartPar
+int
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{do\_uvsub\_ankflag() (in module paircars.flagger)@\spxentry{do\_uvsub\_ankflag()}\spxextra{in module paircars.flagger}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{paircars:paircars.flagger.do_uvsub_ankflag}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.flagger.}}\sphinxbfcode{\sphinxupquote{do\_uvsub\_ankflag}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{model}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{nthread}\DUrole{o}{=}\DUrole{default_value}{0}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{flagbackup}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{extendpols}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{chantime\_minfrac}\DUrole{o}{=}\DUrole{default_value}{0.5}}, \emph{\DUrole{n}{casaflag}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}}{}
@@ -2980,6 +3216,32 @@ float
 
 \end{fulllineitems}
 
+\index{flag\_zeros() (in module paircars.flagger)@\spxentry{flag\_zeros()}\spxextra{in module paircars.flagger}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.flagger.flag_zeros}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{paircars.flagger.}}\sphinxbfcode{\sphinxupquote{flag\_zeros}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{flagbackup}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{force}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
+\sphinxAtStartPar
+Function to flag zero data
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{msname}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the measurement set
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{flagbackup}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Backup flags or not
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{force}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Force to flag even if the header saying flagging is already done
+
+\end{itemize}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 \index{get\_bad\_ants() (in module paircars.flagger)@\spxentry{get\_bad\_ants()}\spxextra{in module paircars.flagger}}
 
 \begin{fulllineitems}
@@ -3016,7 +3278,7 @@ str
 \label{\detokenize{paircars:module-paircars.fullpol_selfcal_LTS}}\label{\detokenize{paircars:paircars-fullpol-selfcal-lts}}\index{module@\spxentry{module}!paircars.fullpol\_selfcal\_LTS@\spxentry{paircars.fullpol\_selfcal\_LTS}}\index{paircars.fullpol\_selfcal\_LTS@\spxentry{paircars.fullpol\_selfcal\_LTS}!module@\spxentry{module}}\index{PolSelfcal (class in paircars.fullpol\_selfcal\_LTS)@\spxentry{PolSelfcal}\spxextra{class in paircars.fullpol\_selfcal\_LTS}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{paircars.fullpol\_selfcal\_LTS.}}\sphinxbfcode{\sphinxupquote{PolSelfcal}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{metafits}}, \emph{\DUrole{n}{maximum\_emission\_scale}}, \emph{\DUrole{n}{largest\_scale}\DUrole{o}{=}\DUrole{default_value}{12}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{savelog}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{use\_wsclean}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{paircars.fullpol\_selfcal\_LTS.}}\sphinxbfcode{\sphinxupquote{PolSelfcal}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{metafits}}, \emph{\DUrole{n}{maximum\_emission\_scale}}, \emph{\DUrole{n}{num\_pixel\_in\_psf}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{largest\_scale}\DUrole{o}{=}\DUrole{default_value}{12}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{savelog}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{use\_wsclean}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
 \sphinxAtStartPar
 Bases: \sphinxcode{\sphinxupquote{object}}
 
@@ -3031,6 +3293,10 @@ Generic class to perform polarisation self\sphinxhyphen{}calibration (Using Andr
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{metafits}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the MWA metafits file
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{num\_pixel\_in\_psf}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of pixels side one point\sphinxhyphen{}spread\sphinxhyphen{}funtion
 
 \item {} 
 \sphinxAtStartPar
@@ -3446,6 +3712,10 @@ Function to calculate minimum number of selfcal iteration based on safety standa
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleemphasis{float} \textendash{} Fraction change in flux for convergence
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{float} \textendash{} Minimum value of allowed sigma
 
 \end{itemize}
 
@@ -4098,7 +4368,7 @@ Function to put rms based threshold on polarisation model
 \index{polselfcal\_iteration() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{polselfcal\_iteration()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal.polselfcal_iteration}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{polselfcal\_iteration}}}{\emph{\DUrole{n}{num\_iter}}, \emph{\DUrole{n}{rms\_thresh}}, \emph{\DUrole{n}{mask\_str}}, \emph{\DUrole{n}{sigma}}, \emph{\DUrole{n}{maskfile}}, \emph{\DUrole{n}{antenna\_to\_use}}, \emph{\DUrole{n}{startmodel}}, \emph{\DUrole{n}{startmask}}, \emph{\DUrole{n}{want\_auto\_masking}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{TB\_limit}\DUrole{o}{=}\DUrole{default_value}{\sphinxhyphen{} 1}}, \emph{\DUrole{n}{solar\_imaging}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{stokes}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{use\_ankflagger}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{do\_flag}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{poldistortion\_correction}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{poldistortion\_type}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}poldistortion\textquotesingle{}}}, \emph{\DUrole{n}{crossphase}\DUrole{o}{=}\DUrole{default_value}{\sphinxhyphen{} 1}}, \emph{\DUrole{n}{poldistortion\_matrix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}UH\textquotesingle{}}}, \emph{\DUrole{n}{do\_solarqu\_cor}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{box\_width}\DUrole{o}{=}\DUrole{default_value}{3}}, \emph{\DUrole{n}{previous\_image}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{previous\_model}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{calibrator\_caltable}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}, \emph{\DUrole{n}{maskregion}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{quvcor\_stokes}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}QUV\textquotesingle{}}}, \emph{\DUrole{n}{polmodel\_threshold}\DUrole{o}{=}\DUrole{default_value}{\sphinxhyphen{} 1}}, \emph{\DUrole{n}{cpus}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{absmem}\DUrole{o}{=}\DUrole{default_value}{2}}, \emph{\DUrole{n}{wlayers}\DUrole{o}{=}\DUrole{default_value}{1}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal.polselfcal_iteration}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{polselfcal\_iteration}}}{\emph{\DUrole{n}{num\_iter}}, \emph{\DUrole{n}{rms\_thresh}}, \emph{\DUrole{n}{mask\_str}}, \emph{\DUrole{n}{sigma}}, \emph{\DUrole{n}{maskfile}}, \emph{\DUrole{n}{antenna\_to\_use}}, \emph{\DUrole{n}{startmodel}}, \emph{\DUrole{n}{startmask}}, \emph{\DUrole{n}{want\_auto\_masking}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{TB\_limit}\DUrole{o}{=}\DUrole{default_value}{\sphinxhyphen{} 1}}, \emph{\DUrole{n}{solar\_imaging}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{stokes}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{use\_ankflagger}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{do\_flag}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{poldistortion\_correction}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{poldistortion\_type}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}poldistortion\textquotesingle{}}}, \emph{\DUrole{n}{crossphase}\DUrole{o}{=}\DUrole{default_value}{\sphinxhyphen{} 1}}, \emph{\DUrole{n}{poldistortion\_matrix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}UH\textquotesingle{}}}, \emph{\DUrole{n}{do\_solarqu\_cor}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{box\_width}\DUrole{o}{=}\DUrole{default_value}{3}}, \emph{\DUrole{n}{previous\_image}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{previous\_model}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{calibrator\_caltable}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}, \emph{\DUrole{n}{maskregion}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{quvcor\_stokes}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}QUV\textquotesingle{}}}, \emph{\DUrole{n}{polmodel\_threshold}\DUrole{o}{=}\DUrole{default_value}{\sphinxhyphen{} 1}}, \emph{\DUrole{n}{cpus}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{absmem}\DUrole{o}{=}\DUrole{default_value}{2}}, \emph{\DUrole{n}{wlayers}\DUrole{o}{=}\DUrole{default_value}{1}}, \emph{\DUrole{n}{weight}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}briggs\textquotesingle{}}}, \emph{\DUrole{n}{robust}\DUrole{o}{=}\DUrole{default_value}{0.5}}}{}
 \sphinxAtStartPar
 Function to perform a polarisation self\sphinxhyphen{}calibration loop, make an image, put the model in the measurement set, and perform the calibration
 \begin{quote}\begin{description}
@@ -4223,6 +4493,14 @@ Function to perform a polarisation self\sphinxhyphen{}calibration loop, make an 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{wlayers}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of w\sphinxhyphen{}stacking layers (For wsclean only)
 
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weight}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{robust}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Robust parameter for briggs weighting, default : 0.5
+
 \end{itemize}
 
 \item[{Returns}] \leavevmode
@@ -4250,7 +4528,7 @@ Function to perform a polarisation self\sphinxhyphen{}calibration loop, make an 
 \index{reduce\_sigma() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{reduce\_sigma()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal.reduce_sigma}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{reduce\_sigma}}}{\emph{\DUrole{n}{imagename}}, \emph{\DUrole{n}{nsigma}}, \emph{\DUrole{n}{sigma\_step}}, \emph{\DUrole{n}{minsigma}}, \emph{\DUrole{n}{pre\_residual}\DUrole{o}{=}\DUrole{default_value}{0.0}}, \emph{\DUrole{n}{residual\_frac}\DUrole{o}{=}\DUrole{default_value}{0.1}}, \emph{\DUrole{n}{stokes\_list}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}I\textquotesingle{}{]}}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal.reduce_sigma}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{reduce\_sigma}}}{\emph{\DUrole{n}{imagename}}, \emph{\DUrole{n}{nsigma}}, \emph{\DUrole{n}{sigma\_step}}, \emph{\DUrole{n}{minsigma}}, \emph{\DUrole{n}{pre\_residual}\DUrole{o}{=}\DUrole{default_value}{0.0}}, \emph{\DUrole{n}{residual\_frac}\DUrole{o}{=}\DUrole{default_value}{0.01}}, \emph{\DUrole{n}{stokes\_list}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}I\textquotesingle{}{]}}}}{}
 \sphinxAtStartPar
 Function to determine whether reduce the CLEAN sigma or not
 \begin{quote}\begin{description}
@@ -4277,7 +4555,7 @@ Function to determine whether reduce the CLEAN sigma or not
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{residual\_frac}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Residual flux fraction to reduce sigma (default : 0.1)
+\sphinxstyleliteralstrong{\sphinxupquote{residual\_frac}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Residual flux fraction to reduce sigma (default : 0.01)
 
 \item {} 
 \sphinxAtStartPar
@@ -4287,11 +4565,17 @@ Function to determine whether reduce the CLEAN sigma or not
 
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
-Reduced value of n\sphinxhyphen{}sigma and median residual fraction if residual flux is more than given percentage (default : 10\%) of the total flux in Stokes I or in all Stokes Q,U,V.
-
-\item[{Return type}] \leavevmode
+\begin{itemize}
+\item {} 
 \sphinxAtStartPar
-float
+\sphinxstyleemphasis{float} \textendash{} Reduced value of n\sphinxhyphen{}sigma and median residual fraction if residual flux is more than given percentage (default : 1\%) of the total flux in Stokes I or in all Stokes Q,U,V.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{float} \textendash{} Median residual flux fraction over all stokes planes
+
+\end{itemize}
+
 
 \end{description}\end{quote}
 
@@ -4426,7 +4710,7 @@ int
 \index{subtract\_background\_sources() (paircars.fullpol\_selfcal\_LTS.PolSelfcal method)@\spxentry{subtract\_background\_sources()}\spxextra{paircars.fullpol\_selfcal\_LTS.PolSelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal.subtract_background_sources}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{subtract\_background\_sources}}}{\emph{\DUrole{n}{stokes}}, \emph{\DUrole{n}{rms\_thresh}}, \emph{\DUrole{n}{sigma}}, \emph{\DUrole{n}{modelthres}}, \emph{\DUrole{n}{maskregion}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{includeregion}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{overwrite}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{modify\_datacolumn}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{cpus}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{absmem}\DUrole{o}{=}\DUrole{default_value}{2}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.fullpol_selfcal_LTS.PolSelfcal.subtract_background_sources}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{subtract\_background\_sources}}}{\emph{\DUrole{n}{stokes}}, \emph{\DUrole{n}{rms\_thresh}}, \emph{\DUrole{n}{sigma}}, \emph{\DUrole{n}{modelthres}}, \emph{\DUrole{n}{maskregion}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{includeregion}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{overwrite}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{modify\_datacolumn}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{cpus}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{absmem}\DUrole{o}{=}\DUrole{default_value}{2}}, \emph{\DUrole{n}{weight}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}briggs\textquotesingle{}}}, \emph{\DUrole{n}{robust}\DUrole{o}{=}\DUrole{default_value}{0.5}}}{}
 \sphinxAtStartPar
 Function to subtract background sources outside the mask region
 \begin{quote}\begin{description}
@@ -4462,6 +4746,14 @@ Function to subtract background sources outside the mask region
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{modelify\_datacolumn}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Modify the datacolumn
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weight}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{robust}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Robust parameter for briggs weighting, default : 0.5
 
 \end{itemize}
 
@@ -4748,7 +5040,7 @@ str
 \label{\detokenize{paircars:module-paircars.intensity_selfcal_LTS}}\label{\detokenize{paircars:paircars-intensity-selfcal-lts}}\index{module@\spxentry{module}!paircars.intensity\_selfcal\_LTS@\spxentry{paircars.intensity\_selfcal\_LTS}}\index{paircars.intensity\_selfcal\_LTS@\spxentry{paircars.intensity\_selfcal\_LTS}!module@\spxentry{module}}\index{IntensitySelfcal (class in paircars.intensity\_selfcal\_LTS)@\spxentry{IntensitySelfcal}\spxextra{class in paircars.intensity\_selfcal\_LTS}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{paircars.intensity\_selfcal\_LTS.}}\sphinxbfcode{\sphinxupquote{IntensitySelfcal}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{metafits}}, \emph{\DUrole{n}{maximum\_emission\_scale}}, \emph{\DUrole{n}{largest\_scale}\DUrole{o}{=}\DUrole{default_value}{12}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{use\_wsclean}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{savelog}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{class }}\sphinxcode{\sphinxupquote{paircars.intensity\_selfcal\_LTS.}}\sphinxbfcode{\sphinxupquote{IntensitySelfcal}}}{\emph{\DUrole{n}{msname}}, \emph{\DUrole{n}{metafits}}, \emph{\DUrole{n}{maximum\_emission\_scale}}, \emph{\DUrole{n}{num\_pixel\_in\_psf}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{largest\_scale}\DUrole{o}{=}\DUrole{default_value}{20}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{use\_wsclean}\DUrole{o}{=}\DUrole{default_value}{True}}, \emph{\DUrole{n}{savelog}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
 \sphinxAtStartPar
 Bases: \sphinxcode{\sphinxupquote{object}}
 
@@ -4763,6 +5055,10 @@ Generic class to perform intensity self\sphinxhyphen{}calibration
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{metafits}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the metafits file
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{num\_pixel\_in\_psf}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of pixels side one point\sphinxhyphen{}spread\sphinxhyphen{}funtion
 
 \item {} 
 \sphinxAtStartPar
@@ -5089,6 +5385,10 @@ Function to calculate minimum number of selfcal iteration based on safety standa
 \sphinxAtStartPar
 \sphinxstyleemphasis{float} \textendash{} Fractional flux change
 
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{float} \textendash{} Minimum allowed sigma
+
 \end{itemize}
 
 
@@ -5125,6 +5425,59 @@ SNR per antenna for self\sphinxhyphen{}calibration
 \item[{Return type}] \leavevmode
 \sphinxAtStartPar
 float
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{casaimage\_to\_wsclean() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{casaimage\_to\_wsclean()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.casaimage_to_wsclean}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{casaimage\_to\_wsclean}}}{\emph{\DUrole{n}{casaimage}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{wsclean\_imagename}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{imagetype}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}image\textquotesingle{}}}, \emph{\DUrole{n}{wsclean\_imsize}\DUrole{o}{=}\DUrole{default_value}{1024}}, \emph{\DUrole{n}{keep\_casaimage}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
+\sphinxAtStartPar
+Function to convert CASA image to WSClean image
+(Stokes modes : ‘I’ and ‘XX,YY’)
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{casaimage}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the CASA image or model
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{wsclean\_imagename}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} WSClean imagename prefix
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{imagetype}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Image type, ‘image’, ‘model’ or ‘residual’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{wsclean\_imsize}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} WSClean image size, CASA image size should be larger than that
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{keep\_casaimage}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Keep CASA image or not
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{list} \textendash{} Output WSClean images
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{int} \textendash{} WSClean image size
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{list} \textendash{} WSClean image stokes axes
+
+\end{itemize}
+
 
 \end{description}\end{quote}
 
@@ -5167,7 +5520,7 @@ float
 \index{dirty\_image() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{dirty\_image()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.dirty_image}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{dirty\_image}}}{\emph{\DUrole{n}{start\_sigma}}, \emph{\DUrole{n}{box\_width}\DUrole{o}{=}\DUrole{default_value}{3}}, \emph{\DUrole{n}{antenna\_to\_use}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.dirty_image}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{dirty\_image}}}{\emph{\DUrole{n}{start\_sigma}}, \emph{\DUrole{n}{box\_width}\DUrole{o}{=}\DUrole{default_value}{3}}, \emph{\DUrole{n}{antenna\_to\_use}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{weight}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}briggs\textquotesingle{}}}, \emph{\DUrole{n}{robust}\DUrole{o}{=}\DUrole{default_value}{0.5}}}{}
 \sphinxAtStartPar
 Function make dirty image
 \begin{quote}\begin{description}
@@ -5183,6 +5536,14 @@ Function make dirty image
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{antenna\_to\_use}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}) \textendash{} List of antennas
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weight}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{robust}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Robust parameter for briggs weighting, default : 0.5
 
 \end{itemize}
 
@@ -5245,7 +5606,7 @@ This function keep and remove caltables, ms, imaging related files based on the 
 \index{image\_source\_true\_loc() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{image\_source\_true\_loc()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.image_source_true_loc}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{image\_source\_true\_loc}}}{\emph{\DUrole{n}{outdir}}, \emph{\DUrole{n}{do\_bandpass}\DUrole{o}{=}\DUrole{default_value}{False}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.image_source_true_loc}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{image\_source\_true\_loc}}}{\emph{\DUrole{n}{outdir}}, \emph{\DUrole{n}{do\_bandpass}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{weight}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}briggs\textquotesingle{}}}, \emph{\DUrole{n}{robust}\DUrole{o}{=}\DUrole{default_value}{0.5}}}{}
 \sphinxAtStartPar
 Function to make quick image for finding source true location with respect to reference time and channel
 \begin{quote}\begin{description}
@@ -5257,6 +5618,14 @@ Function to make quick image for finding source true location with respect to re
 \item {} 
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{do\_bandpass}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Source true location for bandpass self\sphinxhyphen{}calibration or not
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weight}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{robust}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Robust parameter for briggs weighting, default : 0.5
 
 \end{itemize}
 
@@ -5351,7 +5720,7 @@ str
 \index{reduce\_sigma() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{reduce\_sigma()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.reduce_sigma}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{reduce\_sigma}}}{\emph{\DUrole{n}{imagename}}, \emph{\DUrole{n}{nsigma}}, \emph{\DUrole{n}{sigma\_step}}, \emph{\DUrole{n}{minsigma}}, \emph{\DUrole{n}{pre\_residual}\DUrole{o}{=}\DUrole{default_value}{0.0}}, \emph{\DUrole{n}{residual\_frac}\DUrole{o}{=}\DUrole{default_value}{0.1}}, \emph{\DUrole{n}{stokes\_list}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}I\textquotesingle{}{]}}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.reduce_sigma}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{reduce\_sigma}}}{\emph{\DUrole{n}{imagename}}, \emph{\DUrole{n}{nsigma}}, \emph{\DUrole{n}{sigma\_step}}, \emph{\DUrole{n}{minsigma}}, \emph{\DUrole{n}{pre\_residual}\DUrole{o}{=}\DUrole{default_value}{0.0}}, \emph{\DUrole{n}{residual\_frac}\DUrole{o}{=}\DUrole{default_value}{0.01}}, \emph{\DUrole{n}{stokes\_list}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}I\textquotesingle{}{]}}}}{}
 \sphinxAtStartPar
 Function to determine whether reduce the CLEAN sigma or not
 \begin{quote}\begin{description}
@@ -5378,7 +5747,7 @@ Function to determine whether reduce the CLEAN sigma or not
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{residual\_frac}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Residual flux fraction to reduce sigma
+\sphinxstyleliteralstrong{\sphinxupquote{residual\_frac}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Residual flux fraction to reduce sigma (default : 0.01)
 
 \item {} 
 \sphinxAtStartPar
@@ -5388,7 +5757,7 @@ Function to determine whether reduce the CLEAN sigma or not
 
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
-Reduced value of n\sphinxhyphen{}sigma if residual flux is more than given percentage (default : 10\%) of the total flux in Stokes I or in all Stokes Q,U,V.
+Reduced value of n\sphinxhyphen{}sigma if residual flux is more than given percentage (default : 1\%) of the total flux in Stokes I or in all Stokes Q,U,V.
 
 \item[{Return type}] \leavevmode
 \sphinxAtStartPar
@@ -5439,7 +5808,7 @@ str
 \index{selfcal\_iteration() (paircars.intensity\_selfcal\_LTS.IntensitySelfcal method)@\spxentry{selfcal\_iteration()}\spxextra{paircars.intensity\_selfcal\_LTS.IntensitySelfcal method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.selfcal_iteration}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{selfcal\_iteration}}}{\emph{\DUrole{n}{num\_iter}}, \emph{\DUrole{n}{rms\_thresh}}, \emph{\DUrole{n}{sigma}}, \emph{\DUrole{n}{maskstr}}, \emph{\DUrole{n}{antenna\_to\_use}}, \emph{\DUrole{n}{startmodel}}, \emph{\DUrole{n}{startmask}}, \emph{\DUrole{n}{ref\_ant}}, \emph{\DUrole{n}{minsnr}}, \emph{\DUrole{n}{calmode}}, \emph{\DUrole{n}{maskfile}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{want\_auto\_masking}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{cpus}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{absmem}\DUrole{o}{=}\DUrole{default_value}{10}}, \emph{\DUrole{n}{wlayers}\DUrole{o}{=}\DUrole{default_value}{1}}, \emph{\DUrole{n}{stokes}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}I\textquotesingle{}}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{do\_bandpass}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{solmode}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}R\textquotesingle{}}}, \emph{\DUrole{n}{correct\_phasecenter}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{ra}\DUrole{o}{=}\DUrole{default_value}{0}}, \emph{\DUrole{n}{dec}\DUrole{o}{=}\DUrole{default_value}{0}}, \emph{\DUrole{n}{box\_width}\DUrole{o}{=}\DUrole{default_value}{3}}, \emph{\DUrole{n}{calibrator\_caltable}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}, \emph{\DUrole{n}{maskregion}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}}{}
+\phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.selfcal_iteration}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{selfcal\_iteration}}}{\emph{\DUrole{n}{num\_iter}}, \emph{\DUrole{n}{rms\_thresh}}, \emph{\DUrole{n}{sigma}}, \emph{\DUrole{n}{maskstr}}, \emph{\DUrole{n}{antenna\_to\_use}}, \emph{\DUrole{n}{startmodel}}, \emph{\DUrole{n}{startmask}}, \emph{\DUrole{n}{ref\_ant}}, \emph{\DUrole{n}{minsnr}}, \emph{\DUrole{n}{calmode}}, \emph{\DUrole{n}{maskfile}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{want\_auto\_masking}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{cpus}\DUrole{o}{=}\DUrole{default_value}{5}}, \emph{\DUrole{n}{absmem}\DUrole{o}{=}\DUrole{default_value}{10}}, \emph{\DUrole{n}{wlayers}\DUrole{o}{=}\DUrole{default_value}{1}}, \emph{\DUrole{n}{stokes}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}I\textquotesingle{}}}, \emph{\DUrole{n}{interactive}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{do\_bandpass}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{solmode}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}R\textquotesingle{}}}, \emph{\DUrole{n}{correct\_phasecenter}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{ra}\DUrole{o}{=}\DUrole{default_value}{0}}, \emph{\DUrole{n}{dec}\DUrole{o}{=}\DUrole{default_value}{0}}, \emph{\DUrole{n}{box\_width}\DUrole{o}{=}\DUrole{default_value}{3}}, \emph{\DUrole{n}{calibrator\_caltable}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}, \emph{\DUrole{n}{maskregion}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}\textquotesingle{}}}, \emph{\DUrole{n}{weight}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}briggs\textquotesingle{}}}, \emph{\DUrole{n}{robust}\DUrole{o}{=}\DUrole{default_value}{0.5}}}{}
 \sphinxAtStartPar
 Function to perform a self\sphinxhyphen{}calibration loop, make an image, put the model in the measurement set, and perform the calibration
 \begin{quote}\begin{description}
@@ -5466,7 +5835,7 @@ Function to perform a self\sphinxhyphen{}calibration loop, make an image, put th
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{startmodel}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} CASA model to start the CLEANing (For CASA only)
+\sphinxstyleliteralstrong{\sphinxupquote{startmodel}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} CASA model to start the CLEANing (For both CASA imager and WSClean, for WSClean imager, CASA models will be converted to WSClean models)
 
 \item {} 
 \sphinxAtStartPar
@@ -5544,6 +5913,14 @@ Function to perform a self\sphinxhyphen{}calibration loop, make an image, put th
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{maskregion}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Mask region in case of auto\sphinxhyphen{}masking (Only for CASA)
 
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weight}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Visibility weighting during imaging , ‘uniform’, ‘natural’ or ‘briggs’. Default is ‘briggs’
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{robust}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Robust parameter for briggs weighting, default : 0.5
+
 \end{itemize}
 
 \item[{Returns}] \leavevmode
@@ -5607,8 +5984,8 @@ int
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{paircars:paircars.intensity_selfcal_LTS.IntensitySelfcal.wsclean_to_casaimage}}\pysiglinewithargsret{\sphinxbfcode{\sphinxupquote{wsclean\_to\_casaimage}}}{\emph{\DUrole{n}{wsclean\_images}\DUrole{o}{=}\DUrole{default_value}{{[}{]}}}, \emph{\DUrole{n}{casaimage\_prefix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}CASA\_\textquotesingle{}}}, \emph{\DUrole{n}{imagetype}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}image\textquotesingle{}}}, \emph{\DUrole{n}{keep\_wsclean\_images}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
 \sphinxAtStartPar
-Function to convert WSClean image in CASA image
-(Stokes modes : ‘I’)
+Function to convert WSClean image to CASA image
+(Stokes modes : ‘I’ and ‘XX,YY’)
 \begin{quote}\begin{description}
 \item[{Parameters}] \leavevmode\begin{itemize}
 \item {} 
