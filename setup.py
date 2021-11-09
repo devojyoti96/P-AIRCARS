@@ -257,7 +257,7 @@ setup(
     description='Flagger',
     install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     )
-np.save('LDPATH',LD_LIBRARY_PATH)
+np.save(cwd+'/aNKflag/LDPATH',LD_LIBRARY_PATH)
 cwd=os.getcwd()
 os.chdir('CALIBRATE')
 if os.path.isdir('calibrate_tools')==False:
