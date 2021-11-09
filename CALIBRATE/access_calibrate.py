@@ -7,6 +7,7 @@ from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibr
 from casatasks import *
 from paircars.access_ms import *
 from paircars.basic_func import *
+os.system('rm -rf casa*log')
 
 '''
 Code is written by Devojyoti Kansabanik, 16 Feb, 2021; 22 Feb, 2021
