@@ -8,6 +8,7 @@ from paircars.access_ms import *
 import os,copy,numpy as np,webbrowser,pickle,paircars,glob,time,getpass,tkinter as tk,subprocess,psutil
 from PIL import Image,ImageTk
 imagedir=os.path.abspath(os.path.dirname(paircars.__file__))
+os.system('rm -rf casa*log')
 
 class PAIRCARS_inputs:
 	def __init__(self,root):

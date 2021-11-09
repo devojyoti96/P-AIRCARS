@@ -1,6 +1,6 @@
 import os,time,psutil
 from optparse import OptionParser
-
+os.system('rm -rf casa*log')
 cwd=os.getcwd()
 start_time=time.time()
 usage= ' Perform final imaging\n'

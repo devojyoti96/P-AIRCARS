@@ -17,7 +17,7 @@ from CALIBRATE.access_calibrate import *
 from paircars.libpaircars import send_paircars_notification,send_to_database
 from multiprocessing import Process
 from astropy import wcs
-
+os.system('rm -rf casa*log')
 def fill_models(msname):
 	'''
 	Function to fill models from nearest freuencies in the ms

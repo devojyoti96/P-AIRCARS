@@ -9,6 +9,7 @@ import logging,numpy as np,sys,copy,glob,psutil,json,urllib.request
 from paircars.basic_func import *
 from paircars.access_ms import *
 from astropy.io import fits
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 01 Feb, 2021
 

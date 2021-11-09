@@ -25,7 +25,7 @@ from paircars.flagger import *
 from astropy.io import fits
 from pathlib import Path
 from CALIBRATE.access_calibrate import *
-
+os.system('rm -rf casa*log')
 def spliting_timechan(msname,metafits,channel,timestamp,caltype='',ref_timechan=False,input_file='',datacolumn='corrected'):
 	'''
 	Function to split specific time and frequency slice and keep the necessary files in one directory to run the P-AIRCARS

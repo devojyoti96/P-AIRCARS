@@ -11,7 +11,7 @@ from astropy.io import fits
 from astropy import wcs
 from paircars.libpaircars import send_paircars_notification
 matplotlib.use('Agg')
-
+os.system('rm -rf casa*log')
 if __name__!='__main__':
 	cwd=os.getcwd()
 	sys.path.append(cwd)

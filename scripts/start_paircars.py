@@ -5,7 +5,7 @@ from selfcal_inputs import *
 import selfcal_inputs as inputs
 from paircars.access_ms import *
 from paircars.basic_func import *
-
+os.system('rm -rf casa*log')
 from optparse import OptionParser
 if __name__=='__main__':
 	usage= ' P-AIRCARS database manager'

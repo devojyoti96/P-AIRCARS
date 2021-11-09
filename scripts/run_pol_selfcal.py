@@ -13,7 +13,7 @@ from CALIBRATE.access_calibrate import *
 from paircars.libpaircars import send_paircars_notification
 from mwa_pb.mwapb import *
 matplotlib.use('Agg')
-
+os.system('rm -rf casa*log')
 if __name__!='__main__':
 	cwd=os.getcwd()
 	sys.path.append(cwd)

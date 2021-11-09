@@ -35,7 +35,7 @@ from casatasks import *
 from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 import multiprocessing as mp
 from CALIBRATE.access_calibrate import *
-
+os.system('rm -rf casa*log')
 def split_func(params):
 	'''
 	Function to split an measurment set
