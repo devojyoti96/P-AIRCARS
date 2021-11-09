@@ -10,6 +10,7 @@ from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibr
 from casatasks import *
 from paircars.access_ms import *
 from astropy.io import fits
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 26 Jan ,2021
 '''

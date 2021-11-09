@@ -10,7 +10,7 @@ from paircars_casatasks.poltclean import *
 from astropy.io import fits
 from astropy.wcs import WCS
 from mwa_pb.mwapb import *
-
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 17 Jan, 2021
 '''

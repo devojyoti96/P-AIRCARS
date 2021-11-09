@@ -1,7 +1,0 @@
-log\_viewer module
-==================
-
-.. automodule:: log_viewer
-   :members:
-   :undoc-members:
-   :show-inheritance:

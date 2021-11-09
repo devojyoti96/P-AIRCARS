@@ -1,7 +1,0 @@
-compress\_caltables module
-==========================
-
-.. automodule:: compress_caltables
-   :members:
-   :undoc-members:
-   :show-inheritance:

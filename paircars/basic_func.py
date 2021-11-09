@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from pathlib import Path
 import matplotlib.pyplot as plt
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 05 Jan, 2021
 '''

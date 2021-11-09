@@ -2,6 +2,7 @@ import sys,os,numpy as np,glob,time,copy
 from astropy.io import fits
 from casatools import ms as mstools,quanta,msmetadata
 from casatasks import *
+os.system('rm -rf casa*log')
 #Code is written by Leonid Benkevitch and Surajit Mondal
 #Code is modified for python3 and CASA6 by Devojyoti Kansabanik, 05 Jan, 2021
 

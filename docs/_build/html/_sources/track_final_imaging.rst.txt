@@ -1,7 +1,0 @@
-track\_final\_imaging module
-============================
-
-.. automodule:: track_final_imaging
-   :members:
-   :undoc-members:
-   :show-inheritance:

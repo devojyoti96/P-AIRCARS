@@ -1,7 +1,0 @@
-validating\_paircars\_input module
-==================================
-
-.. automodule:: validating_paircars_input
-   :members:
-   :undoc-members:
-   :show-inheritance:

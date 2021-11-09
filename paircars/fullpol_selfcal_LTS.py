@@ -15,6 +15,7 @@ import matplotlib,matplotlib.pyplot as plt
 import scipy.linalg
 from mpl_toolkits.mplot3d import Axes3D
 matplotlib.use('Agg')
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 01 Mar, 2021
 '''

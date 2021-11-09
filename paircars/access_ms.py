@@ -6,6 +6,7 @@ from casatasks import *
 from astropy.time import Time
 from astropy.coordinates import get_sun
 from . import basic_func as B
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 06 Jan, 2021
 '''

@@ -1,7 +1,7 @@
 import os
 from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
-
+os.system('rm -rf casa*log')
 
 class DynamicSpectrum:
 	def __init__(self,msname):
