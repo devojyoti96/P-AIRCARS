@@ -28,7 +28,7 @@ setup(
              'scripts/plot_skymap.py',
              'scripts/primarybeammap_tant_test.py',
              'scripts/track_and_suppress.py'],
-    install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
@@ -39,7 +39,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
 )
 
 setup(name='mantaray-client',
@@ -255,7 +255,7 @@ setup(
 	package_data={'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat']},
     author='Apurba Bera, Python wrapper by Devojyoti Kansabanik',
     description='Flagger',
-    install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     )
 np.save('LDPATH',LD_LIBRARY_PATH)
 cwd=os.getcwd()
@@ -277,7 +277,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
 )
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
