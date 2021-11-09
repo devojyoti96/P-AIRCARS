@@ -1,5 +1,6 @@
 from setuptools import setup,find_packages
 import os,sys,shutil,subprocess,glob
+from distutils.sysconfig import get_python_lib
 
 os.environ['PATH']='/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/sbin:/usr/sbin'
 
@@ -52,13 +53,21 @@ setup(name='mantaray-client',
 
 cwd=os.getcwd()
 # Installing Libraries locally
-if os.path.isdir('libraries')==False:
-	os.makedirs('libraries')
-os.chdir('libraries')
+install_ini_dir=os.path.dirname(get_python_lib())
+if os.path.isdir(install_ini_dir+'/paircars_libraries')==False:
+	os.makedirs(install_ini_dir+'/paircars_libraries')
+try:
+	os.system('rm -rf '+install_ini_dir+'/paircars_libraries/*')
+	print ('Installing libraries.....\n')
+	os.system('cp -r libraries/local '+install_ini_dir+'/paircars_libraries/local')
+except:
+	pass
+os.chdir(install_ini_dir+'/paircars_libraries')
 pwd=os.getcwd()
 install_dir=pwd+'/local'
 if os.path.isdir(install_dir)==False:
 	os.makedirs(install_dir)
+
 
 a=os.system(install_dir+'/bin/fftw-wisdom > tmp')
 if a!=0:
@@ -208,15 +217,8 @@ if a!=0:
 	os.chdir(pwd)
 os.system('rm -rf tmp')
 os.chdir(cwd)
-python_version=float('.'.join(sys.version.split(' ')[0].split('.')[:-1]))
-if python_version!=3.6 and python_version!=3.7:
-	print ('Python version is less than 3.6 or grater than 3.7. aNKflag can only run with python 3.6 and 3.7\n')	
-	os._exit(0)
-try:
-	import numpy as np
-except:
-	os.system('python3.6 -m pip install numpy')
-os.system('python3 -m pip install cmake')
+
+import numpy as np
 
 cwd=os.getcwd()
 LD_LIBRARY_PATH=install_dir+'/lib'
@@ -244,7 +246,6 @@ output.close()
 if os.path.isfile('ankflag')==True:
 	os.system('make clean')
 os.system('make')
-np.save('LDPATH',LD_LIBRARY_PATH)
 os.chdir(cwd)
 
 setup(
@@ -256,7 +257,7 @@ setup(
     description='Flagger',
     install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     )
-
+np.save('LDPATH',LD_LIBRARY_PATH)
 cwd=os.getcwd()
 os.chdir('CALIBRATE')
 if os.path.isdir('calibrate_tools')==False:
