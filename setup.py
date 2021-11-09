@@ -27,7 +27,7 @@ setup(
              'scripts/plot_skymap.py',
              'scripts/primarybeammap_tant_test.py',
              'scripts/track_and_suppress.py'],
-    install_requires=["extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers",'site',"numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
@@ -38,7 +38,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers",'site',"numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
 )
 
 setup(name='mantaray-client',
@@ -46,7 +46,7 @@ setup(name='mantaray-client',
       packages=find_packages(),
       install_requires=['requests>=2.18.3',
                         'websocket_client',
-                        'colorama'],
+                        'colorama','site'],
  entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']
       })
 
