@@ -1,6 +1,5 @@
 from setuptools import setup,find_packages
 import os,sys,shutil,subprocess,glob
-from distutils.sysconfig import get_python_lib
 
 os.environ['PATH']='/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/sbin:/usr/sbin'
 
@@ -28,7 +27,7 @@ setup(
              'scripts/plot_skymap.py',
              'scripts/primarybeammap_tant_test.py',
              'scripts/track_and_suppress.py'],
-    install_requires=["extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["optparse","extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
 
@@ -39,7 +38,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["optparse","extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
 )
 
 setup(name='mantaray-client',
@@ -52,18 +51,10 @@ setup(name='mantaray-client',
       })
 
 cwd=os.getcwd()
-
 # Installing Libraries locally
-install_ini_dir=os.path.dirname(get_python_lib())
-if os.path.isdir(install_ini_dir+'/paircars_libraries')==False:
-	os.makedirs(install_ini_dir+'/paircars_libraries')
-try:
-	os.system('rm -rf '+install_ini_dir+'/paircars_libraries/*')
-	print ('Installing libraries.....\n')
-	os.system('cp -r libraries/local '+install_ini_dir+'/paircars_libraries/local')
-except:
-	pass
-os.chdir(install_ini_dir+'/paircars_libraries')
+if os.path.isdir('libraries')==False:
+	os.makedirs('libraries')
+os.chdir('libraries')
 pwd=os.getcwd()
 install_dir=pwd+'/local'
 if os.path.isdir(install_dir)==False:
@@ -217,6 +208,10 @@ if a!=0:
 	os.chdir(pwd)
 os.system('rm -rf tmp')
 os.chdir(cwd)
+python_version=float('.'.join(sys.version.split(' ')[0].split('.')[:-1]))
+if python_version!=3.6 and python_version!=3.7:
+	print ('Python version is less than 3.6 or grater than 3.7. aNKflag can only run with python 3.6 and 3.7\n')	
+	os._exit(0)
 try:
 	import numpy as np
 except:
@@ -237,6 +232,7 @@ for i in range(len(lines)):
 for i in range(len(lines)):
 	if 'GSL_LIBRARIES=' in lines[i]:
 		lines[i]='GSL_LIBRARIES=-L'+LD_LIBRARY_PATH+' -Wl,\"-R '+LD_LIBRARY_PATH+'\"\n'
+
 makefil.close()
 
 lines=lines[:18]
@@ -248,6 +244,7 @@ output.close()
 if os.path.isfile('ankflag')==True:
 	os.system('make clean')
 os.system('make')
+np.save('LDPATH',LD_LIBRARY_PATH)
 os.chdir(cwd)
 
 setup(
@@ -257,9 +254,8 @@ setup(
 	package_data={'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat']},
     author='Apurba Bera, Python wrapper by Devojyoti Kansabanik',
     description='Flagger',
-    install_requires=["extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib",  "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["optparse","extension-helpers","numpy>=1.19.0", "scipy>=0.15.1", "astropy==4.3", "skyfield", "matplotlib",  "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     )
-np.save(cwd+'/aNKflag/LDPATH',LD_LIBRARY_PATH)
 
 cwd=os.getcwd()
 os.chdir('CALIBRATE')
@@ -280,7 +276,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0", "scipy>=0.15.1","astropy==4.3", "skyfield", "matplotlib",  "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["optparse","extension-helpers","numpy>=1.19.0", "scipy>=0.15.1","astropy==4.3", "skyfield", "matplotlib",  "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
 )
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
@@ -307,7 +303,7 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0","scipy>=0.15.1","astropy==4.3", "skyfield", "matplotlib",  "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["optparse","extension-helpers","numpy>=1.19.0","scipy>=0.15.1","astropy==4.3", "skyfield", "matplotlib",  "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
     scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
 			'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
 			'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download','scripts/download_mwa_data'],
