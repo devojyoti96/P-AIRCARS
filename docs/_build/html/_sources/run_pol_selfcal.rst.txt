@@ -1,0 +1,7 @@
+run\_pol\_selfcal module
+========================
+
+.. automodule:: run_pol_selfcal
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,11 @@
+prefix=/data1/devojyoti/PhD/P-AIRCARS/libraries/local
+exec_prefix=/data1/devojyoti/PhD/P-AIRCARS/libraries/local
+libdir=/data1/devojyoti/PhD/P-AIRCARS/libraries/local/lib
+includedir=/data1/devojyoti/PhD/P-AIRCARS/libraries/local/include
+GSL_CBLAS_LIB=-lgslcblas
+
+Name: GSL
+Description: GNU Scientific Library
+Version: 2.7
+Libs: -L/data1/devojyoti/PhD/P-AIRCARS/libraries/local/lib -lgsl ${GSL_CBLAS_LIB} -lm -lm 
+Cflags: -I/data1/devojyoti/PhD/P-AIRCARS/libraries/local/include

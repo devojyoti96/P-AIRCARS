@@ -1,0 +1,2 @@
+#! /bin/sh
+exec /data1/devojyoti/PhD/P-AIRCARS/libraries/local/bin/bison -y "$@"

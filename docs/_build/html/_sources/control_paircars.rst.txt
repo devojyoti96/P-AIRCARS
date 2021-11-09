@@ -1,0 +1,7 @@
+control\_paircars module
+========================
+
+.. automodule:: control_paircars
+   :members:
+   :undoc-members:
+   :show-inheritance:
