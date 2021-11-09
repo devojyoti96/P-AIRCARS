@@ -6,7 +6,7 @@ from casatasks import importuvfits,exportuvfits
 from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from datetime import datetime 
 from . import convertfits as cf
-
+os.system('rm -rf casa*log')
 '''
 Code is written by Apurba Bera (NCRA-TIFR)
 Wrapper for PAIRCARS is written by Devojyoti Kansabanik, 23 Jan, 2021
