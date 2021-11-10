@@ -3,7 +3,7 @@ from casatasks.private.imagerhelpers.imager_base import PySynthesisImager
 from casatasks.private.imagerhelpers.input_parameters import ImagerParameters
 from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import casalog
-
+os.system('rm -rf casa*log')
 class Poltclean:
 	'''
 	Class to perform full stokes CASA tclean 
