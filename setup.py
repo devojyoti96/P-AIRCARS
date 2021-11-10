@@ -1,5 +1,5 @@
 from setuptools import setup,find_packages
-import os,sys,shutil,subprocess,glob
+import os,sys,shutil,subprocess,glob,pip
 from distutils.sysconfig import get_python_lib
 
 os.environ['PATH']='/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/sbin:/usr/sbin'
@@ -8,48 +8,11 @@ cwd=os.getcwd()
 os.chdir('mwa_pb/data')
 os.system('wget -q -c http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5 --no-check-certificate')
 os.chdir(cwd)
-
-setup(
-    name='mwa_pb',
-    version='1.1.0',
-    packages=['mwa_pb'],
-    package_data={'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5', 'data/*.fab', 'data/*.dat']},
-    author='MWA Team members, repo managed by Andrew Williams',
-    author_email='Andrew.Williams@curtin.edu.au',
-    description='MWA Primary beam code',
-    scripts=['scripts/beam_correct_image_CASA_mwa.py','scripts/beam_correct_image_CASA.py',
-	     'scripts/beam_correct_image_IAU.py',
-	     'scripts/beam_correct_image.py',
-             'scripts/beamtest.py',
-			'scripts/beam_ra_dec.py',
-             'scripts/calc_jones.py',
-             'scripts/make_beam_test.py',
-             'scripts/mwa_sensitivity.py',
-             'scripts/plot_skymap.py',
-             'scripts/primarybeammap_tant_test.py',
-             'scripts/track_and_suppress.py'],
-    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
-    extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
-)
-
-setup(
-    name='paircars_casatasks',
-    version='1.0.0',
-    packages=['paircars_casatasks'],
-    author='Devojyoti Kansabanik',
-    author_email='dkansabanik@ncra.tifr.res.in',
-    description='PAIRCARS',
-    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
-)
-
-setup(name='mantaray-client',
-      version='1.0.0',
-      packages=find_packages(),
-      install_requires=['requests>=2.18.3',
-                        'websocket_client',
-                        'colorama'],
- entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']
-      })
+def install(package):
+    if hasattr(pip, 'main'):
+        pip.main(['install', package])
+    else:
+        pip._internal.main(['install', package])
 
 cwd=os.getcwd()
 # Installing Libraries locally
@@ -217,9 +180,13 @@ if a!=0:
 	os.chdir(pwd)
 os.system('rm -rf tmp')
 os.chdir(cwd)
-
-import numpy as np
-
+install('numpy>=1.19.0')
+install('numpy>=1.19.0')
+try:
+	import numpy as np
+except:
+	install('numpy>=1.19.0')
+	import numpy as np
 cwd=os.getcwd()
 LD_LIBRARY_PATH=install_dir+'/lib'
 INCLUDE_PATH=install_dir+'/include/'
@@ -248,37 +215,6 @@ if os.path.isfile('ankflag')==True:
 os.system('make')
 os.chdir(cwd)
 
-setup(
-    name='aNKflag',
-    version='1.0.0',
-    packages=['aNKflag'],
-	package_data={'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat']},
-    author='Apurba Bera, Python wrapper by Devojyoti Kansabanik',
-    description='Flagger',
-    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
-    )
-np.save(cwd+'/aNKflag/LDPATH',LD_LIBRARY_PATH)
-cwd=os.getcwd()
-os.chdir('CALIBRATE')
-if os.path.isdir('calibrate_tools')==False:
-	os.makedirs('calibrate_tools')
-os.chdir('calibrate_tools')
-if os.path.exists('calibrate')==False or os.path.exists('applysolutions')==False:
-	os.system('make clean')
-	os.system('cmake ../ -DCMAKE_PREFIX_PATH='+install_dir)
-	os.system('make')
-	os.system('rm -rf *')
-	os.chdir(cwd)
-setup(
-    name='CALIBRATE',
-    version='1.0.0',
-    packages=['CALIBRATE'],
-    package_data={'CALIBRATE':['calibrate_tools/*']},
-    author='Devojyoti Kansabanik',
-    author_email='dkansabanik@ncra.tifr.res.in',
-    description='PAIRCARS',
-    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
-)
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
 os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
@@ -295,19 +231,33 @@ os.system('cp -r scripts/log_viewer.py scripts/log_viewer')
 os.system('cp -r scripts/track_final_imaging.py scripts/track_final_imaging')
 os.system('cp -r scripts/download_mwa_data.py scripts/download_mwa_data')
 os.system('cp -r scripts/start_download.py scripts/start_download')
-
 setup(
     name='paircars',
     version='1.0.0',
-    packages=['paircars'],
-    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg']},
+    packages=['paircars','aNKflag','CALIBRATE','mwa_pb','paircars_casatasks','mantaray'],
+    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg'],'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat'],\
+					'CALIBRATE':['calibrate_tools/*'],'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5', 'data/*.fab', 'data/*.dat']},
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake"],
+    install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil",\
+					"casatools","casatasks","casadata","cmake",'requests>=2.18.3','websocket_client','colorama'],
     scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
-			'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
-			'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download','scripts/download_mwa_data'],
-)
+		'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
+		'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download','scripts/download_mwa_data','scripts/beam_correct_image_CASA_mwa.py',\
+		'scripts/beam_correct_image_CASA.py','scripts/beam_correct_image_IAU.py','scripts/beam_correct_image.py','scripts/beamtest.py','scripts/beam_ra_dec.py',\
+		'scripts/calc_jones.py','scripts/make_beam_test.py','scripts/mwa_sensitivity.py','scripts/plot_skymap.py','scripts/primarybeammap_tant_test.py','scripts/track_and_suppress.py'],
+	 extras_require={'skymap':["ephem", "Pillow"]}
+	)
+
 os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go-paircars scripts/start_paircars scripts/log_viewer scripts/track_final_imaging scripts/download_mwa_data scripts/start_download')
+
+setup(name='mantaray-client',
+      version='1.0.0',
+      packages=['mantaray','mantaray.api','mantaray.scripts'],
+      install_requires=['requests>=2.18.3',
+                        'websocket_client',
+                        'colorama'],
+ 	entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']}
+	)
 
