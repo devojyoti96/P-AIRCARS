@@ -88,4 +88,4 @@ That's all. It will automatically install all required packages and libraries. T
 
 Documentation
 =============
-Details documentation can be found add at https://p-aircars.readthedocs.io/
+Details documentation can be found at https://p-aircars.readthedocs.io/
