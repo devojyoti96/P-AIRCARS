@@ -71,6 +71,8 @@ Installing P-AIRCARS
 ********************
 Move to the P-AIRCARS directory.
 
+>> cd P-AIRCARS
+
 Run *setup.py*
 
 >> python3 setup.py install
