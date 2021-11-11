@@ -63,7 +63,7 @@ It should show "/path/to/virtualenv/paircars/bin/python3"
 
 Obtaining P-AIRCARS
 *******************
-P-AIRCARS source code can be downloaded from *git clone https://github.com/devojyoti96/P-AIRCARS.git*. 
+P-AIRCARS source code can be downloaded from **git clone https://github.com/devojyoti96/P-AIRCARS.git**. 
 
 P-AIRCARS is not public now. It will be public very soon. If you want to use P-AIRCARS before it becomes public, please reach us at dkansabanik@ncra.tifr.res.in, paircarsnotification@gmail.com
 
