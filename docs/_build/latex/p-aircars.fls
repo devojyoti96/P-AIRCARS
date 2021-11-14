@@ -1074,6 +1074,7 @@ INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm5
 OUTPUT p-aircars.toc
 INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/tex-gyre/ec-qtmr.tfm
 INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/tex-gyre/ec-qhvr.tfm
+INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/tex-gyre/ec-qtmri.tfm
 INPUT /usr/local/texlive/2021/texmf-dist/tex/latex/txfonts/t1txtt.fd
 INPUT /usr/local/texlive/2021/texmf-dist/tex/latex/txfonts/t1txtt.fd
 INPUT /usr/local/texlive/2021/texmf-dist/tex/latex/txfonts/t1txtt.fd
@@ -1088,7 +1089,6 @@ INPUT ./go_paircars.png
 INPUT ./go_paircars.png
 INPUT go_paircars.png
 INPUT ./go_paircars.png
-INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/tex-gyre/ec-qtmri.tfm
 INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/txfonts/t1xbtt.tfm
 INPUT /usr/local/texlive/2021/texmf-dist/fonts/tfm/public/txfonts/t1xttsl.tfm
 INPUT /usr/local/texlive/2021/texmf-dist/tex/latex/tex-gyre/ts1qtm.fd

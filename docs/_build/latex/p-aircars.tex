@@ -61,7 +61,7 @@
 
 
 \title{P\sphinxhyphen{}AIRCARS}
-\date{Nov 09, 2021}
+\date{Nov 14, 2021}
 \release{1.0.0}
 \author{Devojyoti Kansabanik}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -87,7 +87,7 @@ This is the official documentation of the P\sphinxhyphen{}AIRCARS. Source code c
 \section{P\sphinxhyphen{}AIRCARS (Polarimetry using Automated Imaging Routine for Compact Arrays of the Radio Sun)}
 \label{\detokenize{intro:p-aircars-polarimetry-using-automated-imaging-routine-for-compact-arrays-of-the-radio-sun}}
 \sphinxAtStartPar
-P\sphinxhyphen{}AIRCARS is an automated calibration and imaging routine for polarimetric calibration and imaging of solar observations done with Murchison WIdefield Array (MWA) \sphinxurl{https://www.mwatelescope.org}. P\sphinxhyphen{}AIRCARS has been developed and maintained by solar physics group at National Centre for Radio Astrophysics, Tata Institute of Fundamental Research (NCRA\sphinxhyphen{}TIFR), Pune, India \sphinxurl{https://www.ncra.tifr.res.in}.
+P\sphinxhyphen{}AIRCARS is an automated calibration and imaging routine for polarimetric calibration and imaging of solar observations done with Murchison Widefield Array (MWA) \sphinxurl{https://www.mwatelescope.org}. P\sphinxhyphen{}AIRCARS has been developed and maintained by solar physics group at National Centre for Radio Astrophysics, Tata Institute of Fundamental Research (NCRA\sphinxhyphen{}TIFR), Pune, India \sphinxurl{https://www.ncra.tifr.res.in}.
 
 \sphinxAtStartPar
 P\sphinxhyphen{}AIRCARS uses CASA (Common Astronomy Software Application) \sphinxurl{https://casa.nrao.edu} for intensity and bandpass self\sphinxhyphen{}calibration and polarisation calibration is performed by our own implementation of the full Jones calibration algorithm described by Mitchell et al. 2008 \sphinxurl{https://doi.org/10.1109/JSTSP.2008.2005327}.
@@ -100,7 +100,7 @@ Basic philosophy of P\sphinxhyphen{}AIRCARS is self\sphinxhyphen{}calibration an
 \begin{quote}
 
 \sphinxAtStartPar
-1.AIRCARS (Mondal et al. 2020) \sphinxurl{https://doi.org/10.3847/1538-4357/ab0a01}
+1.AIRCARS (Mondal et al. 2019) \sphinxurl{https://doi.org/10.3847/1538-4357/ab0a01}
 
 \sphinxAtStartPar
 2.Kansabanik et al. 2021a, in preparation
@@ -130,6 +130,9 @@ CPUs: 4 cores
 
 \sphinxAtStartPar
 RAM : 4 GB
+
+\sphinxAtStartPar
+Installation space : 700 MB
 
 \sphinxAtStartPar
 Disk space : 6 times of the data volume
@@ -191,6 +194,74 @@ Details of other software requirements is available in installation section.
 
 \chapter{Installation}
 \label{\detokenize{install:installation}}\label{\detokenize{install::doc}}
+\sphinxAtStartPar
+P\sphinxhyphen{}AIRCARS is a self\sphinxhyphen{}contained python package. It is build on python3. Python version greater than 3.6 is required for P\sphinxhyphen{}AIRACRS. It is recommended to use python virtual environment to install P\sphinxhyphen{}AIRCARS, but it is not a necessary requirement. Installation steps are as follows.
+
+
+\section{Creating virtual environment}
+\label{\detokenize{install:creating-virtual-environment}}
+\sphinxAtStartPar
+Install python virtual environment:
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} python3 \sphinxhyphen{}m pip install \textendash{}upgrade pip
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} python3 \sphinxhyphen{}m pip install virtualenv
+
+\sphinxAtStartPar
+Activate virtual environment:
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} python3 \sphinxhyphen{}m venv /path/to/virtualenv/paircars
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} source /path/to/virtualenv/paircars
+
+\sphinxAtStartPar
+Check the virtual environment path:
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} which python3
+
+\sphinxAtStartPar
+It should show “/path/to/virtualenv/paircars/bin/python3”
+
+
+\section{Obtaining P\sphinxhyphen{}AIRCARS}
+\label{\detokenize{install:obtaining-p-aircars}}
+\sphinxAtStartPar
+P\sphinxhyphen{}AIRCARS source code can be downloaded from \sphinxurl{https://github.com/devojyoti96/P-AIRCARS.git}.
+
+\sphinxAtStartPar
+P\sphinxhyphen{}AIRCARS is not public now. It will be public very soon. If you want to use P\sphinxhyphen{}AIRCARS before it becomes public, please reach us at \sphinxhref{mailto:dkansabanik@ncra.tifr.res.in}{dkansabanik@ncra.tifr.res.in}, \sphinxhref{mailto:paircarsnotification@gmail.com}{paircarsnotification@gmail.com}
+
+
+\section{Installing P\sphinxhyphen{}AIRCARS}
+\label{\detokenize{install:installing-p-aircars}}
+\sphinxAtStartPar
+Move to the P\sphinxhyphen{}AIRCARS directory.
+
+\sphinxAtStartPar
+Run \sphinxstyleemphasis{setup.py}
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} python3 setup.py install
+
+\sphinxAtStartPar
+That’s all. It will automatically install all required packages and libraries. This installation process is in very early stage. If you find any issues during installation, please reach us at \sphinxhref{mailto:dkansabanik@ncra.tifr.res.in}{dkansabanik@ncra.tifr.res.in}, \sphinxhref{mailto:paircarsnotification@gmail.com}{paircarsnotification@gmail.com}.
+
+\begin{sphinxadmonition}{note}{Note:}
+\sphinxAtStartPar
+If you installed P\sphinxhyphen{}AIRCARS in a virtual environment, please make sure you are inside the virtual environment. P\sphinxhyphen{}AIRCARS can not be accessed outside the virtual environment in this case.
+
+\sphinxAtStartPar
+\textgreater{}\textgreater{} which python3
+
+\sphinxAtStartPar
+It should show “/path/to/virtualenv/paircars/bin/python3”. If you are not in virtual environment, please activate it.
+\end{sphinxadmonition}
+
 
 \chapter{Tutorial}
 \label{\detokenize{tut:tutorial}}\label{\detokenize{tut::doc}}
@@ -616,11 +687,323 @@ Advanced input block will be activated when \sphinxstyleemphasis{Auto\sphinxhyph
 \chapter{Robustness and Quality}
 \label{\detokenize{robust_quality:robustness-and-quality}}\label{\detokenize{robust_quality::doc}}
 \sphinxAtStartPar
-In this section two major input parameters for P\sphinxhyphen{}AIRCARS, \sphinxstyleemphasis{Robustness} and \sphinxstyleemphasis{Quality}, will be discussed.
+In this section two major input parameters for P\sphinxhyphen{}AIRCARS, \sphinxstyleemphasis{Quality} and \sphinxstyleemphasis{Robustness}, will be discussed.
 
 
-\section{Robustness}
-\label{\detokenize{robust_quality:robustness}}
+\section{Quality (Q)}
+\label{\detokenize{robust_quality:quality-q}}
+\sphinxAtStartPar
+\sphinxstyleemphasis{Quality} parameters determines the quality of the final images. With the increase of \sphinxstyleemphasis{Quality} value, antennas will be added in smaller steps, self\sphinxhyphen{}calibration will be continued for smaller value of residual fluxes and final CLEANing of the images will be deeper. \sphinxstyleemphasis{Quality} takes three values; 0, 1, 2. Default value is 1.
+
+
+\section{Robustness (R)}
+\label{\detokenize{robust_quality:robustness-r}}
+\sphinxAtStartPar
+\sphinxstyleemphasis{Robustness} parameter determines the robustness of the calibration and imaging. Increasing the robustness parameter will use strong convergence criteria for self\sphinxhyphen{}calibration, uses higher value of minimum SNR for gain solutions, performs calibration at smaller time and frequency intervals. \sphinxstyleemphasis{Robustness} takes three values; 0, 1, 2. Default value is 1.
+
+\sphinxAtStartPar
+The calibration and imaging parameters are determined based on the combination of \sphinxstyleemphasis{Quality} and \sphinxstyleemphasis{Robustness}. The calibration and imaging parameters for each of the combinations with increasing significance are listed below. With the increasing significance, the calibration and imaging quality will be better, but the computational time will also increase. Default value of 1 for \sphinxstyleemphasis{Quality} and \sphinxstyleemphasis{Robustness} is an optimization between final image quality and computational time.
+
+
+\section{Combinations}
+\label{\detokenize{robust_quality:combinations}}
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 0, R = 0}
+
+\sphinxAtStartPar
+residual\_frac   =       0.03
+
+\sphinxAtStartPar
+start\_sigma             =       9.0
+
+\sphinxAtStartPar
+min\_sigma               =       6
+
+\sphinxAtStartPar
+gain\_minsnr             =       3.0
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       25
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       20
+
+\sphinxAtStartPar
+min\_DR                  =       20
+
+\sphinxAtStartPar
+max\_DR                  =       100
+
+\sphinxAtStartPar
+skip\_time               =       480 s
+
+\sphinxAtStartPar
+skip\_freq               =       2560 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 0, R = 1}
+
+\sphinxAtStartPar
+residual\_frac   =       0.03
+
+\sphinxAtStartPar
+start\_sigma             =       9.0
+
+\sphinxAtStartPar
+min\_sigma               =       7
+
+\sphinxAtStartPar
+gain\_minsnr             =       3.0
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       22
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       18
+
+\sphinxAtStartPar
+min\_DR                  =       25
+
+\sphinxAtStartPar
+max\_DR                  =       500
+
+\sphinxAtStartPar
+skip\_time               =       240 s
+
+\sphinxAtStartPar
+skip\_freq               =       2560 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 0, R = 2}
+
+\sphinxAtStartPar
+residual\_frac   =       0.03
+
+\sphinxAtStartPar
+start\_sigma             =       9.0
+
+\sphinxAtStartPar
+min\_sigma               =       8
+
+\sphinxAtStartPar
+gain\_minsnr             =       3.0
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       20
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       15
+
+\sphinxAtStartPar
+min\_DR                  =       30
+
+\sphinxAtStartPar
+max\_DR                  =       1000
+
+\sphinxAtStartPar
+skip\_time               =       120 s
+
+\sphinxAtStartPar
+skip\_freq               =       2560 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 1, R = 0}
+
+\sphinxAtStartPar
+residual\_frac   =       0.015
+
+\sphinxAtStartPar
+start\_sigma             =       10.0
+
+\sphinxAtStartPar
+min\_sigma               =       7
+
+\sphinxAtStartPar
+gain\_minsnr             =       4
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       20
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       15
+
+\sphinxAtStartPar
+min\_DR                  =       30
+
+\sphinxAtStartPar
+max\_DR                  =       1000
+
+\sphinxAtStartPar
+skip\_time               =       120 s
+
+\sphinxAtStartPar
+skip\_freq               =       1280 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 1, R = 1 (Default)}
+
+\sphinxAtStartPar
+residual\_frac   =       0.015
+
+\sphinxAtStartPar
+start\_sigma             =       10.0
+
+\sphinxAtStartPar
+min\_sigma               =       8
+
+\sphinxAtStartPar
+gain\_minsnr             =       4
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       18
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       12
+
+\sphinxAtStartPar
+min\_DR                  =       35
+
+\sphinxAtStartPar
+max\_DR                  =       5000
+
+\sphinxAtStartPar
+skip\_time               =       60 s
+
+\sphinxAtStartPar
+skip\_freq               =       1280 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 1, R = 2}
+
+\sphinxAtStartPar
+residual\_frac   =       0.015
+
+\sphinxAtStartPar
+start\_sigma             =       10.0
+
+\sphinxAtStartPar
+min\_sigma               =       9
+
+\sphinxAtStartPar
+gain\_minsnr             =       4
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       15
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       10
+
+\sphinxAtStartPar
+min\_DR                  =       40
+
+\sphinxAtStartPar
+max\_DR                  =       10000
+
+\sphinxAtStartPar
+skip\_time               =       30 s
+
+\sphinxAtStartPar
+skip\_freq               =       1280 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 2, R = 0}
+
+\sphinxAtStartPar
+residual\_frac   =       0.01
+
+\sphinxAtStartPar
+start\_sigma             =       11.0
+
+\sphinxAtStartPar
+min\_sigma               =       8
+
+\sphinxAtStartPar
+gain\_minsnr             =       4.5
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       18
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       12
+
+\sphinxAtStartPar
+min\_DR                  =       40
+
+\sphinxAtStartPar
+max\_DR                  =       10000
+
+\sphinxAtStartPar
+skip\_time               =       15 s
+
+\sphinxAtStartPar
+skip\_freq               =       640 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 2, R = 1}
+
+\sphinxAtStartPar
+residual\_frac   =   0.01
+
+\sphinxAtStartPar
+start\_sigma             =       11.0
+
+\sphinxAtStartPar
+min\_sigma               =       9
+
+\sphinxAtStartPar
+gain\_minsnr             =       4.5
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       15
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       10
+
+\sphinxAtStartPar
+min\_DR                  =       45
+
+\sphinxAtStartPar
+max\_DR                  =       50000
+
+\sphinxAtStartPar
+skip\_time               =       12 s
+
+\sphinxAtStartPar
+skip\_freq               =       640 kHz
+
+\sphinxAtStartPar
+\sphinxstylestrong{Q = 2, R = 2}
+
+\sphinxAtStartPar
+residual\_frac   =  0.01
+
+\sphinxAtStartPar
+start\_sigma             =       11.0
+
+\sphinxAtStartPar
+min\_sigma               =       10
+
+\sphinxAtStartPar
+gain\_minsnr             =       4.5
+
+\sphinxAtStartPar
+DR\_delta\_rms    =       12
+
+\sphinxAtStartPar
+DR\_delta\_neg    =       8
+
+\sphinxAtStartPar
+min\_DR                  =       50
+
+\sphinxAtStartPar
+max\_DR                  =       100000
+
+\sphinxAtStartPar
+skip\_time               =       10 s
+
+\sphinxAtStartPar
+skip\_freq               =       640 kHz
+
 
 \chapter{paircars}
 \label{\detokenize{modules:paircars}}\label{\detokenize{modules::doc}}
@@ -2402,17 +2785,11 @@ Function to get MWA observation IDs for a given time range
 \begin{quote}\begin{description}
 \item[{Returns}] \leavevmode
 \sphinxAtStartPar
-\begin{itemize}
-\item {} 
+OBSID list
+
+\item[{Return type}] \leavevmode
 \sphinxAtStartPar
-\sphinxstyleemphasis{list} \textendash{} OBSID list
-
-\item {} 
-\sphinxAtStartPar
-\sphinxstyleemphasis{list} \textendash{} Calibration OBSID list
-
-\end{itemize}
-
+list
 
 \end{description}\end{quote}
 
