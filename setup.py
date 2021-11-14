@@ -5,9 +5,11 @@ from distutils.sysconfig import get_python_lib
 os.environ['PATH']='/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/sbin:/usr/sbin'
 
 cwd=os.getcwd()
-os.chdir('mwa_pb/data')
-os.system('wget -q -c http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5 --no-check-certificate')
-os.chdir(cwd)
+if os.path.exists('mwa_pb/data/mwa_full_embedded_element_pattern.h5')==False:
+	print ('Download MWA primary beam data.......\n')
+	os.chdir('mwa_pb/data')
+	os.system('wget -q -c http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5 --no-check-certificate')
+	os.chdir(cwd)
 def install(package):
     if hasattr(pip, 'main'):
         pip.main(['install', package])
@@ -179,14 +181,33 @@ if a!=0:
 	os.system('rm -rf tmp')
 	os.chdir(pwd)
 os.system('rm -rf tmp')
-os.chdir(cwd)
-install('numpy>=1.19.0')
-install('numpy>=1.19.0')
+
 try:
 	import numpy as np
 except:
 	install('numpy>=1.19.0')
 	import numpy as np
+
+a=os.system('which screen > tmp 2> tmp.error')
+if a!=0:
+	if os.path.isdir('screen-4.8.0')==False:
+		os.system('wget "https://ftp.gnu.org/gnu/screen/screen-4.8.0.tar.gz" --no-check-certificate')
+		shutil.unpack_archive('screen-4.8.0.tar.gz')
+		os.system('rm -rf screen-4.8.0.tar.gz')
+	os.chdir('screen-4.8.0')
+	os.system('./configure --prefix='+install_dir)
+	os.system('make install && install -m 644 screen-4.8.0/etc/etcscreenrc '+install_dir+'/etc/screenrc')
+	screen_path=install_dir+'/bin'
+	np.save(cwd+'/paircars_client/screen_path',screen_path)
+else:
+	fil=open('tmp','r')
+	screen_path=os.path.dirname(fil.read())
+	fil.seek(0)
+	fil.close()
+	np.save(cwd+'/paircars_client/screen_path',screen_path)
+os.system('rm -rf tmp tmp.error')
+
+os.chdir(cwd)
 cwd=os.getcwd()
 LD_LIBRARY_PATH=install_dir+'/lib'
 INCLUDE_PATH=install_dir+'/include/'
@@ -215,6 +236,7 @@ if os.path.isfile('ankflag')==True:
 os.system('make')
 os.chdir(cwd)
 
+np.save(cwd+'/aNKflag/LDPATH',LD_LIBRARY_PATH)
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
 os.system('cp -r scripts/run_bandpass_selfcal.py scripts/run_bandpass_selfcal')
 os.system('cp -r scripts/run_pol_selfcal.py scripts/run_pol_selfcal')
@@ -241,13 +263,13 @@ setup(
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
     install_requires=["extension-helpers","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py","julian","psutil",\
-					"casatools","casatasks","casadata","cmake",'requests>=2.18.3','websocket_client','colorama'],
+					"casatools","casatasks","casadata","cmake",'requests>=2.18.3','websocket_client','colorama','shadems'],
     scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
 		'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
 		'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download','scripts/download_mwa_data','scripts/beam_correct_image_CASA_mwa.py',\
 		'scripts/beam_correct_image_CASA.py','scripts/beam_correct_image_IAU.py','scripts/beam_correct_image.py','scripts/beamtest.py','scripts/beam_ra_dec.py',\
 		'scripts/calc_jones.py','scripts/make_beam_test.py','scripts/mwa_sensitivity.py','scripts/plot_skymap.py','scripts/primarybeammap_tant_test.py','scripts/track_and_suppress.py'],
-	 extras_require={'skymap':["ephem", "Pillow"]}
+	 extras_require={'skymap':["ephem", "Pillow"]},python_requires='>=3.6.1',
 	)
 
 os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go-paircars scripts/start_paircars scripts/log_viewer scripts/track_final_imaging scripts/download_mwa_data scripts/start_download')
@@ -258,6 +280,26 @@ setup(name='mantaray-client',
       install_requires=['requests>=2.18.3',
                         'websocket_client',
                         'colorama'],
- 	entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']}
+ 	entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']},
+	python_requires='>=3.6.1',
 	)
+
+setup(
+    name='jprq',
+    version='2.0.1',
+    author='Azimjon Pulatov',
+    author_email='azimjohn@yahoo.com',
+    maintainer='Azimjon Pulatov',
+    maintainer_email='azimjohn@yahoo.com',
+    url='https://github.com/azimjohn/jprq-py',
+    license='MIT',
+    packages=['jprq'],
+    entry_points={
+        'console_scripts': [
+            'jprq = jprq.main:main',
+        ]
+    },
+    install_requires=['certifi==2019.9.11','websockets==9.1','aiohttp==3.7.4','bson~=0.5.10','click==8.0.3'],
+    python_requires='>=3.6.1',
+)
 
