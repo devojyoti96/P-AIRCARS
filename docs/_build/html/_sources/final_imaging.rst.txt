@@ -1,7 +1,0 @@
-final\_imaging module
-=====================
-
-.. automodule:: final_imaging
-   :members:
-   :undoc-members:
-   :show-inheritance:
