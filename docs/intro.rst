@@ -11,7 +11,7 @@ Imaging at P-AIRCARS is performed by WSClean https://wsclean.readthedocs.io. If 
 
 Basic philosophy of P-AIRCARS is self-calibration and use the instrumental model to perform the precise solar calibration. Details of the algorithm and implementation can be found in the follwoing papers
 
-	1.AIRCARS (Mondal et al. 2020) https://doi.org/10.3847/1538-4357/ab0a01
+	1.AIRCARS (Mondal et al. 2019) https://doi.org/10.3847/1538-4357/ab0a01
 
 	2.Kansabanik et al. 2021a, in preparation 
 
