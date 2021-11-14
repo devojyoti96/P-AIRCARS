@@ -1,6 +1,6 @@
 Installation
 ============
-P-AIRCARS is a self-contained python package. It is build on python3. Python version greater than 3.6 is required for P-AIRACRS. We recommend to use python virtual environment to install P-AIRCARS, but it is not a necessary requirement. Installation steps are as follows.
+P-AIRCARS is a self-contained python package. It is build on python3. Python version greater than 3.6 is required for P-AIRACRS. It is recommended to use python virtual environment to install P-AIRCARS, but it is not a necessary requirement. Installation steps are as follows.
 
 Creating virtual environment
 ****************************
