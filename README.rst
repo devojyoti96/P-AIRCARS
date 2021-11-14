@@ -7,7 +7,7 @@ P-AIRCARS (Polarimetry using Automated Imaging Routine for Compact Arrays of the
     :scale: 100%
     :target: http://p-aircars.readthedocs.io
 
-P-AIRCARS is an automated calibration and imaging routine for polarimetric calibration and imaging of solar observations done with Murchison WIdefield Array (MWA) https://www.mwatelescope.org. P-AIRCARS has been developed and maintained by solar physics group at National Centre for Radio Astrophysics, Tata Institute of Fundamental Research (NCRA-TIFR), Pune, India https://www.ncra.tifr.res.in.
+P-AIRCARS is an automated calibration and imaging routine for polarimetric calibration and imaging of solar observations done with Murchison Widefield Array (MWA) https://www.mwatelescope.org. P-AIRCARS has been developed and maintained by solar physics group at National Centre for Radio Astrophysics, Tata Institute of Fundamental Research (NCRA-TIFR), Pune, India https://www.ncra.tifr.res.in.
 
 P-AIRCARS uses CASA (Common Astronomy Software Application) https://casa.nrao.edu for intensity and bandpass self-calibration and polarisation calibration is performed by our own implementation of the full Jones calibration algorithm described by Mitchell et al. 2008 https://doi.org/10.1109/JSTSP.2008.2005327.
 
@@ -15,7 +15,7 @@ Imaging at P-AIRCARS is performed by WSClean https://wsclean.readthedocs.io. If 
 
 Basic philosophy of P-AIRCARS is the self-calibration and use the instrumental model to perform the precise calibration. Details of the algorithm and implementation can be found in the follwoing papers
 
-	1.AIRCARS (Mondal et al. 2020) https://doi.org/10.3847/1538-4357/ab0a01
+	1.AIRCARS (Mondal et al. 2019) https://doi.org/10.3847/1538-4357/ab0a01
 
 	2.Kansabanik et al. 2021a, in preparation 
 
