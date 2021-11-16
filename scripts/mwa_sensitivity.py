@@ -107,9 +107,10 @@ def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, mo
 #        if trcv_type == "trcv_from_skymodel_with_err":
 #            T_rcv = trcv_from_skymodel_with_err(freq_mhz)
 #            print("T_rcv calculated from trcv_from_skymodel_with_err = %.2f K" % (T_rcv))
-    T_rcv = trcv_daniel_paper_2020( freq_mhz )
-    print ("T_rcv calculated from trcv_daniel_paper_2020( %.2f MHz ) = %.2f K" % (freq_mhz,T_rcv))
-
+    if T_rcv==0:
+        T_rcv = trcv_daniel_paper_2020( freq_mhz )
+        print ("T_rcv calculated from trcv_daniel_paper_2020( %.2f MHz ) = %.2f K" % (freq_mhz,T_rcv))
+    print ('T_rcv given ='+str(T_rcv)+'\n') 
     result = make_primarybeammap(gps, delays, freq,
                                  model=model,
                                  plottype=plottype,

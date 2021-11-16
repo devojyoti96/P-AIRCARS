@@ -4,7 +4,7 @@ from mwa_pb import config
 from mwa_pb import primary_beam
 from mwa_pb import beam_tools
 from mwa_pb.calc_beam import calc_beamjones_info
-from casatools import *
+from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from astropy.io import fits
 from astropy.time import Time
@@ -12,6 +12,7 @@ from astropy.coordinates import EarthLocation,SkyCoord,AltAz
 from astropy import units as u
 from numpy.linalg import inv
 from optparse import OptionParser
+os.system('rm -rf casa*log')
 '''
 Code is written by Devojyoti Kansabanik, 24 April, 2021
 '''
