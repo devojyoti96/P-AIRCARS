@@ -679,8 +679,9 @@ class IntensitySelfcal:
 			self.log_verbose.info('rm -rf '+imagename+'*\n')
 		self.log_verbose.info('Making dirty image...........\n')
 		self.log_verbose.info('tclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',imsize=['+str(self.imsize)+'],cell=\''+\
-								str(self.cellsize)+'\',niter=0,antenna=\''+antenna_to_use+'\',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+')\n')
-		tclean(vis=self.msname,imagename=imagename,imsize=[self.imsize],cell=self.cellsize,niter=0,antenna=antenna_to_use,uvtaper=self.uvtaper,weighting=weight,robust=robust)
+								str(self.cellsize)+'arcsec\',niter=0,antenna=\''+antenna_to_use+'\',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+')\n')
+		tclean(vis=self.msname,imagename=imagename,imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',niter=0,antenna=antenna_to_use,\
+					uvtaper=self.uvtaper,weighting=weight,robust=robust)
 		out_dict,negative_dyn_range=self.calc_dyn_range('dirty',start_sigma,box_width=box_width,stokes_list=['I']) # Calculating the dynamic range of the image
 		selfcal_snr=self.calc_selfcal_snr(imagename+'.image',start_sigma,len(antenna_to_use.split(',')))
 		if self.verbose==False:
@@ -1105,25 +1106,26 @@ class IntensitySelfcal:
 		'''
 		os.system('rm -rf test_loc*')
 		robust=robust*2
-		poltclean(vis=self.msname,imagename='test_loc',selectdata=True,startmodel='',stokes='I',antenna='',imsize=[self.imsize],cell=self.cellsize,\
+		poltclean(vis=self.msname,imagename='test_loc',selectdata=True,startmodel='',stokes='I',antenna='',imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',\
 				niter=0,gain=0.5,threshold=['10Jy'],deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,weighting=weight,robust=robust,\
 				interactive=False,mask='')
 		maxpix=imstat(imagename='test_loc.image')['max'][0]
 		thresh=str(maxpix/5)+'Jy'
 		os.system('rm -rf test_loc*')
 		if do_bandpass==True:
-			poltclean(vis=self.msname,imagename='test_loc',selectdata=True,startmodel='',stokes='I',antenna='',imsize=[self.imsize],cell=self.cellsize,\
+			poltclean(vis=self.msname,imagename='test_loc',selectdata=True,startmodel='',stokes='I',antenna='',imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',\
 					niter=100000,gain=0.5,threshold=[thresh],specmode='cube',deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,weighting=weight,\
 					robust=robust,interactive=False,mask='')
 			self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\'test_loc\',selectdata=True,startmodel=\'\',stokes=\'I\',antenna=\'\',imsize=['\
-					+str(self.imsize)+'],cell=\''+str(self.cellsize)+'\',niter=100000,gain=0.5,threshold=[\''+str(thresh)+'\'],specmode=\'cube\',deconvolver=\'multiscale\',scales='+\
-					str(self.multiscale_scales)+',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+'interactive=False,mask=\'\')\n')
+					+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec\',niter=100000,gain=0.5,threshold=[\''+\
+		str(thresh)+'\'],specmode=\'cube\',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+\
+					str(robust)+'interactive=False,mask=\'\')\n')
 		else:
-			poltclean(vis=self.msname,imagename='test_loc',selectdata=True,startmodel='',stokes='I',antenna='',imsize=[self.imsize],cell=self.cellsize,\
+			poltclean(vis=self.msname,imagename='test_loc',selectdata=True,startmodel='',stokes='I',antenna='',imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',\
 					niter=100000,gain=0.5,threshold=[thresh],deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,weighting=weight,\
 					robust=robust,interactive=False,mask='')
 			self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\'test_loc\',selectdata=True,startmodel=\'\',stokes=\'I\',antenna=\'\',imsize=['\
-					+str(self.imsize)+'],cell=\''+str(self.cellsize)+'\',niter=100000,gain=0.5,threshold=[\''+str(thresh)+'\'],deconvolver=\'multiscale\',scales='+\
+					+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec\',niter=100000,gain=0.5,threshold=[\''+str(thresh)+'\'],deconvolver=\'multiscale\',scales='+\
 					str(self.multiscale_scales)+',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+'interactive=False,mask=\'\')\n')
 		if os.path.isdir(outdir)==False:
 			os.makedirs(outdir)
@@ -1139,21 +1141,13 @@ class IntensitySelfcal:
 	def remove_model_negative(self,imagename,modelname,sigma=10,overwrite=False):
 		'''
 		Function to remove negatives from model image
-
-		Parameters
-		----------
-		imagename : str 
-			Name of the image
-		modelname : str 
-			Name of the model
-		sigma : float 
-			Sigma value for thresholding
-		overwrite : bool 
-			Overwrite the model image or not
-		Returns
-		-------
-		str
-			Model image without negatives
+		Parameters:
+		imagename = Name of the image
+		modelname = Name of the model
+		sigma = Sigma value for thresholding
+		overwrite = False, overwrite the model image or not
+		Return:
+		Model image without negatives
 		'''
 		ia=image()
 		if overwrite==False:
@@ -1164,17 +1158,16 @@ class IntensitySelfcal:
 		ia.open(imagename)
 		data=ia.getchunk()
 		ia.close()
+		rmsi=imstat(imagename=imagename,box=self.rms_box)['rms'][0]		
+		sigma_pos=np.where(data>=(sigma*rmsi))
+		sigma_pos1=np.where(data<(sigma*rmsi))
 		ia.open(modelname)
 		data=ia.getchunk()
 		data_copy=copy.deepcopy(data)
-		if sigma!=0:
-			rmsi=imstat(imagename=imagename,box=self.rms_box)['rms'][0]		
-			sigma_pos=np.where(abs(data)>=(sigma*rmsi))
-			sigma_pos1=np.where(data<(sigma*rmsi))
-			data[sigma_pos]=0
-			data_copy[sigma_pos1]=0
+		data[sigma_pos]=0
 		pos=np.where(data<0)
-		data_copy[pos]=0		
+		data_copy[pos]=0
+		data_copy[sigma_pos1]=0
 		ia.putchunk(data_copy)
 		ia.done()
 		return modelname
@@ -1459,12 +1452,12 @@ class IntensitySelfcal:
 			robust=robust*2
 			if maskfile!='': # Using the user provided mask file
 				self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''+\
-						startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)\
+						startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec'\
 						+'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)
 						+',uvtaper=\''+self.uvtaper+'\',weighting=\''+weight+'\',robust='+str(robust)+',interactive=False,mask=\''+str(maskfile)\
 						+'\',uvrange=\''+str(self.calib_uvrange)+'\')\n')
 				poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+					cell=str(self.cellsize)+'arcsec',niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
 					weighting=weight,robust=robust,interactive=False,mask=maskfile,uvrange=self.calib_uvrange)
 			elif want_auto_masking==True and maskfile=='' and maskstr=='': # Use auto-masking
 				try_count=0
@@ -1476,21 +1469,21 @@ class IntensitySelfcal:
 					if try_count==0:
 						self.log_verbose.info('Normal auto-masking.\n')
 						self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''\
-							+startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
+							+startmask+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec'+\
 							'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 							',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+',interactive=False,usemask='+\
 							'\'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+',lownoisethreshold='+str(float(sigma/3.0))+\
 							',negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=5.0,uvrange=\''+str(self.calib_uvrange)+'\',automask_trials='+\
 							str(automask_trials)+',maskregion=\''+maskregion+'\')\n')
 						poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,\
-						imsize=[self.imsize],cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
+						imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
 						uvtaper=self.uvtaper,weighting=weight,robust=robust,interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,\
 						noisethreshold=float(sigma),lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.5,growiterations=75,minpercentchange=5.0,\
 						uvrange=self.calib_uvrange,automask_trials=automask_trials,maskregion=maskregion)
 					elif try_count==1:
 						self.log_verbose.info('Trying with auto-masking with no restriction of minimum beam fraction.\n')
 						self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel\
-							+'\',startmask=\''+startmask+'\',stokes=\''+stokes+',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
+							+'\',startmask=\''+startmask+'\',stokes=\''+stokes+',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec'+\
 							'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 							',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+str(robust)+',interactive=False,usemask=\''+\
 							'auto-multithresh\',mask=\'\',pbmask=0.0,sidelobethreshold=3.0,noisethreshold='+str(float(sigma))+\
@@ -1498,19 +1491,19 @@ class IntensitySelfcal:
 							'minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,uvrange=\''+str(self.calib_uvrange)+'\',automask_trials='+str(automask_trials)+\
 							',maskregion=\''+maskregion+'\')\n')
 						poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,\
-						imsize=[self.imsize],cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
+						imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
 						uvtaper=self.uvtaper,weighting=weight,robust=robust,interactive=False,usemask='auto-multithresh',mask='',pbmask=0.0,sidelobethreshold=3.0,\
 						noisethreshold=float(sigma),lownoisethreshold=float(sigma/3.0),negativethreshold=0.0,smoothfactor=1.0,minbeamfrac=0.1,growiterations=75,minpercentchange=-1.0,\
 						uvrange=self.calib_uvrange,automask_trials=automask_trials,maskregion=maskregion)
 					elif try_count==2:
 						self.log_verbose.info('Trying without masking.\n')
 						self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',startmask=\''+\
-							startmask+'\'stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+\
+							startmask+'\'stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec'+\
 							'\',niter=10000,gain='+str(clean_gain)+',threshold='+str(threshold)+',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)+\
 							',uvtaper=\''+str(self.uvtaper)+'\',weighting=\''+weight+'\',robust='+\
 							str(robust)+',interactive=False,usemask=\'user\',mask=\'\',uvrange=\''+str(self.calib_uvrange)+'\')\n')
 						poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,\
-						imsize=[self.imsize],cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
+						imsize=[self.imsize],cell=str(self.cellsize)+'arcsec',niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,\
 						uvtaper=self.uvtaper,weighting=weight,robust=robust,interactive=False,usemask='user',mask='',uvrange=self.calib_uvrange)
 					else:
 						break
@@ -1521,12 +1514,12 @@ class IntensitySelfcal:
 						break
 			else: # If no masking
 				self.log_verbose.info('poltclean(vis=\''+self.msname+'\',imagename=\''+imagename+'\',selectdata=True,startmodel=\''+startmodel+'\',dtartmask=\''+startmask\
-						+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)\
+						+'\',stokes=\''+stokes+'\',antenna=\''+antenna_to_use+'\',imsize=['+str(self.imsize)+'],cell=\''+str(self.cellsize)+'arcsec'\
 						+'\',niter=10000,gain='+str(clean_gain)+',threshold=\''+str(threshold)+'\',deconvolver=\'multiscale\',scales='+str(self.multiscale_scales)
 						+',uvtaper=\''+self.uvtaper+'\',weighting=\''+weight+'\',robust='+str(robust)+',interactive=False,mask='+str([maskfile])+',uvrange=\''\
 						+str(self.calib_uvrange)+'\')\n')		
 				poltclean(vis=self.msname,imagename=imagename,selectdata=True,startmodel=startmodel,startmask=startmask,stokes=stokes,antenna=antenna_to_use,imsize=[self.imsize],\
-					cell=self.cellsize,niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
+					cell=str(self.cellsize)+'arcsec',niter=10000,gain=clean_gain,threshold=threshold,deconvolver='multiscale',scales=self.multiscale_scales,uvtaper=self.uvtaper,\
 					weighting=weight,robust=robust,interactive=False,mask='',uvrange=self.calib_uvrange)
 			casa_imagename=imagename+'.image'
 			casa_modelname=imagename+'.model'
@@ -1603,10 +1596,8 @@ class IntensitySelfcal:
 				self.log_verbose.info('delmod(vis=\''+self.msname+'\',scr=True)\n') 
 				delmod(vis=self.msname,scr=True) # Clear the MODEL column
 				if self.wsclean==False:
-					if do_bandpass==False:
+					if num_iter>=2:
 						self.remove_model_negative(casa_imagename,casa_modelname,sigma=3,overwrite=True) # Removing negatives from model and less than 3 sigma regions
-					else:
-						self.remove_model_negative(casa_imagename,casa_modelname,sigma=0,overwrite=True) # Removing negatives only from the model
 				if correct_phasecenter==True:
 					if ra==0 or dec==0:
 						AM=am.AccessMS(self.msname)
