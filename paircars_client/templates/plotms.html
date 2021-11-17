@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.88.1">
-    <title>P-AIRCARS Plot Measurement Sets</title>
+    <title>P-AIRCARS Plot MS</title>
 
     <link rel="canonical" href="https://getbootstrap.com/docs/5.1/examples/sidebars/">
 
@@ -15,6 +15,9 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"  crossorigin="anonymous">
 
     <style>
+      .bg-color:first-child {
+  background-color: #CFDCF7;
+			}  
       .bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
@@ -41,17 +44,44 @@
 		background-color: #f5f5f5;
 		border-right: 1px solid #eee;
 		}
+     .carousel-caption {
+			   bottom: -120px;
+			   top: auto
+			}
+
+	.carousel-inner {padding-bottom:120px; }
+	.example1 {
+		  width: 100%; white-space:wrap;
+		  overflow: auto;
+		  overflow-x: marquee-line;
+		  marquee-direction: forward;
+		  marquee-style: scroll;
+		  marquee-speed: normal;
+		  marquee-play-count: 5;
+		}
+		li {
+		  max-width 30%;
+		}
+
+		li a {
+		  word-break: break-all;
+		}
+	.carousel-control-prev-icon, .carousel-control-next-icon {
+		filter: invert(1);
+		}
     </style>
 
-    
-  
     <!-- Custom styles for this template -->
     <link href="dashboard.css" rel="stylesheet">
+	<link href="carousel.css" rel="stylesheet">
   </head>
   <body>
     
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
   <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="/home">P-AIRCARS remote client</a>
+  {% if ms is not none %}	
+	<marquee class="navbar-brand" behavior="scroll" scrolldelay=-10 scrollamount=10 onstart=true>MS : {{ms}}, X-axis : {{xaxis}}, X-datacolumn : {{xcolumn}}, Y-axis : {{yaxis}}, Y-datacolumn : {{ycolumn}}, Plot Flags : {{plotflag}}, Iteration : {{iteration}}</marquee>	
+  {% endif %}
   <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -125,7 +155,7 @@
   </symbol>
 </svg>
 
-<div class="flex-shrink-0 p-3 bg-white sidebar" style="width: 30%;">
+<div class="flex-shrink-0 p-3 bg-color sidebar" style="width: 30%;">
     <a href="/plotms" class="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom">
       <span class="fs-5 fw-semibold">Plot MS</span>
     </a>
@@ -154,11 +184,23 @@
 		</ul>
         </div>
       </li>
-      <li class="mb-1">
+		<li class="mb-1">
         <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#orders-collapse" aria-expanded="false">
-          Y axis
+          X datacolumn
         </button>
         <div class="collapse" id="orders-collapse">
+         <ul class="btn-toggle-nav fw-normal pb-1 small">
+         {% for i in range(xdata_column|length) %}
+            <li><a href="{{url_for('open_plotms', xcolumntype=xdata_column[i])}}" class="link-dark rounded">{{xdata_column[i]}}</a></li>
+		{% endfor %}
+		</ul>
+        </div>
+      </li>
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#yaxis-collapse" aria-expanded="false">
+          Y axis
+        </button>
+        <div class="collapse" id="yaxis-collapse">
          <ul class="btn-toggle-nav fw-normal pb-1 small">
          {% for i in range(ytypes|length) %}
             <li><a href="{{url_for('open_plotms', ytype=ytypes[i])}}" class="link-dark rounded">{{ytypes[i]}}</a></li>
@@ -166,7 +208,125 @@
 		</ul>
         </div>
       </li>
+		<li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#ycol-collapse" aria-expanded="false">
+          Y datacolumn
+        </button>
+        <div class="collapse" id="ycol-collapse">
+         <ul class="btn-toggle-nav fw-normal pb-1 small">
+         {% for i in range(ydata_column|length) %}
+            <li><a href="{{url_for('open_plotms', ycolumntype=ydata_column[i])}}" class="link-dark rounded">{{ydata_column[i]}}</a></li>
+		{% endfor %}
+		</ul>
+        </div>
+      </li>
+		<li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#iter-collapse" aria-expanded="false">
+          Iteration
+        </button>
+        <div class="collapse" id="iter-collapse">
+         <ul class="btn-toggle-nav fw-normal pb-1 small">
+         {% for i in range(iteration_list|length) %}
+            <li><a href="{{url_for('open_plotms', itertype=iteration_list[i])}}" class="link-dark rounded">{{iteration_list[i]}}</a></li>
+		{% endfor %}
+		</ul>
+        </div>
+      </li>
+		</li>
+		<li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#flag-collapse" aria-expanded="false">
+          Plot Flags
+        </button>
+        <div class="collapse" id="flag-collapse">
+         <ul class="btn-toggle-nav fw-normal pb-1 small">
+         {% for i in range(plotflag_list|length) %}
+            <li><a href="{{url_for('open_plotms', flagtype=plotflag_list[i])}}" class="link-dark rounded">{{plotflag_list[i]}}</a></li>
+		{% endfor %}
+		</ul>
+        </div>
+      </li>
+		<form action="" method="post">
+        <p>
+            <label class="align-items-center" for="antennas" />Antennas</label>
+            <input style="margin-left:60px" type="text" name="antennas" value="ant1,ant2...."  onblur="if (this.value == '') {this.value = 'ant1,ant2....';}"
+ onfocus="if (this.value == 'ant1,ant2....') {this.value = '';}" >
+        </p>
+        <p>
+            <label for="baseline">Baseline</label>
+            <input style="margin-left:70px" type="text" name="baseline" value="ant1-ant2,ant2-ant3,...." onblur="if (this.value == '') {this.value = 'ant1-ant2,ant2-ant3,....';}"
+ onfocus="if (this.value == 'ant1-ant2,ant2-ant3,....') {this.value = '';}">
+        </p>
+		<p>
+            <label for="spw">Spectral Windows</label>
+            <input style="margin-left:3px" type=text" name="spw" value = "spw0,spw1,..." onblur="if (this.value == '') {this.value = 'spw0,spw1,...';}"
+ onfocus="if (this.value == 'spw0,spw1,...') {this.value = '';}">
+        </p>
+		<p>
+            <label for="chans">Channels</label>
+            <input style="margin-left:65px"type="text" name="chans" value="start:stop:step" onblur="if (this.value == '') {this.value = 'start:stop:step';}"
+ onfocus="if (this.value == 'start:stop:step') {this.value = '';}">
+        </p>
+		<p>
+            <label for="field">Field</label>
+            <input style="margin-left:95px" type="number" name="field" value = 0 onblur="if (this.value == '') {this.value = 0;}"
+ onfocus="if (this.value == 0) {this.value = 0}">
+        </p>
+		<p>
+            <label for="scan">Scan</label>
+            <input style="margin-left:95px" type="number" name="scan" value =1 onblur="if (this.value == '') {this.value = 1;}"
+ onfocus="if (this.value == 1) {this.value = 1}">
+        </p>
+		<p>
+            <label for="corr">Correlation</label>
+            <input style="margin-left:48px" type="text" name="corr" value="XX, XY, YX, YY, I, Q, U, V" onblur="if (this.value == '') {this.value = 'XX, XY, YX, YY, I, Q, U, V';}"
+ onfocus="if (this.value == 'XX, XY, YX, YY, I, Q, U, V') {this.value = '';}">
+        </p>
+        <p>
+            <input type="submit" value="Plot">
+        </p>
+    </form>
+</div>
 
+<main class="col-md-5 ms-sm-auto col-lg-8 px-md-4">
+	<div>
+	{% if noms and ms is none%}
+	   <h2 style="text-align:center;"> No measurement set is selected </h2>
+	{% elif image_list|length > 0 and message == 0 %}
+		<div  id="myCarousel" class="carousel slide" data-bs-ride="carousel">
+		  <div class="carousel-inner">
+			{% for i in range(image_list|length) %}
+			{% if i==0 %}
+				<div class="carousel-item active">
+			{% else %}
+				<div class="carousel-item">
+			{% endif %}
+				<div class="d-flex justify-content-center">
+				 	 <img src="{{url_for('static',filename=image_list[i])}}" style="height:auto; width: auto ; object-fit: contain; max-width : 75%; max-height:85%">
+				</div>
+					<div class="container">
+          				<div class="carousel-caption text-left">
+							<p><a class="btn btn-lg btn-primary"  href="{{url_for('static',filename=image_list[i])}}" download>Download</a>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		  </div>
+		<button class="carousel-control-prev" type="button" data-bs-target="#myCarousel" data-bs-slide="prev">
+		  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+		  <span class="visually-hidden">Previous</span>
+		</button>
+		<button class="carousel-control-next" type="button" data-bs-target="#myCarousel" data-bs-slide="next">
+		  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+		  <span class="visually-hidden">Next</span>
+		</button>
+		</div>
+	</div>
+	{% elif message == 1 %}
+	   <h2 style="text-align:center;"> Error in ploting </h2>
+	{% endif %}
+    </main>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 
