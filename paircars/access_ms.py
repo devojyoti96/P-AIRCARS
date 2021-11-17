@@ -69,7 +69,7 @@ class AccessMS:
 		radec_str=B.radec_con_deg_to_hhmmss(radeg,decdeg)
 		return radec_str,radeg,decdeg
 
-	def get_pol(self):
+	def get_npol(self):
 		'''
 		Function to get number of polarisations 
 		Returns

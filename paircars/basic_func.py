@@ -878,7 +878,7 @@ def freq_to_MWA_coarse(freq):
 		if freq>=ch0 and freq<ch1:
 			return i 
 
-def update_mwa_obsids(obsid_file='',verbose=False):
+def update_mwa_obsids(obsid_file='',verbose=False,force=False):
 	'''
 	Function to update MWA OBSIDs 
 
@@ -888,6 +888,8 @@ def update_mwa_obsids(obsid_file='',verbose=False):
 		Name of the file to save MWA OBSIDs
 	verbose : bool
 		Verbose output
+	force :  bool
+		Update forcefully
 	Returns
 	-------
 	str
@@ -901,7 +903,7 @@ def update_mwa_obsids(obsid_file='',verbose=False):
 		obsid_file=datadir+'/MWA_OBSids'
 	BASEURL='http://ws.mwatelescope.org/'
 	temp_array=np.empty(0,dtype='int')
-	if os.path.isfile(obsid_file+'.npy')==True:
+	if os.path.isfile(obsid_file+'.npy')==True and force==False:
 		try:
 			obsids=np.load(obsid_file+'.npy',allow_pickle=True)
 			start_obsid=np.max(obsids)
