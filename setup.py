@@ -1,5 +1,5 @@
 from setuptools import setup,find_packages
-import os,sys,shutil,subprocess,glob,pip
+import os,sys,shutil,subprocess,glob,pip,sysconfig
 from distutils.sysconfig import get_python_lib
 from pkg_resources import resource_filename
 
@@ -45,8 +45,8 @@ else:
 	os._exit(1)
 
 python_version=float('.'.join(sys.version.split(' ')[0].split('.')[:-1]))
-if python_version<3.6:
-	print ('Python version is less than 3.6. Python version more than 3.6 is required for P-AIRCARS.\n')	
+if python_version<3.6 or python_version>3.8:
+	print ('Python version is either less than 3.6 or grater than 3.8. Python version more than 3.6 and less than 3.8 is required for P-AIRCARS.\n')	
 	os._exit(1)
 
 cwd=os.getcwd()
@@ -319,8 +319,8 @@ setup(
             'jprq = jprq.main:main',
         ]
     },
-    install_requires=['requests>=2.18.3','certifi==2019.9.11','websockets==9.1','aiohttp==3.7.4','bson~=0.5.10','click==8.0.3'],
-    python_requires='>=3.6.1',
+    install_requires=['requests==2.18.3','certifi==2019.9.11','websockets==9.1','aiohttp==3.7.4','bson~=0.5.10','click==8.0.3'],
+    python_requires='>=3.6.1,<=3.8',
 )
 
 setup(
@@ -333,9 +333,9 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers","pillow>=7.1.0","ephem","bokeh==2.4.0","pyparsing==2.4.7","numpy>=1.19.0", "astropy==4.3", "skyfield", "matplotlib",\
-					 "chardet>=3.0.4","scipy>=0.15.1", "h5py","julian","psutil","casatools","casatasks","casadata","cmake",'requests>=2.18.3','websocket_client','colorama',\
-					 "dask-ms[xarray]","dask[complete]","datashader>=0.12.0", "holoviews",\
+    install_requires=["extension-helpers","pillow==8.2.0","ephem","bokeh==2.4.0","pyparsing==2.4.7","numpy==1.19.0", "scipy==1.6.2","astropy==4.3","skyfield", "matplotlib",\
+					 "chardet==3.0.4", "h5py","julian","psutil","casatools","casatasks","casadata","cmake",'requests==2.18.3','websocket_client','colorama',\
+					 "dask-ms[xarray]","dask[complete]","datashader==0.12.0", "holoviews",\
 					"matplotlib>2.2.3; python_version >= '3.5'","cmasher","future-fstrings","MSUtils",'shadems','Flask'],
     scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
 		'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
@@ -350,19 +350,18 @@ os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_in
 setup(name='mantaray-client',
       version='1.0.0',
       packages=['mantaray','mantaray.api','mantaray.scripts'],
-      install_requires=['requests>=2.18.3',
+      install_requires=['requests==2.18.3',
                         'websocket_client',
                         'colorama'],
  	entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']},
-	python_requires='>=3.6.1',
+	python_requires='>=3.6.1,<=3.8',
 	)
 cwd=os.getcwd()
-import site
-paircars_path=site.getsitepackages()[0]
+paircars_path=sysconfig.get_paths()['platlib']
 os.chdir(paircars_path)
 paircars_client_path=glob.glob('paircars*')[0]+'/paircars_client/static'
-print (os.path.abspath(paircars_client_path))
 os.system('chmod a+rwx '+paircars_client_path)
-from paircars.basic_func import update_mwa_obsids
-obsid_file,msg=update_mwa_obsids(verbose=True)
+os.chdir(cwd)
+from paircars.update_mwa_database import *
+update_mwa_obsids(verbose=True)
 os.chdir(cwd)
