@@ -600,14 +600,14 @@ class ANKFLAG():
 					now = datetime.now()
 					dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
 					afank.saveflagversion('aNKflag_'+str(version_num),'Flags autosave on '+dt_string)
-					if os.path.isdir(inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms'):
+					if os.path.isdir(inp_filepath+'/'+inpfile_name_prefix+'.temp_aNKflag.ms'):
 						os.system('rm -rf '+inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
-					importuvfits(fitsfile=outfits,vis=inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
+					importuvfits(fitsfile=outfits,vis=inp_filepath+'/'+inpfile_name_prefix+'.temp_aNKflag.ms')
 					tbank=table()
-					tbank.open(inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
+					tbank.open(inp_filepath+'/'+inpfile_name_prefix+'.temp_aNKflag.ms')
 					flag=tbank.getcol('FLAG')
 					tbank.close()
-					os.system('rm -rf '+inp_filepath+inpfile_name_prefix+'.temp_aNKflag.ms')
+					os.system('rm -rf '+inp_filepath+'/'+inpfile_name_prefix+'.temp_aNKflag.ms')
 					tbank.open(inpfilename,nomodify=False)
 					tbank.putcol('FLAG',flag)
 					tbank.flush()
