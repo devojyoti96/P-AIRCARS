@@ -2,7 +2,7 @@
 // detail/impl/pipe_select_interrupter.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,8 +17,7 @@
 
 #include <boost/asio/detail/config.hpp>
 
-#if !defined(BOOST_ASIO_WINDOWS_RUNTIME)
-#if !defined(BOOST_ASIO_WINDOWS)
+#if !defined(BOOST_WINDOWS)
 #if !defined(__CYGWIN__)
 #if !defined(__SYMBIAN32__)
 #if !defined(BOOST_ASIO_HAS_EVENTFD)
@@ -102,17 +101,12 @@ bool pipe_select_interrupter::reset()
   {
     char data[1024];
     signed_size_type bytes_read = ::read(read_descriptor_, data, sizeof(data));
-    if (bytes_read == sizeof(data))
+    if (bytes_read < 0 && errno == EINTR)
       continue;
-    if (bytes_read > 0)
-      return true;
-    if (bytes_read == 0)
-      return false;
-    if (errno == EINTR)
-      continue;
-    if (errno == EWOULDBLOCK || errno == EAGAIN)
-      return true;
-    return false;
+    bool was_interrupted = (bytes_read > 0);
+    while (bytes_read == sizeof(data))
+      bytes_read = ::read(read_descriptor_, data, sizeof(data));
+    return was_interrupted;
   }
 }
 
@@ -125,7 +119,6 @@ bool pipe_select_interrupter::reset()
 #endif // !defined(BOOST_ASIO_HAS_EVENTFD)
 #endif // !defined(__SYMBIAN32__)
 #endif // !defined(__CYGWIN__)
-#endif // !defined(BOOST_ASIO_WINDOWS)
-#endif // !defined(BOOST_ASIO_WINDOWS_RUNTIME)
+#endif // !defined(BOOST_WINDOWS)
 
 #endif // BOOST_ASIO_DETAIL_IMPL_PIPE_SELECT_INTERRUPTER_IPP

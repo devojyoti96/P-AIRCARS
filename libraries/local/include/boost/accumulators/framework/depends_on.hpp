@@ -223,13 +223,13 @@ namespace boost { namespace accumulators
         template<typename First, typename Last>
         struct build_acc_list<First, Last, true>
         {
-            typedef fusion::nil_ type;
+            typedef fusion::nil type;
 
             template<typename Args>
-            static fusion::nil_
+            static fusion::nil
             call(Args const &, First const&, Last const&)
             {
-                return fusion::nil_();
+                return fusion::nil();
             }
         };
 
@@ -266,16 +266,9 @@ namespace boost { namespace accumulators
 
         template<typename Sequence, typename Args>
         typename meta::make_acc_list<Sequence>::type
-        make_acc_list(Sequence &seq, Args const &args)
-        {
-            return meta::make_acc_list<Sequence>::call(args, fusion::begin(seq), fusion::end(seq));
-        }
-
-        template<typename Sequence, typename Args>
-        typename meta::make_acc_list<Sequence>::type
         make_acc_list(Sequence const &seq, Args const &args)
         {
-            return meta::make_acc_list<Sequence const>::call(args, fusion::begin(seq), fusion::end(seq));
+            return meta::make_acc_list<Sequence>::call(args, fusion::begin(seq), fusion::end(seq));
         }
 
         ///////////////////////////////////////////////////////////////////////////

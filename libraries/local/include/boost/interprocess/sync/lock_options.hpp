@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_LOCK_OPTIONS_HPP
 #define BOOST_INTERPROCESS_LOCK_OPTIONS_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -26,6 +22,10 @@
 //!Describes the lock options with associated with interprocess_mutex lock constructors.
 
 namespace boost {
+
+namespace posix_time
+{  class ptime;   }
+
 namespace interprocess {
 
 //!Type to indicate to a mutex lock constructor that must not lock the mutex.

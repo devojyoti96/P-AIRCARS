@@ -3,27 +3,22 @@
 //Distributed under the Boost Software License, Version 1.0. (See accompanying
 //file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef BOOST_EXCEPTION_C3E1741C754311DDB2834CCA55D89593
-#define BOOST_EXCEPTION_C3E1741C754311DDB2834CCA55D89593
-
-#include <boost/config.hpp>
-#include <boost/core/typeinfo.hpp>
-#include <boost/core/demangle.hpp>
-#include <boost/current_function.hpp>
-#include <string>
-#include <string.h>
-
-#ifndef BOOST_EXCEPTION_ENABLE_WARNINGS
-#if __GNUC__*100+__GNUC_MINOR__>301
+#ifndef UUID_C3E1741C754311DDB2834CCA55D89593
+#define UUID_C3E1741C754311DDB2834CCA55D89593
+#if defined(__GNUC__) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
 #pragma GCC system_header
 #endif
-#ifdef __clang__
-#pragma clang system_header
-#endif
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
 #pragma warning(push,1)
 #endif
+
+#include <boost/detail/sp_typeinfo.hpp>
+#include <boost/current_function.hpp>
+#include <boost/config.hpp>
+#ifndef BOOST_NO_TYPEID
+#include <boost/units/detail/utility.hpp>
 #endif
+#include <string>
 
 namespace
 boost
@@ -36,7 +31,7 @@ boost
 #ifdef BOOST_NO_TYPEID
         return BOOST_CURRENT_FUNCTION;
 #else
-        return core::demangle(typeid(T*).name());
+        return units::detail::demangle(typeid(T*).name());
 #endif
         }
 
@@ -48,7 +43,7 @@ boost
 #ifdef BOOST_NO_TYPEID
         return BOOST_CURRENT_FUNCTION;
 #else
-        return core::demangle(typeid(T).name());
+        return units::detail::demangle(typeid(T).name());
 #endif
         }
 
@@ -58,10 +53,10 @@ boost
         struct
         type_info_
             {
-            core::typeinfo const * type_;
+            detail::sp_typeinfo const * type_;
 
             explicit
-            type_info_( core::typeinfo const & type ):
+            type_info_( detail::sp_typeinfo const & type ):
                 type_(&type)
                 {
                 }
@@ -70,13 +65,13 @@ boost
             bool
             operator<( type_info_ const & a, type_info_ const & b )
                 {
-                return a.type_!=b.type_ && strcmp(a.type_->name(), b.type_->name()) < 0;
+                return 0!=(a.type_->before(*b.type_));
                 }
             };
         }
     }
 
-#define BOOST_EXCEPTION_STATIC_TYPEID(T) ::boost::exception_detail::type_info_(BOOST_CORE_TYPEID(T))
+#define BOOST_EXCEPTION_STATIC_TYPEID(T) ::boost::exception_detail::type_info_(BOOST_SP_TYPEID(T))
 
 #ifndef BOOST_NO_RTTI
 #define BOOST_EXCEPTION_DYNAMIC_TYPEID(x) ::boost::exception_detail::type_info_(typeid(x))

@@ -4,13 +4,12 @@
 #ifndef BOOST_CONCEPT_DETAIL_GENERAL_DWA2006429_HPP
 # define BOOST_CONCEPT_DETAIL_GENERAL_DWA2006429_HPP
 
-# include <boost/config.hpp>
 # include <boost/preprocessor/cat.hpp>
 # include <boost/concept/detail/backward_compatibility.hpp>
 
 # ifdef BOOST_OLD_CONCEPT_SUPPORT
 #  include <boost/concept/detail/has_constraints.hpp>
-#  include <boost/type_traits/conditional.hpp>
+#  include <boost/mpl/if.hpp>
 # endif
 
 // This implementation works on Comeau and GCC, all the way back to
@@ -28,14 +27,7 @@ namespace detail
 template <class Model>
 struct requirement
 {
-#   if defined(BOOST_GCC) && (BOOST_GCC >= 110000)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wnonnull"
-#   endif
     static void failed() { ((Model*)0)->~Model(); }
-#   if defined(BOOST_GCC) && (BOOST_GCC >= 110000)
-#   pragma GCC diagnostic pop
-#   endif
 };
 
 struct failed {};
@@ -43,14 +35,7 @@ struct failed {};
 template <class Model>
 struct requirement<failed ************ Model::************>
 {
-#   if defined(BOOST_GCC) && (BOOST_GCC >= 110000)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wnonnull"
-#   endif
     static void failed() { ((Model*)0)->~Model(); }
-#   if defined(BOOST_GCC) && (BOOST_GCC >= 110000)
-#   pragma GCC diagnostic pop
-#   endif
 };
 
 # ifdef BOOST_OLD_CONCEPT_SUPPORT
@@ -58,20 +43,13 @@ struct requirement<failed ************ Model::************>
 template <class Model>
 struct constraint
 {
-#   if defined(BOOST_GCC) && (BOOST_GCC >= 110000)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wnonnull"
-#   endif
     static void failed() { ((Model*)0)->constraints(); }
-#   if defined(BOOST_GCC) && (BOOST_GCC >= 110000)
-#   pragma GCC diagnostic pop
-#   endif
 };
   
 template <class Model>
 struct requirement_<void(*)(Model)>
-  : boost::conditional<
-        concepts::not_satisfied<Model>::value
+  : mpl::if_<
+        concepts::not_satisfied<Model>
       , constraint<Model>
       , requirement<failed ************ Model::************>
     >::type
@@ -90,8 +68,7 @@ struct requirement_<void(*)(Model)>
 #  define BOOST_CONCEPT_ASSERT_FN( ModelFnPtr )             \
     typedef ::boost::concepts::detail::instantiate<          \
     &::boost::concepts::requirement_<ModelFnPtr>::failed>    \
-      BOOST_PP_CAT(boost_concept_check,__LINE__)             \
-      BOOST_ATTRIBUTE_UNUSED
+      BOOST_PP_CAT(boost_concept_check,__LINE__)
 
 }}
 

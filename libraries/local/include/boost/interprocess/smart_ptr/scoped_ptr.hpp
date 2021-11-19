@@ -15,20 +15,11 @@
 #ifndef BOOST_INTERPROCESS_SCOPED_PTR_HPP_INCLUDED
 #define BOOST_INTERPROCESS_SCOPED_PTR_HPP_INCLUDED
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
 #include <boost/interprocess/detail/pointer_type.hpp>
 #include <boost/interprocess/detail/utilities.hpp>
 #include <boost/assert.hpp>
-#include <boost/move/adl_move_swap.hpp>
 
 //!\file
 //!Describes the smart pointer scoped_ptr
@@ -49,13 +40,13 @@ template<class T, class Deleter>
 class scoped_ptr
    : private Deleter
 {
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    scoped_ptr(scoped_ptr const &);
    scoped_ptr & operator=(scoped_ptr const &);
 
    typedef scoped_ptr<T, Deleter> this_type;
    typedef typename ipcdetail::add_reference<T>::type reference;
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 
    public:
 
@@ -91,64 +82,61 @@ class scoped_ptr
 
    //!Assigns internal pointer as 0 and returns previous pointer. This will
    //!avoid deletion on destructor
-   pointer release() BOOST_NOEXCEPT
+   pointer release()
    {  pointer tmp(m_ptr);  m_ptr = 0;  return tmp; }
 
    //!Returns a reference to the object pointed to by the stored pointer.
    //!Never throws.
-   reference operator*() const BOOST_NOEXCEPT
+   reference operator*() const
    {  BOOST_ASSERT(m_ptr != 0);  return *m_ptr; }
 
    //!Returns the internal stored pointer.
    //!Never throws.
-   pointer &operator->() BOOST_NOEXCEPT
+   pointer &operator->()
    {  BOOST_ASSERT(m_ptr != 0);  return m_ptr;  }
 
    //!Returns the internal stored pointer.
    //!Never throws.
-   const pointer &operator->() const BOOST_NOEXCEPT
+   const pointer &operator->() const
    {  BOOST_ASSERT(m_ptr != 0);  return m_ptr;  }
 
    //!Returns the stored pointer.
    //!Never throws.
-   pointer & get() BOOST_NOEXCEPT
+   pointer & get()
    {  return m_ptr;  }
 
    //!Returns the stored pointer.
    //!Never throws.
-   const pointer & get() const BOOST_NOEXCEPT
+   const pointer & get() const
    {  return m_ptr;  }
 
    typedef pointer this_type::*unspecified_bool_type;
 
    //!Conversion to bool
    //!Never throws
-   operator unspecified_bool_type() const BOOST_NOEXCEPT
+   operator unspecified_bool_type() const
    {  return m_ptr == 0? 0: &this_type::m_ptr;  }
 
    //!Returns true if the stored pointer is 0.
    //!Never throws.
-   bool operator! () const BOOST_NOEXCEPT // never throws
+   bool operator! () const // never throws
    {  return m_ptr == 0;   }
 
    //!Exchanges the internal pointer and deleter with other scoped_ptr
    //!Never throws.
-   void swap(scoped_ptr & b) BOOST_NOEXCEPT // never throws
-   {
-      ::boost::adl_move_swap(static_cast<Deleter&>(*this), static_cast<Deleter&>(b));
-      ::boost::adl_move_swap(m_ptr, b.m_ptr);
-   }
+   void swap(scoped_ptr & b) // never throws
+   {  ipcdetail::do_swap<Deleter>(*this, b); ipcdetail::do_swap(m_ptr, b.m_ptr); }
 
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    private:
    pointer m_ptr;
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 };
 
 //!Exchanges the internal pointer and deleter with other scoped_ptr
 //!Never throws.
 template<class T, class D> inline
-void swap(scoped_ptr<T, D> & a, scoped_ptr<T, D> & b) BOOST_NOEXCEPT
+void swap(scoped_ptr<T, D> & a, scoped_ptr<T, D> & b)
 {  a.swap(b); }
 
 //!Returns a copy of the stored pointer
@@ -159,7 +147,7 @@ typename scoped_ptr<T, D>::pointer to_raw_pointer(scoped_ptr<T, D> const & p)
 
 } // namespace interprocess
 
-#if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+/// @cond
 
 #if defined(_MSC_VER) && (_MSC_VER < 1400)
 template<class T, class D> inline
@@ -167,7 +155,7 @@ T *to_raw_pointer(boost::interprocess::scoped_ptr<T, D> const & p)
 {  return p.get();   }
 #endif
 
-#endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+/// @endcond
 
 } // namespace boost
 

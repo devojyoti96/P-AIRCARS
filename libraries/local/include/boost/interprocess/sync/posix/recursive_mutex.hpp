@@ -27,26 +27,17 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_POSIX_RECURSIVE_MUTEX_HPP
 #define BOOST_INTERPROCESS_DETAIL_POSIX_RECURSIVE_MUTEX_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
 
 #include <pthread.h>
 #include <errno.h>
 #include <boost/interprocess/sync/posix/pthread_helpers.hpp>
-#include <boost/interprocess/sync/posix/timepoint_to_timespec.hpp>
-#include <boost/interprocess/detail/timed_utils.hpp>
+#include <boost/interprocess/sync/posix/ptime_to_timespec.hpp>
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #ifndef BOOST_INTERPROCESS_POSIX_TIMEOUTS
 #  include <boost/interprocess/detail/os_thread_functions.hpp>
-#  include <boost/interprocess/sync/detail/common_algorithms.hpp>
 #endif
 #include <boost/assert.hpp>
 
@@ -65,7 +56,7 @@ class posix_recursive_mutex
 
    void lock();
    bool try_lock();
-   template<class TimePoint> bool timed_lock(const TimePoint &abs_time);
+   bool timed_lock(const boost::posix_time::ptime &abs_time);
    void unlock();
 
    private:
@@ -99,17 +90,15 @@ inline bool posix_recursive_mutex::try_lock()
    return res == 0;
 }
 
-template<class TimePoint>
-inline bool posix_recursive_mutex::timed_lock(const TimePoint &abs_time)
+inline bool posix_recursive_mutex::timed_lock(const boost::posix_time::ptime &abs_time)
 {
-   #ifdef BOOST_INTERPROCESS_POSIX_TIMEOUTS
-   //Posix does not support infinity absolute time so handle it here
-   if(ipcdetail::is_pos_infinity(abs_time)){
+   if(abs_time == boost::posix_time::pos_infin){
       this->lock();
       return true;
    }
+   #ifdef BOOST_INTERPROCESS_POSIX_TIMEOUTS
 
-   timespec ts = timepoint_to_timespec(abs_time);
+   timespec ts = ptime_to_timespec(abs_time);
    int res = pthread_mutex_timedlock(&m_mut, &ts);
    if (res != 0 && res != ETIMEDOUT)
       throw lock_exception();
@@ -117,7 +106,22 @@ inline bool posix_recursive_mutex::timed_lock(const TimePoint &abs_time)
 
    #else //BOOST_INTERPROCESS_POSIX_TIMEOUTS
 
-   return ipcdetail::try_based_timed_lock(*this, abs_time);
+   //Obtain current count and target time
+   boost::posix_time::ptime now = microsec_clock::universal_time();
+
+   do{
+      if(this->try_lock()){
+         break;
+      }
+      now = microsec_clock::universal_time();
+
+      if(now >= abs_time){
+         return false;
+      }
+      // relinquish current time slice
+     thread_yield();
+   }while (true);
+   return true;
 
    #endif   //BOOST_INTERPROCESS_POSIX_TIMEOUTS
 }

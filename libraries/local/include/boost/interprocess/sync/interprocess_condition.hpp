@@ -11,43 +11,44 @@
 #ifndef BOOST_INTERPROCESS_CONDITION_HPP
 #define BOOST_INTERPROCESS_CONDITION_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
-#if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+/// @cond
 
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
 
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/detail/locks.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/limits.hpp>
 #include <boost/assert.hpp>
 
-#if   !defined(BOOST_INTERPROCESS_FORCE_GENERIC_EMULATION) && defined(BOOST_INTERPROCESS_POSIX_PROCESS_SHARED)
+#if !defined(BOOST_INTERPROCESS_FORCE_GENERIC_EMULATION) && defined(BOOST_INTERPROCESS_POSIX_PROCESS_SHARED)
    #include <boost/interprocess/sync/posix/condition.hpp>
-   #define BOOST_INTERPROCESS_CONDITION_USE_POSIX
+   #define BOOST_INTERPROCESS_USE_POSIX
 //Experimental...
 #elif !defined(BOOST_INTERPROCESS_FORCE_GENERIC_EMULATION) && defined (BOOST_INTERPROCESS_WINDOWS)
    #include <boost/interprocess/sync/windows/condition.hpp>
-   #define BOOST_INTERPROCESS_CONDITION_USE_WINAPI
-#else
-   //spin_condition is used
+   #define BOOST_INTERPROCESS_USE_WINDOWS
+#elif !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
    #include <boost/interprocess/sync/spin/condition.hpp>
+   #define BOOST_INTERPROCESS_USE_GENERIC_EMULATION
 #endif
 
-#endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+/// @endcond
 
 //!\file
 //!Describes process-shared variables interprocess_condition class
 
 namespace boost {
+
+namespace posix_time
+{  class ptime;   }
+
 namespace interprocess {
 
 class named_condition;
@@ -58,15 +59,15 @@ class named_condition;
 //!
 //!Unlike std::condition_variable in C++11, it is NOT safe to invoke the destructor if all
 //!threads have been only notified. It is required that they have exited their respective wait
-//!functions.
+//!functions. 
 class interprocess_condition
 {
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    //Non-copyable
    interprocess_condition(const interprocess_condition &);
    interprocess_condition &operator=(const interprocess_condition &);
    friend class named_condition;
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 
    public:
    //!Constructs a interprocess_condition. On error throws interprocess_exception.
@@ -93,7 +94,7 @@ class interprocess_condition
    //!this->notify_one() or this->notify_all(), and then reacquires the lock.
    template <typename L>
    void wait(L& lock)
-   {
+   {  
       ipcdetail::internal_mutex_lock<L> internal_lock(lock);
       m_condition.wait(internal_lock);
    }
@@ -112,8 +113,8 @@ class interprocess_condition
    //!this->notify_one() or this->notify_all(), or until time abs_time is reached,
    //!and then reacquires the lock.
    //!Returns: false if time abs_time is reached, otherwise true.
-   template <typename L, class TimePoint>
-   bool timed_wait(L& lock, const TimePoint &abs_time)
+   template <typename L>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time)
    {
       ipcdetail::internal_mutex_lock<L> internal_lock(lock);
       return m_condition.timed_wait(internal_lock, abs_time);
@@ -122,25 +123,29 @@ class interprocess_condition
    //!The same as:   while (!pred()) {
    //!                  if (!timed_wait(lock, abs_time)) return pred();
    //!               } return true;
-   template <typename L, class TimePoint, typename Pr>
-   bool timed_wait(L& lock, const TimePoint &abs_time, Pr pred)
+   template <typename L, typename Pr>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time, Pr pred)
    {
       ipcdetail::internal_mutex_lock<L> internal_lock(lock);
       return m_condition.timed_wait(internal_lock, abs_time, pred);
    }
 
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
 
    private:
-   #if defined(BOOST_INTERPROCESS_CONDITION_USE_POSIX)
-      ipcdetail::posix_condition m_condition;
-   #elif defined(BOOST_INTERPROCESS_CONDITION_USE_WINAPI)
-      ipcdetail::winapi_condition m_condition;
-   #else
+   #if defined (BOOST_INTERPROCESS_USE_GENERIC_EMULATION)
+      #undef BOOST_INTERPROCESS_USE_GENERIC_EMULATION
       ipcdetail::spin_condition m_condition;
+   #elif defined(BOOST_INTERPROCESS_USE_POSIX)
+      #undef BOOST_INTERPROCESS_USE_POSIX
+      ipcdetail::posix_condition m_condition;
+   #elif defined(BOOST_INTERPROCESS_USE_WINDOWS)
+      #undef BOOST_INTERPROCESS_USE_WINDOWS
+      ipcdetail::windows_condition m_condition;
+   #else
+      #error "Unknown platform for interprocess_mutex"
    #endif
-
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 };
 
 }  //namespace interprocess

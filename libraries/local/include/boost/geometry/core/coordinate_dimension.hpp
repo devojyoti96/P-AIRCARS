@@ -4,10 +4,6 @@
 // Copyright (c) 2008-2012 Barend Gehrels, Amsterdam, the Netherlands.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
-// This file was modified by Oracle on 2020.
-// Modifications copyright (c) 2020, Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -21,9 +17,12 @@
 
 #include <cstddef>
 
+#include <boost/mpl/assert.hpp>
+#include <boost/mpl/equal_to.hpp>
+#include <boost/static_assert.hpp>
+
 #include <boost/geometry/core/point_type.hpp>
-#include <boost/geometry/core/static_assert.hpp>
-#include <boost/geometry/util/type_traits_std.hpp>
+#include <boost/geometry/util/bare_type.hpp>
 
 namespace boost { namespace geometry
 {
@@ -36,15 +35,16 @@ namespace traits
 \par Geometries:
     - point
 \par Specializations should provide:
-    - value (e.g. derived from std::integral_constant<std::size_t, D>)
+    - value (should be derived from boost::mpl::int_<D>
 \ingroup traits
 */
 template <typename Point, typename Enable = void>
 struct dimension
 {
-    BOOST_GEOMETRY_STATIC_ASSERT_FALSE(
-        "Not implemented for this Point type.",
-        Point);
+   BOOST_MPL_ASSERT_MSG
+        (
+            false, NOT_IMPLEMENTED_FOR_THIS_POINT_TYPE, (types<Point>)
+        );
 };
 
 } // namespace traits
@@ -55,24 +55,10 @@ namespace core_dispatch
 
 // Base class derive from its own specialization of point-tag
 template <typename T, typename G>
-struct dimension
-    : dimension<point_tag, typename point_type<T, G>::type>::type
-{};
+struct dimension : dimension<point_tag, typename point_type<T, G>::type> {};
 
 template <typename P>
-struct dimension<point_tag, P>
-    : std::integral_constant
-        <
-            std::size_t,
-            traits::dimension<util::remove_cptrref_t<P>>::value
-        >
-{
-    BOOST_GEOMETRY_STATIC_ASSERT(
-        (traits::dimension<util::remove_cptrref_t<P>>::value > 0),
-        "Dimension has to be greater than 0.",
-        traits::dimension<util::remove_cptrref_t<P>>
-    );
-};
+struct dimension<point_tag, P> : traits::dimension<typename geometry::util::bare_type<P>::type> {};
 
 } // namespace core_dispatch
 #endif
@@ -89,7 +75,7 @@ struct dimension
     : core_dispatch::dimension
         <
             typename tag<Geometry>::type,
-            typename util::remove_cptrref<Geometry>::type
+			typename geometry::util::bare_type<Geometry>::type
         >
 {};
 
@@ -97,26 +83,32 @@ struct dimension
 \brief assert_dimension, enables compile-time checking if coordinate dimensions are as expected
 \ingroup utility
 */
-template <typename Geometry, std::size_t Dimensions>
-constexpr inline void assert_dimension()
+template <typename Geometry, int Dimensions>
+inline void assert_dimension()
 {
-    BOOST_STATIC_ASSERT(( dimension<Geometry>::value == Dimensions ));
+    BOOST_STATIC_ASSERT((
+        boost::mpl::equal_to
+        <
+            geometry::dimension<Geometry>,
+            boost::mpl::int_<Dimensions>
+        >::type::value
+        ));
 }
 
 /*!
 \brief assert_dimension, enables compile-time checking if coordinate dimensions are as expected
 \ingroup utility
 */
-template <typename Geometry, std::size_t Dimensions>
-constexpr inline void assert_dimension_less_equal()
+template <typename Geometry, int Dimensions>
+inline void assert_dimension_less_equal()
 {
-    BOOST_STATIC_ASSERT(( dimension<Geometry>::value <= Dimensions ));
+    BOOST_STATIC_ASSERT(( dimension<Geometry>::type::value <= Dimensions ));
 }
 
-template <typename Geometry, std::size_t Dimensions>
-constexpr inline void assert_dimension_greater_equal()
+template <typename Geometry, int Dimensions>
+inline void assert_dimension_greater_equal()
 {
-    BOOST_STATIC_ASSERT(( dimension<Geometry>::value >= Dimensions ));
+    BOOST_STATIC_ASSERT(( dimension<Geometry>::type::value >= Dimensions ));
 }
 
 /*!
@@ -124,9 +116,9 @@ constexpr inline void assert_dimension_greater_equal()
 \ingroup utility
 */
 template <typename G1, typename G2>
-constexpr inline void assert_dimension_equal()
+inline void assert_dimension_equal()
 {
-    BOOST_STATIC_ASSERT(( dimension<G1>::value == dimension<G2>::value ));
+    BOOST_STATIC_ASSERT(( dimension<G1>::type::value == dimension<G2>::type::value ));
 }
 
 }} // namespace boost::geometry

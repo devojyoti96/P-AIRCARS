@@ -2,14 +2,14 @@
 #define BOOST_ARCHIVE_ITERATORS_ESCAPE_HPP
 
 // MS compatible compilers support #pragma once
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // escape.hpp
 
-// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com .
+// (C) Copyright 2002 Robert Ramey - http://www.rrsd.com . 
 // Use, modification and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -19,10 +19,11 @@
 #include <boost/assert.hpp>
 #include <cstddef> // NULL
 
+#include <boost/config.hpp> // for BOOST_DEDUCED_TYPENAME
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/iterator/iterator_traits.hpp>
 
-namespace boost {
+namespace boost { 
 namespace archive {
 namespace iterators {
 
@@ -30,22 +31,22 @@ namespace iterators {
 // insert escapes into text
 
 template<class Derived, class Base>
-class escape :
+class escape : 
     public boost::iterator_adaptor<
-        Derived,
-        Base,
-        typename boost::iterator_value<Base>::type,
+        Derived, 
+        Base, 
+        BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type,
         single_pass_traversal_tag,
-        typename boost::iterator_value<Base>::type
+        BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type
     >
 {
-    typedef typename boost::iterator_value<Base>::type base_value_type;
-    typedef typename boost::iterator_reference<Base>::type reference_type;
+    typedef BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type base_value_type;
+    typedef BOOST_DEDUCED_TYPENAME boost::iterator_reference<Base>::type reference_type;
     friend class boost::iterator_core_access;
 
-    typedef typename boost::iterator_adaptor<
-        Derived,
-        Base,
+    typedef BOOST_DEDUCED_TYPENAME boost::iterator_adaptor<
+        Derived, 
+        Base, 
         base_value_type,
         single_pass_traversal_tag,
         base_value_type
@@ -58,7 +59,7 @@ class escape :
         m_full = true;
     }
 
-    //Access the value referred to
+    //Access the value referred to 
     reference_type dereference() const {
         if(!m_full)
             const_cast<this_t *>(this)->dereference_impl();
@@ -98,12 +99,11 @@ class escape :
     bool m_full;
     base_value_type m_current_value;
 public:
-    escape(Base base) :
+    escape(Base base) : 
         super_t(base),
         m_bnext(NULL),
         m_bend(NULL),
-        m_full(false),
-        m_current_value(0)
+        m_full(false)
     {
     }
 };

@@ -11,16 +11,9 @@
 #ifndef BOOST_INTERPROCESS_XSI_SHARED_MEMORY_HPP
 #define BOOST_INTERPROCESS_XSI_SHARED_MEMORY_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
+#include <boost/detail/workaround.hpp>
 
 #if !defined(BOOST_INTERPROCESS_XSI_SHARED_MEMORY_OBJECTS)
 #error "This header can't be used in operating systems without XSI (System V) shared memory support"
@@ -29,22 +22,15 @@
 #include <boost/interprocess/creation_tags.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/detail/utilities.hpp>
-
+#include <boost/move/move.hpp>
 #include <boost/interprocess/detail/os_file_functions.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/xsi_key.hpp>
 #include <boost/interprocess/permissions.hpp>
-#include <boost/interprocess/detail/simple_swap.hpp>
-// move
-#include <boost/move/utility_core.hpp>
-// other boost
-#include <boost/cstdint.hpp>
-// std
-#include <cstddef>
-// OS
 #include <sys/shm.h>
-
+#include <cstddef>
+#include <boost/cstdint.hpp>
 
 //!\file
 //!Describes a class representing a native xsi shared memory.
@@ -61,15 +47,15 @@ namespace interprocess {
 //!can't communicate between them.
 class xsi_shared_memory
 {
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    //Non-copyable and non-assignable
    BOOST_MOVABLE_BUT_NOT_COPYABLE(xsi_shared_memory)
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 
    public:
    //!Default constructor.
    //!Represents an empty xsi_shared_memory.
-   xsi_shared_memory() BOOST_NOEXCEPT;
+   xsi_shared_memory();
 
    //!Initializes *this with a shmid previously obtained (possibly from another process)
    //!This lower-level initializer allows shared memory mapping without having a key.
@@ -95,14 +81,14 @@ class xsi_shared_memory
    //!Moves the ownership of "moved"'s shared memory object to *this.
    //!After the call, "moved" does not represent any shared memory object.
    //!Does not throw
-   xsi_shared_memory(BOOST_RV_REF(xsi_shared_memory) moved) BOOST_NOEXCEPT
+   xsi_shared_memory(BOOST_RV_REF(xsi_shared_memory) moved)
       : m_shmid(-1)
    {  this->swap(moved);   }
 
    //!Moves the ownership of "moved"'s shared memory to *this.
    //!After the call, "moved" does not represent any shared memory.
    //!Does not throw
-   xsi_shared_memory &operator=(BOOST_RV_REF(xsi_shared_memory) moved) BOOST_NOEXCEPT
+   xsi_shared_memory &operator=(BOOST_RV_REF(xsi_shared_memory) moved)
    {
       xsi_shared_memory tmp(boost::move(moved));
       this->swap(tmp);
@@ -110,7 +96,7 @@ class xsi_shared_memory
    }
 
    //!Swaps two xsi_shared_memorys. Does not throw
-   void swap(xsi_shared_memory &other) BOOST_NOEXCEPT;
+   void swap(xsi_shared_memory &other);
 
    //!Destroys *this. The shared memory won't be destroyed, just
    //!this connection to it. Use remove() to destroy the shared memory.
@@ -118,18 +104,18 @@ class xsi_shared_memory
 
    //!Returns the shared memory ID that
    //!identifies the shared memory
-   int get_shmid() const BOOST_NOEXCEPT;
+   int get_shmid() const;
 
    //!Returns the mapping handle.
    //!Never throws
-   mapping_handle_t get_mapping_handle() const BOOST_NOEXCEPT;
+   mapping_handle_t get_mapping_handle() const;
 
    //!Erases the XSI shared memory object identified by shmid
    //!from the system.
    //!Returns false on error. Never throws
    static bool remove(int shmid);
 
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    private:
 
    //!Closes a previously opened file mapping. Never throws.
@@ -138,27 +124,27 @@ class xsi_shared_memory
                            , const permissions& perm
                            , std::size_t size);
    int            m_shmid;
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 };
 
-#if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+/// @cond
 
-inline xsi_shared_memory::xsi_shared_memory() BOOST_NOEXCEPT
+inline xsi_shared_memory::xsi_shared_memory()
    :  m_shmid(-1)
 {}
 
 inline xsi_shared_memory::~xsi_shared_memory()
 {}
 
-inline int xsi_shared_memory::get_shmid() const BOOST_NOEXCEPT
+inline int xsi_shared_memory::get_shmid() const
 {  return m_shmid; }
 
-inline void xsi_shared_memory::swap(xsi_shared_memory &other) BOOST_NOEXCEPT
+inline void xsi_shared_memory::swap(xsi_shared_memory &other)
 {
-   (simple_swap)(m_shmid, other.m_shmid);
+   std::swap(m_shmid, other.m_shmid);
 }
 
-inline mapping_handle_t xsi_shared_memory::get_mapping_handle() const BOOST_NOEXCEPT
+inline mapping_handle_t xsi_shared_memory::get_mapping_handle() const
 {  mapping_handle_t mhnd = { m_shmid, true};   return mhnd;   }
 
 inline bool xsi_shared_memory::priv_open_or_create
@@ -205,7 +191,7 @@ inline bool xsi_shared_memory::priv_open_or_create
 inline bool xsi_shared_memory::remove(int shmid)
 {  return -1 != ::shmctl(shmid, IPC_RMID, 0); }
 
-#endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+///@endcond
 
 }  //namespace interprocess {
 }  //namespace boost {

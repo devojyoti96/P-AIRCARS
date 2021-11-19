@@ -6,11 +6,10 @@
  * Boost Software License, Version 1.0. (See accompanying
  * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
  * Author: Jeff Garland, Bart Garst
- * $Date$
+ * $Date: 2012-09-22 15:33:33 -0700 (Sat, 22 Sep 2012) $
  */
 
 #include <boost/operators.hpp>
-#include <boost/date_time/compiler_config.hpp>
 #include <boost/date_time/year_month_day.hpp>
 #include <boost/date_time/special_defs.hpp>
 
@@ -51,7 +50,7 @@ namespace date_time {
 
 
   template<class T, class calendar, class duration_type_>
-  class BOOST_SYMBOL_VISIBLE date : private
+  class date : private
        boost::less_than_comparable<T
      , boost::equality_comparable<T
     > >
@@ -68,76 +67,76 @@ namespace date_time {
     typedef typename calendar::date_rep_type date_rep_type;
     typedef typename calendar::date_int_type date_int_type;
     typedef typename calendar::day_of_week_type day_of_week_type;
-    BOOST_CXX14_CONSTEXPR date(year_type y, month_type m, day_type d)
+    date(year_type y, month_type m, day_type d)
       : days_(calendar::day_number(ymd_type(y, m, d)))
     {}
-    BOOST_CXX14_CONSTEXPR date(const ymd_type& ymd)
+    date(const ymd_type& ymd)
       : days_(calendar::day_number(ymd))
     {}
     //let the compiler write copy, assignment, and destructor
-    BOOST_CXX14_CONSTEXPR year_type        year() const
+    year_type        year() const
     {
       ymd_type ymd = calendar::from_day_number(days_);
       return ymd.year;
     }
-    BOOST_CXX14_CONSTEXPR month_type       month() const
+    month_type       month() const
     {
       ymd_type ymd = calendar::from_day_number(days_);
       return ymd.month;
     }
-    BOOST_CXX14_CONSTEXPR day_type         day() const
+    day_type         day() const
     {
       ymd_type ymd = calendar::from_day_number(days_);
       return ymd.day;
     }
-    BOOST_CXX14_CONSTEXPR day_of_week_type day_of_week() const
+    day_of_week_type day_of_week() const
     {
       ymd_type ymd = calendar::from_day_number(days_);
       return calendar::day_of_week(ymd);
     }
-    BOOST_CXX14_CONSTEXPR ymd_type         year_month_day() const
+    ymd_type         year_month_day() const
     {
       return calendar::from_day_number(days_);
     }
-    BOOST_CONSTEXPR bool operator<(const date_type& rhs)  const
+    bool operator<(const date_type& rhs)  const
     {
       return days_ < rhs.days_;
     }
-    BOOST_CONSTEXPR bool operator==(const date_type& rhs) const
+    bool operator==(const date_type& rhs) const
     {
       return days_ == rhs.days_;
     }
     //! check to see if date is a special value
-    BOOST_CONSTEXPR bool is_special()const
+    bool is_special()const
     {
       return(is_not_a_date() || is_infinity());
     }
     //! check to see if date is not a value
-    BOOST_CONSTEXPR bool is_not_a_date()  const
+    bool is_not_a_date()  const
     {
       return traits_type::is_not_a_number(days_);
     }
     //! check to see if date is one of the infinity values
-    BOOST_CONSTEXPR bool is_infinity()  const
+    bool is_infinity()  const
     {
       return traits_type::is_inf(days_);
     }
     //! check to see if date is greater than all possible dates
-    BOOST_CONSTEXPR bool is_pos_infinity()  const
+    bool is_pos_infinity()  const
     {
       return traits_type::is_pos_inf(days_);
     }
     //! check to see if date is greater than all possible dates
-    BOOST_CONSTEXPR bool is_neg_infinity()  const
+    bool is_neg_infinity()  const
     {
       return traits_type::is_neg_inf(days_);
     }
     //! return as a special value or a not_special if a normal date
-    BOOST_CXX14_CONSTEXPR special_values as_special()  const
+    special_values as_special()  const
     {
       return traits_type::to_special(days_);
     }
-    BOOST_CXX14_CONSTEXPR duration_type operator-(const date_type& d) const
+    duration_type operator-(const date_type& d) const
     {
       if (!this->is_special() && !d.is_special())
       {
@@ -154,33 +153,33 @@ namespace date_time {
       }
     }
 
-    BOOST_CXX14_CONSTEXPR date_type operator-(const duration_type& dd) const
+    date_type operator-(const duration_type& dd) const
     {
       if(dd.is_special())
       {
         return date_type(date_rep_type(days_) - dd.get_rep());
       }
-      return date_type(date_rep_type(days_) - static_cast<date_int_type>(dd.days()));
+      return date_type(date_rep_type(days_) - dd.days());
     }
-    BOOST_CXX14_CONSTEXPR date_type operator-=(const duration_type& dd)
+    date_type operator-=(const duration_type& dd)
     {
       *this = *this - dd;
       return date_type(days_);
     }
-    BOOST_CONSTEXPR date_rep_type day_count() const
+    date_rep_type day_count() const
     {
       return days_;
     }
     //allow internal access from operators
-    BOOST_CXX14_CONSTEXPR date_type operator+(const duration_type& dd) const
+    date_type operator+(const duration_type& dd) const
     {
       if(dd.is_special())
       {
         return date_type(date_rep_type(days_) + dd.get_rep());
       }
-      return date_type(date_rep_type(days_) + static_cast<date_int_type>(dd.days()));
+      return date_type(date_rep_type(days_) + dd.days());
     }
-    BOOST_CXX14_CONSTEXPR date_type operator+=(const duration_type& dd)
+    date_type operator+=(const duration_type& dd)
     {
       *this = *this + dd;
       return date_type(days_);
@@ -192,8 +191,8 @@ namespace date_time {
       dates.  It is not exposed to users since that would require class
       users to understand the inner workings of the date class.
     */
-    BOOST_CONSTEXPR explicit date(date_int_type days) : days_(days) {}
-    BOOST_CXX14_CONSTEXPR explicit date(date_rep_type days) : days_(days.as_number()) {}
+    explicit date(date_int_type days) : days_(days) {}
+    explicit date(date_rep_type days) : days_(days.as_number()) {}
     date_int_type days_;
 
   };

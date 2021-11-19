@@ -24,7 +24,7 @@
 // is strictly defined as a discrete function:
 // only integral values of k are envisaged.
 // However because the method of calculation uses a continuous gamma function,
-// it is convenient to treat it as if a continuous function,
+// it is convenient to treat it as if a continous function,
 // and permit non-integral values of k.
 // To enforce the strict mathematical model, users should use floor or ceil functions
 // on k outside this function to ensure that k is integral.
@@ -43,6 +43,11 @@
 #include <boost/math/special_functions/fpclassify.hpp> // isnan.
 #include <boost/math/tools/roots.hpp> // for root finding.
 #include <boost/math/distributions/detail/inv_discrete_quantile.hpp>
+
+#include <boost/type_traits/is_floating_point.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/is_same.hpp>
+#include <boost/mpl/if.hpp>
 
 #include <limits> // using std::numeric_limits;
 #include <utility>
@@ -100,7 +105,7 @@ namespace boost
       template <class RealType, class Policy>
       inline bool check_dist_and_prob(const char* function, RealType p, RealType prob, RealType* result, const Policy& pol)
       {
-        if((check_dist(function, p, result, pol) && detail::check_probability(function, prob, result, pol)) == false)
+        if(check_dist(function, p, result, pol) && detail::check_probability(function, prob, result, pol) == false)
         {
           return false;
         }
@@ -367,8 +372,8 @@ namespace boost
       //RealType q = 1 - p;  // Bad for small p
       //RealType probability = 1 - std::pow(q, k+1);
 
-      RealType z = boost::math::log1p(-p, Policy()) * (k + 1);
-      RealType probability = -boost::math::expm1(z, Policy());
+      RealType z = boost::math::log1p(-p) * (k+1);
+      RealType probability = -boost::math::expm1(z);
 
       return probability;
     } // cdf Cumulative Distribution Function geometric.
@@ -393,7 +398,7 @@ namespace boost
       {
         return result;
       }
-      RealType z = boost::math::log1p(-p, Policy()) * (k+1);
+      RealType z = boost::math::log1p(-p) * (k+1);
       RealType probability = exp(z);
       return probability;
     } // cdf Complemented Cumulative Distribution Function geometric.
@@ -443,7 +448,7 @@ namespace boost
       }
    
       // log(1-x) /log(1-success_fraction) -1; but use log1p in case success_fraction is small
-      result = boost::math::log1p(-x, Policy()) / boost::math::log1p(-success_fraction, Policy()) - 1;
+      result = boost::math::log1p(-x) / boost::math::log1p(-success_fraction) -1;
       // Subtract a few epsilons here too?
       // to make sure it doesn't slip over, so ceil would be one too many.
       return result;
@@ -491,7 +496,7 @@ namespace boost
           // unless #define BOOST_MATH_THROW_ON_OVERFLOW_ERROR
        }
        // log(x) /log(1-success_fraction) -1; but use log1p in case success_fraction is small
-       result = log(x) / boost::math::log1p(-success_fraction, Policy()) - 1;
+       result = log(x) / boost::math::log1p(-success_fraction) -1;
       return result;
 
     } // quantile complement

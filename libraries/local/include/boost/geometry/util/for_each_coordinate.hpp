@@ -4,10 +4,6 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
-// This file was modified by Oracle on 2020.
-// Modifications copyright (c) 2020, Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -20,6 +16,7 @@
 
 #include <boost/concept/requires.hpp>
 #include <boost/geometry/geometries/concepts/point_concept.hpp>
+#include <boost/geometry/util/add_const_if_c.hpp>
 
 namespace boost { namespace geometry
 {
@@ -28,31 +25,36 @@ namespace boost { namespace geometry
 namespace detail
 {
 
-template
-<
-    typename Point,
-    int Dimension = 0,
-    int DimensionCount = dimension<Point>::value
->
+template <typename Point, int Dimension, int DimensionCount, bool IsConst>
 struct coordinates_scanner
 {
     template <typename Op>
-    static inline Op apply(Point& point, Op operation)
+    static inline Op apply(typename add_const_if_c
+        <
+            IsConst,
+            Point
+        >::type& point, Op operation)
     {
         operation.template apply<Point, Dimension>(point);
         return coordinates_scanner
             <
                 Point,
-                Dimension + 1
+                Dimension+1,
+                DimensionCount,
+                IsConst
             >::apply(point, operation);
     }
 };
 
-template <typename Point, int DimensionCount>
-struct coordinates_scanner<Point, DimensionCount, DimensionCount>
+template <typename Point, int DimensionCount, bool IsConst>
+struct coordinates_scanner<Point, DimensionCount, DimensionCount, IsConst>
 {
     template <typename Op>
-    static inline Op apply(Point& , Op operation)
+    static inline Op apply(typename add_const_if_c
+        <
+            IsConst,
+            Point
+        >::type& , Op operation)
     {
         return operation;
     }
@@ -64,17 +66,27 @@ struct coordinates_scanner<Point, DimensionCount, DimensionCount>
 template <typename Point, typename Op>
 inline void for_each_coordinate(Point& point, Op operation)
 {
-    BOOST_CONCEPT_ASSERT( (concepts::Point<Point>) );
+    BOOST_CONCEPT_ASSERT( (concept::Point<Point>) );
 
-    detail::coordinates_scanner<Point>::apply(point, operation);
+    typedef typename detail::coordinates_scanner
+        <
+            Point, 0, dimension<Point>::type::value, false
+        > scanner;
+
+    scanner::apply(point, operation);
 }
 
 template <typename Point, typename Op>
 inline Op for_each_coordinate(Point const& point, Op operation)
 {
-    BOOST_CONCEPT_ASSERT( (concepts::ConstPoint<Point>) );
+    BOOST_CONCEPT_ASSERT( (concept::ConstPoint<Point>) );
 
-    return detail::coordinates_scanner<Point const>::apply(point, operation);
+    typedef typename detail::coordinates_scanner
+        <
+            Point, 0, dimension<Point>::type::value, true
+        > scanner;
+
+    return scanner::apply(point, operation);
 }
 
 }} // namespace boost::geometry

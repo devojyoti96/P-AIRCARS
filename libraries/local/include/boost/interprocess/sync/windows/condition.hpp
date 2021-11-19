@@ -11,16 +11,9 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_WINDOWS_CONDITION_HPP
 #define BOOST_INTERPROCESS_DETAIL_WINDOWS_CONDITION_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -34,22 +27,18 @@ namespace boost {
 namespace interprocess {
 namespace ipcdetail {
 
-class winapi_condition
+class windows_condition
 {
-   winapi_condition(const winapi_condition &);
-   winapi_condition &operator=(const winapi_condition &);
+   windows_condition(const windows_condition &);
+   windows_condition &operator=(const windows_condition &);
 
    public:
-   winapi_condition()
+   windows_condition()
       : m_condition_data()
    {}
 
-   ~winapi_condition()
-   {
-      //Notify all waiting threads
-      //to allow POSIX semantics on condition destruction
-      this->notify_all();
-   }
+   ~windows_condition()
+   {}
 
    void notify_one()
    {  m_condition_data.notify_one();   }
@@ -57,12 +46,12 @@ class winapi_condition
    void notify_all()
    {  m_condition_data.notify_all();   }
 
-   template <typename L, typename TimePoint>
-   bool timed_wait(L& lock, const TimePoint &abs_time)
+   template <typename L>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time)
    {  return m_condition_data.timed_wait(lock, abs_time);   }
 
-   template <typename L, typename TimePoint, typename Pr>
-   bool timed_wait(L& lock, const TimePoint &abs_time, Pr pred)
+   template <typename L, typename Pr>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time, Pr pred)
    {  return m_condition_data.timed_wait(lock, abs_time, pred);   }
 
    template <typename L>
@@ -78,8 +67,8 @@ class winapi_condition
    struct condition_data
    {
       typedef boost::int32_t     integer_type;
-      typedef winapi_semaphore  semaphore_type;
-      typedef winapi_mutex      mutex_type;
+      typedef windows_semaphore  semaphore_type;
+      typedef windows_mutex      mutex_type;
 
       condition_data()
          : m_nwaiters_blocked(0)
@@ -108,12 +97,12 @@ class winapi_condition
       mutex_type      &get_mtx_unblock_lock()
       {  return m_mtx_unblock_lock;  }
 
-      integer_type            m_nwaiters_blocked;
-      integer_type            m_nwaiters_gone;
-      integer_type            m_nwaiters_to_unblock;
-      semaphore_type          m_sem_block_queue;
-      semaphore_type          m_sem_block_lock;
-      mutex_type              m_mtx_unblock_lock;
+      boost::int32_t    m_nwaiters_blocked;
+      boost::int32_t    m_nwaiters_gone;
+      boost::int32_t    m_nwaiters_to_unblock;
+      windows_semaphore m_sem_block_queue;
+      windows_semaphore m_sem_block_lock;
+      windows_mutex     m_mtx_unblock_lock;
    };
 
    ipcdetail::condition_8a_wrapper<condition_data> m_condition_data;

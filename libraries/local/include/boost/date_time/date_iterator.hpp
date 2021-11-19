@@ -6,7 +6,7 @@
  * Boost Software License, Version 1.0. (See accompanying
  * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
  * Author: Jeff Garland, Bart Garst
- * $Date$
+ * $Date: 2012-09-22 15:33:33 -0700 (Sat, 22 Sep 2012) $
  */
 
 #include <iterator>
@@ -53,14 +53,14 @@ namespace date_time {
     }
     virtual duration_type get_offset(const date_type& current) const=0;
     virtual duration_type get_neg_offset(const date_type& current) const=0;
-    const date_type& operator*() const {return current_;}
-    const date_type* operator->() const {return &current_;}
-    bool operator<  (const date_type& d) const {return current_ < d;}
-    bool operator<= (const date_type& d) const {return current_ <= d;}
-    bool operator>  (const date_type& d) const {return current_ > d;}
-    bool operator>= (const date_type& d) const {return current_ >= d;}
-    bool operator== (const date_type& d) const {return current_ == d;}
-    bool operator!= (const date_type& d) const {return current_ != d;}
+    date_type operator*() {return current_;}
+    date_type* operator->() {return &current_;}
+    bool operator<  (const date_type& d) {return current_ < d;}
+    bool operator<= (const date_type& d) {return current_ <= d;}
+    bool operator>  (const date_type& d) {return current_ > d;}
+    bool operator>= (const date_type& d) {return current_ >= d;}
+    bool operator== (const date_type& d) {return current_ == d;}
+    bool operator!= (const date_type& d) {return current_ != d;}
   private:
     date_type current_;
   };

@@ -13,30 +13,31 @@
 #ifndef BOOST_VARIANT_DETAIL_VISITATION_IMPL_HPP
 #define BOOST_VARIANT_DETAIL_VISITATION_IMPL_HPP
 
-#include <boost/config.hpp>
+#include "boost/config.hpp"
 
-#include <boost/variant/detail/backup_holder.hpp>
-#include <boost/variant/detail/cast_storage.hpp>
-#include <boost/variant/detail/forced_return.hpp>
-#include <boost/variant/variant_fwd.hpp> // for BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES
+#include "boost/variant/detail/backup_holder.hpp"
+#include "boost/variant/detail/cast_storage.hpp"
+#include "boost/variant/detail/forced_return.hpp"
+#include "boost/variant/detail/generic_result_type.hpp"
 
-#include <boost/mpl/eval_if.hpp>
-#include <boost/mpl/bool.hpp>
-#include <boost/mpl/identity.hpp>
-#include <boost/mpl/int.hpp>
-#include <boost/mpl/next.hpp>
-#include <boost/mpl/deref.hpp>
-#include <boost/mpl/or.hpp>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/inc.hpp>
-#include <boost/preprocessor/repeat.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/has_nothrow_copy.hpp>
-#include <boost/type_traits/is_nothrow_move_constructible.hpp>
+#include "boost/assert.hpp"
+#include "boost/mpl/eval_if.hpp"
+#include "boost/mpl/bool.hpp"
+#include "boost/mpl/identity.hpp"
+#include "boost/mpl/int.hpp"
+#include "boost/mpl/next.hpp"
+#include "boost/mpl/deref.hpp"
+#include "boost/mpl/or.hpp"
+#include "boost/preprocessor/cat.hpp"
+#include "boost/preprocessor/inc.hpp"
+#include "boost/preprocessor/repeat.hpp"
+#include "boost/type_traits/is_same.hpp"
+#include "boost/type_traits/has_nothrow_copy.hpp"
+#include "boost/variant/detail/has_nothrow_move.hpp"
 
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
-# pragma warning (push)
-# pragma warning (disable : 4702) //unreachable code
+#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400) 
+# pragma warning (push) 
+# pragma warning (disable : 4702) //unreachable code 
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -46,23 +47,8 @@
 // and potentially increase runtime performance. (TODO: Investigate further.)
 //
 #if !defined(BOOST_VARIANT_VISITATION_UNROLLING_LIMIT)
-
-#ifndef BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES
-#   include <boost/mpl/limits/list.hpp>
-#   define BOOST_VARIANT_VISITATION_UNROLLING_LIMIT   \
-        BOOST_MPL_LIMIT_LIST_SIZE
-#else
 #   define BOOST_VARIANT_VISITATION_UNROLLING_LIMIT   \
         BOOST_VARIANT_LIMIT_TYPES
-#endif
-
-#endif
-
-// Define a compiler generic null pointer value
-#if defined(BOOST_NO_NULLPTR)
-#define BOOST_VARIANT_NULL 0
-#else
-#define BOOST_VARIANT_NULL nullptr
 #endif
 
 namespace boost {
@@ -81,6 +67,7 @@ struct apply_visitor_unrolled {};
 // "Never ending" iterator range facilitates visitation_impl unrolling.
 //
 
+#if !defined(BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION)
 
 template <typename Iter, typename LastIter>
 struct visitation_impl_step
@@ -100,6 +87,29 @@ struct visitation_impl_step< LastIter,LastIter >
     typedef visitation_impl_step next;
 };
 
+#else // defined(BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION)
+
+template <typename Iter, typename LastIter>
+struct visitation_impl_step
+{
+    typedef typename mpl::eval_if<
+          is_same<Iter, LastIter>
+        , mpl::identity<apply_visitor_unrolled>
+        , Iter
+        >::type type;
+
+    typedef typename mpl::eval_if<
+          is_same<type, apply_visitor_unrolled> //is_same<Iter, LastIter>
+        , mpl::identity<LastIter>
+        , mpl::next<Iter>
+        >::type next_iter;
+
+    typedef visitation_impl_step<
+          next_iter, LastIter
+        > next;
+};
+
+#endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION workaround
 
 ///////////////////////////////////////////////////////////////////////////////
 // (detail) function template visitation_impl_invoke
@@ -108,7 +118,8 @@ struct visitation_impl_step< LastIter,LastIter >
 //
 
 template <typename Visitor, typename VoidPtrCV, typename T>
-inline typename Visitor::result_type
+inline
+    BOOST_VARIANT_AUX_GENERIC_RESULT_TYPE(typename Visitor::result_type)
 visitation_impl_invoke_impl(
       int, Visitor& visitor, VoidPtrCV storage, T*
     , mpl::true_// never_uses_backup
@@ -120,7 +131,8 @@ visitation_impl_invoke_impl(
 }
 
 template <typename Visitor, typename VoidPtrCV, typename T>
-inline typename Visitor::result_type
+inline
+    BOOST_VARIANT_AUX_GENERIC_RESULT_TYPE(typename Visitor::result_type)
 visitation_impl_invoke_impl(
       int internal_which, Visitor& visitor, VoidPtrCV storage, T*
     , mpl::false_// never_uses_backup
@@ -141,7 +153,8 @@ visitation_impl_invoke_impl(
 }
 
 template <typename Visitor, typename VoidPtrCV, typename T, typename NoBackupFlag>
-inline typename Visitor::result_type
+inline
+    BOOST_VARIANT_AUX_GENERIC_RESULT_TYPE(typename Visitor::result_type)
 visitation_impl_invoke(
       int internal_which, Visitor& visitor, VoidPtrCV storage, T* t
     , NoBackupFlag
@@ -150,7 +163,7 @@ visitation_impl_invoke(
 {
     typedef typename mpl::or_<
           NoBackupFlag
-        , is_nothrow_move_constructible<T>
+        , has_nothrow_move_constructor<T>
         , has_nothrow_copy<T>
         >::type never_uses_backup;
 
@@ -161,10 +174,12 @@ visitation_impl_invoke(
 }
 
 template <typename Visitor, typename VoidPtrCV, typename NBF>
-inline typename Visitor::result_type
+inline
+    BOOST_VARIANT_AUX_GENERIC_RESULT_TYPE(typename Visitor::result_type)
 visitation_impl_invoke(int, Visitor&, VoidPtrCV, apply_visitor_unrolled*, NBF, long)
 {
-    // should never be here at runtime!
+    // should never be here at runtime:
+    BOOST_ASSERT(false);
     typedef typename Visitor::result_type result_type;
     return ::boost::detail::variant::forced_return< result_type >();
 }
@@ -180,14 +195,16 @@ template <
     , typename Visitor, typename VPCV
     , typename NBF
     >
-inline typename Visitor::result_type
+inline
+    BOOST_VARIANT_AUX_GENERIC_RESULT_TYPE(typename Visitor::result_type)
 visitation_impl(
       int, int, Visitor&, VPCV
     , mpl::true_ // is_apply_visitor_unrolled
-    , NBF, W* = BOOST_VARIANT_NULL, S* = BOOST_VARIANT_NULL
+    , NBF, W* = 0, S* = 0
     )
 {
-    // should never be here at runtime!
+    // should never be here at runtime:
+    BOOST_ASSERT(false);
     typedef typename Visitor::result_type result_type;
     return ::boost::detail::variant::forced_return< result_type >();
 }
@@ -197,13 +214,14 @@ template <
     , typename Visitor, typename VoidPtrCV
     , typename NoBackupFlag
     >
-BOOST_FORCEINLINE typename Visitor::result_type
+inline
+    BOOST_VARIANT_AUX_GENERIC_RESULT_TYPE(typename Visitor::result_type)
 visitation_impl(
       const int internal_which, const int logical_which
     , Visitor& visitor, VoidPtrCV storage
     , mpl::false_ // is_apply_visitor_unrolled
     , NoBackupFlag no_backup_flag
-    , Which* = BOOST_VARIANT_NULL, step0* = BOOST_VARIANT_NULL
+    , Which* = 0, step0* = 0
     )
 {
     // Typedef apply_visitor_unrolled steps and associated types...
@@ -258,7 +276,7 @@ visitation_impl(
     typedef typename is_same< next_type,apply_visitor_unrolled >::type
         is_apply_visitor_unrolled;
 
-    return detail::variant::visitation_impl(
+    return visitation_impl(
           internal_which, logical_which
         , visitor, storage
         , is_apply_visitor_unrolled()
@@ -270,8 +288,8 @@ visitation_impl(
 }} // namespace detail::variant
 } // namespace boost
 
-#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)
-# pragma warning(pop)
-#endif
+#if BOOST_WORKAROUND(BOOST_MSVC, >= 1400)  
+# pragma warning(pop)  
+#endif 
 
 #endif // BOOST_VARIANT_DETAIL_VISITATION_IMPL_HPP

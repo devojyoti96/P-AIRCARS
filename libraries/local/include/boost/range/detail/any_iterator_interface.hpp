@@ -12,7 +12,8 @@
 
 #include <boost/range/detail/any_iterator_buffer.hpp>
 #include <boost/iterator/iterator_categories.hpp>
-#include <boost/type_traits/is_convertible.hpp>
+#include <boost/type_traits/add_const.hpp>
+#include <boost/type_traits/add_reference.hpp>
 #include <boost/type_traits/is_reference.hpp>
 #include <boost/type_traits/remove_const.hpp>
 #include <boost/type_traits/remove_reference.hpp>
@@ -26,23 +27,11 @@ namespace boost
         {
             typedef typename mpl::if_<
                 typename is_reference<T>::type,
-                typename add_const<
-                    typename remove_reference<T>::type
-                >::type&,
-                T
-            >::type type;
-        };
-
-        template<class T>
-        struct reference_as_value_type_generator
-        {
-            typedef typename remove_reference<
-                typename remove_const<T>::type
-            >::type value_type;
-
-            typedef typename mpl::if_<
-                typename is_convertible<const value_type&, value_type>::type,
-                value_type,
+                typename add_reference<
+                    typename add_const<
+                        typename remove_reference<T>::type
+                    >::type
+                >::type,
                 T
             >::type type;
         };
@@ -57,8 +46,8 @@ namespace boost
             typedef typename const_reference_type_generator<
                 Reference
             >::type const_reference;
-            typedef typename reference_as_value_type_generator<
-                Reference
+            typedef typename remove_const<
+                typename remove_reference<Reference>::type
             >::type reference_as_value_type;
 
             typedef Buffer buffer_type;
@@ -98,7 +87,7 @@ namespace boost
             virtual any_single_pass_iterator_interface<reference_as_value_type, Buffer>*
                         clone_reference_as_value(buffer_type& buffer) const = 0;
 
-            virtual reference dereference() const = 0;
+            virtual Reference dereference() const = 0;
 
             virtual bool equal(const any_single_pass_iterator_interface& other) const = 0;
         };

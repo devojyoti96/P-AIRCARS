@@ -5,8 +5,8 @@
   Distributed under the Boost Software License, Version 1.0. (See accompanying
   file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
-#ifndef BOOST_SPIRIT_CLASSIC_PHOENIX_PRIMITIVES_HPP
-#define BOOST_SPIRIT_CLASSIC_PHOENIX_PRIMITIVES_HPP
+#ifndef PHOENIX_PRIMITIVES_HPP
+#define PHOENIX_PRIMITIVES_HPP
 
 ///////////////////////////////////////////////////////////////////////////////
 #include <boost/spirit/home/classic/phoenix/actor.hpp>
@@ -56,8 +56,7 @@ struct argument {
     typename tuple_element<N, TupleT>::type
     eval(TupleT const& args) const
     {
-        tuple_index<N> const idx;
-        return args[idx];
+        return args[tuple_index<N>()];
     }
 };
 

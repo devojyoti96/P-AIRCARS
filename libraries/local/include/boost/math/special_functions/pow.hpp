@@ -13,19 +13,15 @@
 #define BOOST_MATH_POW_HPP
 
 
-#include <boost/math/special_functions/math_fwd.hpp>
 #include <boost/math/policies/policy.hpp>
 #include <boost/math/policies/error_handling.hpp>
 #include <boost/math/tools/promotion.hpp>
+#include <boost/mpl/greater_equal.hpp>
 
 
 namespace boost {
 namespace math {
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4702) // Unreachable code, only triggered in release mode and /W4
-#endif
 
 namespace detail {
 
@@ -34,7 +30,7 @@ template <int N, int M = N%2>
 struct positive_power
 {
     template <typename T>
-    static BOOST_CXX14_CONSTEXPR T result(T base)
+    static T result(T base)
     {
         T power = positive_power<N/2>::result(base);
         return power * power;
@@ -45,7 +41,7 @@ template <int N>
 struct positive_power<N, 1>
 {
     template <typename T>
-    static BOOST_CXX14_CONSTEXPR T result(T base)
+    static T result(T base)
     {
         T power = positive_power<N/2>::result(base);
         return base * power * power;
@@ -56,7 +52,7 @@ template <>
 struct positive_power<1, 1>
 {
     template <typename T>
-    static BOOST_CXX14_CONSTEXPR T result(T base){ return base; }
+    static T result(T base){ return base; }
 };
 
 
@@ -64,7 +60,7 @@ template <int N, bool>
 struct power_if_positive
 {
     template <typename T, class Policy>
-    static BOOST_CXX14_CONSTEXPR T result(T base, const Policy&)
+    static T result(T base, const Policy&)
     { return positive_power<N>::result(base); }
 };
 
@@ -72,7 +68,7 @@ template <int N>
 struct power_if_positive<N, false>
 {
     template <typename T, class Policy>
-    static BOOST_CXX14_CONSTEXPR T result(T base, const Policy& policy)
+    static T result(T base, const Policy& policy)
     {
         if (base == 0)
         {
@@ -91,7 +87,7 @@ template <>
 struct power_if_positive<0, true>
 {
     template <typename T, class Policy>
-    static BOOST_CXX14_CONSTEXPR T result(T base, const Policy& policy)
+    static T result(T base, const Policy& policy)
     {
         if (base == 0)
         {
@@ -112,7 +108,12 @@ struct power_if_positive<0, true>
 template <int N>
 struct select_power_if_positive
 {
-    using type = power_if_positive<N, (N >= 0)>;
+    typedef typename mpl::greater_equal<
+                         mpl::int_<N>,
+                         mpl::int_<0>
+                     >::type is_positive;
+
+    typedef power_if_positive<N, is_positive::value> type;
 };
 
 
@@ -120,19 +121,17 @@ struct select_power_if_positive
 
 
 template <int N, typename T, class Policy>
-BOOST_CXX14_CONSTEXPR inline typename tools::promote_args<T>::type pow(T base, const Policy& policy)
+inline typename tools::promote_args<T>::type pow(T base, const Policy& policy)
 { 
-   using result_type = typename tools::promote_args<T>::type;
+   typedef typename tools::promote_args<T>::type result_type;
    return detail::select_power_if_positive<N>::type::result(static_cast<result_type>(base), policy); 
 }
 
+
 template <int N, typename T>
-BOOST_CXX14_CONSTEXPR inline typename tools::promote_args<T>::type pow(T base)
+inline typename tools::promote_args<T>::type pow(T base)
 { return pow<N>(base, policies::policy<>()); }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 }  // namespace math
 }  // namespace boost

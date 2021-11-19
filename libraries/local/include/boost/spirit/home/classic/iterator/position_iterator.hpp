@@ -12,6 +12,7 @@
 
 #include <string>
 #include <boost/config.hpp>
+#include <boost/concept_check.hpp>
 
 #include <boost/spirit/home/classic/namespace.hpp>
 #include <boost/spirit/home/classic/iterator/position_iterator_fwd.hpp>
@@ -94,7 +95,7 @@ BOOST_SPIRIT_CLASSIC_NAMESPACE_END
 
 
 // This must be included here for full compatibility with old MSVC
-#include <boost/spirit/home/classic/iterator/impl/position_iterator.ipp>
+#include "boost/spirit/home/classic/iterator/impl/position_iterator.ipp"
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace spirit {
@@ -293,7 +294,7 @@ private:
 
 protected:
 
-    void newline()
+    void newline(void)
     {}
 
     ForwardIteratorT _end;
@@ -396,13 +397,13 @@ public:
         return *this;
     }
 
-    ForwardIteratorT get_currentline_begin() const
+    ForwardIteratorT get_currentline_begin(void) const
     { return _startline; }
 
-    ForwardIteratorT get_currentline_end() const
+    ForwardIteratorT get_currentline_end(void) const
     { return get_endline(); }
 
-    std::basic_string<value_type> get_currentline() const
+    std::basic_string<value_type> get_currentline(void) const
     {
         return std::basic_string<value_type>
             (get_currentline_begin(), get_currentline_end());
@@ -424,7 +425,7 @@ protected:
         return endline;
     }
 
-    void newline()
+    void newline(void)
     { _startline = this->base(); }
 };
 

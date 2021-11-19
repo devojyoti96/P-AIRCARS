@@ -11,16 +11,13 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_WINDOWS_MUTEX_HPP
 #define BOOST_INTERPROCESS_DETAIL_WINDOWS_MUTEX_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 #include <boost/interprocess/detail/win32_api.hpp>
 #include <boost/interprocess/detail/windows_intermodule_singleton.hpp>
 #include <boost/interprocess/sync/windows/sync_utils.hpp>
@@ -32,18 +29,18 @@ namespace boost {
 namespace interprocess {
 namespace ipcdetail {
 
-class winapi_mutex
+class windows_mutex
 {
-   winapi_mutex(const winapi_mutex &);
-   winapi_mutex &operator=(const winapi_mutex &);
+   windows_mutex(const windows_mutex &);
+   windows_mutex &operator=(const windows_mutex &);
    public:
 
-   winapi_mutex();
-   ~winapi_mutex();
+   windows_mutex();
+   ~windows_mutex();
 
    void lock();
    bool try_lock();
-   template<class TimePoint> bool timed_lock(const TimePoint &abs_time);
+   bool timed_lock(const boost::posix_time::ptime &abs_time);
    void unlock();
    void take_ownership(){};
 
@@ -51,7 +48,7 @@ class winapi_mutex
    const sync_id id_;
 };
 
-inline winapi_mutex::winapi_mutex()
+inline windows_mutex::windows_mutex()
    : id_(this)
 {
    sync_handles &handles =
@@ -60,19 +57,19 @@ inline winapi_mutex::winapi_mutex()
    bool open_or_created;
    (void)handles.obtain_mutex(this->id_, &open_or_created);
    //The mutex must be created, never opened
-   BOOST_ASSERT(open_or_created);
-   BOOST_ASSERT(open_or_created && winapi::get_last_error() != winapi::error_already_exists);
+   assert(open_or_created);
+   assert(open_or_created && winapi::get_last_error() != winapi::error_already_exists);
    (void)open_or_created;
 }
 
-inline winapi_mutex::~winapi_mutex()
+inline windows_mutex::~windows_mutex()
 {
    sync_handles &handles =
       windows_intermodule_singleton<sync_handles>::get();
    handles.destroy_handle(this->id_);
 }
 
-inline void winapi_mutex::lock(void)
+inline void windows_mutex::lock(void)
 {
    sync_handles &handles =
       windows_intermodule_singleton<sync_handles>::get();
@@ -81,7 +78,7 @@ inline void winapi_mutex::lock(void)
    mut.lock();
 }
 
-inline bool winapi_mutex::try_lock(void)
+inline bool windows_mutex::try_lock(void)
 {
    sync_handles &handles =
       windows_intermodule_singleton<sync_handles>::get();
@@ -90,8 +87,7 @@ inline bool winapi_mutex::try_lock(void)
    return mut.try_lock();
 }
 
-template<class TimePoint>
-inline bool winapi_mutex::timed_lock(const TimePoint &abs_time)
+inline bool windows_mutex::timed_lock(const boost::posix_time::ptime &abs_time)
 {
    sync_handles &handles =
       windows_intermodule_singleton<sync_handles>::get();
@@ -100,7 +96,7 @@ inline bool winapi_mutex::timed_lock(const TimePoint &abs_time)
    return mut.timed_lock(abs_time);
 }
 
-inline void winapi_mutex::unlock(void)
+inline void windows_mutex::unlock(void)
 {
    sync_handles &handles =
       windows_intermodule_singleton<sync_handles>::get();

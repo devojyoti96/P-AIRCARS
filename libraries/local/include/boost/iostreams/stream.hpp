@@ -8,7 +8,7 @@
 #ifndef BOOST_IOSTREAMS_STREAM_HPP_INCLUDED
 #define BOOST_IOSTREAMS_STREAM_HPP_INCLUDED
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
@@ -56,12 +56,6 @@ struct stream_traits {
             >::type stream_tag;
 };
 
-#if defined(BOOST_MSVC) && (BOOST_MSVC == 1700)
-# pragma warning(push)
-// https://connect.microsoft.com/VisualStudio/feedback/details/733720/
-# pragma warning(disable: 4250)
-#endif
-
 // By encapsulating initialization in a base, we can define the macro
 // BOOST_IOSTREAMS_DEFINE_FORWARDING_FUNCTIONS to generate constructors
 // without base member initializer lists.
@@ -90,10 +84,6 @@ public:
     stream_base() : pbase_type(), stream_type(&member) { }
 };
 
-#if defined(BOOST_MSVC) && (BOOST_MSVC == 1700)
-# pragma warning(pop)
-#endif
-
 } } } // End namespaces detail, iostreams, boost.
 
 #ifdef BOOST_IOSTREAMS_BROKEN_OVERLOAD_RESOLUTION
@@ -101,12 +91,6 @@ public:
 #else
 
 namespace boost { namespace iostreams {
-
-#if defined(BOOST_MSVC) && (BOOST_MSVC == 1700)
-# pragma warning(push)
-// https://connect.microsoft.com/VisualStudio/feedback/details/733720/
-# pragma warning(disable: 4250)
-#endif
 
 //
 // Template name: stream.
@@ -159,10 +143,6 @@ private:
         this->member.open(dev BOOST_IOSTREAMS_PUSH_ARGS()); 
     }
 };
-
-#if defined(BOOST_MSVC) && (BOOST_MSVC == 1700)
-# pragma warning(pop)
-#endif
 
 } } // End namespaces iostreams, boost.
 

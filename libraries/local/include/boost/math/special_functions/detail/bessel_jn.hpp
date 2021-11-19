@@ -35,7 +35,7 @@ T bessel_jn(int n, T x, const Policy& pol)
     //
     if (n < 0)
     {
-        factor = static_cast<T>((n & 0x1) ? -1 : 1);  // J_{-n}(z) = (-1)^n J_n(z)
+        factor = (n & 0x1) ? -1 : 1;  // J_{-n}(z) = (-1)^n J_n(z)
         n = -n;
     }
     else
@@ -50,8 +50,6 @@ T bessel_jn(int n, T x, const Policy& pol)
     //
     // Special cases:
     //
-    if(asymptotic_bessel_large_x_limit(T(n), x))
-       return factor * asymptotic_bessel_j_large_x_2<T>(T(n), x, pol);
     if (n == 0)
     {
         return factor * bessel_j0(x);
@@ -66,13 +64,16 @@ T bessel_jn(int n, T x, const Policy& pol)
         return static_cast<T>(0);
     }
 
-    BOOST_MATH_ASSERT(n > 1);
+    typedef typename bessel_asymptotic_tag<T, Policy>::type tag_type;
+    if(fabs(x) > asymptotic_bessel_j_limit<T>(n, tag_type()))
+      return factor * asymptotic_bessel_j_large_x_2<T>(n, x);
+
+    BOOST_ASSERT(n > 1);
     T scale = 1;
     if (n < abs(x))                         // forward recurrence
     {
         prev = bessel_j0(x);
         current = bessel_j1(x);
-        policies::check_series_iterations<T>("boost::math::bessel_j_n<%1%>(%1%,%1%)", n, pol);
         for (int k = 1; k < n; k++)
         {
             T fact = 2 * k / x;
@@ -90,7 +91,7 @@ T bessel_jn(int n, T x, const Policy& pol)
             current = value;
         }
     }
-    else if((x < 1) || (n > x * x / 4) || (x < 5))
+    else if(x < 1)
     {
        return factor * bessel_j_small_z_series(T(n), x, pol);
     }
@@ -101,8 +102,6 @@ T bessel_jn(int n, T x, const Policy& pol)
         boost::math::detail::CF1_jy(static_cast<T>(n), x, &fn, &s, pol);
         prev = fn;
         current = 1;
-        // Check recursion won't go on too far:
-        policies::check_series_iterations<T>("boost::math::bessel_j_n<%1%>(%1%,%1%)", n, pol);
         for (int k = n; k > 0; k--)
         {
             T fact = 2 * k / x;

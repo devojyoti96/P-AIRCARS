@@ -1,13 +1,7 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2011-2015 Akira Takahashi
-// Copyright (c) 2011-2015 Barend Gehrels, Amsterdam, the Netherlands.
-
-// This file was modified by Oracle on 2015-2020.
-// Modifications copyright (c) 2015-2020, Oracle and/or its affiliates.
-
-// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+// Copyright (c) 2011-2012 Akira Takahashi
+// Copyright (c) 2011-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
@@ -18,23 +12,24 @@
 
 
 #include <cstddef>
-#include <type_traits>
 
 #include <boost/fusion/include/is_sequence.hpp>
 #include <boost/fusion/include/size.hpp>
 #include <boost/fusion/include/tag_of.hpp>
 #include <boost/fusion/include/front.hpp>
 #include <boost/fusion/include/at.hpp>
-#include <boost/fusion/mpl.hpp>
+#include <boost/utility/enable_if.hpp>
 
-#include <boost/mpl/and.hpp>
-#include <boost/mpl/count_if.hpp>
+#include <boost/fusion/mpl.hpp>
 #include <boost/mpl/front.hpp>
-#include <boost/mpl/placeholders.hpp>
+#include <boost/mpl/count_if.hpp>
 #include <boost/mpl/pop_front.hpp>
 #include <boost/mpl/size.hpp>
-
 #include <boost/type_traits/is_same.hpp>
+#include <boost/type_traits/remove_reference.hpp>
+#include <boost/mpl/placeholders.hpp>
+#include <boost/mpl/and.hpp>
+#include <boost/mpl/front.hpp>
 
 #include <boost/geometry/core/access.hpp>
 #include <boost/geometry/core/coordinate_dimension.hpp>
@@ -52,46 +47,27 @@ namespace fusion_adapt_detail
 
 template <class Sequence>
 struct all_same :
-    std::integral_constant
-        <
-            bool,
-            boost::mpl::count_if<
-                Sequence,
-                boost::is_same<
-                    typename boost::mpl::front<Sequence>::type,
-                    boost::mpl::_
-                >
-            >::value == boost::mpl::size<Sequence>::value
-        >
+    boost::mpl::bool_<
+        boost::mpl::count_if<
+            Sequence,
+            boost::is_same<
+                typename boost::mpl::front<Sequence>::type,
+                boost::mpl::_
+            >
+        >::value == boost::mpl::size<Sequence>::value
+    >
 {};
 
 template <class Sequence>
-struct is_coordinate_size
-    : std::integral_constant
-        <
-            bool,
-            (boost::fusion::result_of::size<Sequence>::value == 2
-          || boost::fusion::result_of::size<Sequence>::value == 3)
-        >
-{};
-
-template
-<
-    typename Sequence,
-    bool IsSequence = boost::fusion::traits::is_sequence<Sequence>::value
->
-struct is_fusion_sequence
-    : std::integral_constant
-        <
-            bool,
-            (fusion_adapt_detail::is_coordinate_size<Sequence>::value
-          && fusion_adapt_detail::all_same<Sequence>::value)
-        >
-{};
+struct is_coordinate_size : boost::mpl::bool_<
+            boost::fusion::result_of::size<Sequence>::value == 2 ||
+            boost::fusion::result_of::size<Sequence>::value == 3> {};
 
 template<typename Sequence>
-struct is_fusion_sequence<Sequence, false>
-    : std::false_type
+struct is_fusion_sequence
+    : mpl::and_<boost::fusion::traits::is_sequence<Sequence>,
+                fusion_adapt_detail::is_coordinate_size<Sequence>,
+                fusion_adapt_detail::all_same<Sequence> >
 {};
 
 
@@ -107,10 +83,10 @@ template <typename Sequence>
 struct coordinate_type
     <
         Sequence,
-        std::enable_if_t
+        typename boost::enable_if
             <
-                fusion_adapt_detail::is_fusion_sequence<Sequence>::value
-            >
+                fusion_adapt_detail::is_fusion_sequence<Sequence>
+            >::type
     >
 {
     typedef typename boost::mpl::front<Sequence>::type type;
@@ -121,10 +97,10 @@ template <typename Sequence>
 struct dimension
     <
         Sequence,
-        std::enable_if_t
+        typename boost::enable_if
             <
-                fusion_adapt_detail::is_fusion_sequence<Sequence>::value
-            >
+                fusion_adapt_detail::is_fusion_sequence<Sequence>
+            >::type
     > : boost::mpl::size<Sequence>
 {};
 
@@ -134,10 +110,10 @@ struct access
     <
         Sequence,
         Dimension,
-        std::enable_if_t
+        typename boost::enable_if
             <
-                fusion_adapt_detail::is_fusion_sequence<Sequence>::value
-            >
+                fusion_adapt_detail::is_fusion_sequence<Sequence>
+            >::type
     >
 {
     typedef typename coordinate_type<Sequence>::type ctype;
@@ -159,10 +135,10 @@ template <typename Sequence>
 struct tag
     <
         Sequence,
-        std::enable_if_t
+        typename boost::enable_if
             <
-                fusion_adapt_detail::is_fusion_sequence<Sequence>::value
-            >
+                fusion_adapt_detail::is_fusion_sequence<Sequence>
+            >::type
     >
 {
     typedef point_tag type;
@@ -184,10 +160,10 @@ struct tag
     struct coordinate_system \
                < \
                    Sequence, \
-                   std::enable_if_t \
+                   typename boost::enable_if \
                        < \
-                           fusion_adapt_detail::is_fusion_sequence<Sequence>::value \
-                       > \
+                           fusion_adapt_detail::is_fusion_sequence<Sequence> \
+                       >::type \
                > \
     { typedef CoordinateSystem type; }; \
     }}}

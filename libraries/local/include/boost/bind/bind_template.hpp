@@ -325,7 +325,7 @@
 
     template<class V> void accept(V & v) const
     {
-#if !defined( BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP ) && !defined( BOOST_BORLANDC )
+#if !defined( BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP ) && !defined( __BORLANDC__ )
 
         using boost::visit_each;
 

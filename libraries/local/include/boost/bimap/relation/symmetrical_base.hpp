@@ -12,7 +12,7 @@
 #ifndef BOOST_BIMAP_RELATION_SYMMETRICAL_BASE_HPP
 #define BOOST_BIMAP_RELATION_SYMMETRICAL_BASE_HPP
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER>=1200)
 #pragma once
 #endif
 
@@ -32,7 +32,7 @@ namespace boost {
 namespace bimaps {
 namespace relation {
 
-/// \brief Base of symmetrical tagged types.
+/// \brief Base of symetrical tagged types.
 /**
 
                                                            **/

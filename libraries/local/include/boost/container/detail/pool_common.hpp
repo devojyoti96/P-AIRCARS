@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// (C) Copyright Ion Gaztanaga 2005-2013. Distributed under the Boost
+// (C) Copyright Ion Gaztanaga 2005-2012. Distributed under the Boost
 // Software License, Version 1.0. (See accompanying file
 // LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
@@ -8,25 +8,20 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef BOOST_CONTAINER_DETAIL_POOL_COMMON_HPP
-#define BOOST_CONTAINER_DETAIL_POOL_COMMON_HPP
+#ifndef BOOST_CONTAINER_DETAIL_NODE_POOL_COMMON_HPP
+#define BOOST_CONTAINER_DETAIL_NODE_POOL_COMMON_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
-#include <boost/container/detail/config_begin.hpp>
-#include <boost/container/detail/workaround.hpp>
-
+#include "config_begin.hpp"
 #include <boost/intrusive/slist.hpp>
+#include <new>
 
 namespace boost {
 namespace container {
-namespace dtl {
+namespace container_detail {
 
 template<class VoidPointer>
 struct node_slist
@@ -48,7 +43,7 @@ struct is_stateless_segment_manager
    static const bool value = false;
 };
 
-}  //namespace dtl {
+}  //namespace container_detail {
 }  //namespace container {
 }  //namespace boost {
 

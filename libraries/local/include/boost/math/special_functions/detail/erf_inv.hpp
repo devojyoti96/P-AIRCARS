@@ -8,12 +8,7 @@
 
 #ifdef _MSC_VER
 #pragma once
-#pragma warning(push)
-#pragma warning(disable:4127) // Conditional expression is constant
-#pragma warning(disable:4702) // Unreachable code: optimization warning
 #endif
-
-#include <type_traits>
 
 namespace boost{ namespace math{ 
 
@@ -23,7 +18,7 @@ namespace detail{
 // this version is for 80-bit long double's and smaller:
 //
 template <class T, class Policy>
-T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constant<int, 64>*)
+T erf_inv_imp(const T& p, const T& q, const Policy&, const boost::mpl::int_<64>*)
 {
    BOOST_MATH_STD_USING // for ADL of std names.
 
@@ -55,7 +50,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
          BOOST_MATH_BIG_CONSTANT(T, 64, -0.00538772965071242932965)
       };
       static const T Q[] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         1,
          BOOST_MATH_BIG_CONSTANT(T, 64, -0.970005043303290640362),
          BOOST_MATH_BIG_CONSTANT(T, 64, -1.56574558234175846809),
          BOOST_MATH_BIG_CONSTANT(T, 64, 1.56221558398423026363),
@@ -97,7 +92,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
          BOOST_MATH_BIG_CONSTANT(T, 64, -3.67192254707729348546)
       };
       static const T Q[] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 6.24264124854247537712),
          BOOST_MATH_BIG_CONSTANT(T, 64, 3.9713437953343869095),
          BOOST_MATH_BIG_CONSTANT(T, 64, -28.6608180499800029974),
@@ -108,7 +103,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
          BOOST_MATH_BIG_CONSTANT(T, 64, 1.72114765761200282724)
       };
       T g = sqrt(-2 * log(q));
-      T xs = q - 0.25f;
+      T xs = q - 0.25;
       T r = tools::evaluate_polynomial(P, xs) / tools::evaluate_polynomial(Q, xs);
       result = g / (Y + r);
    }
@@ -152,7 +147,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
             BOOST_MATH_BIG_CONSTANT(T, 64, -0.681149956853776992068e-9)
          };
          static const T Q[] = {    
-            BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+            1,
             BOOST_MATH_BIG_CONSTANT(T, 64, 3.46625407242567245975),
             BOOST_MATH_BIG_CONSTANT(T, 64, 5.38168345707006855425),
             BOOST_MATH_BIG_CONSTANT(T, 64, 4.77846592945843778382),
@@ -161,7 +156,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.152264338295331783612),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.01105924229346489121)
          };
-         T xs = x - 1.125f;
+         T xs = x - 1.125;
          T R = tools::evaluate_polynomial(P, xs) / tools::evaluate_polynomial(Q, xs);
          result = Y * x + R * x;
       }
@@ -181,7 +176,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.266339227425782031962e-11)
          };
          static const T Q[] = {    
-            BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+            BOOST_MATH_BIG_CONSTANT(T, 64, 1),
             BOOST_MATH_BIG_CONSTANT(T, 64, 1.3653349817554063097),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.762059164553623404043),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.220091105764131249824),
@@ -209,7 +204,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.99055709973310326855e-16)
          };
          static const T Q[] = {    
-            BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+            BOOST_MATH_BIG_CONSTANT(T, 64, 1),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.591429344886417493481),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.138151865749083321638),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.0160746087093676504695),
@@ -236,7 +231,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
             BOOST_MATH_BIG_CONSTANT(T, 64, -0.116765012397184275695e-17)
          };
          static const T Q[] = {    
-            BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+            BOOST_MATH_BIG_CONSTANT(T, 64, 1),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.207123112214422517181),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.0169410838120975906478),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.000690538265622684595676),
@@ -263,7 +258,7 @@ T erf_inv_imp(const T& p, const T& q, const Policy&, const std::integral_constan
             BOOST_MATH_BIG_CONSTANT(T, 64, -0.348890393399948882918e-21)
          };
          static const T Q[] = {    
-            BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+            BOOST_MATH_BIG_CONSTANT(T, 64, 1),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.0845746234001899436914),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.00282092984726264681981),
             BOOST_MATH_BIG_CONSTANT(T, 64, 0.468292921940894236786e-4),
@@ -296,12 +291,12 @@ private:
 };
 
 template <class T, class Policy>
-T erf_inv_imp(const T& p, const T& q, const Policy& pol, const std::integral_constant<int, 0>*)
+T erf_inv_imp(const T& p, const T& q, const Policy& pol, const boost::mpl::int_<0>*)
 {
    //
    // Generic version, get a guess that's accurate to 64-bits (10^-19)
    //
-   T guess = erf_inv_imp(p, q, pol, static_cast<std::integral_constant<int, 64> const*>(0));
+   T guess = erf_inv_imp(p, q, pol, static_cast<mpl::int_<64> const*>(0));
    T result;
    //
    // If T has more bit's than 64 in it's mantissa then we need to iterate,
@@ -309,14 +304,14 @@ T erf_inv_imp(const T& p, const T& q, const Policy& pol, const std::integral_con
    //
    if(policies::digits<T, Policy>() > 64)
    {
-      std::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
+      boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
       if(p <= 0.5)
       {
-         result = tools::halley_iterate(detail::erf_roots<typename std::remove_cv<T>::type, Policy>(p, 1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3, max_iter);
+         result = tools::halley_iterate(detail::erf_roots<typename remove_cv<T>::type, Policy>(p, 1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3, max_iter);
       }
       else
       {
-         result = tools::halley_iterate(detail::erf_roots<typename std::remove_cv<T>::type, Policy>(q, -1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3, max_iter);
+         result = tools::halley_iterate(detail::erf_roots<typename remove_cv<T>::type, Policy>(q, -1), guess, static_cast<T>(0), tools::max_value<T>(), (policies::digits<T, Policy>() * 2) / 3, max_iter);
       }
       policies::check_root_iterations<T>("boost::math::erf_inv<%1%>", max_iter, pol);
    }
@@ -336,40 +331,28 @@ struct erf_inv_initializer
       {
          do_init();
       }
-      static bool is_value_non_zero(T);
       static void do_init()
       {
-         // If std::numeric_limits<T>::digits is zero, we must not call
-         // our initialization code here as the precision presumably
-         // varies at runtime, and will not have been set yet.
-         if(std::numeric_limits<T>::digits)
-         {
-            boost::math::erf_inv(static_cast<T>(0.25), Policy());
-            boost::math::erf_inv(static_cast<T>(0.55), Policy());
-            boost::math::erf_inv(static_cast<T>(0.95), Policy());
-            boost::math::erfc_inv(static_cast<T>(1e-15), Policy());
-            // These following initializations must not be called if
-            // type T can not hold the relevant values without
-            // underflow to zero.  We check this at runtime because
-            // some tools such as valgrind silently change the precision
-            // of T at runtime, and numeric_limits basically lies!
-            if(is_value_non_zero(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-130))))
-               boost::math::erfc_inv(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-130)), Policy());
+         boost::math::erf_inv(static_cast<T>(0.25), Policy());
+         boost::math::erf_inv(static_cast<T>(0.55), Policy());
+         boost::math::erf_inv(static_cast<T>(0.95), Policy());
+         boost::math::erfc_inv(static_cast<T>(1e-15), Policy());
+         if(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-130)) != 0)
+            boost::math::erfc_inv(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-130)), Policy());
 
-            // Some compilers choke on constants that would underflow, even in code that isn't instantiated
-            // so try and filter these cases out in the preprocessor:
+         // Some compilers choke on constants that would underflow, even in code that isn't instantiated
+         // so try and filter these cases out in the preprocessor:
 #if LDBL_MAX_10_EXP >= 800
-            if(is_value_non_zero(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-800))))
-               boost::math::erfc_inv(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-800)), Policy());
-            if(is_value_non_zero(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-900))))
-               boost::math::erfc_inv(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-900)), Policy());
+         if(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-800)) != 0)
+            boost::math::erfc_inv(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-800)), Policy());
+         if(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-900)) != 0)
+            boost::math::erfc_inv(static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1e-900)), Policy());
 #else
-            if(is_value_non_zero(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-800))))
-               boost::math::erfc_inv(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-800)), Policy());
-            if(is_value_non_zero(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-900))))
-               boost::math::erfc_inv(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-900)), Policy());
+         if(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-800)) != 0)
+            boost::math::erfc_inv(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-800)), Policy());
+         if(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-900)) != 0)
+            boost::math::erfc_inv(static_cast<T>(BOOST_MATH_HUGE_CONSTANT(T, 64, 1e-900)), Policy());
 #endif
-         }
       }
       void force_instantiate()const{}
    };
@@ -383,15 +366,6 @@ struct erf_inv_initializer
 template <class T, class Policy>
 const typename erf_inv_initializer<T, Policy>::init erf_inv_initializer<T, Policy>::initializer;
 
-template <class T, class Policy>
-bool erf_inv_initializer<T, Policy>::init::is_value_non_zero(T v)
-{
-   // This needs to be non-inline to detect whether v is non zero at runtime
-   // rather than at compile time, only relevant when running under valgrind
-   // which changes long double's to double's on the fly.
-   return v != 0;
-}
-
 } // namespace detail
 
 template <class T, class Policy>
@@ -404,7 +378,7 @@ typename tools::promote_args<T>::type erfc_inv(T z, const Policy& pol)
    //
    static const char* function = "boost::math::erfc_inv<%1%>(%1%, %1%)";
    if((z < 0) || (z > 2))
-      return policies::raise_domain_error<result_type>(function, "Argument outside range [0,2] in inverse erfc function (got p=%1%).", z, pol);
+      policies::raise_domain_error<result_type>(function, "Argument outside range [0,2] in inverse erfc function (got p=%1%).", z, pol);
    if(z == 0)
       return policies::raise_overflow_error<result_type>(function, 0, pol);
    if(z == 2)
@@ -432,10 +406,11 @@ typename tools::promote_args<T>::type erfc_inv(T z, const Policy& pol)
    // to use, based on the number of bits in the mantissa of T:
    //
    typedef typename policies::precision<result_type, Policy>::type precision_type;
-   typedef std::integral_constant<int,
-      precision_type::value <= 0 ? 0 :
-      precision_type::value <= 64 ? 64 : 0
-   > tag_type;
+   typedef typename mpl::if_<
+      mpl::or_<mpl::less_equal<precision_type, mpl::int_<0> >, mpl::greater<precision_type, mpl::int_<64> > >,
+      mpl::int_<0>,
+      mpl::int_<64>
+   >::type tag_type;
    //
    // Likewise use internal promotion, so we evaluate at a higher
    // precision internally if it's appropriate:
@@ -467,7 +442,7 @@ typename tools::promote_args<T>::type erf_inv(T z, const Policy& pol)
    //
    static const char* function = "boost::math::erf_inv<%1%>(%1%, %1%)";
    if((z < -1) || (z > 1))
-      return policies::raise_domain_error<result_type>(function, "Argument outside range [-1, 1] in inverse erf function (got p=%1%).", z, pol);
+      policies::raise_domain_error<result_type>(function, "Argument outside range [-1, 1] in inverse erf function (got p=%1%).", z, pol);
    if(z == 1)
       return policies::raise_overflow_error<result_type>(function, 0, pol);
    if(z == -1)
@@ -497,10 +472,11 @@ typename tools::promote_args<T>::type erf_inv(T z, const Policy& pol)
    // to use, based on the number of bits in the mantissa of T:
    //
    typedef typename policies::precision<result_type, Policy>::type precision_type;
-   typedef std::integral_constant<int,
-      precision_type::value <= 0 ? 0 :
-      precision_type::value <= 64 ? 64 : 0
-   > tag_type;
+   typedef typename mpl::if_<
+      mpl::or_<mpl::less_equal<precision_type, mpl::int_<0> >, mpl::greater<precision_type, mpl::int_<64> > >,
+      mpl::int_<0>,
+      mpl::int_<64>
+   >::type tag_type;
    //
    // Likewise use internal promotion, so we evaluate at a higher
    // precision internally if it's appropriate:
@@ -540,10 +516,6 @@ inline typename tools::promote_args<T>::type erf_inv(T z)
 
 } // namespace math
 } // namespace boost
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #endif // BOOST_MATH_SF_ERF_INV_HPP
 

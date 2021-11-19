@@ -2,7 +2,7 @@
 // detail/win_iocp_socket_recv_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,13 +19,12 @@
 
 #if defined(BOOST_ASIO_HAS_IOCP)
 
+#include <boost/utility/addressof.hpp>
 #include <boost/asio/detail/bind_handler.hpp>
 #include <boost/asio/detail/buffer_sequence_adapter.hpp>
 #include <boost/asio/detail/fenced_block.hpp>
 #include <boost/asio/detail/handler_alloc_helpers.hpp>
 #include <boost/asio/detail/handler_invoke_helpers.hpp>
-#include <boost/asio/detail/handler_work.hpp>
-#include <boost/asio/detail/memory.hpp>
 #include <boost/asio/detail/operation.hpp>
 #include <boost/asio/detail/socket_ops.hpp>
 #include <boost/asio/error.hpp>
@@ -36,7 +35,7 @@ namespace boost {
 namespace asio {
 namespace detail {
 
-template <typename MutableBufferSequence, typename Handler, typename IoExecutor>
+template <typename MutableBufferSequence, typename Handler>
 class win_iocp_socket_recv_op : public operation
 {
 public:
@@ -44,18 +43,16 @@ public:
 
   win_iocp_socket_recv_op(socket_ops::state_type state,
       socket_ops::weak_cancel_token_type cancel_token,
-      const MutableBufferSequence& buffers, Handler& handler,
-      const IoExecutor& io_ex)
+      const MutableBufferSequence& buffers, Handler& handler)
     : operation(&win_iocp_socket_recv_op::do_complete),
       state_(state),
       cancel_token_(cancel_token),
       buffers_(buffers),
-      handler_(BOOST_ASIO_MOVE_CAST(Handler)(handler)),
-      work_(handler_, io_ex)
+      handler_(BOOST_ASIO_MOVE_CAST(Handler)(handler))
   {
   }
 
-  static void do_complete(void* owner, operation* base,
+  static void do_complete(io_service_impl* owner, operation* base,
       const boost::system::error_code& result_ec,
       std::size_t bytes_transferred)
   {
@@ -63,14 +60,9 @@ public:
 
     // Take ownership of the operation object.
     win_iocp_socket_recv_op* o(static_cast<win_iocp_socket_recv_op*>(base));
-    ptr p = { boost::asio::detail::addressof(o->handler_), o, o };
+    ptr p = { boost::addressof(o->handler_), o, o };
 
-    BOOST_ASIO_HANDLER_COMPLETION((*o));
-
-    // Take ownership of the operation's outstanding work.
-    handler_work<Handler, IoExecutor> w(
-        BOOST_ASIO_MOVE_CAST2(handler_work<Handler, IoExecutor>)(
-          o->work_));
+    BOOST_ASIO_HANDLER_COMPLETION((o));
 
 #if defined(BOOST_ASIO_ENABLE_BUFFER_DEBUGGING)
     // Check whether buffers are still valid.
@@ -94,7 +86,7 @@ public:
     // deallocated the memory here.
     detail::binder2<Handler, boost::system::error_code, std::size_t>
       handler(o->handler_, ec, bytes_transferred);
-    p.h = boost::asio::detail::addressof(handler.handler_);
+    p.h = boost::addressof(handler.handler_);
     p.reset();
 
     // Make the upcall if required.
@@ -102,7 +94,7 @@ public:
     {
       fenced_block b(fenced_block::half);
       BOOST_ASIO_HANDLER_INVOCATION_BEGIN((handler.arg1_, handler.arg2_));
-      w.complete(handler, handler.handler_);
+      boost_asio_handler_invoke_helpers::invoke(handler, handler.handler_);
       BOOST_ASIO_HANDLER_INVOCATION_END;
     }
   }
@@ -112,7 +104,6 @@ private:
   socket_ops::weak_cancel_token_type cancel_token_;
   MutableBufferSequence buffers_;
   Handler handler_;
-  handler_work<Handler, IoExecutor> work_;
 };
 
 } // namespace detail

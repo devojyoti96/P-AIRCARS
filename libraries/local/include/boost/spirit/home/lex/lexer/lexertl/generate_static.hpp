@@ -18,8 +18,8 @@
 #include <boost/spirit/home/support/detail/lexer/state_machine.hpp>
 #include <boost/spirit/home/support/detail/lexer/debug.hpp>
 #include <boost/spirit/home/lex/lexer/lexertl/static_version.hpp>
-#include <boost/scoped_array.hpp>
-#include <locale>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace spirit { namespace lex { namespace lexertl
@@ -50,7 +50,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
         {
             using namespace std;        // some systems have size_t in ns std
             size_t len = strlen(source);
-            boost::scoped_array<wchar_t> result (new wchar_t[len+1]);
+            std::auto_ptr<wchar_t> result (new wchar_t[len+1]);
             result.get()[len] = '\0';
 
             // working with wide character streams is supported only if the
@@ -155,7 +155,9 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
         os_ << "struct lexer" << suffix << "\n{\n";
         os_ << "    // version number and feature-set of compatible static lexer engine\n";
         os_ << "    enum\n";
-        os_ << "    {\n        static_version = " << SPIRIT_STATIC_LEXER_VERSION << ",\n";
+        os_ << "    {\n        static_version = "
+            << boost::lexical_cast<std::basic_string<Char> >(SPIRIT_STATIC_LEXER_VERSION)
+            << ",\n";
         os_ << "        supports_bol = " << std::boolalpha << bol << ",\n";
         os_ << "        supports_eol = " << std::boolalpha << eol << "\n";
         os_ << "    };\n\n";
@@ -412,7 +414,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             {
                 os_ << "            std::size_t index = *curr_++\n";
             }
-            os_ << "            bol = (index == '\\n') ? true : false;\n";
+            os_ << "            bol = (index == '\n') ? true : false;\n";
             os_ << "            std::size_t const state_ = ptr_[\n";
             os_ << "                lookup_[static_cast<std::size_t>(index)]];\n";
 
@@ -439,7 +441,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             {
                 os_ << "            std::size_t index = *curr_++\n";
             }
-            os_ << "            bol = (index == '\\n') ? true : false;\n";
+            os_ << "            bol = (index == '\n') ? true : false;\n";
             os_ << "            std::size_t const state_ = ptr_[\n";
             os_ << "                lookup_[static_cast<std::size_t>(index)]];\n";
 
@@ -466,7 +468,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             {
                 os_ << "            std::size_t index = *curr_++\n";
             }
-            os_ << "            bol = (index == '\\n') ? true : false;\n";
+            os_ << "            bol = (index == '\n') ? true : false;\n";
             os_ << "            std::size_t const state_ = ptr_[\n";
             os_ << "                lookup_[static_cast<std::size_t>(index)]];\n";
 
@@ -574,7 +576,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
 
         if (sm_.data()._seen_BOL_assertion)
         {
-            os_ << "        bol_ = (*start_token_ == '\\n') ? true : false;\n";
+            os_ << "        bol_ = (*start_token_ == '\n') ? true : false;\n";
         }
 
         os_ << "        id_ = npos;\n";
@@ -746,7 +748,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
                     }
                     if (iter_->eol_index != boost::lexer::npos)
                     {
-                        os_ << "\n    if (ch_ == '\\n') goto state" << dfa_
+                        os_ << "\n    if (ch_ == '\n') goto state" << dfa_
                             << '_' << iter_->eol_index << ";\n";
                     }
                     os_ << "    ++curr_;\n";
@@ -755,7 +757,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
                 for (/**/; t_ < transitions_; ++t_)
                 {
                     Char const *ptr_ = iter_->token._charset.c_str();
-                    Char const *end2_ = ptr_ + iter_->token._charset.size();
+                    Char const *end_ = ptr_ + iter_->token._charset.size();
                     Char start_char_ = 0;
                     Char curr_char_ = 0;
                     bool range_ = false;
@@ -763,7 +765,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
 
                     os_ << "\n    if (";
 
-                    while (ptr_ != end2_)
+                    while (ptr_ != end_)
                     {
                         curr_char_ = *ptr_++;
 
@@ -903,18 +905,12 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             guard.replace(p, 1, L<Char>("_"));
             p = guard.find_first_of(L<Char>(": "), p);
         }
-        { // to_upper(guard)
-            typedef std::ctype<Char> facet_t;
-            facet_t const& facet = std::use_facet<facet_t>(std::locale());
-            typedef typename std::basic_string<Char>::iterator iter_t;
-            for (iter_t iter = guard.begin(),
-                        last = guard.end(); iter != last; ++iter)
-                *iter = facet.toupper(*iter);
-        }
+        boost::to_upper(guard);
 
         os_ << "#if !defined(BOOST_SPIRIT_LEXER_NEXT_TOKEN_" << guard << ")\n";
         os_ << "#define BOOST_SPIRIT_LEXER_NEXT_TOKEN_" << guard << "\n\n";
 
+        os_ << "#include <boost/detail/iterator.hpp>\n";
         os_ << "#include <boost/spirit/home/support/detail/lexer/char_traits.hpp>\n\n";
 
         generate_delimiter(os_);

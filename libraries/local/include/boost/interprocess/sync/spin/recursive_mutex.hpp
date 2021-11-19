@@ -27,17 +27,14 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_SPIN_RECURSIVE_MUTEX_HPP
 #define BOOST_INTERPROCESS_DETAIL_SPIN_RECURSIVE_MUTEX_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
 
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 #include <boost/interprocess/detail/os_thread_functions.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
@@ -61,7 +58,7 @@ class spin_recursive_mutex
 
    void lock();
    bool try_lock();
-   template<class TimePoint> bool timed_lock(const TimePoint &abs_time);
+   bool timed_lock(const boost::posix_time::ptime &abs_time);
    void unlock();
    void take_ownership();
    private:
@@ -118,10 +115,13 @@ inline bool spin_recursive_mutex::try_lock()
    return false;
 }
 
-template<class TimePoint>
-inline bool spin_recursive_mutex::timed_lock(const TimePoint &abs_time)
+inline bool spin_recursive_mutex::timed_lock(const boost::posix_time::ptime &abs_time)
 {
    typedef ipcdetail::OS_systemwide_thread_id_t handle_t;
+   if(abs_time == boost::posix_time::pos_infin){
+      this->lock();
+      return true;
+   }
    const handle_t thr_id(ipcdetail::get_current_systemwide_thread_id());
    handle_t old_id;
    ipcdetail::systemwide_thread_id_copy(m_nOwner, old_id);
@@ -133,7 +133,6 @@ inline bool spin_recursive_mutex::timed_lock(const TimePoint &abs_time)
       ++m_nLockCount;
       return true;
    }
-   //m_mutex supports abs_time so no need to check it
    if(m_mutex.timed_lock(abs_time)){
       ipcdetail::systemwide_thread_id_copy(thr_id, m_nOwner);
       m_nLockCount = 1;

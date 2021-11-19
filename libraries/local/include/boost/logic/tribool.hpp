@@ -14,7 +14,7 @@
 #include <boost/config.hpp>
 #include <boost/detail/workaround.hpp>
 
-#ifdef BOOST_HAS_PRAGMA_ONCE
+#if BOOST_WORKAROUND(_MSC_VER, >= 1200)
 #  pragma once
 #endif
 
@@ -30,7 +30,7 @@ namespace detail {
  */
 struct indeterminate_t
 {
-#if BOOST_WORKAROUND(BOOST_BORLANDC, < 0x0600)
+#if BOOST_WORKAROUND(__BORLANDC__, < 0x0600)
   char dummy_; // BCB would use 8 bytes by default
 #endif
 };
@@ -59,9 +59,9 @@ typedef bool (*indeterminate_keyword_t)(tribool, detail::indeterminate_t);
  * \returns <tt>x.value == tribool::indeterminate_value</tt>
  * \throws nothrow
  */
-BOOST_CONSTEXPR inline bool
+inline bool
 indeterminate(tribool x,
-              detail::indeterminate_t dummy = detail::indeterminate_t()) BOOST_NOEXCEPT;
+              detail::indeterminate_t dummy = detail::indeterminate_t());
 
 /**
  * \brief A 3-state boolean type.
@@ -71,7 +71,6 @@ indeterminate(tribool x,
  */
 class tribool
 {
-#if defined( BOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS )
 private:
   /// INTERNAL ONLY
   struct dummy {
@@ -79,7 +78,6 @@ private:
   };
 
   typedef void (dummy::*safe_bool)();
-#endif
 
 public:
   /**
@@ -87,7 +85,7 @@ public:
    *
    * \throws nothrow
    */
-  BOOST_CONSTEXPR tribool() BOOST_NOEXCEPT : value(false_value) {}
+  tribool() : value(false_value) {}
 
   /**
    * Construct a new 3-state boolean value with the given boolean
@@ -95,14 +93,14 @@ public:
    *
    * \throws nothrow
    */
-  BOOST_CONSTEXPR tribool(bool initial_value) BOOST_NOEXCEPT : value(initial_value? true_value : false_value) {}
+  tribool(bool initial_value) : value(initial_value? true_value : false_value) {}
 
   /**
    * Construct a new 3-state boolean value with an indeterminate value.
    *
    * \throws nothrow
    */
-  BOOST_CONSTEXPR tribool(indeterminate_keyword_t) BOOST_NOEXCEPT : value(indeterminate_value) {}
+  tribool(indeterminate_keyword_t) : value(indeterminate_value) {}
 
   /**
    * Use a 3-state boolean in a boolean context. Will evaluate true in a
@@ -111,21 +109,10 @@ public:
    * \returns true if the 3-state boolean is true, false otherwise
    * \throws nothrow
    */
-#if !defined( BOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS )
-
-  BOOST_CONSTEXPR explicit operator bool () const BOOST_NOEXCEPT
-  {
-    return value == true_value;
-  }
-
-#else
-
-  BOOST_CONSTEXPR operator safe_bool() const BOOST_NOEXCEPT
+  operator safe_bool() const
   {
     return value == true_value? &dummy::nonnull : 0;
   }
-
-#endif
 
   /**
    * The actual stored value in this 3-state boolean, which may be false, true,
@@ -136,7 +123,7 @@ public:
 
 // Check if the given tribool has an indeterminate value. Also doubles as a
 // keyword for the 'indeterminate' value
-BOOST_CONSTEXPR inline bool indeterminate(tribool x, detail::indeterminate_t) BOOST_NOEXCEPT
+inline bool indeterminate(tribool x, detail::indeterminate_t)
 {
   return x.value == tribool::indeterminate_value;
 }
@@ -169,7 +156,7 @@ BOOST_CONSTEXPR inline bool indeterminate(tribool x, detail::indeterminate_t) BO
  *  </table>
  * \throws nothrow
  */
-BOOST_CONSTEXPR inline tribool operator!(tribool x) BOOST_NOEXCEPT
+inline tribool operator!(tribool x)
 {
   return x.value == tribool::false_value? tribool(true)
         :x.value == tribool::true_value? tribool(false)
@@ -177,7 +164,7 @@ BOOST_CONSTEXPR inline tribool operator!(tribool x) BOOST_NOEXCEPT
 }
 
 /**
- * \brief Computes the logical conjunction of two tribools
+ * \brief Computes the logical conjuction of two tribools
  *
  * \returns the result of logically ANDing the two tribool values,
  * according to the following table:
@@ -209,36 +196,38 @@ BOOST_CONSTEXPR inline tribool operator!(tribool x) BOOST_NOEXCEPT
  *       </table>
  * \throws nothrow
  */
-BOOST_CONSTEXPR inline tribool operator&&(tribool x, tribool y) BOOST_NOEXCEPT
+inline tribool operator&&(tribool x, tribool y)
 {
-  return (static_cast<bool>(!x) || static_cast<bool>(!y))
-    ? tribool(false)
-    : ((static_cast<bool>(x) && static_cast<bool>(y)) ? tribool(true) : indeterminate)
-  ;
+  if (static_cast<bool>(!x) || static_cast<bool>(!y))
+    return false;
+  else if (static_cast<bool>(x) && static_cast<bool>(y))
+    return true;
+  else
+    return indeterminate;
 }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator&&(tribool x, bool y) BOOST_NOEXCEPT
+inline tribool operator&&(tribool x, bool y)
 { return y? x : tribool(false); }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator&&(bool x, tribool y) BOOST_NOEXCEPT
+inline tribool operator&&(bool x, tribool y)
 { return x? y : tribool(false); }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator&&(indeterminate_keyword_t, tribool x) BOOST_NOEXCEPT
+inline tribool operator&&(indeterminate_keyword_t, tribool x)
 { return !x? tribool(false) : tribool(indeterminate); }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator&&(tribool x, indeterminate_keyword_t) BOOST_NOEXCEPT
+inline tribool operator&&(tribool x, indeterminate_keyword_t)
 { return !x? tribool(false) : tribool(indeterminate); }
 
 /**
@@ -274,36 +263,38 @@ BOOST_CONSTEXPR inline tribool operator&&(tribool x, indeterminate_keyword_t) BO
  *       </table>
  *  \throws nothrow
  */
-BOOST_CONSTEXPR inline tribool operator||(tribool x, tribool y) BOOST_NOEXCEPT
+inline tribool operator||(tribool x, tribool y)
 {
-  return (static_cast<bool>(!x) && static_cast<bool>(!y))
-    ? tribool(false)
-    : ((static_cast<bool>(x) || static_cast<bool>(y)) ? tribool(true) : tribool(indeterminate))
-  ;
+  if (static_cast<bool>(!x) && static_cast<bool>(!y))
+    return false;
+  else if (static_cast<bool>(x) || static_cast<bool>(y))
+    return true;
+  else
+    return indeterminate;
 }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator||(tribool x, bool y) BOOST_NOEXCEPT
+inline tribool operator||(tribool x, bool y)
 { return y? tribool(true) : x; }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator||(bool x, tribool y) BOOST_NOEXCEPT
+inline tribool operator||(bool x, tribool y)
 { return x? tribool(true) : y; }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator||(indeterminate_keyword_t, tribool x) BOOST_NOEXCEPT
+inline tribool operator||(indeterminate_keyword_t, tribool x)
 { return x? tribool(true) : tribool(indeterminate); }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator||(tribool x, indeterminate_keyword_t) BOOST_NOEXCEPT
+inline tribool operator||(tribool x, indeterminate_keyword_t)
 { return x? tribool(true) : tribool(indeterminate); }
 //@}
 
@@ -340,34 +331,34 @@ BOOST_CONSTEXPR inline tribool operator||(tribool x, indeterminate_keyword_t) BO
  *      </table>
  * \throws nothrow
  */
-BOOST_CONSTEXPR inline tribool operator==(tribool x, tribool y) BOOST_NOEXCEPT
+inline tribool operator==(tribool x, tribool y)
 {
-  return (indeterminate(x) || indeterminate(y))
-    ? indeterminate
-    : ((x && y) || (!x && !y))
-  ;
+  if (indeterminate(x) || indeterminate(y))
+    return indeterminate;
+  else
+    return (x && y) || (!x && !y);
 }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator==(tribool x, bool y) BOOST_NOEXCEPT { return x == tribool(y); }
+inline tribool operator==(tribool x, bool y) { return x == tribool(y); }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator==(bool x, tribool y) BOOST_NOEXCEPT { return tribool(x) == y; }
+inline tribool operator==(bool x, tribool y) { return tribool(x) == y; }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator==(indeterminate_keyword_t, tribool x) BOOST_NOEXCEPT
+inline tribool operator==(indeterminate_keyword_t, tribool x)
 { return tribool(indeterminate) == x; }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator==(tribool x, indeterminate_keyword_t) BOOST_NOEXCEPT
+inline tribool operator==(tribool x, indeterminate_keyword_t)
 { return tribool(indeterminate) == x; }
 
 /**
@@ -403,34 +394,34 @@ BOOST_CONSTEXPR inline tribool operator==(tribool x, indeterminate_keyword_t) BO
  *       </table>
  * \throws nothrow
  */
-BOOST_CONSTEXPR inline tribool operator!=(tribool x, tribool y) BOOST_NOEXCEPT
+inline tribool operator!=(tribool x, tribool y)
 {
-  return (indeterminate(x) || indeterminate(y))
-    ? indeterminate
-    : !((x && y) || (!x && !y))
-  ;
+  if (indeterminate(x) || indeterminate(y))
+    return indeterminate;
+  else
+    return !((x && y) || (!x && !y));
 }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator!=(tribool x, bool y) BOOST_NOEXCEPT { return x != tribool(y); }
+inline tribool operator!=(tribool x, bool y) { return x != tribool(y); }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator!=(bool x, tribool y) BOOST_NOEXCEPT { return tribool(x) != y; }
+inline tribool operator!=(bool x, tribool y) { return tribool(x) != y; }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator!=(indeterminate_keyword_t, tribool x) BOOST_NOEXCEPT
+inline tribool operator!=(indeterminate_keyword_t, tribool x)
 { return tribool(indeterminate) != x; }
 
 /**
  * \overload
  */
-BOOST_CONSTEXPR inline tribool operator!=(tribool x, indeterminate_keyword_t) BOOST_NOEXCEPT
+inline tribool operator!=(tribool x, indeterminate_keyword_t)
 { return x != tribool(indeterminate); }
 
 } } // end namespace boost::logic

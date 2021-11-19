@@ -11,14 +11,6 @@
 #ifndef BOOST_INTERPROCESS_MANAGED_OPEN_OR_CREATE_IMPL
 #define BOOST_INTERPROCESS_MANAGED_OPEN_OR_CREATE_IMPL
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/os_thread_functions.hpp>
 #include <boost/interprocess/detail/os_file_functions.hpp>
@@ -31,14 +23,41 @@
 #include <boost/interprocess/creation_tags.hpp>
 #include <boost/interprocess/detail/mpl.hpp>
 #include <boost/interprocess/permissions.hpp>
-#include <boost/container/detail/type_traits.hpp>  //alignment_of, aligned_storage
-#include <boost/interprocess/sync/spin/wait.hpp>
+#include <boost/type_traits/alignment_of.hpp>
+#include <boost/type_traits/type_with_alignment.hpp>
 #include <boost/move/move.hpp>
 #include <boost/cstdint.hpp>
 
 namespace boost {
 namespace interprocess {
+
+/// @cond
+namespace ipcdetail{ class interprocess_tester; }
+
+
+template<class DeviceAbstraction>
+struct managed_open_or_create_impl_device_id_t
+{
+   typedef const char *type;
+};
+
+#ifdef BOOST_INTERPROCESS_XSI_SHARED_MEMORY_OBJECTS
+
+class xsi_shared_memory_file_wrapper;
+class xsi_key;
+
+template<>
+struct managed_open_or_create_impl_device_id_t<xsi_shared_memory_file_wrapper>
+{
+   typedef xsi_key type;
+};
+
+#endif   //BOOST_INTERPROCESS_XSI_SHARED_MEMORY_OBJECTS
+
+/// @endcond
+
 namespace ipcdetail {
+
 
 template <bool StoreDevice, class DeviceAbstraction>
 class managed_open_or_create_impl_device_holder
@@ -72,6 +91,7 @@ class managed_open_or_create_impl
    //Non-copyable
    BOOST_MOVABLE_BUT_NOT_COPYABLE(managed_open_or_create_impl)
 
+   typedef typename managed_open_or_create_impl_device_id_t<DeviceAbstraction>::type device_id_t;
    typedef managed_open_or_create_impl_device_holder<StoreDevice, DeviceAbstraction> DevHolder;
    enum
    {
@@ -81,21 +101,20 @@ class managed_open_or_create_impl
       CorruptedSegment
    };
 
-   static const std::size_t RequiredAlignment =
-      MemAlignment ? MemAlignment
-                   : boost::container::dtl::alignment_of< boost::container::dtl::max_align_t >::value
-                   ;
-
    public:
-   static const std::size_t ManagedOpenOrCreateUserOffset =
-      ct_rounded_size<sizeof(boost::uint32_t), RequiredAlignment>::value;
+   static const std::size_t
+      ManagedOpenOrCreateUserOffset =
+         ct_rounded_size
+            < sizeof(boost::uint32_t)
+            , MemAlignment ? (MemAlignment) :
+               (::boost::alignment_of< ::boost::detail::max_align >::value)
+            >::value;
 
    managed_open_or_create_impl()
    {}
 
-   template <class DeviceId>
    managed_open_or_create_impl(create_only_t,
-                 const DeviceId & id,
+                 const device_id_t & id,
                  std::size_t size,
                  mode_t mode,
                  const void *addr,
@@ -111,9 +130,8 @@ class managed_open_or_create_impl
          , null_mapped_region_function());
    }
 
-   template <class DeviceId>
    managed_open_or_create_impl(open_only_t,
-                 const DeviceId & id,
+                 const device_id_t & id,
                  mode_t mode,
                  const void *addr)
    {
@@ -127,9 +145,9 @@ class managed_open_or_create_impl
          , null_mapped_region_function());
    }
 
-   template <class DeviceId>
+
    managed_open_or_create_impl(open_or_create_t,
-                 const DeviceId & id,
+                 const device_id_t & id,
                  std::size_t size,
                  mode_t mode,
                  const void *addr,
@@ -145,9 +163,9 @@ class managed_open_or_create_impl
          , null_mapped_region_function());
    }
 
-   template <class DeviceId, class ConstructFunc>
+   template <class ConstructFunc>
    managed_open_or_create_impl(create_only_t,
-                 const DeviceId & id,
+                 const device_id_t & id,
                  std::size_t size,
                  mode_t mode,
                  const void *addr,
@@ -164,9 +182,9 @@ class managed_open_or_create_impl
          , construct_func);
    }
 
-   template <class DeviceId, class ConstructFunc>
+   template <class ConstructFunc>
    managed_open_or_create_impl(open_only_t,
-                 const DeviceId & id,
+                 const device_id_t & id,
                  mode_t mode,
                  const void *addr,
                  const ConstructFunc &construct_func)
@@ -181,9 +199,9 @@ class managed_open_or_create_impl
          , construct_func);
    }
 
-   template <class DeviceId, class ConstructFunc>
+   template <class ConstructFunc>
    managed_open_or_create_impl(open_or_create_t,
-                 const DeviceId & id,
+                 const device_id_t & id,
                  std::size_t size,
                  mode_t mode,
                  const void *addr,
@@ -264,26 +282,26 @@ class managed_open_or_create_impl
    { return size == std::size_t(offset_t(size)); }
 
    //These are templatized to allow explicit instantiations
-   template<bool dummy, class DeviceId>
-   static void create_device(DeviceAbstraction &dev, const DeviceId & id, std::size_t size, const permissions &perm, false_ file_like)
+   template<bool dummy>
+   static void create_device(DeviceAbstraction &dev, const device_id_t & id, std::size_t size, const permissions &perm, false_ file_like)
    {
       (void)file_like;
       DeviceAbstraction tmp(create_only, id, read_write, size, perm);
       tmp.swap(dev);
    }
 
-   template<bool dummy, class DeviceId>
-   static void create_device(DeviceAbstraction &dev, const DeviceId & id, std::size_t, const permissions &perm, true_ file_like)
+   template<bool dummy>
+   static void create_device(DeviceAbstraction &dev, const device_id_t & id, std::size_t, const permissions &perm, true_ file_like)
    {
       (void)file_like;
       DeviceAbstraction tmp(create_only, id, read_write, perm);
       tmp.swap(dev);
    }
 
-   template <class DeviceId, class ConstructFunc> inline
+   template <class ConstructFunc> inline
    void priv_open_or_create
       (create_enum_t type,
-       const DeviceId & id,
+       const device_id_t & id,
        std::size_t size,
        mode_t mode, const void *addr,
        const permissions &perm,
@@ -291,6 +309,7 @@ class managed_open_or_create_impl
    {
       typedef bool_<FileBased> file_like_t;
       (void)mode;
+      error_info err;
       bool created = false;
       bool ronly   = false;
       bool cow     = false;
@@ -335,7 +354,6 @@ class managed_open_or_create_impl
          //file and know if we have really created it or just open it
          //drop me a e-mail!
          bool completed = false;
-         spin_wait swait;
          while(!completed){
             try{
                create_device<FileBased>(dev, id, size, perm, file_like_t());
@@ -366,7 +384,7 @@ class managed_open_or_create_impl
             catch(...){
                throw;
             }
-            swait.yield();
+            thread_yield();
          }
       }
 
@@ -413,13 +431,11 @@ class managed_open_or_create_impl
       else{
          if(FileBased){
             offset_t filesize = 0;
-            spin_wait swait;
             while(filesize == 0){
                if(!get_file_size(file_handle_from_mapping_handle(dev.get_mapping_handle()), filesize)){
-                  error_info err = system_error_code();
-                  throw interprocess_exception(err);
+                  throw interprocess_exception(error_info(system_error_code()));
                }
-               swait.yield();
+               thread_yield();
             }
             if(filesize == 1){
                throw interprocess_exception(error_info(corrupted_error));
@@ -431,9 +447,8 @@ class managed_open_or_create_impl
          boost::uint32_t *patomic_word = static_cast<boost::uint32_t*>(region.get_address());
          boost::uint32_t value = atomic_read32(patomic_word);
 
-         spin_wait swait;
          while(value == InitializingSegment || value == UninitializedSegment){
-            swait.yield();
+            thread_yield();
             value = atomic_read32(patomic_word);
          }
 

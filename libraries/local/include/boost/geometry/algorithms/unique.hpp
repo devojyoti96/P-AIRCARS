@@ -3,11 +3,6 @@
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
-// Copyright (c) 2014 Adam Wulkiewicz, Lodz, Poland.
-
-// This file was modified by Oracle on 2020.
-// Modifications copyright (c) 2020 Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
@@ -21,13 +16,11 @@
 
 #include <algorithm>
 
-#include <boost/range/begin.hpp>
-#include <boost/range/end.hpp>
+#include <boost/range.hpp>
+#include <boost/typeof/typeof.hpp>
 
-#include <boost/geometry/algorithms/detail/interior_iterator.hpp>
 #include <boost/geometry/core/interior_rings.hpp>
 #include <boost/geometry/core/mutable_range.hpp>
-#include <boost/geometry/core/tags.hpp>
 #include <boost/geometry/geometries/concepts/check.hpp>
 #include <boost/geometry/policies/compare.hpp>
 
@@ -64,35 +57,19 @@ struct polygon_unique
     template <typename Polygon, typename ComparePolicy>
     static inline void apply(Polygon& polygon, ComparePolicy const& policy)
     {
+        typedef typename geometry::ring_type<Polygon>::type ring_type;
+
         range_unique::apply(exterior_ring(polygon), policy);
 
-        typename interior_return_type<Polygon>::type
-            rings = interior_rings(polygon);
-
-        for (typename detail::interior_iterator<Polygon>::type
-                it = boost::begin(rings); it != boost::end(rings); ++it)
+        typename interior_return_type<Polygon>::type rings
+                    = interior_rings(polygon);
+        for (BOOST_AUTO_TPL(it, boost::begin(rings)); it != boost::end(rings); ++it)
         {
             range_unique::apply(*it, policy);
         }
     }
 };
 
-
-template <typename Policy>
-struct multi_unique
-{
-    template <typename MultiGeometry, typename ComparePolicy>
-    static inline void apply(MultiGeometry& multi, ComparePolicy const& compare)
-    {
-        for (typename boost::range_iterator<MultiGeometry>::type
-                it = boost::begin(multi);
-            it != boost::end(multi);
-            ++it)
-        {
-            Policy::apply(*it, compare);
-        }
-    }
-};
 
 
 }} // namespace detail::unique
@@ -136,24 +113,6 @@ struct unique<Polygon, polygon_tag>
 {};
 
 
-// For points, unique is not applicable and does nothing
-// (Note that it is not "spatially unique" but that it removes duplicate coordinates,
-//  like std::unique does). Spatially unique is "dissolve" which can (or will be)
-//  possible for multi-points as well, removing points at the same location.
-
-
-template <typename MultiLineString>
-struct unique<MultiLineString, multi_linestring_tag>
-    : detail::unique::multi_unique<detail::unique::range_unique>
-{};
-
-
-template <typename MultiPolygon>
-struct unique<MultiPolygon, multi_polygon_tag>
-    : detail::unique::multi_unique<detail::unique::polygon_unique>
-{};
-
-
 } // namespace dispatch
 #endif
 
@@ -170,7 +129,7 @@ struct unique<MultiPolygon, multi_polygon_tag>
 template <typename Geometry>
 inline void unique(Geometry& geometry)
 {
-    concepts::check<Geometry>();
+    concept::check<Geometry>();
 
     // Default strategy is the default point-comparison policy
     typedef geometry::equal_to

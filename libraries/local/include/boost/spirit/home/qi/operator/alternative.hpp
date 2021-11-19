@@ -5,8 +5,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef BOOST_SPIRIT_QI_OPERATOR_ALTERNATIVE_HPP
-#define BOOST_SPIRIT_QI_OPERATOR_ALTERNATIVE_HPP
+#if !defined(SPIRIT_ALTERNATIVE_FEBRUARY_05_2007_1153AM)
+#define SPIRIT_ALTERNATIVE_FEBRUARY_05_2007_1153AM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -24,8 +24,6 @@
 #include <boost/fusion/include/any.hpp>
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/include/for_each.hpp>
-#include <boost/proto/operators.hpp>
-#include <boost/proto/tags.hpp>
 
 namespace boost { namespace spirit
 {
@@ -65,17 +63,17 @@ namespace boost { namespace spirit { namespace qi
             type;
         };
 
-        alternative(Elements const& elements_)
-          : elements(elements_) {}
+        alternative(Elements const& elements)
+          : elements(elements) {}
 
         template <typename Iterator, typename Context
           , typename Skipper, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
           , Context& context, Skipper const& skipper
-          , Attribute& attr_) const
+          , Attribute& attr) const
         {
             detail::alternative_function<Iterator, Context, Skipper, Attribute>
-                f(first, last, context, skipper, attr_);
+                f(first, last, context, skipper, attr);
 
             // return true if *any* of the parsers succeed
             return fusion::any(elements, f);

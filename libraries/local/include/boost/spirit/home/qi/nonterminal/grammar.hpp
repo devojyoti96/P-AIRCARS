@@ -19,8 +19,6 @@
 #include <boost/spirit/home/qi/nonterminal/nonterminal_fwd.hpp>
 #include <boost/spirit/home/qi/reference.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/proto/extends.hpp>
-#include <boost/proto/traits.hpp>
 #include <boost/type_traits/is_same.hpp>
 
 namespace boost { namespace spirit { namespace qi
@@ -58,9 +56,9 @@ namespace boost { namespace spirit { namespace qi
 
         grammar(
             start_type const& start
-          , std::string const& name = "unnamed-grammar")
+          , std::string const& name_ = "unnamed-grammar")
         : proto::extends<terminal, base_type>(terminal::make(reference_(start)))
-        , name_(name)
+        , name_(name_)
         {}
 
         // This constructor is used to catch if the start rule is not
@@ -92,10 +90,10 @@ namespace boost { namespace spirit { namespace qi
         template <typename Context, typename Skipper, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
           , Context& context, Skipper const& skipper
-          , Attribute& attr_) const
+          , Attribute& attr) const
         {
             return this->proto_base().child0.parse(
-                first, last, context, skipper, attr_);
+                first, last, context, skipper, attr);
         }
 
         template <typename Context>

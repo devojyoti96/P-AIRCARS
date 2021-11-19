@@ -25,7 +25,6 @@
 #include <boost/spirit/home/support/info.hpp>
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/include/vector.hpp>
-#include <boost/integer_traits.hpp>
 
 namespace boost { namespace spirit
 {
@@ -109,8 +108,9 @@ namespace boost { namespace spirit { namespace karma
             unsigned int const numcolumns;
             mutable unsigned int count;
 
+        private:
             // silence MSVC warning C4512: assignment operator could not be generated
-            BOOST_DELETED_FUNCTION(columns_delimiter& operator= (columns_delimiter const&))
+            columns_delimiter& operator= (columns_delimiter const&);
         };
     }
 

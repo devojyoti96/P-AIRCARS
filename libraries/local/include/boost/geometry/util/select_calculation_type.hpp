@@ -4,10 +4,6 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
-// This file was modified by Oracle on 2014-2020.
-// Modifications copyright (c) 2014-2020 Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -18,6 +14,9 @@
 #ifndef BOOST_GEOMETRY_UTIL_SELECT_CALCULATION_TYPE_HPP
 #define BOOST_GEOMETRY_UTIL_SELECT_CALCULATION_TYPE_HPP
 
+
+#include <boost/mpl/if.hpp>
+#include <boost/type_traits.hpp>
 
 #include <boost/geometry/util/select_coordinate_type.hpp>
 
@@ -38,35 +37,17 @@ namespace boost { namespace geometry
 template <typename Geometry1, typename Geometry2, typename CalculationType>
 struct select_calculation_type
 {
-    typedef std::conditional_t
+    typedef typename
+        boost::mpl::if_
         <
-            std::is_void<CalculationType>::value,
+            boost::is_void<CalculationType>,
             typename select_coordinate_type
                 <
                     Geometry1,
                     Geometry2
                 >::type,
             CalculationType
-        > type;
-};
-
-// alternative version supporting more than 2 Geometries
-template
-<
-    typename CalculationType,
-    typename ...Geometries
->
-struct select_calculation_type_alt
-{
-    typedef std::conditional_t
-        <
-            std::is_void<CalculationType>::value,
-            typename select_coordinate_type
-                <
-                    Geometries...
-                >::type,
-            CalculationType
-        > type;
+        >::type type;
 };
 
 

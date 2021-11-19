@@ -54,7 +54,7 @@ struct check_base_dimension {
 /// to use the same value in multiple definitions.
 template<class Derived,
          long N
-#if !defined(BOOST_UNITS_DOXYGEN) && !defined(BOOST_BORLANDC)
+#if !defined(BOOST_UNITS_DOXYGEN) && !defined(__BORLANDC__)
          ,
          class = typename detail::ordinal_has_already_been_defined<
              check_base_dimension<Derived, N>::value
@@ -83,21 +83,21 @@ class base_dimension :
         /// check_base_dimension will trigger an error earlier
         /// for compilers with less strict name lookup.
         /// INTERNAL ONLY
-        friend BOOST_CONSTEXPR Derived* 
+        friend Derived* 
         check_double_register(const units::base_dimension_ordinal<N>&) 
         { return(0); }
 
         /// Register this ordinal
         /// INTERNAL ONLY
-        friend BOOST_CONSTEXPR detail::yes 
+        friend detail::yes 
         boost_units_is_registered(const units::base_dimension_ordinal<N>&) 
-        { return(detail::yes()); }
+        { detail::yes result; return(result); }
         
         /// But make sure we can identify the current instantiation!
         /// INTERNAL ONLY
-        friend BOOST_CONSTEXPR detail::yes 
+        friend detail::yes 
         boost_units_is_registered(const units::base_dimension_pair<Derived, N>&) 
-        { return(detail::yes()); }
+        { detail::yes result; return(result); }
 };
 
 } // namespace units

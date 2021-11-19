@@ -13,7 +13,6 @@
 #include <vector>
 #include <iterator>     // for std::iterator_traits
 
-#include <boost/config.hpp>
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 
@@ -70,26 +69,23 @@ namespace boost { namespace algorithm {
         /// \param p            A predicate used for the search comparisons.
         ///
         template <typename corpusIter>
-        std::pair<corpusIter, corpusIter>
-        operator () ( corpusIter corpus_first, corpusIter corpus_last ) const {
+        corpusIter operator () ( corpusIter corpus_first, corpusIter corpus_last ) const {
             BOOST_STATIC_ASSERT (( boost::is_same<
                 typename std::iterator_traits<patIter>::value_type, 
                 typename std::iterator_traits<corpusIter>::value_type>::value ));
-
-            if ( corpus_first == corpus_last ) return std::make_pair(corpus_last, corpus_last);   // if nothing to search, we didn't find it!
-            if (    pat_first ==    pat_last ) return std::make_pair(corpus_first, corpus_first); // empty pattern matches at start
+            if ( corpus_first == corpus_last ) return corpus_last;  // if nothing to search, we didn't find it!
+            if ( pat_first == pat_last )       return corpus_first; // empty pattern matches at start
 
             const difference_type k_corpus_length = std::distance ( corpus_first, corpus_last );
         //  If the pattern is larger than the corpus, we can't find it!
             if ( k_corpus_length < k_pattern_length ) 
-                return std::make_pair(corpus_last, corpus_last);
+                return corpus_last;
 
-            return do_search ( corpus_first, corpus_last, k_corpus_length );
+            return do_search   ( corpus_first, corpus_last, k_corpus_length );
             }
     
         template <typename Range>
-        std::pair<typename boost::range_iterator<Range>::type, typename boost::range_iterator<Range>::type>
-        operator () ( Range &r ) const {
+        typename boost::range_iterator<Range>::type operator () ( Range &r ) const {
             return (*this) (boost::begin(r), boost::end(r));
             }
 
@@ -107,8 +103,7 @@ namespace boost { namespace algorithm {
         /// \param p            A predicate used for the search comparisons.
         ///
         template <typename corpusIter>
-        std::pair<corpusIter, corpusIter>
-        do_search ( corpusIter corpus_first, corpusIter corpus_last, 
+        corpusIter do_search ( corpusIter corpus_first, corpusIter corpus_last, 
                                                 difference_type k_corpus_length ) const {
             difference_type match_start = 0;  // position in the corpus that we're matching
             
@@ -140,7 +135,7 @@ namespace boost { namespace algorithm {
             while ( match_start <= last_match ) {
                 while ( pat_first [ idx ] == corpus_first [ match_start + idx ] ) {
                     if ( ++idx == k_pattern_length )
-                        return std::make_pair(corpus_first + match_start, corpus_first + match_start + k_pattern_length);
+                        return corpus_first + match_start;
                     }
             //  Figure out where to start searching again
            //   assert ( idx - skip_ [ idx ] > 0 ); // we're always moving forward
@@ -151,14 +146,14 @@ namespace boost { namespace algorithm {
 #endif
                 
         //  We didn't find anything
-            return std::make_pair(corpus_last, corpus_last);
+            return corpus_last;
             }
     
 
         void preKmp ( patIter first, patIter last ) {
-           const difference_type count = std::distance ( first, last );
+           const /*std::size_t*/ int count = std::distance ( first, last );
         
-           difference_type i, j;
+           int i, j;
         
            i = 0;
            j = skip_[0] = -1;
@@ -178,7 +173,7 @@ namespace boost { namespace algorithm {
         void init_skip_table ( patIter first, patIter last ) {
             const difference_type count = std::distance ( first, last );
     
-            difference_type j;
+            int j;
             skip_ [ 0 ] = -1;
             for ( int i = 1; i <= count; ++i ) {
                 j = skip_ [ i - 1 ];
@@ -207,7 +202,7 @@ namespace boost { namespace algorithm {
 /// \param pat_last     One past the end of the data to search for
 ///
     template <typename patIter, typename corpusIter>
-    std::pair<corpusIter, corpusIter> knuth_morris_pratt_search ( 
+    corpusIter knuth_morris_pratt_search ( 
                   corpusIter corpus_first, corpusIter corpus_last, 
                   patIter pat_first, patIter pat_last )
     {
@@ -216,7 +211,7 @@ namespace boost { namespace algorithm {
     }
 
     template <typename PatternRange, typename corpusIter>
-    std::pair<corpusIter, corpusIter> knuth_morris_pratt_search ( 
+    corpusIter knuth_morris_pratt_search ( 
         corpusIter corpus_first, corpusIter corpus_last, const PatternRange &pattern )
     {
         typedef typename boost::range_iterator<const PatternRange>::type pattern_iterator;
@@ -225,9 +220,8 @@ namespace boost { namespace algorithm {
     }
     
     template <typename patIter, typename CorpusRange>
-    typename boost::disable_if_c<
-        boost::is_same<CorpusRange, patIter>::value, 
-        std::pair<typename boost::range_iterator<CorpusRange>::type, typename boost::range_iterator<CorpusRange>::type> >
+    typename boost::lazy_disable_if_c<
+        boost::is_same<CorpusRange, patIter>::value, typename boost::range_iterator<CorpusRange> >
     ::type
     knuth_morris_pratt_search ( CorpusRange &corpus, patIter pat_first, patIter pat_last )
     {
@@ -236,7 +230,7 @@ namespace boost { namespace algorithm {
     }
     
     template <typename PatternRange, typename CorpusRange>
-    std::pair<typename boost::range_iterator<CorpusRange>::type, typename boost::range_iterator<CorpusRange>::type>
+    typename boost::range_iterator<CorpusRange>::type
     knuth_morris_pratt_search ( CorpusRange &corpus, const PatternRange &pattern )
     {
         typedef typename boost::range_iterator<const PatternRange>::type pattern_iterator;

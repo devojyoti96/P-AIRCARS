@@ -2,7 +2,7 @@
 #define BOOST_ARCHIVE_CODECVT_NULL_HPP
 
 // MS compatible compilers support #pragma once
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
@@ -18,13 +18,10 @@
 
 #include <locale>
 #include <cstddef> // NULL, size_t
-#ifndef BOOST_NO_CWCHAR
 #include <cwchar>   // for mbstate_t
-#endif
 #include <boost/config.hpp>
-#include <boost/serialization/force_include.hpp>
 #include <boost/archive/detail/auto_link_archive.hpp>
-//#include <boost/archive/detail/abi_prefix.hpp> // must be the last header
+#include <boost/archive/detail/abi_prefix.hpp> // must be the last header
 
 #if defined(BOOST_NO_STDC_NAMESPACE)
 namespace std {
@@ -52,21 +49,19 @@ class codecvt_null;
 template<>
 class codecvt_null<char> : public std::codecvt<char, char, std::mbstate_t>
 {
-    bool do_always_noconv() const throw() BOOST_OVERRIDE {
+    virtual bool do_always_noconv() const throw() {
         return true;
     }
 public:
     explicit codecvt_null(std::size_t no_locale_manage = 0) :
         std::codecvt<char, char, std::mbstate_t>(no_locale_manage)
     {}
-    ~codecvt_null() BOOST_OVERRIDE {}
 };
 
 template<>
-class BOOST_SYMBOL_VISIBLE codecvt_null<wchar_t> :
-    public std::codecvt<wchar_t, char, std::mbstate_t>
+class codecvt_null<wchar_t> : public std::codecvt<wchar_t, char, std::mbstate_t>
 {
-    BOOST_SYMBOL_EXPORT std::codecvt_base::result
+    virtual BOOST_WARCHIVE_DECL(std::codecvt_base::result)
     do_out(
         std::mbstate_t & state,
         const wchar_t * first1,
@@ -75,9 +70,8 @@ class BOOST_SYMBOL_VISIBLE codecvt_null<wchar_t> :
         char * first2,
         char * last2,
         char * & next2
-    ) const BOOST_OVERRIDE;
-
-    BOOST_SYMBOL_EXPORT std::codecvt_base::result
+    ) const;
+    virtual BOOST_WARCHIVE_DECL(std::codecvt_base::result)
     do_in(
         std::mbstate_t & state,
         const char * first1,
@@ -86,23 +80,13 @@ class BOOST_SYMBOL_VISIBLE codecvt_null<wchar_t> :
         wchar_t * first2,
         wchar_t * last2,
         wchar_t * & next2
-    ) const BOOST_OVERRIDE;
-
-    BOOST_SYMBOL_EXPORT int do_encoding( ) const throw( ) BOOST_OVERRIDE {
+    ) const;
+    virtual int do_encoding( ) const throw( ){
         return sizeof(wchar_t) / sizeof(char);
     }
-
-    BOOST_SYMBOL_EXPORT bool do_always_noconv() const throw() BOOST_OVERRIDE {
-        return false;
-    }
-
-    BOOST_SYMBOL_EXPORT int do_max_length( ) const throw( ) BOOST_OVERRIDE {
+    virtual int do_max_length( ) const throw( ){
         return do_encoding();
     }
-public:
-    BOOST_SYMBOL_EXPORT explicit codecvt_null(std::size_t no_locale_manage = 0);
-
-    BOOST_SYMBOL_EXPORT ~codecvt_null() BOOST_OVERRIDE ;
 };
 
 } // namespace archive
@@ -111,6 +95,6 @@ public:
 #ifdef BOOST_MSVC
 #  pragma warning(pop)
 #endif
-//#include <boost/archive/detail/abi_suffix.hpp> // pop pragmas
+#include <boost/archive/detail/abi_suffix.hpp> // pop pragmas
 
 #endif //BOOST_ARCHIVE_CODECVT_NULL_HPP

@@ -12,7 +12,7 @@
 #include <boost/thread/detail/config.hpp>
 #include <boost/thread/detail/delete.hpp>
 #include <boost/thread/detail/move.hpp>
-#include <boost/thread/thread_only.hpp>
+#include <boost/thread/thread.hpp>
 
 #include <boost/config/abi_prefix.hpp>
 
@@ -21,29 +21,15 @@ namespace boost
 
   struct detach
   {
-    template <class Thread>
-    void operator()(Thread& t)
+    void operator()(thread& t)
     {
       t.detach();
     }
   };
 
-  struct detach_if_joinable
-  {
-    template <class Thread>
-    void operator()(Thread& t)
-    {
-      if (t.joinable())
-      {
-        t.detach();
-      }
-    }
-  };
-
   struct join_if_joinable
   {
-    template <class Thread>
-    void operator()(Thread& t)
+    void operator()(thread& t)
     {
       if (t.joinable())
       {
@@ -55,12 +41,11 @@ namespace boost
 #if defined BOOST_THREAD_PROVIDES_INTERRUPTIONS
   struct interrupt_and_join_if_joinable
   {
-    template <class Thread>
-    void operator()(Thread& t)
+    void operator()(thread& t)
     {
+      t.interrupt();
       if (t.joinable())
       {
-        t.interrupt();
         t.join();
       }
     }

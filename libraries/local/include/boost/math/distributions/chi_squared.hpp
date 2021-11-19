@@ -55,11 +55,6 @@ private:
 
 typedef chi_squared_distribution<double> chi_squared;
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4127)
-#endif
-
 template <class RealType, class Policy>
 inline const std::pair<RealType, RealType> range(const chi_squared_distribution<RealType, Policy>& /*dist*/)
 { // Range of permissible values for random variable x.
@@ -73,10 +68,6 @@ inline const std::pair<RealType, RealType> range(const chi_squared_distribution<
     return std::pair<RealType, RealType>(static_cast<RealType>(0), max_value<RealType>()); // 0 to + max.
   }
 }
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 template <class RealType, class Policy>
 inline const std::pair<RealType, RealType> support(const chi_squared_distribution<RealType, Policy>& /*dist*/)
@@ -340,7 +331,7 @@ RealType chi_squared_distribution<RealType, Policy>::find_degrees_of_freedom(
 
    detail::df_estimator<RealType, Policy> f(alpha, beta, variance, difference_from_variance);
    tools::eps_tolerance<RealType> tol(policies::digits<RealType, Policy>());
-   std::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
+   boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
    std::pair<RealType, RealType> r =
      tools::bracket_and_solve_root(f, hint, RealType(2), false, tol, max_iter, Policy());
    RealType result = r.first + (r.second - r.first) / 2;

@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_SYNC_UTILS_HPP
 #define BOOST_INTERPROCESS_DETAIL_SYNC_UTILS_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -52,28 +48,6 @@ inline bool bytes_to_str(const void *mem, const std::size_t mem_length, char *ou
    const char Characters [] =
       { '0', '1', '2', '3', '4', '5', '6', '7'
       , '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-
-   std::size_t char_counter = 0;
-   const char *buf = (const char *)mem;
-   for(std::size_t i = 0; i != mem_length; ++i){
-      out_str[char_counter++] = Characters[(buf[i]&0xF0)>>4];
-      out_str[char_counter++] = Characters[(buf[i]&0x0F)];
-   }
-   out_str[char_counter] = 0;
-   return true;
-}
-
-inline bool bytes_to_str(const void *mem, const std::size_t mem_length, wchar_t *out_str, std::size_t &out_length)
-{
-   const std::size_t need_mem = mem_length*2+1;
-   if(out_length < need_mem){
-      out_length = need_mem;
-      return false;
-   }
-
-   const wchar_t Characters [] =
-      { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7'
-      , L'8', L'9', L'A', L'B', L'C', L'D', L'E', L'F' };
 
    std::size_t char_counter = 0;
    const char *buf = (const char *)mem;

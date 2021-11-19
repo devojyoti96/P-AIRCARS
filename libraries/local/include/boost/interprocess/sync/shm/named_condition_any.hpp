@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_SHM_NAMED_CONDITION_ANY_HPP
 #define BOOST_INTERPROCESS_SHM_NAMED_CONDITION_ANY_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -28,6 +24,7 @@
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/interprocess/detail/managed_open_or_create_impl.hpp>
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 #include <boost/interprocess/sync/shm/named_creation_functor.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/permissions.hpp>
@@ -42,26 +39,25 @@ namespace boost {
 namespace interprocess {
 namespace ipcdetail {
 
-#if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+/// @cond
 class interprocess_tester;
-#endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+/// @endcond
 
 //! A global condition variable that can be created by name.
 //! This condition variable is designed to work with named_mutex and
 //! can't be placed in shared memory or memory mapped files.
 class shm_named_condition_any
 {
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    //Non-copyable
    shm_named_condition_any();
    shm_named_condition_any(const shm_named_condition_any &);
    shm_named_condition_any &operator=(const shm_named_condition_any &);
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
    public:
    //!Creates a global condition with a name.
    //!If the condition can't be created throws interprocess_exception
-   template <class CharT>
-   shm_named_condition_any(create_only_t create_only, const CharT *name, const permissions &perm = permissions())
+   shm_named_condition_any(create_only_t create_only, const char *name, const permissions &perm = permissions())
       :  m_shmem  (create_only
                   ,name
                   ,sizeof(internal_condition) +
@@ -78,8 +74,7 @@ class shm_named_condition_any
    //!If the condition is already created, this call is equivalent
    //!shm_named_condition_any(open_only_t, ... )
    //!Does not throw
-   template <class CharT>
-   shm_named_condition_any(open_or_create_t open_or_create, const CharT *name, const permissions &perm = permissions())
+   shm_named_condition_any(open_or_create_t open_or_create, const char *name, const permissions &perm = permissions())
       :  m_shmem  (open_or_create
                   ,name
                   ,sizeof(internal_condition) +
@@ -93,8 +88,7 @@ class shm_named_condition_any
    //!Opens a global condition with a name if that condition is previously
    //!created. If it is not previously created this function throws
    //!interprocess_exception.
-   template <class CharT>
-   shm_named_condition_any(open_only_t open_only, const CharT *name)
+   shm_named_condition_any(open_only_t open_only, const char *name)
       :  m_shmem  (open_only
                   ,name
                   ,read_write
@@ -114,49 +108,48 @@ class shm_named_condition_any
    //!If there is a thread waiting on *this, change that
    //!thread's state to ready. Otherwise there is no effect.*/
    void notify_one()
-   {  this->internal_cond().notify_one(); }
+   {  m_cond.notify_one(); }
 
    //!Change the state of all threads waiting on *this to ready.
    //!If there are no waiting threads, notify_all() has no effect.
    void notify_all()
-   {  this->internal_cond().notify_all(); }
+   {  m_cond.notify_all(); }
 
    //!Releases the lock on the named_mutex object associated with lock, blocks
    //!the current thread of execution until readied by a call to
    //!this->notify_one() or this->notify_all(), and then reacquires the lock.
    template <typename L>
    void wait(L& lock)
-   {  this->internal_cond().wait(lock); }
+   {  m_cond.wait(lock); }
 
    //!The same as:
    //!while (!pred()) wait(lock)
    template <typename L, typename Pr>
    void wait(L& lock, Pr pred)
-   {  this->internal_cond().wait(lock, pred); }
+   {  m_cond.wait(lock, pred); }
 
    //!Releases the lock on the named_mutex object associated with lock, blocks
    //!the current thread of execution until readied by a call to
    //!this->notify_one() or this->notify_all(), or until time abs_time is reached,
    //!and then reacquires the lock.
    //!Returns: false if time abs_time is reached, otherwise true.
-   template <typename L, typename TimePoint>
-   bool timed_wait(L& lock, const TimePoint &abs_time)
-   {  return this->internal_cond().timed_wait(lock, abs_time); }
+   template <typename L>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time)
+   {  return m_cond.timed_wait(lock, abs_time); }
 
    //!The same as:   while (!pred()) {
    //!                  if (!timed_wait(lock, abs_time)) return pred();
    //!               } return true;
-   template <typename L, typename TimePoint, typename Pr>
-   bool timed_wait(L& lock, const TimePoint &abs_time, Pr pred)
-   {  return this->internal_cond().timed_wait(lock, abs_time, pred); }
+   template <typename L, typename Pr>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time, Pr pred)
+   {  return m_cond.timed_wait(lock, abs_time, pred); }
 
    //!Erases a named condition from the system.
    //!Returns false on error. Never throws.
-   template <class CharT>
-   static bool remove(const CharT *name)
+   static bool remove(const char *name)
    {  return shared_memory_object::remove(name); }
 
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    private:
 
    class internal_condition_members
@@ -164,7 +157,7 @@ class shm_named_condition_any
       public:
       typedef interprocess_mutex       mutex_type;
       typedef interprocess_condition   condvar_type;
-
+  
       condvar_type&  get_condvar() {  return m_cond;  }
       mutex_type&    get_mutex()   {  return m_mtx; }
 
@@ -175,8 +168,7 @@ class shm_named_condition_any
 
    typedef ipcdetail::condition_any_wrapper<internal_condition_members> internal_condition;
 
-   internal_condition &internal_cond()
-   {  return *static_cast<internal_condition*>(m_shmem.get_user_address()); }
+   internal_condition m_cond;
 
    friend class boost::interprocess::ipcdetail::interprocess_tester;
    void dont_close_on_destruction()
@@ -187,7 +179,7 @@ class shm_named_condition_any
 
    template <class T, class Arg> friend class boost::interprocess::ipcdetail::named_creation_functor;
    typedef boost::interprocess::ipcdetail::named_creation_functor<internal_condition> construct_func_t;
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 };
 
 }  //namespace ipcdetail

@@ -45,15 +45,16 @@ namespace boost { namespace phoenix
     struct custom_terminal<detail::nothing, Dummy>
     {
         typedef void result_type;
+
         template <typename Context>
         void operator()(detail::nothing, Context &) const
         {
         }
     };
 
-    typedef expression::null::type nothing_type BOOST_ATTRIBUTE_UNUSED;
+    typedef expression::null::type nothing_type;
 #ifndef BOOST_PHOENIX_NO_PREDEFINED_TERMINALS
-    nothing_type const BOOST_ATTRIBUTE_UNUSED nothing = {{{}}};
+    nothing_type const nothing = {{{}}};
 #endif
 }}
 

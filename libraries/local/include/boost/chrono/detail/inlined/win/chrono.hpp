@@ -12,11 +12,9 @@
 #ifndef BOOST_CHRONO_DETAIL_INLINED_WIN_CHRONO_HPP
 #define BOOST_CHRONO_DETAIL_INLINED_WIN_CHRONO_HPP
 
-#include <boost/winapi/time.hpp>
-#include <boost/winapi/timers.hpp>
-#include <boost/winapi/get_last_error.hpp>
-#include <boost/winapi/error_codes.hpp>
-#include <boost/assert.hpp>
+#include <boost/detail/win/time.hpp>
+#include <boost/detail/win/timers.hpp>
+#include <boost/detail/win/GetLastError.hpp>
 
 namespace boost
 {
@@ -27,8 +25,8 @@ namespace chrono_detail
 
   BOOST_CHRONO_INLINE double get_nanosecs_per_tic() BOOST_NOEXCEPT
   {
-      boost::winapi::LARGE_INTEGER_ freq;
-      if ( !boost::winapi::QueryPerformanceFrequency( &freq ) )
+      boost::detail::win32::LARGE_INTEGER_ freq;
+      if ( !boost::detail::win32::QueryPerformanceFrequency( &freq ) )
           return 0.0L;
       return double(1000000000.0L / freq.QuadPart);
   }
@@ -37,22 +35,14 @@ namespace chrono_detail
 
   steady_clock::time_point steady_clock::now() BOOST_NOEXCEPT
   {
-    double nanosecs_per_tic = chrono_detail::get_nanosecs_per_tic();
+    static double nanosecs_per_tic = chrono_detail::get_nanosecs_per_tic();
 
-    boost::winapi::LARGE_INTEGER_ pcount;
-    if ( nanosecs_per_tic <= 0.0L )
+    boost::detail::win32::LARGE_INTEGER_ pcount;
+    if ( (nanosecs_per_tic <= 0.0L) ||
+            (!boost::detail::win32::QueryPerformanceCounter( &pcount )) )
     {
-      BOOST_ASSERT(0 && "Boost::Chrono - get_nanosecs_per_tic Internal Error");
+      BOOST_ASSERT(0 && "Boost::Chrono - Internal Error");
       return steady_clock::time_point();
-    }
-    unsigned times=0;
-    while ( ! boost::winapi::QueryPerformanceCounter( &pcount ) )
-    {
-      if ( ++times > 3 )
-      {
-        BOOST_ASSERT(0 && "Boost::Chrono - QueryPerformanceCounter Internal Error");
-        return steady_clock::time_point();
-      }
     }
 
     return steady_clock::time_point(steady_clock::duration(
@@ -63,31 +53,31 @@ namespace chrono_detail
 #if !defined BOOST_CHRONO_DONT_PROVIDE_HYBRID_ERROR_HANDLING
   steady_clock::time_point steady_clock::now( system::error_code & ec )
   {
-    double nanosecs_per_tic = chrono_detail::get_nanosecs_per_tic();
+    static double nanosecs_per_tic = chrono_detail::get_nanosecs_per_tic();
 
-    boost::winapi::LARGE_INTEGER_ pcount;
+    boost::detail::win32::LARGE_INTEGER_ pcount;
     if ( (nanosecs_per_tic <= 0.0L)
-            || (!boost::winapi::QueryPerformanceCounter( &pcount )) )
+            || (!boost::detail::win32::QueryPerformanceCounter( &pcount )) )
     {
-        boost::winapi::DWORD_ cause =
+        boost::detail::win32::DWORD_ cause =
             ((nanosecs_per_tic <= 0.0L)
-                    ? boost::winapi::ERROR_NOT_SUPPORTED_
-                    : boost::winapi::GetLastError());
-        if (::boost::chrono::is_throws(ec)) {
+                    ? ERROR_NOT_SUPPORTED
+                    : boost::detail::win32::GetLastError());
+        if (BOOST_CHRONO_IS_THROWS(ec)) {
             boost::throw_exception(
                     system::system_error(
                             cause,
-                            ::boost::system::system_category(),
+                            BOOST_CHRONO_SYSTEM_CATEGORY,
                             "chrono::steady_clock" ));
         }
         else
         {
-            ec.assign( cause, ::boost::system::system_category() );
+            ec.assign( cause, BOOST_CHRONO_SYSTEM_CATEGORY );
             return steady_clock::time_point(duration(0));
         }
     }
 
-    if (!::boost::chrono::is_throws(ec))
+    if (!BOOST_CHRONO_IS_THROWS(ec))
     {
         ec.clear();
     }
@@ -99,13 +89,19 @@ namespace chrono_detail
   BOOST_CHRONO_INLINE
   system_clock::time_point system_clock::now() BOOST_NOEXCEPT
   {
-    boost::winapi::FILETIME_ ft;
-    boost::winapi::GetSystemTimeAsFileTime( &ft );  // never fails
+    boost::detail::win32::FILETIME_ ft;
+  #if defined(UNDER_CE)
+    // Windows CE does not define GetSystemTimeAsFileTime so we do it in two steps.
+    boost::detail::win32::SYSTEMTIME_ st;
+    boost::detail::win32::GetSystemTime( &st );
+    boost::detail::win32::SystemTimeToFileTime( &st, &ft );
+  #else
+    boost::detail::win32::GetSystemTimeAsFileTime( &ft );  // never fails
+  #endif
     return system_clock::time_point(
       system_clock::duration(
         ((static_cast<__int64>( ft.dwHighDateTime ) << 32) | ft.dwLowDateTime)
-       - 116444736000000000LL
-       //- (134775LL*864000000000LL)
+       -116444736000000000LL
       )
     );
   }
@@ -114,18 +110,21 @@ namespace chrono_detail
   BOOST_CHRONO_INLINE
   system_clock::time_point system_clock::now( system::error_code & ec )
   {
-    boost::winapi::FILETIME_ ft;
-    boost::winapi::GetSystemTimeAsFileTime( &ft );  // never fails
-    if (!::boost::chrono::is_throws(ec))
+    boost::detail::win32::FILETIME_ ft;
+  #if defined(UNDER_CE)
+    // Windows CE does not define GetSystemTimeAsFileTime so we do it in two steps.
+    boost::detail::win32::SYSTEMTIME_ st;
+    boost::detail::win32::GetSystemTime( &st );
+    boost::detail::win32::SystemTimeToFileTime( &st, &ft );
+  #else
+    boost::detail::win32::GetSystemTimeAsFileTime( &ft );  // never fails
+  #endif
+    if (!BOOST_CHRONO_IS_THROWS(ec))
     {
         ec.clear();
     }
-    return system_clock::time_point(
-      system_clock::duration(
-       ((static_cast<__int64>( ft.dwHighDateTime ) << 32) | ft.dwLowDateTime)
-       - 116444736000000000LL
-       //- (134775LL*864000000000LL)
-       ));
+    return time_point(duration(
+      (static_cast<__int64>( ft.dwHighDateTime ) << 32) | ft.dwLowDateTime));
   }
 #endif
 
@@ -133,6 +132,7 @@ namespace chrono_detail
   std::time_t system_clock::to_time_t(const system_clock::time_point& t) BOOST_NOEXCEPT
   {
       __int64 temp = t.time_since_epoch().count();
+
       temp /= 10000000;
       return static_cast<std::time_t>( temp );
   }
@@ -142,6 +142,7 @@ namespace chrono_detail
   {
       __int64 temp = t;
       temp *= 10000000;
+
       return time_point(duration(temp));
   }
 

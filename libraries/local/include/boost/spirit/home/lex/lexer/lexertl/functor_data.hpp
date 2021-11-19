@@ -17,10 +17,8 @@
 #include <boost/spirit/home/lex/lexer/lexertl/iterator_tokenizer.hpp>
 #include <boost/spirit/home/lex/lexer/lexertl/semantic_action_data.hpp>
 #include <boost/spirit/home/lex/lexer/lexertl/wrap_action.hpp>
-#include <boost/spirit/home/support/assert_msg.hpp>
 #include <boost/mpl/bool.hpp>
 #include <boost/optional.hpp>
-#include <iterator> // for std::iterator_traits
 
 namespace boost { namespace spirit { namespace lex { namespace lexertl
 { 
@@ -38,7 +36,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
         {
         protected:
             typedef typename 
-                std::iterator_traits<Iterator>::value_type 
+                boost::detail::iterator_traits<Iterator>::value_type 
             char_type;
 
         public:
@@ -67,12 +65,15 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             template <typename Char>
             void set_state_name (Char const*) 
             {
+// some (random) versions of gcc instantiate this function even if it's not 
+// needed leading to false static asserts
+#if !defined(__GNUC__)
                 // If you see a compile time assertion below you're probably 
                 // using a token type not supporting lexer states (the 3rd 
                 // template parameter of the token is mpl::false_), but your 
                 // code uses state changes anyways.
-                BOOST_SPIRIT_ASSERT_FAIL(Char,
-                    tried_to_set_state_of_stateless_token, ());
+                BOOST_STATIC_ASSERT(false);
+#endif
             }
             char_type const* get_state_name() const { return rules_.initial(); }
             std::size_t get_state_id (char_type const*) const
@@ -167,7 +168,7 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             std::size_t get_state() const { return 0; }
             void set_state(std::size_t) {}
 
-            void set_end(Iterator const& /*it*/) {}
+            void set_end(Iterator const& it) {}
 
             Iterator& get_first() { return first_; }
             Iterator const& get_first() const { return first_; }
@@ -191,8 +192,9 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
 
             bool bol_;      // helper storing whether last character was \n
 
+        private:
             // silence MSVC warning C4512: assignment operator could not be generated
-            BOOST_DELETED_FUNCTION(data& operator= (data const&))
+            data& operator= (data const&);
         };
 
         ///////////////////////////////////////////////////////////////////////
@@ -263,8 +265,9 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
         protected:
             std::size_t state_;
 
+        private:
             // silence MSVC warning C4512: assignment operator could not be generated
-            BOOST_DELETED_FUNCTION(data& operator= (data const&))
+            data& operator= (data const&);
         };
 
         ///////////////////////////////////////////////////////////////////////
@@ -296,8 +299,8 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             template <typename IterData>
             data (IterData const& data_, Iterator& first, Iterator const& last)
               : base_type(data_, first, last)
-              , actions_(data_.actions_), hold_(), end_()
-              , value_(iterator_range<Iterator>(last, last))
+              , actions_(data_.actions_), hold_()
+              , value_(iterator_range<Iterator>(first, last))
               , has_value_(false), has_hold_(false) {}
 
             // invoke attached semantic actions, if defined
@@ -398,8 +401,9 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             mutable bool has_value_;    // 'true' if value_ is valid
             bool has_hold_;     // 'true' if hold_ is valid
 
+        private:
             // silence MSVC warning C4512: assignment operator could not be generated
-            BOOST_DELETED_FUNCTION(data& operator= (data const&))
+            data& operator= (data const&);
         };
 
         ///////////////////////////////////////////////////////////////////////
@@ -537,8 +541,9 @@ namespace boost { namespace spirit { namespace lex { namespace lexertl
             mutable bool has_value_;    // 'true' if value_ is valid
             bool has_hold_;     // 'true' if hold_ is valid
 
+        private:
             // silence MSVC warning C4512: assignment operator could not be generated
-            BOOST_DELETED_FUNCTION(data& operator= (data const&))
+            data& operator= (data const&);
         };
     }
 }}}}

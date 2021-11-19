@@ -7,7 +7,7 @@
 
 #ifndef BOOST_IOSTREAMS_FILTER_TEST_HPP_INCLUDED
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
@@ -15,7 +15,8 @@
 #include <boost/detail/workaround.hpp>
 #include <algorithm>                      // min.
 #include <cstddef>                        // size_t.
-#if BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x564)) || \
+#if BOOST_WORKAROUND(BOOST_MSVC, <= 1300) || \
+    BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) || \
     BOOST_WORKAROUND(__MWERKS__, <= 0x3003) \
     /**/
 # include <cstdlib>                       // rand.
@@ -24,7 +25,8 @@
 #include <iterator>
 #include <string>
 #include <vector>
-#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x564)) && \
+#if !BOOST_WORKAROUND(BOOST_MSVC, <= 1300) && \
+    !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) && \
     !BOOST_WORKAROUND(__MWERKS__, <= 0x3003) \
     /**/
 # include <boost/random/linear_congruential.hpp>
@@ -50,7 +52,8 @@
 namespace std { 
     using ::memcpy; 
     using ::strlen; 
-    #if BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x564)) || \
+    #if BOOST_WORKAROUND(BOOST_MSVC, <= 1300) || \
+        BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) || \
         BOOST_WORKAROUND(__MWERKS__, <= 0x3003) \
         /**/
         using ::rand; 
@@ -64,17 +67,18 @@ BOOST_IOSTREAMS_BOOL_TRAIT_DEF(is_string, std::basic_string, 3)
 
 const std::streamsize default_increment = 5;
 
-#if !BOOST_WORKAROUND(BOOST_BORLANDC, BOOST_TESTED_AT(0x564)) && \
+#if !BOOST_WORKAROUND(BOOST_MSVC, <= 1300) && \
+    !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564)) && \
     !BOOST_WORKAROUND(__MWERKS__, <= 0x3003) \
     /**/
-    std::streamsize rand(std::streamsize inc)
+    std::streamsize rand(int inc)
     {
         static rand48                random_gen;
-        static uniform_smallint<int> random_dist(0, static_cast<int>(inc));
+        static uniform_smallint<int> random_dist(0, inc);
         return random_dist(random_gen);
     }
 #else
-    std::streamsize rand(std::streamsize inc) 
+    std::streamsize rand(int inc) 
     { 
         return (std::rand() * inc + 1) / RAND_MAX; 
     }
@@ -93,14 +97,13 @@ public:
         { }
     std::streamsize read(char* s, std::streamsize n)
     {
-        using namespace std;
-        if (pos_ == static_cast<streamsize>(data_.size()))
+        if (pos_ == static_cast<std::streamsize>(data_.size()))
             return -1;
-        streamsize avail = 
-            (std::min) (n, static_cast<streamsize>(data_.size() - pos_));
-        streamsize amt = (std::min) (rand(inc_), avail);
+        std::streamsize avail = 
+            (std::min) (n, static_cast<std::streamsize>(data_.size() - pos_));
+        std::streamsize amt = (std::min) (rand(inc_), avail);
         if (amt)
-            memcpy(s, data_.c_str() + pos_, static_cast<size_t>(amt));
+            std::memcpy(s, data_.c_str() + pos_, amt);
         pos_ += amt;
         return amt;
     }
@@ -108,7 +111,7 @@ public:
     bool putback(char c)
     {
         if (pos_ > 0) {
-            data_[static_cast<std::string::size_type>(--pos_)] = c;
+            data_[--pos_] = c;
             return true;
         }
         return false;

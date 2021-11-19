@@ -2,7 +2,7 @@
 // ssl/detail/engine.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,12 +17,14 @@
 
 #include <boost/asio/detail/config.hpp>
 
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/detail/static_mutex.hpp>
-#include <boost/asio/ssl/detail/openssl_types.hpp>
-#include <boost/asio/ssl/detail/verify_callback.hpp>
-#include <boost/asio/ssl/stream_base.hpp>
-#include <boost/asio/ssl/verify_mode.hpp>
+#if !defined(BOOST_ASIO_ENABLE_OLD_SSL)
+# include <boost/asio/buffer.hpp>
+# include <boost/asio/detail/static_mutex.hpp>
+# include <boost/asio/ssl/detail/openssl_types.hpp>
+# include <boost/asio/ssl/detail/verify_callback.hpp>
+# include <boost/asio/ssl/stream_base.hpp>
+# include <boost/asio/ssl/verify_mode.hpp>
+#endif // !defined(BOOST_ASIO_ENABLE_OLD_SSL)
 
 #include <boost/asio/detail/push_options.hpp>
 
@@ -30,6 +32,8 @@ namespace boost {
 namespace asio {
 namespace ssl {
 namespace detail {
+
+#if !defined(BOOST_ASIO_ENABLE_OLD_SSL)
 
 class engine
 {
@@ -59,18 +63,8 @@ public:
   // Construct a new engine for the specified context.
   BOOST_ASIO_DECL explicit engine(SSL_CTX* context);
 
-#if defined(BOOST_ASIO_HAS_MOVE)
-  // Move construct from another engine.
-  BOOST_ASIO_DECL engine(engine&& other) BOOST_ASIO_NOEXCEPT;
-#endif // defined(BOOST_ASIO_HAS_MOVE)
-
   // Destructor.
   BOOST_ASIO_DECL ~engine();
-
-#if defined(BOOST_ASIO_HAS_MOVE)
-  // Move assign from another engine.
-  BOOST_ASIO_DECL engine& operator=(engine&& other) BOOST_ASIO_NOEXCEPT;
-#endif // defined(BOOST_ASIO_HAS_MOVE)
 
   // Get the underlying implementation in the native type.
   BOOST_ASIO_DECL SSL* native_handle();
@@ -78,10 +72,6 @@ public:
   // Set the peer verification mode.
   BOOST_ASIO_DECL boost::system::error_code set_verify_mode(
       verify_mode v, boost::system::error_code& ec);
-
-  // Set the peer verification depth.
-  BOOST_ASIO_DECL boost::system::error_code set_verify_depth(
-      int depth, boost::system::error_code& ec);
 
   // Set a peer certificate verification callback.
   BOOST_ASIO_DECL boost::system::error_code set_verify_callback(
@@ -104,7 +94,7 @@ public:
       boost::system::error_code& ec, std::size_t& bytes_transferred);
 
   // Get output data to be written to the transport.
-  BOOST_ASIO_DECL boost::asio::mutable_buffer get_output(
+  BOOST_ASIO_DECL boost::asio::mutable_buffers_1 get_output(
       const boost::asio::mutable_buffer& data);
 
   // Put input data that was read from the transport.
@@ -126,11 +116,9 @@ private:
   BOOST_ASIO_DECL static int verify_callback_function(
       int preverified, X509_STORE_CTX* ctx);
 
-#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
   // The SSL_accept function may not be thread safe. This mutex is used to
   // protect all calls to the SSL_accept function.
   BOOST_ASIO_DECL static boost::asio::detail::static_mutex& accept_mutex();
-#endif // (OPENSSL_VERSION_NUMBER < 0x10000000L)
 
   // Perform one operation. Returns >= 0 on success or error, want_read if the
   // operation needs more input, or want_write if it needs to write some output
@@ -157,6 +145,8 @@ private:
   SSL* ssl_;
   BIO* ext_bio_;
 };
+
+#endif // !defined(BOOST_ASIO_ENABLE_OLD_SSL)
 
 } // namespace detail
 } // namespace ssl

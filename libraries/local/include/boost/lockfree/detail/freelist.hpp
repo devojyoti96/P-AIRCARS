@@ -1,6 +1,6 @@
 //  lock-free freelist
 //
-//  Copyright (C) 2008-2016 Tim Blechmann
+//  Copyright (C) 2008, 2009, 2011 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -9,8 +9,6 @@
 #ifndef BOOST_LOCKFREE_FREELIST_HPP_INCLUDED
 #define BOOST_LOCKFREE_FREELIST_HPP_INCLUDED
 
-#include <cstring>
-#include <limits>
 #include <memory>
 
 #include <boost/array.hpp>
@@ -19,18 +17,9 @@
 #include <boost/noncopyable.hpp>
 #include <boost/static_assert.hpp>
 
-#include <boost/align/align_up.hpp>
-#include <boost/align/aligned_allocator_adaptor.hpp>
-
 #include <boost/lockfree/detail/atomic.hpp>
 #include <boost/lockfree/detail/parameter.hpp>
 #include <boost/lockfree/detail/tagged_ptr.hpp>
-
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable: 4100) // unreferenced formal parameter
-#pragma warning(disable: 4127) // conditional expression is constant
-#endif
 
 namespace boost    {
 namespace lockfree {
@@ -50,7 +39,6 @@ class freelist_stack:
     typedef tagged_ptr<freelist_node> tagged_node_ptr;
 
 public:
-    typedef T *           index_t;
     typedef tagged_ptr<T> tagged_node_handle;
 
     template <typename Allocator>
@@ -60,7 +48,6 @@ public:
     {
         for (std::size_t i = 0; i != n; ++i) {
             T * node = Alloc::allocate(1);
-            std::memset((void*)node, 0, sizeof(T));
 #ifdef BOOST_LOCKFREE_FREELIST_INIT_RUNS_DTOR
             destruct<false>(node);
 #else
@@ -74,7 +61,6 @@ public:
     {
         for (std::size_t i = 0; i != count; ++i) {
             T * node = Alloc::allocate(1);
-            std::memset((void*)node, 0, sizeof(T));
             deallocate<ThreadSafe>(node);
         }
     }
@@ -107,7 +93,7 @@ public:
     }
 
     template <bool ThreadSafe>
-    void destruct (tagged_node_handle const & tagged_ptr)
+    void destruct (tagged_node_handle tagged_ptr)
     {
         T * n = tagged_ptr.get_ptr();
         n->~T();
@@ -123,7 +109,7 @@ public:
 
     ~freelist_stack(void)
     {
-        tagged_node_ptr current = pool_.load();
+        tagged_node_ptr current (pool_);
 
         while (current) {
             freelist_node * current_ptr = current.get_ptr();
@@ -181,17 +167,14 @@ private:
 
         for(;;) {
             if (!old_pool.get_ptr()) {
-                if (!Bounded) {
-                    T *ptr = Alloc::allocate(1);
-                    std::memset((void*)ptr, 0, sizeof(T));
-                    return ptr;
-                }
+                if (!Bounded)
+                    return Alloc::allocate(1);
                 else
                     return 0;
             }
 
             freelist_node * new_pool_ptr = old_pool->next.get_ptr();
-            tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_next_tag());
+            tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
             if (pool_.compare_exchange_weak(old_pool, new_pool)) {
                 void * ptr = old_pool.get_ptr();
@@ -206,17 +189,14 @@ private:
         tagged_node_ptr old_pool = pool_.load(memory_order_relaxed);
 
         if (!old_pool.get_ptr()) {
-            if (!Bounded) {
-                T *ptr = Alloc::allocate(1);
-                std::memset((void*)ptr, 0, sizeof(T));
-                return ptr;
-            }
+            if (!Bounded)
+                return Alloc::allocate(1);
             else
                 return 0;
         }
 
         freelist_node * new_pool_ptr = old_pool->next.get_ptr();
-        tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_next_tag());
+        tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
         pool_.store(new_pool, memory_order_relaxed);
         void * ptr = old_pool.get_ptr();
@@ -264,9 +244,7 @@ private:
     atomic<tagged_node_ptr> pool_;
 };
 
-class
-BOOST_ALIGNMENT( 4 ) // workaround for bugs in MSVC
-tagged_index
+class tagged_index
 {
 public:
     typedef boost::uint16_t tag_t;
@@ -309,12 +287,6 @@ public:
         return tag;
     }
 
-    tag_t get_next_tag() const
-    {
-        tag_t next = (get_tag() + 1u) & (std::numeric_limits<tag_t>::max)();
-        return next;
-    }
-
     void set_tag(tag_t t)
     {
         tag = t;
@@ -326,11 +298,6 @@ public:
         return (index == rhs.index) && (tag == rhs.tag);
     }
 
-    bool operator!=(tagged_index const & rhs) const
-    {
-        return !operator==(rhs);
-    }
-
 protected:
     index_t index;
     tag_t tag;
@@ -338,24 +305,21 @@ protected:
 
 template <typename T,
           std::size_t size>
-struct BOOST_ALIGNMENT(BOOST_LOCKFREE_CACHELINE_BYTES) compiletime_sized_freelist_storage
+struct compiletime_sized_freelist_storage
 {
     // array-based freelists only support a 16bit address space.
     BOOST_STATIC_ASSERT(size < 65536);
 
-    boost::array<char, size * sizeof(T) + 64> data;
+    boost::array<char, size * sizeof(T)> data;
 
     // unused ... only for API purposes
     template <typename Allocator>
-    compiletime_sized_freelist_storage(Allocator const & /* alloc */, std::size_t /* count */)
-    {
-        data.fill(0);
-    }
+    compiletime_sized_freelist_storage(Allocator const & alloc, std::size_t count)
+    {}
 
     T * nodes(void) const
     {
-        char * data_pointer = const_cast<char*>(data.data());
-        return reinterpret_cast<T*>( boost::alignment::align_up( data_pointer, BOOST_LOCKFREE_CACHELINE_BYTES ) );
+        return reinterpret_cast<T*>(const_cast<char*>(data.data()));
     }
 
     std::size_t node_count(void) const
@@ -367,25 +331,23 @@ struct BOOST_ALIGNMENT(BOOST_LOCKFREE_CACHELINE_BYTES) compiletime_sized_freelis
 template <typename T,
           typename Alloc = std::allocator<T> >
 struct runtime_sized_freelist_storage:
-    boost::alignment::aligned_allocator_adaptor<Alloc, BOOST_LOCKFREE_CACHELINE_BYTES >
+    Alloc
 {
-    typedef boost::alignment::aligned_allocator_adaptor<Alloc, BOOST_LOCKFREE_CACHELINE_BYTES > allocator_type;
     T * nodes_;
     std::size_t node_count_;
 
     template <typename Allocator>
     runtime_sized_freelist_storage(Allocator const & alloc, std::size_t count):
-        allocator_type(alloc), node_count_(count)
+        Alloc(alloc), node_count_(count)
     {
         if (count > 65535)
             boost::throw_exception(std::runtime_error("boost.lockfree: freelist size is limited to a maximum of 65535 objects"));
-        nodes_ = allocator_type::allocate(count);
-        std::memset((void*)nodes_, 0, sizeof(T) * count);
+        nodes_ = Alloc::allocate(count);
     }
 
     ~runtime_sized_freelist_storage(void)
     {
-        allocator_type::deallocate(nodes_, node_count_);
+        Alloc::deallocate(nodes_, node_count_);
     }
 
     T * nodes(void) const
@@ -411,6 +373,8 @@ class fixed_size_freelist:
         tagged_index next;
     };
 
+    typedef tagged_index::index_t index_t;
+
     void initialize(void)
     {
         T * nodes = NodeStorage::nodes();
@@ -428,7 +392,6 @@ class fixed_size_freelist:
 
 public:
     typedef tagged_index tagged_node_handle;
-    typedef tagged_index::index_t index_t;
 
     template <typename Allocator>
     fixed_size_freelist (Allocator const & alloc, std::size_t count):
@@ -485,7 +448,6 @@ public:
     {
         index_t index = tagged_index.get_index();
         T * n = NodeStorage::nodes() + index;
-        (void)n; // silence msvc warning
         n->~T();
         deallocate<ThreadSafe>(index);
     }
@@ -494,7 +456,7 @@ public:
     void destruct (T * n)
     {
         n->~T();
-        deallocate<ThreadSafe>(static_cast<index_t>(n - NodeStorage::nodes()));
+        deallocate<ThreadSafe>(n - NodeStorage::nodes());
     }
 
     bool is_lock_free(void) const
@@ -561,7 +523,7 @@ private:
             T * old_node = NodeStorage::nodes() + index;
             tagged_index * next_index = reinterpret_cast<tagged_index*>(old_node);
 
-            tagged_index new_pool(next_index->get_index(), old_pool.get_next_tag());
+            tagged_index new_pool(next_index->get_index(), old_pool.get_tag() + 1);
 
             if (pool_.compare_exchange_weak(old_pool, new_pool))
                 return old_pool.get_index();
@@ -579,7 +541,7 @@ private:
         T * old_node = NodeStorage::nodes() + index;
         tagged_index * next_index = reinterpret_cast<tagged_index*>(old_node);
 
-        tagged_index new_pool(next_index->get_index(), old_pool.get_next_tag());
+        tagged_index new_pool(next_index->get_index(), old_pool.get_tag() + 1);
 
         pool_.store(new_pool, memory_order_relaxed);
         return old_pool.get_index();
@@ -659,10 +621,5 @@ struct select_tagged_handle
 } /* namespace detail */
 } /* namespace lockfree */
 } /* namespace boost */
-
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif
-
 
 #endif /* BOOST_LOCKFREE_FREELIST_HPP_INCLUDED */

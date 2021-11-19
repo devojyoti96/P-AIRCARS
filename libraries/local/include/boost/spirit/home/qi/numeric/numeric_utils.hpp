@@ -44,7 +44,7 @@ namespace boost { namespace spirit { namespace qi
     // Low level unsigned integer parser
     ///////////////////////////////////////////////////////////////////////////
     template <typename T, unsigned Radix, unsigned MinDigits, int MaxDigits
-      , bool Accumulate = false, bool IgnoreOverflowDigits = false>
+      , bool Accumulate = false>
     struct extract_uint
     {
         // check template parameter 'Radix' for validity
@@ -53,7 +53,7 @@ namespace boost { namespace spirit { namespace qi
             not_supported_radix, ());
 
         template <typename Iterator>
-        inline static bool call(Iterator& first, Iterator const& last, T& attr_)
+        inline static bool call(Iterator& first, Iterator const& last, T& attr)
         {
             if (first == last)
                 return false;
@@ -64,12 +64,12 @@ namespace boost { namespace spirit { namespace qi
               , MinDigits
               , MaxDigits
               , detail::positive_accumulator<Radix>
-              , Accumulate
-              , IgnoreOverflowDigits>
+              , Accumulate>
             extract_type;
 
             Iterator save = first;
-            if (!extract_type::parse(first, last, attr_))
+            if (!extract_type::parse(first, last,
+                detail::cast_unsigned<T>::call(attr)))
             {
                 first = save;
                 return false;
@@ -81,10 +81,10 @@ namespace boost { namespace spirit { namespace qi
         inline static bool call(Iterator& first, Iterator const& last, Attribute& attr_)
         {
             // this case is called when Attribute is not T
-            T attr_local;
-            if (call(first, last, attr_local))
+            T attr;
+            if (call(first, last, attr))
             {
-                traits::assign_to(attr_local, attr_);
+                traits::assign_to(attr, attr_);
                 return true;
             }
             return false;
@@ -103,7 +103,7 @@ namespace boost { namespace spirit { namespace qi
             not_supported_radix, ());
 
         template <typename Iterator>
-        inline static bool call(Iterator& first, Iterator const& last, T& attr_)
+        inline static bool call(Iterator& first, Iterator const& last, T& attr)
         {
             if (first == last)
                 return false;
@@ -119,9 +119,9 @@ namespace boost { namespace spirit { namespace qi
             Iterator save = first;
             bool hit = extract_sign(first, last);
             if (hit)
-                hit = extract_neg_type::parse(first, last, attr_);
+                hit = extract_neg_type::parse(first, last, attr);
             else
-                hit = extract_pos_type::parse(first, last, attr_);
+                hit = extract_pos_type::parse(first, last, attr);
 
             if (!hit)
             {
@@ -135,10 +135,10 @@ namespace boost { namespace spirit { namespace qi
         inline static bool call(Iterator& first, Iterator const& last, Attribute& attr_)
         {
             // this case is called when Attribute is not T
-            T attr_local;
-            if (call(first, last, attr_local))
+            T attr;
+            if (call(first, last, attr))
             {
-                traits::assign_to(attr_local, attr_);
+                traits::assign_to(attr, attr_);
                 return true;
             }
             return false;

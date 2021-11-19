@@ -8,7 +8,7 @@
 
 #include <boost/detail/workaround.hpp>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
 #endif
 
@@ -18,13 +18,12 @@
 #endif
 
 #include <boost/assert.hpp>
-#include <boost/config.hpp>
-#include <boost/core/allocator_access.hpp>
 #include <boost/iterator/reverse_iterator.hpp>
 #include <boost/iterator/iterator_traits.hpp>
 #include <boost/mpl/if.hpp>
-#include <boost/signals2/detail/scope_guard.hpp>
+#include <boost/multi_index/detail/scope_guard.hpp>
 #include <boost/swap.hpp>
+#include <boost/throw_exception.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
 #include <boost/type_traits/alignment_of.hpp>
 #include <boost/type_traits/has_nothrow_copy.hpp>
@@ -100,7 +99,7 @@ namespace detail
         }
 
         template< class SizeType >
-        static bool should_shrink( SizeType, SizeType )
+        static bool should_shrink( SizeType size, SizeType capacity )
         {
             //
             // @remark: when defining a new grow policy, one might
@@ -141,10 +140,10 @@ namespace detail
     public:
         typedef Allocator                                allocator_type;
         typedef T                                        value_type;
-        typedef typename boost::allocator_size_type<Allocator>::type size_type;
-        typedef typename boost::allocator_difference_type<Allocator>::type difference_type;
+        typedef typename Allocator::size_type            size_type;
+        typedef typename Allocator::difference_type      difference_type;
         typedef T*                                       pointer;
-        typedef typename boost::allocator_pointer<Allocator>::type allocator_pointer;
+        typedef typename Allocator::pointer              allocator_pointer;
         typedef const T*                                 const_pointer;
         typedef T&                                       reference;
         typedef const T&                                 const_reference;
@@ -250,14 +249,6 @@ namespace detail
             auto_buffer_destroy( where, boost::has_trivial_destructor<T>() );
         }
 
-        void auto_buffer_destroy()
-        {
-            BOOST_ASSERT( is_valid() );
-            if( buffer_ ) // do we need this check? Yes, but only
-                // for N = 0u + local instances in one_sided_swap()
-                auto_buffer_destroy( boost::has_trivial_destructor<T>() );
-        }
-
         void destroy_back_n( size_type n, const boost::false_type& )
         {
             BOOST_ASSERT( n > 0 );
@@ -267,7 +258,7 @@ namespace detail
                 auto_buffer_destroy( buffer );
         }
 
-        void destroy_back_n( size_type, const boost::true_type& )
+        void destroy_back_n( size_type n, const boost::true_type& )
         { }
 
         void destroy_back_n( size_type n )
@@ -290,10 +281,11 @@ namespace detail
         pointer move_to_new_buffer( size_type new_capacity, const boost::false_type& )
         {
             pointer new_buffer = allocate( new_capacity ); // strong
-            scope_guard guard = make_obj_guard( *this,
-                                                &auto_buffer::deallocate,
-                                                new_buffer,
-                                                new_capacity );
+            boost::multi_index::detail::scope_guard guard =
+                boost::multi_index::detail::make_obj_guard( *this,
+                                                            &auto_buffer::deallocate,
+                                                            new_buffer,
+                                                            new_capacity );
             copy_impl( begin(), end(), new_buffer ); // strong
             guard.dismiss();                         // nothrow
             return new_buffer;
@@ -310,7 +302,7 @@ namespace detail
         {
             pointer new_buffer = move_to_new_buffer( new_capacity,
                                                  boost::has_nothrow_copy<T>() );
-            auto_buffer_destroy();
+            (*this).~auto_buffer();
             buffer_   = new_buffer;
             members_.capacity_ = new_capacity;
             BOOST_ASSERT( size_ <= members_.capacity_ );
@@ -364,7 +356,7 @@ namespace detail
         void one_sided_swap( auto_buffer& temp ) // nothrow
         {
             BOOST_ASSERT( !temp.is_on_stack() );
-            auto_buffer_destroy();
+            this->~auto_buffer();
             // @remark: must be nothrow
             get_allocator()    = temp.get_allocator();
             members_.capacity_ = temp.members_.capacity_;
@@ -515,13 +507,14 @@ namespace detail
                 {
                     // @remark: we release memory as early as possible
                     //          since we only give the basic guarantee
-                    auto_buffer_destroy();
+                    (*this).~auto_buffer();
                     buffer_ = 0;
                     pointer new_buffer = allocate( r.size() );
-                    scope_guard guard = make_obj_guard( *this,
-                                                        &auto_buffer::deallocate,
-                                                        new_buffer,
-                                                        r.size() );
+                    boost::multi_index::detail::scope_guard guard =
+                        boost::multi_index::detail::make_obj_guard( *this,
+                                                                    &auto_buffer::deallocate,
+                                                                    new_buffer,
+                                                                    r.size() );
                     copy_impl( r.begin(), r.end(), new_buffer );
                     guard.dismiss();
                     buffer_            = new_buffer;
@@ -605,7 +598,10 @@ namespace detail
 
         ~auto_buffer()
         {
-            auto_buffer_destroy();
+            BOOST_ASSERT( is_valid() );
+            if( buffer_ ) // do we need this check? Yes, but only
+                // for N = 0u + local instances in one_sided_swap()
+                auto_buffer_destroy( boost::has_trivial_destructor<T>() );
         }
 
     public:
@@ -976,7 +972,7 @@ namespace detail
 
         pointer uninitialized_grow( size_type n ) // strong
         {
-            if( size_ + n > members_.capacity_ )
+            if( size_ + n <= members_.capacity_ )
                 reserve( size_ + n );
 
             pointer res = end();
@@ -1038,7 +1034,7 @@ namespace detail
                 pointer new_buffer = static_cast<T*>(other->members_.address());
                 copy_impl( one_on_stack->begin(), one_on_stack->end(),
                            new_buffer );                            // strong
-                one_on_stack->auto_buffer_destroy();                       // nothrow
+                one_on_stack->~auto_buffer();                       // nothrow
                 boost::swap( get_allocator(), r.get_allocator() );  // assume nothrow
                 boost::swap( members_.capacity_, r.members_.capacity_ );
                 boost::swap( size_, r.size_ );
@@ -1121,7 +1117,7 @@ namespace detail
     inline bool operator<=( const auto_buffer<T,SBP,GP,A>& l,
                             const auto_buffer<T,SBP,GP,A>& r )
     {
-        return !(l > r);
+        return !(r > l);
     }
 
     template< class T, class SBP, class GP, class A >

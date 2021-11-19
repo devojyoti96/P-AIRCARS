@@ -4,10 +4,9 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 // (C) Copyright 2007-2010 Anthony Williams
-// (C) Copyright 2011-2012 Vicente J. Botet Escriba
+// (C) Copyright 20011-2012 Vicente J. Botet Escriba
 
 #include <boost/thread/detail/config.hpp>
-#include <boost/predef/platform.h>
 
 #include <boost/thread/exceptions.hpp>
 #ifndef BOOST_NO_IOSTREAM
@@ -18,9 +17,6 @@
 #if defined BOOST_THREAD_USES_DATETIME
 #include <boost/thread/xtime.hpp>
 #endif
-#if defined BOOST_THREAD_PROVIDES_INTERRUPTIONS
-#include <boost/thread/interruption.hpp>
-#endif
 #include <boost/thread/detail/thread_heap_alloc.hpp>
 #include <boost/thread/detail/make_tuple_indices.hpp>
 #include <boost/thread/detail/invoke.hpp>
@@ -28,18 +24,17 @@
 #include <boost/assert.hpp>
 #include <list>
 #include <algorithm>
-#include <boost/core/ref.hpp>
+#include <boost/ref.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/bind/bind.hpp>
+#include <boost/bind.hpp>
 #include <stdlib.h>
 #include <memory>
-#include <boost/core/enable_if.hpp>
+#include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 #include <boost/io/ios_state.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/decay.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/thread/detail/platform_time.hpp>
 #ifdef BOOST_THREAD_USES_CHRONO
 #include <boost/chrono/system_clocks.hpp>
 #include <boost/chrono/ceil.hpp>
@@ -69,14 +64,16 @@ namespace boost
       {
       public:
           BOOST_THREAD_NO_COPYABLE(thread_data)
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
             thread_data(BOOST_THREAD_RV_REF(F) f_, BOOST_THREAD_RV_REF(ArgTypes)... args_):
               fp(boost::forward<F>(f_), boost::forward<ArgTypes>(args_)...)
             {}
+#endif
           template <std::size_t ...Indices>
           void run2(tuple_indices<Indices...>)
           {
 
-              detail::invoke(std::move(std::get<0>(fp)), std::move(std::get<Indices>(fp))...);
+              invoke(std::move(std::get<0>(fp)), std::move(std::get<Indices>(fp))...);
           }
           void run()
           {
@@ -177,6 +174,7 @@ namespace boost
     private:
         bool start_thread_noexcept();
         bool start_thread_noexcept(const attributes& attr);
+    public:
         void start_thread()
         {
           if (!start_thread_noexcept())
@@ -295,8 +293,7 @@ namespace boost
         template <class F>
         explicit thread(F f
         , typename disable_if_c<
-        boost::thread_detail::is_rv<F>::value // todo as a thread_detail::is_rv
-        //boost::thread_detail::is_convertible<F&,BOOST_THREAD_RV_REF(F)>::value
+            boost::thread_detail::is_convertible<F&,BOOST_THREAD_RV_REF(F)>::value
             //|| is_same<typename decay<F>::type, thread>::value
            , dummy* >::type=0
         ):
@@ -306,8 +303,7 @@ namespace boost
         }
         template <class F>
         thread(attributes const& attrs, F f
-            , typename disable_if<boost::thread_detail::is_rv<F>, dummy* >::type=0
-            //, typename disable_if<boost::thread_detail::is_convertible<F&,BOOST_THREAD_RV_REF(F) >, dummy* >::type=0
+        , typename disable_if<boost::thread_detail::is_convertible<F&,BOOST_THREAD_RV_REF(F) >, dummy* >::type=0
         ):
             thread_info(make_thread_info(f))
         {
@@ -338,7 +334,7 @@ namespace boost
             start_thread(attrs);
         }
 #endif
-        thread(BOOST_THREAD_RV_REF(thread) x) BOOST_NOEXCEPT
+        thread(BOOST_THREAD_RV_REF(thread) x)
         {
             thread_info=BOOST_THREAD_RV(x).thread_info;
             BOOST_THREAD_RV(x).thread_info.reset();
@@ -358,8 +354,6 @@ namespace boost
 
 #if defined BOOST_THREAD_PROVIDES_THREAD_MOVE_ASSIGN_CALLS_TERMINATE_IF_JOINABLE
             if (joinable()) std::terminate();
-#else
-            detach();
 #endif
             thread_info=BOOST_THREAD_RV(other).thread_info;
             BOOST_THREAD_RV(other).thread_info.reset();
@@ -458,86 +452,95 @@ namespace boost
         }
 
         class id;
+#ifdef BOOST_THREAD_PLATFORM_PTHREAD
+        inline id get_id()  const BOOST_NOEXCEPT;
+#else
         id get_id() const BOOST_NOEXCEPT;
+#endif
+
 
         bool joinable() const BOOST_NOEXCEPT;
     private:
         bool join_noexcept();
-        bool do_try_join_until_noexcept(detail::internal_platform_timepoint const &timeout, bool& res);
-        bool do_try_join_until(detail::internal_platform_timepoint const &timeout);
     public:
-        void join();
+        inline void join();
 
 #ifdef BOOST_THREAD_USES_CHRONO
-        template <class Duration>
-        bool try_join_until(const chrono::time_point<detail::internal_chrono_clock, Duration>& t)
-        {
-          return do_try_join_until(boost::detail::internal_platform_timepoint(t));
-        }
-
-        template <class Clock, class Duration>
-        bool try_join_until(const chrono::time_point<Clock, Duration>& t)
-        {
-          typedef typename common_type<Duration, typename Clock::duration>::type common_duration;
-          common_duration d(t - Clock::now());
-          d = (std::min)(d, common_duration(chrono::milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS)));
-          while ( ! try_join_until(detail::internal_chrono_clock::now() + d) )
-          {
-            d = t - Clock::now();
-            if ( d <= common_duration::zero() ) return false; // timeout occurred
-            d = (std::min)(d, common_duration(chrono::milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS)));
-          }
-          return true;
-        }
-
         template <class Rep, class Period>
         bool try_join_for(const chrono::duration<Rep, Period>& rel_time)
         {
           return try_join_until(chrono::steady_clock::now() + rel_time);
         }
+        template <class Clock, class Duration>
+        bool try_join_until(const chrono::time_point<Clock, Duration>& t)
+        {
+          using namespace chrono;
+          system_clock::time_point     s_now = system_clock::now();
+          typename Clock::time_point  c_now = Clock::now();
+          return try_join_until(s_now + ceil<nanoseconds>(t - c_now));
+        }
+        template <class Duration>
+        bool try_join_until(const chrono::time_point<chrono::system_clock, Duration>& t)
+        {
+          using namespace chrono;
+          typedef time_point<system_clock, nanoseconds> nano_sys_tmpt;
+          return try_join_until(nano_sys_tmpt(ceil<nanoseconds>(t.time_since_epoch())));
+        }
 #endif
+#if defined(BOOST_THREAD_PLATFORM_WIN32)
+    private:
+        bool do_try_join_until_noexcept(uintmax_t milli, bool& res);
+        inline bool do_try_join_until(uintmax_t milli);
+    public:
+        bool timed_join(const system_time& abs_time);
+        //{
+        //  return do_try_join_until(get_milliseconds_until(wait_until));
+        //}
+
+#ifdef BOOST_THREAD_USES_CHRONO
+        bool try_join_until(const chrono::time_point<chrono::system_clock, chrono::nanoseconds>& tp)
+        {
+          chrono::milliseconds rel_time= chrono::ceil<chrono::milliseconds>(tp-chrono::system_clock::now());
+          return do_try_join_until(rel_time.count());
+        }
+#endif
+
+
+#else
+    private:
+        bool do_try_join_until_noexcept(struct timespec const &timeout, bool& res);
+        inline bool do_try_join_until(struct timespec const &timeout);
+    public:
 #if defined BOOST_THREAD_USES_DATETIME
         bool timed_join(const system_time& abs_time)
         {
-          const detail::real_platform_timepoint ts(abs_time);
-#if defined BOOST_THREAD_INTERNAL_CLOCK_IS_MONO
-          detail::platform_duration d(ts - detail::real_platform_clock::now());
-          d = (std::min)(d, detail::platform_milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS));
-          while ( ! do_try_join_until(detail::internal_platform_clock::now() + d) )
-          {
-            d = ts - detail::real_platform_clock::now();
-            if ( d <= detail::platform_duration::zero() ) return false; // timeout occurred
-            d = (std::min)(d, detail::platform_milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS));
-          }
-          return true;
-#else
+          struct timespec const ts=detail::to_timespec(abs_time);
           return do_try_join_until(ts);
-#endif
         }
-
-        template<typename TimeDuration>
-        bool timed_join(TimeDuration const& rel_time)
-        {
-          detail::platform_duration d(rel_time);
-#if defined(BOOST_THREAD_HAS_MONO_CLOCK) && !defined(BOOST_THREAD_INTERNAL_CLOCK_IS_MONO)
-          const detail::mono_platform_timepoint ts(detail::mono_platform_clock::now() + d);
-          d = (std::min)(d, detail::platform_milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS));
-          while ( ! do_try_join_until(detail::internal_platform_clock::now() + d) )
-          {
-            d = ts - detail::mono_platform_clock::now();
-            if ( d <= detail::platform_duration::zero() ) return false; // timeout occurred
-            d = (std::min)(d, detail::platform_milliseconds(BOOST_THREAD_POLL_INTERVAL_MILLISECONDS));
-          }
-          return true;
-#else
-          return do_try_join_until(detail::internal_platform_clock::now() + d);
 #endif
+#ifdef BOOST_THREAD_USES_CHRONO
+        bool try_join_until(const chrono::time_point<chrono::system_clock, chrono::nanoseconds>& tp)
+        {
+          using namespace chrono;
+          nanoseconds d = tp.time_since_epoch();
+          timespec ts = boost::detail::to_timespec(d);
+          return do_try_join_until(ts);
+        }
+#endif
+
+#endif
+      public:
+
+#if defined BOOST_THREAD_USES_DATETIME
+        template<typename TimeDuration>
+        inline bool timed_join(TimeDuration const& rel_time)
+        {
+            return timed_join(get_system_time()+rel_time);
         }
 #endif
         void detach();
 
         static unsigned hardware_concurrency() BOOST_NOEXCEPT;
-        static unsigned physical_concurrency() BOOST_NOEXCEPT;
 
 #define BOOST_THREAD_DEFINES_THREAD_NATIVE_HANDLE
         typedef detail::thread_data_base::native_handle_type native_handle_type;
@@ -585,13 +588,19 @@ namespace boost
     namespace this_thread
     {
 #ifdef BOOST_THREAD_PLATFORM_PTHREAD
-        thread::id get_id() BOOST_NOEXCEPT;
+        inline thread::id get_id() BOOST_NOEXCEPT;
 #else
         thread::id BOOST_THREAD_DECL get_id() BOOST_NOEXCEPT;
 #endif
 
+#if defined BOOST_THREAD_PROVIDES_INTERRUPTIONS
+        void BOOST_THREAD_DECL interruption_point();
+        bool BOOST_THREAD_DECL interruption_enabled() BOOST_NOEXCEPT;
+        bool BOOST_THREAD_DECL interruption_requested() BOOST_NOEXCEPT;
+#endif
+
 #if defined BOOST_THREAD_USES_DATETIME
-        inline BOOST_SYMBOL_VISIBLE void sleep(::boost::xtime const& abs_time)
+        inline BOOST_SYMBOL_VISIBLE void sleep(xtime const& abs_time)
         {
             sleep(system_time(abs_time));
         }
@@ -601,9 +610,6 @@ namespace boost
     class BOOST_SYMBOL_VISIBLE thread::id
     {
     private:
-    
-    #if !defined(BOOST_EMBTC)
-      
         friend inline
         std::size_t
         hash_value(const thread::id &v)
@@ -615,14 +621,6 @@ namespace boost
 #endif
         }
 
-    #else
-      
-        friend
-        std::size_t
-        hash_value(const thread::id &v);
-
-    #endif
-      
 #if defined BOOST_THREAD_PROVIDES_BASIC_THREAD_ID
 #if defined(BOOST_THREAD_PLATFORM_WIN32)
         typedef unsigned int data;
@@ -646,6 +644,10 @@ namespace boost
 #else
         thread_data()
 #endif
+        {}
+
+        id(const id& other) BOOST_NOEXCEPT :
+            thread_data(other.thread_data)
         {}
 
         bool operator==(const id& y) const BOOST_NOEXCEPT
@@ -715,24 +717,9 @@ namespace boost
 #endif
 #endif
     };
-    
-#if defined(BOOST_EMBTC)
-
-        inline
-        std::size_t
-        hash_value(const thread::id &v)
-        {
-#if defined BOOST_THREAD_PROVIDES_BASIC_THREAD_ID
-          return hash_value(v.thread_data);
-#else
-          return hash_value(v.thread_data.get());
-#endif
-        }
-
-#endif
 
 #ifdef BOOST_THREAD_PLATFORM_PTHREAD
-    inline thread::id thread::get_id() const BOOST_NOEXCEPT
+    thread::id thread::get_id() const BOOST_NOEXCEPT
     {
     #if defined BOOST_THREAD_PROVIDES_BASIC_THREAD_ID
         return const_cast<thread*>(this)->native_handle();
@@ -755,19 +742,23 @@ namespace boost
         }
     }
 #endif
-    inline void thread::join() {
+    void thread::join() {
         if (this_thread::get_id() == get_id())
-          boost::throw_exception(thread_resource_error(static_cast<int>(system::errc::resource_deadlock_would_occur), "boost thread: trying joining itself"));
+          boost::throw_exception(thread_resource_error(system::errc::resource_deadlock_would_occur, "boost thread: trying joining itself"));
 
         BOOST_THREAD_VERIFY_PRECONDITION( join_noexcept(),
-            thread_resource_error(static_cast<int>(system::errc::invalid_argument), "boost thread: thread not joinable")
+            thread_resource_error(system::errc::invalid_argument, "boost thread: thread not joinable")
         );
     }
 
-    inline bool thread::do_try_join_until(detail::internal_platform_timepoint const &timeout)
+#ifdef BOOST_THREAD_PLATFORM_PTHREAD
+    bool thread::do_try_join_until(struct timespec const &timeout)
+#else
+    bool thread::do_try_join_until(uintmax_t timeout)
+#endif
     {
         if (this_thread::get_id() == get_id())
-          boost::throw_exception(thread_resource_error(static_cast<int>(system::errc::resource_deadlock_would_occur), "boost thread: trying joining itself"));
+          boost::throw_exception(thread_resource_error(system::errc::resource_deadlock_would_occur, "boost thread: trying joining itself"));
         bool res;
         if (do_try_join_until_noexcept(timeout, res))
         {
@@ -776,7 +767,7 @@ namespace boost
         else
         {
           BOOST_THREAD_THROW_ELSE_RETURN(
-            (thread_resource_error(static_cast<int>(system::errc::invalid_argument), "boost thread: thread not joinable")),
+            (thread_resource_error(system::errc::invalid_argument, "boost thread: thread not joinable")),
             false
           );
         }
@@ -830,21 +821,6 @@ namespace boost
         };
 
         void BOOST_THREAD_DECL add_thread_exit_function(thread_exit_function_base*);
-//#ifndef BOOST_NO_EXCEPTIONS
-        struct shared_state_base;
-#if defined(BOOST_THREAD_PLATFORM_WIN32)
-        inline void make_ready_at_thread_exit(shared_ptr<shared_state_base> as)
-        {
-          detail::thread_data_base* const current_thread_data(detail::get_current_thread_data());
-          if(current_thread_data)
-          {
-            current_thread_data->make_ready_at_thread_exit(as);
-          }
-        }
-#else
-        void BOOST_THREAD_DECL make_ready_at_thread_exit(shared_ptr<shared_state_base> as);
-#endif
-//#endif
     }
 
     namespace this_thread

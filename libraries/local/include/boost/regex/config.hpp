@@ -18,44 +18,12 @@
 
 #ifndef BOOST_REGEX_CONFIG_HPP
 #define BOOST_REGEX_CONFIG_HPP
-
-#if !((__cplusplus >= 201103L) || (defined(_MSC_VER) && (_MSC_VER >= 1600)) || defined(BOOST_REGEX_CXX03))
-#  define BOOST_REGEX_CXX03
-#endif
-
-#if defined(BOOST_REGEX_RECURSIVE) && !defined(BOOST_REGEX_CXX03)
-#  define BOOST_REGEX_CXX03
-#endif
-
-#if defined(__has_include)
-#if !defined(BOOST_REGEX_STANDALONE) && !__has_include(<boost/version.hpp>)
-#define BOOST_REGEX_STANDALONE
-#endif
-#endif
-
 /*
  * Borland C++ Fix/error check
  * this has to go *before* we include any std lib headers:
  */
-#if defined(__BORLANDC__) && !defined(__clang__)
+#if defined(__BORLANDC__)
 #  include <boost/regex/config/borland.hpp>
-#endif
-#ifndef BOOST_REGEX_STANDALONE
-#include <boost/version.hpp>
-#endif
-
-/*************************************************************************
-*
-* Asserts:
-*
-*************************************************************************/
-
-#ifdef BOOST_REGEX_STANDALONE
-#include <cassert>
-#  define BOOST_REGEX_ASSERT(x) assert(x)
-#else
-#include <boost/assert.hpp>
-#  define BOOST_REGEX_ASSERT(x) BOOST_ASSERT(x)
 #endif
 
 /*****************************************************************************
@@ -72,10 +40,7 @@
 
 #  include BOOST_REGEX_USER_CONFIG
 
-#ifndef BOOST_REGEX_STANDALONE
 #  include <boost/config.hpp>
-#  include <boost/predef.h>
-#endif
 
 #else
    /*
@@ -90,21 +55,6 @@
 #  endif
 #endif
 
-
-/****************************************************************************
-*
-* Legacy support:
-*
-*******************************************************************************/
-
-#if defined(BOOST_NO_STD_LOCALE) || defined(BOOST_NO_CXX11_HDR_MUTEX) || defined(BOOST_NO_CXX11_HDR_TYPE_TRAITS) \
-   || defined(BOOST_NO_CXX11_HDR_ATOMIC) || defined(BOOST_NO_CXX11_ALLOCATOR) || defined(BOOST_NO_CXX11_SMART_PTR) \
-   || defined(BOOST_NO_CXX11_STATIC_ASSERT) || defined(BOOST_NO_NOEXCEPT)
-#ifndef BOOST_REGEX_CXX03
-#  define BOOST_REGEX_CXX03
-#endif
-#endif
-
 /*****************************************************************************
  *
  *  Boilerplate regex config options:
@@ -112,50 +62,12 @@
  ****************************************************************************/
 
 /* Obsolete macro, use BOOST_VERSION instead: */
-#define BOOST_RE_VERSION 500
+#define BOOST_RE_VERSION 320
 
 /* fix: */
 #if defined(_UNICODE) && !defined(UNICODE)
 #define UNICODE
 #endif
-
-#define BOOST_REGEX_JOIN(X, Y) BOOST_REGEX_DO_JOIN(X, Y)
-#define BOOST_REGEX_DO_JOIN(X, Y) BOOST_REGEX_DO_JOIN2(X,Y)
-#define BOOST_REGEX_DO_JOIN2(X, Y) X##Y
-
-#ifdef BOOST_FALLTHROUGH
-#  define BOOST_REGEX_FALLTHROUGH BOOST_FALLTHROUGH
-#else
-
-#if defined(__clang__) && (__cplusplus >= 201103L) && defined(__has_warning)
-#  if __has_feature(cxx_attributes) && __has_warning("-Wimplicit-fallthrough")
-#    define BOOST_REGEX_FALLTHROUGH [[clang::fallthrough]]
-#  endif
-#endif
-#if !defined(BOOST_REGEX_FALLTHROUGH) && defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1800) && (__cplusplus >= 201703)
-#  define BOOST_REGEX_FALLTHROUGH [[fallthrough]]
-#endif
-#if !defined(BOOST_REGEX_FALLTHROUGH) && defined(__GNUC__) && (__GNUC__ >= 7)
-#  define BOOST_REGEX_FALLTHROUGH __attribute__((fallthrough))
-#endif
-
-#if !defined(BOOST_REGEX_FALLTHROUGH)
-#  define BOOST_REGEX_FALLTHROUGH
-#endif
-#endif
-
-#ifdef BOOST_NORETURN
-#  define BOOST_REGEX_NORETURN BOOST_NORETURN
-#else
-#  define BOOST_REGEX_NORETURN
-#endif
-
-
-/*
-* Define a macro for the namespace that details are placed in, this includes the Boost
-* version number to avoid mismatched header and library versions:
-*/
-#define BOOST_REGEX_DETAIL_NS BOOST_REGEX_JOIN(re_detail_, BOOST_RE_VERSION)
 
 /*
  * Fix for gcc prior to 3.4: std::ctype<wchar_t> doesn't allow
@@ -163,8 +75,28 @@
  * std::use_facet<std::ctype<wchar_t> >.is(std::ctype_base::lower|std::ctype_base::upper, L'a');
  * returns *false*.
  */
-#if defined(__GLIBCPP__) && defined(BOOST_REGEX_CXX03)
+#ifdef __GLIBCPP__
 #  define BOOST_REGEX_BUGGY_CTYPE_FACET
+#endif
+
+/*
+ * Intel C++ before 8.0 ends up with unresolved externals unless we turn off
+ * extern template support:
+ */
+#if defined(BOOST_INTEL) && defined(__cplusplus) && (BOOST_INTEL <= 800)
+#  define BOOST_REGEX_NO_EXTERNAL_TEMPLATES
+#endif
+/*
+ * Visual C++ doesn't support external templates with C++ extensions turned off:
+ */
+#if defined(_MSC_VER) && !defined(_MSC_EXTENSIONS)
+#  define BOOST_REGEX_NO_EXTERNAL_TEMPLATES
+#endif
+/*
+ * Shared regex lib will crash without this, frankly it looks a lot like a gcc bug:
+ */
+#if defined(__MINGW32__)
+#  define BOOST_REGEX_NO_EXTERNAL_TEMPLATES
 #endif
 
 /*
@@ -185,7 +117,7 @@
 #     define _STLP_CWCTYPE
 #  endif
 
-#if defined(__cplusplus) && defined(BOOST_REGEX_CXX03)
+#ifdef __cplusplus
 #  include <boost/regex/config/cwchar.hpp>
 #endif
 
@@ -201,14 +133,8 @@
 
 /* disable our own file-iterators and mapfiles if we can't
  * support them: */
-#if defined(_WIN32)
-#  if defined(BOOST_REGEX_NO_W32) || BOOST_PLAT_WINDOWS_RUNTIME
-#    define BOOST_REGEX_NO_FILEITER
-#  endif
-#else /* defined(_WIN32) */
-#  if !defined(BOOST_HAS_DIRENT_H)
-#    define BOOST_REGEX_NO_FILEITER
-#  endif
+#if !defined(BOOST_HAS_DIRENT_H) && !(defined(_WIN32) && !defined(BOOST_REGEX_NO_W32))
+#  define BOOST_REGEX_NO_FILEITER
 #endif
 
 /* backwards compatibitity: */
@@ -216,7 +142,7 @@
 #  define BOOST_REGEX_NO_LIB
 #endif
 
-#if defined(__GNUC__) && !defined(_MSC_VER) && (defined(_WIN32) || defined(__CYGWIN__))
+#if defined(__GNUC__) && (defined(_WIN32) || defined(__CYGWIN__))
 /* gcc on win32 has problems if you include <windows.h>
    (sporadically generates bad code). */
 #  define BOOST_REGEX_NO_W32
@@ -225,12 +151,37 @@
 #  define BOOST_REGEX_NO_W32
 #endif
 
-#ifdef BOOST_REGEX_STANDALONE
-#  if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
-#     define BOOST_REGEX_MSVC _MSC_VER
-#endif
-#elif defined(BOOST_MSVC)
-#  define BOOST_REGEX_MSVC BOOST_MSVC
+/*****************************************************************************
+ *
+ *  Wide character workarounds:
+ *
+ ****************************************************************************/
+
+/*
+ * define BOOST_REGEX_HAS_OTHER_WCHAR_T when wchar_t is a native type, but the users
+ * code may be built with wchar_t as unsigned short: basically when we're building
+ * with MSVC and the /Zc:wchar_t option we place some extra unsigned short versions
+ * of the non-inline functions in the library, so that users can still link to the lib,
+ * irrespective of whether their own code is built with /Zc:wchar_t.
+ * Note that this does NOT WORK with VC10 when the C++ locale is in effect as
+ * the locale's <unsigned short> facets simply do not compile in that case.
+ */
+#if defined(__cplusplus) && (defined(BOOST_MSVC) || defined(__ICL)) && !defined(BOOST_NO_INTRINSIC_WCHAR_T) && defined(BOOST_WINDOWS) && !defined(__SGI_STL_PORT) && !defined(_STLPORT_VERSION) && !defined(BOOST_RWSTD_VER) && ((_MSC_VER < 1600) || !defined(BOOST_REGEX_USE_CPP_LOCALE))
+#  define BOOST_REGEX_HAS_OTHER_WCHAR_T
+#  ifdef BOOST_MSVC
+#     pragma warning(push)
+#     pragma warning(disable : 4251 4231)
+#     if BOOST_MSVC < 1600
+#        pragma warning(disable : 4660)
+#     endif
+#  endif
+#  if defined(_DLL) && defined(BOOST_MSVC) && (BOOST_MSVC < 1600)
+#     include <string>
+      extern template class __declspec(dllimport) std::basic_string<unsigned short>;
+#  endif
+#  ifdef BOOST_MSVC
+#     pragma warning(pop)
+#  endif
 #endif
 
 
@@ -240,10 +191,15 @@
  *
  ****************************************************************************/
 
-#if (defined(BOOST_REGEX_DYN_LINK) || defined(BOOST_ALL_DYN_LINK)) && !defined(BOOST_REGEX_STATIC_LINK) && defined(BOOST_SYMBOL_IMPORT)
+#ifndef BOOST_SYMBOL_EXPORT
+#  define BOOST_SYMBOL_EXPORT
+#  define BOOST_SYMBOL_IMPORT
+#endif
+
+#if (defined(BOOST_REGEX_DYN_LINK) || defined(BOOST_ALL_DYN_LINK)) && !defined(BOOST_REGEX_STATIC_LINK)
 #  if defined(BOOST_REGEX_SOURCE)
-#     define BOOST_REGEX_BUILD_DLL
 #     define BOOST_REGEX_DECL BOOST_SYMBOL_EXPORT
+#     define BOOST_REGEX_BUILD_DLL
 #  else
 #     define BOOST_REGEX_DECL BOOST_SYMBOL_IMPORT
 #  endif
@@ -251,7 +207,6 @@
 #  define BOOST_REGEX_DECL
 #endif
 
-#ifdef BOOST_REGEX_CXX03
 #if !defined(BOOST_REGEX_NO_LIB) && !defined(BOOST_REGEX_SOURCE) && !defined(BOOST_ALL_NO_LIB) && defined(__cplusplus)
 #  define BOOST_LIB_NAME boost_regex
 #  if defined(BOOST_REGEX_DYN_LINK) || defined(BOOST_ALL_DYN_LINK)
@@ -262,7 +217,6 @@
 #  endif
 #  include <boost/config/auto_link.hpp>
 #endif
-#endif
 
 /*****************************************************************************
  *
@@ -270,7 +224,7 @@
  *
  ****************************************************************************/
 
-#if defined(_MSC_VER) && defined(_MSC_EXTENSIONS)
+#if defined(BOOST_MSVC) && (BOOST_MSVC >= 1200) && defined(_MSC_EXTENSIONS)
 #if defined(_DEBUG) || defined(__MSVC_RUNTIME_CHECKS) || defined(_MANAGED) || defined(BOOST_REGEX_NO_FASTCALL)
 #  define BOOST_REGEX_CALL __cdecl
 #else
@@ -280,13 +234,8 @@
 #endif
 
 #if defined(__BORLANDC__) && !defined(BOOST_DISABLE_WIN32)
-#if defined(__clang__)
-#  define BOOST_REGEX_CALL __cdecl
-#  define BOOST_REGEX_CCALL __cdecl
-#else
 #  define BOOST_REGEX_CALL __fastcall
 #  define BOOST_REGEX_CCALL __stdcall
-#endif
 #endif
 
 #ifndef BOOST_REGEX_CALL
@@ -315,26 +264,15 @@
 #  define BOOST_REGEX_USE_C_LOCALE
 #endif
 
-/* use C++ locale when targeting windows store */
-#if BOOST_PLAT_WINDOWS_RUNTIME
-#  define BOOST_REGEX_USE_CPP_LOCALE
-#  define BOOST_REGEX_NO_WIN32_LOCALE
-#endif
-
 /* Win32 defaults to native Win32 locale: */
-#if defined(_WIN32) && \
-    !defined(BOOST_REGEX_USE_WIN32_LOCALE) && \
-    !defined(BOOST_REGEX_USE_C_LOCALE) && \
-    !defined(BOOST_REGEX_USE_CPP_LOCALE) && \
-    !defined(BOOST_REGEX_NO_W32) && \
-    !defined(BOOST_REGEX_NO_WIN32_LOCALE)
+#if defined(_WIN32) && !defined(BOOST_REGEX_USE_WIN32_LOCALE) && !defined(BOOST_REGEX_USE_C_LOCALE) && !defined(BOOST_REGEX_USE_CPP_LOCALE) && !defined(BOOST_REGEX_NO_W32)
 #  define BOOST_REGEX_USE_WIN32_LOCALE
 #endif
 /* otherwise use C++ locale if supported: */
 #if !defined(BOOST_REGEX_USE_WIN32_LOCALE) && !defined(BOOST_REGEX_USE_C_LOCALE) && !defined(BOOST_REGEX_USE_CPP_LOCALE) && !defined(BOOST_NO_STD_LOCALE)
 #  define BOOST_REGEX_USE_CPP_LOCALE
 #endif
-/* otherwise use C locale: */
+/* otherwise use C+ locale: */
 #if !defined(BOOST_REGEX_USE_WIN32_LOCALE) && !defined(BOOST_REGEX_USE_C_LOCALE) && !defined(BOOST_REGEX_USE_CPP_LOCALE)
 #  define BOOST_REGEX_USE_C_LOCALE
 #endif
@@ -384,7 +322,7 @@ if(0 == (x))\
 
 #if !defined(BOOST_REGEX_NO_W32) && !defined(BOOST_REGEX_V3)
 #  if(defined(_WIN32) || defined(_WIN64) || defined(_WINCE)) \
-        && !(defined(__GNUC__) || defined(__BORLANDC__) && defined(__clang__)) \
+        && !defined(__GNUC__) \
         && !(defined(__BORLANDC__) && (__BORLANDC__ >= 0x600)) \
         && !(defined(__MWERKS__) && (__MWERKS__ <= 0x3003))
 #     define BOOST_REGEX_HAS_MS_STACK_GUARD
@@ -396,7 +334,7 @@ if(0 == (x))\
 #if defined(__cplusplus) && defined(BOOST_REGEX_HAS_MS_STACK_GUARD)
 
 namespace boost{
-namespace BOOST_REGEX_DETAIL_NS{
+namespace re_detail{
 
 BOOST_REGEX_DECL void BOOST_REGEX_CALL reset_stack_guard_page();
 
@@ -408,13 +346,12 @@ BOOST_REGEX_DECL void BOOST_REGEX_CALL reset_stack_guard_page();
 
 /*****************************************************************************
  *
- *  Algorithm selection and configuration.
- *  These options are now obsolete for C++11 and later (regex v5).
+ *  Algorithm selection and configuration:
  *
  ****************************************************************************/
 
 #if !defined(BOOST_REGEX_RECURSIVE) && !defined(BOOST_REGEX_NON_RECURSIVE)
-#  if defined(BOOST_REGEX_HAS_MS_STACK_GUARD) && !defined(_STLP_DEBUG) && !defined(__STL_DEBUG) && !(defined(_MSC_VER) && (_MSC_VER >= 1400)) && defined(BOOST_REGEX_CXX03)
+#  if defined(BOOST_REGEX_HAS_MS_STACK_GUARD) && !defined(_STLP_DEBUG) && !defined(__STL_DEBUG) && !(defined(BOOST_MSVC) && (BOOST_MSVC >= 1400))
 #     define BOOST_REGEX_RECURSIVE
 #  else
 #     define BOOST_REGEX_NON_RECURSIVE
@@ -442,6 +379,21 @@ BOOST_REGEX_DECL void BOOST_REGEX_CALL reset_stack_guard_page();
 #  endif
 #endif
 
+
+/*****************************************************************************
+ *
+ *  helper memory allocation functions:
+ *
+ ****************************************************************************/
+
+#if defined(__cplusplus) && defined(BOOST_REGEX_NON_RECURSIVE)
+namespace boost{ namespace re_detail{
+
+BOOST_REGEX_DECL void* BOOST_REGEX_CALL get_mem_block();
+BOOST_REGEX_DECL void BOOST_REGEX_CALL put_mem_block(void*);
+
+}} /* namespaces */
+#endif
 
 /*****************************************************************************
  *
@@ -477,4 +429,7 @@ BOOST_REGEX_DECL void BOOST_REGEX_CALL print_regex_library_info();
 #endif
 
 #endif
+
+
+
 

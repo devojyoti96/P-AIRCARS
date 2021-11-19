@@ -12,7 +12,6 @@
 
 #include <iterator>     // for std::iterator_traits
 
-#include <boost/config.hpp>
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 
@@ -76,27 +75,25 @@ Requirements:
         /// \param corpus_last  One past the end of the data to search
         ///
         template <typename corpusIter>
-        std::pair<corpusIter, corpusIter>
-        operator () ( corpusIter corpus_first, corpusIter corpus_last ) const {
+        corpusIter operator () ( corpusIter corpus_first, corpusIter corpus_last ) const {
             BOOST_STATIC_ASSERT (( boost::is_same<
                                     typename std::iterator_traits<patIter>::value_type, 
                                     typename std::iterator_traits<corpusIter>::value_type>::value ));
 
-            if ( corpus_first == corpus_last ) return std::make_pair(corpus_last, corpus_last);   // if nothing to search, we didn't find it!
-            if (    pat_first ==    pat_last ) return std::make_pair(corpus_first, corpus_first); // empty pattern matches at start
+            if ( corpus_first == corpus_last ) return corpus_last;  // if nothing to search, we didn't find it!
+            if (    pat_first ==    pat_last ) return corpus_first; // empty pattern matches at start
 
             const difference_type k_corpus_length  = std::distance ( corpus_first, corpus_last );
         //  If the pattern is larger than the corpus, we can't find it!
             if ( k_corpus_length < k_pattern_length ) 
-                return std::make_pair(corpus_last, corpus_last);
+                return corpus_last;
 
         //  Do the search 
-            return this->do_search ( corpus_first, corpus_last );
+            return this->do_search   ( corpus_first, corpus_last );
             }
             
         template <typename Range>
-        std::pair<typename boost::range_iterator<Range>::type, typename boost::range_iterator<Range>::type>
-        operator () ( Range &r ) const {
+        typename boost::range_iterator<Range>::type operator () ( Range &r ) const {
             return (*this) (boost::begin(r), boost::end(r));
             }
 
@@ -115,8 +112,7 @@ Requirements:
         /// \param p            A predicate used for the search comparisons.
         ///
         template <typename corpusIter>
-        std::pair<corpusIter, corpusIter>
-        do_search ( corpusIter corpus_first, corpusIter corpus_last ) const {
+        corpusIter do_search ( corpusIter corpus_first, corpusIter corpus_last ) const {
         /*  ---- Do the matching ---- */
             corpusIter curPos = corpus_first;
             const corpusIter lastPos = corpus_last - k_pattern_length;
@@ -130,7 +126,7 @@ Requirements:
                     j--;
                 //  We matched - we're done!
                     if ( j == 0 )
-                        return std::make_pair(curPos, curPos + k_pattern_length);
+                        return curPos;
                     }
                 
             //  Since we didn't match, figure out how far to skip forward
@@ -142,7 +138,7 @@ Requirements:
                     curPos += suffix_ [ j ];
                 }
         
-            return std::make_pair(corpus_last, corpus_last);     // We didn't find anything
+            return corpus_last;     // We didn't find anything
             }
 
 
@@ -153,8 +149,8 @@ Requirements:
         
 
         template<typename Iter, typename Container>
-        void compute_bm_prefix ( Iter first, Iter last, Container &prefix ) {
-            const std::size_t count = std::distance ( first, last );
+        void compute_bm_prefix ( Iter pat_first, Iter pat_last, Container &prefix ) {
+            const std::size_t count = std::distance ( pat_first, pat_last );
             BOOST_ASSERT ( count > 0 );
             BOOST_ASSERT ( prefix.size () == count );
                             
@@ -162,26 +158,26 @@ Requirements:
             std::size_t k = 0;
             for ( std::size_t i = 1; i < count; ++i ) {
                 BOOST_ASSERT ( k < count );
-                while ( k > 0 && ( first[k] != first[i] )) {
+                while ( k > 0 && ( pat_first[k] != pat_first[i] )) {
                     BOOST_ASSERT ( k < count );
                     k = prefix [ k - 1 ];
                     }
                     
-                if ( first[k] == first[i] )
+                if ( pat_first[k] == pat_first[i] )
                     k++;
                 prefix [ i ] = k;
                 }
             }
 
-        void build_suffix_table ( patIter first, patIter last ) {
-            const std::size_t count = (std::size_t) std::distance ( first, last );
+        void build_suffix_table ( patIter pat_first, patIter pat_last ) {
+            const std::size_t count = (std::size_t) std::distance ( pat_first, pat_last );
             
             if ( count > 0 ) {  // empty pattern
                 std::vector<typename std::iterator_traits<patIter>::value_type> reversed(count);
-                (void) std::reverse_copy ( first, last, reversed.begin ());
+                (void) std::reverse_copy ( pat_first, pat_last, reversed.begin ());
                 
                 std::vector<difference_type> prefix (count);
-                compute_bm_prefix ( first, last, prefix );
+                compute_bm_prefix ( pat_first, pat_last, prefix );
         
                 std::vector<difference_type> prefix_reversed (count);
                 compute_bm_prefix ( reversed.begin (), reversed.end (), prefix_reversed );
@@ -215,7 +211,7 @@ Requirements:
 /// \param pat_last     One past the end of the data to search for
 ///
     template <typename patIter, typename corpusIter>
-    std::pair<corpusIter, corpusIter> boyer_moore_search ( 
+    corpusIter boyer_moore_search ( 
                   corpusIter corpus_first, corpusIter corpus_last, 
                   patIter pat_first, patIter pat_last )
     {
@@ -224,7 +220,7 @@ Requirements:
     }
 
     template <typename PatternRange, typename corpusIter>
-    std::pair<corpusIter, corpusIter> boyer_moore_search ( 
+    corpusIter boyer_moore_search ( 
         corpusIter corpus_first, corpusIter corpus_last, const PatternRange &pattern )
     {
         typedef typename boost::range_iterator<const PatternRange>::type pattern_iterator;
@@ -233,9 +229,8 @@ Requirements:
     }
     
     template <typename patIter, typename CorpusRange>
-    typename boost::disable_if_c<
-        boost::is_same<CorpusRange, patIter>::value, 
-        std::pair<typename boost::range_iterator<CorpusRange>::type, typename boost::range_iterator<CorpusRange>::type> >
+    typename boost::lazy_disable_if_c<
+        boost::is_same<CorpusRange, patIter>::value, typename boost::range_iterator<CorpusRange> >
     ::type
     boyer_moore_search ( CorpusRange &corpus, patIter pat_first, patIter pat_last )
     {
@@ -244,7 +239,7 @@ Requirements:
     }
     
     template <typename PatternRange, typename CorpusRange>
-    std::pair<typename boost::range_iterator<CorpusRange>::type, typename boost::range_iterator<CorpusRange>::type>
+    typename boost::range_iterator<CorpusRange>::type
     boyer_moore_search ( CorpusRange &corpus, const PatternRange &pattern )
     {
         typedef typename boost::range_iterator<const PatternRange>::type pattern_iterator;

@@ -666,7 +666,7 @@ namespace boost { namespace polygon{
     bool plus45 = vertex.count[2] != 0;
     bool minus45 = vertex.count[0] != 0;
     if(plus45 || minus45) {
-      if(local_abs(vertex.pt.x()) % 2 != local_abs(vertex.pt.y()) % 2) {
+      if(abs(vertex.pt.x()) % 2 != abs(vertex.pt.y()) % 2) {
         if(vertex.count[1] != 0 ||
            (plus45 && minus45)) {
           //move right
@@ -1014,7 +1014,7 @@ namespace boost { namespace polygon{
       if(resizing > 0) return; //accute interior corner
       else multiplier *= -1; //make it appear to be an accute exterior angle
     }
-    Unit bloating = local_abs(resizing);
+    Unit bloating = abs(resizing);
     if(rounding == SQRT1OVER2) {
       if(edge1 % 2 && edge2 % 2) return;
       if(corner == ORTHOGONAL && edge1 % 2 == 0 && edge2 % 2 == 0) {
@@ -1551,7 +1551,6 @@ namespace boost { namespace polygon{
       l90sd.sort();
       r90sd.sort();
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (push)
 #pragma warning (disable: 4127)
 #endif
       if(op == 0) {
@@ -1568,7 +1567,7 @@ namespace boost { namespace polygon{
                                     r90sd.begin(), r90sd.end(), boolean_op::BinaryCount<boolean_op::BinaryXor>());
       }
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (pop)
+#pragma warning (default: 4127)
 #endif
       result.data_.clear();
       result.insert(output);
@@ -1679,7 +1678,6 @@ namespace boost { namespace polygon{
       }
       l90sd.sort();
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (push)
 #pragma warning (disable: 4127)
 #endif
       if(op == 0) {
@@ -1690,7 +1688,7 @@ namespace boost { namespace polygon{
         l90sd.self_xor();
       }
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (pop)
+#pragma warning (default: 4127)
 #endif
       result.data_.clear();
       result.insert(l90sd);

@@ -4,8 +4,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef BOOST_SPIRIT_QI_DIRECTIVE_SKIP_HPP
-#define BOOST_SPIRIT_QI_DIRECTIVE_SKIP_HPP
+#if !defined(SPIRIT_SKIP_JANUARY_26_2008_0422PM)
+#define SPIRIT_SKIP_JANUARY_26_2008_0422PM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -26,7 +26,6 @@
 #include <boost/spirit/home/support/handles_container.hpp>
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/include/vector.hpp>
-#include <boost/utility/enable_if.hpp>
 
 namespace boost { namespace spirit
 {
@@ -71,28 +70,17 @@ namespace boost { namespace spirit { namespace qi
             type;
         };
 
-        reskip_parser(Subject const& subject_)
-          : subject(subject_) {}
+        reskip_parser(Subject const& subject)
+          : subject(subject) {}
 
         template <typename Iterator, typename Context
           , typename Skipper, typename Attribute>
-        typename enable_if<detail::is_unused_skipper<Skipper>, bool>::type
-        parse(Iterator& first, Iterator const& last
+        bool parse(Iterator& first, Iterator const& last
           , Context& context, Skipper const& u // --> The skipper is reintroduced
-          , Attribute& attr_) const
+          , Attribute& attr) const
         {
             return subject.parse(first, last, context
-              , detail::get_skipper(u), attr_);
-        }
-        template <typename Iterator, typename Context
-          , typename Skipper, typename Attribute>
-        typename disable_if<detail::is_unused_skipper<Skipper>, bool>::type
-        parse(Iterator& first, Iterator const& last
-          , Context& context, Skipper const& skipper
-          , Attribute& attr_) const
-        {
-            return subject.parse(first, last, context
-              , skipper, attr_);
+              , detail::get_skipper(u), attr);
         }
 
         template <typename Context>
@@ -118,16 +106,16 @@ namespace boost { namespace spirit { namespace qi
             type;
         };
 
-        skip_parser(Subject const& subject_, Skipper const& skipper_)
-          : subject(subject_), skipper(skipper_) {}
+        skip_parser(Subject const& subject, Skipper const& skipper)
+          : subject(subject), skipper(skipper) {}
 
         template <typename Iterator, typename Context
           , typename Skipper_, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
           , Context& context, Skipper_ const& //skipper --> bypass the supplied skipper
-          , Attribute& attr_) const
+          , Attribute& attr) const
         {
-            return subject.parse(first, last, context, skipper, attr_);
+            return subject.parse(first, last, context, skipper, attr);
         }
 
         template <typename Context>

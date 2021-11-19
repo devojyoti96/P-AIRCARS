@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_NULL_MUTEX_HPP
 #define BOOST_INTERPROCESS_NULL_MUTEX_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -27,21 +23,25 @@
 //!Describes null_mutex classes
 
 namespace boost {
+
+namespace posix_time
+{  class ptime;   }
+
 namespace interprocess {
 
 //!Implements a mutex that simulates a mutex without doing any operation and
 //!simulates a successful operation.
 class null_mutex
 {
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    null_mutex(const null_mutex&);
    null_mutex &operator= (const null_mutex&);
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
    public:
 
    //!Constructor.
    //!Empty.
-   null_mutex() BOOST_NOEXCEPT {}
+   null_mutex(){}
 
    //!Destructor.
    //!Empty.
@@ -57,8 +57,7 @@ class null_mutex
 
    //!Simulates a mutex timed_lock() operation.
    //!Equivalent to "return true;"
-   template<class TimePoint>
-   bool timed_lock(const TimePoint &)
+   bool timed_lock(const boost::posix_time::ptime &)
    {  return true;   }
 
    //!Simulates a mutex unlock() operation.
@@ -76,8 +75,7 @@ class null_mutex
 
    //!Simulates a mutex timed_lock_sharable() operation.
    //!Equivalent to "return true;"
-   template<class TimePoint>
-   bool timed_lock_sharable(const TimePoint &)
+   bool timed_lock_sharable(const boost::posix_time::ptime &)
    {  return true;   }
 
    //!Simulates a mutex unlock_sharable() operation.
@@ -95,8 +93,7 @@ class null_mutex
 
    //!Simulates a mutex timed_lock_upgradable() operation.
    //!Equivalent to "return true;"
-   template<class TimePoint>
-   bool timed_lock_upgradable(const TimePoint &)
+   bool timed_lock_upgradable(const boost::posix_time::ptime &)
    {  return true;   }
 
    //!Simulates a mutex unlock_upgradable() operation.
@@ -128,8 +125,7 @@ class null_mutex
 
    //!Simulates timed_unlock_upgradable_and_lock().
    //!Equivalent to "return true;"
-   template<class TimePoint>
-   bool timed_unlock_upgradable_and_lock(const TimePoint &)
+   bool timed_unlock_upgradable_and_lock(const boost::posix_time::ptime &)
    {  return true;   }
 
    //!Simulates try_unlock_sharable_and_lock().

@@ -15,7 +15,6 @@
 #endif
 #include <boost/locale/message.hpp>
 #include <boost/locale/formatting.hpp>
-#include <boost/locale/hold_ptr.hpp>
 
 #include <sstream>
 
@@ -122,7 +121,7 @@ namespace boost {
 
                 std::ios_base &ios_;
                 struct data;
-                hold_ptr<data> d;
+                std::auto_ptr<data> d;
             };
 
         }
@@ -474,14 +473,14 @@ namespace boost {
         ///
         typedef basic_format<wchar_t> wformat;
 
-        #ifdef BOOST_LOCALE_ENABLE_CHAR16_T
+        #ifdef BOOST_HAS_CHAR16_T
         ///
         /// Definition of char16_t based format
         ///
         typedef basic_format<char16_t> u16format;
         #endif
 
-        #ifdef BOOST_LOCALE_ENABLE_CHAR32_T
+        #ifdef BOOST_HAS_CHAR32_T
         ///
         /// Definition of char32_t based format
         ///

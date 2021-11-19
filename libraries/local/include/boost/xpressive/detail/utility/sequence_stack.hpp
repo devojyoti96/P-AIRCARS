@@ -9,13 +9,12 @@
 #define BOOST_XPRESSIVE_DETAIL_SEQUENCE_STACK_HPP_EAN_10_04_2005
 
 // MS compatible compilers support #pragma once
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 # pragma warning(push)
 # pragma warning(disable : 4127) // conditional expression constant
 #endif
 
-#include <cstddef>
 #include <algorithm>
 #include <functional>
 
@@ -32,29 +31,22 @@ struct fill_t {} const fill = {};
 template<typename T>
 struct sequence_stack
 {
-    struct allocate_guard_t;
-    friend struct allocate_guard_t;
-    struct allocate_guard_t
-    {
-        std::size_t i;
-        T *p;
-        bool dismissed;
-        ~allocate_guard_t()
-        {
-            if(!this->dismissed)
-                sequence_stack::deallocate(this->p, this->i);
-        }
-    };
 private:
     static T *allocate(std::size_t size, T const &t)
     {
-        allocate_guard_t guard = {0, (T *)::operator new(size * sizeof(T)), false};
-
-        for(; guard.i < size; ++guard.i)
-            ::new((void *)(guard.p + guard.i)) T(t);
-        guard.dismissed = true;
-
-        return guard.p;
+        std::size_t i = 0;
+        T *p = (T *)::operator new(size * sizeof(T));
+        try
+        {
+            for(; i < size; ++i)
+                ::new((void *)(p+i)) T(t);
+        }
+        catch(...)
+        {
+            deallocate(p, i);
+            throw;
+        }
+        return p;
     }
 
     static void deallocate(T *p, std::size_t i)
@@ -123,10 +115,7 @@ private:
             }
 
             // grow exponentially
-            std::size_t new_size = (std::max)(
-                count
-              , static_cast<std::size_t>(static_cast<double>(this->current_chunk_->size()) * 1.5)
-            );
+            std::size_t new_size = (std::max)(count, static_cast<std::size_t>(this->current_chunk_->size() * 1.5));
 
             // Create a new expr and insert it into the list
             this->current_chunk_ = new chunk(new_size, t, count, this->current_chunk_, this->current_chunk_->next_);
@@ -211,19 +200,21 @@ public:
 
     T *push_sequence(std::size_t count, T const &t)
     {
-        // Check to see if we have overflowed this buffer
-        std::size_t size_left = static_cast< std::size_t >(this->end_ - this->curr_);
-        if (size_left < count)
-        {
-            // allocate a new block and return a ptr to the new memory
-            return this->grow_(count, t);
-        }
-
         // This is the ptr to return
         T *ptr = this->curr_;
 
         // Advance the high-water mark
         this->curr_ += count;
+
+        // Check to see if we have overflowed this buffer
+        if(std::less<void*>()(this->end_, this->curr_))
+        {
+            // oops, back this out.
+            this->curr_ = ptr;
+
+            // allocate a new block and return a ptr to the new memory
+            return this->grow_(count, t);
+        }
 
         return ptr;
     }
@@ -261,7 +252,7 @@ public:
 
 }}} // namespace boost::xpressive::detail
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma warning(pop)
 #endif
 

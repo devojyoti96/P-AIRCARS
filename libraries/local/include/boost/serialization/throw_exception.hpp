@@ -3,7 +3,7 @@
 
 // MS compatible compilers support #pragma once
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
@@ -26,13 +26,13 @@ namespace serialization {
 
 #ifdef BOOST_NO_EXCEPTIONS
 
-BOOST_NORETURN inline void throw_exception(std::exception const & e) {
+inline void throw_exception(std::exception const & e) {
     ::boost::throw_exception(e);
 }
 
 #else
 
-template<class E> BOOST_NORETURN inline void throw_exception(E const & e){
+template<class E> inline void throw_exception(E const & e){
     throw e;
 }
 

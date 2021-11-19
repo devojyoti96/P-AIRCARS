@@ -21,7 +21,7 @@
 #include <boost/proto/generate.hpp>
 #include <boost/proto/make_expr.hpp>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma warning(push)
 # pragma warning(disable : 4714) // function 'xxx' marked as __forceinline not inlined
 #endif
@@ -104,8 +104,6 @@ namespace boost { namespace proto
 #ifdef BOOST_NO_CXX11_RVALUE_REFERENCES
 
 #define BOOST_PROTO_DEFINE_UNARY_OPERATOR(OP, TAG, TRAIT, DOMAIN, POST)                             \
-    BOOST_PROTO_PUSH_WARNINGS                                                                       \
-                                                                                                    \
     template<typename Arg>                                                                          \
     BOOST_PROTO_DISABLE_MSVC_C4714 BOOST_FORCEINLINE                                                \
     typename boost::proto::detail::enable_unary<                                                    \
@@ -133,13 +131,9 @@ namespace boost { namespace proto
     {                                                                                               \
         return boost::proto::detail::make_expr_<TAG, DOMAIN, Arg const &>()(arg);                   \
     }                                                                                               \
-                                                                                                    \
-    BOOST_PROTO_POP_WARNINGS                                                                        \
     /**/
 
 #define BOOST_PROTO_DEFINE_BINARY_OPERATOR(OP, TAG, TRAIT, DOMAIN)                                  \
-    BOOST_PROTO_PUSH_WARNINGS                                                                       \
-                                                                                                    \
     template<typename Left, typename Right>                                                         \
     BOOST_PROTO_DISABLE_MSVC_C4714 BOOST_FORCEINLINE                                                \
     typename boost::proto::detail::enable_binary<                                                   \
@@ -199,15 +193,12 @@ namespace boost { namespace proto
     {                                                                                               \
         return boost::proto::detail::make_expr_<TAG, DOMAIN, Left const &, Right const &>()(left, right);\
     }                                                                                               \
-                                                                                                    \
-    BOOST_PROTO_POP_WARNINGS                                                                        \
     /**/
 
 #else
 
 #define BOOST_PROTO_DEFINE_UNARY_OPERATOR(OP, TAG, TRAIT, DOMAIN, POST)                             \
     template<typename Arg>                                                                          \
-    BOOST_PROTO_PUSH_WARNINGS                                                                       \
     BOOST_PROTO_DISABLE_MSVC_C4714 BOOST_FORCEINLINE                                                \
     typename boost::proto::detail::enable_unary<                                                    \
         DOMAIN                                                                                      \
@@ -220,12 +211,10 @@ namespace boost { namespace proto
     {                                                                                               \
         return boost::proto::detail::make_expr_<TAG, DOMAIN, Arg const &>()(arg);                   \
     }                                                                                               \
-    BOOST_PROTO_POP_WARNINGS                                                                        \
     /**/
 
 #define BOOST_PROTO_DEFINE_BINARY_OPERATOR(OP, TAG, TRAIT, DOMAIN)                                  \
     template<typename Left, typename Right>                                                         \
-    BOOST_PROTO_PUSH_WARNINGS                                                                       \
     BOOST_PROTO_DISABLE_MSVC_C4714 BOOST_FORCEINLINE                                                \
     typename boost::proto::detail::enable_binary<                                                   \
         DOMAIN                                                                                      \
@@ -239,7 +228,6 @@ namespace boost { namespace proto
     {                                                                                               \
         return boost::proto::detail::make_expr_<TAG, DOMAIN, Left const &, Right const &>()(left, right);\
     }                                                                                               \
-    BOOST_PROTO_POP_WARNINGS                                                                        \
     /**/
 
 #endif
@@ -383,7 +371,7 @@ namespace boost { namespace proto
 
 }}
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma warning(pop)
 #endif
 

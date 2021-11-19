@@ -2,7 +2,7 @@
 // detail/timer_queue.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,9 +18,10 @@
 #include <boost/asio/detail/config.hpp>
 #include <cstddef>
 #include <vector>
-#include <boost/asio/detail/cstdint.hpp>
+#include <boost/config.hpp>
+#include <boost/limits.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/asio/detail/date_time_fwd.hpp>
-#include <boost/asio/detail/limits.hpp>
 #include <boost/asio/detail/op_queue.hpp>
 #include <boost/asio/detail/timer_queue_base.hpp>
 #include <boost/asio/detail/wait_op.hpp>
@@ -47,11 +48,7 @@ public:
   class per_timer_data
   {
   public:
-    per_timer_data() :
-      heap_index_((std::numeric_limits<std::size_t>::max)()),
-      next_(0), prev_(0)
-    {
-    }
+    per_timer_data() : next_(0), prev_(0) {}
 
   private:
     friend class timer_queue;
@@ -151,12 +148,7 @@ public:
       while (!heap_.empty() && !Time_Traits::less_than(now, heap_[0].time_))
       {
         per_timer_data* timer = heap_[0].timer_;
-        while (wait_op* op = timer->op_queue_.front())
-        {
-          timer->op_queue_.pop();
-          op->ec_ = boost::system::error_code();
-          ops.push(op);
-        }
+        ops.push(timer->op_queue_);
         remove_timer(*timer);
       }
     }
@@ -198,64 +190,17 @@ public:
     return num_cancelled;
   }
 
-  // Cancel and dequeue a specific operation for the given timer.
-  void cancel_timer_by_key(per_timer_data* timer,
-      op_queue<operation>& ops, void* cancellation_key)
-  {
-    if (timer->prev_ != 0 || timer == timers_)
-    {
-      op_queue<wait_op> other_ops;
-      while (wait_op* op = timer->op_queue_.front())
-      {
-        timer->op_queue_.pop();
-        if (op->cancellation_key_ == cancellation_key)
-        {
-          op->ec_ = boost::asio::error::operation_aborted;
-          ops.push(op);
-        }
-        else
-          other_ops.push(op);
-      }
-      timer->op_queue_.push(other_ops);
-      if (timer->op_queue_.empty())
-        remove_timer(*timer);
-    }
-  }
-
-  // Move operations from one timer to another, empty timer.
-  void move_timer(per_timer_data& target, per_timer_data& source)
-  {
-    target.op_queue_.push(source.op_queue_);
-
-    target.heap_index_ = source.heap_index_;
-    source.heap_index_ = (std::numeric_limits<std::size_t>::max)();
-
-    if (target.heap_index_ < heap_.size())
-      heap_[target.heap_index_].timer_ = &target;
-
-    if (timers_ == &source)
-      timers_ = &target;
-    if (source.prev_)
-      source.prev_->next_ = &target;
-    if (source.next_)
-      source.next_->prev_= &target;
-    target.next_ = source.next_;
-    target.prev_ = source.prev_;
-    source.next_ = 0;
-    source.prev_ = 0;
-  }
-
 private:
   // Move the item at the given index up the heap to its correct position.
   void up_heap(std::size_t index)
   {
-    while (index > 0)
+    std::size_t parent = (index - 1) / 2;
+    while (index > 0
+        && Time_Traits::less_than(heap_[index].time_, heap_[parent].time_))
     {
-      std::size_t parent = (index - 1) / 2;
-      if (!Time_Traits::less_than(heap_[index].time_, heap_[parent].time_))
-        break;
       swap_heap(index, parent);
       index = parent;
+      parent = (index - 1) / 2;
     }
   }
 
@@ -296,16 +241,15 @@ private:
     {
       if (index == heap_.size() - 1)
       {
-        timer.heap_index_ = (std::numeric_limits<std::size_t>::max)();
         heap_.pop_back();
       }
       else
       {
         swap_heap(index, heap_.size() - 1);
-        timer.heap_index_ = (std::numeric_limits<std::size_t>::max)();
         heap_.pop_back();
+        std::size_t parent = (index - 1) / 2;
         if (index > 0 && Time_Traits::less_than(
-              heap_[index].time_, heap_[(index - 1) / 2].time_))
+              heap_[index].time_, heap_[parent].time_))
           up_heap(index);
         else
           down_heap(index);
@@ -344,7 +288,7 @@ private:
   {
     if (d.ticks() <= 0)
       return 0;
-    int64_t msec = d.total_milliseconds();
+    boost::int64_t msec = d.total_milliseconds();
     if (msec == 0)
       return 1;
     if (msec > max_duration)
@@ -358,7 +302,7 @@ private:
   {
     if (d.ticks() <= 0)
       return 0;
-    int64_t usec = d.total_microseconds();
+    boost::int64_t usec = d.total_microseconds();
     if (usec == 0)
       return 1;
     if (usec > max_duration)

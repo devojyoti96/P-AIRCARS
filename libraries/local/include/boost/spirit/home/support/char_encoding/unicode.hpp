@@ -22,12 +22,7 @@ namespace boost { namespace spirit { namespace char_encoding
     ///////////////////////////////////////////////////////////////////////////
     struct unicode
     {
-#ifdef BOOST_NO_CXX11_CHAR32_T
         typedef ::boost::uint32_t char_type;
-#else
-        typedef char32_t char_type;
-#endif
-        typedef ::boost::uint32_t classify_type;
 
     ///////////////////////////////////////////////////////////////////////////
     //  Posix stuff
@@ -105,7 +100,7 @@ namespace boost { namespace spirit { namespace char_encoding
             return ucd::is_white_space(ch);
         }
 
-        static bool
+        static int
         isblank BOOST_PREVENT_MACRO_SUBSTITUTION (char_type ch)
         {
             return ucd::is_blank(ch);

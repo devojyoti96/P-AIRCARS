@@ -26,6 +26,7 @@
 
 #include <boost/config.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/signals2/deconstruct_ptr.hpp>
 #include <boost/type_traits/alignment_of.hpp>
 #include <boost/type_traits/remove_const.hpp>
 #include <boost/type_traits/type_with_alignment.hpp>
@@ -64,7 +65,7 @@ public:
     }
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES) && !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
     template<class... Args>
-      const shared_ptr<T>& postconstruct(Args && ... args) const
+      const shared_ptr<T>& postconstruct(Args && ... args)
     {
         if(!_postconstructed)
         {

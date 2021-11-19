@@ -50,8 +50,8 @@ namespace boost { namespace spirit { namespace detail
         struct result<F(A0&)>
           : result_type<A0> {};
 
-        expand_arg(Context& context_)
-          : context(context_)
+        expand_arg(Context& context)
+          : context(context)
         {
         }
 
@@ -78,8 +78,9 @@ namespace boost { namespace spirit { namespace detail
 
         Context& context;
 
+    private:
         // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(expand_arg& operator= (expand_arg const&))
+        expand_arg& operator= (expand_arg const&);
     };
 
 }}}

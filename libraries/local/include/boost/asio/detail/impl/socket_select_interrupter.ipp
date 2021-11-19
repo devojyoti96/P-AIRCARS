@@ -2,7 +2,7 @@
 // detail/impl/socket_select_interrupter.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,9 +17,7 @@
 
 #include <boost/asio/detail/config.hpp>
 
-#if !defined(BOOST_ASIO_WINDOWS_RUNTIME)
-
-#if defined(BOOST_ASIO_WINDOWS) \
+#if defined(BOOST_WINDOWS) \
   || defined(__CYGWIN__) \
   || defined(__SYMBIAN32__)
 
@@ -59,7 +57,7 @@ void socket_select_interrupter::open_descriptors()
   std::size_t addr_len = sizeof(addr);
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = socket_ops::host_to_network_long(INADDR_LOOPBACK);
+  addr.sin_addr.s_addr = inet_addr("127.0.0.1");
   addr.sin_port = 0;
   if (socket_ops::bind(acceptor.get(), (const socket_addr_type*)&addr,
         addr_len, ec) == socket_error_retval)
@@ -72,8 +70,7 @@ void socket_select_interrupter::open_descriptors()
   // Some broken firewalls on Windows will intermittently cause getsockname to
   // return 0.0.0.0 when the socket is actually bound to 127.0.0.1. We
   // explicitly specify the target address here to work around this problem.
-  if (addr.sin_addr.s_addr == socket_ops::host_to_network_long(INADDR_ANY))
-    addr.sin_addr.s_addr = socket_ops::host_to_network_long(INADDR_LOOPBACK);
+  addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   if (socket_ops::listen(acceptor.get(),
         SOMAXCONN, ec) == socket_error_retval)
@@ -156,20 +153,11 @@ bool socket_select_interrupter::reset()
   socket_ops::buf b;
   socket_ops::init_buf(b, data, sizeof(data));
   boost::system::error_code ec;
-  for (;;)
-  {
-    int bytes_read = socket_ops::recv(read_descriptor_, &b, 1, 0, ec);
-    if (bytes_read == sizeof(data))
-      continue;
-    if (bytes_read > 0)
-      return true;
-    if (bytes_read == 0)
-      return false;
-    if (ec == boost::asio::error::would_block
-        || ec == boost::asio::error::try_again)
-      return true;
-    return false;
-  }
+  int bytes_read = socket_ops::recv(read_descriptor_, &b, 1, 0, ec);
+  bool was_interrupted = (bytes_read > 0);
+  while (bytes_read == sizeof(data))
+    bytes_read = socket_ops::recv(read_descriptor_, &b, 1, 0, ec);
+  return was_interrupted;
 }
 
 } // namespace detail
@@ -178,10 +166,8 @@ bool socket_select_interrupter::reset()
 
 #include <boost/asio/detail/pop_options.hpp>
 
-#endif // defined(BOOST_ASIO_WINDOWS)
+#endif // defined(BOOST_WINDOWS)
        // || defined(__CYGWIN__)
        // || defined(__SYMBIAN32__)
-
-#endif // !defined(BOOST_ASIO_WINDOWS_RUNTIME)
 
 #endif // BOOST_ASIO_DETAIL_IMPL_SOCKET_SELECT_INTERRUPTER_IPP

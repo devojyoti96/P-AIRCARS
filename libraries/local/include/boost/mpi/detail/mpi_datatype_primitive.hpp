@@ -21,15 +21,14 @@ namespace std{
 
 #include <boost/mpi/datatype_fwd.hpp>
 #include <boost/mpi/exception.hpp>
-#include <boost/mpi/detail/antiques.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/assert.hpp>
 #include <boost/mpl/placeholders.hpp>
 #include <boost/serialization/array.hpp>
+#include <boost/serialization/detail/get_data.hpp>
 #include <stdexcept>
 #include <iostream>
 #include <vector>
-#include <boost/mpi/detail/antiques.hpp>
 
 namespace boost { namespace mpi { namespace detail {
 
@@ -50,11 +49,7 @@ public:
      : is_committed(false),
        origin()
     {
-#if BOOST_MPI_VERSION >= 2
-      BOOST_MPI_CHECK_RESULT(MPI_Get_address,(const_cast<void*>(orig), &origin));
-#else
       BOOST_MPI_CHECK_RESULT(MPI_Address,(const_cast<void*>(orig), &origin));
-#endif
     }
 
     void save_binary(void const *address, std::size_t count)
@@ -64,7 +59,7 @@ public:
 
     // fast saving of arrays of MPI types
     template<class T>
-    void save_array(serialization::array_wrapper<T> const& x, unsigned int /* version */)
+    void save_array(serialization::array<T> const& x, unsigned int /* version */)
     {
       if (x.count())
         save_impl(x.address(), boost::mpi::get_mpi_datatype(*x.address()), x.count());
@@ -77,27 +72,17 @@ public:
     {
       if (!is_committed)
       {
-#if BOOST_MPI_VERSION >= 2
-       BOOST_MPI_CHECK_RESULT(MPI_Type_create_struct,
+        BOOST_MPI_CHECK_RESULT(MPI_Type_struct,
                     (
                       addresses.size(),
-                      c_data(lengths),
-                      c_data(addresses),
-                      c_data(types),
+                      boost::serialization::detail::get_data(lengths),
+                      boost::serialization::detail::get_data(addresses),
+                      boost::serialization::detail::get_data(types),
                       &datatype_
                     ));
-#else
-        BOOST_MPI_CHECK_RESULT(MPI_Type_struct,
-                               (
-                                addresses.size(),
-                                c_data(lengths),
-                                c_data(addresses),
-                                c_data(types),
-                                &datatype_
-                                ));
-#endif
+
         BOOST_MPI_CHECK_RESULT(MPI_Type_commit,(&datatype_));
-        
+
         is_committed = true;
       }
 
@@ -120,20 +105,11 @@ private:
       // store address, type and length
 
       MPI_Aint a;
-#if BOOST_MPI_VERSION >= 2
-     BOOST_MPI_CHECK_RESULT(MPI_Get_address,(const_cast<void*>(p), &a));
-#else
-     BOOST_MPI_CHECK_RESULT(MPI_Address,(const_cast<void*>(p), &a));
-#endif
+      BOOST_MPI_CHECK_RESULT(MPI_Address,(const_cast<void*>(p), &a));
+
       addresses.push_back(a-origin);
       types.push_back(t);
       lengths.push_back(l);
-    }
-
-    template <class T>
-    static T* get_data(std::vector<T>& v)
-    {
-      return detail::c_data(v);
     }
 
     std::vector<MPI_Aint> addresses;

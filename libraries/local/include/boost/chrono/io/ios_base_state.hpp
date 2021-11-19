@@ -113,10 +113,9 @@ namespace boost
         std::basic_string<CharT> duration_fmt;
       public:
 
-        ios_base_data_aux()
-        //:
-        //  time_fmt(""),
-        //  duration_fmt("")
+        ios_base_data_aux() :
+          time_fmt(""),
+          duration_fmt("")
         {
         }
       };

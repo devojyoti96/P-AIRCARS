@@ -263,7 +263,7 @@ struct voronoi_diagram_traits {
   typedef voronoi_cell<coordinate_type> cell_type;
   typedef voronoi_vertex<coordinate_type> vertex_type;
   typedef voronoi_edge<coordinate_type> edge_type;
-  class vertex_equality_predicate_type {
+  typedef class {
    public:
     enum { ULPS = 128 };
     bool operator()(const vertex_type& v1, const vertex_type& v2) const {
@@ -274,7 +274,7 @@ struct voronoi_diagram_traits {
     }
    private:
     typename detail::ulp_comparison<T> ulp_cmp;
-  };
+  } vertex_equality_predicate_type;
 };
 
 // Voronoi output data structure.
@@ -328,7 +328,7 @@ class voronoi_diagram {
     return vertices_.size();
   }
 
-  void _reserve(std::size_t num_sites) {
+  void _reserve(int num_sites) {
     cells_.reserve(num_sites);
     vertices_.reserve(num_sites << 1);
     edges_.reserve((num_sites << 2) + (num_sites << 1));
@@ -347,8 +347,8 @@ class voronoi_diagram {
       const detail::site_event<CT>& site1,
       const detail::site_event<CT>& site2) {
     // Get sites' indexes.
-    std::size_t site_index1 = site1.sorted_index();
-    std::size_t site_index2 = site2.sorted_index();
+    int site_index1 = site1.sorted_index();
+    int site_index2 = site2.sorted_index();
 
     bool is_linear = is_linear_edge(site1, site2);
     bool is_primary = is_primary_edge(site1, site2);

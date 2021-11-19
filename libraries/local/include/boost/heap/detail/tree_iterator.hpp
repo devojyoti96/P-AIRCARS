@@ -6,15 +6,15 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
+// Disclaimer: Not a Boost library.
+
 #ifndef BOOST_HEAP_DETAIL_TREE_ITERATOR_HPP
 #define BOOST_HEAP_DETAIL_TREE_ITERATOR_HPP
 
 #include <functional>
 #include <vector>
 
-#include <boost/core/allocator_access.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
-#include <boost/type_traits/conditional.hpp>
 #include <queue>
 
 namespace boost  {
@@ -23,13 +23,27 @@ namespace detail {
 
 
 template<typename type>
-struct identity
+struct identity:
+    public std::unary_function<type,type>
 {
-    type& operator()(type& x) const BOOST_NOEXCEPT
+    type& operator()(type& x) const
     { return x; }
 
-    const type& operator()(const type& x) const BOOST_NOEXCEPT
+    const type& operator()(const type& x) const
     { return x; }
+};
+
+template<typename type>
+struct caster:
+    public std::unary_function<type,type>
+{
+    template <typename U>
+    type& operator()(U& x) const
+    { return static_cast<type&>(x); }
+
+    template <typename U>
+    const type& operator()(const U& x) const
+    { return static_cast<const type&>(x); }
 };
 
 template<typename Node>
@@ -82,7 +96,7 @@ struct unordered_tree_iterator_storage
         return data_.empty();
     }
 
-    std::vector<HandleType, typename boost::allocator_rebind<Alloc, HandleType>::type> data_;
+    std::vector<HandleType, typename Alloc::template rebind<HandleType>::other > data_;
 };
 
 template <typename ValueType,
@@ -129,13 +143,13 @@ struct ordered_tree_iterator_storage:
         return data_.top();
     }
 
-    bool empty(void) const BOOST_NOEXCEPT
+    bool empty(void) const
     {
         return data_.empty();
     }
 
     std::priority_queue<HandleType,
-                        std::vector<HandleType, typename boost::allocator_rebind<Alloc, HandleType>::type>,
+                        std::vector<HandleType, typename Alloc::template rebind<HandleType>::other>,
                         compare_values_by_handle> data_;
 };
 
@@ -189,7 +203,7 @@ class tree_iterator:
 
     friend class boost::iterator_core_access;
 
-    typedef typename boost::conditional< ordered_iterator,
+    typedef typename boost::mpl::if_c< ordered_iterator,
                                        ordered_tree_iterator_storage<ValueType, const Node*, Alloc, ValueCompare, ValueExtractor>,
                                        unordered_tree_iterator_storage<const Node*, Alloc, ValueCompare>
                                      >::type

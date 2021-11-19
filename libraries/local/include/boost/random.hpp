@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org/libs/random for documentation.
  *
- * $Id$
+ * $Id: random.hpp 71018 2011-04-05 21:27:52Z steven_watanabe $
  *
  * Revision history
  *  2000-02-18  portability fixes (thanks to Beman Dawes)
@@ -41,7 +41,6 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/linear_feedback_shift.hpp>
 #include <boost/random/mersenne_twister.hpp>
-#include <boost/random/mixmax.hpp>
 #include <boost/random/ranlux.hpp>
 #include <boost/random/shuffle_order.hpp>
 #include <boost/random/shuffle_output.hpp>
@@ -57,7 +56,6 @@
 
 // distributions
 #include <boost/random/bernoulli_distribution.hpp>
-#include <boost/random/beta_distribution.hpp>
 #include <boost/random/binomial_distribution.hpp>
 #include <boost/random/cauchy_distribution.hpp>
 #include <boost/random/chi_squared_distribution.hpp>
@@ -67,11 +65,8 @@
 #include <boost/random/fisher_f_distribution.hpp>
 #include <boost/random/gamma_distribution.hpp>
 #include <boost/random/geometric_distribution.hpp>
-#include <boost/random/hyperexponential_distribution.hpp>
-#include <boost/random/laplace_distribution.hpp>
 #include <boost/random/lognormal_distribution.hpp>
 #include <boost/random/negative_binomial_distribution.hpp>
-#include <boost/random/non_central_chi_squared_distribution.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/piecewise_constant_distribution.hpp>
 #include <boost/random/piecewise_linear_distribution.hpp>
@@ -86,7 +81,5 @@
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/uniform_smallint.hpp>
 #include <boost/random/weibull_distribution.hpp>
-
-#include <boost/random/generate_canonical.hpp>
 
 #endif // BOOST_RANDOM_HPP

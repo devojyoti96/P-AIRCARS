@@ -15,6 +15,8 @@
 #include <boost/config.hpp>
 #include <boost/function.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/type_traits/add_const.hpp>
+#include <boost/type_traits/add_reference.hpp>
 #include <boost/type_traits/is_same.hpp>
 
 #include <boost/fusion/include/vector.hpp>
@@ -38,15 +40,8 @@
 #include <boost/spirit/home/karma/nonterminal/detail/generator_binder.hpp>
 #include <boost/spirit/home/karma/nonterminal/detail/parameterized.hpp>
 
-#include <boost/static_assert.hpp>
-#include <boost/proto/extends.hpp>
-#include <boost/proto/traits.hpp>
-#include <boost/type_traits/is_const.hpp>
-#include <boost/type_traits/is_reference.hpp>
-
 #if defined(BOOST_MSVC)
 # pragma warning(push)
-# pragma warning(disable: 4127) // conditional expression is constant
 # pragma warning(disable: 4355) // 'this' : used in base member initializer list warning
 #endif
 
@@ -123,24 +118,23 @@ namespace boost { namespace spirit { namespace karma
                 karma::domain, template_params>::type
         delimiter_type;
 
+        // The rule's signature
+        typedef typename
+            spirit::detail::extract_sig<template_params>::type
+        sig_type;
+
         // The rule's encoding type
         typedef typename
             spirit::detail::extract_encoding<template_params>::type
         encoding_type;
 
-        // The rule's signature
-        typedef typename
-            spirit::detail::extract_sig<template_params, encoding_type, karma::domain>::type
-        sig_type;
-
         // This is the rule's attribute type
         typedef typename
             spirit::detail::attr_from_sig<sig_type>::type
         attr_type;
-        BOOST_STATIC_ASSERT_MSG(
-            !is_reference<attr_type>::value && !is_const<attr_type>::value,
-            "Const/reference qualifiers on Karma rule attribute are meaningless");
-        typedef attr_type const& attr_reference_type;
+        typedef typename add_reference<
+            typename add_const<attr_type>::type>::type
+        attr_reference_type;
 
         // parameter_types is a sequence of types passed as parameters to the rule
         typedef typename
@@ -183,7 +177,7 @@ namespace boost { namespace spirit { namespace karma
         }
 
         template <typename Auto, typename Expr>
-        static void define(rule& /* lhs */, Expr const& /* expr */, mpl::false_)
+        static void define(rule& lhs, Expr const& expr, mpl::false_)
         {
             // Report invalid expression error as early as possible.
             // If you got an error_invalid_expression error message here,
@@ -246,7 +240,7 @@ namespace boost { namespace spirit { namespace karma
             return r;
         }
 
-#if defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
+#if defined(BOOST_NO_RVALUE_REFERENCES)
         // non-const version needed to suppress proto's %= kicking in
         template <typename Expr>
         friend rule& operator%=(rule& r, Expr& expr)
@@ -291,11 +285,15 @@ namespace boost { namespace spirit { namespace karma
             if (f)
             {
                 // Create an attribute if none is supplied.
+                typedef traits::make_attribute<attr_type, Attribute>
+                    make_attribute;
                 typedef traits::transform_attribute<
-                    Attribute const, attr_type, domain>
+                    typename make_attribute::type, attr_type, domain>
                 transform;
 
-                typename transform::type attr_ = transform::pre(attr);
+                typename transform::type attr_ =
+                    traits::pre_transform<domain, attr_type>(
+                        make_attribute::call(attr));
 
                 // If you are seeing a compilation error here, you are probably
                 // trying to use a rule or a grammar which has inherited
@@ -327,11 +325,15 @@ namespace boost { namespace spirit { namespace karma
             if (f)
             {
                 // Create an attribute if none is supplied.
+                typedef traits::make_attribute<attr_type, Attribute>
+                    make_attribute;
                 typedef traits::transform_attribute<
-                    Attribute const, attr_type, domain>
+                    typename make_attribute::type, attr_type, domain>
                 transform;
 
-                typename transform::type attr_ = transform::pre(attr);
+                typename transform::type attr_ =
+                    traits::pre_transform<domain, attr_type>(
+                        make_attribute::call(attr));
 
                 // If you are seeing a compilation error here, you are probably
                 // trying to use a rule or a grammar which has inherited

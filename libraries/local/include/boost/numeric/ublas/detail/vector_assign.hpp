@@ -30,7 +30,7 @@ namespace detail {
     template<class E1, class E2, class S>
     BOOST_UBLAS_INLINE
     bool equals (const vector_expression<E1> &e1, const vector_expression<E2> &e2, S epsilon, S min_norm) {
-        return norm_inf (e1 - e2) <= epsilon *
+        return norm_inf (e1 - e2) < epsilon *
                std::max<S> (std::max<S> (norm_inf (e1), norm_inf (e2)), min_norm);
     }
 
@@ -59,7 +59,7 @@ namespace detail {
         typename E::const_iterator ite_end (e ().end ());
         if (it != it_end && ite != ite_end) {
             size_type it_index = it.index (), ite_index = ite.index ();
-            for (;;) {
+            while (true) {
                 difference_type compare = it_index - ite_index;
                 if (compare == 0) {
                     ++ it, ++ ite;
@@ -316,15 +316,7 @@ namespace detail {
             difference_type size ((std::min) (difference_type (ite.index () - it.index ()), it_size));
             if (size > 0) {
                 it_size -= size;
-//Disabled warning C4127 because the conditional expression is constant
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
-#endif
                 if (!functor_type::computed) {
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
                     while (-- size >= 0)    // zeroing
                         functor_type::apply (*it, value_type/*zero*/()), ++ it;
                 } else {
@@ -338,15 +330,7 @@ namespace detail {
         while (-- size >= 0)
             functor_type::apply (*it, *ite), ++ it, ++ ite;
         size = it_size;
-//Disabled warning C4127 because the conditional expression is constant
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
-#endif
         if (!functor_type::computed) {
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
             while (-- size >= 0)    // zeroing
                 functor_type::apply (*it, value_type/*zero*/()), ++ it;
         } else {
@@ -364,15 +348,7 @@ namespace detail {
     void vector_assign (V &v, const vector_expression<E> &e, sparse_tag) {
         BOOST_UBLAS_CHECK (v.size () == e ().size (), bad_size ());
         typedef F<typename V::iterator::reference, typename E::value_type> functor_type;
-//Disabled warning C4127 because the conditional expression is constant
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
-#endif
         BOOST_STATIC_ASSERT ((!functor_type::computed));
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
         typedef typename V::value_type value_type;
 #if BOOST_UBLAS_TYPE_CHECK
         vector<value_type> cv (v.size ());
@@ -403,7 +379,7 @@ namespace detail {
         typedef typename V::size_type size_type;
         typedef typename V::difference_type difference_type;
         typedef typename V::value_type value_type;
-
+        typedef typename V::reference reference;
 #if BOOST_UBLAS_TYPE_CHECK
         vector<value_type> cv (v.size ());
         indexing_vector_assign<scalar_assign> (cv, v);
@@ -417,7 +393,7 @@ namespace detail {
         typename E::const_iterator ite_end (e ().end ());
         if (it != it_end && ite != ite_end) {
             size_type it_index = it.index (), ite_index = ite.index ();
-            for (;;) {
+            while (true) {
                 difference_type compare = it_index - ite_index;
                 if (compare == 0) {
                     functor_type::apply (*it, *ite);
@@ -428,15 +404,7 @@ namespace detail {
                     } else
                         break;
                 } else if (compare < 0) {
-//Disabled warning C4127 because the conditional expression is constant
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
-#endif
                     if (!functor_type::computed) {
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
                         functor_type::apply (*it, value_type/*zero*/());
                         ++ it;
                     } else
@@ -454,15 +422,8 @@ namespace detail {
                 }
             }
         }
-//Disabled warning C4127 because the conditional expression is constant
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
-#endif
+
         if (!functor_type::computed) {
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
             while (it != it_end) {  // zeroing
                 functor_type::apply (*it, value_type/*zero*/());
                 ++ it;
@@ -552,6 +513,7 @@ namespace detail {
         typedef F<typename V::iterator::reference, typename E::iterator::reference> functor_type;
         typedef typename V::size_type size_type;
         typedef typename V::difference_type difference_type;
+        typedef typename V::value_type value_type;
 
         detail::make_conformant (v, e);
         // FIXME should be a seperate restriction for E
@@ -563,7 +525,7 @@ namespace detail {
         typename E::iterator ite_end (e ().end ());
         if (it != it_end && ite != ite_end) {
             size_type it_index = it.index (), ite_index = ite.index ();
-            for (;;) {
+            while (true) {
                 difference_type compare = it_index - ite_index;
                 if (compare == 0) {
                     functor_type::apply (*it, *ite);

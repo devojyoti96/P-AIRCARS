@@ -19,7 +19,7 @@
 // In a sequence of Bernoulli trials or events
 // (independent, yes or no, succeed or fail) with success_fraction probability p,
 // negative_binomial is the probability that k or fewer failures
-// precede the r th trial's success.
+// preceed the r th trial's success.
 // random variable k is the number of failures (NOT the probability).
 
 // Negative_binomial distribution is a discrete probability distribution.
@@ -27,7 +27,7 @@
 // (like others including the binomial, Poisson & Bernoulli)
 // is strictly defined as a discrete function: only integral values of k are envisaged.
 // However because of the method of calculation using a continuous gamma function,
-// it is convenient to treat it as if a continuous function,
+// it is convenient to treat it as if a continous function,
 // and permit non-integral values of k.
 
 // However, by default the policy is to use discrete_quantile_policy.
@@ -51,6 +51,11 @@
 #include <boost/math/special_functions/fpclassify.hpp> // isnan.
 #include <boost/math/tools/roots.hpp> // for root finding.
 #include <boost/math/distributions/detail/inv_discrete_quantile.hpp>
+
+#include <boost/type_traits/is_floating_point.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/is_same.hpp>
+#include <boost/mpl/if.hpp>
 
 #include <limits> // using std::numeric_limits;
 #include <utility>
@@ -119,7 +124,7 @@ namespace boost
       template <class RealType, class Policy>
       inline bool check_dist_and_prob(const char* function, const RealType& r, RealType p, RealType prob, RealType* result, const Policy& pol)
       {
-        if((check_dist(function, r, p, result, pol) && detail::check_probability(function, prob, result, pol)) == false)
+        if(check_dist(function, r, p, result, pol) && detail::check_probability(function, prob, result, pol) == false)
         {
           return false;
         }
@@ -455,15 +460,6 @@ namespace boost
       { // p <= pdf(dist, 0) == cdf(dist, 0)
         return 0;
       }
-      if(p == 0)
-      {  // Would need +infinity failures for total confidence.
-         result = policies::raise_overflow_error<RealType>(
-            function,
-            "Success fraction is 0, which implies infinite failures !", Policy());
-         return result;
-         // usually means return +std::numeric_limits<RealType>::infinity();
-         // unless #define BOOST_MATH_THROW_ON_OVERFLOW_ERROR
-      }
       /*
       // Calculate quantile of negative_binomial using the inverse incomplete beta function.
       using boost::math::ibeta_invb;
@@ -487,12 +483,12 @@ namespace boost
       //
       // Max iterations permitted:
       //
-      std::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
+      boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
       typedef typename Policy::discrete_quantile_type discrete_type;
       return detail::inverse_discrete_quantile(
          dist,
          P,
-         false,
+         1-P,
          guess,
          factor,
          RealType(1),
@@ -531,26 +527,16 @@ namespace boost
           // since the probability of zero failures may be non-zero,
           return 0; // but zero is the best we can do:
        }
+       if (-Q <= boost::math::powm1(dist.success_fraction(), dist.successes(), Policy()))
+       {  // q <= cdf(complement(dist, 0)) == pdf(dist, 0)
+          return 0; //
+       }
        if(Q == 0)
        {  // Probability 1 - Q  == 1 so infinite failures to achieve certainty.
           // Would need +infinity failures for total confidence.
           result = policies::raise_overflow_error<RealType>(
              function,
              "Probability argument complement is 0, which implies infinite failures !", Policy());
-          return result;
-          // usually means return +std::numeric_limits<RealType>::infinity();
-          // unless #define BOOST_MATH_THROW_ON_OVERFLOW_ERROR
-       }
-       if (-Q <= boost::math::powm1(dist.success_fraction(), dist.successes(), Policy()))
-       {  // q <= cdf(complement(dist, 0)) == pdf(dist, 0)
-          return 0; //
-       }
-       if(p == 0)
-       {  // Success fraction is 0 so infinite failures to achieve certainty.
-          // Would need +infinity failures for total confidence.
-          result = policies::raise_overflow_error<RealType>(
-             function,
-             "Success fraction is 0, which implies infinite failures !", Policy());
           return result;
           // usually means return +std::numeric_limits<RealType>::infinity();
           // unless #define BOOST_MATH_THROW_ON_OVERFLOW_ERROR
@@ -574,12 +560,12 @@ namespace boost
        //
        // Max iterations permitted:
        //
-       std::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
+       boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
        typedef typename Policy::discrete_quantile_type discrete_type;
        return detail::inverse_discrete_quantile(
           dist,
+          1-Q,
           Q,
-          true,
           guess,
           factor,
           RealType(1),

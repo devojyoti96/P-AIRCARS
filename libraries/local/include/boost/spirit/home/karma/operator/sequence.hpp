@@ -4,8 +4,8 @@
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef BOOST_SPIRIT_KARMA_OPERATOR_SEQUENCE_HPP
-#define BOOST_SPIRIT_KARMA_OPERATOR_SEQUENCE_HPP
+#if !defined(SPIRIT_KARMA_SEQUENCE_FEB_28_2007_0247PM)
+#define SPIRIT_KARMA_SEQUENCE_FEB_28_2007_0247PM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -37,8 +37,6 @@
 #include <boost/mpl/not.hpp>
 #include <boost/fusion/include/transform.hpp>
 #include <boost/mpl/accumulate.hpp>
-#include <boost/proto/operators.hpp>
-#include <boost/proto/tags.hpp>
 #include <boost/config.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -75,7 +73,7 @@ namespace boost { namespace spirit { namespace traits
             };
 
             // never called, but needed for decltype-based result_of (C++0x)
-#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
+#ifndef BOOST_NO_RVALUE_REFERENCES
             template <typename Element>
             typename result<element_properties(Element)>::type
             operator()(Element&&) const;

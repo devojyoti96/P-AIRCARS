@@ -15,14 +15,14 @@
 
 #include <boost/spirit/home/support/unused.hpp>
 #include <boost/spirit/home/support/attributes_fwd.hpp>
+#include <boost/detail/iterator.hpp> // for boost::detail::iterator_traits
 #include <boost/mpl/has_xxx.hpp>
 #include <boost/mpl/bool.hpp>
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/repeat.hpp>
-#include <boost/range/range_fwd.hpp>
-#include <iterator> // for std::iterator_traits
+#include <boost/range/iterator_range.hpp>
 
 namespace boost { namespace spirit { namespace traits
 {
@@ -59,19 +59,6 @@ namespace boost { namespace spirit { namespace traits
       : is_container<T>
     {};
 
-#if !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES)
-    template<typename T>
-    struct is_container<boost::variant<T> >
-      : is_container<T>
-    {};
-
-    template<typename T0, typename T1, typename ...TN>
-    struct is_container<boost::variant<T0, T1, TN...> >
-      : mpl::bool_<is_container<T0>::value ||
-            is_container<boost::variant<T1, TN...> >::value>
-    {};
-
-#else
 #define BOOST_SPIRIT_IS_CONTAINER(z, N, data)                                 \
         is_container<BOOST_PP_CAT(T, N)>::value ||                            \
     /***/
@@ -89,7 +76,6 @@ namespace boost { namespace spirit { namespace traits
     {};
 
 #undef BOOST_SPIRIT_IS_CONTAINER
-#endif
 
     template <typename T, typename Enable/* = void*/>
     struct is_iterator_range
@@ -207,7 +193,8 @@ namespace boost { namespace spirit { namespace traits
     template <typename Iterator>
     struct container_iterator<iterator_range<Iterator> >
     {
-        typedef Iterator type;
+        typedef typename range_const_iterator<
+              iterator_range<Iterator> >::type type;
     };
 
     template <>
@@ -251,7 +238,7 @@ namespace boost { namespace spirit { namespace traits
 
         static bool is_valid(boost::optional<T> const& val)
         {
-            return !!val;
+            return val;
         }
     };
 
@@ -464,7 +451,7 @@ namespace boost { namespace spirit { namespace traits
     template <typename Iterator, typename Enable/* = void*/>
     struct deref_iterator
     {
-        typedef typename std::iterator_traits<Iterator>::reference type;
+        typedef typename boost::detail::iterator_traits<Iterator>::reference type;
         static type call(Iterator& it)
         {
             return *it;

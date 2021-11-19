@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id$
+ * $Id: seed.hpp 71018 2011-04-05 21:27:52Z steven_watanabe $
  */
 
 #ifndef BOOST_RANDOM_DETAIL_SEED_HPP
@@ -17,7 +17,7 @@
 
 // Sun seems to have trouble with the use of SFINAE for the
 // templated constructor.  So does Borland.
-#if !defined(BOOST_NO_SFINAE) && !defined(__SUNPRO_CC) && !defined(BOOST_BORLANDC)
+#if !defined(BOOST_NO_SFINAE) && !defined(__SUNPRO_CC) && !defined(__BORLANDC__)
 
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
@@ -63,6 +63,7 @@ struct disable_constructor<Engine, Engine> {};
 #else
 
 #include <boost/type_traits/is_arithmetic.hpp>
+#include <boost/mpl/bool.hpp>
 
 #define BOOST_RANDOM_DETAIL_GENERATOR_CONSTRUCTOR(Self, Generator, gen) \
     Self(Self& other) { *this = other; }                                \
@@ -72,7 +73,7 @@ struct disable_constructor<Engine, Engine> {};
         boost_random_constructor_impl(gen, ::boost::is_arithmetic<Generator>());\
     }                                                                   \
     template<class Generator>                                           \
-    void boost_random_constructor_impl(Generator& gen, ::boost::false_type)
+    void boost_random_constructor_impl(Generator& gen, ::boost::mpl::false_)
 
 #define BOOST_RANDOM_DETAIL_GENERATOR_SEED(Self, Generator, gen)    \
     template<class Generator>                                       \
@@ -80,7 +81,7 @@ struct disable_constructor<Engine, Engine> {};
         boost_random_seed_impl(gen, ::boost::is_arithmetic<Generator>());\
     }\
     template<class Generator>\
-    void boost_random_seed_impl(Generator& gen, ::boost::false_type)
+    void boost_random_seed_impl(Generator& gen, ::boost::mpl::false_)
 
 #define BOOST_RANDOM_DETAIL_SEED_SEQ_CONSTRUCTOR(Self, SeedSeq, seq)    \
     Self(Self& other) { *this = other; }                                \
@@ -90,7 +91,7 @@ struct disable_constructor<Engine, Engine> {};
         boost_random_constructor_impl(seq, ::boost::is_arithmetic<SeedSeq>());\
     }                                                                   \
     template<class SeedSeq>                                             \
-    void boost_random_constructor_impl(SeedSeq& seq, ::boost::false_type)
+    void boost_random_constructor_impl(SeedSeq& seq, ::boost::mpl::false_)
 
 #define BOOST_RANDOM_DETAIL_SEED_SEQ_SEED(Self, SeedSeq, seq)           \
     template<class SeedSeq>                                             \
@@ -98,15 +99,15 @@ struct disable_constructor<Engine, Engine> {};
         boost_random_seed_impl(seq, ::boost::is_arithmetic<SeedSeq>()); \
     }                                                                   \
     template<class SeedSeq>                                             \
-    void boost_random_seed_impl(SeedSeq& seq, ::boost::false_type)
+    void boost_random_seed_impl(SeedSeq& seq, ::boost::mpl::false_)
 
 #define BOOST_RANDOM_DETAIL_ARITHMETIC_CONSTRUCTOR(Self, T, x)  \
-    explicit Self(const T& x) { boost_random_constructor_impl(x, ::boost::true_type()); }\
-    void boost_random_constructor_impl(const T& x, ::boost::true_type)
+    explicit Self(const T& x) { boost_random_constructor_impl(x, ::boost::mpl::true_()); }\
+    void boost_random_constructor_impl(const T& x, ::boost::mpl::true_)
 
 #define BOOST_RANDOM_DETAIL_ARITHMETIC_SEED(Self, T, x) \
-    void seed(const T& x) { boost_random_seed_impl(x, ::boost::true_type()); }\
-    void boost_random_seed_impl(const T& x, ::boost::true_type)
+    void seed(const T& x) { boost_random_seed_impl(x, ::boost::mpl::true_()); }\
+    void boost_random_seed_impl(const T& x, ::boost::mpl::true_)
 
 #endif
 

@@ -48,12 +48,12 @@ public:
    typedef RealType value_type;
    typedef Policy policy_type;
 
-   lognormal_distribution(RealType l_location = 0, RealType l_scale = 1)
-      : m_location(l_location), m_scale(l_scale)
+   lognormal_distribution(RealType location = 0, RealType scale = 1)
+      : m_location(location), m_scale(scale)
    {
       RealType result;
-      detail::check_scale("boost::math::lognormal_distribution<%1%>::lognormal_distribution", l_scale, &result, Policy());
-      detail::check_location("boost::math::lognormal_distribution<%1%>::lognormal_distribution", l_location, &result, Policy());
+      detail::check_scale("boost::math::lognormal_distribution<%1%>::lognormal_distribution", scale, &result, Policy());
+      detail::check_location("boost::math::lognormal_distribution<%1%>::lognormal_distribution", location, &result, Policy());
    }
 
    RealType location()const
@@ -326,15 +326,6 @@ inline RealType kurtosis_excess(const lognormal_distribution<RealType, Policy>& 
       return result;
 
    return exp(4 * ss) + 2 * exp(3 * ss) + 3 * exp(2 * ss) - 6;
-}
-
-template <class RealType, class Policy>
-inline RealType entropy(const lognormal_distribution<RealType, Policy>& dist)
-{
-   using std::log;
-   RealType mu = dist.location();
-   RealType sigma = dist.scale();
-   return mu + log(constants::two_pi<RealType>()*constants::e<RealType>()*sigma*sigma)/2;
 }
 
 } // namespace math

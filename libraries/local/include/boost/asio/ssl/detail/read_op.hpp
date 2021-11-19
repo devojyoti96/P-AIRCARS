@@ -2,7 +2,7 @@
 // ssl/detail/read_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,8 +17,10 @@
 
 #include <boost/asio/detail/config.hpp>
 
-#include <boost/asio/detail/buffer_sequence_adapter.hpp>
-#include <boost/asio/ssl/detail/engine.hpp>
+#if !defined(BOOST_ASIO_ENABLE_OLD_SSL)
+# include <boost/asio/detail/buffer_sequence_adapter.hpp>
+# include <boost/asio/ssl/detail/engine.hpp>
+#endif // !defined(BOOST_ASIO_ENABLE_OLD_SSL)
 
 #include <boost/asio/detail/push_options.hpp>
 
@@ -27,15 +29,12 @@ namespace asio {
 namespace ssl {
 namespace detail {
 
+#if !defined(BOOST_ASIO_ENABLE_OLD_SSL)
+
 template <typename MutableBufferSequence>
 class read_op
 {
 public:
-  static BOOST_ASIO_CONSTEXPR const char* tracking_name()
-  {
-    return "ssl::stream<>::async_read_some";
-  }
-
   read_op(const MutableBufferSequence& buffers)
     : buffers_(buffers)
   {
@@ -57,12 +56,14 @@ public:
       const boost::system::error_code& ec,
       const std::size_t& bytes_transferred) const
   {
-    BOOST_ASIO_MOVE_OR_LVALUE(Handler)(handler)(ec, bytes_transferred);
+    handler(ec, bytes_transferred);
   }
 
 private:
   MutableBufferSequence buffers_;
 };
+
+#endif // !defined(BOOST_ASIO_ENABLE_OLD_SSL)
 
 } // namespace detail
 } // namespace ssl

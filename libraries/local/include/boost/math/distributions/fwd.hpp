@@ -1,6 +1,6 @@
 // fwd.hpp Forward declarations of Boost.Math distributions.
 
-// Copyright Paul A. Bristow 2007, 2010, 2012, 2014.
+// Copyright Paul A. Bristow 2007, 2010, 2012.
 // Copyright John Maddock 2007.
 
 // Use, modification and distribution are subject to the
@@ -11,12 +11,9 @@
 #ifndef BOOST_MATH_DISTRIBUTIONS_FWD_HPP
 #define BOOST_MATH_DISTRIBUTIONS_FWD_HPP
 
-// 33 distributions at Boost 1.9.1 after adding hyperexpon and arcsine
+// 31 distributions at Boost 1.52
 
 namespace boost{ namespace math{
-
-template <class RealType, class Policy>
-class arcsine_distribution;
 
 template <class RealType, class Policy>
 class bernoulli_distribution;
@@ -49,9 +46,6 @@ template <class RealType, class Policy>
 class geometric_distribution;
 
 template <class RealType, class Policy>
-class hyperexponential_distribution;
-
-template <class RealType, class Policy>
 class hypergeometric_distribution;
 
 template <class RealType, class Policy>
@@ -62,9 +56,6 @@ class inverse_gamma_distribution;
 
 template <class RealType, class Policy>
 class inverse_gaussian_distribution;
-
-template <class RealType, class Policy>
-class kolmogorov_smirnov_distribution;
 
 template <class RealType, class Policy>
 class laplace_distribution;
@@ -120,7 +111,6 @@ class weibull_distribution;
 }} // namespaces
 
 #define BOOST_MATH_DECLARE_DISTRIBUTIONS(Type, Policy)\
-   typedef boost::math::arcsine_distribution<Type, Policy> arcsine;\
    typedef boost::math::bernoulli_distribution<Type, Policy> bernoulli;\
    typedef boost::math::beta_distribution<Type, Policy> beta;\
    typedef boost::math::binomial_distribution<Type, Policy> binomial;\
@@ -132,7 +122,6 @@ class weibull_distribution;
    typedef boost::math::gamma_distribution<Type, Policy> gamma;\
    typedef boost::math::geometric_distribution<Type, Policy> geometric;\
    typedef boost::math::hypergeometric_distribution<Type, Policy> hypergeometric;\
-   typedef boost::math::kolmogorov_smirnov_distribution<Type, Policy> kolmogorov_smirnov;\
    typedef boost::math::inverse_chi_squared_distribution<Type, Policy> inverse_chi_squared;\
    typedef boost::math::inverse_gaussian_distribution<Type, Policy> inverse_gaussian;\
    typedef boost::math::inverse_gamma_distribution<Type, Policy> inverse_gamma;\

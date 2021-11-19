@@ -11,6 +11,7 @@
 #endif
 
 #include <boost/config/no_tr1/cmath.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/type_traits/remove_const.hpp>
 
 #include <boost/spirit/home/support/char_class.hpp>
@@ -161,7 +162,8 @@ namespace boost { namespace spirit { namespace karma
         //
         //  Note:     If the trailing_zeros flag is not in effect additional
         //            comments apply. See the comment for the fraction_part()
-        //            function below.
+        //            function below. Moreover, this precision will be limited
+        //            to the value of std::numeric_limits<T>::digits10 + 1
         ///////////////////////////////////////////////////////////////////////
         static unsigned precision(T)
         {
@@ -173,20 +175,19 @@ namespace boost { namespace spirit { namespace karma
         //  Generate the integer part of the number.
         //
         //      sink       The output iterator to use for generation
-        //      n          The absolute value of the integer part of the floating
-        //                 point number to convert (always non-negative).
-        //      sign       The sign of the overall floating point number to
+        //      n          The absolute value of the integer part of the floating 
+        //                 point number to convert (always non-negative). 
+        //      sign       The sign of the overall floating point number to 
         //                 convert.
-        //      force_sign Whether a sign has to be generated even for
-        //                 non-negative numbers. Note, that force_sign will be
-        //                 set to false for zero floating point values.
+        //      force_sign Whether a sign has to be generated even for 
+        //                 non-negative numbers
         ///////////////////////////////////////////////////////////////////////
         template <typename OutputIterator>
         static bool integer_part (OutputIterator& sink, T n, bool sign
           , bool force_sign)
         {
             return sign_inserter::call(
-                      sink, traits::test_zero(n), sign, force_sign, force_sign) &&
+                      sink, traits::test_zero(n), sign, force_sign) &&
                    int_inserter<10>::call(sink, n);
         }
 

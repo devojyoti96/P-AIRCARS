@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_CONTAINERS_VERSION_TYPE_HPP
 #define BOOST_INTERPROCESS_CONTAINERS_VERSION_TYPE_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -25,8 +21,8 @@
 namespace boost {
 namespace interprocess {
 
-using boost::container::dtl::version_type;
-using boost::container::dtl::version;
+using boost::container::container_detail::version_type;
+using boost::container::container_detail::version;
 
 }  //namespace interprocess {
 }  //namespace boost {

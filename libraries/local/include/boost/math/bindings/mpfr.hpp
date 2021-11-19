@@ -11,9 +11,9 @@
 #ifndef BOOST_MATH_MPLFR_BINDINGS_HPP
 #define BOOST_MATH_MPLFR_BINDINGS_HPP
 
-#include <type_traits>
+#include <boost/config.hpp>
 
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 //
 // We get a lot of warnings from the gmp, mpfr and gmpfrxx headers, 
 // disable them here, so we only see warnings from *our* code:
@@ -24,7 +24,7 @@
 
 #include <gmpfrxx.h>
 
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #pragma warning(pop)
 #endif
 
@@ -35,44 +35,25 @@
 #include <boost/math/special_functions/math_fwd.hpp>
 #include <boost/math/bindings/detail/big_digamma.hpp>
 #include <boost/math/bindings/detail/big_lanczos.hpp>
-#include <boost/math/tools/big_constant.hpp>
-#include <boost/math/tools/config.hpp>
-#include <boost/math/tools/lexical_cast.hpp>
 
 inline mpfr_class fabs(const mpfr_class& v)
 {
    return abs(v);
 }
-template <class T, class U>
-inline mpfr_class fabs(const __gmp_expr<T,U>& v)
-{
-   return abs(static_cast<mpfr_class>(v));
-}
 
-inline mpfr_class pow(const mpfr_class& b, const mpfr_class& e)
+inline mpfr_class pow(const mpfr_class& b, const mpfr_class e)
 {
    mpfr_class result;
    mpfr_pow(result.__get_mp(), b.__get_mp(), e.__get_mp(), GMP_RNDN);
    return result;
 }
-/*
-template <class T, class U, class V, class W>
-inline mpfr_class pow(const __gmp_expr<T,U>& b, const __gmp_expr<V,W>& e)
-{
-   return pow(static_cast<mpfr_class>(b), static_cast<mpfr_class>(e));
-}
-*/
+
 inline mpfr_class ldexp(const mpfr_class& v, int e)
 {
    //int e = mpfr_get_exp(*v.__get_mp());
    mpfr_class result(v);
    mpfr_set_exp(result.__get_mp(), e);
    return result;
-}
-template <class T, class U>
-inline mpfr_class ldexp(const __gmp_expr<T,U>& v, int e)
-{
-   return ldexp(static_cast<mpfr_class>(v), e);
 }
 
 inline mpfr_class frexp(const mpfr_class& v, int* expon)
@@ -82,11 +63,6 @@ inline mpfr_class frexp(const mpfr_class& v, int* expon)
    mpfr_set_exp(result.__get_mp(), 0);
    *expon = e;
    return result;
-}
-template <class T, class U>
-inline mpfr_class frexp(const __gmp_expr<T,U>& v, int* expon)
-{
-   return frexp(static_cast<mpfr_class>(v), expon);
 }
 
 inline mpfr_class fmod(const mpfr_class& v1, const mpfr_class& v2)
@@ -98,11 +74,6 @@ inline mpfr_class fmod(const mpfr_class& v1, const mpfr_class& v2)
       n = floor(v1 / v2);
    return v1 - n * v2;
 }
-template <class T, class U, class V, class W>
-inline mpfr_class fmod(const __gmp_expr<T,U>& v1, const __gmp_expr<V,W>& v2)
-{
-   return fmod(static_cast<mpfr_class>(v1), static_cast<mpfr_class>(v2));
-}
 
 template <class Policy>
 inline mpfr_class modf(const mpfr_class& v, long long* ipart, const Policy& pol)
@@ -110,86 +81,43 @@ inline mpfr_class modf(const mpfr_class& v, long long* ipart, const Policy& pol)
    *ipart = lltrunc(v, pol);
    return v - boost::math::tools::real_cast<mpfr_class>(*ipart);
 }
-template <class T, class U, class Policy>
-inline mpfr_class modf(const __gmp_expr<T,U>& v, long long* ipart, const Policy& pol)
+template <class Policy>
+inline int iround(mpfr_class const& x, const Policy& pol)
 {
-   return modf(static_cast<mpfr_class>(v), ipart, pol);
+   return boost::math::tools::real_cast<int>(boost::math::round(x, pol));
 }
 
 template <class Policy>
-inline int iround(mpfr_class const& x, const Policy&)
+inline long lround(mpfr_class const& x, const Policy& pol)
 {
-   return boost::math::tools::real_cast<int>(boost::math::round(x, typename boost::math::policies::normalise<Policy, boost::math::policies::rounding_error< boost::math::policies::throw_on_error> >::type()));
-}
-template <class T, class U, class Policy>
-inline int iround(__gmp_expr<T,U> const& x, const Policy& pol)
-{
-   return iround(static_cast<mpfr_class>(x), pol);
+   return boost::math::tools::real_cast<long>(boost::math::round(x, pol));
 }
 
 template <class Policy>
-inline long lround(mpfr_class const& x, const Policy&)
+inline long long llround(mpfr_class const& x, const Policy& pol)
 {
-   return boost::math::tools::real_cast<long>(boost::math::round(x, typename boost::math::policies::normalise<Policy, boost::math::policies::rounding_error< boost::math::policies::throw_on_error> >::type()));
-}
-template <class T, class U, class Policy>
-inline long lround(__gmp_expr<T,U> const& x, const Policy& pol)
-{
-   return lround(static_cast<mpfr_class>(x), pol);
+   return boost::math::tools::real_cast<long long>(boost::math::round(x, pol));
 }
 
 template <class Policy>
-inline long long llround(mpfr_class const& x, const Policy&)
+inline int itrunc(mpfr_class const& x, const Policy& pol)
 {
-   return boost::math::tools::real_cast<long long>(boost::math::round(x, typename boost::math::policies::normalise<Policy, boost::math::policies::rounding_error< boost::math::policies::throw_on_error> >::type()));
-}
-template <class T, class U, class Policy>
-inline long long llround(__gmp_expr<T,U> const& x, const Policy& pol)
-{
-   return llround(static_cast<mpfr_class>(x), pol);
+   return boost::math::tools::real_cast<int>(boost::math::trunc(x, pol));
 }
 
 template <class Policy>
-inline int itrunc(mpfr_class const& x, const Policy&)
+inline long ltrunc(mpfr_class const& x, const Policy& pol)
 {
-   return boost::math::tools::real_cast<int>(boost::math::trunc(x, typename boost::math::policies::normalise<Policy, boost::math::policies::rounding_error< boost::math::policies::throw_on_error> >::type()));
-}
-template <class T, class U, class Policy>
-inline int itrunc(__gmp_expr<T,U> const& x, const Policy& pol)
-{
-   return itrunc(static_cast<mpfr_class>(x), pol);
+   return boost::math::tools::real_cast<long>(boost::math::trunc(x, pol));
 }
 
 template <class Policy>
-inline long ltrunc(mpfr_class const& x, const Policy&)
+inline long long lltrunc(mpfr_class const& x, const Policy& pol)
 {
-   return boost::math::tools::real_cast<long>(boost::math::trunc(x, typename boost::math::policies::normalise<Policy, boost::math::policies::rounding_error< boost::math::policies::throw_on_error> >::type()));
-}
-template <class T, class U, class Policy>
-inline long ltrunc(__gmp_expr<T,U> const& x, const Policy& pol)
-{
-   return ltrunc(static_cast<mpfr_class>(x), pol);
+   return boost::math::tools::real_cast<long long>(boost::math::trunc(x, pol));
 }
 
-template <class Policy>
-inline long long lltrunc(mpfr_class const& x, const Policy&)
-{
-   return boost::math::tools::real_cast<long long>(boost::math::trunc(x, typename boost::math::policies::normalise<Policy, boost::math::policies::rounding_error< boost::math::policies::throw_on_error> >::type()));
-}
-template <class T, class U, class Policy>
-inline long long lltrunc(__gmp_expr<T,U> const& x, const Policy& pol)
-{
-   return lltrunc(static_cast<mpfr_class>(x), pol);
-}
-
-namespace boost{ 
-
-#ifdef BOOST_MATH_USE_FLOAT128
-   template<> struct std::is_convertible<BOOST_MATH_FLOAT128_TYPE, mpfr_class> : public std::integral_constant<bool, false>{};
-#endif
-   template<> struct std::is_convertible<long long, mpfr_class> : public std::integral_constant<bool, false>{};
-
-namespace math{
+namespace boost{ namespace math{
 
 #if defined(__GNUC__) && (__GNUC__ < 4)
    using ::iround;
@@ -275,19 +203,6 @@ struct lanczos<mpfr_class, Policy>
 
 } // namespace lanczos
 
-namespace constants{
-
-template <class Real, class Policy>
-struct construction_traits;
-
-template <class Policy>
-struct construction_traits<mpfr_class, Policy>
-{
-   typedef std::integral_constant<int, 0> type;
-};
-
-}
-
 namespace tools
 {
 
@@ -298,7 +213,7 @@ struct promote_arg<__gmp_expr<T,U> >
 };
 
 template<>
-inline int digits<mpfr_class>(BOOST_MATH_EXPLICIT_TEMPLATE_TYPE_SPEC(mpfr_class)) noexcept
+inline int digits<mpfr_class>(BOOST_MATH_EXPLICIT_TEMPLATE_TYPE_SPEC(mpfr_class))
 {
    return mpfr_class::get_dprec();
 }
@@ -456,10 +371,6 @@ inline mpfr_class skewness(const extreme_value_distribution<mpfr_class, Policy>&
    // This is 12 * sqrt(6) * zeta(3) / pi^3:
    // See http://mathworld.wolfram.com/ExtremeValueDistribution.html
    //
-   #ifdef BOOST_MATH_STANDALONE
-   static_assert(sizeof(Policy) == 0, "mpfr skewness can not be calculated in standalone mode");
-   #endif
-
    return boost::lexical_cast<mpfr_class>("1.1395470994046486574927930193898461120875997958366");
 }
 
@@ -467,10 +378,6 @@ template <class Policy>
 inline mpfr_class skewness(const rayleigh_distribution<mpfr_class, Policy>& /*dist*/)
 {
   // using namespace boost::math::constants;
-  #ifdef BOOST_MATH_STANDALONE
-  static_assert(sizeof(Policy) == 0, "mpfr skewness can not be calculated in standalone mode");
-  #endif
-
   return boost::lexical_cast<mpfr_class>("0.63111065781893713819189935154422777984404221106391");
   // Computed using NTL at 150 bit, about 50 decimal digits.
   // return 2 * root_pi<RealType>() * pi_minus_three<RealType>() / pow23_four_minus_pi<RealType>();
@@ -480,10 +387,6 @@ template <class Policy>
 inline mpfr_class kurtosis(const rayleigh_distribution<mpfr_class, Policy>& /*dist*/)
 {
   // using namespace boost::math::constants;
-  #ifdef BOOST_MATH_STANDALONE
-  static_assert(sizeof(Policy) == 0, "mpfr kurtosis can not be calculated in standalone mode");
-  #endif
-
   return boost::lexical_cast<mpfr_class>("3.2450893006876380628486604106197544154170667057995");
   // Computed using NTL at 150 bit, about 50 decimal digits.
   // return 3 - (6 * pi<RealType>() * pi<RealType>() - 24 * pi<RealType>() + 16) /
@@ -495,10 +398,6 @@ inline mpfr_class kurtosis_excess(const rayleigh_distribution<mpfr_class, Policy
 {
   //using namespace boost::math::constants;
   // Computed using NTL at 150 bit, about 50 decimal digits.
-  #ifdef BOOST_MATH_STANDALONE
-  static_assert(sizeof(Policy) == 0, "mpfr excess kurtosis can not be calculated in standalone mode");
-  #endif
-
   return boost::lexical_cast<mpfr_class>("0.2450893006876380628486604106197544154170667057995");
   // return -(6 * pi<RealType>() * pi<RealType>() - 24 * pi<RealType>() + 16) /
   //   (four_minus_pi<RealType>() * four_minus_pi<RealType>());
@@ -510,7 +409,7 @@ namespace detail{
 // Version of Digamma accurate to ~100 decimal digits.
 //
 template <class Policy>
-mpfr_class digamma_imp(mpfr_class x, const std::integral_constant<int, 0>* , const Policy& pol)
+mpfr_class digamma_imp(mpfr_class x, const mpl::int_<0>* , const Policy& pol)
 {
    //
    // This handles reflection of negative arguments, and all our
@@ -550,7 +449,7 @@ mpfr_class digamma_imp(mpfr_class x, const std::integral_constant<int, 0>* , con
 // starting guess for Halley iteration:
 //
 template <class Policy>
-inline mpfr_class erf_inv_imp(const mpfr_class& p, const mpfr_class& q, const Policy&, const std::integral_constant<int, 64>*)
+inline mpfr_class erf_inv_imp(const mpfr_class& p, const mpfr_class& q, const Policy&, const boost::mpl::int_<64>*)
 {
    BOOST_MATH_STD_USING // for ADL of std names.
 
@@ -808,10 +707,6 @@ inline mpfr_class erf_inv_imp(const mpfr_class& p, const mpfr_class& q, const Po
 
 inline mpfr_class bessel_i0(mpfr_class x)
 {
-   #ifdef BOOST_MATH_STANDALONE
-   static_assert(sizeof(x) == 0, "mpfr bessel_i0 can not be calculated in standalone mode");
-   #endif
-    
     static const mpfr_class P1[] = {
         boost::lexical_cast<mpfr_class>("-2.2335582639474375249e+15"),
         boost::lexical_cast<mpfr_class>("-5.5050369673018427753e+14"),
@@ -967,7 +862,7 @@ inline mpfr_class bessel_i1(mpfr_class x)
 
 }
 
-template<> struct std::is_convertible<long double, mpfr_class> : public std::false_type{};
+template<> struct is_convertible<long double, mpfr_class> : public mpl::false_{};
 
 }
 

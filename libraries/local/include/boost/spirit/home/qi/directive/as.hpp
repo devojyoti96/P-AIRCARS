@@ -6,8 +6,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef BOOST_SPIRIT_QI_DIRECTIVE_AS_HPP
-#define BOOST_SPIRIT_QI_DIRECTIVE_AS_HPP
+#if !defined(SPIRIT_AS_DECEMBER_6_2010_1013AM)
+#define SPIRIT_AS_DECEMBER_6_2010_1013AM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -25,6 +25,8 @@
 #include <boost/spirit/home/support/handles_container.hpp>
 #include <boost/spirit/home/support/assert_msg.hpp>
 #include <boost/spirit/home/support/container.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <string>
 
 namespace boost { namespace spirit { namespace qi
 {
@@ -74,8 +76,8 @@ namespace boost { namespace spirit { namespace qi
     struct as_directive : unary_parser<as_directive<Subject, T> >
     {
         typedef Subject subject_type;
-        as_directive(Subject const& subject_)
-          : subject(subject_) {}
+        as_directive(Subject const& subject)
+          : subject(subject) {}
 
         template <typename Context, typename Iterator>
         struct attribute
@@ -86,13 +88,13 @@ namespace boost { namespace spirit { namespace qi
         template <typename Iterator, typename Context
           , typename Skipper, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
-          , Context& context, Skipper const& skipper, Attribute& attr_) const
+          , Context& context, Skipper const& skipper, Attribute& attr) const
         {
             Iterator i = first;
             T as_attr;
             if (subject.parse(i, last, context, skipper, as_attr))
             {
-                spirit::traits::assign_to(as_attr, attr_);
+                spirit::traits::assign_to(as_attr, attr);
                 first = i;
                 return true;
             }
@@ -101,10 +103,10 @@ namespace boost { namespace spirit { namespace qi
 
         template <typename Iterator, typename Context, typename Skipper>
         bool parse(Iterator& first, Iterator const& last
-          , Context& context, Skipper const& skipper, T& attr_) const
+          , Context& context, Skipper const& skipper, T& attr) const
         {
             Iterator i = first;
-            if (subject.parse(i, last, context, skipper, attr_))
+            if (subject.parse(i, last, context, skipper, attr))
             {
                 first = i;
                 return true;

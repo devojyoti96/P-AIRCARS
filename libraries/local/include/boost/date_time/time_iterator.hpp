@@ -6,7 +6,7 @@
  * Boost Software License, Version 1.0. (See accompanying
  * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
  * Author: Jeff Garland, Bart Garst
- * $Date$
+ * $Date: 2012-09-22 15:33:33 -0700 (Sat, 22 Sep 2012) $
  */
 
 
@@ -30,14 +30,14 @@ namespace date_time {
       current_ = current_ - offset_;
       return *this;
     }
-    const time_type& operator*() const {return current_;}
-    const time_type* operator->() const {return &current_;}
-    bool operator<  (const time_type& t) const {return current_ < t;}
-    bool operator<= (const time_type& t) const {return current_ <= t;}
-    bool operator!=  (const time_type& t) const {return current_ != t;}
-    bool operator== (const time_type& t) const {return current_ == t;}
-    bool operator>  (const time_type& t) const {return current_ > t;}
-    bool operator>= (const time_type& t) const {return current_ >= t;}
+    time_type operator*() {return current_;}
+    time_type* operator->() {return &current_;}
+    bool operator<  (const time_type& t) {return current_ < t;}
+    bool operator<= (const time_type& t) {return current_ <= t;}
+    bool operator!=  (const time_type& t) {return current_ != t;}
+    bool operator== (const time_type& t) {return current_ == t;}
+    bool operator>  (const time_type& t) {return current_ > t;}
+    bool operator>= (const time_type& t) {return current_ >= t;}
 
   private:
     time_type current_;

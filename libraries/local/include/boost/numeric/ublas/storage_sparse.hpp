@@ -195,13 +195,14 @@ namespace boost { namespace numeric { namespace ublas {
 
 
     // Default map type is simply forwarded to std::map
+    // FIXME should use ALLOC for map but std::allocator of std::pair<const I, T> and std::pair<I,T> fail to compile
     template<class I, class T, class ALLOC>
-    class map_std : public std::map<I, T, std::less<I>, ALLOC> {
+    class map_std : public std::map<I, T /*, ALLOC */> {
     public:
          // Serialization
         template<class Archive>
         void serialize(Archive & ar, const unsigned int /* file_version */){
-            ar & serialization::make_nvp("base", boost::serialization::base_object< std::map<I, T, std::less<I>, ALLOC> >(*this));
+            ar & serialization::make_nvp("base", boost::serialization::base_object< std::map<I, T /*, ALLOC */> >(*this));
         }
     };
 
@@ -214,8 +215,8 @@ namespace boost { namespace numeric { namespace ublas {
     class map_array {
     public:
         typedef ALLOC allocator_type;
-        typedef typename boost::allocator_size_type<ALLOC>::type size_type;
-        typedef typename boost::allocator_difference_type<ALLOC>::type difference_type;
+        typedef typename ALLOC::size_type size_type;
+        typedef typename ALLOC::difference_type difference_type;
         typedef std::pair<I,T> value_type;
         typedef I key_type;
         typedef T mapped_type;
@@ -397,7 +398,7 @@ namespace boost { namespace numeric { namespace ublas {
         }
         // Form Sorted Associative Container concept
         // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.    
-				iterator insert (iterator /*hint*/, const value_type &p) {
+        iterator insert (iterator hint, const value_type &p) {
             return insert (p).first;
         }
         // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.    
@@ -447,16 +448,8 @@ namespace boost { namespace numeric { namespace ublas {
             return data_;
         }
         BOOST_UBLAS_INLINE
-        const_iterator cbegin () const {
-            return begin ();
-        }
-        BOOST_UBLAS_INLINE
         const_iterator end () const {
             return data_ + size_;
-        }
-        BOOST_UBLAS_INLINE
-        const_iterator cend () const {
-            return end ();
         }
 
         BOOST_UBLAS_INLINE
@@ -477,18 +470,9 @@ namespace boost { namespace numeric { namespace ublas {
             return const_reverse_iterator (end ());
         }
         BOOST_UBLAS_INLINE
-        const_reverse_iterator crbegin () const {
-            return rbegin ();
-        }
-        BOOST_UBLAS_INLINE
         const_reverse_iterator rend () const {
             return const_reverse_iterator (begin ());
         }
-        BOOST_UBLAS_INLINE
-        const_reverse_iterator crend () const {
-            return rend ();
-        }
-
         BOOST_UBLAS_INLINE
         reverse_iterator rbegin () {
             return reverse_iterator (end ());

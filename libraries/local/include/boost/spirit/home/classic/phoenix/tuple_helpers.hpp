@@ -6,8 +6,8 @@
   Distributed under the Boost Software License, Version 1.0. (See accompanying
   file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
-#ifndef BOOST_SPIRIT_CLASSIC_PHOENIX_TUPLE_HELPERS_HPP
-#define BOOST_SPIRIT_CLASSIC_PHOENIX_TUPLE_HELPERS_HPP
+#ifndef PHOENIX_TUPLEHELPERS_HPP
+#define PHOENIX_TUPLEHELPERS_HPP
 
 ///////////////////////////////////////////////////////////////////////////////
 #include <cassert>
@@ -534,8 +534,7 @@ namespace impl
         actor_element(ActorTupleT const& actor_tuple, is_not_default)
         {
             BOOST_STATIC_ASSERT(ActorTupleT::length <= TupleResultT::length);
-            tuple_index<N> const idx;
-            return actor_tuple[idx](); // apply the actor
+            return actor_tuple[tuple_index<N>()](); // apply the actor
         }
 
         static type
@@ -1073,4 +1072,4 @@ namespace impl
 ///////////////////////////////////////////////////////////////////////////////
 }   //  namespace phoenix
 
-#endif
+#endif // PHOENIX_TUPLEHELPERS_HPP

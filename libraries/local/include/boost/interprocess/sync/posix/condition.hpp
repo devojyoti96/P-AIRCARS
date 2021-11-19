@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_POSIX_CONDITION_HPP
 #define BOOST_INTERPROCESS_POSIX_CONDITION_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -25,8 +21,8 @@
 #include <pthread.h>
 #include <errno.h>
 #include <boost/interprocess/sync/posix/pthread_helpers.hpp>
-#include <boost/interprocess/sync/posix/timepoint_to_timespec.hpp>
-#include <boost/interprocess/detail/timed_utils.hpp>
+#include <boost/interprocess/sync/posix/ptime_to_timespec.hpp>
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 #include <boost/interprocess/sync/posix/mutex.hpp>
 #include <boost/assert.hpp>
 
@@ -84,44 +80,42 @@ class posix_condition
    //!this->notify_one() or this->notify_all(), or until time abs_time is reached,
    //!and then reacquires the lock.
    //!Returns: false if time abs_time is reached, otherwise true.
-   template <typename L, typename TimePoint>
-   bool timed_wait(L& lock, const TimePoint &abs_time)
+   template <typename L>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time)
    {
-      if (!lock)
-         throw lock_exception();
-      //Posix does not support infinity absolute time so handle it here
-      if(ipcdetail::is_pos_infinity(abs_time)){
+      if(abs_time == boost::posix_time::pos_infin){
          this->wait(lock);
          return true;
       }
+      if (!lock)
+            throw lock_exception();
       return this->do_timed_wait(abs_time, *lock.mutex());
    }
 
    //!The same as:   while (!pred()) {
    //!                  if (!timed_wait(lock, abs_time)) return pred();
    //!               } return true;
-   template <typename L, typename TimePoint, typename Pr>
-   bool timed_wait(L& lock, const TimePoint &abs_time, Pr pred)
+   template <typename L, typename Pr>
+   bool timed_wait(L& lock, const boost::posix_time::ptime &abs_time, Pr pred)
    {
-      if (!lock)
-         throw lock_exception();
-      //Posix does not support infinity absolute time so handle it here
-      if(ipcdetail::is_pos_infinity(abs_time)){
+      if(abs_time == boost::posix_time::pos_infin){
          this->wait(lock, pred);
          return true;
       }
+      if (!lock)
+            throw lock_exception();
       while (!pred()){
          if (!this->do_timed_wait(abs_time, *lock.mutex()))
             return pred();
       }
+
       return true;
    }
 
 
    void do_wait(posix_mutex &mut);
 
-   template<class TimePoint>
-   bool do_timed_wait(const TimePoint &abs_time, posix_mutex &mut);
+   bool do_timed_wait(const boost::posix_time::ptime &abs_time, posix_mutex &mut);
 
    private:
    pthread_cond_t   m_condition;
@@ -176,11 +170,10 @@ inline void posix_condition::do_wait(posix_mutex &mut)
    BOOST_ASSERT(res == 0); (void)res;
 }
 
-template<class TimePoint>
 inline bool posix_condition::do_timed_wait
-   (const TimePoint &abs_time, posix_mutex &mut)
+   (const boost::posix_time::ptime &abs_time, posix_mutex &mut)
 {
-   timespec ts = timepoint_to_timespec(abs_time);
+   timespec ts = ptime_to_timespec(abs_time);
    pthread_mutex_t* pmutex = &mut.m_mut;
    int res = 0;
    res = pthread_cond_timedwait(&m_condition, pmutex, &ts);

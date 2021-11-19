@@ -11,7 +11,6 @@
 #ifndef BOOST_SIGNALS2_OPTIONAL_LAST_VALUE_HPP
 #define BOOST_SIGNALS2_OPTIONAL_LAST_VALUE_HPP
 
-#include <boost/core/no_exceptions_support.hpp>
 #include <boost/optional.hpp>
 #include <boost/signals2/expired_slot.hpp>
 
@@ -30,12 +29,11 @@ namespace boost {
         optional<T> value;
         while (first != last)
         {
-          BOOST_TRY
+          try
           {
             value = *first;
           }
-          BOOST_CATCH(const expired_slot &) {}
-          BOOST_CATCH_END
+          catch(const expired_slot &) {}
           ++first;
         }
         return value;
@@ -52,12 +50,11 @@ namespace boost {
       {
         while (first != last)
         {
-          BOOST_TRY
+          try
           {
             *first;
           }
-          BOOST_CATCH(const expired_slot &) {}
-          BOOST_CATCH_END
+          catch(const expired_slot &) {}
           ++first;
         }
         return;

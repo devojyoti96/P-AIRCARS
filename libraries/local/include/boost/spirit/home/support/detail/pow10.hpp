@@ -6,14 +6,13 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef BOOST_SPIRIT_SUPPORT_DETAIL_POW10_HPP
-#define BOOST_SPIRIT_SUPPORT_DETAIL_POW10_HPP
+#if !defined(SPIRIT_POW10_DECEMBER_26_2008_1118AM)
+#define SPIRIT_POW10_DECEMBER_26_2008_1118AM
 
 #if defined(_MSC_VER)
 #pragma once
 #endif
 
-#include <cfloat>
 #include <boost/config/no_tr1/cmath.hpp>
 #include <boost/limits.hpp>
 #include <boost/spirit/home/support/unused.hpp>

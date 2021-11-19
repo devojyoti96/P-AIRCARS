@@ -19,7 +19,6 @@
 #include <boost/spirit/home/qi/parser.hpp>
 #include <boost/spirit/home/support/common_terminals.hpp>
 #include <boost/spirit/home/support/info.hpp>
-#include <boost/spirit/home/support/detail/is_spirit_tag.hpp>
 #include <boost/mpl/assert.hpp>
 #include <boost/type_traits/is_same.hpp>
 
@@ -29,10 +28,7 @@ namespace boost { namespace spirit
     {
         template <typename T, unsigned Radix, unsigned MinDigits
                 , int MaxDigits>
-        struct int_parser 
-        {
-            BOOST_SPIRIT_IS_TAG()
-        };
+        struct int_parser {};
     }
 
     namespace qi
@@ -202,11 +198,11 @@ namespace boost { namespace spirit { namespace qi
           , typename Skipper, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
           , Context& /*context*/, Skipper const& skipper
-          , Attribute& attr_) const
+          , Attribute& attr) const
         {
             typedef extract_int<T, Radix, MinDigits, MaxDigits> extract;
             qi::skip_over(first, last, skipper);
-            return extract::call(first, last, attr_);
+            return extract::call(first, last, attr);
         }
 
         template <typename Context>
@@ -240,7 +236,7 @@ namespace boost { namespace spirit { namespace qi
           , typename Skipper, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
           , Context& /*context*/, Skipper const& skipper
-          , Attribute& attr_param) const
+          , Attribute& attr) const
         {
             typedef extract_int<T, Radix, MinDigits, MaxDigits> extract;
             qi::skip_over(first, last, skipper);
@@ -250,7 +246,7 @@ namespace boost { namespace spirit { namespace qi
 
             if (extract::call(first, last, attr_) && (attr_ == n_))
             {
-                traits::assign_to(attr_, attr_param);
+                traits::assign_to(attr_, attr);
                 return true;
             }
 

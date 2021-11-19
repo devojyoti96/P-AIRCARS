@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// (C) Copyright Ion Gaztanaga 2012-2013. Distributed under the Boost
+// (C) Copyright Ion Gaztanaga 2012-2012. Distributed under the Boost
 // Software License, Version 1.0. (See accompanying file
 // LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
@@ -11,34 +11,30 @@
 #ifndef BOOST_CONTAINER_DETAIL_ALLOCATOR_VERSION_TRAITS_HPP
 #define BOOST_CONTAINER_DETAIL_ALLOCATOR_VERSION_TRAITS_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
 #include <boost/container/detail/config_begin.hpp>
 #include <boost/container/detail/workaround.hpp>
-
 #include <boost/container/allocator_traits.hpp>             //allocator_traits
-#include <boost/container/throw_exception.hpp>
 #include <boost/container/detail/multiallocation_chain.hpp> //multiallocation_chain
 #include <boost/container/detail/version_type.hpp>          //version_type
 #include <boost/container/detail/allocation_type.hpp>       //allocation_type
 #include <boost/container/detail/mpl.hpp>                   //integral_constant
 #include <boost/intrusive/pointer_traits.hpp>               //pointer_traits
-#include <boost/core/no_exceptions_support.hpp>             //BOOST_TRY
+#include <utility>                                          //pair
+#include <stdexcept>                                        //runtime_error
+#include <boost/detail/no_exceptions_support.hpp>           //BOOST_TRY
 
 namespace boost {
 namespace container {
-namespace dtl {
+namespace container_detail {
 
-template<class Allocator, unsigned Version = boost::container::dtl::version<Allocator>::value>
+template<class Allocator, unsigned Version = boost::container::container_detail::version<Allocator>::value>
 struct allocator_version_traits
 {
-   typedef ::boost::container::dtl::integral_constant
+   typedef ::boost::container::container_detail::integral_constant
       <unsigned, Version> alloc_version;
 
    typedef typename Allocator::multiallocation_chain multiallocation_chain;
@@ -59,15 +55,20 @@ struct allocator_version_traits
    static void deallocate_individual(Allocator &a, multiallocation_chain &holder)
    {  a.deallocate_individual(holder);   }
 
-   static pointer allocation_command(Allocator &a, allocation_type command,
-                         size_type limit_size, size_type &prefer_in_recvd_out_size, pointer &reuse)
-   {  return a.allocation_command(command, limit_size, prefer_in_recvd_out_size, reuse);  }
+   static std::pair<pointer, bool>
+      allocation_command(Allocator &a, allocation_type command,
+                         size_type limit_size, size_type preferred_size,
+                         size_type &received_size, const pointer &reuse)
+   {
+      return a.allocation_command
+         (command, limit_size, preferred_size, received_size, reuse);
+   }
 };
 
 template<class Allocator>
 struct allocator_version_traits<Allocator, 1>
 {
-   typedef ::boost::container::dtl::integral_constant
+   typedef ::boost::container::container_detail::integral_constant
       <unsigned, 1> alloc_version;
 
    typedef typename boost::container::allocator_traits<Allocator>::pointer    pointer;
@@ -76,9 +77,9 @@ struct allocator_version_traits<Allocator, 1>
 
    typedef typename boost::intrusive::pointer_traits<pointer>::
          template rebind_pointer<void>::type                void_ptr;
-   typedef dtl::basic_multiallocation_chain
+   typedef container_detail::basic_multiallocation_chain
       <void_ptr>                                            multialloc_cached_counted;
-   typedef boost::container::dtl::
+   typedef boost::container::container_detail::
       transform_multiallocation_chain
          < multialloc_cached_counted, value_type>           multiallocation_chain;
 
@@ -91,13 +92,8 @@ struct allocator_version_traits<Allocator, 1>
 
    static void deallocate_individual(Allocator &a, multiallocation_chain &holder)
    {
-      size_type n = holder.size();
-      typename multiallocation_chain::iterator it = holder.begin();
-      while(n){
-         --n;
-         pointer p = boost::intrusive::pointer_traits<pointer>::pointer_to(*it);
-         ++it;
-         a.deallocate(p, 1);
+      while(!holder.empty()){
+         a.deallocate(holder.pop_front(), 1);
       }
    }
 
@@ -131,16 +127,21 @@ struct allocator_version_traits<Allocator, 1>
       rollback.release();
    }
 
-   static pointer allocation_command(Allocator &a, allocation_type command,
-                         size_type, size_type &prefer_in_recvd_out_size, pointer &reuse)
+   static std::pair<pointer, bool>
+      allocation_command(Allocator &a, allocation_type command,
+                         size_type, size_type preferred_size,
+                         size_type &received_size, const pointer &)
    {
-      pointer ret = pointer();
-      if(BOOST_UNLIKELY(!(command & allocate_new) && !(command & nothrow_allocation))){
-         throw_logic_error("version 1 allocator without allocate_new flag");
+      std::pair<pointer, bool> ret(pointer(), false);
+      if(!(command & allocate_new)){
+         if(!(command & nothrow_allocation)){
+            throw std::runtime_error("version 1 allocator without allocate_new flag");
+         }
       }
       else{
+         received_size = preferred_size;
          BOOST_TRY{
-            ret = a.allocate(prefer_in_recvd_out_size);
+            ret.first = a.allocate(received_size);
          }
          BOOST_CATCH(...){
             if(!(command & nothrow_allocation)){
@@ -148,13 +149,12 @@ struct allocator_version_traits<Allocator, 1>
             }
          }
          BOOST_CATCH_END
-         reuse = pointer();
       }
       return ret;
    }
 };
 
-}  //namespace dtl {
+}  //namespace container_detail {
 }  //namespace container {
 }  //namespace boost {
 

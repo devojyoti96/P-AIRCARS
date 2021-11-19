@@ -11,9 +11,8 @@
 
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
-#include <boost/core/allocator_access.hpp>
 #include <boost/intrusive/list.hpp>
-#include <boost/type_traits/conditional.hpp>
+#include <boost/mpl/if.hpp>
 
 #ifdef BOOST_HEAP_SANITYCHECKS
 #define BOOST_HEAP_ASSERT BOOST_ASSERT
@@ -27,10 +26,11 @@ namespace heap   {
 namespace detail {
 
 namespace bi = boost::intrusive;
+namespace mpl = boost::mpl;
 
 template <bool auto_unlink = false>
 struct heap_node_base:
-    bi::list_base_hook<typename boost::conditional<auto_unlink,
+    bi::list_base_hook<typename mpl::if_c<auto_unlink,
                                           bi::link_mode<bi::auto_unlink>,
                                           bi::link_mode<bi::safe_link>
                                          >::type
@@ -83,12 +83,6 @@ std::size_t count_nodes(const Node * n)
     return 1 + count_list_nodes<Node, typename Node::child_list>(n->children);
 }
 
-template<class Node>
-void destroy_node(Node& node)
-{
-    node.~Node();
-}
-
 
 /* node cloner
  *
@@ -138,7 +132,7 @@ template <typename Node,
           typename Alloc>
 struct node_disposer
 {
-    typedef typename boost::allocator_pointer<Alloc>::type node_pointer;
+    typedef typename Alloc::pointer node_pointer;
 
     node_disposer(Alloc & alloc):
         alloc_(alloc)
@@ -148,7 +142,6 @@ struct node_disposer
     {
         node_pointer n = static_cast<node_pointer>(base);
         n->clear_subtree(alloc_);
-        boost::heap::detail::destroy_node(*n);
         alloc_.deallocate(n, 1);
     }
 

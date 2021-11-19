@@ -8,12 +8,11 @@
     LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
 
-#if !defined(BOOST_DEFAULT_PREPROCESSING_HOOKS_HPP_INCLUDED)
-#define BOOST_DEFAULT_PREPROCESSING_HOOKS_HPP_INCLUDED
+#if !defined(DEFAULT_PREPROCESSING_HOOKS_HPP_INCLUDED)
+#define DEFAULT_PREPROCESSING_HOOKS_HPP_INCLUDED
 
 #include <boost/wave/wave_config.hpp>
 #include <boost/wave/util/cpp_include_paths.hpp>
-#include <boost/wave/cpp_exceptions.hpp>
 
 #include <vector>
 
@@ -66,6 +65,16 @@ struct default_preprocessing_hooks
     //
     ///////////////////////////////////////////////////////////////////////////
 
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename TokenT, typename ContainerT>
+    void expanding_function_like_macro(
+        TokenT const& macrodef, std::vector<TokenT> const& formal_args, 
+        ContainerT const& definition,
+        TokenT const& macrocall, std::vector<ContainerT> const& arguments) 
+    {}
+#else
+    // new signature
     template <typename ContextT, typename TokenT, typename ContainerT, typename IteratorT>
     bool 
     expanding_function_like_macro(ContextT const& ctx,
@@ -74,6 +83,7 @@ struct default_preprocessing_hooks
         TokenT const& macrocall, std::vector<ContainerT> const& arguments,
         IteratorT const& seqstart, IteratorT const& seqend) 
     { return false; }   // default is to normally expand the macro
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //  
@@ -95,11 +105,20 @@ struct default_preprocessing_hooks
     //  expanded (return false) or will be copied to the output (return true).
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename TokenT, typename ContainerT>
+    void expanding_object_like_macro(TokenT const& macro, 
+        ContainerT const& definition, TokenT const& macrocall)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename TokenT, typename ContainerT>
     bool 
     expanding_object_like_macro(ContextT const& ctx, TokenT const& macro, 
         ContainerT const& definition, TokenT const& macrocall)
     { return false; }   // default is to normally expand the macro
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //  
@@ -113,9 +132,17 @@ struct default_preprocessing_hooks
     //  result of the macro expansion.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename ContainerT>
+    void expanded_macro(ContainerT const& result)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename ContainerT>
     void expanded_macro(ContextT const& ctx, ContainerT const& result)
     {}
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //  
@@ -129,9 +156,17 @@ struct default_preprocessing_hooks
     //  result of the rescanning.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename ContainerT>
+    void rescanned_macro(ContainerT const& result)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename ContainerT>
     void rescanned_macro(ContextT const& ctx, ContainerT const& result)
     {}
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //  
@@ -213,6 +248,13 @@ struct default_preprocessing_hooks
     //  (return false) or will be skipped (return true).
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    void 
+    found_include_directive(std::string const& filename, bool include_next) 
+    {}
+#else
+    // new signature
     template <typename ContextT>
     bool 
     found_include_directive(ContextT const& ctx, std::string const& filename, 
@@ -220,6 +262,7 @@ struct default_preprocessing_hooks
     {
         return false;    // ok to include this file
     }
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //  
@@ -240,11 +283,20 @@ struct default_preprocessing_hooks
     //  found as a result of a #include <...> directive.
     //  
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    void 
+    opened_include_file(std::string const& relname, std::string const& absname, 
+        std::size_t include_depth, bool is_system_include) 
+    {}
+#else
+    // new signature
     template <typename ContextT>
     void 
     opened_include_file(ContextT const& ctx, std::string const& relname, 
         std::string const& absname, bool is_system_include) 
     {}
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //  
@@ -255,10 +307,18 @@ struct default_preprocessing_hooks
     //  instantiating the preprocessing iterators by the user.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    void
+    returning_from_include_file() 
+    {}
+#else
+    // new signature
     template <typename ContextT>
     void
     returning_from_include_file(ContextT const& ctx) 
     {}
+#endif
 
 #if BOOST_WAVE_SUPPORT_PRAGMA_ONCE != 0
     ///////////////////////////////////////////////////////////////////////////
@@ -425,6 +485,16 @@ struct default_preprocessing_hooks
     //  during the initialization phase of the library.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename TokenT, typename ParametersT, typename DefinitionT>
+    void
+    defined_macro(TokenT const& macro_name, bool is_functionlike, 
+        ParametersT const& parameters, DefinitionT const& definition, 
+        bool is_predefined)
+    {}
+#else
+    // new signature
     template <
         typename ContextT, typename TokenT, typename ParametersT, 
         typename DefinitionT
@@ -434,6 +504,7 @@ struct default_preprocessing_hooks
         bool is_functionlike, ParametersT const& parameters, 
         DefinitionT const& definition, bool is_predefined)
     {}
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -447,10 +518,19 @@ struct default_preprocessing_hooks
     //  removed.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename TokenT>
+    void
+    undefined_macro(TokenT const& macro_name)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename TokenT>
     void
     undefined_macro(ContextT const& ctx, TokenT const& macro_name)
     {}
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -470,10 +550,19 @@ struct default_preprocessing_hooks
     //  output by a single newline.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename TokenT>
+    void
+    found_directive(TokenT const& directive)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename TokenT>
     bool
     found_directive(ContextT const& ctx, TokenT const& directive)
     { return false; }   // by default we never skip any directives
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -527,12 +616,22 @@ struct default_preprocessing_hooks
     //  to force the expression to be re-evaluated.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename ContainerT>
+    void
+    evaluated_conditional_expression(ContainerT const& expression, 
+        bool expression_value)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename TokenT, typename ContainerT>
     bool
     evaluated_conditional_expression(ContextT const& ctx, 
         TokenT const& directive, ContainerT const& expression, 
         bool expression_value)
     { return false; }         // ok to continue, do not re-evaluate expression
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -546,10 +645,19 @@ struct default_preprocessing_hooks
     //  The parameter 'token' refers to the token to be skipped.
     //
     ///////////////////////////////////////////////////////////////////////////
+#if BOOST_WAVE_USE_DEPRECIATED_PREPROCESSING_HOOKS != 0
+    // old signature
+    template <typename TokenT>
+    void
+    skipped_token(TokenT const& token)
+    {}
+#else
+    // new signature
     template <typename ContextT, typename TokenT>
     void
     skipped_token(ContextT const& ctx, TokenT const& token)
     {}
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -707,4 +815,4 @@ struct default_preprocessing_hooks
 #include BOOST_ABI_SUFFIX
 #endif
 
-#endif // !defined(BOOST_DEFAULT_PREPROCESSING_HOOKS_HPP_INCLUDED)
+#endif // !defined(DEFAULT_PREPROCESSING_HOOKS_HPP_INCLUDED)

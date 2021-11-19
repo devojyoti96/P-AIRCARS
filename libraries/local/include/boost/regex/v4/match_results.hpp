@@ -33,16 +33,13 @@
 namespace boost{
 #ifdef BOOST_MSVC
 #pragma warning(push)
-#pragma warning(disable : 4251)
-#if BOOST_MSVC < 1700
-#     pragma warning(disable : 4231)
-#endif
+#pragma warning(disable : 4251 4231)
 #  if BOOST_MSVC < 1600
 #     pragma warning(disable : 4660)
 #  endif
 #endif
 
-namespace BOOST_REGEX_DETAIL_NS{
+namespace re_detail{
 
 class named_subexpressions;
 
@@ -59,9 +56,7 @@ private:
 #endif
 public: 
    typedef          sub_match<BidiIterator>                         value_type;
-#ifndef BOOST_NO_CXX11_ALLOCATOR
-   typedef typename std::allocator_traits<Allocator>::value_type const &    const_reference;
-#elif  !defined(BOOST_NO_STD_ALLOCATOR) && !(defined(BOOST_MSVC) && defined(_STLPORT_VERSION))
+#if  !defined(BOOST_NO_STD_ALLOCATOR) && !(defined(BOOST_MSVC) && defined(_STLPORT_VERSION))
    typedef typename Allocator::const_reference                              const_reference;
 #else
    typedef          const value_type&                                       const_reference;
@@ -69,33 +64,24 @@ public:
    typedef          const_reference                                         reference;
    typedef typename vector_type::const_iterator                             const_iterator;
    typedef          const_iterator                                          iterator;
-   typedef typename BOOST_REGEX_DETAIL_NS::regex_iterator_traits<
+   typedef typename re_detail::regex_iterator_traits<
                                     BidiIterator>::difference_type          difference_type;
-#ifdef BOOST_NO_CXX11_ALLOCATOR
    typedef typename Allocator::size_type                                    size_type;
-#else
-   typedef typename std::allocator_traits<Allocator>::size_type             size_type;
-#endif
    typedef          Allocator                                               allocator_type;
-   typedef typename BOOST_REGEX_DETAIL_NS::regex_iterator_traits<
+   typedef typename re_detail::regex_iterator_traits<
                                     BidiIterator>::value_type               char_type;
    typedef          std::basic_string<char_type>                            string_type;
-   typedef          BOOST_REGEX_DETAIL_NS::named_subexpressions                         named_sub_type;
+   typedef          re_detail::named_subexpressions                         named_sub_type;
 
    // construct/copy/destroy:
    explicit match_results(const Allocator& a = Allocator())
 #ifndef BOOST_NO_STD_ALLOCATOR
-      : m_subs(a), m_base(), m_null(), m_last_closed_paren(0), m_is_singular(true) {}
+      : m_subs(a), m_base(), m_last_closed_paren(0), m_is_singular(true) {}
 #else
-      : m_subs(), m_base(), m_null(), m_last_closed_paren(0), m_is_singular(true) { (void)a; }
+      : m_subs(), m_base(), m_last_closed_paren(0), m_is_singular(true) { (void)a; }
 #endif
-   //
-   // IMPORTANT: in the code below, the crazy looking checks around m_is_singular are
-   // all required because it is illegal to copy a singular iterator.
-   // See https://svn.boost.org/trac/boost/ticket/3632.
-   //
    match_results(const match_results& m)
-      : m_subs(m.m_subs), m_base(), m_null(), m_named_subs(m.m_named_subs), m_last_closed_paren(m.m_last_closed_paren), m_is_singular(m.m_is_singular)
+      : m_subs(m.m_subs), m_named_subs(m.m_named_subs), m_last_closed_paren(m.m_last_closed_paren), m_is_singular(m.m_is_singular) 
    {
       if(!m_is_singular)
       {
@@ -167,7 +153,7 @@ public:
          const sub_match<BidiIterator>& s = m_subs[sub];
          if(s.matched || (sub == 2))
          {
-            return ::boost::BOOST_REGEX_DETAIL_NS::distance((BidiIterator)(m_base), (BidiIterator)(s.first));
+            return ::boost::re_detail::distance((BidiIterator)(m_base), (BidiIterator)(s.first));
          }
       }
       return ~static_cast<difference_type>(0);
@@ -246,7 +232,7 @@ public:
       //
       if(m_is_singular)
          raise_logic_error();
-      BOOST_REGEX_DETAIL_NS::named_subexpressions::range_type r = m_named_subs->equal_range(i, j);
+      re_detail::named_subexpressions::range_type r = m_named_subs->equal_range(i, j);
       while((r.first != r.second) && ((*this)[r.first->index].matched == false))
          ++r.first;
       return r.first != r.second ? (*this)[r.first->index] : m_null;
@@ -271,7 +257,7 @@ public:
       //
       if(m_is_singular)
          raise_logic_error();
-      BOOST_REGEX_DETAIL_NS::named_subexpressions::range_type s, r;
+      re_detail::named_subexpressions::range_type s, r;
       s = r = m_named_subs->equal_range(i, j);
       while((r.first != r.second) && ((*this)[r.first->index].matched == false))
          ++r.first;
@@ -354,7 +340,7 @@ public:
    {
       if(m_is_singular)
          raise_logic_error();
-      typedef typename BOOST_REGEX_DETAIL_NS::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, OutputIterator>::type F;
+      typedef typename re_detail::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, OutputIterator>::type F;
       F func(fmt);
       return func(*this, out, flags);
    }
@@ -364,9 +350,9 @@ public:
       if(m_is_singular)
          raise_logic_error();
       std::basic_string<char_type> result;
-      BOOST_REGEX_DETAIL_NS::string_out_iterator<std::basic_string<char_type> > i(result);
+      re_detail::string_out_iterator<std::basic_string<char_type> > i(result);
 
-      typedef typename BOOST_REGEX_DETAIL_NS::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, BOOST_REGEX_DETAIL_NS::string_out_iterator<std::basic_string<char_type> > >::type F;
+      typedef typename re_detail::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, re_detail::string_out_iterator<std::basic_string<char_type> > >::type F;
       F func(fmt);
 
       func(*this, i, flags);
@@ -382,7 +368,7 @@ public:
       if(m_is_singular)
          raise_logic_error();
       typedef ::boost::regex_traits_wrapper<typename RegexT::traits_type> traits_type;
-      typedef typename BOOST_REGEX_DETAIL_NS::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, OutputIterator, traits_type>::type F;
+      typedef typename re_detail::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, OutputIterator, traits_type>::type F;
       F func(fmt);
       return func(*this, out, flags, re.get_traits());
    }
@@ -395,9 +381,9 @@ public:
          raise_logic_error();
       typedef ::boost::regex_traits_wrapper<typename RegexT::traits_type> traits_type;
       std::basic_string<char_type> result;
-      BOOST_REGEX_DETAIL_NS::string_out_iterator<std::basic_string<char_type> > i(result);
+      re_detail::string_out_iterator<std::basic_string<char_type> > i(result);
 
-      typedef typename BOOST_REGEX_DETAIL_NS::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, BOOST_REGEX_DETAIL_NS::string_out_iterator<std::basic_string<char_type> >, traits_type >::type F;
+      typedef typename re_detail::compute_functor_type<Functor, match_results<BidiIterator, Allocator>, re_detail::string_out_iterator<std::basic_string<char_type> >, traits_type >::type F;
       F func(fmt);
 
       func(*this, i, flags, re.get_traits());
@@ -474,7 +460,7 @@ public:
    // private access functions:
    void BOOST_REGEX_CALL set_second(BidiIterator i)
    {
-      BOOST_REGEX_ASSERT(m_subs.size() > 2);
+      BOOST_ASSERT(m_subs.size() > 2);
       m_subs[2].second = i;
       m_subs[2].matched = true;
       m_subs[0].first = i;
@@ -490,7 +476,7 @@ public:
       if(pos)
          m_last_closed_paren = static_cast<int>(pos);
       pos += 2;
-      BOOST_REGEX_ASSERT(m_subs.size() > pos);
+      BOOST_ASSERT(m_subs.size() > pos);
       m_subs[pos].second = i;
       m_subs[pos].matched = m;
       if((pos == 2) && !escape_k)
@@ -531,7 +517,7 @@ public:
    }
    void BOOST_REGEX_CALL set_first(BidiIterator i)
    {
-      BOOST_REGEX_ASSERT(m_subs.size() > 2);
+      BOOST_ASSERT(m_subs.size() > 2);
       // set up prefix:
       m_subs[1].second = i;
       m_subs[1].matched = (m_subs[1].first != i);
@@ -546,7 +532,7 @@ public:
    }
    void BOOST_REGEX_CALL set_first(BidiIterator i, size_type pos, bool escape_k = false)
    {
-      BOOST_REGEX_ASSERT(pos+2 < m_subs.size());
+      BOOST_ASSERT(pos+2 < m_subs.size());
       if(pos || escape_k)
       {
          m_subs[pos+2].first = i;
@@ -572,7 +558,7 @@ private:
    //
    static void raise_logic_error()
    {
-      std::logic_error e("Attempt to access an uninitialized boost::match_results<> class.");
+      std::logic_error e("Attempt to access an uninitialzed boost::match_results<> class.");
       boost::throw_exception(e);
    }
 
@@ -648,17 +634,17 @@ void BOOST_REGEX_CALL match_results<BidiIterator, Allocator>::maybe_assign(const
          // p1 better than p2, and no need to calculate distances:
          return;
       }
-      base1 = ::boost::BOOST_REGEX_DETAIL_NS::distance(l_base, p1->first);
-      base2 = ::boost::BOOST_REGEX_DETAIL_NS::distance(l_base, p2->first);
-      BOOST_REGEX_ASSERT(base1 >= 0);
-      BOOST_REGEX_ASSERT(base2 >= 0);
+      base1 = ::boost::re_detail::distance(l_base, p1->first);
+      base2 = ::boost::re_detail::distance(l_base, p2->first);
+      BOOST_ASSERT(base1 >= 0);
+      BOOST_ASSERT(base2 >= 0);
       if(base1 < base2) return;
       if(base2 < base1) break;
 
-      len1 = ::boost::BOOST_REGEX_DETAIL_NS::distance((BidiIterator)p1->first, (BidiIterator)p1->second);
-      len2 = ::boost::BOOST_REGEX_DETAIL_NS::distance((BidiIterator)p2->first, (BidiIterator)p2->second);
-      BOOST_REGEX_ASSERT(len1 >= 0);
-      BOOST_REGEX_ASSERT(len2 >= 0);
+      len1 = ::boost::re_detail::distance((BidiIterator)p1->first, (BidiIterator)p1->second);
+      len2 = ::boost::re_detail::distance((BidiIterator)p2->first, (BidiIterator)p2->second);
+      BOOST_ASSERT(len1 >= 0);
+      BOOST_ASSERT(len2 >= 0);
       if((len1 != len2) || ((p1->matched == false) && (p2->matched == true)))
          break;
       if((p1->matched == true) && (p2->matched == false))

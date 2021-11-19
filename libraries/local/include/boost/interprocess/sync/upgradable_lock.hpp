@@ -16,11 +16,7 @@
 #ifndef BOOST_INTERPROCESS_UPGRADABLE_LOCK_HPP
 #define BOOST_INTERPROCESS_UPGRADABLE_LOCK_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -32,7 +28,8 @@
 #include <boost/interprocess/detail/type_traits.hpp>
 
 #include <boost/interprocess/exceptions.hpp>
-#include <boost/move/utility_core.hpp>
+#include <boost/move/move.hpp>
+#include <boost/interprocess/detail/posix_time_types_wrk.hpp>
 
 //!\file
 //!Describes the upgradable_lock class that serves to acquire the upgradable
@@ -55,18 +52,18 @@ class upgradable_lock
 {
    public:
    typedef UpgradableMutex mutex_type;
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    private:
    typedef upgradable_lock<UpgradableMutex> this_type;
    explicit upgradable_lock(scoped_lock<mutex_type>&);
    typedef bool this_type::*unspecified_bool_type;
    BOOST_MOVABLE_BUT_NOT_COPYABLE(upgradable_lock)
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
    public:
 
    //!Effects: Default constructs a upgradable_lock.
    //!Postconditions: owns() == false and mutex() == 0.
-   upgradable_lock() BOOST_NOEXCEPT
+   upgradable_lock()
       : mp_mutex(0), m_locked(false)
    {}
 
@@ -108,8 +105,7 @@ class upgradable_lock
    //!   handles recursive locking depends upon the mutex. If the mutex_type
    //!   does not support timed_lock_upgradable, this constructor will fail
    //!   at compile time if instantiated, but otherwise have no effect.
-   template<class TimePoint>
-   upgradable_lock(mutex_type& m, const TimePoint& abs_time)
+   upgradable_lock(mutex_type& m, const boost::posix_time::ptime& abs_time)
       : mp_mutex(&m), m_locked(false)
    {  m_locked = mp_mutex->timed_lock_upgradable(abs_time);  }
 
@@ -123,7 +119,7 @@ class upgradable_lock
    //!   signature. An non-moved upgradable_lock can be moved with the
    //!   expression: "boost::move(lock);". This constructor does not alter the
    //!   state of the mutex, only potentially who owns it.
-   upgradable_lock(BOOST_RV_REF(upgradable_lock<mutex_type>) upgr) BOOST_NOEXCEPT
+   upgradable_lock(BOOST_RV_REF(upgradable_lock<mutex_type>) upgr)
       : mp_mutex(0), m_locked(upgr.owns())
    {  mp_mutex = upgr.release(); }
 
@@ -243,8 +239,7 @@ class upgradable_lock
    //!   specified time. If the mutex_type does not support
    //!   timed_lock_upgradable(abs_time), this function will fail at compile
    //!   time if instantiated, but otherwise have no effect.
-   template<class TimePoint>
-   bool timed_lock(const TimePoint& abs_time)
+   bool timed_lock(const boost::posix_time::ptime& abs_time)
    {
       if(!mp_mutex || m_locked)
          throw lock_exception();
@@ -267,23 +262,23 @@ class upgradable_lock
 
    //!Effects: Returns true if this scoped_lock has acquired the
    //!referenced mutex.
-   bool owns() const BOOST_NOEXCEPT
+   bool owns() const
    {  return m_locked && mp_mutex;  }
 
    //!Conversion to bool.
    //!Returns owns().
-   operator unspecified_bool_type() const BOOST_NOEXCEPT
+   operator unspecified_bool_type() const
    {  return m_locked? &this_type::m_locked : 0;   }
 
    //!Effects: Returns a pointer to the referenced mutex, or 0 if
    //!there is no mutex to reference.
-   mutex_type* mutex() const BOOST_NOEXCEPT
+   mutex_type* mutex() const
    {  return  mp_mutex;  }
 
    //!Effects: Returns a pointer to the referenced mutex, or 0 if there is no
    //!   mutex to reference.
    //!Postconditions: mutex() == 0 and owns() == false.
-   mutex_type* release() BOOST_NOEXCEPT
+   mutex_type* release()
    {
       mutex_type *mut = mp_mutex;
       mp_mutex = 0;
@@ -293,17 +288,17 @@ class upgradable_lock
 
    //!Effects: Swaps state with moved lock.
    //!Throws: Nothing.
-   void swap(upgradable_lock<mutex_type> &other) BOOST_NOEXCEPT
+   void swap(upgradable_lock<mutex_type> &other)
    {
-      (simple_swap)(mp_mutex, other.mp_mutex);
-      (simple_swap)(m_locked, other.m_locked);
+      std::swap(mp_mutex, other.mp_mutex);
+      std::swap(m_locked, other.m_locked);
    }
 
-   #if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+   /// @cond
    private:
    mutex_type *mp_mutex;
    bool        m_locked;
-   #endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+   /// @endcond
 };
 
 } // namespace interprocess

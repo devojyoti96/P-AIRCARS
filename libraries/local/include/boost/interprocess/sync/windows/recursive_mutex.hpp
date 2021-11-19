@@ -11,11 +11,7 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_WINDOWS_RECURSIVE_MUTEX_HPP
 #define BOOST_INTERPROCESS_DETAIL_WINDOWS_RECURSIVE_MUTEX_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -28,13 +24,13 @@ namespace interprocess {
 namespace ipcdetail {
 
 //Windows mutex is already recursive
-class winapi_recursive_mutex
-   : public winapi_mutex
+class windows_recursive_mutex
+   : public windows_mutex
 {
-   winapi_recursive_mutex(const winapi_recursive_mutex &);
-   winapi_recursive_mutex &operator=(const winapi_recursive_mutex &);
+   windows_recursive_mutex(const windows_recursive_mutex &);
+   windows_recursive_mutex &operator=(const windows_recursive_mutex &);
    public:
-   winapi_recursive_mutex() : winapi_mutex() {}
+   windows_recursive_mutex() : windows_mutex() {}
 };
 
 }  //namespace ipcdetail {

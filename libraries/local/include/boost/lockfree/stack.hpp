@@ -1,4 +1,4 @@
-//  Copyright (C) 2008-2013 Tim Blechmann
+//  Copyright (C) 2008, 2009, 2010, 2011 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -9,24 +9,18 @@
 
 #include <boost/assert.hpp>
 #include <boost/checked_delete.hpp>
-#include <boost/core/allocator_access.hpp>
-#include <boost/core/no_exceptions_support.hpp>
 #include <boost/integer_traits.hpp>
+#include <boost/noncopyable.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/type_traits/is_copy_constructible.hpp>
+#include <boost/type_traits/has_trivial_assign.hpp>
+#include <boost/type_traits/has_trivial_destructor.hpp>
 
 #include <boost/lockfree/detail/atomic.hpp>
 #include <boost/lockfree/detail/copy_payload.hpp>
 #include <boost/lockfree/detail/freelist.hpp>
 #include <boost/lockfree/detail/parameter.hpp>
 #include <boost/lockfree/detail/tagged_ptr.hpp>
-
-#include <boost/lockfree/lockfree_forward.hpp>
-
-#ifdef BOOST_HAS_PRAGMA_ONCE
-#pragma once
-#endif
 
 namespace boost    {
 namespace lockfree {
@@ -61,22 +55,23 @@ typedef parameter::parameters<boost::parameter::optional<tag::allocator>,
  *  \b Requirements:
  *  - T must have a copy constructor
  * */
-#ifdef BOOST_NO_CXX11_VARIADIC_TEMPLATES
-template <typename T, class A0, class A1, class A2>
+#ifndef BOOST_DOXYGEN_INVOKED
+template <typename T,
+          class A0 = boost::parameter::void_,
+          class A1 = boost::parameter::void_,
+          class A2 = boost::parameter::void_>
 #else
-template <typename T, typename ...Options>
+template <typename T, ...Options>
 #endif
-class stack
+class stack:
+    boost::noncopyable
 {
 private:
 #ifndef BOOST_DOXYGEN_INVOKED
-    BOOST_STATIC_ASSERT(boost::is_copy_constructible<T>::value);
+    BOOST_STATIC_ASSERT(boost::has_trivial_assign<T>::value);
+    BOOST_STATIC_ASSERT(boost::has_trivial_destructor<T>::value);
 
-#ifdef BOOST_NO_CXX11_VARIADIC_TEMPLATES
     typedef typename detail::stack_signature::bind<A0, A1, A2>::type bound_args;
-#else
-    typedef typename detail::stack_signature::bind<Options...>::type bound_args;
-#endif
 
     static const bool has_capacity = detail::extract_capacity<bound_args>::has_capacity;
     static const size_t capacity = detail::extract_capacity<bound_args>::capacity;
@@ -113,9 +108,6 @@ private:
 
 #endif
 
-    BOOST_DELETED_FUNCTION(stack(stack const&))
-    BOOST_DELETED_FUNCTION(stack& operator= (stack const&))
-
 public:
     typedef T value_type;
     typedef typename implementation_defined::allocator allocator;
@@ -135,72 +127,48 @@ public:
         return tos.is_lock_free() && pool.is_lock_free();
     }
 
-    /** Construct a fixed-sized stack
-     *
-     *  \pre Must specify a capacity<> argument
-     * */
+    //! Construct stack
+    // @{
     stack(void):
         pool(node_allocator(), capacity)
     {
-        // Don't use BOOST_STATIC_ASSERT() here since it will be evaluated when compiling
-        // this function and this function may be compiled even when it isn't being used.
         BOOST_ASSERT(has_capacity);
         initialize();
     }
 
-    /** Construct a fixed-sized stack with a custom allocator
-     *
-     *  \pre Must specify a capacity<> argument
-     * */
     template <typename U>
-    explicit stack(typename boost::allocator_rebind<node_allocator, U>::type const & alloc):
+    explicit stack(typename node_allocator::template rebind<U>::other const & alloc):
         pool(alloc, capacity)
     {
         BOOST_STATIC_ASSERT(has_capacity);
         initialize();
     }
 
-    /** Construct a fixed-sized stack with a custom allocator
-     *
-     *  \pre Must specify a capacity<> argument
-     * */
     explicit stack(allocator const & alloc):
         pool(alloc, capacity)
     {
-        // Don't use BOOST_STATIC_ASSERT() here since it will be evaluated when compiling
-        // this function and this function may be compiled even when it isn't being used.
         BOOST_ASSERT(has_capacity);
         initialize();
     }
+    // @}
 
-    /** Construct a variable-sized stack
-     *
-     *  Allocate n nodes initially for the freelist
-     *
-     *  \pre Must \b not specify a capacity<> argument
-     * */
+    //! Construct stack, allocate n nodes for the freelist.
+    // @{
     explicit stack(size_type n):
         pool(node_allocator(), n)
     {
-        // Don't use BOOST_STATIC_ASSERT() here since it will be evaluated when compiling
-        // this function and this function may be compiled even when it isn't being used.
         BOOST_ASSERT(!has_capacity);
         initialize();
     }
 
-    /** Construct a variable-sized stack with a custom allocator
-     *
-     *  Allocate n nodes initially for the freelist
-     *
-     *  \pre Must \b not specify a capacity<> argument
-     * */
     template <typename U>
-    stack(size_type n, typename boost::allocator_rebind<node_allocator, U>::type const & alloc):
+    stack(size_type n, typename node_allocator::template rebind<U>::other const & alloc):
         pool(alloc, n)
     {
         BOOST_STATIC_ASSERT(!has_capacity);
         initialize();
     }
+    // @}
 
     /** Allocate n nodes for freelist
      *
@@ -210,10 +178,8 @@ public:
      * */
     void reserve(size_type n)
     {
-        // Don't use BOOST_STATIC_ASSERT() here since it will be evaluated when compiling
-        // this function and this function may be compiled even when it isn't being used.
-        BOOST_ASSERT(!has_capacity);
-        pool.template reserve<true>(n);
+        BOOST_STATIC_ASSERT(!has_capacity);
+        pool.reserve(n);
     }
 
     /** Allocate n nodes for freelist
@@ -224,10 +190,8 @@ public:
      * */
     void reserve_unsafe(size_type n)
     {
-        // Don't use BOOST_STATIC_ASSERT() here since it will be evaluated when compiling
-        // this function and this function may be compiled even when it isn't being used.
-        BOOST_ASSERT(!has_capacity);
-        pool.template reserve<false>(n);
+        BOOST_STATIC_ASSERT(!has_capacity);
+        pool.reserve_unsafe(n);
     }
 
     /** Destroys stack, free all nodes from freelist.
@@ -266,7 +230,7 @@ private:
         tagged_node_handle old_tos = tos.load(detail::memory_order_relaxed);
 
         tagged_node_handle new_tos (pool.get_handle(new_top_node), old_tos.get_tag());
-        end_node->next = pool.get_handle(old_tos);
+        end_node->next = pool.get_pointer(old_tos);
 
         tos.store(new_tos, memory_order_relaxed);
     }
@@ -284,7 +248,7 @@ private:
         node * new_top_node = end_node;
         end_node->next = NULL;
 
-        BOOST_TRY {
+        try {
             /* link nodes */
             for (; it != end; ++it) {
                 node * newnode = pool.template construct<Threadsafe, Bounded>(*it);
@@ -293,16 +257,14 @@ private:
                 newnode->next = new_top_node;
                 new_top_node = newnode;
             }
-        } BOOST_CATCH (...) {
+        } catch (...) {
             for (node * current_node = new_top_node; current_node != NULL;) {
                 node * next = current_node->next;
                 pool.template destruct<Threadsafe>(current_node);
                 current_node = next;
             }
-            BOOST_RETHROW;
+            throw;
         }
-        BOOST_CATCH_END
-
         ret = it;
         return make_tuple(new_top_node, end_node);
     }
@@ -463,9 +425,21 @@ public:
     bool pop(U & ret)
     {
         BOOST_STATIC_ASSERT((boost::is_convertible<T, U>::value));
-        detail::consume_via_copy<U> consumer(ret);
+        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
 
-        return consume_one(consumer);
+        for (;;) {
+            node * old_tos_pointer = pool.get_pointer(old_tos);
+            if (!old_tos_pointer)
+                return false;
+
+            tagged_node_handle new_tos(old_tos_pointer->next, old_tos.get_tag() + 1);
+
+            if (tos.compare_exchange_weak(old_tos, new_tos)) {
+                detail::copy_payload(old_tos_pointer->v, ret);
+                pool.template destruct<true>(old_tos);
+                return true;
+            }
+        }
     }
 
 
@@ -502,7 +476,7 @@ public:
             return false;
 
         node * new_tos_ptr = pool.get_pointer(old_tos_pointer->next);
-        tagged_node_handle new_tos(pool.get_handle(new_tos_ptr), old_tos.get_next_tag());
+        tagged_node_handle new_tos(pool.get_handle(new_tos_ptr), old_tos.get_tag() + 1);
 
         tos.store(new_tos, memory_order_relaxed);
         detail::copy_payload(old_tos_pointer->v, ret);
@@ -510,293 +484,6 @@ public:
         return true;
     }
 
-    /** consumes one element via a functor
-     *
-     *  pops one element from the stack and applies the functor on this object
-     *
-     * \returns true, if one element was consumed
-     *
-     * \note Thread-safe and non-blocking, if functor is thread-safe and non-blocking
-     * */
-    template <typename Functor>
-    bool consume_one(Functor & f)
-    {
-        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
-
-        for (;;) {
-            node * old_tos_pointer = pool.get_pointer(old_tos);
-            if (!old_tos_pointer)
-                return false;
-
-            tagged_node_handle new_tos(old_tos_pointer->next, old_tos.get_next_tag());
-
-            if (tos.compare_exchange_weak(old_tos, new_tos)) {
-                f(old_tos_pointer->v);
-                pool.template destruct<true>(old_tos);
-                return true;
-            }
-        }
-    }
-
-    /// \copydoc boost::lockfree::stack::consume_one(Functor & rhs)
-    template <typename Functor>
-    bool consume_one(Functor const & f)
-    {
-        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
-
-        for (;;) {
-            node * old_tos_pointer = pool.get_pointer(old_tos);
-            if (!old_tos_pointer)
-                return false;
-
-            tagged_node_handle new_tos(old_tos_pointer->next, old_tos.get_next_tag());
-
-            if (tos.compare_exchange_weak(old_tos, new_tos)) {
-                f(old_tos_pointer->v);
-                pool.template destruct<true>(old_tos);
-                return true;
-            }
-        }
-    }
-
-    /** consumes all elements via a functor
-     *
-     * sequentially pops all elements from the stack and applies the functor on each object
-     *
-     * \returns number of elements that are consumed
-     *
-     * \note Thread-safe and non-blocking, if functor is thread-safe and non-blocking
-     * */
-    template <typename Functor>
-    size_t consume_all(Functor & f)
-    {
-        size_t element_count = 0;
-        while (consume_one(f))
-            element_count += 1;
-
-        return element_count;
-    }
-
-    /// \copydoc boost::lockfree::stack::consume_all(Functor & rhs)
-    template <typename Functor>
-    size_t consume_all(Functor const & f)
-    {
-        size_t element_count = 0;
-        while (consume_one(f))
-            element_count += 1;
-
-        return element_count;
-    }
-
-    /** consumes all elements via a functor
-     *
-     * atomically pops all elements from the stack and applies the functor on each object
-     *
-     * \returns number of elements that are consumed
-     *
-     * \note Thread-safe and non-blocking, if functor is thread-safe and non-blocking
-     * */
-    template <typename Functor>
-    size_t consume_all_atomic(Functor & f)
-    {
-        size_t element_count = 0;
-        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
-
-        for (;;) {
-            node * old_tos_pointer = pool.get_pointer(old_tos);
-            if (!old_tos_pointer)
-                return 0;
-
-            tagged_node_handle new_tos(pool.null_handle(), old_tos.get_next_tag());
-
-            if (tos.compare_exchange_weak(old_tos, new_tos))
-                break;
-        }
-
-        tagged_node_handle nodes_to_consume = old_tos;
-
-        for(;;) {
-            node * node_pointer = pool.get_pointer(nodes_to_consume);
-            f(node_pointer->v);
-            element_count += 1;
-
-            node * next_node = pool.get_pointer(node_pointer->next);
-
-            if (!next_node) {
-                pool.template destruct<true>(nodes_to_consume);
-                break;
-            }
-
-            tagged_node_handle next(pool.get_handle(next_node), nodes_to_consume.get_next_tag());
-            pool.template destruct<true>(nodes_to_consume);
-            nodes_to_consume = next;
-        }
-
-        return element_count;
-    }
-
-    /// \copydoc boost::lockfree::stack::consume_all_atomic(Functor & rhs)
-    template <typename Functor>
-    size_t consume_all_atomic(Functor const & f)
-    {
-        size_t element_count = 0;
-        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
-
-        for (;;) {
-            node * old_tos_pointer = pool.get_pointer(old_tos);
-            if (!old_tos_pointer)
-                return 0;
-
-            tagged_node_handle new_tos(pool.null_handle(), old_tos.get_next_tag());
-
-            if (tos.compare_exchange_weak(old_tos, new_tos))
-                break;
-        }
-
-        tagged_node_handle nodes_to_consume = old_tos;
-
-        for(;;) {
-            node * node_pointer = pool.get_pointer(nodes_to_consume);
-            f(node_pointer->v);
-            element_count += 1;
-
-            node * next_node = pool.get_pointer(node_pointer->next);
-
-            if (!next_node) {
-                pool.template destruct<true>(nodes_to_consume);
-                break;
-            }
-
-            tagged_node_handle next(pool.get_handle(next_node), nodes_to_consume.get_next_tag());
-            pool.template destruct<true>(nodes_to_consume);
-            nodes_to_consume = next;
-        }
-
-        return element_count;
-    }
-
-    /** consumes all elements via a functor
-     *
-     * atomically pops all elements from the stack and applies the functor on each object in reversed order
-     *
-     * \returns number of elements that are consumed
-     *
-     * \note Thread-safe and non-blocking, if functor is thread-safe and non-blocking
-     * */
-    template <typename Functor>
-    size_t consume_all_atomic_reversed(Functor & f)
-    {
-        size_t element_count = 0;
-        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
-
-        for (;;) {
-            node * old_tos_pointer = pool.get_pointer(old_tos);
-            if (!old_tos_pointer)
-                return 0;
-
-            tagged_node_handle new_tos(pool.null_handle(), old_tos.get_next_tag());
-
-            if (tos.compare_exchange_weak(old_tos, new_tos))
-                break;
-        }
-
-        tagged_node_handle nodes_to_consume = old_tos;
-
-        node * last_node_pointer = NULL;
-        tagged_node_handle nodes_in_reversed_order;
-        for(;;) {
-            node * node_pointer = pool.get_pointer(nodes_to_consume);
-            node * next_node    = pool.get_pointer(node_pointer->next);
-
-            node_pointer->next  = pool.get_handle(last_node_pointer);
-            last_node_pointer   = node_pointer;
-
-            if (!next_node) {
-                nodes_in_reversed_order = nodes_to_consume;
-                break;
-            }
-
-            tagged_node_handle next(pool.get_handle(next_node), nodes_to_consume.get_next_tag());
-            nodes_to_consume = next;
-        }
-
-        for(;;) {
-            node * node_pointer = pool.get_pointer(nodes_in_reversed_order);
-            f(node_pointer->v);
-            element_count += 1;
-
-            node * next_node = pool.get_pointer(node_pointer->next);
-
-            if (!next_node) {
-                pool.template destruct<true>(nodes_in_reversed_order);
-                break;
-            }
-
-            tagged_node_handle next(pool.get_handle(next_node), nodes_in_reversed_order.get_next_tag());
-            pool.template destruct<true>(nodes_in_reversed_order);
-            nodes_in_reversed_order = next;
-        }
-
-        return element_count;
-    }
-
-    /// \copydoc boost::lockfree::stack::consume_all_atomic_reversed(Functor & rhs)
-    template <typename Functor>
-    size_t consume_all_atomic_reversed(Functor const & f)
-    {
-        size_t element_count = 0;
-        tagged_node_handle old_tos = tos.load(detail::memory_order_consume);
-
-        for (;;) {
-            node * old_tos_pointer = pool.get_pointer(old_tos);
-            if (!old_tos_pointer)
-                return 0;
-
-            tagged_node_handle new_tos(pool.null_handle(), old_tos.get_next_tag());
-
-            if (tos.compare_exchange_weak(old_tos, new_tos))
-                break;
-        }
-
-        tagged_node_handle nodes_to_consume = old_tos;
-
-        node * last_node_pointer = NULL;
-        tagged_node_handle nodes_in_reversed_order;
-        for(;;) {
-            node * node_pointer = pool.get_pointer(nodes_to_consume);
-            node * next_node    = pool.get_pointer(node_pointer->next);
-
-            node_pointer->next  = pool.get_handle(last_node_pointer);
-            last_node_pointer   = node_pointer;
-
-            if (!next_node) {
-                nodes_in_reversed_order = nodes_to_consume;
-                break;
-            }
-
-            tagged_node_handle next(pool.get_handle(next_node), nodes_to_consume.get_next_tag());
-            nodes_to_consume = next;
-        }
-
-        for(;;) {
-            node * node_pointer = pool.get_pointer(nodes_in_reversed_order);
-            f(node_pointer->v);
-            element_count += 1;
-
-            node * next_node = pool.get_pointer(node_pointer->next);
-
-            if (!next_node) {
-                pool.template destruct<true>(nodes_in_reversed_order);
-                break;
-            }
-
-            tagged_node_handle next(pool.get_handle(next_node), nodes_in_reversed_order.get_next_tag());
-            pool.template destruct<true>(nodes_in_reversed_order);
-            nodes_in_reversed_order = next;
-        }
-
-        return element_count;
-    }
     /**
      * \return true, if stack is empty.
      *

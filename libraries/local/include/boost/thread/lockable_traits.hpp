@@ -11,12 +11,7 @@
 
 #include <boost/assert.hpp>
 #include <boost/detail/workaround.hpp>
-#include <boost/type_traits/integral_constant.hpp>
-#ifdef BOOST_NO_CXX11_SFINAE_EXPR
 #include <boost/type_traits/is_class.hpp>
-#else
-#include <boost/type_traits/declval.hpp>
-#endif
 
 #include <boost/config/abi_prefix.hpp>
 
@@ -38,7 +33,6 @@ namespace boost
 #ifndef BOOST_THREAD_NO_AUTO_DETECT_MUTEX_TYPES
     namespace detail
     {
-#ifdef BOOST_NO_CXX11_SFINAE_EXPR
 #define BOOST_THREAD_DEFINE_HAS_MEMBER_CALLED(member_name)                     \
         template<typename T, bool=boost::is_class<T>::value>            \
         struct has_member_called_##member_name                          \
@@ -148,31 +142,6 @@ namespace boost
         BOOST_STATIC_CONSTANT(
             bool,value=sizeof(has_member_try_lock<T>::has_member(&T::try_lock))==sizeof(true_type));
       };
-#else
-      template<typename T,typename Enabled=void>
-      struct has_member_lock : false_type {};
-
-      template<typename T>
-      struct has_member_lock<T,
-          decltype(void(boost::declval<T&>().lock()))
-      > : true_type {};
-
-      template<typename T,typename Enabled=void>
-      struct has_member_unlock : false_type {};
-
-      template<typename T>
-      struct has_member_unlock<T,
-          decltype(void(boost::declval<T&>().unlock()))
-      > : true_type {};
-
-      template<typename T,typename Enabled=bool>
-      struct has_member_try_lock : false_type {};
-
-      template<typename T>
-      struct has_member_try_lock<T,
-          decltype(bool(boost::declval<T&>().try_lock()))
-      > : true_type {};
-#endif
 
     }
 
@@ -204,15 +173,10 @@ namespace boost
 #endif
 
     template<typename T>
-    struct is_recursive_mutex_sur_parole
+    struct is_recursive_mutex_sur_parolle
     {
       BOOST_STATIC_CONSTANT(bool, value = false);
     };
-    template<typename T>
-    struct is_recursive_mutex_sur_parolle : is_recursive_mutex_sur_parole<T>
-    {
-    };
-
     template<typename T>
     struct is_recursive_basic_lockable
     {

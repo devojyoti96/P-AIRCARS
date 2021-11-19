@@ -171,9 +171,8 @@ namespace boost { namespace polygon{
         pts.push_back(he1.second);
         std::set<Point>& segmentpts = intersection_points[(*outer).second];
         for(typename std::set<Point>::iterator itr = segmentpts.begin(); itr != segmentpts.end(); ++itr) {
-          if ((*itr).y() >= min_y) {
+          if((*itr).y() > min_y - 1)
             pts.push_back(*itr);
-          }
         }
         bool have_first_y = he1.first.y() >= min_y && he1.second.y() >= min_y;
         for(typename std::vector<std::pair<half_edge, segment_id> >::iterator inner = outer;
@@ -207,7 +206,7 @@ namespace boost { namespace polygon{
           outer != data.end(); ++outer) {
         const half_edge& he1 = (*outer).first;
         segment_id id1 = (*outer).second;
-        //typedef rectangle_data<Unit> Rectangle;
+        typedef rectangle_data<Unit> Rectangle;
         //Rectangle rect1;
         //set_points(rect1, he1.first, he1.second);
         //typename std::vector<Point>::iterator itr = lower_bound(pts.begin(), newend, (std::min)(he1.first, he1.second));
@@ -316,11 +315,8 @@ namespace boost { namespace polygon{
       return true;
     }
 
-    class less_point_down_slope {
+    class less_point_down_slope : public std::binary_function<Point, Point, bool> {
     public:
-      typedef Point first_argument_type;
-      typedef Point second_argument_type;
-      typedef bool result_type;
       inline less_point_down_slope() {}
       inline bool operator () (const Point& pt1, const Point& pt2) const {
         if(pt1.get(HORIZONTAL) < pt2.get(HORIZONTAL)) return true;
@@ -1028,7 +1024,7 @@ namespace boost { namespace polygon{
 
     template <typename result_type, typename result_functor, typename iT>
     iT handle_input_events(result_type& result, result_functor rf, iT begin, iT end) {
-      //typedef typename high_precision_type<Unit>::type high_precision;
+      typedef typename high_precision_type<Unit>::type high_precision;
       //for each event
       property_map vertical_properties_above;
       property_map vertical_properties_below;
@@ -1042,8 +1038,7 @@ namespace boost { namespace polygon{
       bool first_iteration = true;
       //we want to return from inside the loop when we hit end or new x
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (push)
-#pragma warning (disable: 4127)
+#pragma warning( disable: 4127 )
 #endif
       while(true) {
         if(begin == end || (!first_iteration && ((*begin).first.first.get(VERTICAL) != y ||
@@ -1151,7 +1146,7 @@ namespace boost { namespace polygon{
         }
       }
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (pop)
+#pragma warning( default: 4127 )
 #endif
 
     }
@@ -1644,7 +1639,7 @@ namespace boost { namespace polygon{
 
     template <typename polygon_with_holes_type>
     void insert(const polygon_with_holes_type& polygon_with_holes_object, const property_type& property_value, bool is_hole,
-                polygon_with_holes_concept) {
+                polygon_with_holes_concept tag) {
       insert(polygon_with_holes_object, property_value, is_hole, polygon_concept());
       for(typename polygon_with_holes_traits<polygon_with_holes_type>::iterator_holes_type itr =
             begin_holes(polygon_with_holes_object);
@@ -2297,12 +2292,11 @@ pts.push_back(Point(12344171, 6695983 )); pts.push_back(Point(12287208, 6672388 
             stdcout << polys[j] << "\n";
             stdcout << polys90[j] << "\n";
 #ifdef BOOST_POLYGON_ICC
-#pragma warning (push)
 #pragma warning (disable:1572)
 #endif
             if(area(polys[j]) != area(polys90[j])) {
 #ifdef BOOST_POLYGON_ICC
-#pragma warning (pop)
+#pragma warning (default:1572)
 #endif
               stdcout << "merge failed with area mismatch\n";
               failed = true;
@@ -2545,7 +2539,6 @@ pts.push_back(Point(12344171, 6695983 )); pts.push_back(Point(12287208, 6672388 
         if(edge.second < edge.first) elem.second *= -1;
         if(scanline_base<Unit>::is_vertical(edge)) elem.second *= -1;
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (push)
 #pragma warning (disable: 4127)
 #endif
         if(op_type == 0) { //OR
@@ -2576,7 +2569,7 @@ pts.push_back(Point(12344171, 6695983 )); pts.push_back(Point(12287208, 6672388 
             }
           }
 #ifdef BOOST_POLYGON_MSVC
-#pragma warning (pop)
+#pragma warning (default: 4127)
 #endif
           if(right.size() == 1) {
             if((*(right.begin())) == 0) {

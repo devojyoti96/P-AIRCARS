@@ -19,11 +19,6 @@
 #include <boost/heap/detail/heap_node.hpp>
 #include <boost/heap/detail/stable_heap.hpp>
 #include <boost/heap/detail/tree_iterator.hpp>
-#include <boost/type_traits/integral_constant.hpp>
-
-#ifdef BOOST_HAS_PRAGMA_ONCE
-#pragma once
-#endif
 
 #ifndef BOOST_DOXYGEN_INVOKED
 #ifdef BOOST_HEAP_SANITYCHECKS
@@ -49,7 +44,7 @@ struct make_binomial_heap_base
 {
     static const bool constant_time_size = parameter::binding<Parspec,
                                                               tag::constant_time_size,
-                                                              boost::true_type
+                                                              boost::mpl::true_
                                                              >::type::value;
     typedef typename detail::make_heap_base<T, Parspec, constant_time_size>::type base_type;
     typedef typename detail::make_heap_base<T, Parspec, constant_time_size>::allocator_argument allocator_argument;
@@ -57,7 +52,7 @@ struct make_binomial_heap_base
 
     typedef parent_pointing_heap_node<typename base_type::internal_type> node_type;
 
-    typedef typename boost::allocator_rebind<allocator_argument, node_type>::type allocator_type;
+    typedef typename allocator_argument::template rebind<node_type>::other allocator_type;
 
     struct type:
         base_type,
@@ -132,7 +127,6 @@ class binomial_heap:
 
     typedef typename super_t::internal_type internal_type;
     typedef typename super_t::size_holder_type size_holder;
-    typedef typename super_t::stability_counter_type stability_counter_type;
     typedef typename base_maker::allocator_argument allocator_argument;
 
     template <typename Heap1, typename Heap2>
@@ -158,8 +152,8 @@ private:
         typedef typename base_maker::allocator_type allocator_type;
         typedef typename base_maker::node_type node;
 
-        typedef typename boost::allocator_pointer<allocator_type>::type node_pointer;
-        typedef typename boost::allocator_const_pointer<allocator_type>::type const_node_pointer;
+        typedef typename allocator_type::pointer node_pointer;
+        typedef typename allocator_type::const_pointer const_node_pointer;
 
         typedef detail::node_handle<node_pointer, super_t, reference> handle_type;
 
@@ -304,8 +298,7 @@ public:
     /// \copydoc boost::heap::priority_queue::max_size
     size_type max_size(void) const
     {
-        const allocator_type& alloc = *this;
-        return boost::allocator_max_size(alloc);
+        return allocator_type::max_size();
     }
 
     /// \copydoc boost::heap::priority_queue::clear
@@ -348,9 +341,9 @@ public:
      * */
     handle_type push(value_type const & v)
     {
-        allocator_type& alloc = *this;
-        node_pointer n = alloc.allocate(1);
+        node_pointer n = allocator_type::allocate(1);
         new(n) node_type(super_t::make_node(v));
+
         insert_node(trees.begin(), n);
 
         if (!top_element || super_t::operator()(top_element->value, n->value))
@@ -371,9 +364,9 @@ public:
     template <class... Args>
     handle_type emplace(Args&&... args)
     {
-        allocator_type& alloc = *this;
-        node_pointer n = alloc.allocate(1);
+        node_pointer n = allocator_type::allocate(1);
         new(n) node_type(super_t::make_node(std::forward<Args>(args)...));
+
         insert_node(trees.begin(), n);
 
         if (!top_element || super_t::operator()(top_element->value, n->value))
@@ -402,20 +395,11 @@ public:
 
         if (element->child_count()) {
             size_type sz = (1 << element->child_count()) - 1;
-
             binomial_heap children(value_comp(), element->children, sz);
-            if (trees.empty()) {
-                stability_counter_type stability_count = super_t::get_stability_count();
-                size_t size = constant_time_size ? size_holder::get_size()
-                                                 : 0;
+            if (trees.empty())
                 swap(children);
-                super_t::set_stability_count(stability_count);
-
-                if (constant_time_size)
-                    size_holder::set_size( size );
-            } else
+            else
                 merge_and_clear_nodes(children);
-
         }
 
         if (trees.empty())
@@ -424,8 +408,7 @@ public:
             update_top_element();
 
         element->~node_type();
-        allocator_type& alloc = *this;
-        alloc.deallocate(element, 1);
+        allocator_type::deallocate(element, 1);
         sanity_check();
     }
 
@@ -519,7 +502,8 @@ public:
 
         siftdown(n);
 
-        update_top_element();
+        if (n == top_element)
+            update_top_element();
     }
 
     /**
@@ -794,6 +778,7 @@ private:
                 trees.insert(it, *n);
             }
             n->add_child(parent);
+            BOOST_HEAP_ASSERT(parent->child_count() == n->child_count());
         }
     }
 

@@ -2,7 +2,7 @@
 // detail/descriptor_ops.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2021 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,12 +17,9 @@
 
 #include <boost/asio/detail/config.hpp>
 
-#if !defined(BOOST_ASIO_WINDOWS) \
-  && !defined(BOOST_ASIO_WINDOWS_RUNTIME) \
-  && !defined(__CYGWIN__)
+#if !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
 
 #include <cstddef>
-#include <boost/asio/error.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/asio/detail/socket_types.hpp>
 
@@ -51,18 +48,13 @@ enum
 
 typedef unsigned char state_type;
 
-inline void get_last_error(
-    boost::system::error_code& ec, bool is_error_condition)
+template <typename ReturnType>
+inline ReturnType error_wrapper(ReturnType return_value,
+    boost::system::error_code& ec)
 {
-  if (!is_error_condition)
-  {
-    ec.assign(0, ec.category());
-  }
-  else
-  {
-    ec = boost::system::error_code(errno,
-        boost::asio::error::get_system_category());
-  }
+  ec = boost::system::error_code(errno,
+      boost::asio::error::get_system_category());
+  return return_value;
 }
 
 BOOST_ASIO_DECL int open(const char* path, int flags,
@@ -82,28 +74,15 @@ typedef iovec buf;
 BOOST_ASIO_DECL std::size_t sync_read(int d, state_type state, buf* bufs,
     std::size_t count, bool all_empty, boost::system::error_code& ec);
 
-BOOST_ASIO_DECL std::size_t sync_read1(int d, state_type state, void* data,
-    std::size_t size, boost::system::error_code& ec);
-
 BOOST_ASIO_DECL bool non_blocking_read(int d, buf* bufs, std::size_t count,
-    boost::system::error_code& ec, std::size_t& bytes_transferred);
-
-BOOST_ASIO_DECL bool non_blocking_read1(int d, void* data, std::size_t size,
     boost::system::error_code& ec, std::size_t& bytes_transferred);
 
 BOOST_ASIO_DECL std::size_t sync_write(int d, state_type state,
     const buf* bufs, std::size_t count, bool all_empty,
     boost::system::error_code& ec);
 
-BOOST_ASIO_DECL std::size_t sync_write1(int d, state_type state,
-    const void* data, std::size_t size, boost::system::error_code& ec);
-
 BOOST_ASIO_DECL bool non_blocking_write(int d,
     const buf* bufs, std::size_t count,
-    boost::system::error_code& ec, std::size_t& bytes_transferred);
-
-BOOST_ASIO_DECL bool non_blocking_write1(int d,
-    const void* data, std::size_t size,
     boost::system::error_code& ec, std::size_t& bytes_transferred);
 
 BOOST_ASIO_DECL int ioctl(int d, state_type& state, long cmd,
@@ -120,9 +99,6 @@ BOOST_ASIO_DECL int poll_read(int d,
 BOOST_ASIO_DECL int poll_write(int d,
     state_type state, boost::system::error_code& ec);
 
-BOOST_ASIO_DECL int poll_error(int d,
-    state_type state, boost::system::error_code& ec);
-
 } // namespace descriptor_ops
 } // namespace detail
 } // namespace asio
@@ -134,8 +110,6 @@ BOOST_ASIO_DECL int poll_error(int d,
 # include <boost/asio/detail/impl/descriptor_ops.ipp>
 #endif // defined(BOOST_ASIO_HEADER_ONLY)
 
-#endif // !defined(BOOST_ASIO_WINDOWS)
-       //   && !defined(BOOST_ASIO_WINDOWS_RUNTIME)
-       //   && !defined(__CYGWIN__)
+#endif // !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
 
 #endif // BOOST_ASIO_DETAIL_DESCRIPTOR_OPS_HPP

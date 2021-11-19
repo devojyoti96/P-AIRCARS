@@ -4,10 +4,6 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
-// This file was modified by Oracle on 2020.
-// Modifications copyright (c) 2020, Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -19,23 +15,14 @@
 #define BOOST_GEOMETRY_ALGORITHMS_DETAIL_FOR_EACH_RANGE_HPP
 
 
-#include <type_traits>
-#include <utility>
-
+#include <boost/mpl/assert.hpp>
 #include <boost/concept/requires.hpp>
-#include <boost/core/addressof.hpp>
-#include <boost/range/begin.hpp>
-#include <boost/range/end.hpp>
 
-#include <boost/geometry/core/static_assert.hpp>
 #include <boost/geometry/core/tag.hpp>
 #include <boost/geometry/core/tag_cast.hpp>
-#include <boost/geometry/core/tags.hpp>
 
-#include <boost/geometry/util/type_traits.hpp>
-
+#include <boost/geometry/util/add_const_if_c.hpp>
 #include <boost/geometry/views/box_view.hpp>
-#include <boost/geometry/views/segment_view.hpp>
 
 
 namespace boost { namespace geometry
@@ -47,80 +34,43 @@ namespace detail { namespace for_each
 {
 
 
-template <typename Point>
-struct fe_range_point
-{
-    template <typename Functor>
-    static inline bool apply(Point& point, Functor&& f)
-    {
-        Point* ptr = boost::addressof(point);
-        return f(std::pair<Point*, Point*>(ptr, ptr + 1));
-    }
-};
-
-
-template <typename Segment>
-struct fe_range_segment
-{
-    template <typename Functor>
-    static inline bool apply(Segment& segment, Functor&& f)
-    {
-        return f(segment_view<typename std::remove_const<Segment>::type>(segment));
-    }
-};
-
-
-template <typename Range>
+template <typename Range, typename Actor, bool IsConst>
 struct fe_range_range
 {
-    template <typename Functor>
-    static inline bool apply(Range& range, Functor&& f)
+    static inline void apply(
+                    typename add_const_if_c<IsConst, Range>::type& range,
+                    Actor& actor)
     {
-        return f(range);
+        actor.apply(range);
     }
 };
 
 
-template <typename Polygon>
+template <typename Polygon, typename Actor, bool IsConst>
 struct fe_range_polygon
 {
-    template <typename Functor>
-    static inline bool apply(Polygon& polygon, Functor&& f)
+    static inline void apply(
+                    typename add_const_if_c<IsConst, Polygon>::type& polygon,
+                    Actor& actor)
     {
-        return f(exterior_ring(polygon));
+        actor.apply(exterior_ring(polygon));
 
         // TODO: If some flag says true, also do the inner rings.
         // for convex hull, it's not necessary
     }
 };
 
-template <typename Box>
+template <typename Box, typename Actor, bool IsConst>
 struct fe_range_box
 {
-    template <typename Functor>
-    static inline bool apply(Box& box, Functor&& f)
+    static inline void apply(
+                    typename add_const_if_c<IsConst, Box>::type& box,
+                    Actor& actor)
     {
-        return f(box_view<typename std::remove_const<Box>::type>(box));
+        actor.apply(box_view<Box>(box));
     }
 };
 
-template <typename Multi, typename SinglePolicy>
-struct fe_range_multi
-{
-    template <typename Functor>
-    static inline bool apply(Multi& multi, Functor&& f)
-    {
-        auto const end = boost::end(multi);
-        for (auto it = boost::begin(multi); it != end; ++it)
-        {
-            if (! SinglePolicy::apply(*it, f))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-};
 
 }} // namespace detail::for_each
 #endif // DOXYGEN_NO_DETAIL
@@ -133,90 +83,41 @@ namespace dispatch
 
 template
 <
+    typename Tag,
     typename Geometry,
-    typename Tag = typename tag<Geometry>::type
+    typename Actor,
+    bool IsConst
 >
 struct for_each_range
 {
-    BOOST_GEOMETRY_STATIC_ASSERT_FALSE(
-        "Not or not yet implemented for this Geometry type.",
-        Geometry, Tag);
+    BOOST_MPL_ASSERT_MSG
+        (
+            false, NOT_OR_NOT_YET_IMPLEMENTED_FOR_THIS_GEOMETRY_TYPE
+            , (types<Geometry>)
+        );
 };
 
 
-template <typename Point>
-struct for_each_range<Point, point_tag>
-    : detail::for_each::fe_range_point<Point>
+template <typename Linestring, typename Actor, bool IsConst>
+struct for_each_range<linestring_tag, Linestring, Actor, IsConst>
+    : detail::for_each::fe_range_range<Linestring, Actor, IsConst>
 {};
 
 
-template <typename Segment>
-struct for_each_range<Segment, segment_tag>
-    : detail::for_each::fe_range_segment<Segment>
+template <typename Ring, typename Actor, bool IsConst>
+struct for_each_range<ring_tag, Ring, Actor, IsConst>
+    : detail::for_each::fe_range_range<Ring, Actor, IsConst>
 {};
 
 
-template <typename Linestring>
-struct for_each_range<Linestring, linestring_tag>
-    : detail::for_each::fe_range_range<Linestring>
+template <typename Polygon, typename Actor, bool IsConst>
+struct for_each_range<polygon_tag, Polygon, Actor, IsConst>
+    : detail::for_each::fe_range_polygon<Polygon, Actor, IsConst>
 {};
 
-
-template <typename Ring>
-struct for_each_range<Ring, ring_tag>
-    : detail::for_each::fe_range_range<Ring>
-{};
-
-
-template <typename Polygon>
-struct for_each_range<Polygon, polygon_tag>
-    : detail::for_each::fe_range_polygon<Polygon>
-{};
-
-
-template <typename Box>
-struct for_each_range<Box, box_tag>
-    : detail::for_each::fe_range_box<Box>
-{};
-
-
-template <typename MultiPoint>
-struct for_each_range<MultiPoint, multi_point_tag>
-    : detail::for_each::fe_range_range<MultiPoint>
-{};
-
-
-template <typename Geometry>
-struct for_each_range<Geometry, multi_linestring_tag>
-    : detail::for_each::fe_range_multi
-        <
-            Geometry,
-            detail::for_each::fe_range_range
-                <
-                    util::transcribe_const_t
-                        <
-                            Geometry,
-                            typename boost::range_value<Geometry>::type
-                        >
-                >
-        >
-{};
-
-
-template <typename Geometry>
-struct for_each_range<Geometry, multi_polygon_tag>
-    : detail::for_each::fe_range_multi
-        <
-            Geometry,
-            detail::for_each::fe_range_polygon
-                <
-                    util::transcribe_const_t
-                        <
-                            Geometry,
-                            typename boost::range_value<Geometry>::type
-                        >
-                >
-        >
+template <typename Box, typename Actor, bool IsConst>
+struct for_each_range<box_tag, Box, Actor, IsConst>
+    : detail::for_each::fe_range_box<Box, Actor, IsConst>
 {};
 
 
@@ -226,55 +127,16 @@ struct for_each_range<Geometry, multi_polygon_tag>
 namespace detail
 {
 
-
-// Currently for Polygons p is checked only for exterior ring
-// Should this function be renamed?
-template <typename Geometry, typename UnaryPredicate>
-inline bool all_ranges_of(Geometry const& geometry, UnaryPredicate p)
+template <typename Geometry, typename Actor>
+inline void for_each_range(Geometry const& geometry, Actor& actor)
 {
-    return dispatch::for_each_range<Geometry const>::apply(geometry, p);
-}
-
-
-// Currently for Polygons p is checked only for exterior ring
-// Should this function be renamed?
-template <typename Geometry, typename UnaryPredicate>
-inline bool any_range_of(Geometry const& geometry, UnaryPredicate p)
-{
-    return ! dispatch::for_each_range<Geometry const>::apply(geometry,
-                [&](auto&& range)
-                {
-                    return ! p(range);
-                });
-}
-
-
-// Currently for Polygons p is checked only for exterior ring
-// Should this function be renamed?
-template <typename Geometry, typename UnaryPredicate>
-inline bool none_range_of(Geometry const& geometry, UnaryPredicate p)
-{
-    return dispatch::for_each_range<Geometry const>::apply(geometry,
-                [&](auto&& range)
-                {
-                    return ! p(range);
-                });
-}
-
-
-// Currently for Polygons f is called only for exterior ring
-// Should this function be renamed?
-template <typename Geometry, typename Functor>
-inline Functor for_each_range(Geometry const& geometry, Functor f)
-{
-    dispatch::for_each_range<Geometry const>::apply(geometry,
-        [&](auto&& range)
-        {
-            f(range);
-            // TODO: Implement separate function?
-            return true;
-        });
-    return f;
+    dispatch::for_each_range
+        <
+            typename tag<Geometry>::type,
+            Geometry,
+            Actor,
+            true
+        >::apply(geometry, actor);
 }
 
 

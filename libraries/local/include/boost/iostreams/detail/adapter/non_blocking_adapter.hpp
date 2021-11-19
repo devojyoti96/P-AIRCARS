@@ -28,7 +28,7 @@ public:
     { 
         std::streamsize result = 0;
         while (result < n) {
-            std::streamsize amt = iostreams::read(device_, s + result, n - result);
+            std::streamsize amt = iostreams::read(device_, s, n);
             if (amt == -1)
                 break;
             result += amt;
@@ -41,9 +41,6 @@ public:
         while (result < n) {
             std::streamsize amt = 
                 iostreams::write(device_, s + result, n - result);
-            // write errors, like EOF on read, need to be handled.
-            if (amt == -1)
-                break;
             result += amt;
         }
         return result;    

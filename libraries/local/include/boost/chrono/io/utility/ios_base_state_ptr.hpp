@@ -81,7 +81,6 @@ namespace boost
       explicit ios_state_ptr(std::ios_base& ios) :
         ios_(ios)
       {
-
       }
       /**
        * Nothing to do as xalloc index can not be removed.
@@ -164,10 +163,9 @@ namespace boost
        */
       T * release() BOOST_NOEXCEPT
       {
-        void*& pw = ios_.pword(index());
-        T* ptr = static_cast<T*> (pw);
-        pw = 0;
-        return ptr;
+        T const* f = get();
+        reset();
+        return f;
       }
 
       /**

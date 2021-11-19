@@ -4,8 +4,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef BOOST_SPIRIT_QI_DETAIL_ALTERNATIVE_FUNCTION_HPP
-#define BOOST_SPIRIT_QI_DETAIL_ALTERNATIVE_FUNCTION_HPP
+#if !defined(SPIRIT_ALTERNATIVE_FUNCTION_APRIL_23_2007_1046AM)
+#define SPIRIT_ALTERNATIVE_FUNCTION_APRIL_23_2007_1046AM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -23,14 +23,16 @@ namespace boost { namespace spirit { namespace qi { namespace detail
     template <typename Variant, typename Expected>
     struct find_substitute
     {
-        // Get the type from the variant that can be a substitute for Expected.
+        // Get the typr from the variant that can be a substitute for Expected.
         // If none is found, just return Expected
 
         typedef Variant variant_type;
         typedef typename variant_type::types types;
         typedef typename mpl::end<types>::type end;
 
-        typedef typename mpl::find<types, Expected>::type iter_1;
+        typedef typename
+            mpl::find_if<types, is_same<mpl::_1, Expected> >::type
+        iter_1;
 
         typedef typename
             mpl::eval_if<
@@ -54,10 +56,10 @@ namespace boost { namespace spirit { namespace qi { namespace detail
     struct alternative_function
     {
         alternative_function(
-            Iterator& first_, Iterator const& last_, Context& context_,
-            Skipper const& skipper_, Attribute& attr_)
-          : first(first_), last(last_), context(context_), skipper(skipper_),
-            attr(attr_)
+            Iterator& first, Iterator const& last, Context& context,
+            Skipper const& skipper, Attribute& attr)
+          : first(first), last(last), context(context), skipper(skipper),
+            attr(attr)
         {
         }
 
@@ -174,22 +176,23 @@ namespace boost { namespace spirit { namespace qi { namespace detail
         Skipper const& skipper;
         Attribute& attr;
 
+    private:
         // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(alternative_function& operator= (alternative_function const&))
+        alternative_function& operator= (alternative_function const&);
     };
 
     template <typename Iterator, typename Context, typename Skipper>
     struct alternative_function<Iterator, Context, Skipper, unused_type const>
     {
         alternative_function(
-            Iterator& first_, Iterator const& last_, Context& context_,
-            Skipper const& skipper_, unused_type)
-          : first(first_), last(last_), context(context_), skipper(skipper_)
+            Iterator& first, Iterator const& last, Context& context,
+            Skipper const& skipper, unused_type)
+          : first(first), last(last), context(context), skipper(skipper)
         {
         }
 
         template <typename Component>
-        bool operator()(Component const& component) const
+        bool operator()(Component const& component)
         {
             // return true if the parser succeeds
             return component.parse(first, last, context, skipper,
@@ -201,8 +204,9 @@ namespace boost { namespace spirit { namespace qi { namespace detail
         Context& context;
         Skipper const& skipper;
 
+    private:
         // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(alternative_function& operator= (alternative_function const&))
+        alternative_function& operator= (alternative_function const&);
     };
 
 }}}}

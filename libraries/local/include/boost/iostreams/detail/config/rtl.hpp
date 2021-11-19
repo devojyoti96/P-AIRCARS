@@ -23,7 +23,7 @@
 #include <boost/iostreams/detail/config/windows_posix.hpp>
 
 // Handle open, close, read, and write
-#ifdef BOOST_BORLANDC
+#ifdef __BORLANDC__
 # define BOOST_IOSTREAMS_RTL(x) BOOST_JOIN(_rtl_, x)
 #elif defined BOOST_IOSTREAMS_WINDOWS
 # define BOOST_IOSTREAMS_RTL(x) BOOST_JOIN(_, x)

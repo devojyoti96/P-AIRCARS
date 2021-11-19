@@ -13,11 +13,7 @@
 #ifndef BOOST_INTERPROCESS_DELETER_HPP
 #define BOOST_INTERPROCESS_DELETER_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if (defined _MSC_VER) && (_MSC_VER >= 1200)
 #  pragma once
 #endif
 
@@ -52,7 +48,7 @@ class deleter
    segment_manager_pointer mp_mngr;
 
    public:
-   deleter(segment_manager_pointer pmngr) BOOST_NOEXCEPT
+   deleter(segment_manager_pointer pmngr)
       :  mp_mngr(pmngr)
    {}
 

@@ -35,17 +35,11 @@
 
 #include <utility> // needed for the assignment from pair to tuple
 
-#include <boost/type_traits/cv_traits.hpp>
-#include <boost/type_traits/function_traits.hpp>
-#include <boost/type_traits/integral_constant.hpp>
-#include <boost/utility/swap.hpp>
+#include "boost/type_traits/cv_traits.hpp"
+#include "boost/type_traits/function_traits.hpp"
+#include "boost/utility/swap.hpp"
 
-#include <boost/detail/workaround.hpp> // needed for BOOST_WORKAROUND
-
-#if defined(BOOST_GCC) && (BOOST_GCC >= 40700)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#endif
+#include "boost/detail/workaround.hpp" // needed for BOOST_WORKAROUND
 
 namespace boost {
 namespace tuples {
@@ -141,7 +135,7 @@ private:
   typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
       apply<T>::type::head_type unqualified_type;
 public:
-#if BOOST_WORKAROUND(BOOST_BORLANDC,<0x600)
+#if BOOST_WORKAROUND(__BORLANDC__,<0x600)
   typedef const unqualified_type type;
 #else
   typedef BOOST_DEDUCED_TYPENAME boost::add_const<unqualified_type>::type type;
@@ -214,7 +208,7 @@ template<int N, class HT, class TT>
 inline typename access_traits<
                   typename element<N, cons<HT, TT> >::type
                 >::non_const_type
-get(cons<HT, TT>& c) {
+get(cons<HT, TT>& c BOOST_APPEND_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) {
   typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
       apply<cons<HT, TT> > impl;
   typedef BOOST_DEDUCED_TYPENAME impl::type cons_element;
@@ -228,9 +222,10 @@ template<int N, class HT, class TT>
 inline typename access_traits<
                   typename element<N, cons<HT, TT> >::type
                 >::const_type
-get(const cons<HT, TT>& c) {
+get(const cons<HT, TT>& c BOOST_APPEND_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) {
   typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
       apply<cons<HT, TT> > impl;
+  typedef BOOST_DEDUCED_TYPENAME impl::type cons_element;
   return impl::call(c).head;
 }
 
@@ -310,7 +305,6 @@ struct cons {
       tail (t2, t3, t4, t5, t6, t7, t8, t9, t10, detail::cnull())
       {}
 
-  cons( const cons& u ) : head(u.head), tail(u.tail) {}
 
   template <class HT2, class TT2>
   cons( const cons<HT2, TT2>& u ) : head(u.head), tail(u.tail) {}
@@ -390,8 +384,6 @@ struct cons<HT, null_type> {
        const null_type&, const null_type&, const null_type&)
   : head () {}
 
-  cons( const cons& u ) : head(u.head) {}
-
   template <class HT2>
   cons( const cons<HT2, null_type>& u ) : head(u.head) {}
 
@@ -407,7 +399,7 @@ struct cons<HT, null_type> {
   typename access_traits<
              typename element<N, self_type>::type
             >::non_const_type
-  get() {
+  get(BOOST_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) {
     return boost::tuples::get<N>(*this);
   }
 
@@ -415,7 +407,7 @@ struct cons<HT, null_type> {
   typename access_traits<
              typename element<N, self_type>::type
            >::const_type
-  get() const {
+  get(BOOST_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) const {
     return boost::tuples::get<N>(*this);
   }
 
@@ -424,28 +416,28 @@ struct cons<HT, null_type> {
 // templates for finding out the length of the tuple -------------------
 
 template<class T>
-struct length: boost::integral_constant<int, 1 + length<typename T::tail_type>::value>
-{
+struct length  {
+  BOOST_STATIC_CONSTANT(int, value = 1 + length<typename T::tail_type>::value);
 };
 
 template<>
-struct length<tuple<> >: boost::integral_constant<int, 0>
-{
+struct length<tuple<> > {
+  BOOST_STATIC_CONSTANT(int, value = 0);
 };
 
 template<>
-struct length<tuple<> const>: boost::integral_constant<int, 0>
-{
+struct length<tuple<> const> {
+  BOOST_STATIC_CONSTANT(int, value = 0);
 };
 
 template<>
-struct length<null_type>: boost::integral_constant<int, 0>
-{
+struct length<null_type> {
+  BOOST_STATIC_CONSTANT(int, value = 0);
 };
 
 template<>
-struct length<null_type const>: boost::integral_constant<int, 0>
-{
+struct length<null_type const> {
+  BOOST_STATIC_CONSTANT(int, value = 0);
 };
 
 namespace detail {
@@ -488,7 +480,7 @@ public:
 // access_traits<T>::parameter_type takes non-reference types as const T&
   tuple() {}
 
-  explicit tuple(typename access_traits<T0>::parameter_type t0)
+  tuple(typename access_traits<T0>::parameter_type t0)
     : inherited(t0, detail::cnull(), detail::cnull(), detail::cnull(),
                 detail::cnull(), detail::cnull(), detail::cnull(),
                 detail::cnull(), detail::cnull(), detail::cnull()) {}
@@ -983,9 +975,6 @@ inline void swap(tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>& lhs,
 } // end of namespace boost
 
 
-#if defined(BOOST_GCC) && (BOOST_GCC >= 40700)
-#pragma GCC diagnostic pop
-#endif
-
-
 #endif // BOOST_TUPLE_BASIC_HPP
+
+

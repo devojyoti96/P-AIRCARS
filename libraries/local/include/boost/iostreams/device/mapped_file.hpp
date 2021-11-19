@@ -7,7 +7,7 @@
 #ifndef BOOST_IOSTREAMS_MAPPED_FILE_HPP_INCLUDED
 #define BOOST_IOSTREAMS_MAPPED_FILE_HPP_INCLUDED
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
@@ -32,10 +32,6 @@
 #include <boost/type_traits/is_same.hpp>
 
 // Must come last.
-#if defined(BOOST_MSVC)
-# pragma warning(push)
-# pragma warning(disable:4251)  // Missing DLL interface for shared_ptr
-#endif
 #include <boost/config/abi_prefix.hpp>
 
 namespace boost { namespace iostreams {
@@ -309,7 +305,7 @@ public:
     const char* const_data() const { return delegate_.data(); }
     iterator begin() const { return data(); }
     const_iterator const_begin() const { return const_data(); }
-    iterator end() const;
+    iterator end() const { return data() + size(); }
     const_iterator const_end() const { return const_data() + size(); }
 
     //--------------Query admissible offsets----------------------------------//
@@ -469,9 +465,6 @@ void mapped_file::open(
 inline char* mapped_file::data() const 
 { return (flags() != readonly) ? const_cast<char*>(delegate_.data()) : 0; }
 
-inline mapped_file::iterator mapped_file::end() const 
-{ return (flags() != readonly) ? data() + size() : 0; }
-
 //------------------Implementation of mapped_file_sink------------------------//
 
 template<typename Path>
@@ -602,8 +595,5 @@ operator^=(mapped_file::mapmode& a, mapped_file::mapmode b)
 } } // End namespaces iostreams, boost.
 
 #include <boost/config/abi_suffix.hpp> // pops abi_suffix.hpp pragmas
-#if defined(BOOST_MSVC)
-# pragma warning(pop)  // pops #pragma warning(disable:4251)
-#endif
 
 #endif // #ifndef BOOST_IOSTREAMS_MAPPED_FILE_HPP_INCLUDED

@@ -156,7 +156,7 @@ namespace boost
       typedef RealType value_type;
       typedef Policy policy_type;
 
-      beta_distribution(RealType l_alpha = 1, RealType l_beta = 1) : m_alpha(l_alpha), m_beta(l_beta)
+      beta_distribution(RealType alpha = 1, RealType beta = 1) : m_alpha(alpha), m_beta(beta)
       {
         RealType result;
         beta_detail::check_dist(
@@ -382,13 +382,6 @@ namespace boost
         return result;
       }
       using boost::math::beta;
-
-      // Corner case: check_x ensures x element of [0, 1], but PDF is 0 for x = 0 and x = 1. PDF EQN:
-      // https://wikimedia.org/api/rest_v1/media/math/render/svg/125fdaa41844a8703d1a8610ac00fbf3edacc8e7
-      if(x == 0 || x == 1)
-      {
-        return RealType(0);
-      }
       return ibeta_derivative(a, b, x, Policy());
     } // pdf
 

@@ -8,14 +8,12 @@
 #ifndef BOOST_ACCUMULATORS_FRAMEWORK_PARAMETERS_SAMPLE_HPP_EAN_31_10_2005
 #define BOOST_ACCUMULATORS_FRAMEWORK_PARAMETERS_SAMPLE_HPP_EAN_31_10_2005
 
-#include <boost/parameter/name.hpp>
-#include <boost/accumulators/accumulators_fwd.hpp>
+#include <boost/parameter/keyword.hpp>
 
 namespace boost { namespace accumulators
 {
 
-BOOST_PARAMETER_NAME((sample, tag) sample)
-BOOST_ACCUMULATORS_IGNORE_GLOBAL(sample)
+BOOST_PARAMETER_KEYWORD(tag, sample)
 
 }} // namespace boost::accumulators
 

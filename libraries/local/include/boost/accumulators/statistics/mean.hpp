@@ -31,7 +31,7 @@ namespace impl
       : accumulator_base
     {
         // for boost::result_of
-        typedef typename numeric::functional::fdiv<Sample, std::size_t>::result_type result_type;
+        typedef typename numeric::functional::average<Sample, std::size_t>::result_type result_type;
 
         mean_impl(dont_care) {}
 
@@ -39,12 +39,8 @@ namespace impl
         result_type result(Args const &args) const
         {
             extractor<SumFeature> sum;
-            return numeric::fdiv(sum(args), count(args));
+            return numeric::average(sum(args), count(args));
         }
-
-        // serialization is done by accumulators it depends on
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int file_version) {}
     };
 
     template<typename Sample, typename Tag>
@@ -52,11 +48,11 @@ namespace impl
       : accumulator_base
     {
         // for boost::result_of
-        typedef typename numeric::functional::fdiv<Sample, std::size_t>::result_type result_type;
+        typedef typename numeric::functional::average<Sample, std::size_t>::result_type result_type;
 
         template<typename Args>
         immediate_mean_impl(Args const &args)
-          : mean(numeric::fdiv(args[sample | Sample()], numeric::one<std::size_t>::value))
+          : mean(numeric::average(args[sample | Sample()], numeric::one<std::size_t>::value))
         {
         }
 
@@ -64,7 +60,7 @@ namespace impl
         void operator ()(Args const &args)
         {
             std::size_t cnt = count(args);
-            this->mean = numeric::fdiv(
+            this->mean = numeric::average(
                 (this->mean * (cnt - 1)) + args[parameter::keyword<Tag>::get()]
               , cnt
             );
@@ -73,12 +69,6 @@ namespace impl
         result_type result(dont_care) const
         {
             return this->mean;
-        }
-
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int file_version)
-        { 
-            ar & mean;
         }
 
     private:

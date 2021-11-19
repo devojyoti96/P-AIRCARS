@@ -433,16 +433,10 @@ namespace chrono {
         rep rep_;
     public:
 
-#if  defined   BOOST_CHRONO_DURATION_DEFAULTS_TO_ZERO
-        BOOST_FORCEINLINE BOOST_CONSTEXPR
+        BOOST_CONSTEXPR
         duration() : rep_(duration_values<rep>::zero()) { }
-#elif  defined   BOOST_NO_CXX11_DEFAULTED_FUNCTIONS
-        BOOST_CONSTEXPR duration() {}
-#else
-        BOOST_CONSTEXPR duration()  = default;
-#endif
         template <class Rep2>
-        BOOST_SYMBOL_VISIBLE BOOST_FORCEINLINE BOOST_CONSTEXPR
+        BOOST_SYMBOL_VISIBLE inline  BOOST_CONSTEXPR
         explicit duration(const Rep2& r
         , typename boost::enable_if <
                     mpl::and_ <
@@ -457,18 +451,17 @@ namespace chrono {
                     >
                 >::type* = 0
             ) : rep_(r) { }
-#if  defined   BOOST_NO_CXX11_DEFAULTED_FUNCTIONS
-        duration& operator=(const duration& rhs)
+        //~duration() {} //= default;
+//        BOOST_CONSTEXPR        duration(const duration& rhs) : rep_(rhs.rep_) {} // = default;
+        duration& operator=(const duration& rhs) // = default;
         {
             if (&rhs != this) rep_= rhs.rep_;
             return *this;
         }
-#else
-        duration& operator=(const duration& rhs) = default;
-#endif
+
         // conversions
         template <class Rep2, class Period2>
-        BOOST_FORCEINLINE BOOST_CONSTEXPR
+        BOOST_CONSTEXPR
         duration(const duration<Rep2, Period2>& d
         , typename boost::enable_if <
                     mpl::or_ <
@@ -543,8 +536,8 @@ namespace chrono {
           const duration<Rep2, Period2>& rhs)
     {
       typedef typename common_type<duration<Rep1, Period1>,
-        duration<Rep2, Period2> >::type common_duration;
-      return common_duration(common_duration(lhs).count()+common_duration(rhs).count());
+        duration<Rep2, Period2> >::type CD;
+      return CD(CD(lhs).count()+CD(rhs).count());
     }
 
     // Duration -
@@ -556,8 +549,8 @@ namespace chrono {
           const duration<Rep2, Period2>& rhs)
     {
       typedef typename common_type<duration<Rep1, Period1>,
-            duration<Rep2, Period2> >::type common_duration;
-      return common_duration(common_duration(lhs).count()-common_duration(rhs).count());
+            duration<Rep2, Period2> >::type CD;
+      return CD(CD(lhs).count()-CD(rhs).count());
     }
 
     // Duration *
@@ -573,9 +566,9 @@ namespace chrono {
     >::type
     operator*(const duration<Rep1, Period>& d, const Rep2& s)
     {
-      typedef typename common_type<Rep1, Rep2>::type common_rep;
-      typedef duration<common_rep, Period> common_duration;
-      return common_duration(common_duration(d).count()*static_cast<common_rep>(s));
+      typedef typename common_type<Rep1, Rep2>::type CR;
+      typedef duration<CR, Period> CD;
+      return CD(CD(d).count()*static_cast<CR>(s));
     }
 
     template <class Rep1, class Period, class Rep2>
@@ -602,9 +595,10 @@ namespace chrono {
     >::type
     operator/(const duration<Rep1, Period>& d, const Rep2& s)
     {
-      typedef typename common_type<Rep1, Rep2>::type common_rep;
-      typedef duration<common_rep, Period> common_duration;
-      return common_duration(common_duration(d).count()/static_cast<common_rep>(s));
+        typedef typename common_type<Rep1, Rep2>::type CR;
+        typedef duration<CR, Period> CD;
+
+      return CD(CD(d).count()/static_cast<CR>(s));
     }
 
     template <class Rep1, class Period1, class Rep2, class Period2>
@@ -613,8 +607,8 @@ namespace chrono {
     operator/(const duration<Rep1, Period1>& lhs, const duration<Rep2, Period2>& rhs)
     {
         typedef typename common_type<duration<Rep1, Period1>,
-                                   duration<Rep2, Period2> >::type common_duration;
-        return common_duration(lhs).count() / common_duration(rhs).count();
+                                   duration<Rep2, Period2> >::type CD;
+        return CD(lhs).count() / CD(rhs).count();
     }
 
     #ifdef BOOST_CHRONO_EXTENSIONS
@@ -626,9 +620,10 @@ namespace chrono {
       >::type
     operator/(const Rep1& s, const duration<Rep2, Period>& d)
     {
-      typedef typename common_type<Rep1, Rep2>::type common_rep;
-      typedef duration<common_rep, Period> common_duration;
-      return static_cast<common_rep>(s)/common_duration(d).count();
+        typedef typename common_type<Rep1, Rep2>::type CR;
+        typedef duration<CR, Period> CD;
+
+      return static_cast<CR>(s)/CD(d).count();
     }
     #endif
     // Duration %
@@ -641,9 +636,10 @@ namespace chrono {
     >::type
     operator%(const duration<Rep1, Period>& d, const Rep2& s)
     {
-      typedef typename common_type<Rep1, Rep2>::type common_rep;
-      typedef duration<common_rep, Period> common_duration;
-      return common_duration(common_duration(d).count()%static_cast<common_rep>(s));
+        typedef typename common_type<Rep1, Rep2>::type CR;
+        typedef duration<CR, Period> CD;
+
+      return CD(CD(d).count()%static_cast<CR>(s));
     }
 
     template <class Rep1, class Period1, class Rep2, class Period2>
@@ -652,9 +648,9 @@ namespace chrono {
     operator%(const duration<Rep1, Period1>& lhs,
           const duration<Rep2, Period2>& rhs) {
         typedef typename common_type<duration<Rep1, Period1>,
-                                 duration<Rep2, Period2> >::type common_duration;
+                                 duration<Rep2, Period2> >::type CD;
 
-      return common_duration(common_duration(lhs).count()%common_duration(rhs).count());
+      return CD(CD(lhs).count()%CD(rhs).count());
     }
 
 
@@ -667,17 +663,17 @@ namespace detail
     template <class LhsDuration, class RhsDuration>
     struct duration_eq
     {
-      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const RhsDuration& rhs) const
+      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const RhsDuration& rhs)
         {
-            typedef typename common_type<LhsDuration, RhsDuration>::type common_duration;
-            return common_duration(lhs).count() == common_duration(rhs).count();
+            typedef typename common_type<LhsDuration, RhsDuration>::type CD;
+            return CD(lhs).count() == CD(rhs).count();
         }
     };
 
     template <class LhsDuration>
     struct duration_eq<LhsDuration, LhsDuration>
     {
-      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const LhsDuration& rhs) const
+      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const LhsDuration& rhs)
         {
             return lhs.count() == rhs.count();
         }
@@ -686,17 +682,17 @@ namespace detail
     template <class LhsDuration, class RhsDuration>
     struct duration_lt
     {
-      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const RhsDuration& rhs) const
+      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const RhsDuration& rhs)
         {
-            typedef typename common_type<LhsDuration, RhsDuration>::type common_duration;
-            return common_duration(lhs).count() < common_duration(rhs).count();
+            typedef typename common_type<LhsDuration, RhsDuration>::type CD;
+            return CD(lhs).count() < CD(rhs).count();
         }
     };
 
     template <class LhsDuration>
     struct duration_lt<LhsDuration, LhsDuration>
     {
-      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const LhsDuration& rhs) const
+      BOOST_CONSTEXPR bool operator()(const LhsDuration& lhs, const LhsDuration& rhs)
         {
             return lhs.count() < rhs.count();
         }

@@ -11,17 +11,12 @@
 #ifndef BOOST_INTERPROCESS_WINDOWS_INTERMODULE_SINGLETON_HPP
 #define BOOST_INTERPROCESS_WINDOWS_INTERMODULE_SINGLETON_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
+#if defined(_MSC_VER)&&(_MSC_VER>=1200)
 #pragma once
 #endif
 
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
-#include <boost/container/string.hpp>
 
 #if !defined(BOOST_INTERPROCESS_WINDOWS)
    #error "This header can't be included from non-windows operating systems"
@@ -34,7 +29,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/cstdint.hpp>
 #include <string>
-#include <boost/container/map.hpp>
+#include <map>
 
 namespace boost{
 namespace interprocess{
@@ -54,7 +49,7 @@ namespace intermodule_singleton_helpers {
 //    max and current semaphore count.
 class windows_semaphore_based_map
 {
-   typedef boost::container::map<boost::container::string, ref_count_ptr> map_type;
+   typedef std::map<std::string, ref_count_ptr> map_type;
 
    public:
    windows_semaphore_based_map()
@@ -140,7 +135,6 @@ class windows_semaphore_based_map
          success = success && m_sem_map.open_or_create
             (name.c_str(), initial_count, max_count, perm, created);
          if(!success){
-            delete m;
             //winapi_xxx wrappers do the cleanup...
             throw int(0);
          }
@@ -187,7 +181,7 @@ class windows_semaphore_based_map
    {
       scoped_lock<winapi_mutex_wrapper> lck(m_mtx_lock);
       map_type &map = this->get_map_unlocked();
-      map_type::iterator it = map.find(boost::container::string(name));
+      map_type::iterator it = map.find(std::string(name));
       if(it != map.end()){
          return &it->second;
       }
@@ -200,7 +194,7 @@ class windows_semaphore_based_map
    {
       scoped_lock<winapi_mutex_wrapper> lck(m_mtx_lock);
       map_type &map = this->get_map_unlocked();
-      map_type::iterator it = map.insert(map_type::value_type(boost::container::string(name), ref)).first;
+      map_type::iterator it = map.insert(map_type::value_type(std::string(name), ref)).first;
       return &it->second;
    }
 
@@ -208,7 +202,7 @@ class windows_semaphore_based_map
    {
       scoped_lock<winapi_mutex_wrapper> lck(m_mtx_lock);
       map_type &map = this->get_map_unlocked();
-      return map.erase(boost::container::string(name)) != 0;
+      return map.erase(std::string(name)) != 0;
    }
 
    template<class F>
@@ -223,9 +217,7 @@ class windows_semaphore_based_map
       scoped_lock<winapi_mutex_wrapper> lck(m_mtx_lock);
       m_sem_count.wait();
       if(0 == m_sem_count.value()){
-         map_type &map = this->get_map_unlocked();
-         BOOST_ASSERT(map.empty());
-         delete &map;
+         delete &this->get_map_unlocked();
       }
       //First close sems to protect this with the external mutex
       m_sem_map.close();
@@ -295,7 +287,7 @@ struct thread_safe_global_map_dependant<windows_semaphore_based_map>
 
 }  //namespace intermodule_singleton_helpers {
 
-template<typename C, bool LazyInit = true, bool Phoenix = false>
+template<typename C, bool LazyInit = true, bool Phoenix = true>
 class windows_intermodule_singleton
    : public intermodule_singleton_impl
       < C

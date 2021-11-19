@@ -16,7 +16,7 @@
 #define BOOST_XPRESSIVE_MATCH_RESULTS_HPP_EAN_10_04_2005
 
 // MS compatible compilers support #pragma once
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif
 
@@ -119,26 +119,21 @@ struct char_overflow_handler_
 ///////////////////////////////////////////////////////////////////////////////
 // transform_op enum
 //
-enum transform_op { op_none = 0, op_upper = 1, op_lower = 2 };
-enum transform_scope { scope_next = 0, scope_rest = 1 };
+enum transform_op { None = 0, Upper = 1, Lower = 2 };
+enum transform_scope { Next = 0, Rest = 1 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // case_converting_iterator
 //
 template<typename OutputIterator, typename Char>
 struct case_converting_iterator
+  : std::iterator<std::output_iterator_tag, Char, void, void, case_converting_iterator<OutputIterator, Char> >
 {
-    typedef std::output_iterator_tag iterator_category;
-    typedef Char value_type;
-    typedef void difference_type;
-    typedef void pointer;
-    typedef case_converting_iterator<OutputIterator, Char> reference;
-
     case_converting_iterator(OutputIterator const &out, traits<Char> const *tr)
       : out_(out)
       , traits_(tr)
-      , next_(op_none)
-      , rest_(op_none)
+      , next_(None)
+      , rest_(None)
     {}
 
     OutputIterator base() const
@@ -149,7 +144,7 @@ struct case_converting_iterator
     case_converting_iterator &operator ++()
     {
         ++this->out_;
-        this->next_ = op_none;
+        this->next_ = None;
         return *this;
     }
 
@@ -167,8 +162,8 @@ struct case_converting_iterator
 
     friend bool set_transform(case_converting_iterator &iter, transform_op trans, transform_scope scope)
     {
-        BOOST_ASSERT(scope == scope_next || scope == scope_rest);
-        if(scope == scope_next)
+        BOOST_ASSERT(scope == Next || scope == Rest);
+        if(scope == Next)
             iter.next_ = trans;
         else
             iter.rest_ = trans;
@@ -179,11 +174,11 @@ struct case_converting_iterator
     {
         switch(this->next_ ? this->next_ : this->rest_)
         {
-        case op_lower:
+        case Lower:
             ch = this->traits_->tolower(ch);
             break;
 
-        case op_upper:
+        case Upper:
             ch = this->traits_->toupper(ch);
             break;
 
@@ -211,13 +206,8 @@ inline bool set_transform(Iterator &, transform_op, transform_scope)
 //
 template<typename Char>
 struct noop_output_iterator
+  : std::iterator<std::output_iterator_tag, Char, void, void, noop_output_iterator<Char> >
 {
-    typedef std::output_iterator_tag iterator_category;
-    typedef Char value_type;
-    typedef void difference_type;
-    typedef void pointer;
-    typedef noop_output_iterator<Char> reference;
-
     noop_output_iterator &operator ++()
     {
         return *this;
@@ -944,7 +934,7 @@ private:
     (
         OutputIterator out
       , Expr const &format
-      , regex_constants::match_flag_type
+      , regex_constants::match_flag_type flags
       , mpl::size_t<4>
     ) const
     {
@@ -1106,12 +1096,11 @@ private:
             case BOOST_XPR_CHAR_(char_type, ':'):
                 if(metacolon)
                 {
-                    BOOST_FALLTHROUGH;
             case BOOST_XPR_CHAR_(char_type, ')'):
                     ++cur;
                     return out;
                 }
-                BOOST_FALLTHROUGH;
+                // else fall-through
 
             default:
                 *out++ = *cur++;
@@ -1261,35 +1250,35 @@ private:
             break;
 
         case BOOST_XPR_CHAR_(char_type, 'l'):
-            if(!set_transform(out, detail::op_lower, detail::scope_next))
+            if(!set_transform(out, detail::Lower, detail::Next))
             {
                 *out++ = BOOST_XPR_CHAR_(char_type, 'l');
             }
             break;
 
         case BOOST_XPR_CHAR_(char_type, 'L'):
-            if(!set_transform(out, detail::op_lower, detail::scope_rest))
+            if(!set_transform(out, detail::Lower, detail::Rest))
             {
                 *out++ = BOOST_XPR_CHAR_(char_type, 'L');
             }
             break;
 
         case BOOST_XPR_CHAR_(char_type, 'u'):
-            if(!set_transform(out, detail::op_upper, detail::scope_next))
+            if(!set_transform(out, detail::Upper, detail::Next))
             {
                 *out++ = BOOST_XPR_CHAR_(char_type, 'u');
             }
             break;
 
         case BOOST_XPR_CHAR_(char_type, 'U'):
-            if(!set_transform(out, detail::op_upper, detail::scope_rest))
+            if(!set_transform(out, detail::Upper, detail::Rest))
             {
                 *out++ = BOOST_XPR_CHAR_(char_type, 'U');
             }
             break;
 
         case BOOST_XPR_CHAR_(char_type, 'E'):
-            if(!set_transform(out, detail::op_none, detail::scope_rest))
+            if(!set_transform(out, detail::None, detail::Rest))
             {
                 *out++ = BOOST_XPR_CHAR_(char_type, 'E');
             }
@@ -1364,10 +1353,8 @@ private:
 //
 template<typename BidiIter>
 struct regex_id_filter_predicate
+  : std::unary_function<match_results<BidiIter>, bool>
 {
-    typedef match_results<BidiIter> argument_type;
-    typedef bool result_type;
-
     regex_id_filter_predicate(regex_id_type regex_id)
       : regex_id_(regex_id)
     {

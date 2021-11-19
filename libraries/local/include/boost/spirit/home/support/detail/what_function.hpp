@@ -4,8 +4,8 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#ifndef BOOST_SPIRIT_SUPPORT_DETAIL_WHAT_FUNCTION_HPP
-#define BOOST_SPIRIT_SUPPORT_DETAIL_WHAT_FUNCTION_HPP
+#if !defined(SPIRIT_WHAT_FUNCTION_APRIL_22_2007_0236PM)
+#define SPIRIT_WHAT_FUNCTION_APRIL_22_2007_0236PM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -20,8 +20,8 @@ namespace boost { namespace spirit { namespace detail
     template <typename Context>
     struct what_function
     {
-        what_function(info& what_, Context& context_)
-          : what(what_), context(context_)
+        what_function(info& what, Context& context)
+          : what(what), context(context)
         {
             what.value = std::list<info>();
         }
@@ -39,8 +39,9 @@ namespace boost { namespace spirit { namespace detail
         info& what;
         Context& context;
 
+    private:
         // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(what_function& operator= (what_function const&))
+        what_function& operator= (what_function const&);
     };
 }}}
 

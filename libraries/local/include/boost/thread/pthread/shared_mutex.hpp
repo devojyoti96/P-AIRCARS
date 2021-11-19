@@ -9,7 +9,6 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/assert.hpp>
-#include <boost/bind/bind.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
@@ -29,110 +28,8 @@ namespace boost
     class shared_mutex
     {
     private:
-        class state_data
+        struct state_data
         {
-        public:
-            state_data () :
-              shared_count(0),
-              exclusive(false),
-              upgrade(false),
-              exclusive_waiting_blocked(false)
-            {}
-
-            void assert_free() const
-            {
-                BOOST_ASSERT( ! exclusive );
-                BOOST_ASSERT( ! upgrade );
-                BOOST_ASSERT( shared_count==0 );
-            }
-
-            void assert_locked() const
-            {
-                BOOST_ASSERT( exclusive );
-                BOOST_ASSERT( shared_count==0 );
-                BOOST_ASSERT( ! upgrade );
-            }
-
-            void assert_lock_shared () const
-            {
-                BOOST_ASSERT( ! exclusive );
-                BOOST_ASSERT( shared_count>0 );
-                //BOOST_ASSERT( (! upgrade) || (shared_count>1));
-                // if upgraded there are at least 2 threads sharing the mutex,
-                // except when unlock_upgrade_and_lock has decreased the number of readers but has not taken yet exclusive ownership.
-            }
-
-            void assert_lock_upgraded () const
-            {
-                BOOST_ASSERT( ! exclusive );
-                BOOST_ASSERT(  upgrade );
-                BOOST_ASSERT(  shared_count>0 );
-            }
-
-            void assert_lock_not_upgraded () const
-            {
-                BOOST_ASSERT(  ! upgrade );
-            }
-
-            bool can_lock () const
-            {
-                return ! (shared_count || exclusive);
-            }
-
-            void lock ()
-            {
-                exclusive = true;
-            }
-
-            void unlock ()
-            {
-                exclusive = false;
-                exclusive_waiting_blocked = false;
-            }
-
-            bool can_lock_shared () const
-            {
-                return ! (exclusive || exclusive_waiting_blocked);
-            }
-
-            bool no_shared () const
-            {
-                return shared_count==0;
-            }
-
-            bool one_shared () const
-            {
-                return shared_count==1;
-            }
-
-            void lock_shared ()
-            {
-                ++shared_count;
-            }
-
-
-            void unlock_shared ()
-            {
-                --shared_count;
-            }
-
-            void lock_upgrade ()
-            {
-                ++shared_count;
-                upgrade=true;
-            }
-            bool can_lock_upgrade () const
-            {
-                return ! (exclusive || exclusive_waiting_blocked || upgrade);
-            }
-
-            void unlock_upgrade ()
-            {
-                upgrade=false;
-                --shared_count;
-            }
-
-        //private:
             unsigned shared_count;
             bool exclusive;
             bool upgrade;
@@ -154,11 +51,12 @@ namespace boost
         }
 
     public:
-
         BOOST_THREAD_NO_COPYABLE(shared_mutex)
 
         shared_mutex()
         {
+            state_data state_={0,0,0,0};
+            state=state_;
         }
 
         ~shared_mutex()
@@ -171,20 +69,27 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            shared_cond.wait(lk, boost::bind(&state_data::can_lock_shared, boost::ref(state)));
-            state.lock_shared();
+
+            while(state.exclusive || state.exclusive_waiting_blocked)
+            {
+                shared_cond.wait(lk);
+            }
+            ++state.shared_count;
         }
 
         bool try_lock_shared()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
 
-            if(!state.can_lock_shared())
+            if(state.exclusive || state.exclusive_waiting_blocked)
             {
                 return false;
             }
-            state.lock_shared();
-            return true;
+            else
+            {
+                ++state.shared_count;
+                return true;
+            }
         }
 
 #if defined BOOST_THREAD_USES_DATETIME
@@ -194,27 +99,22 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            if(!shared_cond.timed_wait(lk, timeout, boost::bind(&state_data::can_lock_shared, boost::ref(state))))
+
+            while(state.exclusive || state.exclusive_waiting_blocked)
             {
-                return false;
+                if(!shared_cond.timed_wait(lk,timeout))
+                {
+                    return false;
+                }
             }
-            state.lock_shared();
+            ++state.shared_count;
             return true;
         }
 
         template<typename TimeDuration>
         bool timed_lock_shared(TimeDuration const & relative_time)
         {
-#if defined BOOST_THREAD_PROVIDES_INTERRUPTIONS
-            boost::this_thread::disable_interruption do_not_disturb;
-#endif
-            boost::unique_lock<boost::mutex> lk(state_change);
-            if(!shared_cond.timed_wait(lk, relative_time, boost::bind(&state_data::can_lock_shared, boost::ref(state))))
-            {
-                return false;
-            }
-            state.lock_shared();
-            return true;
+            return timed_lock_shared(get_system_time()+relative_time);
         }
 #endif
 #ifdef BOOST_THREAD_USES_CHRONO
@@ -230,34 +130,34 @@ namespace boost
           boost::this_thread::disable_interruption do_not_disturb;
 #endif
           boost::unique_lock<boost::mutex> lk(state_change);
-          if(!shared_cond.wait_until(lk, abs_time, boost::bind(&state_data::can_lock_shared, boost::ref(state))))
+
+          while(state.exclusive || state.exclusive_waiting_blocked)
           {
-              return false;
+              if(cv_status::timeout==shared_cond.wait_until(lk,abs_time))
+              {
+                  return false;
+              }
           }
-          state.lock_shared();
+          ++state.shared_count;
           return true;
         }
 #endif
         void unlock_shared()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.assert_lock_shared();
-            state.unlock_shared();
-            if (state.no_shared())
+            bool const last_reader=!--state.shared_count;
+
+            if(last_reader)
             {
-                if (state.upgrade)
+                if(state.upgrade)
                 {
-                    // As there is a thread doing a unlock_upgrade_and_lock that is waiting for state.no_shared()
-                    // avoid other threads to lock, lock_upgrade or lock_shared, so only this thread is notified.
                     state.upgrade=false;
                     state.exclusive=true;
-                    //lk.unlock();
                     upgrade_cond.notify_one();
                 }
                 else
                 {
                     state.exclusive_waiting_blocked=false;
-                    //lk.unlock();
                 }
                 release_waiters();
             }
@@ -269,8 +169,12 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.exclusive_waiting_blocked=true;
-            exclusive_cond.wait(lk, boost::bind(&state_data::can_lock, boost::ref(state)));
+
+            while(state.shared_count || state.exclusive)
+            {
+                state.exclusive_waiting_blocked=true;
+                exclusive_cond.wait(lk);
+            }
             state.exclusive=true;
         }
 
@@ -281,12 +185,20 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.exclusive_waiting_blocked=true;
-            if(!exclusive_cond.timed_wait(lk, timeout, boost::bind(&state_data::can_lock, boost::ref(state))))
+
+            while(state.shared_count || state.exclusive)
             {
-                state.exclusive_waiting_blocked=false;
-                release_waiters();
-                return false;
+                state.exclusive_waiting_blocked=true;
+                if(!exclusive_cond.timed_wait(lk,timeout))
+                {
+                    if(state.shared_count || state.exclusive)
+                    {
+                        state.exclusive_waiting_blocked=false;
+                        release_waiters();
+                        return false;
+                    }
+                    break;
+                }
             }
             state.exclusive=true;
             return true;
@@ -295,19 +207,7 @@ namespace boost
         template<typename TimeDuration>
         bool timed_lock(TimeDuration const & relative_time)
         {
-#if defined BOOST_THREAD_PROVIDES_INTERRUPTIONS
-            boost::this_thread::disable_interruption do_not_disturb;
-#endif
-            boost::unique_lock<boost::mutex> lk(state_change);
-            state.exclusive_waiting_blocked=true;
-            if(!exclusive_cond.timed_wait(lk, relative_time, boost::bind(&state_data::can_lock, boost::ref(state))))
-            {
-                state.exclusive_waiting_blocked=false;
-                release_waiters();
-                return false;
-            }
-            state.exclusive=true;
-            return true;
+            return timed_lock(get_system_time()+relative_time);
         }
 #endif
 #ifdef BOOST_THREAD_USES_CHRONO
@@ -323,12 +223,20 @@ namespace boost
           boost::this_thread::disable_interruption do_not_disturb;
 #endif
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.exclusive_waiting_blocked=true;
-          if(!exclusive_cond.wait_until(lk, abs_time, boost::bind(&state_data::can_lock, boost::ref(state))))
+
+          while(state.shared_count || state.exclusive)
           {
-              state.exclusive_waiting_blocked=false;
-              release_waiters();
-              return false;
+              state.exclusive_waiting_blocked=true;
+              if(cv_status::timeout == exclusive_cond.wait_until(lk,abs_time))
+              {
+                  if(state.shared_count || state.exclusive)
+                  {
+                      state.exclusive_waiting_blocked=false;
+                      release_waiters();
+                      return false;
+                  }
+                  break;
+              }
           }
           state.exclusive=true;
           return true;
@@ -338,21 +246,24 @@ namespace boost
         bool try_lock()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            if(!state.can_lock())
+
+            if(state.shared_count || state.exclusive)
             {
                 return false;
             }
-            state.exclusive=true;
-            return true;
+            else
+            {
+                state.exclusive=true;
+                return true;
+            }
+
         }
 
         void unlock()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.assert_locked();
             state.exclusive=false;
             state.exclusive_waiting_blocked=false;
-            state.assert_free();
             release_waiters();
         }
 
@@ -362,8 +273,11 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            shared_cond.wait(lk, boost::bind(&state_data::can_lock_upgrade, boost::ref(state)));
-            state.lock_shared();
+            while(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
+            {
+                shared_cond.wait(lk);
+            }
+            ++state.shared_count;
             state.upgrade=true;
         }
 
@@ -374,11 +288,18 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            if(!shared_cond.timed_wait(lk, timeout, boost::bind(&state_data::can_lock_upgrade, boost::ref(state))))
+            while(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
             {
-                return false;
+                if(!shared_cond.timed_wait(lk,timeout))
+                {
+                    if(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
+                    {
+                        return false;
+                    }
+                    break;
+                }
             }
-            state.lock_shared();
+            ++state.shared_count;
             state.upgrade=true;
             return true;
         }
@@ -386,17 +307,7 @@ namespace boost
         template<typename TimeDuration>
         bool timed_lock_upgrade(TimeDuration const & relative_time)
         {
-#if defined BOOST_THREAD_PROVIDES_INTERRUPTIONS
-            boost::this_thread::disable_interruption do_not_disturb;
-#endif
-            boost::unique_lock<boost::mutex> lk(state_change);
-            if(!shared_cond.timed_wait(lk, relative_time, boost::bind(&state_data::can_lock_upgrade, boost::ref(state))))
-            {
-                return false;
-            }
-            state.lock_shared();
-            state.upgrade=true;
-            return true;
+            return timed_lock_upgrade(get_system_time()+relative_time);
         }
 #endif
 #ifdef BOOST_THREAD_USES_CHRONO
@@ -412,11 +323,18 @@ namespace boost
           boost::this_thread::disable_interruption do_not_disturb;
 #endif
           boost::unique_lock<boost::mutex> lk(state_change);
-          if(!shared_cond.wait_until(lk, abs_time, boost::bind(&state_data::can_lock_upgrade, boost::ref(state))))
+          while(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
           {
-              return false;
+              if(cv_status::timeout == shared_cond.wait_until(lk,abs_time))
+              {
+                  if(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
+                  {
+                      return false;
+                  }
+                  break;
+              }
           }
-          state.lock_shared();
+          ++state.shared_count;
           state.upgrade=true;
           return true;
         }
@@ -424,27 +342,30 @@ namespace boost
         bool try_lock_upgrade()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            if(!state.can_lock_upgrade())
+            if(state.exclusive || state.exclusive_waiting_blocked || state.upgrade)
             {
                 return false;
             }
-            state.lock_shared();
-            state.upgrade=true;
-            state.assert_lock_upgraded();
-            return true;
+            else
+            {
+                ++state.shared_count;
+                state.upgrade=true;
+                return true;
+            }
         }
 
         void unlock_upgrade()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            //state.upgrade=false;
-            state.unlock_upgrade();
-            if(state.no_shared())
+            state.upgrade=false;
+            bool const last_reader=!--state.shared_count;
+
+            if(last_reader)
             {
                 state.exclusive_waiting_blocked=false;
                 release_waiters();
             } else {
-                shared_cond.notify_all();
+              shared_cond.notify_all();
             }
         }
 
@@ -455,30 +376,28 @@ namespace boost
             boost::this_thread::disable_interruption do_not_disturb;
 #endif
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.assert_lock_upgraded();
-            state.unlock_shared();
-            upgrade_cond.wait(lk, boost::bind(&state_data::no_shared, boost::ref(state)));
+            --state.shared_count;
+            while(state.shared_count)
+            {
+                upgrade_cond.wait(lk);
+            }
             state.upgrade=false;
             state.exclusive=true;
-            state.assert_locked();
         }
 
         void unlock_and_lock_upgrade()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.assert_locked();
             state.exclusive=false;
             state.upgrade=true;
-            state.lock_shared();
+            ++state.shared_count;
             state.exclusive_waiting_blocked=false;
-            state.assert_lock_upgraded();
             release_waiters();
         }
 
         bool try_unlock_upgrade_and_lock()
         {
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.assert_lock_upgraded();
           if(    !state.exclusive
               && !state.exclusive_waiting_blocked
               && state.upgrade
@@ -487,7 +406,6 @@ namespace boost
             state.shared_count=0;
             state.exclusive=true;
             state.upgrade=false;
-            state.assert_locked();
             return true;
           }
           return false;
@@ -510,10 +428,16 @@ namespace boost
           boost::this_thread::disable_interruption do_not_disturb;
 #endif
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.assert_lock_upgraded();
-          if(!shared_cond.wait_until(lk, abs_time, boost::bind(&state_data::one_shared, boost::ref(state))))
+          if (state.shared_count != 1)
           {
-              return false;
+              for (;;)
+              {
+                cv_status status = shared_cond.wait_until(lk,abs_time);
+                if (state.shared_count == 1)
+                  break;
+                if(status == cv_status::timeout)
+                  return false;
+              }
           }
           state.upgrade=false;
           state.exclusive=true;
@@ -527,9 +451,8 @@ namespace boost
         void unlock_and_lock_shared()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.assert_locked();
             state.exclusive=false;
-            state.lock_shared();
+            ++state.shared_count;
             state.exclusive_waiting_blocked=false;
             release_waiters();
         }
@@ -538,7 +461,6 @@ namespace boost
         bool try_unlock_shared_and_lock()
         {
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.assert_lock_shared();
           if(    !state.exclusive
               && !state.exclusive_waiting_blocked
               && !state.upgrade
@@ -568,10 +490,16 @@ namespace boost
           boost::this_thread::disable_interruption do_not_disturb;
 #endif
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.assert_lock_shared();
-          if(!shared_cond.wait_until(lk, abs_time, boost::bind(&state_data::one_shared, boost::ref(state))))
+          if (state.shared_count != 1)
           {
-              return false;
+              for (;;)
+              {
+                cv_status status = shared_cond.wait_until(lk,abs_time);
+                if (state.shared_count == 1)
+                  break;
+                if(status == cv_status::timeout)
+                  return false;
+              }
           }
           state.upgrade=false;
           state.exclusive=true;
@@ -586,7 +514,6 @@ namespace boost
         void unlock_upgrade_and_lock_shared()
         {
             boost::unique_lock<boost::mutex> lk(state_change);
-            state.assert_lock_upgraded();
             state.upgrade=false;
             state.exclusive_waiting_blocked=false;
             release_waiters();
@@ -596,8 +523,10 @@ namespace boost
         bool try_unlock_shared_and_lock_upgrade()
         {
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.assert_lock_shared();
-          if(state.can_lock_upgrade())
+          if(    !state.exclusive
+              && !state.exclusive_waiting_blocked
+              && !state.upgrade
+              )
           {
             state.upgrade=true;
             return true;
@@ -622,10 +551,22 @@ namespace boost
           boost::this_thread::disable_interruption do_not_disturb;
 #endif
           boost::unique_lock<boost::mutex> lk(state_change);
-          state.assert_lock_shared();
-          if(!exclusive_cond.wait_until(lk, abs_time, boost::bind(&state_data::can_lock_upgrade, boost::ref(state))))
+          if(    state.exclusive
+              || state.exclusive_waiting_blocked
+              || state.upgrade
+              )
           {
-              return false;
+              for (;;)
+              {
+                cv_status status = exclusive_cond.wait_until(lk,abs_time);
+                if(    ! state.exclusive
+                    && ! state.exclusive_waiting_blocked
+                    && ! state.upgrade
+                    )
+                  break;
+                if(status == cv_status::timeout)
+                  return false;
+              }
           }
           state.upgrade=true;
           return true;

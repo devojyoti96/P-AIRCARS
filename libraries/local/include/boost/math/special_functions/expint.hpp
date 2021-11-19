@@ -8,8 +8,6 @@
 
 #ifdef _MSC_VER
 #pragma once
-#pragma warning(push)
-#pragma warning(disable:4702) // Unreachable code (release mode only warning)
 #endif
 
 #include <boost/math/tools/precision.hpp>
@@ -17,20 +15,9 @@
 #include <boost/math/tools/fraction.hpp>
 #include <boost/math/tools/series.hpp>
 #include <boost/math/policies/error_handling.hpp>
-#include <boost/math/special_functions/math_fwd.hpp>
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/log1p.hpp>
 #include <boost/math/special_functions/pow.hpp>
-
-#if defined(__GNUC__) && defined(BOOST_MATH_USE_FLOAT128)
-//
-// This is the only way we can avoid
-// warning: non-standard suffix on floating constant [-Wpedantic]
-// when building with -Wall -pedantic.  Neither __extension__
-// nor #pragma diagnostic ignored work :(
-//
-#pragma GCC system_header
-#endif
 
 namespace boost{ namespace math{
 
@@ -41,15 +28,15 @@ inline typename tools::promote_args<T>::type
 namespace detail{
 
 template <class T>
-inline T expint_1_rational(const T& z, const std::integral_constant<int, 0>&)
+inline T expint_1_rational(const T& z, const mpl::int_<0>&)
 {
    // this function is never actually called
-   BOOST_MATH_ASSERT(0);
+   BOOST_ASSERT(0);
    return z;
 }
 
 template <class T>
-T expint_1_rational(const T& z, const std::integral_constant<int, 53>&)
+T expint_1_rational(const T& z, const mpl::int_<53>&)
 {
    BOOST_MATH_STD_USING
    T result;
@@ -68,7 +55,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 53>&)
          BOOST_MATH_BIG_CONSTANT(T, 53, -0.000111507792921197858394)
       };
       static const T Q[6] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.37091387659397013215),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.056770677104207528384),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.00427347600017103698101),
@@ -97,7 +84,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 53>&)
          BOOST_MATH_BIG_CONSTANT(T, 53, -1185.45720315201027667)
       };
       static const T Q[12] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, 45.3058660811801465927),
          BOOST_MATH_BIG_CONSTANT(T, 53, 809.193214954550328455),
          BOOST_MATH_BIG_CONSTANT(T, 53, 7417.37624454689546708),
@@ -123,7 +110,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 53>&)
 }
 
 template <class T>
-T expint_1_rational(const T& z, const std::integral_constant<int, 64>&)
+T expint_1_rational(const T& z, const mpl::int_<64>&)
 {
    BOOST_MATH_STD_USING
    T result;
@@ -143,7 +130,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 64>&)
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.30853660894346057053e-4)
       };
       static const T Q[7] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.317978365797784100273),
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.0393622602554758722511),
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.00204062029115966323229),
@@ -176,7 +163,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 64>&)
          BOOST_MATH_BIG_CONSTANT(T, 64, -2038.82870680427258038)
       };
       static const T Q[14] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 64.1517806091379399478),
          BOOST_MATH_BIG_CONSTANT(T, 64, 1690.76044393722763785),
          BOOST_MATH_BIG_CONSTANT(T, 64, 24035.9534033068949426),
@@ -204,7 +191,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 64>&)
 }
 
 template <class T>
-T expint_1_rational(const T& z, const std::integral_constant<int, 113>&)
+T expint_1_rational(const T& z, const mpl::int_<113>&)
 {
    BOOST_MATH_STD_USING
    T result;
@@ -228,7 +215,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 113>&)
          BOOST_MATH_BIG_CONSTANT(T, 113, -0.340500302777838063940402160594523429e-9)
       };
       static const T Q[10] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 113, 1),
          BOOST_MATH_BIG_CONSTANT(T, 113, 0.426568827778942588160423015589537302),
          BOOST_MATH_BIG_CONSTANT(T, 113, 0.0841384046470893490592450881447510148),
          BOOST_MATH_BIG_CONSTANT(T, 113, 0.0100557215850668029618957359471132995),
@@ -269,7 +256,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 113>&)
          BOOST_MATH_BIG_CONSTANT(T, 113, -1.51492042209561411434644938098833499)
       };
       static const T Q[16] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 113, 1),
          BOOST_MATH_BIG_CONSTANT(T, 113, 46.734521442032505570517810766704587),
          BOOST_MATH_BIG_CONSTANT(T, 113, 908.694714348462269000247450058595655),
          BOOST_MATH_BIG_CONSTANT(T, 113, 9701.76053033673927362784882748513195),
@@ -318,7 +305,7 @@ T expint_1_rational(const T& z, const std::integral_constant<int, 113>&)
          BOOST_MATH_BIG_CONSTANT(T, 113, -68028222642.1941480871395695677675137)
       };
       static const T Q[20] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 113, 1),
          BOOST_MATH_BIG_CONSTANT(T, 113, 168.542326331163836642960118190147311),
          BOOST_MATH_BIG_CONSTANT(T, 113, 12535.7237814586576783518249115343619),
          BOOST_MATH_BIG_CONSTANT(T, 113, 544891.263372016404143120911148640627),
@@ -374,7 +361,7 @@ inline T expint_as_fraction(unsigned n, T z, const Policy& pol)
 {
    BOOST_MATH_STD_USING
    BOOST_MATH_INSTRUMENT_VARIABLE(z)
-   std::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
+   boost::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
    expint_fraction<T> f(n, z);
    T result = tools::continued_fraction_b(
       f, 
@@ -413,7 +400,7 @@ template <class T, class Policy>
 inline T expint_as_series(unsigned n, T z, const Policy& pol)
 {
    BOOST_MATH_STD_USING
-   std::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
+   boost::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
 
    BOOST_MATH_INSTRUMENT_VARIABLE(z)
 
@@ -431,7 +418,7 @@ inline T expint_as_series(unsigned n, T z, const Policy& pol)
    }
    BOOST_MATH_INSTRUMENT_VARIABLE(result)
    result += pow(-z, static_cast<T>(n - 1)) 
-      * (boost::math::digamma(static_cast<T>(n), pol) - log(z)) / fact;
+      * (boost::math::digamma(static_cast<T>(n)) - log(z)) / fact;
    BOOST_MATH_INSTRUMENT_VARIABLE(result)
 
    expint_series<T> s(k, z, x_k, denom, fact);
@@ -463,7 +450,7 @@ T expint_imp(unsigned n, T z, const Policy& pol, const Tag& tag)
    {
       f = z < (static_cast<T>(n - 2) / static_cast<T>(n - 1));
    }
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #  pragma warning(push)
 #  pragma warning(disable:4127) // conditional expression is constant
 #endif
@@ -477,7 +464,7 @@ T expint_imp(unsigned n, T z, const Policy& pol, const Tag& tag)
       result = expint_as_series(n, z, pol);
    else
       result = expint_as_fraction(n, z, pol);
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #  pragma warning(pop)
 #endif
 
@@ -507,7 +494,7 @@ T expint_i_as_series(T z, const Policy& pol)
    T result = log(z); // (log(z) - log(1 / z)) / 2;
    result += constants::euler<T>();
    expint_i_series<T> s(z);
-   std::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
+   boost::uintmax_t max_iter = policies::get_max_series_iterations<Policy>();
    result = tools::sum_series(s, policies::get_epsilon<T, Policy>(), max_iter, result);
    policies::check_series_iterations<T>("boost::math::expint_i_series<%1%>(%1%)", max_iter, pol);
    return result;
@@ -525,7 +512,7 @@ T expint_i_imp(T z, const Policy& pol, const Tag& tag)
 }
 
 template <class T, class Policy>
-T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& tag)
+T expint_i_imp(T z, const Policy& pol, const mpl::int_<53>& tag)
 {
    BOOST_MATH_STD_USING
    static const char* function = "boost::math::expint<%1%>(%1%)";
@@ -554,7 +541,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.2777056254402008721e-6)
       };
       static const T Q[8] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, -1.17090412365413911947),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.62215109846016746276),
          BOOST_MATH_BIG_CONSTANT(T, 53, -0.195114782069495403315),
@@ -576,7 +563,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
       result *= t;
       if(fabs(t) < 0.1)
       {
-         result += boost::math::log1p(t / r, pol);
+         result += boost::math::log1p(t / r);
       }
       else
       {
@@ -600,7 +587,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
          BOOST_MATH_BIG_CONSTANT(T, 53, -0.396487648924804510056e-5)
       };
       static const T Q[8] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.744625566823272107711),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.329061095011767059236),
          BOOST_MATH_BIG_CONSTANT(T, 53, 0.100128624977313872323),
@@ -634,7 +621,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
          BOOST_MATH_BIG_CONSTANT(T, 53, -0.138652200349182596186e-4)
       };
       static const T Q[9] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, 1.97017214039061194971),
          BOOST_MATH_BIG_CONSTANT(T, 53, 1.86232465043073157508),
          BOOST_MATH_BIG_CONSTANT(T, 53, 1.09601437090337519977),
@@ -670,7 +657,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
          BOOST_MATH_BIG_CONSTANT(T, 53, -0.113161784705911400295e-9)
       };
       static const T Q[9] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, 2.84354408840148561131),
          BOOST_MATH_BIG_CONSTANT(T, 53, 3.6599610090072393012),
          BOOST_MATH_BIG_CONSTANT(T, 53, 2.75088464344293083595),
@@ -699,7 +686,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
          BOOST_MATH_BIG_CONSTANT(T, 53, -38703.1431362056714134)
       };
       static const T Q[7] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 53, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 53, 1),
          BOOST_MATH_BIG_CONSTANT(T, 53, 61.9733592849439884145),
          BOOST_MATH_BIG_CONSTANT(T, 53, -2354.56211323420194283),
          BOOST_MATH_BIG_CONSTANT(T, 53, 22329.1459489893079041),
@@ -739,7 +726,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 53>& ta
 }
 
 template <class T, class Policy>
-T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& tag)
+T expint_i_imp(T z, const Policy& pol, const mpl::int_<64>& tag)
 {
    BOOST_MATH_STD_USING
    static const char* function = "boost::math::expint<%1%>(%1%)";
@@ -770,7 +757,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.177833045143692498221e-7)
       };
       static const T Q[9] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, -1.20352377969742325748),
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.66707904942606479811),
          BOOST_MATH_BIG_CONSTANT(T, 64, -0.223014531629140771914),
@@ -793,7 +780,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
       result *= t;
       if(fabs(t) < 0.1)
       {
-         result += boost::math::log1p(t / r, pol);
+         result += boost::math::log1p(t / r);
       }
       else
       {
@@ -819,7 +806,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
          BOOST_MATH_BIG_CONSTANT(T, 64, -0.377246883283337141444e-6)
       };
       static const T Q[10] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 1.08073635708902053767),
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.553681133533942532909),
          BOOST_MATH_BIG_CONSTANT(T, 64, 0.176763647137553797451),
@@ -857,7 +844,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
          BOOST_MATH_BIG_CONSTANT(T, 64, -0.252788029251437017959e-5)
       };
       static const T Q[10] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 2.00323265503572414261),
          BOOST_MATH_BIG_CONSTANT(T, 64, 1.94688958187256383178),
          BOOST_MATH_BIG_CONSTANT(T, 64, 1.19733638134417472296),
@@ -896,7 +883,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
          BOOST_MATH_BIG_CONSTANT(T, 64, -0.533769629702262072175e-11)
       };
       static const T Q[9] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 3.13286733695729715455),
          BOOST_MATH_BIG_CONSTANT(T, 64, 4.49281223045653491929),
          BOOST_MATH_BIG_CONSTANT(T, 64, 3.84900294427622911374),
@@ -934,7 +921,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
          BOOST_MATH_BIG_CONSTANT(T, 64, 137839271.592778020028)
       };
       static const T Q[9] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 64, 1),
          BOOST_MATH_BIG_CONSTANT(T, 64, 27.2103343964943718802),
          BOOST_MATH_BIG_CONSTANT(T, 64, -8785.48528692879413676),
          BOOST_MATH_BIG_CONSTANT(T, 64, 397530.290000322626766),
@@ -975,8 +962,8 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 64>& ta
    return result;
 }
 
-template <class T, class Policy>
-void expint_i_imp_113a(T& result, const T& z, const Policy& pol)
+template <class T>
+void expint_i_imp_113a(T& result, const T& z)
 {
    BOOST_MATH_STD_USING
    // Maximum Deviation Found:                     1.230e-36
@@ -1002,7 +989,7 @@ void expint_i_imp_113a(T& result, const T& z, const Policy& pol)
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.306243138978114692252817805327426657e-13)
    };
    static const T Q[15] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, -1.40178870313943798705491944989231793),
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.943810968269701047641218856758605284),
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.405026631534345064600850391026113165),
@@ -1035,7 +1022,7 @@ void expint_i_imp_113a(T& result, const T& z, const Policy& pol)
    result *= t;
    if(fabs(t) < 0.1)
    {
-      result += boost::math::log1p(t / r, pol);
+      result += boost::math::log1p(t / r);
    }
    else
    {
@@ -1070,7 +1057,7 @@ void expint_i_113b(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.384276705503357655108096065452950822e-12)
    };
    static const T Q[15] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, 1.58784732785354597996617046880946257),
       BOOST_MATH_BIG_CONSTANT(T, 113, 1.18550755302279446339364262338114098),
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.55598993549661368604527040349702836),
@@ -1123,7 +1110,7 @@ void expint_i_113c(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.869226483473172853557775877908693647e-15)
    };
    static const T Q[15] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, 2.23227220874479061894038229141871087),
       BOOST_MATH_BIG_CONSTANT(T, 113, 2.40221000361027971895657505660959863),
       BOOST_MATH_BIG_CONSTANT(T, 113, 1.65476320985936174728238416007084214),
@@ -1172,7 +1159,7 @@ void expint_i_113d(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.133141358866324100955927979606981328e-10)
    };
    static const T Q[14] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, 1.72490783907582654629537013560044682),
       BOOST_MATH_BIG_CONSTANT(T, 113, 1.44524329516800613088375685659759765),
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.778241785539308257585068744978050181),
@@ -1224,7 +1211,7 @@ void expint_i_113e(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.105428907085424234504608142258423505e-8)
    };
    static const T Q[16] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, 3.17261315255467581204685605414005525),
       BOOST_MATH_BIG_CONSTANT(T, 113, 4.85267952971640525245338392887217426),
       BOOST_MATH_BIG_CONSTANT(T, 113, 4.74341914912439861451492872946725151),
@@ -1275,7 +1262,7 @@ void expint_i_113f(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.107839681938752337160494412638656696e-8)
    };
    static const T Q[12] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, 2.09913805456661084097134805151524958),
       BOOST_MATH_BIG_CONSTANT(T, 113, 2.07041755535439919593503171320431849),
       BOOST_MATH_BIG_CONSTANT(T, 113, 1.26406517226052371320416108604874734),
@@ -1321,7 +1308,7 @@ void expint_i_113g(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.720558173805289167524715527536874694e-7)
    };
    static const T Q[11] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, 2.95918362458402597039366979529287095),
       BOOST_MATH_BIG_CONSTANT(T, 113, 3.96472247520659077944638411856748924),
       BOOST_MATH_BIG_CONSTANT(T, 113, 3.15563251550528513747923714884142131),
@@ -1364,7 +1351,7 @@ void expint_i_113h(T& result, const T& z)
       BOOST_MATH_BIG_CONSTANT(T, 113, -6758379.93672362080947905580906028645)
    };
    static const T Q[10] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1),
       BOOST_MATH_BIG_CONSTANT(T, 113, -99.4868026047611434569541483506091713),
       BOOST_MATH_BIG_CONSTANT(T, 113, 3879.67753690517114249705089803055473),
       BOOST_MATH_BIG_CONSTANT(T, 113, -76495.82413252517165830203774900806),
@@ -1383,7 +1370,7 @@ void expint_i_113h(T& result, const T& z)
 }
 
 template <class T, class Policy>
-T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 113>& tag)
+T expint_i_imp(T z, const Policy& pol, const mpl::int_<113>& tag)
 {
    BOOST_MATH_STD_USING
    static const char* function = "boost::math::expint<%1%>(%1%)";
@@ -1396,7 +1383,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 113>& t
 
    if(z <= 6)
    {
-      expint_i_imp_113a(result, z, pol);
+      expint_i_imp_113a(result, z);
    }
    else if (z <= 10)
    {
@@ -1445,7 +1432,7 @@ T expint_i_imp(T z, const Policy& pol, const std::integral_constant<int, 113>& t
          BOOST_MATH_BIG_CONSTANT(T, 113, 175864.614717440010942804684741336853)
       };
       static const T Q[9] = {    
-         BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
+         BOOST_MATH_BIG_CONSTANT(T, 113, 1),
          BOOST_MATH_BIG_CONSTANT(T, 113, -65.6998869881600212224652719706425129),
          BOOST_MATH_BIG_CONSTANT(T, 113, 1642.73850032324014781607859416890077),
          BOOST_MATH_BIG_CONSTANT(T, 113, -19937.2610222467322481947237312818575),
@@ -1495,34 +1482,34 @@ struct expint_i_initializer
       {
          do_init(tag());
       }
-      static void do_init(const std::integral_constant<int, 0>&){}
-      static void do_init(const std::integral_constant<int, 53>&)
+      static void do_init(const mpl::int_<0>&){}
+      static void do_init(const mpl::int_<53>&)
       {
-         boost::math::expint(T(5), Policy());
-         boost::math::expint(T(7), Policy());
-         boost::math::expint(T(18), Policy());
-         boost::math::expint(T(38), Policy());
-         boost::math::expint(T(45), Policy());
+         boost::math::expint(T(5));
+         boost::math::expint(T(7));
+         boost::math::expint(T(18));
+         boost::math::expint(T(38));
+         boost::math::expint(T(45));
       }
-      static void do_init(const std::integral_constant<int, 64>&)
+      static void do_init(const mpl::int_<64>&)
       {
-         boost::math::expint(T(5), Policy());
-         boost::math::expint(T(7), Policy());
-         boost::math::expint(T(18), Policy());
-         boost::math::expint(T(38), Policy());
-         boost::math::expint(T(45), Policy());
+         boost::math::expint(T(5));
+         boost::math::expint(T(7));
+         boost::math::expint(T(18));
+         boost::math::expint(T(38));
+         boost::math::expint(T(45));
       }
-      static void do_init(const std::integral_constant<int, 113>&)
+      static void do_init(const mpl::int_<113>&)
       {
-         boost::math::expint(T(5), Policy());
-         boost::math::expint(T(7), Policy());
-         boost::math::expint(T(17), Policy());
-         boost::math::expint(T(25), Policy());
-         boost::math::expint(T(40), Policy());
-         boost::math::expint(T(50), Policy());
-         boost::math::expint(T(80), Policy());
-         boost::math::expint(T(200), Policy());
-         boost::math::expint(T(220), Policy());
+         boost::math::expint(T(5));
+         boost::math::expint(T(7));
+         boost::math::expint(T(17));
+         boost::math::expint(T(25));
+         boost::math::expint(T(40));
+         boost::math::expint(T(50));
+         boost::math::expint(T(80));
+         boost::math::expint(T(200));
+         boost::math::expint(T(220));
       }
       void force_instantiate()const{}
    };
@@ -1545,22 +1532,22 @@ struct expint_1_initializer
       {
          do_init(tag());
       }
-      static void do_init(const std::integral_constant<int, 0>&){}
-      static void do_init(const std::integral_constant<int, 53>&)
+      static void do_init(const mpl::int_<0>&){}
+      static void do_init(const mpl::int_<53>&)
       {
-         boost::math::expint(1, T(0.5), Policy());
-         boost::math::expint(1, T(2), Policy());
+         boost::math::expint(1, T(0.5));
+         boost::math::expint(1, T(2));
       }
-      static void do_init(const std::integral_constant<int, 64>&)
+      static void do_init(const mpl::int_<64>&)
       {
-         boost::math::expint(1, T(0.5), Policy());
-         boost::math::expint(1, T(2), Policy());
+         boost::math::expint(1, T(0.5));
+         boost::math::expint(1, T(2));
       }
-      static void do_init(const std::integral_constant<int, 113>&)
+      static void do_init(const mpl::int_<113>&)
       {
-         boost::math::expint(1, T(0.5), Policy());
-         boost::math::expint(1, T(2), Policy());
-         boost::math::expint(1, T(6), Policy());
+         boost::math::expint(1, T(0.5));
+         boost::math::expint(1, T(2));
+         boost::math::expint(1, T(6));
       }
       void force_instantiate()const{}
    };
@@ -1576,7 +1563,7 @@ const typename expint_1_initializer<T, Policy, tag>::init expint_1_initializer<T
 
 template <class T, class Policy>
 inline typename tools::promote_args<T>::type
-   expint_forwarder(T z, const Policy& /*pol*/, std::true_type const&)
+   expint_forwarder(T z, const Policy& /*pol*/, mpl::true_ const&)
 {
    typedef typename tools::promote_args<T>::type result_type;
    typedef typename policies::evaluation<result_type, Policy>::type value_type;
@@ -1587,12 +1574,23 @@ inline typename tools::promote_args<T>::type
       policies::promote_double<false>, 
       policies::discrete_quantile<>,
       policies::assert_undefined<> >::type forwarding_policy;
-   typedef std::integral_constant<int,
-      precision_type::value <= 0 ? 0 :
-      precision_type::value <= 53 ? 53 :
-      precision_type::value <= 64 ? 64 :
-      precision_type::value <= 113 ? 113 : 0
-   > tag_type;
+   typedef typename mpl::if_<
+      mpl::less_equal<precision_type, mpl::int_<0> >,
+      mpl::int_<0>,
+      typename mpl::if_<
+         mpl::less_equal<precision_type, mpl::int_<53> >,
+         mpl::int_<53>,  // double
+         typename mpl::if_<
+            mpl::less_equal<precision_type, mpl::int_<64> >,
+            mpl::int_<64>, // 80-bit long double
+            typename mpl::if_<
+               mpl::less_equal<precision_type, mpl::int_<113> >,
+               mpl::int_<113>, // 128-bit long double
+               mpl::int_<0> // too many bits, use generic version.
+            >::type
+         >::type
+      >::type
+   >::type tag_type;
 
    expint_i_initializer<value_type, forwarding_policy, tag_type>::force_instantiate();
 
@@ -1604,7 +1602,7 @@ inline typename tools::promote_args<T>::type
 
 template <class T>
 inline typename tools::promote_args<T>::type
-expint_forwarder(unsigned n, T z, const std::false_type&)
+expint_forwarder(unsigned n, T z, const mpl::false_&)
 {
    return boost::math::expint(n, z, policies::policy<>());
 }
@@ -1624,12 +1622,23 @@ inline typename tools::promote_args<T>::type
       policies::promote_double<false>, 
       policies::discrete_quantile<>,
       policies::assert_undefined<> >::type forwarding_policy;
-   typedef std::integral_constant<int,
-      precision_type::value <= 0 ? 0 :
-      precision_type::value <= 53 ? 53 :
-      precision_type::value <= 64 ? 64 :
-      precision_type::value <= 113 ? 113 : 0
-   > tag_type;
+   typedef typename mpl::if_<
+      mpl::less_equal<precision_type, mpl::int_<0> >,
+      mpl::int_<0>,
+      typename mpl::if_<
+         mpl::less_equal<precision_type, mpl::int_<53> >,
+         mpl::int_<53>,  // double
+         typename mpl::if_<
+            mpl::less_equal<precision_type, mpl::int_<64> >,
+            mpl::int_<64>, // 80-bit long double
+            typename mpl::if_<
+               mpl::less_equal<precision_type, mpl::int_<113> >,
+               mpl::int_<113>, // 128-bit long double
+               mpl::int_<0> // too many bits, use generic version.
+            >::type
+         >::type
+      >::type
+   >::type tag_type;
 
    detail::expint_1_initializer<value_type, forwarding_policy, tag_type>::force_instantiate();
 
@@ -1656,10 +1665,6 @@ inline typename tools::promote_args<T>::type
 }
 
 }} // namespaces
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #endif // BOOST_MATH_EXPINT_HPP
 

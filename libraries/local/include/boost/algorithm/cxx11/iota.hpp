@@ -12,12 +12,17 @@
 #ifndef BOOST_ALGORITHM_IOTA_HPP
 #define BOOST_ALGORITHM_IOTA_HPP
 
-#include <boost/config.hpp>
+#include <numeric>
+
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 
 namespace boost { namespace algorithm {
 
+#if __cplusplus >= 201103L
+//  Use the C++11 versions of iota if it is available
+using std::iota;      // Section 26.7.6
+#else
 /// \fn iota ( ForwardIterator first, ForwardIterator last, T value )
 /// \brief Generates an increasing sequence of values, and stores them in [first, last)
 /// 
@@ -25,12 +30,15 @@ namespace boost { namespace algorithm {
 /// \param last     One past the end of the input sequence
 /// \param value    The initial value of the sequence to be generated
 /// \note           This function is part of the C++2011 standard library.
+///  We will use the standard one if it is available, 
+///  otherwise we have our own implementation.
 template <typename ForwardIterator, typename T>
-BOOST_CXX14_CONSTEXPR void iota ( ForwardIterator first, ForwardIterator last, T value )
+void iota ( ForwardIterator first, ForwardIterator last, T value )
 {
     for ( ; first != last; ++first, ++value )
         *first = value;
 }
+#endif
 
 /// \fn iota ( Range &r, T value )
 /// \brief Generates an increasing sequence of values, and stores them in the input Range.
@@ -39,7 +47,7 @@ BOOST_CXX14_CONSTEXPR void iota ( ForwardIterator first, ForwardIterator last, T
 /// \param value    The initial value of the sequence to be generated
 ///
 template <typename Range, typename T>
-BOOST_CXX14_CONSTEXPR void iota ( Range &r, T value )
+void iota ( Range &r, T value )
 {
     boost::algorithm::iota (boost::begin(r), boost::end(r), value);
 }
@@ -53,10 +61,10 @@ BOOST_CXX14_CONSTEXPR void iota ( Range &r, T value )
 /// \param n        The number of items to write
 ///
 template <typename OutputIterator, typename T>
-BOOST_CXX14_CONSTEXPR OutputIterator iota_n ( OutputIterator out, T value, std::size_t n )
+OutputIterator iota_n ( OutputIterator out, T value, std::size_t n )
 {
-    for ( ; n > 0; --n, ++value )
-        *out++ = value;
+    while ( n-- > 0 )
+        *out++ = value++;
 
     return out;
 }

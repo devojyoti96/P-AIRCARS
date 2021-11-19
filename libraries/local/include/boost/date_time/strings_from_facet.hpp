@@ -6,15 +6,13 @@
  * Boost Software License, Version 1.0. (See accompanying
  * file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
  * Author: Jeff Garland
- * $Date$
+ * $Date: 2012-09-22 09:04:10 -0700 (Sat, 22 Sep 2012) $
  */
 
-#include <cstring>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <locale>
-#include <iterator>
 
 namespace boost { namespace date_time {
 
@@ -37,6 +35,7 @@ gather_month_strings(const std::locale& locale, bool short_strings=true)
 {
   typedef std::basic_string<charT> string_type;
   typedef std::vector<string_type> collection_type;
+  typedef std::basic_ostringstream<charT> ostream_type;
   typedef std::ostreambuf_iterator<charT> ostream_iter_type;
   typedef std::basic_ostringstream<charT> stringstream_type;
   typedef std::time_put<charT>           time_put_facet_type;
@@ -51,8 +50,7 @@ gather_month_strings(const std::locale& locale, bool short_strings=true)
     //grab the needed strings by using the locale to
     //output each month
     const charT* p_outfmt = outfmt.c_str(), *p_outfmt_end = p_outfmt + outfmt.size();
-    tm tm_value;
-    std::memset(&tm_value, 0, sizeof(tm_value));
+    tm tm_value = {};
     for (int m=0; m < 12; m++) {
       tm_value.tm_mon = m;
       stringstream_type ss;
@@ -87,6 +85,7 @@ gather_weekday_strings(const std::locale& locale, bool short_strings=true)
 {
   typedef std::basic_string<charT> string_type;
   typedef std::vector<string_type> collection_type;
+  typedef std::basic_ostringstream<charT> ostream_type;
   typedef std::ostreambuf_iterator<charT> ostream_iter_type;
   typedef std::basic_ostringstream<charT> stringstream_type;
   typedef std::time_put<charT>           time_put_facet_type;
@@ -104,8 +103,7 @@ gather_weekday_strings(const std::locale& locale, bool short_strings=true)
     //grab the needed strings by using the locale to
     //output each month / weekday
     const charT* p_outfmt = outfmt.c_str(), *p_outfmt_end = p_outfmt + outfmt.size();
-    tm tm_value;
-    std::memset(&tm_value, 0, sizeof(tm_value));
+    tm tm_value = {};
     for (int i=0; i < 7; i++) {
       tm_value.tm_wday = i;
       stringstream_type ss;

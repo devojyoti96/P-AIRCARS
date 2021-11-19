@@ -1,18 +1,19 @@
-//  (C) Copyright Gennadiy Rozental 2001.
+//  (C) Copyright Gennadiy Rozental 2005-2008.
 //  Distributed under the Boost Software License, Version 1.0.
-//  (See accompanying file LICENSE_1_0.txt or copy at
+//  (See accompanying file LICENSE_1_0.txt or copy at 
 //  http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org/libs/test for the library home page.
 //
-//!@file
-//!@brief shared definition for unit test log levels
+//  File        : $RCSfile$
+//
+//  Version     : $Revision: 49312 $
+//
+//  Description : shared definition for unit test log levels
 // ***************************************************************************
 
 #ifndef BOOST_TEST_LOG_LEVEL_HPP_011605GER
 #define BOOST_TEST_LOG_LEVEL_HPP_011605GER
-
-#include <boost/test/detail/config.hpp>
 
 namespace boost {
 namespace unit_test {
@@ -22,7 +23,7 @@ namespace unit_test {
 // ************************************************************************** //
 
 //  each log level includes all subsequent higher loging levels
-enum BOOST_TEST_ENUM_SYMBOL_VISIBLE log_level {
+enum            log_level {
     invalid_log_level        = -1,
     log_successful_tests     = 0,
     log_test_units           = 1,

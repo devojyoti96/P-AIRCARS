@@ -11,11 +11,9 @@
 #ifndef BOOST_MATH_DISTRIBUTION_CONCEPT_HPP
 #define BOOST_MATH_DISTRIBUTION_CONCEPT_HPP
 
-#ifndef BOOST_MATH_STANDALONE
-
 #include <boost/math/distributions/complement.hpp>
 #include <boost/math/distributions/fwd.hpp>
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #pragma warning(push)
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4510)
@@ -23,7 +21,7 @@
 #pragma warning(disable: 4189) // local variable is initialized but not referenced.
 #endif
 #include <boost/concept_check.hpp>
-#ifdef _MSC_VER
+#ifdef BOOST_MSVC
 #pragma warning(pop)
 #endif
 #include <utility>
@@ -114,7 +112,7 @@ std::pair<RealType, RealType> support(const distribution_archetype<RealType>& di
 
 //
 // Next comes the concept checks for verifying that a class
-// fulfils the requirements of a Distribution:
+// fullfils the requirements of a Distribution:
 //
 template <class Distribution>
 struct DistributionConcept
@@ -488,10 +486,6 @@ Distribution* DistributionConcept<Distribution>::pd = 0;
 } // namespace concepts
 } // namespace math
 } // namespace boost
-
-#else
-#error This header can not be used in standalone mode.
-#endif // BOOST_MATH_STANDALONE
 
 #endif // BOOST_MATH_DISTRIBUTION_CONCEPT_HPP
 

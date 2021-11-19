@@ -8,8 +8,6 @@
 
 #ifdef _MSC_VER
 #pragma once
-#pragma warning(push)
-#pragma warning(disable:4702) // Unreachable code (release mode only warning)
 #endif
 
 #include <boost/math/special_functions/detail/bessel_j1.hpp>
@@ -17,17 +15,7 @@
 #include <boost/math/tools/rational.hpp>
 #include <boost/math/tools/big_constant.hpp>
 #include <boost/math/policies/error_handling.hpp>
-#include <boost/math/tools/assert.hpp>
-
-#if defined(__GNUC__) && defined(BOOST_MATH_USE_FLOAT128)
-//
-// This is the only way we can avoid
-// warning: non-standard suffix on floating constant [-Wpedantic]
-// when building with -Wall -pedantic.  Neither __extension__
-// nor #pragma diagnostic ignored work :(
-//
-#pragma GCC system_header
-#endif
+#include <boost/assert.hpp>
 
 // Bessel function of the second kind of order one
 // x <= 8, minimax rational approximations on root-bracketing intervals
@@ -159,7 +147,7 @@ T bessel_y1(T x, const Policy& pol)
 
     if (x <= 0)
     {
-       return policies::raise_domain_error<T>("boost::math::bessel_y1<%1%>(%1%,%1%)",
+       return policies::raise_domain_error<T>("bost::math::bessel_y1<%1%>(%1%,%1%)",
             "Got x == %1%, but x must be > 0, complex result not supported.", x, pol);
     }
     if (x <= 4)                       // x in (0, 4]
@@ -184,29 +172,25 @@ T bessel_y1(T x, const Policy& pol)
         T y2 = y * y;
         rc = evaluate_rational(PC, QC, y2);
         rs = evaluate_rational(PS, QS, y2);
-        factor = 1 / (sqrt(x) * root_pi<T>());
+        factor = sqrt(2 / (x * pi<T>()));
         //
         // This code is really just:
         //
         // T z = x - 0.75f * pi<T>();
         // value = factor * (rc * sin(z) + y * rs * cos(z));
         //
-        // But using the sin/cos addition rules, plus constants for sin/cos of 3PI/4
-        // which then cancel out with corresponding terms in "factor".
+        // But using the sin/cos addition rules, plus constants for sin/cos of 3PI/4:
         //
         T sx = sin(x);
         T cx = cos(x);
-        value = factor * (y * rs * (sx - cx) - rc * (sx + cx));
+        value = factor * (rc * (sx * -constants::one_div_root_two<T>() - cx * constants::half_root_two<T>()) 
+           + y * rs * (cx * -constants::one_div_root_two<T>() + sx * constants::half_root_two<T>()));
     }
 
     return value;
 }
 
 }}} // namespaces
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #endif // BOOST_MATH_BESSEL_Y1_HPP
 

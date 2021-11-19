@@ -14,13 +14,13 @@
 #  define BOOST_GEOMETRY_DEBUG_SEGMENT_IDENTIFIER
 #endif
 
-#if defined(BOOST_GEOMETRY_DEBUG_SEGMENT_IDENTIFIER)
-#include <iostream>
-#endif
+
+#include <vector>
 
 
-#include <boost/geometry/algorithms/detail/signed_size_type.hpp>
-#include <boost/geometry/algorithms/detail/ring_identifier.hpp>
+#include <boost/geometry/core/access.hpp>
+#include <boost/geometry/core/coordinate_dimension.hpp>
+
 
 
 namespace boost { namespace geometry
@@ -31,7 +31,6 @@ namespace boost { namespace geometry
 // on a linestring,ring
 // or polygon (needs ring_index)
 // or multi-geometry (needs multi_index)
-// It is always used for clockwise indication (even if the original is anticlockwise)
 struct segment_identifier
 {
     inline segment_identifier()
@@ -39,18 +38,13 @@ struct segment_identifier
         , multi_index(-1)
         , ring_index(-1)
         , segment_index(-1)
-        , piece_index(-1)
     {}
 
-    inline segment_identifier(signed_size_type src,
-                              signed_size_type mul,
-                              signed_size_type rin,
-                              signed_size_type seg)
+    inline segment_identifier(int src, int mul, int rin, int seg)
         : source_index(src)
         , multi_index(mul)
         , ring_index(rin)
         , segment_index(seg)
-        , piece_index(-1)
     {}
 
     inline bool operator<(segment_identifier const& other) const
@@ -58,7 +52,6 @@ struct segment_identifier
         return source_index != other.source_index ? source_index < other.source_index
             : multi_index !=other.multi_index ? multi_index < other.multi_index
             : ring_index != other.ring_index ? ring_index < other.ring_index
-            : piece_index != other.piece_index ? piece_index < other.piece_index
             : segment_index < other.segment_index
             ;
     }
@@ -68,7 +61,6 @@ struct segment_identifier
         return source_index == other.source_index
             && segment_index == other.segment_index
             && ring_index == other.ring_index
-            && piece_index == other.piece_index
             && multi_index == other.multi_index
             ;
     }
@@ -76,38 +68,23 @@ struct segment_identifier
 #if defined(BOOST_GEOMETRY_DEBUG_SEGMENT_IDENTIFIER)
     friend std::ostream& operator<<(std::ostream &os, segment_identifier const& seg_id)
     {
-        os
+        std::cout
             << "s:" << seg_id.source_index
-            << ", v:" << seg_id.segment_index // v:vertex because s is used for source
+            << ", v:" << seg_id.segment_index // ~vertex
             ;
-        if (seg_id.ring_index >= 0) os << ", r:" << seg_id.ring_index;
-        if (seg_id.multi_index >= 0) os << ", m:" << seg_id.multi_index;
-        if (seg_id.piece_index >= 0) os << ", p:" << seg_id.piece_index;
+        if (seg_id.ring_index >= 0) std::cout << ", r:" << seg_id.ring_index;
+        if (seg_id.multi_index >= 0) std::cout << ", m:" << seg_id.multi_index;
         return os;
     }
 #endif
 
-    signed_size_type source_index;
-    signed_size_type multi_index;
-    signed_size_type ring_index;
-    signed_size_type segment_index;
-
-    // For buffer - todo: move this to buffer-only
-    signed_size_type piece_index;
+    int source_index;
+    int multi_index;
+    int ring_index;
+    int segment_index;
 };
 
-#ifndef DOXYGEN_NO_DETAIL
-namespace detail { namespace overlay
-{
 
-// Create a ring identifier from a segment identifier
-inline ring_identifier ring_id_by_seg_id(segment_identifier const& seg_id)
-{
-    return ring_identifier(seg_id.source_index, seg_id.multi_index, seg_id.ring_index);
-}
-
-}} // namespace detail::overlay
-#endif // DOXYGEN_NO_DETAIL
 
 }} // namespace boost::geometry
 

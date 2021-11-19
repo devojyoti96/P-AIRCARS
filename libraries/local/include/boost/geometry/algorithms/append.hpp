@@ -1,13 +1,8 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2007-2014 Barend Gehrels, Amsterdam, the Netherlands.
-// Copyright (c) 2008-2014 Bruno Lalande, Paris, France.
-// Copyright (c) 2009-2014 Mateusz Loskot, London, UK.
-
-// This file was modified by Oracle on 2014-2021.
-// Modifications copyright (c) 2014-2021, Oracle and/or its affiliates.
-// Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+// Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
+// Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
+// Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
@@ -19,22 +14,17 @@
 #ifndef BOOST_GEOMETRY_ALGORITHMS_APPEND_HPP
 #define BOOST_GEOMETRY_ALGORITHMS_APPEND_HPP
 
+#include <boost/range.hpp>
 
-#include <boost/range/begin.hpp>
-#include <boost/range/end.hpp>
-#include <boost/range/value_type.hpp>
 
-#include <boost/geometry/algorithms/num_interior_rings.hpp>
-#include <boost/geometry/algorithms/detail/convert_point_to_point.hpp>
-#include <boost/geometry/algorithms/detail/signed_size_type.hpp>
 #include <boost/geometry/core/access.hpp>
 #include <boost/geometry/core/mutable_range.hpp>
 #include <boost/geometry/core/point_type.hpp>
 #include <boost/geometry/core/tags.hpp>
-#include <boost/geometry/core/visit.hpp>
-#include <boost/geometry/geometries/adapted/boost_variant.hpp> // for backward compatibility
+
+#include <boost/geometry/algorithms/num_interior_rings.hpp>
+#include <boost/geometry/algorithms/detail/convert_point_to_point.hpp>
 #include <boost/geometry/geometries/concepts/check.hpp>
-#include <boost/geometry/util/range.hpp>
 
 
 namespace boost { namespace geometry
@@ -45,20 +35,20 @@ namespace boost { namespace geometry
 namespace detail { namespace append
 {
 
+template <typename Geometry, typename Point>
 struct append_no_action
 {
-    template <typename Geometry, typename Point>
     static inline void apply(Geometry& , Point const& ,
-                             signed_size_type = -1, signed_size_type = 0)
+                int = 0, int = 0)
     {
     }
 };
 
-struct to_range_point
+template <typename Geometry, typename Point>
+struct append_point
 {
-    template <typename Geometry, typename Point>
     static inline void apply(Geometry& geometry, Point const& point,
-                             signed_size_type = -1, signed_size_type = 0)
+                int = 0, int = 0)
     {
         typename geometry::point_type<Geometry>::type copy;
         geometry::detail::conversion::convert_point_to_point(point, copy);
@@ -67,84 +57,65 @@ struct to_range_point
 };
 
 
-struct to_range_range
+template <typename Geometry, typename Range>
+struct append_range
 {
-    template <typename Geometry, typename Range>
+    typedef typename boost::range_value<Range>::type point_type;
+
     static inline void apply(Geometry& geometry, Range const& range,
-                             signed_size_type = -1, signed_size_type = 0)
+                int = 0, int = 0)
     {
-        using point_type = typename boost::range_value<Range>::type;
-
-        auto const end = boost::end(range);
-        for (auto it = boost::begin(range); it != end; ++it)
+        for (typename boost::range_iterator<Range const>::type
+            it = boost::begin(range);
+             it != boost::end(range);
+             ++it)
         {
-            to_range_point::apply<Geometry, point_type>(geometry, *it);
+            append_point<Geometry, point_type>::apply(geometry, *it);
         }
     }
 };
 
 
-struct to_polygon_point
+template <typename Polygon, typename Point>
+struct point_to_polygon
 {
-    template <typename Polygon, typename Point>
+    typedef typename ring_type<Polygon>::type ring_type;
+
     static inline void apply(Polygon& polygon, Point const& point,
-                             signed_size_type ring_index, signed_size_type = 0)
+                int ring_index, int = 0)
     {
-        using ring_type = typename ring_type<Polygon>::type;
-        using exterior_ring_type = typename ring_return_type<Polygon>::type;
-        using interior_ring_range_type = typename interior_return_type<Polygon>::type;
-
         if (ring_index == -1)
         {
-            exterior_ring_type ext_ring = exterior_ring(polygon);
-            to_range_point::apply<ring_type, Point>(ext_ring, point);
+            append_point<ring_type, Point>::apply(
+                        exterior_ring(polygon), point);
         }
-        else if (ring_index < signed_size_type(num_interior_rings(polygon)))
+        else if (ring_index < int(num_interior_rings(polygon)))
         {
-            interior_ring_range_type int_rings = interior_rings(polygon);
-            to_range_point::apply<ring_type, Point>(range::at(int_rings, ring_index), point);
+            append_point<ring_type, Point>::apply(
+                        interior_rings(polygon)[ring_index], point);
         }
     }
 };
 
 
-struct to_polygon_range
+template <typename Polygon, typename Range>
+struct range_to_polygon
 {
-    template <typename Polygon, typename Range>
+    typedef typename ring_type<Polygon>::type ring_type;
+
     static inline void apply(Polygon& polygon, Range const& range,
-                             signed_size_type ring_index, signed_size_type = 0)
+                int ring_index, int )
     {
-        using ring_type = typename ring_type<Polygon>::type;
-        using exterior_ring_type = typename ring_return_type<Polygon>::type;
-        using interior_ring_range_type = typename interior_return_type<Polygon>::type;
-
         if (ring_index == -1)
         {
-            exterior_ring_type ext_ring = exterior_ring(polygon);
-            to_range_range::apply<ring_type, Range>(ext_ring, range);
+            append_range<ring_type, Range>::apply(
+                        exterior_ring(polygon), range);
         }
-        else if (ring_index < signed_size_type(num_interior_rings(polygon)))
+        else if (ring_index < int(num_interior_rings(polygon)))
         {
-            interior_ring_range_type int_rings = interior_rings(polygon);
-            to_range_range::apply<ring_type, Range>(range::at(int_rings, ring_index), range);
+            append_range<ring_type, Range>::apply(
+                        interior_rings(polygon)[ring_index], range);
         }
-    }
-};
-
-
-template <typename Policy>
-struct to_multigeometry
-{
-    template <typename MultiGeometry, typename RangeOrPoint>
-    static inline void apply(MultiGeometry& multigeometry,
-                             RangeOrPoint const& range_or_point,
-                             signed_size_type ring_index, signed_size_type multi_index)
-    {
-        Policy::template apply
-            <
-                typename boost::range_value<MultiGeometry>::type,
-                RangeOrPoint
-            >(range::at(multigeometry, multi_index), range_or_point, ring_index);
     }
 };
 
@@ -157,98 +128,72 @@ struct to_multigeometry
 namespace dispatch
 {
 
-template
-<
-    typename Geometry,
-    typename RangeOrPoint,
-    typename Tag = typename geometry::tag<Geometry>::type,
-    typename OtherTag = typename geometry::tag<RangeOrPoint>::type
->
-struct append
-    : detail::append::append_no_action
+namespace splitted_dispatch
+{
+
+template <typename Tag, typename Geometry, typename Point>
+struct append_point
+    : detail::append::append_no_action<Geometry, Point>
 {};
 
 template <typename Geometry, typename Point>
-struct append<Geometry, Point, linestring_tag, point_tag>
-    : detail::append::to_range_point
+struct append_point<linestring_tag, Geometry, Point>
+    : detail::append::append_point<Geometry, Point>
 {};
 
 template <typename Geometry, typename Point>
-struct append<Geometry, Point, ring_tag, point_tag>
-    : detail::append::to_range_point
+struct append_point<ring_tag, Geometry, Point>
+    : detail::append::append_point<Geometry, Point>
 {};
+
 
 template <typename Polygon, typename Point>
-struct append<Polygon, Point, polygon_tag, point_tag>
-        : detail::append::to_polygon_point
-{};
-
-template <typename Geometry, typename Range, typename RangeTag>
-struct append<Geometry, Range, linestring_tag, RangeTag>
-    : detail::append::to_range_range
-{};
-
-template <typename Geometry, typename Range, typename RangeTag>
-struct append<Geometry, Range, ring_tag, RangeTag>
-    : detail::append::to_range_range
-{};
-
-template <typename Polygon, typename Range, typename RangeTag>
-struct append<Polygon, Range, polygon_tag, RangeTag>
-        : detail::append::to_polygon_range
+struct append_point<polygon_tag, Polygon, Point>
+        : detail::append::point_to_polygon<Polygon, Point>
 {};
 
 
-template <typename Geometry, typename Point>
-struct append<Geometry, Point, multi_point_tag, point_tag>
-    : detail::append::to_range_point
+template <typename Tag, typename Geometry, typename Range>
+struct append_range
+    : detail::append::append_no_action<Geometry, Range>
 {};
 
-template <typename Geometry, typename Range, typename RangeTag>
-struct append<Geometry, Range, multi_point_tag, RangeTag>
-    : detail::append::to_range_range
+template <typename Geometry, typename Range>
+struct append_range<linestring_tag, Geometry, Range>
+    : detail::append::append_range<Geometry, Range>
 {};
 
-template <typename MultiGeometry, typename Point>
-struct append<MultiGeometry, Point, multi_linestring_tag, point_tag>
-    : detail::append::to_multigeometry<detail::append::to_range_point>
-{};
-
-template <typename MultiGeometry, typename Range, typename RangeTag>
-struct append<MultiGeometry, Range, multi_linestring_tag, RangeTag>
-    : detail::append::to_multigeometry<detail::append::to_range_range>
-{};
-
-template <typename MultiGeometry, typename Point>
-struct append<MultiGeometry, Point, multi_polygon_tag, point_tag>
-    : detail::append::to_multigeometry<detail::append::to_polygon_point>
-{};
-
-template <typename MultiGeometry, typename Range, typename RangeTag>
-struct append<MultiGeometry, Range, multi_polygon_tag, RangeTag>
-    : detail::append::to_multigeometry<detail::append::to_polygon_range>
+template <typename Geometry, typename Range>
+struct append_range<ring_tag, Geometry, Range>
+    : detail::append::append_range<Geometry, Range>
 {};
 
 
-template <typename Geometry, typename RangeOrPoint, typename OtherTag>
-struct append<Geometry, RangeOrPoint, dynamic_geometry_tag, OtherTag>
-{
-    static inline void apply(Geometry& geometry,
-                             RangeOrPoint const& range_or_point,
-                             signed_size_type ring_index, signed_size_type multi_index)
-    {
-        traits::visit<Geometry>::apply([&](auto & g)
-        {
-            append
-                <
-                    std::remove_reference_t<decltype(g)>, RangeOrPoint
-                >::apply(g, range_or_point, ring_index, multi_index);
-        }, geometry);
-    }
-};
+template <typename Polygon, typename Range>
+struct append_range<polygon_tag, Polygon, Range>
+        : detail::append::range_to_polygon<Polygon, Range>
+{};
 
-// TODO: It's unclear how append should work for GeometryCollection because
-//   it can hold multiple different geometries.
+}
+
+
+// Default: append a range (or linestring or ring or whatever) to any geometry
+template
+<
+    typename Geometry, typename RangeOrPoint,
+    typename TagRangeOrPoint = typename tag<RangeOrPoint>::type
+>
+struct append
+    : splitted_dispatch::append_range<typename tag<Geometry>::type, Geometry, RangeOrPoint>
+{};
+
+// Specialization for point to append a point to any geometry
+template <typename Geometry, typename RangeOrPoint>
+struct append<Geometry, RangeOrPoint, point_tag>
+    : splitted_dispatch::append_point<typename tag<Geometry>::type, Geometry, RangeOrPoint>
+{};
+
+
 
 } // namespace dispatch
 #endif // DOXYGEN_NO_DISPATCH
@@ -263,20 +208,21 @@ struct append<Geometry, RangeOrPoint, dynamic_geometry_tag, OtherTag>
 \param range_or_point The point or range to add
 \param ring_index The index of the ring in case of a polygon:
     exterior ring (-1, the default) or  interior ring index
-\param multi_index The index of the geometry to which the points are appended
+\param multi_index Reserved for multi polygons or multi linestrings
 
 \qbk{[include reference/algorithms/append.qbk]}
 }
  */
 template <typename Geometry, typename RangeOrPoint>
 inline void append(Geometry& geometry, RangeOrPoint const& range_or_point,
-                   signed_size_type ring_index = -1, signed_size_type multi_index = 0)
+            int ring_index = -1, int multi_index = 0)
 {
-    concepts::check<Geometry>();
+    concept::check<Geometry>();
 
     dispatch::append
         <
-            Geometry, RangeOrPoint
+            Geometry,
+            RangeOrPoint
         >::apply(geometry, range_or_point, ring_index, multi_index);
 }
 

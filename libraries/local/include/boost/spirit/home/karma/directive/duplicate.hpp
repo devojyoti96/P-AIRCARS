@@ -3,8 +3,8 @@
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef BOOST_SPIRIT_KARMA_DIRECTIVE_DUPLICATE_HPP
-#define BOOST_SPIRIT_KARMA_DIRECTIVE_DUPLICATE_HPP
+#if !defined(SPIRIT_KARMA_DUPLICATE_JUL_11_2010_0954AM)
+#define SPIRIT_KARMA_DUPLICATE_JUL_11_2010_0954AM
 
 #if defined(_MSC_VER)
 #pragma once
@@ -68,7 +68,7 @@ namespace boost { namespace spirit { namespace karma
         template <typename T
           , bool IsSequence = fusion::traits::is_sequence<T>::value>
         struct first_attribute_of_subject
-          : remove_reference<typename fusion::result_of::at_c<T, 0>::type>
+          : fusion::result_of::at_c<T, 0>
         {};
 
         template <typename T>

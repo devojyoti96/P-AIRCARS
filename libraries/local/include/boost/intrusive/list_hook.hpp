@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 //
 // (C) Copyright Olaf Krzikalla 2004-2006.
-// (C) Copyright Ion Gaztanaga  2006-2013
+// (C) Copyright Ion Gaztanaga  2006-2012
 //
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
@@ -16,26 +16,29 @@
 
 #include <boost/intrusive/detail/config_begin.hpp>
 #include <boost/intrusive/intrusive_fwd.hpp>
-
+#include <boost/intrusive/detail/utilities.hpp>
 #include <boost/intrusive/detail/list_node.hpp>
 #include <boost/intrusive/circular_list_algorithms.hpp>
 #include <boost/intrusive/options.hpp>
 #include <boost/intrusive/detail/generic_hook.hpp>
 
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
-
 namespace boost {
 namespace intrusive {
+
+/// @cond
+template<class VoidPointer>
+struct get_list_node_algo
+{
+   typedef circular_list_algorithms<list_node_traits<VoidPointer> > type;
+};
+/// @endcond
 
 //! Helper metafunction to define a \c \c list_base_hook that yields to the same
 //! type when the same options (either explicitly or implicitly) are used.
 #if defined(BOOST_INTRUSIVE_DOXYGEN_INVOKED) || defined(BOOST_INTRUSIVE_VARIADIC_TEMPLATES)
 template<class ...Options>
 #else
-template<class O1 = void, class O2 = void, class O3 = void>
+template<class O1 = none, class O2 = none, class O3 = none>
 #endif
 struct make_list_base_hook
 {
@@ -49,12 +52,11 @@ struct make_list_base_hook
       #endif
       >::type packed_options;
 
-   typedef generic_hook
-   < CircularListAlgorithms
-   , list_node_traits<typename packed_options::void_pointer>
+   typedef detail::generic_hook
+   < get_list_node_algo<typename packed_options::void_pointer>
    , typename packed_options::tag
    , packed_options::link_mode
-   , ListBaseHookId
+   , detail::ListBaseHook
    > implementation_defined;
    /// @endcond
    typedef implementation_defined type;
@@ -75,7 +77,7 @@ struct make_list_base_hook
 //! \c auto_unlink or \c safe_link).
 //!
 //! \c void_pointer<> is the pointer type that will be used internally in the hook
-//! and the container configured to use this hook.
+//! and the the container configured to use this hook.
 #if defined(BOOST_INTRUSIVE_DOXYGEN_INVOKED) || defined(BOOST_INTRUSIVE_VARIADIC_TEMPLATES)
 template<class ...Options>
 #else
@@ -96,7 +98,7 @@ class list_base_hook
    //!   initializes the node to an unlinked state.
    //!
    //! <b>Throws</b>: Nothing.
-   list_base_hook() BOOST_NOEXCEPT;
+   list_base_hook();
 
    //! <b>Effects</b>: If link_mode is \c auto_unlink or \c safe_link
    //!   initializes the node to an unlinked state. The argument is ignored.
@@ -107,7 +109,7 @@ class list_base_hook
    //!   makes classes using the hook STL-compliant without forcing the
    //!   user to do some additional work. \c swap can be used to emulate
    //!   move-semantics.
-   list_base_hook(const list_base_hook& ) BOOST_NOEXCEPT;
+   list_base_hook(const list_base_hook& );
 
    //! <b>Effects</b>: Empty function. The argument is ignored.
    //!
@@ -117,7 +119,7 @@ class list_base_hook
    //!   makes classes using the hook STL-compliant without forcing the
    //!   user to do some additional work. \c swap can be used to emulate
    //!   move-semantics.
-   list_base_hook& operator=(const list_base_hook& ) BOOST_NOEXCEPT;
+   list_base_hook& operator=(const list_base_hook& );
 
    //! <b>Effects</b>: If link_mode is \c normal_link, the destructor does
    //!   nothing (ie. no code is generated). If link_mode is \c safe_link and the
@@ -139,7 +141,7 @@ class list_base_hook
    //! <b>Complexity</b>: Constant
    //!
    //! <b>Throws</b>: Nothing.
-   void swap_nodes(list_base_hook &other) BOOST_NOEXCEPT;
+   void swap_nodes(list_base_hook &other);
 
    //! <b>Precondition</b>: link_mode must be \c safe_link or \c auto_unlink.
    //!
@@ -154,7 +156,7 @@ class list_base_hook
    //!   This function is only allowed if link_mode is \c auto_unlink.
    //!
    //! <b>Throws</b>: Nothing.
-   void unlink() BOOST_NOEXCEPT;
+   void unlink();
    #endif
 };
 
@@ -163,7 +165,7 @@ class list_base_hook
 #if defined(BOOST_INTRUSIVE_DOXYGEN_INVOKED) || defined(BOOST_INTRUSIVE_VARIADIC_TEMPLATES)
 template<class ...Options>
 #else
-template<class O1 = void, class O2 = void, class O3 = void>
+template<class O1 = none, class O2 = none, class O3 = none>
 #endif
 struct make_list_member_hook
 {
@@ -177,12 +179,11 @@ struct make_list_member_hook
       #endif
       >::type packed_options;
 
-   typedef generic_hook
-   < CircularListAlgorithms
-   , list_node_traits<typename packed_options::void_pointer>
+   typedef detail::generic_hook
+   < get_list_node_algo<typename packed_options::void_pointer>
    , member_tag
    , packed_options::link_mode
-   , NoBaseHookId
+   , detail::NoBaseHook
    > implementation_defined;
    /// @endcond
    typedef implementation_defined type;
@@ -198,7 +199,7 @@ struct make_list_member_hook
 //! \c auto_unlink or \c safe_link).
 //!
 //! \c void_pointer<> is the pointer type that will be used internally in the hook
-//! and the container configured to use this hook.
+//! and the the container configured to use this hook.
 #if defined(BOOST_INTRUSIVE_DOXYGEN_INVOKED) || defined(BOOST_INTRUSIVE_VARIADIC_TEMPLATES)
 template<class ...Options>
 #else
@@ -219,7 +220,7 @@ class list_member_hook
    //!   initializes the node to an unlinked state.
    //!
    //! <b>Throws</b>: Nothing.
-   list_member_hook() BOOST_NOEXCEPT;
+   list_member_hook();
 
    //! <b>Effects</b>: If link_mode is \c auto_unlink or \c safe_link
    //!   initializes the node to an unlinked state. The argument is ignored.
@@ -230,7 +231,7 @@ class list_member_hook
    //!   makes classes using the hook STL-compliant without forcing the
    //!   user to do some additional work. \c swap can be used to emulate
    //!   move-semantics.
-   list_member_hook(const list_member_hook& ) BOOST_NOEXCEPT;
+   list_member_hook(const list_member_hook& );
 
    //! <b>Effects</b>: Empty function. The argument is ignored.
    //!
@@ -240,7 +241,7 @@ class list_member_hook
    //!   makes classes using the hook STL-compliant without forcing the
    //!   user to do some additional work. \c swap can be used to emulate
    //!   move-semantics.
-   list_member_hook& operator=(const list_member_hook& ) BOOST_NOEXCEPT;
+   list_member_hook& operator=(const list_member_hook& );
 
    //! <b>Effects</b>: If link_mode is \c normal_link, the destructor does
    //!   nothing (ie. no code is generated). If link_mode is \c safe_link and the
@@ -262,7 +263,7 @@ class list_member_hook
    //! <b>Complexity</b>: Constant
    //!
    //! <b>Throws</b>: Nothing.
-   void swap_nodes(list_member_hook &other) BOOST_NOEXCEPT;
+   void swap_nodes(list_member_hook &other);
 
    //! <b>Precondition</b>: link_mode must be \c safe_link or \c auto_unlink.
    //!
@@ -277,7 +278,7 @@ class list_member_hook
    //!   This function is only allowed if link_mode is \c auto_unlink.
    //!
    //! <b>Throws</b>: Nothing.
-   void unlink() BOOST_NOEXCEPT;
+   void unlink();
    #endif
 };
 

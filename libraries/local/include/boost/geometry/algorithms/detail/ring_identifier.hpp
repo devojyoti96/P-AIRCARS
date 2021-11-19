@@ -10,14 +10,6 @@
 #define BOOST_GEOMETRY_ALGORITHMS_DETAIL_RING_IDENTIFIER_HPP
 
 
-#if defined(BOOST_GEOMETRY_DEBUG_IDENTIFIER)
-#include <iostream>
-#endif
-
-
-#include <boost/geometry/algorithms/detail/signed_size_type.hpp>
-
-
 namespace boost { namespace geometry
 {
 
@@ -32,9 +24,7 @@ struct ring_identifier
         , ring_index(-1)
     {}
 
-    inline ring_identifier(signed_size_type src,
-                           signed_size_type mul,
-                           signed_size_type rin)
+    inline ring_identifier(int src, int mul, int rin)
         : source_index(src)
         , multi_index(mul)
         , ring_index(rin)
@@ -56,11 +46,6 @@ struct ring_identifier
             ;
     }
 
-    inline bool operator!=(ring_identifier const& other) const
-    {
-        return ! operator==(other);
-    }
-
 #if defined(BOOST_GEOMETRY_DEBUG_IDENTIFIER)
     friend std::ostream& operator<<(std::ostream &os, ring_identifier const& ring_id)
     {
@@ -73,9 +58,9 @@ struct ring_identifier
 #endif
 
 
-    signed_size_type source_index;
-    signed_size_type multi_index;
-    signed_size_type ring_index;
+    int source_index;
+    int multi_index;
+    int ring_index;
 };
 
 

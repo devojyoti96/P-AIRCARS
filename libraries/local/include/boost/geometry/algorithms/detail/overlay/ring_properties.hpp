@@ -2,10 +2,6 @@
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2017.
-// Modifications copyright (c) 2017 Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -27,19 +23,18 @@ namespace boost { namespace geometry
 namespace detail { namespace overlay
 {
 
-template <typename Point, typename AreaType>
+template <typename Point>
 struct ring_properties
 {
     typedef Point point_type;
-    typedef AreaType area_type;
-
-    bool valid;
+    typedef typename default_area_result<Point>::type area_type;
 
     // Filled by "select_rings"
     Point point;
     area_type area;
 
-    // Filled by "update_ring_selection"
+    // Filled by "update_selection_map"
+    int within_code;
     bool reversed;
 
     // Filled/used by "assign_rings"
@@ -49,21 +44,22 @@ struct ring_properties
     std::vector<ring_identifier> children;
 
     inline ring_properties()
-        : valid(false)
-        , area(area_type())
+        : area(area_type())
+        , within_code(-1)
         , reversed(false)
         , discarded(false)
         , parent_area(-1)
     {}
 
-    template <typename RingOrBox, typename Strategy>
-    inline ring_properties(RingOrBox const& ring_or_box, Strategy const& strategy)
-        : reversed(false)
+    template <typename RingOrBox>
+    inline ring_properties(RingOrBox const& ring_or_box, bool midpoint)
+        : within_code(-1)
+        , reversed(false)
         , discarded(false)
         , parent_area(-1)
     {
-        this->area = geometry::area(ring_or_box, strategy);
-        valid = geometry::point_on_border(this->point, ring_or_box);
+        this->area = geometry::area(ring_or_box);
+        geometry::point_on_border(this->point, ring_or_box, midpoint);
     }
 
     inline area_type get_area() const

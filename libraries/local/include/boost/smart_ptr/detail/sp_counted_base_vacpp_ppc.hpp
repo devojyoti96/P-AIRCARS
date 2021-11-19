@@ -21,18 +21,7 @@
 //  formulation
 //
 
-#include <boost/smart_ptr/detail/sp_typeinfo_.hpp>
-#include <boost/smart_ptr/detail/sp_obsolete.hpp>
-#include <boost/config.hpp>
-
-#if defined(BOOST_SP_REPORT_IMPLEMENTATION)
-
-#include <boost/config/pragma_message.hpp>
-BOOST_PRAGMA_MESSAGE("Using xlC/PowerPC sp_counted_base")
-
-#endif
-
-BOOST_SP_OBSOLETE()
+#include <boost/detail/sp_typeinfo.hpp>
 
 extern "builtin" void __lwsync(void);
 extern "builtin" void __isync(void);
@@ -81,7 +70,7 @@ inline int atomic_conditional_increment( int *pw )
    }
 }
 
-class BOOST_SYMBOL_VISIBLE sp_counted_base
+class sp_counted_base
 {
 private:
 
@@ -114,8 +103,7 @@ public:
         delete this;
     }
 
-    virtual void * get_deleter( sp_typeinfo_ const & ti ) = 0;
-    virtual void * get_local_deleter( sp_typeinfo_ const & ti ) = 0;
+    virtual void * get_deleter( sp_typeinfo const & ti ) = 0;
     virtual void * get_untyped_deleter() = 0;
 
     void add_ref_copy()

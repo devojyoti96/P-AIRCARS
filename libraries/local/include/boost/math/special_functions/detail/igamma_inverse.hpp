@@ -281,11 +281,11 @@ T find_inverse_gamma(T a, T p, T q, const Policy& pol, bool* p_has_10_digits)
             // DiDonato and Morris Eq 35:
             T v = log(p) + boost::math::lgamma(ap1, pol);
             z = exp((v + w) / a);
-            s = boost::math::log1p(z / ap1 * (1 + z / ap2), pol);
+            s = boost::math::log1p(z / ap1 * (1 + z / ap2));
             z = exp((v + z - s) / a);
-            s = boost::math::log1p(z / ap1 * (1 + z / ap2), pol);
+            s = boost::math::log1p(z / ap1 * (1 + z / ap2));
             z = exp((v + z - s) / a);
-            s = boost::math::log1p(z / ap1 * (1 + z / ap2 * (1 + z / (a + 3))), pol);
+            s = boost::math::log1p(z / ap1 * (1 + z / ap2 * (1 + z / (a + 3))));
             z = exp((v + z - s) / a);
             BOOST_MATH_INSTRUMENT_VARIABLE(z);
          }
@@ -341,7 +341,7 @@ struct gamma_p_inverse_func
       // flag is set, then Q(x) - q and it's derivatives.
       //
       typedef typename policies::evaluation<T, Policy>::type value_type;
-      // typedef typename lanczos::lanczos<T, Policy>::type evaluation_type;
+      typedef typename lanczos::lanczos<T, Policy>::type evaluation_type;
       typedef typename policies::normalise<
          Policy, 
          policies::promote_float<false>, 
@@ -396,11 +396,11 @@ T gamma_p_inv_imp(T a, T p, const Policy& pol)
    BOOST_MATH_INSTRUMENT_VARIABLE(p);
 
    if(a <= 0)
-      return policies::raise_domain_error<T>(function, "Argument a in the incomplete gamma function inverse must be >= 0 (got a=%1%).", a, pol);
+      policies::raise_domain_error<T>(function, "Argument a in the incomplete gamma function inverse must be >= 0 (got a=%1%).", a, pol);
    if((p < 0) || (p > 1))
-      return policies::raise_domain_error<T>(function, "Probability must be in the range [0,1] in the incomplete gamma function inverse (got p=%1%).", p, pol);
+      policies::raise_domain_error<T>(function, "Probabilty must be in the range [0,1] in the incomplete gamma function inverse (got p=%1%).", p, pol);
    if(p == 1)
-      return policies::raise_overflow_error<T>(function, 0, Policy());
+      return tools::max_value<T>();
    if(p == 0)
       return 0;
    bool has_10_digits;
@@ -433,7 +433,7 @@ T gamma_p_inv_imp(T a, T p, const Policy& pol)
    //
    // Go ahead and iterate:
    //
-   std::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
+   boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
    guess = tools::halley_iterate(
       detail::gamma_p_inverse_func<T, Policy>(a, p, false),
       guess,
@@ -456,11 +456,11 @@ T gamma_q_inv_imp(T a, T q, const Policy& pol)
    static const char* function = "boost::math::gamma_q_inv<%1%>(%1%, %1%)";
 
    if(a <= 0)
-      return policies::raise_domain_error<T>(function, "Argument a in the incomplete gamma function inverse must be >= 0 (got a=%1%).", a, pol);
+      policies::raise_domain_error<T>(function, "Argument a in the incomplete gamma function inverse must be >= 0 (got a=%1%).", a, pol);
    if((q < 0) || (q > 1))
-      return policies::raise_domain_error<T>(function, "Probability must be in the range [0,1] in the incomplete gamma function inverse (got q=%1%).", q, pol);
+      policies::raise_domain_error<T>(function, "Probabilty must be in the range [0,1] in the incomplete gamma function inverse (got q=%1%).", q, pol);
    if(q == 0)
-      return policies::raise_overflow_error<T>(function, 0, Policy());
+      return tools::max_value<T>();
    if(q == 1)
       return 0;
    bool has_10_digits;
@@ -492,7 +492,7 @@ T gamma_q_inv_imp(T a, T q, const Policy& pol)
    //
    // Go ahead and iterate:
    //
-   std::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
+   boost::uintmax_t max_iter = policies::get_max_root_iterations<Policy>();
    guess = tools::halley_iterate(
       detail::gamma_p_inverse_func<T, Policy>(a, q, true),
       guess,

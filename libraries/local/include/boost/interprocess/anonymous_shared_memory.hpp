@@ -11,14 +11,6 @@
 #ifndef BOOST_INTERPROCESS_ANONYMOUS_SHARED_MEMORY_HPP
 #define BOOST_INTERPROCESS_ANONYMOUS_SHARED_MEMORY_HPP
 
-#ifndef BOOST_CONFIG_HPP
-#  include <boost/config.hpp>
-#endif
-#
-#if defined(BOOST_HAS_PRAGMA_ONCE)
-#  pragma once
-#endif
-
 #include <boost/interprocess/detail/config_begin.hpp>
 #include <boost/interprocess/detail/workaround.hpp>
 #include <boost/interprocess/creation_tags.hpp>
@@ -43,7 +35,7 @@
 namespace boost {
 namespace interprocess {
 
-#if !defined(BOOST_INTERPROCESS_DOXYGEN_INVOKED)
+/// @cond
 
 namespace ipcdetail{
 
@@ -61,7 +53,7 @@ namespace ipcdetail{
    };
 }
 
-#endif   //#ifndef BOOST_INTERPROCESS_DOXYGEN_INVOKED
+/// @endcond
 
 //!A function that creates an anonymous shared memory segment of size "size".
 //!If "address" is passed the function will try to map the segment in that address.
@@ -111,7 +103,7 @@ anonymous_shared_memory(std::size_t size, void *address = 0)
 }
 #else
 {
-   windows_shared_memory anonymous_mapping(create_only, (char*)0, read_write, size);
+   windows_shared_memory anonymous_mapping(create_only, 0, read_write, size);
    return mapped_region(anonymous_mapping, read_write, 0, size, address);
 }
 

@@ -8,7 +8,6 @@
 #if !defined(BOOST_FUSION_SINGLE_VIEW_NEXT_IMPL_05052005_0331)
 #define BOOST_FUSION_SINGLE_VIEW_NEXT_IMPL_05052005_0331
 
-#include <boost/fusion/support/config.hpp>
 #include <boost/mpl/next.hpp>
 #include <boost/static_assert.hpp>
 
@@ -35,14 +34,10 @@ namespace boost { namespace fusion
                     typename mpl::next<typename Iterator::position>::type>
                 type;
 
-                BOOST_CONSTEXPR BOOST_FUSION_GPU_ENABLED
                 static type
                 call(Iterator const& i)
                 {
-                    // Workaround for ICE on GCC 4.0.0.
-                    // see https://svn.boost.org/trac/boost/ticket/5808
-                    typedef typename type::position position;
-                    BOOST_STATIC_ASSERT((position::value < 2));
+                    BOOST_STATIC_ASSERT((type::position::value < 2));
                     return type(i.view);
                 }
             };

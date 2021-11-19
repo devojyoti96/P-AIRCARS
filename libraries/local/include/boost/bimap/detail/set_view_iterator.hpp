@@ -12,7 +12,7 @@
 #ifndef BOOST_BIMAP_DETAIL_SET_VIEW_ITERATOR_HPP
 #define BOOST_BIMAP_DETAIL_SET_VIEW_ITERATOR_HPP
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER>=1200)
 #pragma once
 #endif
 
@@ -22,7 +22,6 @@
 
 #ifndef BOOST_BIMAP_DISABLE_SERIALIZATION 
   #include <boost/serialization/nvp.hpp>
-  #include <boost/serialization/split_member.hpp>
 #endif // BOOST_BIMAP_DISABLE_SERIALIZATION
 
 #include <boost/iterator/detail/enable_if.hpp>

@@ -7,12 +7,13 @@
 #ifndef BOOST_IOSTREAMS_DETAIL_UNREACHABLE_RETURN_HPP_INCLUDED
 #define BOOST_IOSTREAMS_DETAIL_UNREACHABLE_RETURN_HPP_INCLUDED
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
 #endif              
 
 #include <boost/config.hpp>
 
+// If Boost.Exception has BOOST_ATTRIBUTE_NORETURN
 #if defined(_MSC_VER) || defined(__GNUC__)
 #define BOOST_IOSTREAMS_UNREACHABLE_RETURN(x) \
     BOOST_UNREACHABLE_RETURN(x)

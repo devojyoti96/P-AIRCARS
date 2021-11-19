@@ -11,9 +11,13 @@
 #ifndef BOOST_RANGE_AS_LITERAL_HPP
 #define BOOST_RANGE_AS_LITERAL_HPP
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
 #endif
+
+#ifdef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
+#include <boost/range/detail/as_literal.hpp>
+#else
 
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/detail/str_types.hpp>
@@ -21,11 +25,6 @@
 #include <boost/detail/workaround.hpp>
 
 #include <cstring>
-
-#if !defined(BOOST_NO_CXX11_CHAR16_T) || !defined(BOOST_NO_CXX11_CHAR32_T)
-#include <string>  // for std::char_traits
-#endif
-
 #ifndef BOOST_NO_CWCHAR
 #include <cwchar>
 #endif
@@ -38,20 +37,6 @@ namespace boost
         {
             return strlen( s );
         }
-
-#ifndef BOOST_NO_CXX11_CHAR16_T
-        inline std::size_t length( const char16_t* s )
-        {
-            return std::char_traits<char16_t>::length( s );
-        }
-#endif
-
-#ifndef BOOST_NO_CXX11_CHAR32_T
-        inline std::size_t length( const char32_t* s )
-        {
-            return std::char_traits<char32_t>::length( s );
-        }
-#endif
 
 #ifndef BOOST_NO_CWCHAR
         inline std::size_t length( const wchar_t* s )
@@ -75,30 +60,6 @@ namespace boost
         {
             return true;
         }
-
-#ifndef BOOST_NO_CXX11_CHAR16_T
-        inline bool is_char_ptr( char16_t* )
-        {
-            return true;
-        }
-
-        inline bool is_char_ptr( const char16_t* )
-        {
-            return true;
-        }
-#endif
-
-#ifndef BOOST_NO_CXX11_CHAR32_T
-        inline bool is_char_ptr( char32_t* )
-        {
-            return true;
-        }
-
-        inline bool is_char_ptr( const char32_t* )
-        {
-            return true;
-        }
-#endif
 
 #ifndef BOOST_NO_CWCHAR
         inline bool is_char_ptr( wchar_t* )
@@ -160,5 +121,7 @@ namespace boost
         return range_detail::make_range( arr, range_detail::is_char_ptr(arr) );
     }
 }
+
+#endif // BOOST_NO_FUNCTION_TEMPLATE_ORDERING
 
 #endif

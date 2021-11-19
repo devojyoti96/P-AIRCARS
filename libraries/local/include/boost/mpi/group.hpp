@@ -16,7 +16,6 @@
 #define BOOST_MPI_GROUP_HPP
 
 #include <boost/mpi/exception.hpp>
-#include <boost/mpi/detail/antiques.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 #include <vector>
@@ -273,9 +272,9 @@ group::translate_ranks(InputIterator first, InputIterator last,
   BOOST_MPI_CHECK_RESULT(MPI_Group_translate_ranks,
                          ((MPI_Group)*this,
                           in_array.size(),
-                          detail::c_data(in_array),
+                          &in_array[0],
                           (MPI_Group)to_group,
-                          detail::c_data(out_array)));
+                          &out_array[0]));
 
   for (std::vector<int>::size_type i = 0, n = out_array.size(); i < n; ++i)
     *out++ = out_array[i];
@@ -301,7 +300,7 @@ group group::include(InputIterator first, InputIterator last)
   std::vector<int> ranks(first, last);
   MPI_Group result;
   BOOST_MPI_CHECK_RESULT(MPI_Group_incl,
-                         ((MPI_Group)*this, ranks.size(), detail::c_data(ranks), &result));
+                         ((MPI_Group)*this, ranks.size(), &ranks[0], &result));
   return group(result, /*adopt=*/true);
 }
 
@@ -323,7 +322,7 @@ group group::exclude(InputIterator first, InputIterator last)
   std::vector<int> ranks(first, last);
   MPI_Group result;
   BOOST_MPI_CHECK_RESULT(MPI_Group_excl,
-                         ((MPI_Group)*this, ranks.size(), detail::c_data(ranks), &result));
+                         ((MPI_Group)*this, ranks.size(), &ranks[0], &result));
   return group(result, /*adopt=*/true);
 }
 

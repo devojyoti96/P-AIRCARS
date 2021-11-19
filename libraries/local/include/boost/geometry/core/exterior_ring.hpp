@@ -4,10 +4,6 @@
 // Copyright (c) 2008-2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2009-2012 Mateusz Loskot, London, UK.
 
-// This file was modified by Oracle on 2020.
-// Modifications copyright (c) 2020, Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Parts of Boost.Geometry are redesigned from Geodan's Geographic Library
 // (geolib/GGL), copyright (c) 1995-2010 Geodan, Amsterdam, the Netherlands.
 
@@ -20,12 +16,14 @@
 #define BOOST_GEOMETRY_CORE_EXTERIOR_RING_HPP
 
 
-#include <type_traits>
+#include <boost/mpl/assert.hpp>
+#include <boost/type_traits/remove_const.hpp>
+
 
 #include <boost/geometry/core/ring_type.hpp>
-#include <boost/geometry/core/static_assert.hpp>
 #include <boost/geometry/core/tag.hpp>
 #include <boost/geometry/core/tags.hpp>
+#include <boost/geometry/util/add_const_if_c.hpp>
 
 
 namespace boost { namespace geometry
@@ -49,9 +47,11 @@ namespace traits
 template <typename Polygon>
 struct exterior_ring
 {
-    BOOST_GEOMETRY_STATIC_ASSERT_FALSE(
-        "Not implemented for this Polygon type.",
-        Polygon);
+    BOOST_MPL_ASSERT_MSG
+        (
+            false, NOT_IMPLEMENTED_FOR_THIS_POLYGON_TYPE
+            , (types<Polygon>)
+        );
 };
 
 
@@ -66,9 +66,11 @@ namespace core_dispatch
 template <typename Tag, typename Geometry>
 struct exterior_ring
 {
-    BOOST_GEOMETRY_STATIC_ASSERT_FALSE(
-        "Not implemented for this Geometry type.",
-        Tag, Geometry);
+    BOOST_MPL_ASSERT_MSG
+        (
+            false, NOT_IMPLEMENTED_FOR_THIS_GEOMETRY_TYPE
+            , (types<Geometry>)
+        );
 };
 
 
@@ -77,11 +79,15 @@ struct exterior_ring<polygon_tag, Polygon>
 {
     static
     typename geometry::ring_return_type<Polygon>::type
-        apply(Polygon& polygon)
+        apply(typename add_const_if_c
+            <
+                boost::is_const<Polygon>::type::value,
+                Polygon
+            >::type& polygon)
     {
         return traits::exterior_ring
             <
-                typename std::remove_const<Polygon>::type
+                typename boost::remove_const<Polygon>::type
             >::get(polygon);
     }
 };
@@ -95,7 +101,7 @@ struct exterior_ring<polygon_tag, Polygon>
     \brief Function to get the exterior_ring ring of a polygon
     \ingroup exterior_ring
     \note OGC compliance: instead of ExteriorRing
-    \tparam Polygon polygon type
+    \tparam P polygon type
     \param polygon the polygon to get the exterior ring from
     \return a reference to the exterior ring
 */

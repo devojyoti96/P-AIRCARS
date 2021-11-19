@@ -2,10 +2,6 @@
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
 
-// This file was modified by Oracle on 2018-2020.
-// Modifications copyright (c) 2018-2020, Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -13,15 +9,18 @@
 #ifndef BOOST_GEOMETRY_ALGORITHMS_DETAIL_OVERLAY_CONVERT_RING_HPP
 #define BOOST_GEOMETRY_ALGORITHMS_DETAIL_OVERLAY_CONVERT_RING_HPP
 
+
+#include <boost/mpl/assert.hpp>
+#include <boost/range.hpp>
 #include <boost/range/algorithm/reverse.hpp>
 
-#include <boost/geometry/algorithms/convert.hpp>
-#include <boost/geometry/algorithms/num_points.hpp>
-
+#include <boost/geometry/core/tags.hpp>
 #include <boost/geometry/core/exterior_ring.hpp>
 #include <boost/geometry/core/interior_rings.hpp>
-#include <boost/geometry/core/static_assert.hpp>
-#include <boost/geometry/core/tags.hpp>
+#include <boost/geometry/algorithms/detail/ring_identifier.hpp>
+
+#include <boost/geometry/algorithms/convert.hpp>
+
 
 namespace boost { namespace geometry
 {
@@ -35,9 +34,11 @@ namespace detail { namespace overlay
 template<typename Tag>
 struct convert_ring
 {
-    BOOST_GEOMETRY_STATIC_ASSERT_FALSE(
-        "Not or not yet implemented for this geometry Tag.",
-        Tag);
+    BOOST_MPL_ASSERT_MSG
+        (
+            false, NOT_OR_NOT_YET_IMPLEMENTED_FOR_THIS_GEOMETRY_TAG
+            , (types<Tag>)
+        );
 };
 
 template<>
