@@ -1,6 +1,6 @@
 import os
 import numpy as np,sys,glob,copy
-import logging
+import logging,paircars
 from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from . import access_ms as am
@@ -79,8 +79,15 @@ class IntensitySelfcal:
 		self.log_verbose.propagate = False
 		self.log_verbose.info('Initiating Intensity selfcal object.\n')
 		if self.wsclean==True:
-			a=os.system('wsclean > wsclean_test')
-			if a!=0:
+			datadir=os.path.abspath(os.path.dirname(paircars.__file__))
+			try:
+				wsclean_path=str(np.load(datadir+'/wsclean_path.npy',allow_pickle=True))
+				os.path.join(wsclean_path)
+				a=os.system('wsclean > wsclean_test')
+				if a!=0:
+					self.log_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
+					self.wsclean=False
+			except:
 				self.log_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
 				self.wsclean=False
 			os.system('rm -rf wsclean_test')
@@ -397,22 +404,22 @@ class IntensitySelfcal:
 				min_num_iter_fixed_sigma=3
 				min_iteration=3
 				max_iteration=100
-				frac_flux_change=0.03
+				frac_flux_change=0.3
 			elif quality_factor==1:
 				min_sigma=7.0
 				min_num_iter_fixed_sigma=5
 				min_iteration=5
 				max_iteration=150
-				frac_flux_change=0.015
+				frac_flux_change=0.15
 			else:
 				min_sigma=6.0
 				min_num_iter_fixed_sigma=7
 				min_iteration=7
 				max_iteration=200
-				frac_flux_change=0.01
+				frac_flux_change=0.1
 		else:
 			if quality_factor==0:     # Low quality (Quick look image making)
-				frac_flux_change=0.03
+				frac_flux_change=0.3
 				if (safety_factor==0):
 					min_sigma=9.0
 					min_num_iter_fixed_sigma=0
@@ -447,7 +454,7 @@ class IntensitySelfcal:
 						max_iteration=60
 						antenna_bin=1
 			elif quality_factor==1:  # Medium quality imaging (Computing speed medium)
-				frac_flux_change=0.015
+				frac_flux_change=0.15
 				if (safety_factor==0):
 					min_sigma=8.0
 					min_num_iter_fixed_sigma=0
@@ -482,7 +489,7 @@ class IntensitySelfcal:
 						max_iteration=550
 						antenna_bin=1
 			else:  # Best quality imaging (Computing slow)
-				frac_flux_change=0.01
+				frac_flux_change=0.1
 				if (safety_factor==0):
 					max_iteration=700
 					min_sigma=7.0
@@ -1596,8 +1603,12 @@ class IntensitySelfcal:
 				self.log_verbose.info('delmod(vis=\''+self.msname+'\',scr=True)\n') 
 				delmod(vis=self.msname,scr=True) # Clear the MODEL column
 				if self.wsclean==False:
-					if num_iter>=2:
+					if do_bandpass==True:
 						self.remove_model_negative(casa_imagename,casa_modelname,sigma=3,overwrite=True) # Removing negatives from model and less than 3 sigma regions
+					elif do_bandpass==False and num_iter==0:
+						self.remove_model_negative(casa_imagename,casa_modelname,sigma=sigma-0.5,overwrite=True) # Removing negatives from model and less than 3 sigma regions
+					else:
+						self.remove_model_negative(casa_imagename,casa_modelname,sigma=sigma,overwrite=True) # Removing negatives from model and less than 3 sigma regions
 				if correct_phasecenter==True:
 					if ra==0 or dec==0:
 						AM=am.AccessMS(self.msname)

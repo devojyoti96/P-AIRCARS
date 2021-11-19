@@ -1,6 +1,6 @@
 import os
 import numpy as np,copy,sys,glob
-import logging
+import logging,paircars
 from casatools import msmetadata,table,measures,quanta,agentflagger,image,calibrater,ms
 from casatasks import *
 from . import access_ms as am
@@ -89,9 +89,16 @@ class PolSelfcal:
 		self.pollog_verbose.propagate = False
 		self.pollog_verbose.info('Initiating Polarisation selfcal object.\n')
 		if self.wsclean==True:
-			a=os.system('wsclean > wsclean_test')
-			if a!=0:
-				self.pollog_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
+			datadir=os.path.abspath(os.path.dirname(paircars.__file__))
+			try:
+				wsclean_path=str(np.load(datadir+'/wsclean_path.npy',allow_pickle=True))
+				os.path.join(wsclean_path)
+				a=os.system('wsclean > wsclean_test')
+				if a!=0:
+					self.log_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
+					self.wsclean=False
+			except:
+				self.log_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
 				self.wsclean=False
 			os.system('rm -rf wsclean_test')
 		
