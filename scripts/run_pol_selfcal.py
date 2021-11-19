@@ -1486,7 +1486,7 @@ if __name__=='__main__':
 		os._exit(0)
 
 	AM=AccessMS(options.chantime_msname)
-	npol=AM.get_pol()
+	npol=AM.get_npol()
 	if npol!=4:
 		logger.info('Number of polarisation products is not equals to 4. Can not perform polarisation calibration.\n')
 		end_time=time.time()

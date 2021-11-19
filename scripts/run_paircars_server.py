@@ -3,6 +3,14 @@ import os,glob,jprq,numpy as np,psutil,socket,copy,paircars_client
 from paircars_client.run_carta import *
 from optparse import OptionParser
 from paircars_client.plotms import *
+from paircars.basic_func import *
+from paircars.libpaircars import send_paircars_notification
+datadir=os.path.abspath(os.path.dirname(paircars_client.__file__))
+try:
+	screen_path=str(np.load(datadir+'/screen_path.npy',allow_pickle=True))
+except:
+	screen_path='/usr/bin'
+os.path.join(screen_path)
 
 requested_ms_copy=''
 x_axis_copy=''
@@ -199,6 +207,7 @@ if __name__ == "__main__":
 	parser = OptionParser(usage=usage)
 	parser.add_option('--basedir',dest="basedir",default=None,help="Name of P-AIRCARS base directory",metavar="Directory path")
 	parser.add_option('--job_id',dest="job_id",default=0,help="P-AIRCARS Job ID",metavar="Integer")
+	parser.add_option('--email',dest="email",default=None,help="E-mail id to send remote access link",metavar="E-mail id")
 	(options, args) = parser.parse_args()
 	os.environ['FLASK_ENV']='development'
 	main(job_id=int(options.job_id),basedir=str(options.basedir),template_path=template_path)
@@ -221,6 +230,12 @@ if __name__ == "__main__":
 				paircars_public_url=line
 				break
 	print ('Access P-AIRCARS remotely at : '+paircars_public_url+'\n')
+	np.save(str(options.basedir)+'/remote_access_link',paircars_public_url)
+	is_internet=check_internet()
+	if is_internet and options.email!=None:
+		msg_subject='P-AIRCARS remote access : Job ID = '+str(options.job_id)
+		msg_str='Dear PAIRCARS user,\n\nRemote access link : '+str(paircars_public_url)+'\n\nBest regards,\nPAIRCARS developing team'
+		send_paircars_notification(str(options.email),msg_subject,msg_str)
 	if os.path.exists(str(options.basedir)+'/plotms_input.npy'):
 		os.system('rm -rf '+str(options.basedir)+'/plotms_input.npy')
 	np.save(str(options.basedir)+'/plotms_input',[None,'Time','Amplitude','DATA','DATA',None,False,'','','','',0,1,''])

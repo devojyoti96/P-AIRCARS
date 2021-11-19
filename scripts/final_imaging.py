@@ -48,7 +48,7 @@ from paircars.flagger import *
 from astropy.io import fits
 from CALIBRATE.access_calibrate import *
 from paircars.fullpol_selfcal_LTS import *
-import time
+import time,paircars
 inputfile=str(options.inputfile)
 if inputfile[-1]=='/':
 	inputfile=inputfile[:-1]
@@ -288,13 +288,17 @@ def make_image(msname,metafits,workdir,sigma=10,stokes='I',savedir='',want_autom
 	backup_ms=msname+'.backup'
 	wsclean_check_count=0
 	if use_wsclean==True:
-		a=os.system('wsclean > wsclean_test')
-		while a!=0:
-			if wsclean_check_count>5:
+		datadir=os.path.abspath(os.path.dirname(paircars.__file__))
+		try:
+			wsclean_path=str(np.load(datadir+'/wsclean_path.npy',allow_pickle=True))
+			os.path.join(wsclean_path)
+			a=os.system('wsclean > wsclean_test')
+			if a!=0:
 				print('WSClean is not installed. Using CASA for imaging.\n')
 				use_wsclean=False
-			else:
-				time.sleep(1.0)
+		except:
+			print('WSClean is not installed. Using CASA for imaging.\n')
+			use_wsclean=False
 		os.system('rm -rf wsclean_test')
 		tempdir=workdir+'/tempdir'
 		if os.path.isdir(tempdir)==False:

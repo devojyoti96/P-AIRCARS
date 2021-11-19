@@ -452,7 +452,8 @@ if len(measurement_set_list)!=0:
 		if str(inputs.job_id) in j and 'P-AIRCARS_mainlog' not in j and 'screen_basedir_for' not in j:
 			delete_screen_list.append(j) 
 	for i in delete_screen_list:
-		os.system('screen -S '+i+' -X quit')
+		if 'remote' not in i and 'carta' not in i and 'jprq' not in i:
+			os.system('screen -S '+i+' -X quit')
 
 	ref_timechan_done_list=glob.glob(inputs.basedir+'/.ref_timechan_done_*')
 	for i in ref_timechan_done_list:

@@ -999,7 +999,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 							os.system('touch '+basedir+'/.Finished_spawned_'+str(ms_obsid)+'_'+basemsdir+'_'+str(0))	
 						save_file=save_selfcal_par([1,0,0,0,0,0],basedir,msname,ref_time_freq=ref_time_freq)
 						return save_file
-			elif int(msg)!=0 and int(msg)!=9: # If not succeeded or not reached the max iteration, removing the ref time
+			elif int(msg)!=0 and int(msg)!=9 and int(msg)!=8: # If not succeeded or not reached the max iteration, removing the ref time
 				ms_mainlog.info('Message : '+error_msgs(100)+' : '+error_msgs(int(msg))+'\n')
 				if inputs.verbose==False:
 					ms_mainlog.info('Removing the directory : '+ref_timechan_dir)
@@ -1044,7 +1044,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 						os.system('touch '+basedir+'/.Finished_spawned_'+str(ms_obsid)+'_'+basemsdir+'_'+str(0))
 					save_file=save_selfcal_par([1,0,0,0,0,0],basedir,msname,ref_time_freq=ref_time_freq)
 					return save_file
-			elif int(msg)==0 or int(msg)==9: # if succeeded or max iteration reached or DR decreases but more than min DR
+			elif int(msg)==0 or int(msg)==9 or int(msg)==8: # if succeeded or max iteration reached or DR decreases but more than min DR
 				os.system('touch '+basedir+'/.ref_timechan_done_'+str(ms_obsid)+'_'+str(os.path.basename(msname))+'_'+str(msg))	
 				ref_timechan_done=True	
 				ms_mainlog.info('Reference time frequency calibration done.\n')

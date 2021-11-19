@@ -288,10 +288,16 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 	
 	if inputs.quality_factor==0:
 		num_pixel_in_psf=3
+		force_reduce_sigma=False
 	elif inputs.quality_factor==1:
 		num_pixel_in_psf=5
+		if inputs.safety_factor<=1:
+			force_reduce_sigma=False
+		else:
+			force_reduce_sigma=True
 	else:
 		num_pixel_in_psf=7
+		force_reduce_sigma=True
 
 	ISC=IntensitySelfcal(msname,metafits,32*60,num_pixel_in_psf=num_pixel_in_psf,largest_scale=20,verbose=verbose,interactive=interactive,use_wsclean=False,\
 						savelog=inputs.keep_logger)
@@ -1079,10 +1085,10 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 					ISC.DR_record(dyn1,'DR_rms',init=False)
 					ISC.DR_record(dyn2,'DR_neg',init=False)
 
-				if last_sigma_DR_rms==0 and num_iter_fixed_sigma>min_num_iter_fixed_sigma:
+				if last_sigma_DR_rms==0 and num_iteration_after_ap>min_iteration:
 					last_sigma_DR_rms=DR5
-				if last_sigma_DR_neg==0 and num_iter_fixed_sigma>min_num_iter_fixed_sigma:
-					last_sigma_DR_neg=DR4
+				if last_sigma_DR_neg==0 and num_iteration_after_ap>min_iteration:
+					last_sigma_DR_neg=DR6
 
 				if os.path.isfile(working_dir+'/Intensity_selfcal_record.npy'):
 					os.system('rm -rf '+working_dir+'/Intensity_selfcal_record.npy')
@@ -1311,17 +1317,21 @@ def run_intensity_selfcal(msname,metafits,working_dir,do_point_source=False,verb
 						(start_fresh==True or (start_fresh==False and num_iter_after_restart>min_iteration)):
 				#  If DR does not increas more the DR delta in last two steps and DR does not increase 8% for rms based and 5% for negative based => Converge
 					if num_iter_fixed_sigma>min_num_iter_fixed_sigma and num_iteration_after_ap>min_iteration+5:
-						sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,min_sigma,residual_frac=frac_flux_change,stokes_list=['XX','YY'])
-						if sigma<start_sigma and (DR5-last_sigma_DR_rms)>DR_delta_rms and (DR5-last_sigma_DR_neg)>DR_delta_neg:
+						sigma=ISC.reduce_sigma('junk1.image',start_sigma,inputs.sigma_step,min_sigma,residual_frac=frac_flux_change/10.0,stokes_list=['XX','YY'])
+						print (sigma,start_sigma,DR5-last_sigma_DR_rms,DR4-last_sigma_DR_neg,DR_delta_rms,DR_delta_neg)
+						if (sigma<start_sigma and (DR5-last_sigma_DR_rms)>DR_delta_rms and (DR6-last_sigma_DR_neg)>DR_delta_neg and force_reduce_sigma==False) or \
+							(sigma<start_sigma and force_reduce_sigma==True):
 										# If the next sigma is less than the present sigma and at least DR_delta improvement from previous sigma
 							start_sigma=sigma	
 							num_iter_fixed_sigma=0
+							last_sigma_DR_neg=DR6
+							last_sigma_DR_rms=DR5	
 						else:
 							if verbose==False:
 								print ('#################\nSelfcal converged. Residual flux inside the mask is less than : '+\
-										str(frac_flux_change*100)+'%. Stopped sigma : '+str(start_sigma)+'\n##################\n') 	
+										str(frac_flux_change*10)+'%. Stopped sigma : '+str(start_sigma)+'\n##################\n') 	
 							logger.info('########################\n')							
-							logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(frac_flux_change*100)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
+							logger.info('Selfcal converged. Residual flux inside the mask is less than : '+str(frac_flux_change*10)+'%. Stopped sigma : '+str(start_sigma)+'\n')	
 							logger.info('########################\n')								
 							end_selfcal=True
 							if 'ref' in msname:

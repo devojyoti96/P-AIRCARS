@@ -5,15 +5,17 @@ from tkinter import messagebox
 from multiprocessing import Process
 from paircars.basic_func import *
 from paircars.access_ms import *
+from optparse import OptionParser
 import os,copy,numpy as np,webbrowser,pickle,paircars,glob,time,getpass,tkinter as tk,subprocess,psutil
 from PIL import Image,ImageTk
 imagedir=os.path.abspath(os.path.dirname(paircars.__file__))
 os.system('rm -rf casa*log')
 
 class PAIRCARS_inputs:
-	def __init__(self,root):
+	def __init__(self,root,asvokey=''):
 		# Master widget		
 		self.root=root
+		self.asvokey=asvokey
 		self.root.title('P-AIRCARS')
 		self.root.geometry('1600x950')
 		self.root.attributes('-alpha',0)
@@ -1021,6 +1023,8 @@ class PAIRCARS_inputs:
 		close_button.pack(side=BOTTOM)
 		top1.pack(expand=1, fill="both")
 
+		if self.asvokey=='':
+			self.asvokey='MWA ASVO API key'
 		def delete_entry(event):
 			if self.apikey_entry.get()=='MWA ASVO API key':
 				self.apikey_entry.delete(0, "end")
@@ -1032,7 +1036,7 @@ class PAIRCARS_inputs:
 				self.apikey='MWA ASVO API key'
 				self.apikey_entry.insert(0,self.apikey)
 				self.apikey_entry.config(fg='gray45')
-		self.apikey='MWA ASVO API key'
+		self.apikey=self.asvokey
 		apikey=Label(top1,text='MWA ASVO API key *',fg='Black',font=('times new roman',15))
 		apikey.place(x=10,y=10)
 		self.apikey_entry=Entry(top1,bg='lightgray',textvariable=self.apikey)
@@ -1592,7 +1596,7 @@ class PAIRCARS_inputs:
 		robust=float(self.robust_options.get())
 		fil.write('robust='+str(robust)+'\n')
 		if self.maxtime_entry.get()=='Max time':
-			maxtime_entry=5.0
+			maxtime_entry=10.0
 		else:
 			maxtime_entry=float(self.maxtime_entry.get())
 		fil.write('max_time_avg='+str(maxtime_entry)+'\n')
@@ -1734,7 +1738,35 @@ class PAIRCARS_inputs:
 					os.system('screen -S '+screen_name+' -X stuff \"'+screen_cmd+'\n"')	
 					os.chdir(cwd)
 					os.system('rm -rf inputs.py')
-					messagebox.showinfo('P-AIRCARS','P-AIRCARS has started. \nJob ID : '+str(job_id))
+					if check_internet() and self.email_entry.get()!='' and self.email_entry.get()!='Enter email address to send notifications.....':
+						remote_access_cmd='run_paircars_server --basedir='+self.basedir_input+' --job_id='+str(job_id)+' --email='+str(self.email_entry.get())
+						os.system('rm -rf '+self.basedir_input+'/paircars_remote_*.batch '+self.basedir_input+'/remote_access_link*')
+						if os.path.exists(self.basedir_input+'/paircars_remote_'+str(job_id)+'.batch'):
+							os.system('rm -rf '+self.basedir_input+'/paircars_remote_'+str(job_id)+'.batch')
+						fil=open(self.basedir_input+'/paircars_remote_'+str(job_id)+'.batch','w')
+						fil.write(remote_access_cmd)
+						fil.seek(0)
+						fil.close()
+						os.system('chmod +x '+self.basedir_input+'/paircars_remote_'+str(job_id)+'.batch')
+						remote_access_screen_name='PAIRCARS_remote_'+str(job_id)
+						os.system('screen -S '+remote_access_screen_name+' -X quit')
+						os.system('screen -mdS '+remote_access_screen_name)
+						os.system('screen -S '+remote_access_screen_name+' -X stuff "sh '+self.basedir_input+'/paircars_remote_'+str(job_id)+'.batch\n"')
+						time.sleep(5)
+						c=0
+						while True:
+							if os.path.exists(self.basedir_input+'/remote_access_link.npy'):
+								paircars_public_link=str(np.load(self.basedir_input+'/remote_access_link.npy',allow_pickle=True))
+								messagebox.showinfo('P-AIRCARS','P-AIRCARS has started. \nJob ID : '+str(job_id)+'\n Remote access link : '+paircars_public_link)
+								return
+							if c>5:
+								messagebox.showinfo('P-AIRCARS','P-AIRCARS has started. \nJob ID : '+str(job_id))
+								return
+							else:
+								time.sleep(10)
+								c+=1
+					else:
+						messagebox.showinfo('P-AIRCARS','P-AIRCARS has started. \nJob ID : '+str(job_id))
 					return
 
 	def save_input(self,savefile=''):
@@ -1944,9 +1976,24 @@ class PAIRCARS_inputs:
 		
 		
 if __name__=='__main__':
+	usage= 'P-AIRCARS User interface'
+	parser = OptionParser(usage=usage)
+	parser.add_option('--ASVO_API_key',dest="asvokey",default=None,help="MWA ASVO API key for data download",metavar="String")
+	(options, args) = parser.parse_args()
 	paircars_homedir=os.path.expanduser('~')+'/.paircars'
+	if os.path.exists(paircars_homedir+'/asvo.key.npy') and options.asvokey!=None:
+		os.system('rm -rf '+paircars_homedir+'/asvo.key.npy')
+		asvokey=str(options.asvokey)
+		np.save(paircars_homedir+'/asvo.key',asvokey)
+	elif os.path.exists(paircars_homedir+'/asvo.key.npy') and options.asvokey==None:
+		asvokey=str(np.load(paircars_homedir+'/asvo.key.npy',allow_pickle=True))
+	elif options.asvokey!=None:
+		asvokey=str(options.asvokey)
+		np.save(paircars_homedir+'/asvo.key',asvokey)
+	else:
+		asvokey=''
 	if os.path.isdir(paircars_homedir)==False:
 		os.makedirs(paircars_homedir)
 	root=Tk()
-	obs=PAIRCARS_inputs(root)
+	obs=PAIRCARS_inputs(root,asvokey=asvokey)
 	root.mainloop()
