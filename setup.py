@@ -63,7 +63,7 @@ def install(package):
 
 cwd=os.getcwd()
 # Installing Libraries locally
-install_ini_dir=os.path.dirname(get_python_lib())
+install_ini_dir=paircars_path=os.path.dirname(sysconfig.get_paths()['platlib'])
 if os.path.isdir(install_ini_dir+'/paircars_libraries')==False:
 	os.makedirs(install_ini_dir+'/paircars_libraries')
 try:
@@ -93,6 +93,7 @@ if a!=0:
 	os.system('make install >> tmp')
 	os.system('rm -rf tmp')
 	os.chdir(pwd)
+	os.system('rm -rf fftw-3.3.8*')
 
 if os.path.exists(install_dir+'/lib/liblapack.so')==False:
 	print ('Installing BLAS and LAPACK......\n')
@@ -108,7 +109,7 @@ if os.path.exists(install_dir+'/lib/liblapack.so')==False:
 	os.system('cmake -DCMAKE_INSTALL_LIBDIR='+install_dir+'/lib -DBUILD_SHARED_LIBS=ON .. >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp lapack-3.10.0')
 	os.chdir(pwd)
 
 if os.path.exists(install_dir+'/lib/libwcs.so')==False:
@@ -121,7 +122,7 @@ if os.path.exists(install_dir+'/lib/libwcs.so')==False:
 	os.system('./configure --without-pgplot --prefix='+install_dir+' >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp wcslib-4.24')
 	os.chdir(pwd)
 
 if os.path.exists(install_dir+'/bin/bison')==False:
@@ -134,7 +135,7 @@ if os.path.exists(install_dir+'/bin/bison')==False:
 	os.system('./configure --prefix='+install_dir+' >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp bison-2.3')
 	os.chdir(pwd)
 
 if os.path.exists(install_dir+'/bin/flex')==False:
@@ -147,7 +148,7 @@ if os.path.exists(install_dir+'/bin/flex')==False:
 	os.system('./configure --prefix='+install_dir+' >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp flex-2.6.0')
 	os.chdir(pwd)
 
 if os.path.exists(install_dir+'/lib/libcasa_casa.so')==False:
@@ -166,7 +167,7 @@ if os.path.exists(install_dir+'/lib/libcasa_casa.so')==False:
 	os.system('cmake ../ -DCMAKE_PREFIX_PATH='+install_dir+' -DCMAKE_INSTALL_PREFIX='+install_dir+' -DBUILD_PYTHON3=OFF -DBUILD_PYTHON=OFF >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp casacore-3.1.1')
 	os.chdir(pwd)
 
 if os.path.exists(install_dir+'/lib/libcfitsio.so')==False:
@@ -179,19 +180,19 @@ if os.path.exists(install_dir+'/lib/libcfitsio.so')==False:
 	os.system('./configure --prefix='+install_dir+' >> tmp')
 	os.system('make shared >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp cfitsio-4.0.0')
 	os.chdir(pwd)
 
-if len(glob.glob(install_dir+'/lib/libboost*.so'))==0:
+if len(glob.glob(install_dir+'/lib/libboost*.so*1.53.0*'))==0:
 	print ('Installing BOOST....\n')
-	if os.path.isdir('boost_1_77_0')==False:
-		os.system('wget -q -c https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz --no-check-certificate >> tmp')
-		shutil.unpack_archive('boost_1_77_0.tar.gz')
-		os.system('rm -rf boost_1_77_0.tar.gz')
-	os.chdir('boost_1_77_0')
+	if os.path.isdir('boost_1_53_0')==False:
+		os.system('wget -c https://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.gz --no-check-certificate >> tmp')
+		shutil.unpack_archive('boost_1_53_0.tar.gz')
+		os.system('rm -rf boost_1_53_0.tar.gz')
+	os.chdir('boost_1_53_0')
 	os.system('./bootstrap.sh --prefix='+install_dir+' --includedir='+install_dir+'/include --libdir='+install_dir+'/lib >> tmp')
 	os.system('./b2 --prefix='+install_dir+' --link=shared --threading=multi install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp boost_1_53_0')
 	os.chdir(pwd)
 
 if os.path.exists(install_dir+'/lib/libgsl.so')==False:
@@ -205,12 +206,16 @@ if os.path.exists(install_dir+'/lib/libgsl.so')==False:
 	os.system('./configure --prefix='+install_dir+' >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp '+gsl_dir)
 	os.chdir(pwd)
 
-a=os.system('wsclean > wsclean_test')
-os.system('rm -rf wsclean_test')
-if a!=0:
+try:
+	import numpy as np
+except:
+	install('numpy==1.19.0')
+	import numpy as np
+
+if os.path.exists(install_dir+'/bin/wsclean')==False:
 	print ('Installing WSClean....\n')
 	if os.path.isdir('wsclean-2.7')==False:
 		os.system('wget -q -c https://sourceforge.net/projects/wsclean/files/wsclean-2.7/wsclean-2.7.tar.bz2 --no-check-certificate >> tmp')
@@ -220,28 +225,25 @@ if a!=0:
 	if os.path.isdir('build')==False:
 		os.makedirs('build')
 	os.chdir('build')
-	os.system('cmake ../ -DCXX11=ON -DCMAKE_PREFIX_PATH='+install_dir+' -DCMAKE_INSTALL_PREFIX='+install_dir+' >> tmp')
+	os.system('cmake ../ -DCMAKE_PREFIX_PATH='+install_dir+' -DCMAKE_INSTALL_PREFIX='+install_dir+' >> tmp')
 	os.system('make >> tmp')
 	os.system('make install >> tmp')
-	os.system('rm -rf tmp')
+	os.system('rm -rf tmp wsclean-2.7')	
 	os.chdir(pwd)
+wsclean_path=install_dir+'/bin'
+np.save(cwd+'/paircars/wsclean_path',wsclean_path)
 os.system('rm -rf tmp')
-
-try:
-	import numpy as np
-except:
-	install('numpy>=1.19.0')
-	import numpy as np
 
 a=os.system('which screen > tmp 2> tmp.error')
 if a!=0:
 	if os.path.isdir('screen-4.8.0')==False:
-		os.system('wget "https://ftp.gnu.org/gnu/screen/screen-4.8.0.tar.gz" --no-check-certificate')
+		os.system('wget "https://ftp.gnu.org/gnu/screen/screen-4.8.0.tar.gz" --no-check-certificate >> tmp')
 		shutil.unpack_archive('screen-4.8.0.tar.gz')
 		os.system('rm -rf screen-4.8.0.tar.gz')
 	os.chdir('screen-4.8.0')
-	os.system('./configure --prefix='+install_dir)
-	os.system('make install && install -m 644 screen-4.8.0/etc/etcscreenrc '+install_dir+'/etc/screenrc')
+	os.system('./configure --prefix='+install_dir+' >>tmp')
+	os.system('make install && install -m 644 ./etc/etcscreenrc '+install_dir+'/etc/screenrc >> tmp')
+	os.system('rm -rf tmp screen-4.8.0')
 	screen_path=install_dir+'/bin'
 	if os.path.exists(cwd+'/paircars_client/screen_path.npy'):
 		os.system('rm -rf '+cwd+'/paircars_client/screen_path.npy')
@@ -258,8 +260,8 @@ os.system('rm -rf tmp tmp.error')
 
 os.chdir(cwd)
 cwd=os.getcwd()
-LD_LIBRARY_PATH=install_dir+'/lib'
-INCLUDE_PATH=install_dir+'/include/'
+LD_LIBRARY_PATH=install_ini_dir+'/paircars_libraries/local/lib'
+INCLUDE_PATH=install_ini_dir+'/paircars_libraries/local/include/'
 
 os.chdir(cwd+'/aNKflag')
 makefil=open('Makefile','r')
@@ -283,6 +285,14 @@ output.close()
 if os.path.isfile('ankflag')==True:
 	os.system('make clean')
 os.system('make')
+os.chdir(cwd)
+
+os.chdir('CALIBRATE/calibrate_tools')
+os.system('make clean')
+os.system('rm -rf *')
+os.system('cmake ../ -DCMAKE_PREFIX_PATH='+install_ini_dir+'/paircars_libraries/local')
+os.system('make')
+os.system('rm -rf *Make* cmake*')
 os.chdir(cwd)
 
 np.save(cwd+'/aNKflag/LDPATH',LD_LIBRARY_PATH)
@@ -327,7 +337,7 @@ setup(
     name='paircars',
     version='1.0.0',
     packages=['paircars','aNKflag','CALIBRATE','mwa_pb','paircars_casatasks','paircars_client','mantaray'],
-    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg'],'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat'],\
+    package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg','wsclean_path.npy'],'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat'],\
 					'CALIBRATE':['calibrate_tools/*'],'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5', 'data/*.fab', 'data/*.dat'],\
 					'paircars_client':['static/*','templates/*','CARTA.AppImage','screen_path.npy']},
     author='Devojyoti Kansabanik',
