@@ -287,13 +287,16 @@ if os.path.isfile('ankflag')==True:
 os.system('make')
 os.chdir(cwd)
 
-os.chdir('CALIBRATE/calibrate_tools')
-os.system('make clean')
-os.system('rm -rf *')
-os.system('cmake ../ -DCMAKE_PREFIX_PATH='+install_ini_dir+'/paircars_libraries/local')
-os.system('make')
-os.system('rm -rf *Make* cmake*')
-os.chdir(cwd)
+if os.path.isdir('CALIBRATE/calibrate_tools')==False:
+	os.makedirs('CALIBRATE/calibrate_tools')
+if os.path.exists('CALIBRATE/calibrate_tools/calibrate')==False or os.path.exists('CALIBRATE/calibrate_tools/applysolutions')==False:
+	os.chdir('CALIBRATE/calibrate_tools')
+	os.system('make clean')
+	os.system('rm -rf *')
+	os.system('cmake ../ -DCMAKE_PREFIX_PATH='+install_ini_dir+'/paircars_libraries/local')
+	os.system('make')
+	os.system('rm -rf *Make* cmake*')
+	os.chdir(cwd)
 
 np.save(cwd+'/aNKflag/LDPATH',LD_LIBRARY_PATH)
 os.system('cp -r scripts/run_intensity_selfcal.py scripts/run_intensity_selfcal')
