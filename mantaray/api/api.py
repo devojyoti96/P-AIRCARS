@@ -10,19 +10,19 @@ except:
 
 from websocket import create_connection
 from requests.auth import HTTPBasicAuth
-import pkg_resources  # part of setuptools
+import mantaray  # part of setuptools
 
 
 def get_api_version_number():
     # This is what we send to the server when we confirm version compatibility.
-    version = pkg_resources.require("mantaray-client")[0].version  # format major.minor.revision
+    version = mantaray.__version__  # format major.minor.revision
 
     version_parts = version.split(".")
     return "mantaray-clientv{0}.{1}".format(version_parts[0], version_parts[1])
 
 
 def get_version_number():
-    return pkg_resources.require("mantaray-client")[0].version
+    return mantaray.__version__
 
 
 def get_pretty_version_string():
