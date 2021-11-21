@@ -400,8 +400,8 @@ setup(
     author='Devojyoti Kansabanik',
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
-    install_requires=["extension-helpers",'certifi==2020.12.0',"pillow==8.2.0","ephem","bokeh==2.4.0","pyparsing==2.4.7","numpy==1.19.0", "scipy==1.6.2","astropy==4.3",\
-	"skyfield", "matplotlib==3.4.1","chardet==3.0.4", "h5py","julian","psutil","casatools==6.3.0.48","casatasks==6.3.0.48","casadata","cmake",'requests==2.18.3','websocket_client',\
+    install_requires=["extension-helpers",'certifi==2020.12.0',"pillow==8.2.0","ephem","bokeh==2.4.0","pyparsing==2.4.7","numpy==1.19.0", "scipy==1.6.2","matplotlib==3.3.2",\
+	"astropy==4.3","skyfield","chardet==3.0.4", "h5py","julian","psutil","casatools==6.3.0.48","casatasks==6.3.0.48","casadata","cmake",'requests==2.18.3','websocket_client',\
 	'colorama',"dask-ms[xarray]","dask[complete]","datashader==0.12.0", "holoviews",'certifi==2019.9.11','websockets==9.1','aiohttp==3.7.4','bson~=0.5.10','click==8.0.3',\
 	"matplotlib>2.2.3; python_version >= '3.5'","cmasher","future-fstrings","MSUtils",'shadems','Flask'],
     scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
