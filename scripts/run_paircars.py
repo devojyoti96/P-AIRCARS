@@ -782,7 +782,7 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 									os.system('rm -rf '+i)
 							num_iter,DR1,DR3,DR5,DR2,DR4,DR6,rms_list,calmode,scratch,antenna_list_index,start_sigma,antenna_added,num_ant_current_iteration,\
 								num_iter_fixed_sigma,num_iter_fixed_ant,num_iteration_after_ap,stokes,phasecenter_changed,startmodel,startmask,uvsub_flag_count,\
-								ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time=np.load(previous_record,allow_pickle=True)
+								ra,dec,num_iter_after_phasecenter_change,phasecenter_change_done,solmode,start_time,sigma_reduce_count=np.load(previous_record,allow_pickle=True)
 							startmodel=''
 							startmask=''
 							if os.path.isfile(workdir+'/Intensity_selfcal_record.npy'):
@@ -806,7 +806,8 @@ def run_paircars_ms(msname,metafits,workdir,ref_freq_avg=0,ref_time_avg=0,ref_ti
 							ms_mainlog.info('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+preneg+'\n')
 							os.system('rm -rf '+previous_caltable+' '+previous_selfcal_record+' '+previous_ms+' '+prelog+' '+preverboselog+' '+prerms+' '+preneg)
 							fresh=False
-						except:
+						except Exception as e:
+							ms_mainlog.error('Error occured : '+str(e)+'. Starting calibration from fresh.\n')
 							fresh=True
 					else:
 						fresh=True
