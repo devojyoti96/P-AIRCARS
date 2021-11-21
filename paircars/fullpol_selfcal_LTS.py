@@ -90,16 +90,19 @@ class PolSelfcal:
 		self.pollog_verbose.info('Initiating Polarisation selfcal object.\n')
 		if self.wsclean==True:
 			datadir=os.path.abspath(os.path.dirname(paircars.__file__))
+			print (datadir+'/wsclean_path.npy')
 			try:
 				wsclean_path=str(np.load(datadir+'/wsclean_path.npy',allow_pickle=True))
 				os.path.join(wsclean_path)
 				a=os.system('wsclean > wsclean_test')
+				print (a)
 				if a!=0:
 					self.log_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
 					self.wsclean=False
 			except:
 				self.log_verbose.info('WSClean is not installed. Using CASA for imaging.\n')
 				self.wsclean=False
+			print (self.wsclean)
 			os.system('rm -rf wsclean_test')
 		
 	def negative_box(self,max_pix,box_width=3):
@@ -236,8 +239,8 @@ class PolSelfcal:
 			Minimum value of allowed sigma
 		'''
 		if quality_factor==0:     # Low quality (Quick look image making)
-			frac_flux_change=0.03
-			pol_frac_change=0.1
+			frac_flux_change=0.3
+			pol_frac_change=0.15
 			if (safety_factor==0):
 				min_sigma=9.0
 				min_num_iter_fixed_sigma=1
@@ -266,8 +269,8 @@ class PolSelfcal:
 					min_iteration=1
 					max_iteration=30
 		elif quality_factor==1:  # Medium quality imaging (Computing speed medium)
-			frac_flux_change=0.015
-			pol_frac_change=0.08
+			frac_flux_change=0.15
+			pol_frac_change=0.1
 			if (safety_factor==0):
 				min_sigma=8.0
 				min_num_iter_fixed_sigma=2
@@ -296,8 +299,8 @@ class PolSelfcal:
 					min_iteration=2
 					max_iteration=50
 		else:  # Best quality imaging (Computing slow)
-			frac_flux_change=0.01
-			pol_frac_change=0.05
+			frac_flux_change=0.1
+			pol_frac_change=0.08
 			if (safety_factor==0):
 				min_sigma=7.0
 				max_iteration=60

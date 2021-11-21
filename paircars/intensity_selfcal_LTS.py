@@ -459,29 +459,29 @@ class IntensitySelfcal:
 					min_sigma=8.0
 					min_num_iter_fixed_sigma=0
 					if (scratch==True):
-						min_iteration=5
+						min_iteration=3
 						max_iteration=200
 						antenna_bin=3
 					else:
-						min_iteration=3
+						min_iteration=2
 						max_iteration=150
 						antenna_bin=1
 				elif (safety_factor==1):
 					min_sigma=7.0
 					min_num_iter_fixed_sigma=5
 					if (scratch==True):
-						min_iteration=7
+						min_iteration=5
 						max_iteration=400
 						antenna_bin=5
 					else:
-						min_iteration=5
+						min_iteration=3
 						max_iteration=350
 						antenna_bin=1
 				else:
 					min_sigma=6.0
 					min_num_iter_fixed_sigma=10
 					if (scratch==True):
-						min_iteration=10
+						min_iteration=7
 						max_iteration=600
 						antenna_bin=7
 					else:
@@ -1606,9 +1606,9 @@ class IntensitySelfcal:
 					if do_bandpass==True:
 						self.remove_model_negative(casa_imagename,casa_modelname,sigma=3,overwrite=True) # Removing negatives from model and less than 3 sigma regions
 					elif do_bandpass==False and num_iter==0:
-						self.remove_model_negative(casa_imagename,casa_modelname,sigma=sigma-0.5,overwrite=True) # Removing negatives from model and less than 3 sigma regions
+						self.remove_model_negative(casa_imagename,casa_modelname,sigma=7,overwrite=True) # Removing negatives from model and less than 7 regions
 					else:
-						self.remove_model_negative(casa_imagename,casa_modelname,sigma=sigma,overwrite=True) # Removing negatives from model and less than 3 sigma regions
+						self.remove_model_negative(casa_imagename,casa_modelname,sigma=5,overwrite=True) # Removing negatives from model and less than 5 sigma regions
 				if correct_phasecenter==True:
 					if ra==0 or dec==0:
 						AM=am.AccessMS(self.msname)
