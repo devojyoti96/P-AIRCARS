@@ -46,7 +46,7 @@ else:
 
 python_version=float('.'.join(sys.version.split(' ')[0].split('.')[:-1]))
 if python_version<3.6 or python_version>3.8:
-	print ('Python version is either less than 3.6 or grater than 3.8. Python version more than 3.6 and less than 3.8 is required for P-AIRCARS.\n')	
+	print ('Python version is either less than 3.6.1 or grater than 3.8. Python version more than 3.6 and less than 3.8 is required for P-AIRCARS.\n')	
 	os._exit(1)
 
 cwd=os.getcwd()
@@ -258,8 +258,79 @@ else:
 	np.save(cwd+'/paircars_client/screen_path',screen_path)
 os.system('rm -rf tmp tmp.error')
 
+for i in ["numpy==1.19.0",'requests==2.18.3',"dask-ms[xarray]","dask[complete]","datashader==0.12.0"]:
+	install(i)
+import numpy as np,datetime as dtt,json,urllib.request,copy,time
+def update_mwa_obsids(obsid_file='',verbose=False,force=False):
+	'''
+	Function to update MWA OBSIDs 
+
+	Parameters
+	----------
+	obsid_file : str 
+		Name of the file to save MWA OBSIDs
+	verbose : bool
+		Verbose output
+	force :  bool
+		Update forcefully
+	Returns
+	-------
+	str
+		OBSID file name
+	int
+		Update success or failure code (0 or 1)
+	'''
+	if verbose==True:
+		print ('Updating local MWA OBSid file......\n')
+	if obsid_file=='':
+		obsid_file=datadir+'/MWA_OBSids'
+	BASEURL='http://ws.mwatelescope.org/'
+	temp_array=np.empty(0,dtype='int')
+	if os.path.isfile(obsid_file+'.npy')==True and force==False:
+		try:
+			obsids=np.load(obsid_file+'.npy',allow_pickle=True)
+			start_obsid=np.max(obsids)
+			temp_array=np.append(temp_array,obsids)
+		except:
+			start_obsid=972654120
+	else:
+		start_obsid=972654120
+	end_obsid=3786480018  # Till 2100-01-01
+	searchurl=BASEURL+'metadata/find?maxtime='+str(end_obsid)+'&page=20000000000000'
+	future_search_url=BASEURL+'metadata/find?maxtime='+str(end_obsid)+'&future=on'
+	try:
+		end_obsid=json.load(urllib.request.urlopen(future_search_url,timeout=10))[0][0]
+		if verbose==True:
+			print ('Last OBSID in MWA metadata server : '+str(end_obsid)+'\n')
+		while True:
+			searchurl=BASEURL+'metadata/find?mintime='+str(start_obsid)+'&maxtime='+str(start_obsid+432000)
+			try:
+				OBSid=json.load(urllib.request.urlopen(searchurl,timeout=150))
+				OBSid=np.array(OBSid)[:,0].astype('int')
+				start_obsid=np.max(OBSid)+235
+			except:
+				OBSid=np.empty(0,dtype='int')
+				start_obsid=start_obsid+3600
+			if len(OBSid)!=0:
+				temp_array=np.append(temp_array,OBSid)
+			if start_obsid>=end_obsid:
+				break
+		np.save(obsid_file,temp_array)
+		if verbose==True:
+			print ('Updated successfully.\n')
+		os.system('rm -rf casa*log')
+		return obsid_file+'.npy',0
+	except Exception as e:
+		if verbose==True:
+			print ('Error in update : '+str(e)+'\n')
+			print ('Update not successful.\n')
+		os.system('rm -rf casa*log')
+		return obsid_file+'.npy',1
+
 os.chdir(cwd)
 cwd=os.getcwd()
+update_mwa_obsids(obsid_file=cwd+'/paircars/MWA_OBSids',verbose=True,force=False)
+
 LD_LIBRARY_PATH=install_ini_dir+'/paircars_libraries/local/lib'
 INCLUDE_PATH=install_ini_dir+'/paircars_libraries/local/include/'
 
@@ -317,29 +388,12 @@ os.system('cp -r scripts/download_mwa_data.py scripts/download_mwa_data')
 os.system('cp -r scripts/start_download.py scripts/start_download')
 os.system('cp -r scripts/run_paircars_server.py scripts/run_paircars_server')
 
-setup(
-    name='jprq',
-    version='2.0.1',
-    author='Azimjon Pulatov',
-    author_email='azimjohn@yahoo.com',
-    maintainer='Azimjon Pulatov',
-    maintainer_email='azimjohn@yahoo.com',
-    url='https://github.com/azimjohn/jprq-py',
-    license='MIT',
-    packages=['jprq'],
-    entry_points={
-        'console_scripts': [
-            'jprq = jprq.main:main',
-        ]
-    },
-    install_requires=['requests==2.18.3','certifi==2019.9.11','websockets==9.1','aiohttp==3.7.4','bson~=0.5.10','click==8.0.3'],
-    python_requires='>=3.6.1,<=3.8',
-)
+
 
 setup(
     name='paircars',
     version='1.0.0',
-    packages=['paircars','aNKflag','CALIBRATE','mwa_pb','paircars_casatasks','paircars_client','mantaray'],
+    packages=['paircars','aNKflag','CALIBRATE','mwa_pb','paircars_casatasks','paircars_client','jprq','mantaray','mantaray.api','mantaray.scripts'],
     package_data={'paircars':['libpaircars.so','MWA_OBSids.npy','flux_scale_polyfit.npy','*.png','*.jpeg','wsclean_path.npy'],'aNKflag':['*.c', '*.npy', 'ankflag', '*.h','*.dat'],\
 					'CALIBRATE':['calibrate_tools/*'],'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5', 'data/*.fab', 'data/*.dat'],\
 					'paircars_client':['static/*','templates/*','CARTA.AppImage','screen_path.npy']},
@@ -347,34 +401,26 @@ setup(
     author_email='dkansabanik@ncra.tifr.res.in',
     description='PAIRCARS',
     install_requires=["extension-helpers","pillow==8.2.0","ephem","bokeh==2.4.0","pyparsing==2.4.7","numpy==1.19.0", "scipy==1.6.2","astropy==4.3","skyfield", "matplotlib",\
-					 "chardet==3.0.4", "h5py","julian","psutil","casatools","casatasks","casadata","cmake",'requests==2.18.3','websocket_client','colorama',\
-					 "dask-ms[xarray]","dask[complete]","datashader==0.12.0", "holoviews",\
+					 "chardet==3.0.4", "h5py","julian","psutil","casatools==6.3.0.48","casatasks==6.3.0.48","casadata","cmake",'requests==2.18.3','websocket_client','colorama',\
+					 "dask-ms[xarray]","dask[complete]","datashader==0.12.0", "holoviews",'certifi==2019.9.11','websockets==9.1','aiohttp==3.7.4','bson~=0.5.10','click==8.0.3',\
 					"matplotlib>2.2.3; python_version >= '3.5'","cmasher","future-fstrings","MSUtils",'shadems','Flask'],
     scripts=['scripts/run_intensity_selfcal','scripts/run_bandpass_selfcal','scripts/run_pol_selfcal','scripts/control_paircars','scripts/validating_paircars_input',\
 		'scripts/manage_database','scripts/parallel_ms_split','scripts/final_imaging','scripts/compress_caltables','scripts/run_paircars','scripts/start_paircars',\
 		'scripts/go-paircars','scripts/log_viewer','scripts/track_final_imaging','scripts/start_download','scripts/download_mwa_data','scripts/beam_correct_image_CASA_mwa.py',\
 		'scripts/beam_correct_image_CASA.py','scripts/beam_correct_image_IAU.py','scripts/beam_correct_image.py','scripts/beamtest.py','scripts/beam_ra_dec.py',\
 		'scripts/calc_jones.py','scripts/make_beam_test.py','scripts/mwa_sensitivity.py','scripts/plot_skymap.py','scripts/primarybeammap_tant_test.py','scripts/track_and_suppress.py',\
-		'scripts/run_paircars_server'],python_requires='>=3.6.1'
-	)
+		'scripts/run_paircars_server'],python_requires='>=3.6.1,<3.9',
+	 entry_points={
+        'console_scripts': [
+            'jprq = jprq.main:main','mwa_client = mantaray.scripts.mwa_client:main']}
+)
 
 os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_intensity_selfcal scripts/run_bandpass_selfcal scripts/run_pol_selfcal scripts/validating_paircars_input scripts/control_paircars scripts/manage_database scripts/compress_caltables scripts/run_paircars scripts/go-paircars scripts/start_paircars scripts/log_viewer scripts/track_final_imaging scripts/download_mwa_data scripts/start_download scripts/run_paircars_server')
 
-setup(name='mantaray-client',
-      version='1.0.0',
-      packages=['mantaray','mantaray.api','mantaray.scripts'],
-      install_requires=['requests==2.18.3',
-                        'websocket_client',
-                        'colorama'],
- 	entry_points={'console_scripts': ['mwa_client = mantaray.scripts.mwa_client:main']},
-	python_requires='>=3.6.1,<=3.8',
-	)
+
 cwd=os.getcwd()
 paircars_path=sysconfig.get_paths()['platlib']
 os.chdir(paircars_path)
 paircars_client_path=glob.glob('paircars*')[0]+'/paircars_client/static'
 os.system('chmod a+rwx '+paircars_client_path)
-os.chdir(cwd)
-from paircars.update_mwa_database import *
-update_mwa_obsids(verbose=True)
 os.chdir(cwd)
