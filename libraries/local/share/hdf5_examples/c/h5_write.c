@@ -5,10 +5,12 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the root of the source code       *
- * distribution tree, or in https://www.hdfgroup.org/licenses.               *
- * If you do not have access to either file, you may request a copy from     *
- * help@hdfgroup.org.                                                        *
+ * the files COPYING and Copyright.html.  COPYING can be found at the root   *
+ * of the source code distribution tree; Copyright.html can be found at the  *
+ * root level of an installed copy of the electronic HDF5 document set and   *
+ * is linked from the top-level documents page.  It can also be found at     *
+ * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
+ * access to either file, you may request a copy from help@hdfgroup.org.     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -18,28 +20,28 @@
 
 #include "hdf5.h"
 
-#define H5FILE_NAME "SDS.h5"
+#define H5FILE_NAME        "SDS.h5"
 #define DATASETNAME "IntArray"
-#define NX          5 /* dataset dimensions */
-#define NY          6
-#define RANK        2
+#define NX     5                      /* dataset dimensions */
+#define NY     6
+#define RANK   2
 
 int
-main(void)
+main (void)
 {
-    hid_t   file, dataset;       /* file and dataset handles */
-    hid_t   datatype, dataspace; /* handles */
-    hsize_t dimsf[2];            /* dataset dimensions */
-    herr_t  status;
-    int     data[NX][NY]; /* data to write */
-    int     i, j;
+    hid_t       file, dataset;         /* file and dataset handles */
+    hid_t       datatype, dataspace;   /* handles */
+    hsize_t     dimsf[2];              /* dataset dimensions */
+    herr_t      status;
+    int         data[NX][NY];          /* data to write */
+    int         i, j;
 
     /*
      * Data  and output buffer initialization.
      */
-    for (j = 0; j < NX; j++)
-        for (i = 0; i < NY; i++)
-            data[j][i] = i + j;
+    for(j = 0; j < NX; j++)
+	for(i = 0; i < NY; i++)
+	    data[j][i] = i + j;
     /*
      * 0 1 2 3 4 5
      * 1 2 3 4 5 6
@@ -59,8 +61,8 @@ main(void)
      * Describe the size of the array and create the data space for fixed
      * size dataset.
      */
-    dimsf[0]  = NX;
-    dimsf[1]  = NY;
+    dimsf[0] = NX;
+    dimsf[1] = NY;
     dataspace = H5Screate_simple(RANK, dimsf, NULL);
 
     /*
@@ -68,13 +70,14 @@ main(void)
      * We will store little endian INT numbers.
      */
     datatype = H5Tcopy(H5T_NATIVE_INT);
-    status   = H5Tset_order(datatype, H5T_ORDER_LE);
+    status = H5Tset_order(datatype, H5T_ORDER_LE);
 
     /*
      * Create a new dataset within the file using defined dataspace and
      * datatype and default dataset creation properties.
      */
-    dataset = H5Dcreate2(file, DATASETNAME, datatype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dataset = H5Dcreate2(file, DATASETNAME, datatype, dataspace,
+			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     /*
      * Write the data to the dataset using default transfer properties.
@@ -91,3 +94,4 @@ main(void)
 
     return 0;
 }
+

@@ -5,10 +5,12 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the COPYING file, which can be found at the root of the source code
-# distribution tree, or in https://www.hdfgroup.org/licenses.
-# If you do not have access to either file, you may request a copy from
-# help@hdfgroup.org.
+# the files COPYING and Copyright.html.  COPYING can be found at the root
+# of the source code distribution tree; Copyright.html can be found at the
+# root level of an installed copy of the electronic HDF5 document set and
+# is linked from the top-level documents page.  It can also be found at
+# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
+# access to either file, you may request a copy from help@hdfgroup.org.
 
 #
 #  This file:  run-hlc-ex.sh
@@ -18,7 +20,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                               #
 # This script will compile and run the c examples from source files installed   #
-# in ${prefix}/share/hdf5_examples/hl/c using h5cc or h5pc.  The order for running              #
+# in .../share/hdf5_examples/hl/c using h5cc or h5pc.  The order for running    #
 # programs with RunTest in the MAIN section below is taken from the Makefile.   #
 # The order is important since some of the test programs use data files created #
 # by earlier test programs.  Any future additions should be placed accordingly. #
@@ -29,32 +31,9 @@
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
-#
-# Try to derive the path to the installation $prefix established
-# by ./configure relative to the examples directory established by
-# ./configure.  If successful, set `prefix_relto_examplesdir` to the
-# relative path.  Otherwise, set `prefix_relto_examplesdir` to the
-# absolute installation $prefix.
-#
-# This script uses the value of `prefix` in the user's environment, if
-# it is set, below.  The content of $() is evaluated in a sub-shell, so
-# if `prefix` is set in the user's environment, the shell statements in
-# $() won't clobbered it.
-#
-prefix_relto_examplesdir=$(
-prefix=/data1/devojyoti/PhD/P-AIRCARS/libraries/local
-examplesdir=${prefix}/share/hdf5_examples
-if [ ${examplesdir##${prefix}/} != ${examplesdir} ]; then
-	echo $(echo ${examplesdir##${prefix}/} | \
-	    sed 's,[^/][^/]*,..,g')
-else
-	echo $prefix
-fi
-)
-
 # Where the tool is installed.
 # default is relative path to installed location of the tools
-prefix="${prefix:-../../${prefix_relto_examplesdir}}"
+prefix="${prefix:-../../../../}"
 PARALLEL=no             # Am I in parallel mode?
 AR="ar"
 RANLIB="ranlib"
@@ -138,5 +117,5 @@ rm *.o
 rm *.h5
 echo
 
-exit $EXIT_VALUE
+exit $EXIT_VALUE 
 

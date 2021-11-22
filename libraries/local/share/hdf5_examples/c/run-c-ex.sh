@@ -5,10 +5,12 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the COPYING file, which can be found at the root of the source code
-# distribution tree, or in https://www.hdfgroup.org/licenses.
-# If you do not have access to either file, you may request a copy from
-# help@hdfgroup.org.
+# the files COPYING and Copyright.html.  COPYING can be found at the root
+# of the source code distribution tree; Copyright.html can be found at the
+# root level of an installed copy of the electronic HDF5 document set and
+# is linked from the top-level documents page.  It can also be found at
+# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
+# access to either file, you may request a copy from help@hdfgroup.org.
 
 #
 #  This file:  run-c-ex.sh
@@ -18,7 +20,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                               #
 # This script will compile and run the c examples from source files installed   #
-# in ${prefix}/share/hdf5_examples/c using h5cc or h5pc.  The order for running                 #
+# in .../share/hdf5_examples/c using h5cc or h5pc.  The order for running       #
 # programs with RunTest in the MAIN section below is taken from the Makefile.   #
 # The order is important since some of the test programs use data files created #
 # by earlier test programs.  Any future additions should be placed accordingly. #
@@ -28,33 +30,10 @@
 # Initializations
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
-
-#
-# Try to derive the path to the installation $prefix established
-# by ./configure relative to the examples directory established by
-# ./configure.  If successful, set `prefix_relto_examplesdir` to the
-# relative path.  Otherwise, set `prefix_relto_examplesdir` to the
-# absolute installation $prefix.
-#
-# This script uses the value of `prefix` in the user's environment, if
-# it is set, below.  The content of $() is evaluated in a sub-shell, so
-# if `prefix` is set in the user's environment, the shell statements in
-# $() won't clobbered it.
-#
-prefix_relto_examplesdir=$(
-prefix=/data1/devojyoti/PhD/P-AIRCARS/libraries/local
-examplesdir=${prefix}/share/hdf5_examples
-if [ ${examplesdir##${prefix}/} != ${examplesdir} ]; then
-	echo $(echo ${examplesdir##${prefix}/} | \
-	    sed 's,[^/][^/]*,..,g')
-else
-	echo $prefix
-fi
-)
-
+ 
 # Where the tool is installed.
-# default is relative path to installed location of the tools
-prefix="${prefix:-../${prefix_relto_examplesdir}}"
+# default is relative path to installed location of the tools 
+prefix="${prefix:-../../../}"
 PARALLEL=no             # Am I in parallel mode?
 AR="ar"
 RANLIB="ranlib"
@@ -135,43 +114,18 @@ then
         rm h5_attribute &&\
         RunTest h5_mount &&\
         rm h5_mount &&\
-        RunTest h5_reference_deprec &&\
-        rm h5_reference_deprec &&\
-        RunTest h5_ref_extern &&\
-        rm h5_ref_extern &&\
-        RunTest h5_ref_compat &&\
-        rm h5_ref_compat &&\
+        RunTest h5_reference &&\
+        rm h5_reference &&\
         RunTest h5_drivers &&\
         rm h5_drivers &&\
-        RunTest h5_ref2reg_deprec &&\
-        rm h5_ref2reg_deprec &&\
+        RunTest h5_ref2reg &&\
+        rm h5_ref2reg &&\
         RunTest h5_extlink &&\
         rm h5_extlink &&\
         RunTest h5_elink_unix2win &&\
         rm h5_elink_unix2win &&\
-        OLD_DEBUG_STRING=$HDF5_DEBUG &&\
-        export HDF5_DEBUG="+all +trace +ttimes" &&\
-        RunTest h5_debug_trace &&\
-        HDF5_DEBUG=$OLD_DEBUG_STRING &&\
-        rm h5_debug_trace &&\
         RunTest h5_shared_mesg &&\
-        rm h5_shared_mesg &&\
-        RunTest h5_vds-eiger &&\
-        rm h5_vds-eiger &&\
-        RunTest h5_vds-exclim &&\
-        rm h5_vds-exclim &&\
-        RunTest h5_vds-exc &&\
-        rm h5_vds-exc &&\
-        RunTest h5_vds-simpleIO &&\
-        rm h5_vds-simpleIO &&\
-        RunTest h5_vds-percival &&\
-        rm h5_vds-percival &&\
-        RunTest h5_vds-percival-unlim &&\
-        rm h5_vds-percival-unlim &&\
-        RunTest h5_vds-percival-unlim-maxmin&&\
-        rm h5_vds-percival-unlim-maxmin &&\
-        RunTest h5_vds &&\
-        rm h5_vds); then
+        rm h5_shared_mesg); then
         EXIT_VALUE=${EXIT_SUCCESS}
     else
         EXIT_VALUE=${EXIT_FAILURE}
@@ -184,5 +138,5 @@ rm *.h5
 rm -rf red blue u2w
 echo
 
-exit $EXIT_VALUE
+exit $EXIT_VALUE 
 

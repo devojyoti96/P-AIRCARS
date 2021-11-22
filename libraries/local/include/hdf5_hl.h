@@ -5,10 +5,12 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the root of the source code       *
- * distribution tree, or in https://www.hdfgroup.org/licenses.               *
- * If you do not have access to either file, you may request a copy from     *
- * help@hdfgroup.org.                                                        *
+ * the files COPYING and Copyright.html.  COPYING can be found at the root   *
+ * of the source code distribution tree; Copyright.html can be found at the  *
+ * root level of an installed copy of the electronic HDF5 document set and   *
+ * is linked from the top-level documents page.  It can also be found at     *
+ * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
+ * access to either file, you may request a copy from help@hdfgroup.org.     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -17,16 +19,15 @@
  * fill this file with lots of gunk...
  */
 
-#ifndef HDF5_HL_H
-#define HDF5_HL_H
+#ifndef _HDF5_HL_H
+#define _HDF5_HL_H
 
-#include "hdf5.h"       /* hdf5 main library */
 #include "H5DOpublic.h" /* dataset optimization */
 #include "H5DSpublic.h" /* dimension scales */
 #include "H5LTpublic.h" /* lite */
 #include "H5IMpublic.h" /* image */
 #include "H5TBpublic.h" /* table */
-#include "H5PTpublic.h" /* packet table */
-#include "H5LDpublic.h" /* lite dataset */
+#include "H5PTpublic.h" /* table */
 
-#endif /*HDF5_HL_H*/
+#endif /*H5_INCLUDE_HL*/
+

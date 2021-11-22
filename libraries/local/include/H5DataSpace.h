@@ -6,153 +6,130 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the root of the source code       *
- * distribution tree, or in https://www.hdfgroup.org/licenses.               *
- * If you do not have access to either file, you may request a copy from     *
- * help@hdfgroup.org.                                                        *
+ * the files COPYING and Copyright.html.  COPYING can be found at the root   *
+ * of the source code distribution tree; Copyright.html can be found at the  *
+ * root level of an installed copy of the electronic HDF5 document set and   *
+ * is linked from the top-level documents page.  It can also be found at     *
+ * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
+ * access to either file, you may request a copy from help@hdfgroup.org.     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef H5DataSpace_H
-#define H5DataSpace_H
+#ifndef __H5DataSpace_H
+#define __H5DataSpace_H
 
+#ifndef H5_NO_NAMESPACE
 namespace H5 {
+#endif
 
-/*! \class DataSpace
-    \brief Class DataSpace inherits from IdComponent and provides wrappers for
-     the HDF5's dataspaces.
-*/
-//  Inheritance: IdComponent
+//! Class DataSpace operates on HDF5 dataspaces.
 class H5_DLLCPP DataSpace : public IdComponent {
-  public:
-    ///\brief Default DataSpace objects
-    static const DataSpace &ALL;
+   public:
+	// Default DataSpace objects
+	static const DataSpace ALL;
 
-    // Creates a dataspace object given the space type
-    DataSpace(H5S_class_t type = H5S_SCALAR);
+	// Creates a dataspace object given the space type
+	DataSpace(H5S_class_t type = H5S_SCALAR);
 
-    // Creates a simple dataspace
-    DataSpace(int rank, const hsize_t *dims, const hsize_t *maxdims = NULL);
+	// Creates a simple dataspace
+	DataSpace(int rank, const hsize_t * dims, const hsize_t * maxdims = NULL);
 
-    // Creates a DataSpace object using an existing dataspace id.
-    DataSpace(const hid_t space_id);
+	// Assignment operator
+	DataSpace& operator=( const DataSpace& rhs );
 
-    // Copy constructor - same as the original DataSpace.
-    DataSpace(const DataSpace &original);
+	// Closes this dataspace.
+	virtual void close();
 
-    // Assignment operator
-    DataSpace &operator=(const DataSpace &rhs);
+	// Makes copy of an existing dataspace.
+	void copy(const DataSpace& like_space);
 
-    // Closes this dataspace.
-    virtual void close() H5_OVERRIDE;
+	// Copies the extent of this dataspace.
+	void extentCopy( DataSpace& dest_space ) const;
 
-    // Makes copy of an existing dataspace.
-    void copy(const DataSpace &like_space);
+	// Gets the bounding box containing the current selection.
+	void getSelectBounds( hsize_t* start, hsize_t* end ) const;
 
-    // Copies the extent of this dataspace.
-    void extentCopy(const DataSpace &dest_space) const;
-    // removed from 1.8.18 and 1.10.1
-    // void extentCopy(DataSpace& dest_space) const;
+	// Gets the number of element points in the current selection.
+	hssize_t getSelectElemNpoints() const;
 
-    // Gets the bounding box containing the current selection.
-    void getSelectBounds(hsize_t *start, hsize_t *end) const;
+	// Retrieves the list of element points currently selected.
+	void getSelectElemPointlist( hsize_t startpoint, hsize_t numpoints, hsize_t *buf ) const;
 
-    // Gets the number of element points in the current selection.
-    hssize_t getSelectElemNpoints() const;
+	// Gets the list of hyperslab blocks currently selected.
+	void getSelectHyperBlocklist( hsize_t startblock, hsize_t numblocks, hsize_t *buf ) const;
 
-    // Retrieves the list of element points currently selected.
-    void getSelectElemPointlist(hsize_t startpoint, hsize_t numpoints, hsize_t *buf) const;
+	// Get number of hyperslab blocks.
+	hssize_t getSelectHyperNblocks() const;
 
-    // Gets the list of hyperslab blocks currently selected.
-    void getSelectHyperBlocklist(hsize_t startblock, hsize_t numblocks, hsize_t *buf) const;
+	// Gets the number of elements in this dataspace selection.
+	hssize_t getSelectNpoints() const;
 
-    // Get number of hyperslab blocks.
-    hssize_t getSelectHyperNblocks() const;
+	// Retrieves dataspace dimension size and maximum size.
+	int getSimpleExtentDims( hsize_t *dims, hsize_t *maxdims = NULL ) const;
 
-    // Gets the number of elements in this dataspace selection.
-    hssize_t getSelectNpoints() const;
+	// Gets the dimensionality of this dataspace.
+	int getSimpleExtentNdims() const;
 
-    // Retrieves dataspace dimension size and maximum size.
-    int getSimpleExtentDims(hsize_t *dims, hsize_t *maxdims = NULL) const;
+	// Gets the number of elements in this dataspace.
+	// 12/05/00 - changed return type to hssize_t from hsize_t - C API
+	hssize_t getSimpleExtentNpoints() const;
 
-    // Gets the dimensionality of this dataspace.
-    int getSimpleExtentNdims() const;
+	// Gets the current class of this dataspace.
+	H5S_class_t getSimpleExtentType() const;
 
-    // Gets the number of elements in this dataspace.
-    // 12/05/00 - changed return type to hssize_t from hsize_t - C API
-    hssize_t getSimpleExtentNpoints() const;
+	// Determines if this dataspace is a simple one.
+	bool isSimple() const;
 
-    // Gets the current class of this dataspace.
-    H5S_class_t getSimpleExtentType() const;
+	// Sets the offset of this simple dataspace.
+	void offsetSimple( const hssize_t* offset ) const;
 
-    // Determines if this dataspace is a simple one.
-    bool isSimple() const;
+	// Selects the entire dataspace.
+	void selectAll() const;
 
-    // Sets the offset of this simple dataspace.
-    void offsetSimple(const hssize_t *offset) const;
+	// Selects array elements to be included in the selection for
+	// this dataspace.
+	void selectElements( H5S_seloper_t op, const size_t num_elements, const hsize_t *coord) const;
 
-    // Selects the entire dataspace.
-    void selectAll() const;
+	// Selects a hyperslab region to add to the current selected region.
+	void selectHyperslab( H5S_seloper_t op, const hsize_t *count, const hsize_t *start, const hsize_t *stride = NULL, const hsize_t *block = NULL ) const;
 
-    // Selects array elements to be included in the selection for
-    // this dataspace.
-    void selectElements(H5S_seloper_t op, const size_t num_elements, const hsize_t *coord) const;
+	// Resets the selection region to include no elements.
+	void selectNone() const;
 
-    // Selects a hyperslab region to add to the current selected region.
-    void selectHyperslab(H5S_seloper_t op, const hsize_t *count, const hsize_t *start,
-                         const hsize_t *stride = NULL, const hsize_t *block = NULL) const;
+	// Verifies that the selection is within the extent of the dataspace.
+	bool selectValid() const;
 
-    // Resets the selection region to include no elements.
-    void selectNone() const;
+	// Removes the extent from this dataspace.
+	void setExtentNone() const;
 
-    // Verifies that the selection is within the extent of the dataspace.
-    bool selectValid() const;
+	// Sets or resets the size of this dataspace.
+	void setExtentSimple( int rank, const hsize_t *current_size, const hsize_t *maximum_size = NULL ) const;
 
-    // Removes the extent from this dataspace.
-    void setExtentNone() const;
+	///\brief Returns this class name.
+	virtual H5std_string fromClass () const { return("DataSpace"); }
 
-    // Sets or resets the size of this dataspace.
-    void setExtentSimple(int rank, const hsize_t *current_size, const hsize_t *maximum_size = NULL) const;
+	// Creates a DataSpace object using an existing dataspace id.
+	DataSpace(const hid_t space_id);
 
-    ///\brief Returns this class name.
-    virtual H5std_string
-    fromClass() const H5_OVERRIDE
-    {
-        return ("DataSpace");
-    }
+	// Copy constructor: makes a copy of the original DataSpace object.
+	DataSpace(const DataSpace& original);
 
-    // Gets the dataspace id.
-    virtual hid_t getId() const H5_OVERRIDE;
+	// Gets the dataspace id.
+	virtual hid_t getId() const;
 
-    // Deletes the global constant
-    static void deleteConstants();
+	// Destructor: properly terminates access to this dataspace.
+	virtual ~DataSpace();
 
-    // Destructor: properly terminates access to this dataspace.
-    virtual ~DataSpace();
+   private:
+	hid_t id;       // HDF5 dataspace id
 
+   protected:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-  protected:
-    // Sets the dataspace id.
-    virtual void p_setId(const hid_t new_id) H5_OVERRIDE;
-
+	// Sets the dataspace id.
+	virtual void p_setId(const hid_t new_id);
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  private:
-    hid_t id; // HDF5 dataspace id
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-    static DataSpace *ALL_;
-
-    // Creates the global constant
-    static DataSpace *getConstant();
-
-    // Friend function to set DataSpace id.  For library use only.
-    friend void f_DataSpace_setId(DataSpace *dspace, hid_t new_id);
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-}; // end of DataSpace
-} // namespace H5
-
-#endif // H5DataSpace_H
+};
+#ifndef H5_NO_NAMESPACE
+}
+#endif
+#endif // __H5DataSpace_H

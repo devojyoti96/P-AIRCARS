@@ -6,10 +6,12 @@
 #
 # This file is part of HDF5.  The full HDF5 copyright notice, including
 # terms governing use, modification, and redistribution, is contained in
-# the COPYING file, which can be found at the root of the source code
-# distribution tree, or in https://www.hdfgroup.org/licenses.
-# If you do not have access to either file, you may request a copy from
-# help@hdfgroup.org.
+# the files COPYING and Copyright.html.  COPYING can be found at the root
+# of the source code distribution tree; Copyright.html can be found at the
+# root level of an installed copy of the electronic HDF5 document set and
+# is linked from the top-level documents page.  It can also be found at
+# http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
+# access to either file, you may request a copy from help@hdfgroup.org.
 #
 
 ############################################################################
@@ -38,7 +40,7 @@ HL="hl"
 ##    $CLINKER $H5BLD_CPPFLAGS $CPPFLAGS $H5BLD_CXXFLAGS $CXXFLAGS        ##
 ##    $LDFLAGS $LIBS $clibpath $link_objs $link_args $shared_link         ##
 ##                                                                        ##
-## These settings can be overridden by setting HDF5_CXXFLAGS,              ##
+## These settings can be overriden by setting HDF5_CXXFLAGS,              ##
 ## HDF5_CPPFLAGS, HDF5_LDFLAGS, or HDF5_LIBS in the environment.          ##
 ##                                                                        ##
 ############################################################################
@@ -87,10 +89,10 @@ CXXLINKERBASE="g++"
 # paths and libraries from AM_LDFLAGS, LDFLAGS, AM_LIBS or LIBS carried in
 # from the hdf5 build. The order of the flags is intended to give precedence
 # to the user's flags.
-H5BLD_CXXFLAGS=" -DOLD_HEADER_FILENAME -DHDF_NO_NAMESPACE -DNO_STATIC_CAST "
-H5BLD_CPPFLAGS=" "
+H5BLD_CXXFLAGS=" "
+H5BLD_CPPFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE  "
 H5BLD_LDFLAGS=" "
-H5BLD_LIBS="-lz -ldl -lm "
+H5BLD_LIBS=" -lz -ldl -lm "
 
 CXX="${HDF5_CXX:-$CXXBASE}"
 CXXLINKER="${HDF5_CLINKER:-$CXXLINKERBASE}"
@@ -140,7 +142,7 @@ usage() {
   echo "                                 [default: no except when built with only"
   echo "                                           shared libraries]"
   echo " You can also add or change paths and flags to the compile line using"
-  echo " the following environment variables or by assigning them to their counterparts"
+  echo " the following environment varibles or by assigning them to their counterparts"
   echo " in the 'Things You Can Modify to Override...'" section of $prog_name
   echo " "
   echo "  Variable              Current value to be replaced"
@@ -203,7 +205,7 @@ for arg in $@ ; do
       compile_args="$compile_args $arg"
 
       if test "x$do_link" = "xyes" -a -n "$output_file"; then
-        compile_args="$compile_args -o $output_file"
+        compile_args="$compile_args -o $outputfile"
       fi
 
       do_link="no"
@@ -311,7 +313,7 @@ fi
 
 if test "x$do_link" = "xyes"; then
   shared_link=""
-  # conditionally link with the hl library
+  # conditionnaly link with the hl library  
   if test "X$HL" = "Xhl"; then
    libraries=" $libraries -lhdf5_hl_cpp -lhdf5_cpp -lhdf5_hl -lhdf5 "
   else
@@ -331,7 +333,7 @@ if test "x$do_link" = "xyes"; then
     hpux*)                flag="-Wl,+b -Wl," ;;
     freebsd*|solaris*)    flag="-R" ;;
     rs6000*|aix*)         flag="-L" ;;
-    sgi)                  flag="-rpath " ;;
+    irix*|sgi)            flag="-rpath " ;;
     *)                    flag="" ;;
   esac
 

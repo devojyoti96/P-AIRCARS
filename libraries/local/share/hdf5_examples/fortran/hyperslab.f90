@@ -5,10 +5,12 @@
 !                                                                             *
 !   This file is part of HDF5.  The full HDF5 copyright notice, including     *
 !   terms governing use, modification, and redistribution, is contained in    *
-!   the COPYING file, which can be found at the root of the source code       *
-!   distribution tree, or in https://www.hdfgroup.org/licenses.               *
-!   If you do not have access to either file, you may request a copy from     *
-!   help@hdfgroup.org.                                                        *
+!   the files COPYING and Copyright.html.  COPYING can be found at the root   *
+!   of the source code distribution tree; Copyright.html can be found at the  *
+!   root level of an installed copy of the electronic HDF5 document set and   *
+!   is linked from the top-level documents page.  It can also be found at     *
+!   http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
+!   access to either file, you may request a copy from help@hdfgroup.org.     *
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
 !
@@ -31,6 +33,8 @@
 
      INTEGER(HSIZE_T), DIMENSION(3) :: dimsm = (/7,7,3/) ! Dataset dimensions
                                                          ! in memory
+     INTEGER(HSIZE_T), DIMENSION(2) :: dims_out ! Buffer to read in dataset
+                                                ! dimesions
      INTEGER(HSIZE_T), DIMENSION(2) :: dimsf = (/5,6/) ! Dataset dimensions.
 
      INTEGER(HSIZE_T), DIMENSION(2) :: count = (/3,4/)
@@ -45,15 +49,16 @@
      INTEGER, DIMENSION(7,7,3) :: data_out ! Output buffer
      INTEGER :: dsetrank = 2 ! Dataset rank ( in file )
      INTEGER :: memrank = 3  ! Dataset rank ( in memory )
+     INTEGER :: rank
      INTEGER :: i, j, k
 
-     INTEGER :: error  ! Error flag
+     INTEGER :: error, error_n  ! Error flags
      INTEGER(HSIZE_T), DIMENSION(3) :: data_dims
 
 
-     !
-     ! Write data to the HDF5 file.
-     !
+   !
+   ! Write data to the HDF5 file.
+   !
 
      !
      ! Data initialization.
