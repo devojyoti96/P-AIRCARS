@@ -75,6 +75,7 @@ except:
 os.chdir(install_ini_dir+'/paircars_libraries')
 pwd=os.getcwd()
 install_dir=pwd+'/local'
+print ('Installing libraries locally at : '+install_dir)
 if os.path.isdir(install_dir)==False:
 	os.makedirs(install_dir)
 
@@ -215,6 +216,34 @@ except:
 	install('numpy==1.19.0')
 	import numpy as np
 
+if os.path.exists(install_dir+'/lib/libz.so')==False or os.path.exists(install_dir+'/lib/libz.so.1.2.11')==False:
+	print ('Installing zlib....\n')
+	if os.path.isdir('zlib-1.2.11')==False:
+		os.system('wget -q -c "https://webwerks.dl.sourceforge.net/project/libpng/zlib/1.2.11/zlib-1.2.11.tar.gz" --no-check-certificate')
+		shutil.unpack_archive('zlib-1.2.11.tar.gz')
+		os.system('rm -rf zlib-1.2.11.targ.gz')
+	os.chdir('zlib-1.2.11')
+	os.system('./configure ../ --prefix='+install_dir+' >> tmp')
+	os.system('make >> tmp')
+	os.system('make install >> tmp')
+	os.system('rm -rf tmp zlib-1.2.11')
+	os.chdir(pwd)
+os.system('rm -rf tmp')
+
+if os.path.exists(install_dir+'/lib/libhdf5.so')==False or os.path.exists(install_dir+'/lib/libhdf5_cpp.so')==False:
+	print ('Installing HDF5....\n')
+	if os.path.isdir('hdf5-1.8.12')==False:
+		os.system('wget -q -c "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz" --no-check-certificate')
+		shutil.unpack_archive('hdf5-1.8.12.tar.gz')
+		os.system('rm -rf hdf5-1.8.12.tar.gz')
+	os.chdir('hdf5-1.8.12')
+	os.system('./configure ../ --prefix='+install_dir+' --enable-cxx --enable-fortran >> tmp')
+	os.system('make >> tmp')
+	os.system('make install >> tmp')
+	os.system('rm -rf tmp hdf5-1.8.12')
+	os.chdir(pwd)
+os.system('rm -rf tmp')
+
 if os.path.exists(install_dir+'/bin/wsclean')==False:
 	print ('Installing WSClean....\n')
 	if os.path.isdir('wsclean-2.7')==False:
@@ -281,7 +310,7 @@ def update_mwa_obsids(obsid_file='',verbose=False,force=False):
 		Update success or failure code (0 or 1)
 	'''
 	if verbose==True:
-		print ('Updating local MWA OBSid file......\n')
+		print ('Updating local MWA OBSid file......')
 	if obsid_file=='':
 		obsid_file=datadir+'/MWA_OBSids'
 	BASEURL='http://ws.mwatelescope.org/'
@@ -301,7 +330,7 @@ def update_mwa_obsids(obsid_file='',verbose=False,force=False):
 	try:
 		end_obsid=json.load(urllib.request.urlopen(future_search_url,timeout=10))[0][0]
 		if verbose==True:
-			print ('Last OBSID in MWA metadata server : '+str(end_obsid)+'\n')
+			print ('Last OBSID in MWA metadata server : '+str(end_obsid))
 		while True:
 			searchurl=BASEURL+'metadata/find?mintime='+str(start_obsid)+'&maxtime='+str(start_obsid+432000)
 			try:
@@ -317,13 +346,13 @@ def update_mwa_obsids(obsid_file='',verbose=False,force=False):
 				break
 		np.save(obsid_file,temp_array)
 		if verbose==True:
-			print ('Updated successfully.\n')
+			print ('Updated successfully.')
 		os.system('rm -rf casa*log')
 		return obsid_file+'.npy',0
 	except Exception as e:
 		if verbose==True:
-			print ('Error in update : '+str(e)+'\n')
-			print ('Update not successful.\n')
+			print ('Error in update : '+str(e))
+			print ('Update not successful')
 		os.system('rm -rf casa*log')
 		return obsid_file+'.npy',1
 
@@ -419,8 +448,10 @@ os.system('rm -rf scripts/parallel_ms_split scripts/final_imaging scripts/run_in
 
 
 cwd=os.getcwd()
+'''
 paircars_path=sysconfig.get_paths()['platlib']
 os.chdir(paircars_path)
 paircars_client_path=glob.glob('paircars*')[0]+'/paircars_client/static'
 os.system('chmod a+rwx '+paircars_client_path)
+'''
 os.chdir(cwd)
