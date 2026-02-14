@@ -123,7 +123,7 @@ def pbcor_all_images(
     mem_frac=0.8,
 ):
     """
-    Correct primary beam of MeerKAT for images in a directory
+    Correct primary beam of MWA for images in a directory
 
     Parameters
     ----------
@@ -345,7 +345,7 @@ def main(
     dask_client=None,
 ):
     """
-    Primary beam correction of MeerKAT for a sets of images in a directory
+    Primary beam correction of MWA for a sets of images in a directory
 
     Parameters
     ----------
@@ -449,7 +449,7 @@ def main(
 
 def cli():
     parser = argparse.ArgumentParser(
-        description="Correct all images for MeerKAT full-pol averaged primary beam",
+        description="Correct all images for MWA full-pol averaged primary beam",
         formatter_class=SmartDefaultsHelpFormatter,
     )
 
