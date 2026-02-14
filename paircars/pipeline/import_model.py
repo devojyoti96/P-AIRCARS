@@ -63,7 +63,6 @@ def import_hyperdrive_model(
         beam_files_freqs = np.array(beam_files_freqs)
         pos = np.argmin(np.abs(beam_files_freqs - freqres))
         beamfile = beam_files[pos]
-    print(f"Primary beam file: {beamfile}")
     if sourcelist == "" or os.path.exists(sourcelist) is not True:
         sourcelist = f"{datadir}/GGSM.txt"
     if ncpu > 0:
