@@ -1601,10 +1601,14 @@ def master_control(
         # Moving into work directory
         #####################################
         os.chdir(workdir)
+        remote_link=""
         if remote_logger:
             trial = 0
             while trial <= 5:
-                remote_link = get_remote_logger_link()
+                try:
+                    remote_link = get_remote_logger_link()
+                except:
+                    pass
                 if remote_link != "":
                     break
                 else:
@@ -1613,6 +1617,7 @@ def master_control(
             if remote_link == "":
                 print("Please provide a valid remote link.")
                 remote_logger = False
+                
         emails = get_emails()
 
         if not remote_logger:
