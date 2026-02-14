@@ -1090,7 +1090,7 @@ def do_full_selfcal(
     elif do_polcal is False:
         return 0, 0, gaintable, []
     else:
-        print(f"Starting polarisation self-calibration for ms: {msname}.\n")
+        print(f"Starting polarisation self-calibration for ms: {msname}.")
         pol_selfcal_msg, pol_selfcal_ms, quartical_table = do_polselfcal(
             msname=selfcal_ms,
             workdir=workdir,

@@ -2195,6 +2195,7 @@ def master_control(
                 if emails != "":
                     msg = "Error occured in flagging self-calibration measurement sets."
                     send_task_notification(emails, msg, jobid, timestamp)
+                    
             ###################################
             # Apply basic calibration
             ###################################
