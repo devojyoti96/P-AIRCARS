@@ -1,4 +1,5 @@
 import os
+import glob
 import numpy as np
 import time
 import sys
@@ -17,7 +18,7 @@ logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 datadir = get_datadir()
 
 
-def import_hyperdrive_model(msname, metafits, beamfile="", sourcelist="", ncpu=-1):
+def import_hyperdrive_model(msname, metafits, beamfile="", sourcelist="", ncpu=-1, verbose=False):
     """
     Simulate visibilities and import in the measurement set
 
@@ -33,12 +34,34 @@ def import_hyperdrive_model(msname, metafits, beamfile="", sourcelist="", ncpu=-
         Source file name
     ncpu : int, optional
         Number of cpu threads to use
+    verbose : bool, optional
+        Verbose output or not
     """
     if datadir is None:
         print("Please setup P-AIRCARS first.")
         return
-    if beamfile == "" or os.path.exists(beamfile) is not True:
-        beamfile = f"{datadir}/mwa_full_embedded_element_pattern.h5"
+    if beamfile == "" or os.path.exists(beamfile) is False:
+        with suppress_output():
+            msmd = msmetadata()
+            msmd.open(msname)
+            freqres = msmd.chanres(0, unit="kHz")[0]
+            msmd.close()
+        beam_files = glob.glob(f"{datadir}/mwa_full_embedded_element_pattern*.h5")
+        beam_files_freqs = []
+        for beamfile in beam_files:
+            if os.path.basename(beamfile) == "mwa_full_embedded_element_pattern.h5":
+                beam_file_freq = 1280.0
+            else:
+                beam_file_freq = float(
+                    os.path.basename(beamfile)
+                    .split(".h5")[0]
+                    .split("mwa_full_embedded_element_pattern_")[-1]
+                )
+            beam_files_freqs.append(beam_file_freq)
+        beam_files_freqs = np.array(beam_files_freqs)
+        pos = np.argmin(np.abs(beam_files_freqs - freqres))
+        beamfile = beam_files[pos]   
+    print (f"Primary beam file: {beamfile}")     
     if sourcelist == "" or os.path.exists(sourcelist) is not True:
         sourcelist = f"{datadir}/GGSM.txt"
     if ncpu > 0:
@@ -94,12 +117,18 @@ def import_hyperdrive_model(msname, metafits, beamfile="", sourcelist="", ncpu=-
             "--output-model-time-average",
             f"{timeres}s",
         ]
-        subprocess.run(
-            hyperdrive_cmd,
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        if verbose is False:
+            subprocess.run(
+                hyperdrive_cmd,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        else:
+            subprocess.run(
+                hyperdrive_cmd,
+                check=True,
+            )
         model_msname = msname.split(".ms")[0] + "_model.ms"
         ########################
         # Importing model
@@ -147,6 +176,7 @@ def main(
     workdir,
     beamfile="",
     sourcelist="",
+    verbose=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
@@ -169,6 +199,8 @@ def main(
         MWA beam file
     sourcelist : str, optional
         MWA global sky model (fits or ascii in wsclean format)
+    verbose : bool, optional
+        Verbose output or not
     cpu_frac : float, optional
         CPU fraction
     mem_frac : float, optional
@@ -245,6 +277,7 @@ def main(
                         beamfile=beamfile,
                         sourcelist=sourcelist,
                         ncpu=ncpu,
+                        verbose=verbose,
                     )
                 )
             print("Start import modeling...")
@@ -318,6 +351,9 @@ def cli():
         help="Source model file",
     )
     adv_args.add_argument(
+        "--verbose", action="store_true", help="Verbose output"
+    )
+    adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
 
@@ -352,6 +388,7 @@ def cli():
         args.workdir,
         beamfile=args.beamfile,
         sourcelist=args.sourcelist,
+        verbose=args.verbose,
         cpu_frac=float(args.cpu_frac),
         mem_frac=float(args.mem_frac),
         logfile=args.logfile,

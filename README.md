@@ -134,6 +134,7 @@ Flux calibration of the observations are done using the menthod described in the
 
 [kansabanik2022c]: https://doi.org/10.3847/1538-4357/ac4bba 
 
+P-AIRCARS name is given by Dr. Barnali Das (NCRA-TIFR, Pune, India)
 
 ## License
 

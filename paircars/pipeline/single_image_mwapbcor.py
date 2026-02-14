@@ -14,7 +14,6 @@ from paircars.utils import *
 warnings.filterwarnings("ignore")
 
 datadir = get_datadir()
-MWA_PB_file_paircars = f"{datadir}/mwa_full_embedded_element_pattern.h5"
 sweet_spot_file_paircars = f"{datadir}/MWA_sweet_spots.npy"
 haslam_map_paircars = f"{datadir}/haslam_map.fits"
 MWALON = 116.67
