@@ -2350,7 +2350,7 @@ def master_control(
                 freqres=freqavg,
                 timeres=timeavg,
                 quack_timestamps=quack_timestamps,
-                force_split=True,
+                force_split=False,
                 prefix=prefix,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
