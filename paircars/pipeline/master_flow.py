@@ -2021,21 +2021,20 @@ def master_control(
                 has_cal = False
             finally:
                 scale_worker_and_wait(dask_cluster, nworker)
-            caltables = glob.glob(f"{caldir}/*cal")
+            caltables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal") + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             if len(caltables) > 0:
                 for caltable in caltables:
-                    if caltable.endswith(".dcal") is False:
-                        msg, caltable_diag_plot = plot_caltable_diagnostics(
-                            caltable, outdir=f"{outdir}/diagnostic_plots"
+                    msg, caltable_diag_plot = plot_caltable_diagnostics(
+                        caltable, outdir=f"{outdir}/diagnostic_plots"
+                    )
+                    if msg == 0:
+                        print(
+                            f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
                         )
-                        if msg == 0:
-                            print(
-                                f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
-                            )
-                        else:
-                            print(
-                                f"Error in creating diagnostic plots for caltable {caltable}."
-                            )
+                    else:
+                        print(
+                            f"Error in creating diagnostic plots for caltable {caltable}."
+                        )
 
         ##########################################
         # Checking presence of necessary caltables
@@ -2208,7 +2207,7 @@ def master_control(
                 workdir,
                 caldir,
                 overwrite_datacolumn=False,
-                only_amplitude=False,
+                only_amplitude=True,
                 applymode="calflag",
                 prefix="selfcal",
                 jobid=jobid,
@@ -2323,7 +2322,7 @@ def master_control(
         # Checking self-cal caltables
         ########################################
         if do_imaging or do_apply_selfcal:
-            selfcal_tables = glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal")
+            selfcal_tables = glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal") + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
             if len(selfcal_tables) == 0:
                 print(
                     "Self-calibration is not performed and no self-calibration caltable is available."
@@ -2332,6 +2331,19 @@ def master_control(
                 if emails != "":
                     msg = "Self-calibration is not performed and no self-calibration caltable is available."
                     send_task_notification(emails, msg, jobid, timestamp)
+            else:
+                for caltable in selfcal_tables:
+                    msg, caltable_diag_plot = plot_caltable_diagnostics(
+                        caltable, outdir=f"{outdir}/diagnostic_plots"
+                    )
+                    if msg == 0:
+                        print(
+                            f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
+                        )
+                    else:
+                        print(
+                            f"Error in creating diagnostic plots for caltable {caltable}."
+                        )
 
         #############################################
         # Spliting targets if not started already
@@ -2463,7 +2475,7 @@ def master_control(
                 workdir,
                 caldir,
                 overwrite_datacolumn=True,
-                only_amplitude=False,
+                only_amplitude=True,
                 applymode="calflag",
                 prefix="target",
                 jobid=jobid,
