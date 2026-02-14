@@ -1,0 +1,8 @@
+**/__pycache__/
+paircars/tests/testdata
+build/
+dist/
+*.egg*/
+docs/build
+**/casa*log
+
