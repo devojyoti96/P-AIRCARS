@@ -33,7 +33,11 @@ def test_move_to_sun(mock_radec_sun, mock_run_chgcenter):
     # Check that mocked functions were called
     mock_radec_sun.assert_called_once_with(msname)
     mock_run_chgcenter.assert_called_once_with(
-        msname, "12h00m00s", "-20d00m00s", only_uvw=True, container_name="paircarswsclean"
+        msname,
+        "12h00m00s",
+        "-20d00m00s",
+        only_uvw=True,
+        container_name="paircarswsclean",
     )
 
     assert result == 0

@@ -79,7 +79,7 @@ def write_prefect_profile():
 
 
 def kill_port(port):
-    print (f"Closed previous prefect server at port : {port}.")
+    print(f"Closed previous prefect server at port : {port}.")
     result = subprocess.run(
         ["lsof", "-t", f"-i:{port}"],
         capture_output=True,
@@ -87,8 +87,8 @@ def kill_port(port):
     )
     for pid in result.stdout.split():
         os.kill(int(pid), signal.SIGKILL)
-        
-        
+
+
 def prefect_server_status():
     """
     Get prefect server status

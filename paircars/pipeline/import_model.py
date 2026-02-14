@@ -18,7 +18,9 @@ logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 datadir = get_datadir()
 
 
-def import_hyperdrive_model(msname, metafits, beamfile="", sourcelist="", ncpu=-1, verbose=False):
+def import_hyperdrive_model(
+    msname, metafits, beamfile="", sourcelist="", ncpu=-1, verbose=False
+):
     """
     Simulate visibilities and import in the measurement set
 
@@ -60,8 +62,8 @@ def import_hyperdrive_model(msname, metafits, beamfile="", sourcelist="", ncpu=-
             beam_files_freqs.append(beam_file_freq)
         beam_files_freqs = np.array(beam_files_freqs)
         pos = np.argmin(np.abs(beam_files_freqs - freqres))
-        beamfile = beam_files[pos]   
-    print (f"Primary beam file: {beamfile}")     
+        beamfile = beam_files[pos]
+    print(f"Primary beam file: {beamfile}")
     if sourcelist == "" or os.path.exists(sourcelist) is not True:
         sourcelist = f"{datadir}/GGSM.txt"
     if ncpu > 0:
@@ -350,9 +352,7 @@ def cli():
         default="",
         help="Source model file",
     )
-    adv_args.add_argument(
-        "--verbose", action="store_true", help="Verbose output"
-    )
+    adv_args.add_argument("--verbose", action="store_true", help="Verbose output")
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )

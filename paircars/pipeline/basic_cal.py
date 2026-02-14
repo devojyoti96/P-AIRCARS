@@ -664,20 +664,20 @@ def main(
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
             )
-            if len(caltables)==0:
-                print ("No caltable is made.")
+            if len(caltables) == 0:
+                print("No caltable is made.")
             else:
-                bcals=[]
-                kcrosscals=[]
+                bcals = []
+                kcrosscals = []
                 for caltable in caltables:
                     if caltable.endswith(".bcal"):
                         bcals.append(caltable)
                     elif caltable.endswith("kcrosscal"):
-                        kcrosscals.append(caltable) 
-                if len(bcals)>0:
+                        kcrosscals.append(caltable)
+                if len(bcals) > 0:
                     print(f"All bandpass caltables: {bcals}.")
-                if len(kcrosscals)>0:
-                    print (f"All cross-phase caltables: {kcrosscals}.")
+                if len(kcrosscals) > 0:
+                    print(f"All cross-phase caltables: {kcrosscals}.")
                 for caltable in caltables:
                     if caltable is not None and os.path.exists(caltable):
                         dest = caldir + "/" + os.path.basename(caltable)
