@@ -46,6 +46,7 @@ def split_target_scans(
     time_interval=-1,
     time_window=-1,
     quack_timestamps=-1,
+    force_split=False,
     cpu_frac=0.8,
     mem_frac=0.8,
 ):
@@ -76,6 +77,8 @@ def split_target_scans(
         Time window in seconds
     quack_timestamps : int, optional
         Number of timestamps ignored at the start and end of each scan
+    force_split : bool, optional
+        Force split
     cpu_frac : float, optional
         CPU fraction to use
     mem_frac : float, optional
@@ -151,10 +154,14 @@ def split_target_scans(
         timerange = ",".join(timerange_list)
         for chanrange in chanlist:
             outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_spw_{chanrange}.ms"
-            if os.path.exists(f"{outputvis}/.splited"):
+            if os.path.exists(f"{outputvis}/.splited") and force_split is False:
                 print(f"{outputvis} is already splited successfully.")
                 splited_ms_list.append(outputvis)
             else:
+                if os.path.exists(outputvis):
+                    os.system(f"rm -rf {outputvis}")
+                if os.path.exists(f"{outputvis}.flagversions"):
+                    os.system(f"rm -rf {outputvis}.flagversions")
                 task = delayed(single_mstransform)(
                     msname=msname,
                     outputms=outputvis,
@@ -200,6 +207,7 @@ def main(
     freqres=-1,
     timeres=-1,
     prefix="targets",
+    force_split=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
@@ -232,6 +240,8 @@ def main(
         Time resolution in seconds for time averaging. Set -1 to disable. Default is -1.
     prefix : str, optional
         Prefix for the output split MS files. Default is "targets".
+    force_split : bool, optional
+        Force to split
     cpu_frac : float, optional
         Fraction of available CPUs to allocate per task. Default is 0.8.
     mem_frac : float, optional
@@ -307,6 +317,7 @@ def main(
                     time_window=float(time_window),
                     time_interval=float(time_interval),
                     quack_timestamps=int(quack_timestamps),
+                    force_split=force_split,
                     scan=scan,
                     prefix=prefix,
                     cpu_frac=float(cpu_frac),
@@ -408,6 +419,9 @@ def cli():
         help="Splited ms prefix name",
     )
     adv_args.add_argument(
+        "--force_split", action="store_true", help="Force to split"
+    )
+    adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
 
@@ -446,6 +460,7 @@ def cli():
         time_window=args.time_window,
         time_interval=args.time_interval,
         quack_timestamps=args.quack_timestamps,
+        force_split=args.force_split,
         freqres=args.freqres,
         timeres=args.timeres,
         prefix=args.prefix,
