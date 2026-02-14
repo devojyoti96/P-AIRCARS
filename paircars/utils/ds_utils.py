@@ -447,9 +447,6 @@ def calc_dynamic_spectrum(msname, metafits, outdir, nthreads=1):
         ###################################
         # Normalised cross-correlation
         ###################################
-        print(
-            f"Extracting normalised cross-correlation from ms: {msname} for baseline: {baseline}."
-        )
         result_rn = cal_norm_crosscorr(msname, baseline[0], baseline[1])
         rn_dic[tuple(baseline)] = result_rn
         rn_xx = result_rn[0]
@@ -471,9 +468,6 @@ def calc_dynamic_spectrum(msname, metafits, outdir, nthreads=1):
         sun_beam_yy_spectrum = []
         beam_omega_xx_spectrum = []
         beam_omega_yy_spectrum = []
-        print(
-            f"Determining system and sky temperatures for ms: {msname} for baseline: {baseline}."
-        )
         for i in range(len(freqs)):
             #################################
             # Each frequency calculations
