@@ -78,6 +78,17 @@ def write_prefect_profile():
     print(f"✅ Prefect profile '{profile_name}' written to {profile_path}")
 
 
+def kill_port(port):
+    print (f"Closed previous prefect server at port : {port}.")
+    result = subprocess.run(
+        ["lsof", "-t", f"-i:{port}"],
+        capture_output=True,
+        text=True,
+    )
+    for pid in result.stdout.split():
+        os.kill(int(pid), signal.SIGKILL)
+        
+        
 def prefect_server_status():
     """
     Get prefect server status
@@ -141,19 +152,9 @@ def start_server(show_config=False):
     """
     config = prefect_config()
     cachedir = config["CACHEDIR"]
-    if prefect_server_status():
-        print(f"🟢 Prefect server is already running at {config['SERVER_DASHBOARD']}")
-        if os.path.exists(f"{cachedir}/prefect.dashboard") is not True:
-            with open(f"{cachedir}/prefect.dashboard", "w") as f:
-                f.write(f"{config['SERVER_DASHBOARD']}")
-        if show_config:
-            show_prefect_config()
-        os.makedirs(config["PREFECT_HOME"], exist_ok=True)
-        save_prefect_env_to_file()
-        return 0
-    print("🚀 Starting Prefect server...")
     pid_file = config["PID_FILE"]
-    if os.path.exists(pid_file):
+    print("🚀 Starting Prefect server...")
+    if prefect_server_status():
         stop_prefect_server()
     with open(config["LOG_FILE"], "w") as f:
         server_proc = subprocess.Popen(
@@ -204,7 +205,7 @@ def stop_prefect_server():
     cachedir = config["CACHEDIR"]
     try:
         if not os.path.exists(pid_file):
-            print("⚠️ No PID file found. Cannot stop Prefect server.")
+            kill_port(config["SERVER_PORT"])
         else:
             with open(pid_file, "r") as f:
                 pid = int(f.read().strip())
@@ -218,7 +219,8 @@ def stop_prefect_server():
     except Exception as e:
         print(f"❌ Error stopping server: {e}")
     finally:
-        os.remove(config["ENV_FILE"])
+        if os.path.exists(config["ENV_FILE"]):
+            os.remove(config["ENV_FILE"])
         os.system(f"touch {config['ENV_FILE']}")
         os.remove(f"{cachedir}/prefect.dashboard")
 

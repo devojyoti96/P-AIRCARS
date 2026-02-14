@@ -1,5 +1,4 @@
 import os
-import logging
 import psutil
 import numpy as np
 import argparse
@@ -10,9 +9,6 @@ import glob
 import sys
 import os
 import socket
-import warnings
-
-warnings.filterwarnings("ignore", category=UserWarning, module="pydantic_settings")
 from collections import Counter
 from casatools import msmetadata
 from astropy.io import fits
@@ -25,6 +21,7 @@ from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
+from pyfiglet import Figlet
 from paircars.pipeline import (
     mwa_make_ds,
     do_target_split,
@@ -41,9 +38,6 @@ from paircars.pipeline import (
     move_solarcenter,
 )
 from paircars.pipeline.init_data import init_paircars_data
-
-logging.getLogger("distributed").setLevel(logging.ERROR)
-logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 datadir = get_datadir()
 
 
@@ -1954,22 +1948,6 @@ def master_control(
             )
             try:
                 msg = future_basical.result()
-                for calms in split_cal_mslist:
-                    msg, ms_diag_plot = plot_ms_diagnostics(
-                        calms,
-                        outdir=f"{outdir}/diagnostic_plots",
-                        dask_client=dask_client,
-                        cpu_frac=cpu_frac,
-                        mem_frac=mem_frac,
-                    )
-                    if msg == 0:
-                        print(
-                            f"Calibrator diagnostic plots are saved in : {ms_diag_plot}"
-                        )
-                    else:
-                        print(
-                            f"Error in creating diagnostic plots for calibrator measurement set: {calms}."
-                        )
                 caltables = glob.glob(f"{caldir}/*cal")
                 for caltable in caltables:
                     msg, caltable_diag_plot = plot_caltable_diagnostics(
@@ -2426,28 +2404,6 @@ def master_control(
                 traceback.print_exc()
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
-
-        #####################################
-        # Target ms diagnostic plots
-        #####################################
-        if do_apply_selfcal or do_imaging:
-            if len(split_target_mslist) > 0:
-                for targetms in split_target_mslist:
-                    msg, ms_diag_plot = plot_ms_diagnostics(
-                        targetms,
-                        outdir=f"{outdir}/diagnostic_plots",
-                        dask_client=dask_client,
-                        cpu_frac=cpu_frac,
-                        mem_frac=mem_frac,
-                    )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for target measurement set {targetms} are saved in : {ms_diag_plot}"
-                        )
-                    else:
-                        print(
-                            f"Error in creating diagnostic plots for target measurement set {targetms}."
-                        )
 
         ######################################
         # Imaging
@@ -2919,6 +2875,9 @@ def cli():
         sys.exit(1)
 
     args = parser.parse_args()
+    
+    f = Figlet(font="big")
+    print(f.renderText("P-AIRCARS"))
 
     result = prefect_server_status()
     if result is not True:

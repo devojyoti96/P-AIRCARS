@@ -664,13 +664,26 @@ def main(
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
             )
-            print(f"All caltables: {caltables}")
-            for caltable in caltables:
-                if caltable is not None and os.path.exists(caltable):
-                    dest = caldir + "/" + os.path.basename(caltable)
-                    if os.path.exists(dest):
-                        os.system("rm -rf " + dest)
-                    os.system("mv " + caltable + " " + caldir)
+            if len(caltables)==0:
+                print ("No caltable is made.")
+            else:
+                bcals=[]
+                kcrosscals=[]
+                for caltable in caltables:
+                    if caltable.endswith(".bcal"):
+                        bcals.append(caltable)
+                    elif caltable.endswith("kcrosscal"):
+                        kcrosscals.append(caltable) 
+                if len(bcals)>0:
+                    print(f"All bandpass caltables: {bcals}.")
+                if len(kcrosscals)>0:
+                    print (f"All cross-phase caltables: {kcrosscals}.")
+                for caltable in caltables:
+                    if caltable is not None and os.path.exists(caltable):
+                        dest = caldir + "/" + os.path.basename(caltable)
+                        if os.path.exists(dest):
+                            os.system("rm -rf " + dest)
+                        os.system("mv " + caltable + " " + caldir)
         else:
             print("Please provide a valid measurement set.")
             msg = 1

@@ -182,6 +182,7 @@ dependencies = [
     "mwa_hyperbeam==0.10.4",
     "skyfield==1.53",
     "pycurl==7.45.7",
+    "pyfiglet==1.0.4",
 ]
 urls = { "Homepage" = "https://github.com/devojyoti96/P-AIRCARS" }
 
