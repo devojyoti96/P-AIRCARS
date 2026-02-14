@@ -42,10 +42,7 @@ from paircars.pipeline import (
 )
 from paircars.pipeline.init_data import init_paircars_data
 
-datadir = get_datadir()
-
-
-@task(name="moving_to_solar_center", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="moving_to_solar_center", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_solar_phasecenter_jobs(
     mslist,
     workdir,
@@ -119,7 +116,7 @@ def run_solar_phasecenter_jobs(
         return msg
 
 
-@task(name="making_dynamic_spectra", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="making_dynamic_spectra", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_ds_jobs(
     mslist,
     metafits,
@@ -202,7 +199,7 @@ def run_ds_jobs(
         return msg
 
 
-@task(name="spliting_ms", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="spliting_ms", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_target_split_jobs(
     mslist,
     workdir,
@@ -301,7 +298,7 @@ def run_target_split_jobs(
         return msg
 
 
-@task(name="flagging", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="flagging", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_flag(
     mslist,
     metafits,
@@ -415,7 +412,7 @@ def run_flag(
 @task(
     name="importing_model_visibilities",
     retries=2,
-    retry_delay_seconds=10,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_import_model(
@@ -492,7 +489,7 @@ def run_import_model(
         return msg
 
 
-@task(name="basic_calibration", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="basic_calibration", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_basic_cal_jobs(
     mslist,
     workdir,
@@ -578,7 +575,7 @@ def run_basic_cal_jobs(
 @task(
     name="applying_basic_calibration",
     retries=2,
-    retry_delay_seconds=10,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_apply_basiccal_sol(
@@ -679,7 +676,7 @@ def run_apply_basiccal_sol(
 
 
 @task(
-    name="solar_sidereal_correction", retries=2, retry_delay_seconds=10, log_prints=True
+    name="solar_sidereal_correction", retries=2, retry_delay_seconds=60, log_prints=True
 )
 def run_solar_siderealcor_jobs(
     mslist,
@@ -754,7 +751,7 @@ def run_solar_siderealcor_jobs(
         return msg
 
 
-@task(name="selfcal", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="selfcal", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_selfcal_jobs(
     mslist,
     workdir,
@@ -904,7 +901,7 @@ def run_selfcal_jobs(
 
 
 @task(
-    name="applying_self-calibration", retries=2, retry_delay_seconds=10, log_prints=True
+    name="applying_self-calibration", retries=2, retry_delay_seconds=60, log_prints=True
 )
 def run_apply_selfcal_sol(
     mslist,
@@ -992,7 +989,7 @@ def run_apply_selfcal_sol(
         return msg
 
 
-@task(name="imaging", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="imaging", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_imaging_jobs(
     mslist,
     workdir,
@@ -1123,7 +1120,7 @@ def run_imaging_jobs(
         return msg
 
 
-@task(name="applying_primary_beam", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="applying_primary_beam", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_apply_pbcor(
     imagedir,
     metafits,
@@ -1198,7 +1195,7 @@ def run_apply_pbcor(
         return msg
 
 
-@task(name="making_overlay", retries=2, retry_delay_seconds=10, log_prints=True)
+@task(name="making_overlay", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_make_overlay(
     imagedir,
     outdir,
@@ -2022,17 +2019,18 @@ def master_control(
             caltables = glob.glob(f"{caldir}/*cal")
             if len(caltables) > 0:
                 for caltable in caltables:
-                    msg, caltable_diag_plot = plot_caltable_diagnostics(
-                        caltable, outdir=f"{outdir}/diagnostic_plots"
-                    )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
+                    if caltable.endswith(".dcal") is False:
+                        msg, caltable_diag_plot = plot_caltable_diagnostics(
+                            caltable, outdir=f"{outdir}/diagnostic_plots"
                         )
-                    else:
-                        print(
-                            f"Error in creating diagnostic plots for caltable {caltable}."
-                        )
+                        if msg == 0:
+                            print(
+                                f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
+                            )
+                        else:
+                            print(
+                                f"Error in creating diagnostic plots for caltable {caltable}."
+                            )
 
         ##########################################
         # Checking presence of necessary caltables

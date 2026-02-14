@@ -21,8 +21,6 @@ from .mwapb_utils import *
 from .ds_utils import *
 from casatasks import casalog
 from astropy.utils import iers
-
-create_datadir()
 set_udocker_env()
 
 try:
