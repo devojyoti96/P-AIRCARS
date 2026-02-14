@@ -1,0 +1,69 @@
+Quickstart
+==========
+P-AIRCARS is distributed on
+`PyPI <https://pypi.org/project/paircars/>`__. To use it:
+
+1. Create conda environment with python 3.10
+
+   .. code-block:: bash
+
+      conda create -n paircars_env python=3.10
+      conda activate paircars_env
+
+2. Install P-AIRCARS in conda environment
+
+   .. code-block:: bash
+
+      pip install paircars
+
+3. Initiate necessary post-installation setup for metadata and ``prefect`` server
+
+   .. code-block:: bash
+
+      init-paircars-setup --init --prefect_server
+
+4. Before running the pipeline, setup your data as following:
+    
+    * Create a <target_datadir> and put all coarse channel measurement sets of solar scan of a single observation ID (OBSID) inside it.
+    
+    * Create a <cal_datadir> and put all coarse channel measurement sets for calibrator observation of a single OBSID inside it.
+    
+5. Run P-AIRCARS pipeline
+
+   .. code-block:: bash
+
+      run-mwa-paircars <path of target measurement set directory> <path of target metafits file> --cal_datadir <path of calibrator measurement set directory> --cal_metafits <path of calibrator metafits> --workdir <path of work directory> --outdir <path of output products directory>
+
+.. note ::
+
+   Keep target measurement sets for a single OBSID and calibrator measurement sets for a single OBSID must be kept in seperate directories. If calibrator is not present, do not provide these information.
+
+That’s all. You started P-AIRCARS pipeline for analysing your MWA solar observation 🎉. Read the ``Directory Structure and Data Products`` section to understand how to find final images.
+
+6. To see all running P-AIRCARS jobs
+
+   .. code-block :: bash
+        
+      show-paircars-status --show
+      
+       
+7. To see ``prefect`` dashboard, if ``prefect`` server is running:
+
+   .. code-block :: bash
+    
+      run-mwa-mwalogger
+
+8. If ``prefect`` dashboard is not showing logs, use local log of any job using the <jobid>:
+
+   .. code-block :: bash
+    
+      run-mwa-mwalogger --jobid <jobid>
+      
+9. If ``prefect`` dashboard is running, to see local log of any job using the <jobid>:
+
+   .. code-block :: bash
+    
+      run-mwa-mwalogger --jobid <jobid> --no-prefect
+      
+10. Output products will be saved in : ``<path of output products directory>``.
+
