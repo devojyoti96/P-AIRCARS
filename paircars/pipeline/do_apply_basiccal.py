@@ -179,14 +179,14 @@ def applysol(
                             f"{soltype}.load_from={qc}/{soltype}",
                         ]
                         quartical_cmd = " ".join(quartical_args)
-                        print(f"Quartical cmd: {quartical_cmd}\n")
                         quartical_msg = run_quartical(
                             quartical_cmd, "paircarsquartical", verbose=False
                         )
                         if quartical_msg != 0:
                             print("Quartical solutions did not apply.")
                             os.system(f"touch {msname}/.nopolselfcal")
-                        os.system(f"rm -rf {quartical_log} {temp_pol_caltable}")
+                        os.system(f"rm -rf {quartical_log}")
+                        os.system(f"rm -rf {temp_pol_caltable}")
         if overwrite_datacolumn:
             print(f"Over writing data column with corrected data for ms: {msname}.")
             outputvis = msname.split(".ms")[0] + "_cor.ms"
