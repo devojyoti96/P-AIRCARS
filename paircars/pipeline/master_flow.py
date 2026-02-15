@@ -2569,7 +2569,7 @@ def master_control(
                     send_task_notification(emails, msg, jobid, timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
-
+                
         ######################################
         # Imaging
         ######################################
@@ -2723,6 +2723,17 @@ def master_control(
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
             print(f"Final image directory: {os.path.dirname(outdir)}")
+
+        ######################################
+        # Keeping flag backups
+        ######################################
+        os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
+        print (f"Doing flag backup in: {outdir}/ms_flags")
+        for target_ms in split_target_mslist:
+            do_flag_backup(target_ms,flagtype="finalflag")
+            os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
+            if keep_backup is False:
+                os.system("rm -rf {target_ms}")
 
         ###########################################
         # Successful exit

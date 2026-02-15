@@ -66,7 +66,6 @@ def do_flag_backup(msname, flagtype="flagdata"):
         Flag type
     """
     from casatools import agentflagger
-
     af = agentflagger()
     af.open(msname)
     versionlist = af.getflagversionlist()
