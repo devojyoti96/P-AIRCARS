@@ -14,15 +14,19 @@ def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
     )
     monkeypatch.setattr(
         "glob.glob",
-        lambda x: [str(tmp_path / "mwa_full_embedded_element_pattern_150.h5")]
+        lambda x: [str(tmp_path / "mwa_full_embedded_element_pattern_150.h5")],
     )
     monkeypatch.setattr("os.path.exists", lambda x: True)
     if raise_error:
+
         def fake_run(*args, **kwargs):
             raise RuntimeError("hyperdrive failed")
+
     else:
+
         def fake_run(*args, **kwargs):
             return None
+
     monkeypatch.setattr("subprocess.run", fake_run)
     fake_msmd = MagicMock()
     fake_msmd.nchan.return_value = 4
@@ -34,10 +38,7 @@ def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
     fake_msmd.exposuretime.return_value = {"value": 2.0}
     fake_msmd.nrows.return_value = 10
 
-    monkeypatch.setattr(
-        "paircars.pipeline.import_model.msmetadata",
-        lambda: fake_msmd
-    )
+    monkeypatch.setattr("paircars.pipeline.import_model.msmetadata", lambda: fake_msmd)
     fake_table = MagicMock()
     fake_table.colnames.return_value = ["DATA", "MODEL_DATA"]
     fake_table.getcol.side_effect = [
@@ -45,14 +46,8 @@ def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
         np.array([1, 2]),  # ANTENNA2
         np.ones((2, 4, 2), dtype=complex),  # model DATA
     ]
-    monkeypatch.setattr(
-        "paircars.pipeline.import_model.casatable",
-        lambda: fake_table
-    )
-    monkeypatch.setattr(
-        "paircars.pipeline.import_model.setjy",
-        lambda **kwargs: None
-    )
+    monkeypatch.setattr("paircars.pipeline.import_model.casatable", lambda: fake_table)
+    monkeypatch.setattr("paircars.pipeline.import_model.setjy", lambda **kwargs: None)
     monkeypatch.setattr("os.system", lambda x: 0)
     result = import_hyperdrive_model(msname, metafits)
     if raise_error:

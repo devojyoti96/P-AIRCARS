@@ -418,9 +418,7 @@ def cli():
         default="targets",
         help="Splited ms prefix name",
     )
-    adv_args.add_argument(
-        "--force_split", action="store_true", help="Force to split"
-    )
+    adv_args.add_argument("--force_split", action="store_true", help="Force to split")
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )

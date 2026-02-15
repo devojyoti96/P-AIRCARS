@@ -146,7 +146,6 @@ def get_logid(logfile):
         return name
 
 
-
 class TailWatcher(FileSystemEventHandler, QObject):
     new_line = pyqtSignal(str)
 

@@ -203,7 +203,7 @@ def plot_caltable_diagnostics(caltable, outdir=""):
     try:
         tb = table()
         tb.open(f"{caltable}/SPECTRAL_WINDOW")
-        freqs = np.round(tb.getcol("CHAN_FREQ") / 10**9,3)  # In GHz
+        freqs = np.round(tb.getcol("CHAN_FREQ") / 10**9, 3)  # In GHz
         tb.close()
         tb.open(caltable)
         cal_type = tb.getkeywords()["VisCal"]

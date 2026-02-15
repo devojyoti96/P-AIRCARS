@@ -158,7 +158,7 @@ def perform_imaging(
             cal_sol = False
         else:
             cal_sol = True
-    
+
         ####################################
         # Whether pol-selfcal is done or not
         ####################################

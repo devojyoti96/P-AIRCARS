@@ -42,6 +42,7 @@ from paircars.pipeline import (
 )
 from paircars.pipeline.init_data import init_paircars_data
 
+
 @task(name="moving_to_solar_center", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_solar_phasecenter_jobs(
     mslist,
@@ -1391,7 +1392,7 @@ def master_control(
         Apply basic calibration on target scans
     only_amplitude : bool, optional
         Apply only amplitude part of gain solution from calibrator
-        
+
     do_target_split : bool, optional
         Split target scans into chunks
     freqrange : str, optional
@@ -1609,7 +1610,7 @@ def master_control(
         # Moving into work directory
         #####################################
         os.chdir(workdir)
-        remote_link=""
+        remote_link = ""
         if remote_logger:
             trial = 0
             while trial <= 5:
@@ -1625,7 +1626,7 @@ def master_control(
             if remote_link == "":
                 print("Please provide a valid remote link.")
                 remote_logger = False
-                
+
         emails = get_emails()
 
         if not remote_logger:
@@ -2027,7 +2028,9 @@ def master_control(
                 has_cal = False
             finally:
                 scale_worker_and_wait(dask_cluster, nworker)
-            caltables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal") + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+            caltables = glob.glob(
+                f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
+            ) + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             if len(caltables) > 0 and do_basic_cal and has_cal:
                 for caltable in caltables:
                     msg, caltable_diag_plot = plot_caltable_diagnostics(
@@ -2115,7 +2118,9 @@ def master_control(
             try:
                 msg = future_selfcal_split.result()
                 if emails != "":
-                    email_msg = "Spliting of measurement sets for self-calibration is done."
+                    email_msg = (
+                        "Spliting of measurement sets for self-calibration is done."
+                    )
                     send_task_notification(emails, email_msg, jobid, timestamp)
             except Exception as e:
                 print(
@@ -2190,7 +2195,9 @@ def master_control(
             try:
                 msg = future_flag.result()
                 if emails != "":
-                    email_msg = "Flagging for self-calibration measurment sets are done."
+                    email_msg = (
+                        "Flagging for self-calibration measurment sets are done."
+                    )
                     send_task_notification(emails, email_msg, jobid, timestamp)
             except Exception as e:
                 print(
@@ -2198,9 +2205,11 @@ def master_control(
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = "Error occured in flagging self-calibration measurement sets."
+                    email_msg = (
+                        "Error occured in flagging self-calibration measurement sets."
+                    )
                     send_task_notification(emails, email_msg, jobid, timestamp)
-                    
+
             ###################################
             # Apply basic calibration
             ###################################
@@ -2327,7 +2336,9 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        selfcal_tables = glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal") + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
+        selfcal_tables = glob.glob(
+            f"{caldir}/selfcal_{target_obsid}*.gcal"
+        ) + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
         if len(selfcal_tables) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
@@ -2340,7 +2351,7 @@ def master_control(
         ###########################################
         # Plotting self-caltables
         ###########################################
-        if len(selfcal_tables)>0 and do_selfcal:
+        if len(selfcal_tables) > 0 and do_selfcal:
             for caltable in selfcal_tables:
                 msg, caltable_diag_plot = plot_caltable_diagnostics(
                     caltable, outdir=f"{outdir}/diagnostic_plots"
@@ -2403,7 +2414,9 @@ def master_control(
             if len(split_target_mslist) == 0:
                 print("!!!! WARNING: No target ms are present. !!!!")
                 if emails != "":
-                    email_msg = "No target measurement set is present for final processing."
+                    email_msg = (
+                        "No target measurement set is present for final processing."
+                    )
                     send_task_notification(emails, email_msg, jobid, timestamp)
                 return 1
 
@@ -2469,7 +2482,9 @@ def master_control(
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = "Error occured in flagging of final target measurement sets."
+                    email_msg = (
+                        "Error occured in flagging of final target measurement sets."
+                    )
                     send_task_notification(emails, email_msg, jobid, timestamp)
 
             ####################################
@@ -2575,7 +2590,7 @@ def master_control(
                     send_task_notification(emails, email_msg, jobid, timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
-                
+
         ######################################
         # Imaging
         ######################################
@@ -2723,56 +2738,70 @@ def master_control(
                 print("!!!! WARNING: Overlay of the images are not successful. !!!!")
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = "Error occured in making overlays. P-AIRCARS has stopped."
+                    email_msg = (
+                        "Error occured in making overlays. P-AIRCARS has stopped."
+                    )
                     send_task_notification(emails, email_msg, jobid, timestamp)
                 return 1
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
             print(f"Final image directory: {os.path.dirname(outdir)}")
-        
+
         ######################################
         # Keeping flag backups
         ######################################
         # Flag backups of calibrator measurement sets
         ######################################
         final_cal_mslist = glob.glob(workdir + "/calibrator*_spw_*.ms")
-        if len(final_cal_mslist)>0:
-            os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
-            print (f"Doing flag backup in: {outdir}/ms_flags")
+        if len(final_cal_mslist) > 0:
+            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup in: {outdir}/ms_flags")
             for cal_ms in final_cal_mslist:
-                do_flag_backup(cal_ms,flagtype="finalflag")
-                if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"):
-                    os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions")
+                do_flag_backup(cal_ms, flagtype="finalflag")
+                if os.path.exists(
+                    f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                ):
+                    os.system(
+                        f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                    )
                 os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
                 if keep_calibrated_ms is False:
                     os.system(f"rm -rf {cal_ms}")
-                    
+
         ######################################
         # Flag backups of selfcal measurement sets
         ######################################
         final_selfcal_mslist = glob.glob(workdir + "/selfcal*_spw_*.ms")
-        if len(final_selfcal_mslist)>0:
-            os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
-            print (f"Doing flag backup in: {outdir}/ms_flags")
+        if len(final_selfcal_mslist) > 0:
+            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup in: {outdir}/ms_flags")
             for selfcal_ms in final_selfcal_mslist:
-                do_flag_backup(selfcal_ms,flagtype="finalflag")
-                if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"):
-                    os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions")
+                do_flag_backup(selfcal_ms, flagtype="finalflag")
+                if os.path.exists(
+                    f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
+                ):
+                    os.system(
+                        f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
+                    )
                 os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
                 if keep_calibrated_ms is False:
                     os.system(f"rm -rf {selfcal_ms}")
-        
+
         ######################################
         # Flag backups of target measurement sets
         ######################################
         final_split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
-        if len(final_split_target_mslist)>0:
-            os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
-            print (f"Doing flag backup in: {outdir}/ms_flags")
+        if len(final_split_target_mslist) > 0:
+            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup in: {outdir}/ms_flags")
             for target_ms in final_split_target_mslist:
-                do_flag_backup(target_ms,flagtype="finalflag")
-                if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"):
-                    os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions")
+                do_flag_backup(target_ms, flagtype="finalflag")
+                if os.path.exists(
+                    f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                ):
+                    os.system(
+                        f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                    )
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
                 if keep_calibrated_ms is False:
                     os.system(f"rm -rf {target_ms}")

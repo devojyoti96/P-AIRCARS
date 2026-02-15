@@ -475,8 +475,8 @@ def correct_image_leakage(
         modeldata[1, 0, ...] = model_Q
         modeldata[2, 0, ...] = model_U
         modeldata[3, 0, ...] = model_V
-        modeldata[np.isinf(modeldata)]=0.0
-        modeldata[np.isnan(modeldata)]=0.0
+        modeldata[np.isinf(modeldata)] = 0.0
+        modeldata[np.isnan(modeldata)] = 0.0
         fits.writeto(
             modelname.split(".fits")[0] + "_leakagecor.fits",
             data=modeldata,
@@ -732,8 +732,8 @@ def single_image_update_leakage(
         )
         image_data = fits.getdata(cor_imagename)
         model_data = fits.getdata(cor_modelname)
-        model_data[np.isinf(model_data)]=0.0
-        model_data[np.isnan(model_data)]=0.0
+        model_data[np.isinf(model_data)] = 0.0
+        model_data[np.isnan(model_data)] = 0.0
         for i in range(len(wsclean_images)):
             header = fits.getheader(wsclean_images[i])
             data = fits.getdata(wsclean_images[i])
