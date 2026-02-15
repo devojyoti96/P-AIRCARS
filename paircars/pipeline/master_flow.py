@@ -2325,7 +2325,7 @@ def master_control(
         # Checking self-cal caltables
         ########################################
         selfcal_tables = glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal") + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
-        if do_imaging or do_apply_selfcal and len(selfcal_tables) == 0:
+        if len(selfcal_tables) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
             )
@@ -2868,7 +2868,6 @@ def cli():
     advanced_cal.add_argument(
         "--only_amplitude",
         action="store_false",
-        dest="only_amplitude",
         help="Apply only amplitude part of gain solution from calibrator or not",
     )
 
