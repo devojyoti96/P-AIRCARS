@@ -1314,6 +1314,7 @@ def master_control(
     # Basic calibration
     do_basic_cal=True,
     do_applycal=True,
+    only_amplitude=False,
     # Target data preparation
     do_target_split=True,
     freqrange="",
@@ -1387,7 +1388,9 @@ def master_control(
         Perform basic calibration
     do_applycal : bool, optional
         Apply basic calibration on target scans
-
+    only_amplitude : bool, optional
+        Apply only amplitude part of gain solution from calibrator
+        
     do_target_split : bool, optional
         Split target scans into chunks
     freqrange : str, optional
@@ -2207,7 +2210,7 @@ def master_control(
                 workdir,
                 caldir,
                 overwrite_datacolumn=False,
-                only_amplitude=True,
+                only_amplitude=only_amplitude,
                 applymode="calflag",
                 prefix="selfcal",
                 jobid=jobid,
@@ -2475,7 +2478,7 @@ def master_control(
                 workdir,
                 caldir,
                 overwrite_datacolumn=True,
-                only_amplitude=True,
+                only_amplitude=only_amplitude,
                 applymode="calflag",
                 prefix="target",
                 jobid=jobid,
@@ -2812,8 +2815,14 @@ def cli():
         dest="do_polcal",
         help="Disable polarization calibration",
     )
+    advanced_cal.add_argument(
+        "--only_amplitude",
+        action="store_false",
+        dest="only_amplitude",
+        help="Apply only amplitude part of gain solution from calibrator or not",
+    )
 
-    # === Advanced imaging and calibration parameters ===
+    # === Advanced imaging parameters ===
     advanced_image = parser.add_argument_group(
         "###################\nAdvanced imaging parameters\n###################"
     )
@@ -3132,6 +3141,7 @@ def cli():
             do_selfcal=args.do_selfcal,
             do_selfcal_split=args.do_selfcal_split,
             do_apply_selfcal=args.do_apply_selfcal,
+            only_amplitude=args.only_amplitude,
             do_ap_selfcal=args.do_ap_selfcal,
             solar_selfcal=args.solar_selfcal,
             solint=args.solint,

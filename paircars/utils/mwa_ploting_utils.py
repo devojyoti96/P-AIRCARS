@@ -75,7 +75,7 @@ def plot_ms_diagnostics(
         outdir = os.getcwd()
     os.makedirs(outdir, exist_ok=True)
     output_pdf = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_plots"
-    output_pdf_list = glob.glob(f"{output_pdf}*.pdf")
+    output_pdf_list = glob.glob(f"{output_pdf}*.png")
     if len(output_pdf_list) > 0:
         return 0, output_pdf_list
 
@@ -146,7 +146,7 @@ def plot_ms_diagnostics(
             # Making plots
             #########################
             pngs = glob.glob(f"*{yaxis}*.png")
-            outfile = f"{output_pdf}_{yaxis}.pdf"
+            outfile = f"{output_pdf}_{yaxis}.png"
             if len(pngs) > 0:
                 images = []
                 for image in pngs:
@@ -192,7 +192,7 @@ def plot_caltable_diagnostics(caltable, outdir=""):
     if outdir == "":
         outdir = os.getcwd()
     os.makedirs(outdir, exist_ok=True)
-    output_pdf = f"{outdir}/{os.path.basename(caltable)}_plots.pdf"
+    output_pdf = f"{outdir}/{os.path.basename(caltable)}_plots.png"
     if os.path.exists(output_pdf):
         return 0, output_pdf
     pols = ["X", "Y"]
