@@ -84,7 +84,8 @@ def test_applysol(
             m_exists.side_effect = exists_side_effect
 
             result = applysol(
-                msname=msname,
+                msname,
+                "/mock/workdir",
                 gaintable=["g1"],
                 gainfield=[""],
                 interp=["nearest"],

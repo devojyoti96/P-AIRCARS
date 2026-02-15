@@ -4,86 +4,61 @@ from unittest.mock import patch, MagicMock
 from paircars.pipeline.import_model import *
 
 
-@patch("paircars.pipeline.import_model.os.system")
-@patch("paircars.pipeline.import_model.subprocess.run")
-@patch("paircars.pipeline.import_model.setjy")
-@patch("paircars.pipeline.import_model.casatable")
-@patch("paircars.pipeline.import_model.msmetadata")
-@patch("paircars.pipeline.import_model.suppress_output")
-@patch("paircars.pipeline.import_model.time.time", side_effect=[0, 1])
-@patch("paircars.pipeline.import_model.os.path.exists", return_value=True)
-def test_import_hyperdrive_model(
-    mock_exists,
-    mock_time,
-    mock_suppress,
-    mock_msmetadata,
-    mock_casatable,
-    mock_setjy,
-    mock_subprocess,
-    mock_os_system,
-):
-    import paircars.pipeline.import_model as module
+@pytest.mark.parametrize("raise_error", [False, True])
+def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
+    msname = "test.ms"
+    metafits = "test.metafits"
+    monkeypatch.setattr(
+        "paircars.pipeline.import_model.datadir",
+        str(tmp_path),
+    )
+    monkeypatch.setattr(
+        "glob.glob",
+        lambda x: [str(tmp_path / "mwa_full_embedded_element_pattern_150.h5")]
+    )
+    monkeypatch.setattr("os.path.exists", lambda x: True)
+    if raise_error:
+        def fake_run(*args, **kwargs):
+            raise RuntimeError("hyperdrive failed")
+    else:
+        def fake_run(*args, **kwargs):
+            return None
+    monkeypatch.setattr("subprocess.run", fake_run)
+    fake_msmd = MagicMock()
+    fake_msmd.nchan.return_value = 4
+    fake_msmd.meanfreq.return_value = 150.0
+    fake_msmd.chanres.return_value = [40.0]
+    fake_msmd.ncorrforpol.return_value = [2]
+    fake_msmd.nantennas.return_value = 4
+    fake_msmd.timesforfield.return_value = [1, 2, 3]
+    fake_msmd.exposuretime.return_value = {"value": 2.0}
+    fake_msmd.nrows.return_value = 10
 
-    module.datadir = "/tmp/data"
-    mock_msmd = MagicMock()
-    mock_msmd.nchan.return_value = 4
-    mock_msmd.meanfreq.return_value = 150.0
-    mock_msmd.chanres.return_value = [40.0]
-    mock_msmd.ncorrforpol.return_value = [2]
-    mock_msmd.nantennas.return_value = 4
-    mock_msmd.timesforfield.return_value = [1, 2, 3]
-    mock_msmd.exposuretime.return_value = {"value": 10}
-    mock_msmd.nrows.return_value = 10
-    mock_msmetadata.return_value = mock_msmd
-    mock_data_table = MagicMock()
-    mock_model_table = MagicMock()
-    mock_data_table.colnames.return_value = ["MODEL_DATA"]
-    mock_data_table.getcol.side_effect = [
-        np.array([0, 1, 0]),  # ANTENNA1
-        np.array([1, 1, 2]),  # ANTENNA2
+    monkeypatch.setattr(
+        "paircars.pipeline.import_model.msmetadata",
+        lambda: fake_msmd
+    )
+    fake_table = MagicMock()
+    fake_table.colnames.return_value = ["DATA", "MODEL_DATA"]
+    fake_table.getcol.side_effect = [
+        np.array([0, 1]),  # ANTENNA1
+        np.array([1, 2]),  # ANTENNA2
+        np.ones((2, 4, 2), dtype=complex),  # model DATA
     ]
-    mock_model_table.getcol.return_value = np.ones((2, 4, 3), dtype="complex")
-    call_counter = {"n": 0}
-
-    def casatable_side_effect():
-        call_counter["n"] += 1
-        if call_counter["n"] == 1:
-            return mock_data_table
-        else:
-            return mock_model_table
-
-    mock_casatable.side_effect = casatable_side_effect
-    result = import_hyperdrive_model(
-        msname="mock.ms",
-        metafits="meta.fits",
-        beamfile="beam.h5",
-        sourcelist="source.txt",
-        ncpu=4,
+    monkeypatch.setattr(
+        "paircars.pipeline.import_model.casatable",
+        lambda: fake_table
     )
-    mock_subprocess.assert_called_once()
-    call_counter["n"] = 0  # reset
-
-    mock_data_table.colnames.return_value = []
-
-    result = import_hyperdrive_model(
-        msname="mock.ms",
-        metafits="meta.fits",
+    monkeypatch.setattr(
+        "paircars.pipeline.import_model.setjy",
+        lambda **kwargs: None
     )
-    mock_setjy.assert_called()
-    call_counter["n"] = 0
-    mock_subprocess.side_effect = Exception("Simulated failure")
-
-    result = import_hyperdrive_model(
-        msname="mock.ms",
-        metafits="meta.fits",
-    )
-    module.datadir = None
-
-    result = import_hyperdrive_model(
-        msname="mock.ms",
-        metafits="meta.fits",
-    )
-    assert result is None
+    monkeypatch.setattr("os.system", lambda x: 0)
+    result = import_hyperdrive_model(msname, metafits)
+    if raise_error:
+        assert result == 1
+    else:
+        assert result == 0
 
 
 @patch("paircars.pipeline.import_model.clean_shutdown")

@@ -187,6 +187,7 @@ def test_run_target_split_jobs(
         cpu_frac=0.5,
         mem_frac=0.5,
         remote_log=True,
+        force_split=True,
     )
 
     if raises:
@@ -219,6 +220,7 @@ def test_run_target_split_jobs(
         logfile="/mock/workdir/logs/split_target.log",
         jobid=42,
         start_remote_log=True,
+        force_split=True,
         dask_client=mock_client,
     )
 
