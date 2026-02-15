@@ -14,6 +14,8 @@ from .basic_utils import *
 
 def set_udocker_env():
     datadir = get_datadir()
+    if datadir is None:
+        return 
     udocker_dir = datadir + "/udocker"
     os.makedirs(udocker_dir, exist_ok=True)
     os.environ["UDOCKER_DIR"] = udocker_dir
