@@ -1354,6 +1354,7 @@ def master_control(
     mem_frac=0.8,
     max_worker=-1,
     keep_backup=False,
+    keep_calibrated_ms=False,
     # Remote logging
     remote_logger=False,
     jobid=None,
@@ -1459,6 +1460,8 @@ def master_control(
         Maximum workers
     keep_backup : bool, optional
         Keep backup of self-cal rounds and final models and residual images
+    keep_calibrated_ms : bool, optional
+        Keep calibrated measurement sets or not
 
     remote_logger : bool, optional
         Enable remote logging of the pipeline status
@@ -2742,7 +2745,7 @@ def master_control(
                 if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"):
                     os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions")
                 os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
-                if keep_backup is False:
+                if keep_calibrated_ms is False:
                     os.system(f"rm -rf {cal_ms}")
                     
         ######################################
@@ -2757,7 +2760,7 @@ def master_control(
                 if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"):
                     os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions")
                 os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
-                if keep_backup is False:
+                if keep_calibrated_ms is False:
                     os.system(f"rm -rf {selfcal_ms}")
         
         ######################################
@@ -2772,7 +2775,7 @@ def master_control(
                 if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"):
                     os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions")
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
-                if keep_backup is False:
+                if keep_calibrated_ms is False:
                     os.system(f"rm -rf {target_ms}")
 
         ###########################################
@@ -2868,7 +2871,7 @@ def cli():
     )
     advanced_cal.add_argument(
         "--only_amplitude",
-        action="store_false",
+        action="store_true",
         help="Apply only amplitude part of gain solution from calibrator or not",
     )
 
@@ -3083,6 +3086,11 @@ def cli():
         help="Keep backup of intermediate steps",
     )
     advanced_resource.add_argument(
+        "--keep_calibrated_ms",
+        action="store_true",
+        help="Keep calibrated measurement sets or not",
+    )
+    advanced_resource.add_argument(
         "--no_remote_logger",
         action="store_false",
         dest="remote_logger",
@@ -3218,6 +3226,7 @@ def cli():
             cpu_frac=args.cpu_frac,
             mem_frac=args.mem_frac,
             keep_backup=args.keep_backup,
+            keep_calibrated_ms=args.keep_calibrated_ms,
             # Remote logging
             remote_logger=args.remote_logger,
             jobid=jobid,
