@@ -1009,7 +1009,7 @@ def run_imaging_jobs(
     threshold=1.0,
     use_multiscale=True,
     use_solar_mask=True,
-    cutout_rsun=4.0,
+    cutout_rsun=10.0,
     savemodel=False,
     saveres=False,
     jobid=0,
@@ -1055,7 +1055,7 @@ def run_imaging_jobs(
     use_solar_mask : bool, optional
         Use solar mask or not
     cutout_rsun : float, optional
-        Cutout image size from center in solar radii (default : 4.0 solar radii)
+        Cutout image size from center in solar radii (default : 10.0 solar radii)
     savemodel : bool, optional
         Save model images or not
     saveres : bool, optional
@@ -1346,7 +1346,7 @@ def master_control(
     pol="IQUV",
     clean_threshold=1.0,
     use_multiscale=True,
-    cutout_rsun=4.0,
+    cutout_rsun=10.0,
     make_overlay=False,
     # Resource settings
     cpu_frac=0.8,
@@ -1446,7 +1446,7 @@ def master_control(
     use_multiscale : bool, optional
         Use multiscale scales or not
     cutout_rsun : float, optional
-        Cutout image size from center in solar radii (default : 4.0 solar radii)
+        Cutout image size from center in solar radii (default : 10.0 solar radii)
     make_overlay : bool, optional
         Make EUV MWA overlay
 
@@ -2723,7 +2723,7 @@ def master_control(
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
             print(f"Final image directory: {os.path.dirname(outdir)}")
-
+        
         ######################################
         # Keeping flag backups
         ######################################
@@ -2735,9 +2735,11 @@ def master_control(
             print (f"Doing flag backup in: {outdir}/ms_flags")
             for cal_ms in final_cal_mslist:
                 do_flag_backup(cal_ms,flagtype="finalflag")
+                if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"):
+                    os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions")
                 os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
                 if keep_backup is False:
-                    os.system("rm -rf {cal_ms}")
+                    os.system(f"rm -rf {cal_ms}")
                     
         ######################################
         # Flag backups of selfcal measurement sets
@@ -2748,9 +2750,11 @@ def master_control(
             print (f"Doing flag backup in: {outdir}/ms_flags")
             for selfcal_ms in final_selfcal_mslist:
                 do_flag_backup(selfcal_ms,flagtype="finalflag")
+                if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"):
+                    os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions")
                 os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
                 if keep_backup is False:
-                    os.system("rm -rf {selfcal_ms}")
+                    os.system(f"rm -rf {selfcal_ms}")
         
         ######################################
         # Flag backups of target measurement sets
@@ -2761,9 +2765,11 @@ def master_control(
             print (f"Doing flag backup in: {outdir}/ms_flags")
             for target_ms in final_split_target_mslist:
                 do_flag_backup(target_ms,flagtype="finalflag")
+                if os.path.exists(f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"):
+                    os.system(f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions")
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
                 if keep_backup is False:
-                    os.system("rm -rf {target_ms}")
+                    os.system(f"rm -rf {target_ms}")
 
         ###########################################
         # Successful exit
@@ -2936,7 +2942,7 @@ def cli():
     advanced_image.add_argument(
         "--cutout_rsun",
         type=float,
-        default=4.0,
+        default=10.0,
         help="Field of view cutout radius in solar radii",
     )
     advanced_image.add_argument(

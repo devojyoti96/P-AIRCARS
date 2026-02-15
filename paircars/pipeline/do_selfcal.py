@@ -791,8 +791,8 @@ def do_polselfcal(
         instrument_fov = calc_field_of_view(msname, FWHM=False)
         sun_size = calc_sun_dia(freqMHz)
         fov = min(
-            instrument_fov, 2 * sun_size * 60
-        )  # 2 times sun size at that frequency
+            instrument_fov, 3.0 * sun_size * 60
+        )  # 3 times sun size at that frequency
         imsize = int(fov / cellsize)
         pow2 = np.ceil(np.log2(imsize)).astype("int")
         possible_sizes = []

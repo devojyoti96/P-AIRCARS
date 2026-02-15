@@ -42,7 +42,7 @@ def perform_imaging(
     saveres=True,
     ncpu=-1,
     mem=-1,
-    cutout_rsun=4.0,
+    cutout_rsun=10.0,
     make_overlay=False,
     make_plots=True,
     logfile="imaging.log",
@@ -93,7 +93,7 @@ def perform_imaging(
     saveres : bool, optional
         Save residual images or not
     cutout_rsun : float, optional
-        Cutout image size in solar radii from center (default: 4.0 solar radii)
+        Cutout image size in solar radii from center (default: 10.0 solar radii)
     make_overlay : bool, optional
         Make SUVI MWA overlay
     make_plots : bool, optional
@@ -535,7 +535,7 @@ def run_all_imaging(
     imaging_params={},  # TODO
     savemodel=False,
     saveres=False,
-    cutout_rsun=-1,
+    cutout_rsun=10.0,
     make_overlay=False,
     make_plots=True,
     cpu_frac=0.8,
@@ -585,8 +585,8 @@ def run_all_imaging(
         Save residual images or not
     cutout_rsun : float, optional
         Cutout image size (width and height is : 2 times cutout_rsun)
-        Default value: 4 solar radii
-        Note: default FoV is 8 solar solar radii. If cutout_rsun is chosen larger than 8 solar radii, FoV will be increased accordingly.
+        Default value: 10 solar radii
+        Note: default FoV is 20 solar solar radii. If cutout_rsun is chosen larger than 20 solar radii, FoV will be increased accordingly.
     make_overlay : bool, optional
         Make SUVI MWA overlay
     make_plots : bool, optional
@@ -734,12 +734,8 @@ def run_all_imaging(
             msmd.close()
             sun_size = calc_sun_dia(freqMHz)
             fov = min(
-                instrument_fov, 3 * sun_size * 60
+                instrument_fov, 3.0 * sun_size * 60
             )  # 3 times sun size at that frequency
-            if cutout_rsun == -1:
-                cutout_rsun = 4 * round(
-                    sun_size / 32, 2
-                )  # Multiple of optical disk of the sun
             if fov < (2 * (cutout_rsun * 16) * 60):
                 fov = 2 * (cutout_rsun * 16) * 60
             imsize = int(fov / cellsize)
@@ -836,7 +832,7 @@ def main(
     robust=0.0,
     minuv=0.0,
     threshold=1.0,
-    cutout_rsun=-1,
+    cutout_rsun=10.0,
     use_multiscale=True,
     use_solar_mask=True,
     savemodel=True,
@@ -882,7 +878,7 @@ def main(
     threshold : float, optional
         Cleaning threshold in sigma. Default is 1.0.
     cutout_rsun : float, optional
-        Radius in solar radii to cut out around solar center. Set to -1 to disable. Default is -1.
+        Radius in solar radii to cut out around solar center. Default is 10.0.
     use_multiscale : bool, optional
         If True, enables multiscale CLEAN deconvolution. Default is True.
     use_solar_mask : bool, optional
@@ -1104,7 +1100,7 @@ def cli():
     adv_args.add_argument(
         "--cutout_rsun",
         type=float,
-        default=-1,
+        default=10.0,
         help="Cutout radius for images (solar radii)",
     )
     adv_args.add_argument(
