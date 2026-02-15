@@ -151,6 +151,14 @@ def perform_imaging(
         npol = msmd.ncorrforpol()[0]
         msmd.close()
 
+        ###################################################
+        # Whether calibration solutions were applied or not
+        ###################################################
+        if os.path.exists(f"{msname}/.nocal"):
+            cal_sol = False
+        else:
+            cal_sol = True
+    
         ####################################
         # Whether pol-selfcal is done or not
         ####################################
@@ -435,6 +443,7 @@ def perform_imaging(
                                 make_plots=make_plots,
                                 keep_euv_fits=True,
                                 pol_selfcal=pol_selfcal,
+                                cal_sol=cal_sol,
                             )
                             if renamed_image is not None:
                                 final_image_list.append(renamed_image)
@@ -452,6 +461,7 @@ def perform_imaging(
                                     make_overlay=False,
                                     make_plots=False,
                                     pol_selfcal=pol_selfcal,
+                                    cal_sol=cal_sol,
                                 )
                                 if renamed_model is not None:
                                     final_model_list.append(renamed_model)

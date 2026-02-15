@@ -2025,7 +2025,7 @@ def master_control(
             finally:
                 scale_worker_and_wait(dask_cluster, nworker)
             caltables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal") + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-            if len(caltables) > 0:
+            if len(caltables) > 0 and do_basic_cal and has_cal:
                 for caltable in caltables:
                     msg, caltable_diag_plot = plot_caltable_diagnostics(
                         caltable, outdir=f"{outdir}/diagnostic_plots"
@@ -2324,29 +2324,32 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        if do_imaging or do_apply_selfcal:
-            selfcal_tables = glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal") + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
-            if len(selfcal_tables) == 0:
-                print(
-                    "Self-calibration is not performed and no self-calibration caltable is available."
+        selfcal_tables = glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal") + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
+        if do_imaging or do_apply_selfcal and len(selfcal_tables) == 0:
+            print(
+                "Self-calibration is not performed and no self-calibration caltable is available."
+            )
+            do_apply_selfcal = False
+            if emails != "":
+                msg = "Self-calibration is not performed and no self-calibration caltable is available."
+                send_task_notification(emails, msg, jobid, timestamp)
+
+        ###########################################
+        # Plotting self-caltables
+        ###########################################
+        if len(selfcal_tables)>0 and do_selfcal:
+            for caltable in selfcal_tables:
+                msg, caltable_diag_plot = plot_caltable_diagnostics(
+                    caltable, outdir=f"{outdir}/diagnostic_plots"
                 )
-                do_apply_selfcal = False
-                if emails != "":
-                    msg = "Self-calibration is not performed and no self-calibration caltable is available."
-                    send_task_notification(emails, msg, jobid, timestamp)
-            else:
-                for caltable in selfcal_tables:
-                    msg, caltable_diag_plot = plot_caltable_diagnostics(
-                        caltable, outdir=f"{outdir}/diagnostic_plots"
+                if msg == 0:
+                    print(
+                        f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
                     )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
-                        )
-                    else:
-                        print(
-                            f"Error in creating diagnostic plots for caltable {caltable}."
-                        )
+                else:
+                    print(
+                        f"Error in creating diagnostic plots for caltable {caltable}."
+                    )
 
         #############################################
         # Spliting targets if not started already

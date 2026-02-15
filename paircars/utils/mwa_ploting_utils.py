@@ -1329,6 +1329,7 @@ def rename_mwasolar_image(
     make_plots=True,
     keep_euv_fits=False,
     pol_selfcal=True,
+    cal_sol=True,
 ):
     """
     Rename and move image to image directory
@@ -1353,6 +1354,8 @@ def rename_mwasolar_image(
         Keep EUV images or not
     pol_selfcal : bool, optional
         Whether polarisation self-calibration solutions are applied
+    cal_sol : bool, optional
+        Whether calibration solutions are applied or not
 
     Returns
     -------
@@ -1391,6 +1394,10 @@ def rename_mwasolar_image(
             hdr["POLSELF"] = "TRUE"
         else:
             hdr["POLSELF"] = "FALSE"
+        if cal_sol:
+            hdr["CALAPP"] = "TRUE"
+        else:
+            hdr["CALAPP"] = "FALSE"
         try:
             sun_jpl = Horizons(id="10", location="500", epochs=astro_time.jd)
             eph = sun_jpl.ephemerides()
