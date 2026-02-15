@@ -168,7 +168,8 @@ def run_all_applysol(
                     os.system(f"touch {ms}/.nopolselfcal")
                 tasks.append(
                     delayed(applysol)(
-                        msname=ms,
+                        ms,
+                        workdir,
                         gaintable=gaintable,
                         quartical_table=quartical_table,
                         overwrite_datacolumn=overwrite_datacolumn,

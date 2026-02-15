@@ -64,7 +64,8 @@ def scale_bandpass(bandpass_table, cal_attn, target_attn, only_amplitude=False):
 
 
 def applysol(
-    msname="",
+    msname,
+    workdir,
     gaintable=[],
     gainfield=[],
     interp=[],
@@ -83,6 +84,8 @@ def applysol(
     ----------
     msname : str
         Measurement set
+    workdir : str
+        Work directory
     gaintable : list, optional
         Caltable list
     gainfield : list, optional
@@ -153,9 +156,8 @@ def applysol(
                             calflag = False
                         else:
                             calflag = True
-                        cwd=os.getcwd()
-                        temp_pol_caltable = f"{cwd}/{os.path.basename(qc)}.tempcal"
-                        quartical_log = f"{cwd}/{os.path.basename(qc)}.log"
+                        temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
+                        quartical_log = f"{workdir}/{os.path.basename(qc)}.log"
                         qc = qc.rstrip("/")
                         qc_dirs = os.listdir(qc)
                         soltype = qc_dirs[0]
@@ -350,6 +352,7 @@ def run_all_applysol(
             tasks.append(
                 delayed(applysol)(
                     ms,
+                    workdir,
                     gaintable=final_gaintable,
                     overwrite_datacolumn=overwrite_datacolumn,
                     applymode=applymode,

@@ -35,9 +35,10 @@ All final data products will be saved in ``<outputdir>``.
 
        graph LR
            WD["Work directory:<br>workdir"] --> CAL["Calibrator ms:<br>calibrator.ms"]
-           WD --> SCMS["`Self-cal ms(s):<br>selfcals_scan_*_spw_*.ms`"]
-           WD --> SCDIR["`Self-cal directories:<br>selfcals_scan_*_spw_*_selfcal`"]
-           WD --> TMS["`Target ms(s):<br>targets_scan_*_spw_*.ms`"]
+           WD --> SCMS["`Self-cal ms(s):<br>selfcal_*_spw_*.ms`"]
+           WD --> INTSCDIR["`Intensity self-cal directories:<br>selfcal*_spw_*_selfcal.int`"]
+           WD --> POLSCDIR["`Polarisation self-cal directories:<br>selfcal*_spw_*_selfcal.pol`"]
+           WD --> TMS["`Target ms(s):<br>targets*_spw_*.ms`"]
            WD --> BACK["Backup directory:<br>backup"]
            WD --> LOG["Log directory:<br>logs"]
            LOG --> LOGF["*.log"]
