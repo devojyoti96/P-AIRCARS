@@ -2043,7 +2043,7 @@ def master_control(
         # Checking presence of necessary caltables
         ##########################################
         if calibrator_obsid is not None:
-            if len(glob.glob(f"{caldir}/*{calibrator_obsid}*.bcal")) == 0:
+            if len(glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."
                 )
@@ -2727,13 +2727,43 @@ def master_control(
         ######################################
         # Keeping flag backups
         ######################################
-        os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
-        print (f"Doing flag backup in: {outdir}/ms_flags")
-        for target_ms in split_target_mslist:
-            do_flag_backup(target_ms,flagtype="finalflag")
-            os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
-            if keep_backup is False:
-                os.system("rm -rf {target_ms}")
+        # Flag backups of calibrator measurement sets
+        ######################################
+        final_cal_mslist = glob.glob(workdir + "/calibrator*_spw_*.ms")
+        if len(final_cal_mslist)>0:
+            os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
+            print (f"Doing flag backup in: {outdir}/ms_flags")
+            for cal_ms in final_cal_mslist:
+                do_flag_backup(cal_ms,flagtype="finalflag")
+                os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
+                if keep_backup is False:
+                    os.system("rm -rf {cal_ms}")
+                    
+        ######################################
+        # Flag backups of selfcal measurement sets
+        ######################################
+        final_selfcal_mslist = glob.glob(workdir + "/selfcal*_spw_*.ms")
+        if len(final_selfcal_mslist)>0:
+            os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
+            print (f"Doing flag backup in: {outdir}/ms_flags")
+            for selfcal_ms in final_selfcal_mslist:
+                do_flag_backup(selfcal_ms,flagtype="finalflag")
+                os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
+                if keep_backup is False:
+                    os.system("rm -rf {selfcal_ms}")
+        
+        ######################################
+        # Flag backups of target measurement sets
+        ######################################
+        final_split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
+        if len(final_split_target_mslist)>0:
+            os.makedirs(f"{outdir}/ms_flags",exist_ok=True)
+            print (f"Doing flag backup in: {outdir}/ms_flags")
+            for target_ms in final_split_target_mslist:
+                do_flag_backup(target_ms,flagtype="finalflag")
+                os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
+                if keep_backup is False:
+                    os.system("rm -rf {target_ms}")
 
         ###########################################
         # Successful exit

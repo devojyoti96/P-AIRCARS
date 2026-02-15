@@ -153,8 +153,9 @@ def applysol(
                             calflag = False
                         else:
                             calflag = True
-                        temp_pol_caltable = f"{qc}.tempcal"
-                        quartical_log = f"{qc}.log"
+                        cwd=os.getcwd()
+                        temp_pol_caltable = f"{cwd}/{os.path.basename(qc)}.tempcal"
+                        quartical_log = f"{cwd}/{os.path.basename(qc)}.log"
                         qc = qc.rstrip("/")
                         qc_dirs = os.listdir(qc)
                         soltype = qc_dirs[0]
