@@ -267,15 +267,15 @@ def get_pbcor_image(
                 if np.isnan(q_leakage):
                     hdr["QLEAK"] = "NAN"
                 else:
-                    hdr["QLEAK"] = round(q_leakage * 100.0, 4)
+                    hdr["QLEAK"] = abs(round(q_leakage * 100.0, 4))
                 if np.isnan(u_leakage):
                     hdr["ULEAK"] = "NAN"
                 else:
-                    hdr["ULEAK"] = round(u_leakage * 100.0, 4)
+                    hdr["ULEAK"] = abs(round(u_leakage * 100.0, 4))
                 if np.isnan(v_leakage):
                     hdr["VLEAK"] = "NAN"
                 else:
-                    hdr["VLEAK"] = round(v_leakage * 100.0, 4)
+                    hdr["VLEAK"] = abs(round(v_leakage * 100.0, 4))
         print(f"Output image written to : {outfile}\n")
         return outfile
     except Exception as e:

@@ -111,34 +111,40 @@ def get_logid(logfile):
         "apply_pbcor.log": "Applying primary beam corrections",
         "apply_selfcal.log": "Applying self-calibration solutions",
         "basic_cal.log": "Basic calibration",
-        "cor_sidereal_selfcals.log": "Correction of sidereal motion before self-calibration",
-        "cor_sidereal_targets.log": "Correction of sidereal motion for target scans",
-        "flagging_cal_calibrator.log": "Basic flagging",
-        "modeling_calibrator.log": "Simulating visibilities of calibrators",
-        "split_targets.log": "Spliting target scans",
-        "split_selfcals.log": "Spliting for self-calibration",
-        "selfcal_targets.log": "All self-calibrations",
-        "imaging_targets.log": "All imaging",
-        "noise_cal.log": "Flux calibration using noise-diode",
-        "partition_cal.log": "Partioning for basic calibration",
-        "ds_targets.log": "Making dynamic spectra",
-        "main.log": "Main pipeline logs",
+        "cor_phasecenter_target.log": "Moving phasecenter to solar center",
+        "cor_sidereal_selfcal.log": "Correction of sidereal motion before self-calibration",
+        "cor_sidereal_target.log": "Correction of sidereal motion for target scans",
+        "flagging_cal_calibrator.log": "Basic flagging of calibrators",
+        "flagging_target_target.log": "Basic flagging of targets",
+        "modeling.log": "Simulating visibilities of calibrators",
+        "split_calibrator.log": "Spliting calibrator scans",
+        "split_target.log": "Spliting target",
+        "split_selfcal.log": "Spliting for self-calibration",
+        "selfcal_target.log": "All self-calibrations",
+        "imaging_target.log": "All imaging",
+        "ds_target.log": "Making dynamic spectra",
+        "main.log": "Main pipeline log",
     }
-
     if name in logmap:
         return logmap[name]
-    elif "selfcals_scan_" in name:
-        name = name.rstrip("_selfcal.log")
-        scan = name.split("scan_")[-1].split("_spw")[0]
-        spw = name.split("spw_")[-1].split("_selfcal")[0]
-        return f"Self-calibration for: Scan : {scan}, Spectral window: {spw}"
-    elif "imaging_targets_scan_" in name:
-        name = name.rstrip(".log")
-        scan = name.split("scan_")[-1].split("_spw")[0]
-        spw = name.split("spw_")[-1].split("_selfcal")[0]
-        return f"Imaging for: Scan : {scan}, Spectral window: {spw}"
+    elif ".log.int" in name:
+        name = name.split("_selfcal.log.int")[0].split("selfcal_")[1]
+        obsid = name.split("_")[0]
+        coarse_chan = name.split("ch")[1].split("_")[0]
+        return f"Intensity self-calibration for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+    elif ".log.pol" in name:
+        name = name.split("_selfcal.log.pol")[0].split("selfcal_")[1]
+        obsid = name.split("_")[0]
+        coarse_chan = name.split("ch")[1].split("_")[0]
+        return f"Polarisation self-calibration for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+    elif "imaging_target" in name:
+        name = name.rstrip(".log").split("imaging_target_")[1]
+        obsid = name.split("_")[0]
+        coarse_chan = name.split("ch")[1].split("_")[0]
+        return f"Imaging for: OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
         return name
+
 
 
 class TailWatcher(FileSystemEventHandler, QObject):

@@ -653,7 +653,6 @@ def run_apply_basiccal_sol(
         ######################
         # Applying basic calibration
         ######################
-        print ("ONly amplitude:",only_amplitude)
         with get_dask_client() as dask_client:
             msg = do_apply_basiccal.main(
                 mslist,

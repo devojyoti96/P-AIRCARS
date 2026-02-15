@@ -28,6 +28,9 @@ All final data products will be saved in ``<outputdir>``.
 
    In local workstations, it is okay to choose ``<workdir>`` and ``<outputdir>``. In HPC environment, generally, high-speed disks are used during data-processing, which may have limited storage life-time, and has seperate long-term storage disks. It is recommended to choose ``<workdir>`` path inside the high-speed disk and ``<outputdir>`` inside the long-term storage disk. Otherwise, there may be possiblity that final data-products will be removed after certain time. 
 
+.. note::
+    Inside ``<workdir>`` and ``<outputdir>``, another directory with target observation ID, ``<targrt_obsid>`` will be created. These will be the ``<workdir>`` and ``<outputdir>`` for that OBSID. This ensures if different OBSID targets are provided same ``<workdir>`` and ``<outputdir>``, there will be no mixup. Some of these follwing directories will be only present when back are kept.
+
 .. admonition:: Click here to see directory structure in work directory
    :class: dropdown
    
@@ -53,26 +56,15 @@ All final data products will be saved in ``<outputdir>``.
            WD --> DP["`Diagnostic plots:<br>diagnostic_plots`"]
            DP --> DPPDF["`Diagnostic plots of ms and caltables in PDF:<br>*.pdf`"]
            WD --> DS["`Dynamic spectra:<br>dynamic_spectra`"]
-           DS --> DSNPY["`Dynamic spectrum numpy files:<br>*.npy`"]
-           DS --> DSPNG["`Dynamic spectrum plots in PNG:<br>*.png`"]
            WD --> IMG["`Image directory:<br>imagedir_f_*_t_*_w_briggs_*`"]
-           CALTABLE --> ATT["`Attenuator values:<br>*_attval_scan_*.npy`"]
-           CALTABLE --> CTBL["`Caltables:<br>calibrator_caltable.bcal/gcal/kcal`"]
-           CALTABLE --> BPATT["`Bandpass tables scaled:<br>calibrator_caltable_att.bcal`"]
-           CALTABLE --> SCTBL["`Self-cal tables:<br>selfcal_scan_*.gcal`"]
            IMG --> IMAGE["Fits image:<br>images"]
            IMG --> MODEL["Fits models:<br>models"]
            IMG --> RES["Fits residual:<br>residuals"]
            IMG --> PBCOR["`Primary beam<br>corrected images:<br>pbcor_images`"]
            IMG --> TBIMG["`Brightness temperature images:<br>tb_images`"]
            IMG --> OVRPNG["Overlays of EUV:<br>PNG format:<br>overlays_pngs"]
-           IMAGE --> IMAGEHPC["Radio images in HPC coordinate:<br>FITS format:<br>hpcs"]
-           PBCOR --> PBCORHPC["Radio images in HPC coordinate:<br>FITS format:<br>hpcs"]
-           TBIMG --> TBIMGHPC["Radio images in HPC coordinate:<br>FITS format:<br>hpcs"]
-           IMAGE --> IMAGEPNG["Quicklook in HPC coordinate:<br>PNG format:<br>pngs"]
-           PBCOR --> PBCORPNG["Quicklook in HPC coordinate:<br>PNG format:<br>pngs"]
-           TBIMG --> TBIMGPNG["Quicklook in HPC coordinate:<br>PNG format:<br>pngs"]
-
+           
+           
 Data products
 -------------
 Pipeline produces calibrated visibilities as well as several imaging products.
@@ -87,7 +79,7 @@ Diagnostic plots for all measurement sets and calibration tables in pdf format i
 
 Calibrated visibilities
 ~~~~~~~~~~~~~~~~~~~~~~~
-Calibrated measurements sets for all (or the ones selected) target scans will be available in work directory ``<workdir>`` with naming format, ``targets_scan_<scan_number>_spw_<channel_range>.ms``. Calibrated measurement sets will not be saved in output directory ``<outputdir>`` (unless same as ``<workdir>``) to save space.
+By default calibrated measurement sets will be removed after final imaging. If ``keep_calibrated_ms`` parameter is turned on during processing, they will be kept in work directory ``<workdir>`` with naming format, ``target_<target_obsid>_ch<coarse_chan>_spw_<chanrange>.ms``. Calibrated measurement sets will not be saved in output directory ``<outputdir>`` (unless same as ``<workdir>``) to save space as well as to keep them high-speed disk.
 
 Imaging products 
 ~~~~~~~~~~~~~~~~
@@ -122,7 +114,23 @@ Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_
                                                         
         MIMADYN =  ``<minmaxdyn>`` # Min-max based dynamic range, ``<maxval/abs(minval)>``  
         
-        ATTCAL  =   ``<attcal>`` # Whether solar attenuation is calibrated or not
+        CALAPP  =   ``TRUE/FALSE`` # Whether calibrator solutions were applied or not
+        
+        POLSELF =   ``TRUE/FALSE`` # Whether polarisation selfcal is performed or not
+        
+        LEAKUNIT =   ``PERCENT`` # Residual leakage unit
+        
+        QLEAK    =    ``<qleak>`` # Residual Stokes I to Stokes Q leakage  
+        
+        ULEAK    =    ``<uleak>`` # Residual Stokes I to Stokes U leakage  
+        
+        VLEAK    =    ``<vleak>`` # Residual Stokes I to Stokes V leakage  
+        
+.. note::
+
+    If CALAPP is False, flux calibration is performed using the method described in `Kansabanik et al., 2022, ApJ, v927:17 <https://doi.org/10.3847/1538-4357/ac4bba>`_. In this case, flux density and spectrum may not be very accurate. We generally expect observations before middle of 2014 have this issue. These observations may also have unreliable pol-rotation (Stokes Q, U, V mixing).
+    
+    If POLSELF is False, polarisation self-calibration could not be performed, and hence only image-based leakage correction is done. If this case, very low-level polarised sources should be not be considered as true source. 
  
 2. **Primary beam corrected image fits** - Primary beam corrected fits images are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/pbcor_images`` directory inside work directory.
 
@@ -136,13 +144,9 @@ Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_
   
    Header of helioprojective maps have wavelength information in unit of ``centimeter`` or ``meter``.  
 
-6. **Overlays on EUV images** - Overlays on EUV images are saved in PNG and PDF formats in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/overlays_pngs`` and ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/overlays_pngs``, respectively.
+6. **Overlays on EUV images** - If EUV overlays are requested, overlays on EUV images are saved in PNG formats in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/overlays_pngs``.
 
-
-
-
-
-
-
-
+Measurement set flags
+~~~~~~~~~~~~~~~~~~~~~
+Flags of the final calibrated measurement sets are saved in ``ms_flags`` directory inside the ``<outputdir>``. These flags can be used later to restore and re-image calibrated measurement sets. 
 

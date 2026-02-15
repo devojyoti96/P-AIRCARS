@@ -187,9 +187,7 @@ def applysol(
                         if quartical_msg != 0:
                             print("Quartical solutions did not apply.")
                             os.system(f"touch {msname}/.nopolselfcal")
-                        print (f"rm -rf {quartical_log}")
                         os.system(f"rm -rf {quartical_log}")
-                        print (f"rm -rf {temp_pol_caltable}")
                         os.system(f"rm -rf {temp_pol_caltable}")
         if overwrite_datacolumn:
             print(f"Over writing data column with corrected data for ms: {msname}.")

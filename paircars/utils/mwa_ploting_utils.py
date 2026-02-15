@@ -1390,14 +1390,14 @@ def rename_mwasolar_image(
             hdr["MEDIAN"] = median_val
             hdr["RMSDYN"] = rms_dyn
             hdr["MIMADYN"] = minmax_dyn
-        if pol_selfcal:
-            hdr["POLSELF"] = "TRUE"
-        else:
-            hdr["POLSELF"] = "FALSE"
         if cal_sol:
             hdr["CALAPP"] = "TRUE"
         else:
             hdr["CALAPP"] = "FALSE"
+        if pol_selfcal:
+            hdr["POLSELF"] = "TRUE"
+        else:
+            hdr["POLSELF"] = "FALSE"
         try:
             sun_jpl = Horizons(id="10", location="500", epochs=astro_time.jd)
             eph = sun_jpl.ephemerides()
