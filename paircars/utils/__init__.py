@@ -26,13 +26,7 @@ from .mwapb_utils import *
 from .ds_utils import *
 from casatasks import casalog
 from astropy.utils import iers
-
-result = set_udocker_env()
-if result is None:
-    raise RuntimeError(
-        "Udocker environment setup failed. Module import aborted."
-    )
-
+set_udocker_env()
 try:
     logfile = casalog.logfile()
     os.remove(logfile)
