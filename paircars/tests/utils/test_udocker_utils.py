@@ -7,23 +7,60 @@ from unittest.mock import patch, MagicMock
 from paircars.utils.udocker_utils import *
 
 
+@pytest.mark.parametrize(
+    "datadir, exists_datadir, exists_tarball, should_set",
+    [
+        (None, False, False, False),          # datadir None
+        ("/mock/data", False, False, False),  # datadir missing
+        ("/mock/data", True, False, False),   # tarball missing
+        ("/mock/data", True, True, True),     # success case
+    ],
+)
 @patch("paircars.utils.udocker_utils.os.makedirs")
-@patch("paircars.utils.udocker_utils.get_datadir", return_value="/mock/data")
-def test_set_udocker_env(mock_get_datadir, mock_makedirs):
-    # Backup original env
-    original_env = dict(os.environ)
-    try:
-        set_udocker_env()
-        mock_get_datadir.assert_called_once()
-        mock_makedirs.assert_called_once_with("/mock/data/udocker", exist_ok=True)
-        assert os.environ["UDOCKER_DIR"] == "/mock/data/udocker"
-        assert (
-            os.environ["UDOCKER_TARBALL"] == "/mock/data/udocker-englib-1.2.11.tar.gz"
-        )
-    finally:
-        # Restore original environment
-        os.environ.clear()
-        os.environ.update(original_env)
+@patch("paircars.utils.udocker_utils.os.path.exists")
+@patch("paircars.utils.udocker_utils.get_datadir")
+def test_set_udocker_env(
+    mock_get_datadir,
+    mock_exists,
+    mock_makedirs,
+    datadir,
+    exists_datadir,
+    exists_tarball,
+    should_set,
+):
+    with patch.dict(os.environ, {}, clear=True):
+
+        mock_get_datadir.return_value = datadir
+
+        def exists_side_effect(path):
+            if datadir is None:
+                return False
+            if path == datadir:
+                return exists_datadir
+            if path == f"{datadir}/udocker-englib-1.2.11.tar.gz":
+                return exists_tarball
+            return False
+
+        mock_exists.side_effect = exists_side_effect
+
+        result = set_udocker_env()
+
+        if should_set:
+            mock_makedirs.assert_called_once_with(
+                f"{datadir}/udocker",
+                exist_ok=True,
+            )
+            assert result == datadir
+            assert os.environ["UDOCKER_DIR"] == f"{datadir}/udocker"
+            assert (
+                os.environ["UDOCKER_TARBALL"]
+                == f"{datadir}/udocker-englib-1.2.11.tar.gz"
+            )
+        else:
+            mock_makedirs.assert_not_called()
+            assert result is None
+            assert "UDOCKER_DIR" not in os.environ
+            assert "UDOCKER_TARBALL" not in os.environ
 
 
 @patch("paircars.utils.udocker_utils.set_udocker_env")

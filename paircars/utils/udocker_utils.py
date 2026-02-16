@@ -14,12 +14,13 @@ from .basic_utils import *
 
 def set_udocker_env():
     datadir = get_datadir()
-    if datadir is None:
+    if datadir is None or os.path.exists(datadir) is False or os.path.exists(f"{datadir}/udocker-englib-1.2.11.tar.gz") is False:
         return 
-    udocker_dir = datadir + "/udocker"
+    udocker_dir = f"{datadir}/udocker"
     os.makedirs(udocker_dir, exist_ok=True)
     os.environ["UDOCKER_DIR"] = udocker_dir
-    os.environ["UDOCKER_TARBALL"] = datadir + "/udocker-englib-1.2.11.tar.gz"
+    os.environ["UDOCKER_TARBALL"] = f"{datadir}/udocker-englib-1.2.11.tar.gz"
+    return datadir
 
 
 def init_udocker():

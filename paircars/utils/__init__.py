@@ -1,4 +1,9 @@
 import os
+os.environ["PYTHONWARNINGS"] = "ignore"
+import logging
+logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+logging.getLogger("tzlocal").setLevel(logging.ERROR)
 from .basic_utils import *
 from .calibration import *
 from .casatasks import *
@@ -22,7 +27,11 @@ from .ds_utils import *
 from casatasks import casalog
 from astropy.utils import iers
 
-set_udocker_env()
+result = set_udocker_env()
+if result is None:
+    raise RuntimeError(
+        "Udocker environment setup failed. Module import aborted."
+    )
 
 try:
     logfile = casalog.logfile()
