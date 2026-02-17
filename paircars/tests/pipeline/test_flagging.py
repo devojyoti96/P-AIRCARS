@@ -15,7 +15,7 @@ def test_single_ms_flag(dummy_msname):
         flagdimension="freqtime",
         flag_autocorr=True,
         n_threads=-1,
-        memory_limit=-1,
+        mem_limit=-1,
     )
     assert result == 0
     tb = table()

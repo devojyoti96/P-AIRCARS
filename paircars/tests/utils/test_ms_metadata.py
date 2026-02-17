@@ -79,7 +79,7 @@ def test_get_ms_scan_size(dummy_msname):
 
 
 def test_get_chunk_size(dummy_msname):
-    assert get_chunk_size(dummy_msname, memory_limit=1) == 1
+    assert get_chunk_size(dummy_msname, mem_limit=1) == 1
 
 
 def test_check_datacolumn_valid(dummy_msname):

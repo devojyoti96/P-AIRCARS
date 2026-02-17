@@ -188,7 +188,7 @@ def run_all_applysol(
                         applymode=applymode,
                         interp=["linear,linearflag"],
                         n_threads=n_threads,
-                        memory_limit=mem_limit,
+                        mem_limit=mem_limit,
                         cpu_frac=cpu_frac,
                         mem_frac=mem_frac,
                         force_apply=force_apply,

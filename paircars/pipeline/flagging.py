@@ -28,7 +28,7 @@ def single_ms_flag(
     flag_quack=True,
     threshold=5.0,
     n_threads=-1,
-    memory_limit=-1,
+    mem_limit=-1,
     cpu_frac=-1,
     mem_frac=-1,
 ):
@@ -59,7 +59,7 @@ def single_ms_flag(
         Flagging threshold
     n_threads : int, optional
         Number of OpenMP threads
-    memory_limit : float, optional
+    mem_limit : float, optional
         Memory limit in GB
     cpu_frac : float, optional
         CPU fraction of current node
@@ -430,7 +430,7 @@ def do_flagging(
                     flag_quack=flag_quack,
                     threshold=5.0,
                     n_threads=n_threads,
-                    memory_limit=mem_limit,
+                    mem_limit=mem_limit,
                     cpu_frac=cpu_frac,
                     mem_frac=mem_frac,
                 )

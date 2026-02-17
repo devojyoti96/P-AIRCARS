@@ -136,7 +136,7 @@ def test_run_postcal_flag(
         datacolumn="residual",
         threshold=5.0,
         n_threads=4,
-        memory_limit=8,
+        mem_limit=8,
     )
     m_limit.assert_called_once_with(n_threads=4)
     m_flag.assert_called_once_with(
@@ -150,7 +150,7 @@ def test_run_postcal_flag(
         flag_autocorr=False,
         threshold=5.0,
         n_threads=4,
-        memory_limit=8,
+        mem_limit=8,
     )
     captured = capsys.readouterr()
     if expect_print:
@@ -229,7 +229,7 @@ def test_single_ms_cal_and_flag(
             do_postcal_flag=do_postcal_flag,
             flag_threshold=5.0,
             n_threads=2,
-            memory_limit=1024,
+            mem_limit=1024,
         )
 
         m_drop.assert_called_once_with(msname)

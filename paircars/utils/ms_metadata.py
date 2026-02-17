@@ -249,7 +249,7 @@ def get_ms_scan_size(msname, scan, only_autocorr=False):
     return scan_size
 
 
-def get_chunk_size(msname, memory_limit=-1, only_autocorr=False):
+def get_chunk_size(msname, mem_limit=-1, only_autocorr=False):
     """
     Get time chunk size for a memory limit
 
@@ -257,7 +257,7 @@ def get_chunk_size(msname, memory_limit=-1, only_autocorr=False):
     ----------
     msname : str
         Measurement set
-    memory_limit : int, optional
+    mem_limit : int, optional
         Memory limit
     only_autocorr : bool, optional
         Only aut-correlation
@@ -267,10 +267,10 @@ def get_chunk_size(msname, memory_limit=-1, only_autocorr=False):
     int
         Number of chunks
     """
-    if memory_limit == -1:
-        memory_limit = psutil.virtual_memory().available / 1024**3  # In GB
+    if mem_limit == -1:
+        mem_limit = psutil.virtual_memory().available / 1024**3  # In GB
     col_size = get_column_size(msname, only_autocorr=only_autocorr)
-    nchunk = int(col_size / memory_limit)
+    nchunk = int(col_size / mem_limit)
     if nchunk < 1:
         nchunk = 1
     return nchunk

@@ -387,7 +387,7 @@ def get_local_dask_cluster(
     cluster = LocalCluster(
         n_workers=1,
         threads_per_worker=1,
-        memory_limit=f"{usable_mem}GB",
+        mem_limit=f"{usable_mem}GB",
         local_directory=dask_dir,
         dashboard_address=":0",
         processes=True,
