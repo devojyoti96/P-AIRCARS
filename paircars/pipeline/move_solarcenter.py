@@ -55,6 +55,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -85,10 +88,8 @@ def main(
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=workdir,
+            workdir,
             cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
         )
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
         scale_worker_and_wait(dask_cluster, nworker + 1)

@@ -73,7 +73,9 @@ def applysol(
     quartical_table=[],
     overwrite_datacolumn=False,
     n_threads=-1,
-    memory_limit=-1,
+    mem_limit=-1,
+    cpu_frac=-1,
+    mem_frac=-1,
     force_apply=False,
     soltype="basic",
 ):
@@ -100,8 +102,12 @@ def applysol(
         Overwrite data column with corrected solutions
     n_threads : int, optional
         Number of OpenMP threads
-    memory_limit : float, optional
+    mem_limit : float, optional
         Memory limit in GB
+    cpu_frac : float, optonal
+        CPU fraction of current node
+    mem_frac : float, optional
+        Memory fraction of current node
     force_apply : bool, optional
         Force to apply solutions if it is already applied
     soltype : str, optional
@@ -112,6 +118,13 @@ def applysol(
     int
         Success message
     """
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    if cpu_frac>0:  
+        n_threads = max(1,int(psutil.cpu_count()*cpu_frac))
+    if mem_frac>0:
+        mem_limit = mem_frac*psutil.virtual_memory().available/(1024**3)
+    
     limit_threads(n_threads=n_threads)
     from casatasks import applycal, flagdata, split, clearcal
 
@@ -260,13 +273,9 @@ def run_all_applysol(
     list
         Calibrated target scans
     """
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
     try:
-        if cpu_frac > 0.8:
-            cpu_frac = 0.8
-        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        if mem_frac > 0.8:
-            mem_frac = 0.8
-        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
 
@@ -322,17 +331,29 @@ def run_all_applysol(
         # Applycal jobs
         ####################################
         print(f"Total ms list: {len(mslist)}")
+        scheduler_name = get_scheduler_name()
+        if scheduler_name=="local":
+            total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            njobs = min(total_cpu, len(mslist))
+            n_threads = max(1, int(total_cpu / njobs))
+            mem_limit = total_mem / njobs
+            cpu_frac = -1
+            mem_frac = -1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print(f"CPU per worker: {n_threads}")
+            print(f"Memory per worker: {round(mem_limit,2)} GB")
+            print("#################################")
+        else:
+            njobs = len(dask_client.scheduler_info()["workers"])
+            n_threads=-1
+            mem_limit=-1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print("#################################")
+
         tasks = []
-        njobs = min(total_cpu, len(mslist))
-        n_threads = max(1, int(total_cpu / njobs))
-        mem_limit = total_mem / njobs
-
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit,2)} GB")
-        print("#################################")
-
         for ms in mslist:
             msmd = msmetadata()
             msmd.open(ms)
@@ -356,7 +377,9 @@ def run_all_applysol(
                     applymode=applymode,
                     interp=interp,
                     n_threads=n_threads,
-                    memory_limit=mem_limit,
+                    mem_limit=mem_limit,
+                    cpu_frac=cpu_frac,
+                    mem_frac=mem_frac,
                     force_apply=force_apply,
                 )
             )
@@ -448,6 +471,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -477,9 +503,7 @@ def main(
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=workdir,
-            cpu_frac=cpu_frac,
+            workdir,
             mem_frac=mem_frac,
         )
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)

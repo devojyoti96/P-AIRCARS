@@ -60,13 +60,9 @@ def run_all_applysol(
     list
         Calibrated target scans
     """
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
     try:
-        if cpu_frac > 0.8:
-            cpu_frac = 0.8
-        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        if mem_frac > 0.8:
-            mem_frac = 0.8
-        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
         parang = False
@@ -127,16 +123,30 @@ def run_all_applysol(
         # Applycal jobs
         ####################################
         print(f"Total ms list: {len(mslist)}")
+        scheduler_name = get_scheduler_name()
+        if scheduler_name=="local":
+            total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            njobs = min(total_cpu, len(mslist))
+            n_threads = max(1, int(total_cpu / njobs))
+            mem_limit = total_mem / njobs
+            cpu_frac=-1
+            mem_frac=-1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print(f"CPU per worker: {n_threads}")
+            print(f"Memory per worker: {round(mem_limit,2)} GB")
+            print("#################################")
+        else:
+            njobs = len(dask_client.scheduler_info()["workers"])
+            n_threads=-1
+            mem_limit=-1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print("#################################")
+            
         tasks = []
         msmd = msmetadata()
-        njobs = min(total_cpu, len(mslist))
-        n_threads = max(1, int(total_cpu / njobs))
-        mem_limit = total_mem / njobs
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit,2)} GB")
-        print("#################################")
         for ms in mslist:
             msmd.open(ms)
             freqs = msmd.chanfreqs(0, unit="MHz")
@@ -177,6 +187,8 @@ def run_all_applysol(
                         interp=["linear,linearflag"],
                         n_threads=n_threads,
                         memory_limit=mem_limit,
+                        cpu_frac=cpu_frac,
+                        mem_frac=mem_frac,
                         force_apply=force_apply,
                         soltype="selfcal",
                     )
@@ -272,6 +284,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
     # Get first MS from mslist for fallback directory creation
     mslist = mslist.split(",")
 
@@ -302,9 +317,7 @@ def main(
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=workdir,
-            cpu_frac=cpu_frac,
+            workdir,
             mem_frac=mem_frac,
         )
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)

@@ -123,6 +123,7 @@ def get_logid(logfile):
         "selfcal_target.log": "All self-calibrations",
         "imaging_target.log": "All imaging",
         "ds_target.log": "Making dynamic spectra",
+        "do_overlay.log": "Making overlay",
         "main.log": "Main pipeline log",
     }
     if name in logmap:

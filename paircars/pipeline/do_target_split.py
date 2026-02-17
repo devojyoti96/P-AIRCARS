@@ -90,13 +90,9 @@ def split_target_scans(
         Splited ms list
     """
     try:
-        if cpu_frac > 0.8:
-            cpu_frac = 0.8
-        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        if mem_frac > 0.8:
-            mem_frac = 0.8
-        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
-
+        cpu_frac = min(0.8,cpu_frac)
+        mem_frac = min(0.8,mem_frac)
+    
         os.chdir(workdir)
         #######################################
         # Extracting time frequency information
@@ -140,8 +136,24 @@ def split_target_scans(
         else:
             total_chunks = 1
 
-        njobs = max(1, min(total_cpu, total_chunks))
-        n_threads = max(1, int(total_cpu / njobs))
+        scheduler_name = get_scheduler_name()
+        if scheduler_name=="local":
+            total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            njobs = max(1, min(total_cpu, total_chunks))
+            n_threads = max(1, int(total_cpu / njobs))
+            cpu_frac=-1
+            mem_frac=-1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print(f"CPU per worker: {n_threads}")
+            print("#################################")
+        else:
+            njobs = len(dask_client.scheduler_info()["workers"])
+            n_threads=-1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print("#################################")       
 
         tasks = []
         splited_ms_list = []
@@ -172,6 +184,7 @@ def split_target_scans(
                     corr="",
                     timerange=timerange,
                     n_threads=n_threads,
+                    cpu_frac=cpu_frac,
                 )
                 tasks.append(task)
         if len(tasks):
@@ -264,6 +277,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+        
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -293,9 +309,7 @@ def main(
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=workdir,
-            cpu_frac=cpu_frac,
+            workdir,
             mem_frac=mem_frac,
         )
         nworker = max(2, int(psutil.cpu_count() * cpu_frac))

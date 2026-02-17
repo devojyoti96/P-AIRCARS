@@ -45,6 +45,8 @@ def do_selfcal(
     solar_selfcal=True,
     ncpu=-1,
     mem=-1,
+    cpu_frac=-1,
+    mem_frac=-1,
     logfile="selfcal.log",
 ):
     """
@@ -98,6 +100,10 @@ def do_selfcal(
         Number of CPU threads to use
     mem : float, optional
         Memory in GB to use
+    cpu_frac : float, optional
+        CPU fraction of current node
+    mem_frac : float, optional
+        Memory fraction of current node
     logfile : str, optional
         Log file name
 
@@ -110,6 +116,14 @@ def do_selfcal(
     str
         Final caltable
     """
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
+    if cpu_frac>0:
+        npcu = max(1,int(psutil.cpu_count()*cpu_frac))
+    if mem_frac>0:
+        mem = mem_frac*psutil.virtual_memory().available/(1024**3)
+        
     limit_threads(n_threads=ncpu)
     from casatasks import split, flagdata, flagmanager
 
@@ -627,6 +641,8 @@ def do_polselfcal(
     solar_selfcal=True,
     ncpu=-1,
     mem=-1,
+    cpu_frac=-1,
+    mem_frac=-1,
     logfile="selfcal.log",
 ):
     """
@@ -670,6 +686,10 @@ def do_polselfcal(
         Number of CPU threads to use
     mem : float, optional
         Memory in GB to use
+    cpu_frac : float, optional
+        CPU fraction of current node
+    mem_frac : float, optional
+        Memory fraction of current node
     logfile : str, optional
         Log file name
 
@@ -682,6 +702,14 @@ def do_polselfcal(
     str
         Final caltable
     """
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
+    if cpu_frac>0:
+        npcu = max(1,int(psutil.cpu_count()*cpu_frac))
+    if mem_frac>0:
+        mem = mem_frac*psutil.virtual_memory().available/(1024**3)
+    
     limit_threads(n_threads=ncpu)
     from casatasks import split, flagdata, flagmanager
 
@@ -1045,6 +1073,8 @@ def do_full_selfcal(
     solar_selfcal=True,
     ncpu=-1,
     mem=-1,
+    cpu_frac=-1,
+    mem_frac=-1,
     logfile="selfcal.log",
 ):
     """
@@ -1083,6 +1113,8 @@ def do_full_selfcal(
         solar_selfcal=solar_selfcal,
         ncpu=ncpu,
         mem=mem,
+        cpu_frac=cpu_frac,
+        mem_frac=mem_frac,
         logfile=f"{logfile}.int",
     )
     if intensity_selfcal_msg != 0:
@@ -1109,6 +1141,8 @@ def do_full_selfcal(
             solar_selfcal=solar_selfcal,
             ncpu=ncpu,
             mem=mem,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
             logfile=f"{logfile}.pol",
         )
         return intensity_selfcal_msg, pol_selfcal_msg, gaintable, quartical_table
@@ -1215,6 +1249,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -1248,9 +1285,7 @@ def main(
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=workdir,
-            cpu_frac=cpu_frac,
+            workdir,
             mem_frac=mem_frac,
         )
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
@@ -1329,43 +1364,49 @@ def main(
                 print("No filtered ms to continue.")
                 return 1
             else:
-                for ms in mslist:
-                    msmd = msmetadata()
-                    msmd.open(ms)
-                    times = msmd.timesforspws(0)
-                    timeres = np.diff(times)
-                    pos = np.where(timeres > 3 * np.nanmedian(timeres))[0]
-                    max_intervals = min(1, len(pos))
-                    msmd.close()
-                    per_job_fd = (
-                        max_intervals * 4 * 2
-                    )  # 4 types of images, 2 is fudge factor
-                    if per_job_fd == 0:
-                        per_job_fd = 1
-                    num_fd_list.append(per_job_fd)
-                total_fd = max(num_fd_list) * len(mslist)
+                scheduler_name = get_scheduler_name()
+                if scheduler_name=="local":
+                    for ms in mslist:
+                        msmd = msmetadata()
+                        msmd.open(ms)
+                        times = msmd.timesforspws(0)
+                        timeres = np.diff(times)
+                        pos = np.where(timeres > 3 * np.nanmedian(timeres))[0]
+                        max_intervals = min(1, len(pos))
+                        msmd.close()
+                        per_job_fd = (
+                            max_intervals * 4 * 2
+                        )  # 4 types of images, 2 is fudge factor
+                        if per_job_fd == 0:
+                            per_job_fd = 1
+                        num_fd_list.append(per_job_fd)
+                    total_fd = max(num_fd_list) * len(mslist)
 
-                if cpu_frac > 0.8:
-                    cpu_frac = 0.8
-                total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-                if mem_frac > 0.8:
-                    mem_frac = 0.8
-                total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                    1024**3
-                )  # In GB
-                njobs = min(len(mslist), int(new_soft_limit / total_fd))
-                njobs = max(1, min(total_cpu, njobs))
-
-                #####################################
-                # Determining per jobs resource
-                #####################################
-                n_threads = max(1, int(total_cpu / njobs))
-                mem_limit = total_mem / njobs
-                print("#################################")
-                print(f"Total dask worker: {njobs}")
-                print(f"CPU per worker: {n_threads}")
-                print(f"Memory per worker: {round(mem_limit,2)} GB")
-                print("#################################")
+                    total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+                    total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                        1024**3
+                    )  # In GB
+                    njobs = min(len(mslist), int(new_soft_limit / total_fd))
+                    njobs = max(1, min(total_cpu, njobs))
+                    #####################################
+                    # Determining per jobs resource
+                    #####################################
+                    n_threads = max(1, int(total_cpu / njobs))
+                    mem_limit = total_mem / njobs
+                    print("#################################")
+                    print(f"Total dask worker: {njobs}")
+                    print(f"CPU per worker: {n_threads}")
+                    print(f"Memory per worker: {round(mem_limit,2)} GB")
+                    print("#################################")
+                    cpu_frac=-1
+                    mem_frac=-1
+                else:
+                    njobs = len(dask_client.scheduler_info()["workers"])
+                    n_threads=-1
+                    mem_limit=-1
+                    print("#################################")
+                    print(f"Total dask worker: {njobs}")
+                    print("#################################")
 
                 #####################################s
                 os.makedirs(f"{workdir}/logs", exist_ok=True)
@@ -1391,6 +1432,8 @@ def main(
                             + "_selfcal",
                             ncpu=n_threads,
                             mem=mem_limit,
+                            cpu_frac=cpu_frac,
+                            mem_frac=mem_frac,
                             logfile=logfile,
                         )
                     )

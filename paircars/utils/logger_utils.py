@@ -237,6 +237,7 @@ def get_logid(logfile):
         "selfcal_target.log": "All self-calibrations",
         "imaging_target.log": "All imaging",
         "ds_target.log": "Making dynamic spectra",
+        "do_overlay.log": "Making overlays",
         "main.log": "Main pipeline log",
     }
 

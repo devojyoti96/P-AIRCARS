@@ -7,7 +7,9 @@ import time
 import glob
 import sys
 import os
+import dask
 from paircars.utils import *
+from dask import delayed
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -21,6 +23,7 @@ def main(
     logfile=None,
     jobid=0,
     start_remote_log=False,
+    dask_client=None,
 ):
     """
     Run the flagging pipeline for a measurement set.
@@ -41,6 +44,8 @@ def main(
         Numeric job ID used for PID tracking. Default is 0.
     start_remote_log : bool, optional
         Whether to enable remote logging using credentials in the workdir. Default is False.
+    dask_client : dask.client
+        Dask client
 
     Returns
     -------
@@ -51,6 +56,8 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    
     if workdir == "":
         workdir = f"{imagedir}/workdir"
     os.makedirs(workdir, exist_ok=True)
@@ -72,7 +79,7 @@ def main(
         )
         if os.path.exists(logfile):
             observer = init_logger(
-                "do_flagging", logfile, jobname=jobname, password=password
+                "do_overlay", logfile, jobname=jobname, password=password
             )
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
@@ -83,19 +90,37 @@ def main(
         return 1
 
     try:
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        outimage_list = []
-        for image in imagelist:
-            outimage = make_mwa_overlay(
-                image,
-                plot_file_prefix=os.path.basename(image).split(".fits")[0]
-                + "_euv_mwa_overlay",
-                extensions=["png"],
-                outdirs=[outdir],
-                keep_euv_fits=True,
-                ncpu=ncpu,
-                verbose=False,
-            )
+        scheduler_name = get_scheduler_name()
+        if scheduler_name == "local" or dask_client is None:
+            ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+            outimage_list = []
+            for image in imagelist:
+                outimage = make_mwa_overlay(
+                    image,
+                    plot_file_prefix=os.path.basename(image).split(".fits")[0]
+                    + "_euv_mwa_overlay",
+                    extensions=["png"],
+                    outdirs=[outdir],
+                    keep_euv_fits=True,
+                    ncpu=ncpu,
+                    verbose=False,
+                )
+        else:
+            tasks=[]
+            for image in imagelist:
+                task = delayed(make_mwa_overlay)(
+                        image,
+                        plot_file_prefix=os.path.basename(image).split(".fits")[0]
+                        + "_euv_mwa_overlay",
+                        extensions=["png"],
+                        outdirs=[outdir],
+                        keep_euv_fits=True,
+                        cpu_frac=cpu_frac,
+                        verbose=False,
+                    )
+                tasks.append(task)
+            futures = dask_client.compute(batch)
+            outimage_list = list(dask_client.gather(futures))
         outimage_list.append(outimage)
         if len(outimage_list) == 0:
             print("No overlay is made.")

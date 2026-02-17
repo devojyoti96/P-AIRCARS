@@ -1231,7 +1231,7 @@ def run_make_overlay(
     int
         Success message for applying primary beam correction on all images
     """
-    overlay_basename = "overlay"
+    overlay_basename = "do_overlay"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
     logfile = f"{logdir}/{overlay_basename}.log"
@@ -1253,15 +1253,30 @@ def run_make_overlay(
         #####################
         # Making overlays
         #####################
-        msg = make_mwa_overlay.main(
-            imagedir,
-            outdir,
-            workdir=workdir,
-            cpu_frac=float(cpu_frac),
-            logfile=logfile,
-            jobid=jobid,
-            start_remote_log=remote_log,
-        )
+        scheduler_name = get_scheduler_name()
+        if scheduler_name=="local":
+            msg = make_mwa_overlay.main(
+                    imagedir,
+                    outdir,
+                    workdir=workdir,
+                    cpu_frac=float(cpu_frac),
+                    logfile=logfile,
+                    jobid=jobid,
+                    start_remote_log=remote_log,
+                    dask_client=dask_client,
+                )
+        else:
+            with get_dask_client() as dask_client:
+                msg = make_mwa_overlay.main(
+                        imagedir,
+                        outdir,
+                        workdir=workdir,
+                        cpu_frac=float(cpu_frac),
+                        logfile=logfile,
+                        jobid=jobid,
+                        start_remote_log=remote_log,
+                        dask_client=dask_client,
+                    )
     finally:
         stop_event.set()
         log_thread_overlay.join(timeout=5)

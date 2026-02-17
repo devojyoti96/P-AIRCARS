@@ -59,11 +59,9 @@ def make_solar_DS(
     str
         Plot file name
     """
-    if cpu_frac > 0.8:
-        cpu_frac = 0.8
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
     total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac > 0.8:
-        mem_frac = 0.8
     total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
 
     warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -72,29 +70,39 @@ def make_solar_DS(
     print(f"Start making dynamic spectra for ms: {mslist}")
     print("##############################################")
 
-    ########################################
-    # Number of worker limit based on memory
-    ########################################
-    ms_sizes = [get_ms_size(ms) for ms in mslist]
-    per_job_mem = 2 * max(ms_sizes)
-    mem_limit = (psutil.virtual_memory().available * mem_frac) / (1024**3)
-    max_njobs = int(mem_limit / per_job_mem)
-    njobs = max(1, min(max_njobs, len(mslist)))
-    n_threads = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
-
-    print("#################################")
-    print(f"Total dask worker: {njobs}")
-    print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {round(mem_limit,2)} GB")
-    print("#################################")
-
+    scheduler_name = get_scheduler_name()
+    if scheduler_name=="local":
+        ########################################
+        # Number of worker limit based on memory
+        ########################################
+        ms_sizes = [get_ms_size(ms) for ms in mslist]
+        per_job_mem = 2 * max(ms_sizes)
+        mem_limit = (psutil.virtual_memory().available * mem_frac) / (1024**3)
+        max_njobs = int(mem_limit / per_job_mem)
+        njobs = max(1, min(max_njobs, len(mslist)))
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
+        cpu_frac=-1
+        mem_frac=-1
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {round(mem_limit,2)} GB")
+        print("#################################")
+    else:
+        njobs = len(dask_client.scheduler_info()["workers"])
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print("#################################")
+        n_threads=-1
+        mem_limit=-1
+        
     try:
         ###########################################
         tasks = []
         for msname in mslist:
             tasks.append(
                 delayed(calc_dynamic_spectrum)(
-                    msname, metafits, f"{outdir}/dynamic_spectra", nthreads=n_threads
+                    msname, metafits, f"{outdir}/dynamic_spectra", nthreads=n_threads, cpu_frac=cpu_frac
                 )
             )
         results = []
@@ -188,6 +196,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -218,9 +229,7 @@ def main(
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=workdir,
-            cpu_frac=cpu_frac,
+            workdir,
             mem_frac=mem_frac,
         )
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
