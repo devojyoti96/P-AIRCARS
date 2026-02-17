@@ -1568,7 +1568,7 @@ def master_control(
         dask_cluster = dask_client.cluster
     except:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2, workdir, cpu_frac=cpu_frac, mem_frac=mem_frac
+            workdir, mem_frac=mem_frac
         )
     current_worker = get_total_worker(dask_cluster)
 
