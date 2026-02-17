@@ -164,6 +164,7 @@ def get_unflagged_antennas(
     msname="",
     scan="",
     n_threads=-1,
+    cpu_frac=-1,
 ):
     """
     Get unflagged antennas of a scan
@@ -182,6 +183,9 @@ def get_unflagged_antennas(
     numpy.array
         Flag fraction list
     """
+    if cpu_frac>0:
+        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
+        
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 
@@ -207,6 +211,7 @@ def get_chans_flag(
     msname="",
     field="",
     n_threads=-1,
+    cpu_frac=-1,
 ):
     """
     Get flag/unflag channel list
@@ -225,6 +230,9 @@ def get_chans_flag(
     list
         Flag channel list
     """
+    if cpu_frac>0:
+        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
+        
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 
@@ -251,6 +259,7 @@ def calc_flag_fraction(
     field="",
     scan="",
     n_threads=-1,
+    cpu_frac=-1,
 ):
     """
     Function to calculate the fraction of total data flagged.
@@ -269,6 +278,9 @@ def calc_flag_fraction(
     float
         Fraction of the total data flagged
     """
+    if cpu_frac>0:
+        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
+        
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 
@@ -281,7 +293,7 @@ def calc_flag_fraction(
     return flagged_fraction
 
 
-def flag_outside_uvrange(vis, uvrange, n_threads=-1, flagbackup=True):
+def flag_outside_uvrange(vis, uvrange, flagbackup=True, n_threads=-1, cpu_frac=-1,):
     """
     Flag outside the given uv range
 
@@ -294,6 +306,9 @@ def flag_outside_uvrange(vis, uvrange, n_threads=-1, flagbackup=True):
     flagbackup : bool, optional
         Flag backup
     """
+    if cpu_frac>0:
+        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
+        
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 

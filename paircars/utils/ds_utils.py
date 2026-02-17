@@ -2,6 +2,7 @@ import os
 import numpy as np
 import warnings
 import types
+import psutil
 from scipy.interpolate import interp1d
 from casatools import msmetadata, table, ms as casamstool
 from astropy.wcs import FITSFixedWarning
@@ -378,7 +379,7 @@ def get_short_baselines(msname, max_uv=100.0, nmax=6):
     return baselines
 
 
-def calc_dynamic_spectrum(msname, metafits, outdir, nthreads=1):
+def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1,cpu_frac=-1):
     """
     Function to calculate MWA dynamic spectrum of the Sun
 
@@ -390,8 +391,10 @@ def calc_dynamic_spectrum(msname, metafits, outdir, nthreads=1):
         Metafits file
     outdir : str
         Name of the output directory
-    nthreads : int, optional
+    n_threads : int, optional
         Number of CPU threads to use
+    cpu_frac : float, optional
+        CPU fraction of current node
 
     Returns
     -------
@@ -400,6 +403,9 @@ def calc_dynamic_spectrum(msname, metafits, outdir, nthreads=1):
     str
         Output normalised cross-correlation file name
     """
+    if cpu_frac>0:
+        n_threads = max(1,int(psutil.cpu_count()*cpu_frac))
+    n_threads=max(1,n_threads)
     ##################################
     # Determine baseline list
     ##################################
@@ -489,7 +495,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, nthreads=1):
                 metafits,
                 baseline,
                 freq,
-                nthreads=nthreads,
+                n_threads=n_threads,
                 iau_order=False,
                 calc_fringe_temp=True,
             )

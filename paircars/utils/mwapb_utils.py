@@ -184,6 +184,7 @@ def all_sky_beam_interpolator(
     freq,
     resolution,
     ncpu=-1,
+    cpu_frac=-1,
     MWA_PB_file="",
     sweet_spot_file="",
     iau_order=False,
@@ -201,6 +202,8 @@ def all_sky_beam_interpolator(
         Spatial resolution in degree
     ncpu : int, optional
         Number of CPU threads to use
+    cpu_frac : float, optional
+        CPU fraction of current node
     MWA_PB_file : str, optional
         MWA primary beam file
     sweet_spot_file : str, optional
@@ -213,6 +216,8 @@ def all_sky_beam_interpolator(
     numpy.array
         All sky primary beam Jones array
     """
+    if cpu_frac>0:
+        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -296,6 +301,7 @@ def get_jones_array(
     freq,
     gridpoint,
     ncpu=-1,
+    cpu_frac=-1,
     interpolated=True,
     MWA_PB_file="",
     sweet_spot_file="",
@@ -316,6 +322,8 @@ def get_jones_array(
         Gridpoint number
     ncpu : int, optional
         Number of CPU threads to use
+    cpu_frac : float, optional
+        CPU fraction of current node
     interpolated : bool, optional
         Use spatially interpolated beams or not
     MWA_PB_file : str, optional
@@ -330,6 +338,8 @@ def get_jones_array(
     numpy.array
         Jones array (shape : coordinate_arr_shape, 2 ,2)
     """
+    if cpu_frac>0:
+        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -409,6 +419,7 @@ def get_pb_radec(
     freq,
     metafits,
     ncpu=-1,
+    cpu_frac=-1,
     MWA_PB_file="",
     sweet_spot_file="",
     iau_order=False,
@@ -428,6 +439,8 @@ def get_pb_radec(
         MWA metafits file
     ncpu : int, optional
         Number of CPU threads
+    cpu_frac : float, optional
+        CPU fraction of current node
     MWA_PB_file : str, optional
         MWA primary beam file path
     sweet_spot_file : str, optional
@@ -448,6 +461,8 @@ def get_pb_radec(
     float
         YY power beam value
     """
+    if cpu_frac>0:
+        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -755,7 +770,7 @@ def makeAZZA_dOMEGA(npix, projection="SIN"):
     return az, za, n_total, dOMEGA
 
 
-def get_fringe(msname, freq, metafits, resolution=1, nthreads=1, baseline=[]):
+def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, cpu_frac=-1, baseline=[]):
     """
     Function to calculate all sky fringe of a baseline
 
@@ -769,8 +784,10 @@ def get_fringe(msname, freq, metafits, resolution=1, nthreads=1, baseline=[]):
         Name of the metafits file
     resolution : float, optional
         Beam resolution in degree (default : 1deg)
-    nthreads : int, optional
+    n_threads : int, optional
         Number of cpu threads use for parallel computing
+    cpu_frac : float, optional
+        CPU fraction of current node
     baseline : list, optional
         Antenna list of a baseline
 
@@ -779,6 +796,8 @@ def get_fringe(msname, freq, metafits, resolution=1, nthreads=1, baseline=[]):
     np.array
         All-sky fringe array in sky coornidinate
     """
+    if cpu_frac>0:
+        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
     try:
         msname = msname.rstrip("/")
         baseline_str = str(baseline[0]) + "&&" + str(baseline[1])
@@ -811,7 +830,7 @@ def get_fringe(msname, freq, metafits, resolution=1, nthreads=1, baseline=[]):
             "-make-psf-only",
             "-no-fit-beam",
             "-pol i",
-            "-j " + str(nthreads),
+            "-j " + str(n_threads),
             "-name " + imagename_prefix,
             "-quiet",
         ]
@@ -850,7 +869,8 @@ def make_primarybeammap(
     iau_order=True,
     MWA_PB_file="",
     sweet_spot_file="",
-    nthreads=1,
+    n_threads=1,
+    cpu_frac=-1,
     calc_fringe_temp=False,
 ):
     """
@@ -872,8 +892,10 @@ def make_primarybeammap(
         MWA primary beam file path
     sweet_spot_file: str, optional
         MWA sweet spot file
-    nthreads : int, optional
+    n_threads : int, optional
         Number of cpu threads use for parallel computing
+    cpu_frac : float, optional
+        CPU fraction of current code
     calc_fringe_temp : bool, optional
         Calculate temperature contribution of the baseline
 
@@ -896,13 +918,15 @@ def make_primarybeammap(
     float
         Total beam area (YY)
     """
+    if cpu_frac>0:
+        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
     warnings.filterwarnings("ignore")
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    nthreads = max(1, nthreads)
-    os.environ["RAYON_NUM_THREADS"] = str(nthreads)
+    n_threads = max(1, n_threads)
+    os.environ["RAYON_NUM_THREADS"] = str(n_threads)
     beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
 
     ############################
@@ -986,7 +1010,7 @@ def make_primarybeammap(
                 freq,
                 metafits,
                 resolution=resolution,
-                nthreads=nthreads,
+                n_threads=n_threads,
                 baseline=bs,
             )
             time.sleep(0.5)

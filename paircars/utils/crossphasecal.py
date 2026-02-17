@@ -175,6 +175,7 @@ def crossphasecal(
     uvrange="",
     gaintable="",
     chanwidth=1,
+    n_threads=-1,
 ):
     """
     Function to calculate MWA cross hand phase
@@ -191,16 +192,16 @@ def crossphasecal(
         Previous gaintable
     chanwidth : int, optional
         Channels to average
+    n_threads : int, optional
+        Number of CPU threads to use
 
     Returns
     -------
     str
         Name of the caltable
     """
-    ncpu = int(psutil.cpu_count() * 0.8)
-    if ncpu < 1:
-        ncpu = 1
-    ne.set_num_threads(ncpu)
+    n_threads = max(1,n_threads)
+    ne.set_num_threads(n_threads)
     if caltable == "":
         caltable = msname.split(".ms")[0] + ".kcross"
     #######################

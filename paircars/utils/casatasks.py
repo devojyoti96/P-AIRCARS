@@ -44,6 +44,7 @@ def reset_weights_and_flags(
     restore_flag=True,
     force_reset=False,
     n_threads=-1,
+    cpu_frac=-1,
 ):
     """
     Reset weights and flags for the ms
@@ -57,6 +58,8 @@ def reset_weights_and_flags(
     force_reset : bool, optional
         Force reset
     """
+    if cpu_frac>0:
+        n_threads = max(1,int(psutil.cpu_count()*cpu_frac))
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 
@@ -109,6 +112,7 @@ def single_mstransform(
     timerange="",
     numsubms="auto",
     n_threads=-1,
+    cpu_frac=-1,
 ):
     """
     Perform mstransform
@@ -133,12 +137,17 @@ def single_mstransform(
         Time range
     n_threads : int, optional
         Number of CPU threads
+    cpu_frac : float, optional
+        CPU fraction of current node
 
     Returns
     -------
     str
         Output measurement set name
     """
+    if cpu_frac>0:
+        n_threads = max(1,int(psutil.cpu_count()*cpu_frac))
+
     limit_threads(n_threads=n_threads)
     from casatasks import mstransform, initweights, flagdata
 

@@ -332,9 +332,7 @@ def get_scheduler_name():
 
 
 def get_local_dask_cluster(
-    njobs,
     dask_dir,
-    cpu_frac=0.8,
     mem_frac=0.8,
     ncpu=-1,
     mem=-1,
@@ -346,18 +344,10 @@ def get_local_dask_cluster(
 
     Parameters
     ----------
-    njobs : int
-        Number of MS tasks (ideally = number of MS files)
     dask_dir : str
         Dask temporary directory
-    cpu_frac : float, optional
-        Fraction of total CPUs to use
     mem_frac : float, optional
         Fraction of total memory to use
-    ncpu : int, optional
-        Number of CPUs to use (if specified, cpu_frac will be ignored)
-    mem : float, optional
-        Memory in GB to use (if specified, mem_frac will be ignored)
     spill_frac : float, optional
         Spill to disk at this fraction
     verbose : bool, optional
@@ -378,26 +368,13 @@ def get_local_dask_cluster(
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
-
-    total_cpus = psutil.cpu_count(logical=True)
     total_mem = psutil.virtual_memory().total / 1024**3  # In GB
-
-    # Override fractions if ncpu or mem is provided
-    if ncpu > 0:
-        cpu_frac = min(ncpu / total_cpus, 0.8)
-    if mem > 0:
-        mem_frac = min(mem / total_mem, 0.8)
-    cpu_frac = min(cpu_frac, 0.8)
     mem_frac = min(mem_frac, 0.8)
     usable_mem = total_mem * mem_frac
-    usable_cpus = int(total_cpus * cpu_frac)
-    n_workers = max(1, usable_cpus)
-
     # Raise file descriptor limit
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     if soft < int(hard * 0.8):
         resource.setrlimit(resource.RLIMIT_NOFILE, (int(hard * 0.8), hard))
-
     dask.config.set(
         {
             "temporary-directory": dask_dir,
@@ -407,7 +384,6 @@ def get_local_dask_cluster(
             "distributed.worker.memory.terminate": spill_frac + 0.25,
         }
     )
-
     cluster = LocalCluster(
         n_workers=1,
         threads_per_worker=1,
@@ -434,13 +410,8 @@ def get_local_dask_cluster(
 
 
 def get_slurm_dask_cluster(
-    njobs,
     config_yaml,
     dask_dir,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    ncpu=-1,
-    mem=-1,
     spill_frac=0.7,
     verbose=True,
 ):
@@ -449,20 +420,10 @@ def get_slurm_dask_cluster(
 
     Parameters
     ----------
-    njobs : int
-        Number of expected tasks (used for worker scaling)
     config_yaml : str
         Path to Dask SLURMCluster YAML configuration
     dask_dir : str
         Dask working directory (for temporary files)
-    cpu_frac : float
-        Fraction of total CPUs to use (ignored if ncpu > 0)
-    mem_frac : float
-        Fraction of total RAM to use (ignored if mem > 0)
-    ncpu : int
-        Total CPUs to use (overrides cpu_frac)
-    mem : float
-        Total memory (in GB) to use (overrides mem_frac)
     spill_frac : float
         Fraction of memory to spill to disk
     verbose : bool
@@ -482,24 +443,6 @@ def get_slurm_dask_cluster(
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
-
-    total_cpus = psutil.cpu_count(logical=True)
-    total_mem = psutil.virtual_memory().total / 1024**3  # in GB
-
-    if ncpu > 0:
-        cpu_frac = min(ncpu / total_cpus, 0.8)
-    if mem > 0:
-        mem_frac = min(mem / total_mem, 0.8)
-
-    cpu_frac = min(cpu_frac, 0.8)
-    mem_frac = min(mem_frac, 0.8)
-    usable_mem = total_mem * mem_frac
-    usable_cpus = int(total_cpus * cpu_frac)
-
-    # Raise file descriptor limit
-    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-    if soft < int(hard * 0.8):
-        resource.setrlimit(resource.RLIMIT_NOFILE, (int(hard * 0.8), hard))
 
     dask.config.set(
         {
@@ -530,7 +473,7 @@ def get_slurm_dask_cluster(
     )
 
     # Scale workers (1 per task/MS file ideally)
-    cluster.scale(njobs)
+    cluster.scale(1)
     client = Client(cluster, heartbeat_interval="5s")
     client.run_on_scheduler(gc.collect)
     if verbose:

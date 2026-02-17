@@ -851,6 +851,8 @@ def selfcal_round(
     do_uvsub_flag=False,
     ncpu=-1,
     mem=-1,
+    cpu_frac=-1,
+    mem_frac=-1,
 ):
     """
     A single self-calibration round
@@ -921,6 +923,10 @@ def selfcal_round(
         Number of CPUs to use in WSClean
     mem : float, optional
         Memory usage limit in WSClean
+    cpu_frac : float, optional
+        CPU fraction of current node
+    mem_frac : float, optional
+        Memory fraction of current node
 
     Returns
     -------
@@ -941,6 +947,11 @@ def selfcal_round(
     list
         Leakage informations [Q_leakage, U_leakage, V_leakage, Q_leakage_error, U_leakage_error, V_leakage_error]
     """
+    if cpu_frac>0:
+        ncpu = max(1, int(psutil.cpu_count()*cpu_frac))
+    if mem_frac>0:
+        mem = mem_frac*(psutil.virtual_memory().available)/(1024**3)
+        
     limit_threads(n_threads=ncpu)
     from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager
 

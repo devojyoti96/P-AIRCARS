@@ -81,6 +81,7 @@ def run_crossphasecal(
             f"{caltable_prefix}.kcrosscal",
             uvrange=uvrange,
             gaintable=gaintable,
+            n_threads=n_threads,
         )
     if os.path.exists(caltable_prefix + ".kcrosscal"):
         return caltable_prefix + ".kcrosscal"

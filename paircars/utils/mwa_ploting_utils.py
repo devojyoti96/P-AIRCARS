@@ -971,6 +971,7 @@ def make_mwa_overlay(
     extensions=["png"],
     outdirs=[],
     ncpu=-1,
+    cpu_frac=-1,
     keep_euv_fits=False,
     showgui=False,
     verbose=False,
@@ -1006,6 +1007,8 @@ def make_mwa_overlay(
         Output directories for each extensions
     ncpu : int, optional
         Number of CPUs to use
+    cpu_frac : float, optional
+        CPU fraction of current node
     keep_euv_fits : bool, optional
         Keep EUV fits file
     showgui : bool, optional
@@ -1029,6 +1032,9 @@ def make_mwa_overlay(
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     logging.getLogger("reproject.common").setLevel(logging.WARNING)
 
+    if cpu_frac>0:
+        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
+        
     @delayed
     def reproject_map(smap, target_header):
         with SphericalScreen(smap.observer_coordinate):
