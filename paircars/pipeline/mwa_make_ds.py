@@ -105,7 +105,7 @@ def make_solar_DS(
                     msname,
                     metafits,
                     f"{outdir}/dynamic_spectra",
-                    nthreads=n_threads,
+                    n_threads=n_threads,
                     cpu_frac=cpu_frac,
                 )
             )
