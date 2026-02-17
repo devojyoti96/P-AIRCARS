@@ -3192,9 +3192,7 @@ def cli():
     if args.cluster is not True:
         print("Setting up local cluster....")
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            2,
-            dask_dir=args.workdir,
-            cpu_frac=args.cpu_frac,
+            args.workdir,
             mem_frac=args.mem_frac,
         )
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
