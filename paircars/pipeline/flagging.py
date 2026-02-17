@@ -71,14 +71,14 @@ def single_ms_flag(
     int
         Success message
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
-    if cpu_frac>0:
-        n_threads = max(1, int(psutil.cpu_count()*cpu_frac))
-    if mem_frac>0:
-        mem_limit = mem_frac*psutil.virtual_memory().available/(1024**3)
-        
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
+    if cpu_frac > 0:
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac > 0:
+        mem_limit = mem_frac * psutil.virtual_memory().available / (1024**3)
+
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 
@@ -361,20 +361,23 @@ def do_flagging(
     int
         Success message
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     try:
         from casatasks import flagdata
+
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                1024**3
+            )  # In GB
             njobs = max(1, min(total_cpu, len(mslist)))
             n_threads = max(1, int(total_cpu / njobs))
             mem_limit = total_mem / njobs
-            cpu_frac=-1
-            mem_frac=-1
+            cpu_frac = -1
+            mem_frac = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print(f"CPU per worker: {n_threads}")
@@ -382,8 +385,8 @@ def do_flagging(
             print("#################################")
         else:
             njobs = len(client.scheduler_info()["workers"])
-            n_threads=-1
-            mem_limit=-1
+            n_threads = -1
+            mem_limit = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print("#################################")
@@ -528,9 +531,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":

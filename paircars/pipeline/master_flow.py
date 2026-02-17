@@ -1254,8 +1254,20 @@ def run_make_overlay(
         # Making overlays
         #####################
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             msg = make_mwa_overlay.main(
+                imagedir,
+                outdir,
+                workdir=workdir,
+                cpu_frac=float(cpu_frac),
+                logfile=logfile,
+                jobid=jobid,
+                start_remote_log=remote_log,
+                dask_client=dask_client,
+            )
+        else:
+            with get_dask_client() as dask_client:
+                msg = make_mwa_overlay.main(
                     imagedir,
                     outdir,
                     workdir=workdir,
@@ -1265,18 +1277,6 @@ def run_make_overlay(
                     start_remote_log=remote_log,
                     dask_client=dask_client,
                 )
-        else:
-            with get_dask_client() as dask_client:
-                msg = make_mwa_overlay.main(
-                        imagedir,
-                        outdir,
-                        workdir=workdir,
-                        cpu_frac=float(cpu_frac),
-                        logfile=logfile,
-                        jobid=jobid,
-                        start_remote_log=remote_log,
-                        dask_client=dask_client,
-                    )
     finally:
         stop_event.set()
         log_thread_overlay.join(timeout=5)

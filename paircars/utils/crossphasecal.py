@@ -200,7 +200,7 @@ def crossphasecal(
     str
         Name of the caltable
     """
-    n_threads = max(1,n_threads)
+    n_threads = max(1, n_threads)
     ne.set_num_threads(n_threads)
     if caltable == "":
         caltable = msname.split(".ms")[0] + ".kcross"

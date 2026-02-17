@@ -75,7 +75,7 @@ def get_datadir():
     """
     cachedir = get_cachedir()
     if os.path.exists(f"{cachedir}/paircarspipe_data_dir.txt") == False:
-        print ("P-AIRCARS data directory does not exist. Initiate P-AIRCARS data setup.")
+        print("P-AIRCARS data directory does not exist. Initiate P-AIRCARS data setup.")
         return None
     with open(f"{cachedir}/paircarspipe_data_dir.txt", "r") as f:
         datadir = f.read().strip()

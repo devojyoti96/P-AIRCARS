@@ -56,8 +56,8 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+
     if workdir == "":
         workdir = f"{imagedir}/workdir"
     os.makedirs(workdir, exist_ok=True)
@@ -106,18 +106,18 @@ def main(
                     verbose=False,
                 )
         else:
-            tasks=[]
+            tasks = []
             for image in imagelist:
                 task = delayed(make_mwa_overlay)(
-                        image,
-                        plot_file_prefix=os.path.basename(image).split(".fits")[0]
-                        + "_euv_mwa_overlay",
-                        extensions=["png"],
-                        outdirs=[outdir],
-                        keep_euv_fits=True,
-                        cpu_frac=cpu_frac,
-                        verbose=False,
-                    )
+                    image,
+                    plot_file_prefix=os.path.basename(image).split(".fits")[0]
+                    + "_euv_mwa_overlay",
+                    extensions=["png"],
+                    outdirs=[outdir],
+                    keep_euv_fits=True,
+                    cpu_frac=cpu_frac,
+                    verbose=False,
+                )
                 tasks.append(task)
             futures = dask_client.compute(batch)
             outimage_list = list(dask_client.gather(futures))

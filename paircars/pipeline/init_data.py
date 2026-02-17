@@ -169,10 +169,12 @@ def main(
             return 1
         if prefect_server:
             scheduler_name = get_scheduler_name()
-            if scheduler_name=="local":
+            if scheduler_name == "local":
                 start_server()
             else:
-                print("We are in multi-node cluster architechture. Prefect server mode will not work. We recomment setup and use remote logging facility.")
+                print(
+                    "We are in multi-node cluster architechture. Prefect server mode will not work. We recomment setup and use remote logging facility."
+                )
         return 0
     else:
         return 1

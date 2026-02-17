@@ -60,8 +60,8 @@ def run_all_applysol(
     list
         Calibrated target scans
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
@@ -124,14 +124,16 @@ def run_all_applysol(
         ####################################
         print(f"Total ms list: {len(mslist)}")
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                1024**3
+            )  # In GB
             njobs = min(total_cpu, len(mslist))
             n_threads = max(1, int(total_cpu / njobs))
             mem_limit = total_mem / njobs
-            cpu_frac=-1
-            mem_frac=-1
+            cpu_frac = -1
+            mem_frac = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print(f"CPU per worker: {n_threads}")
@@ -139,12 +141,12 @@ def run_all_applysol(
             print("#################################")
         else:
             njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads=-1
-            mem_limit=-1
+            n_threads = -1
+            mem_limit = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print("#################################")
-            
+
         tasks = []
         msmd = msmetadata()
         for ms in mslist:
@@ -284,9 +286,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     # Get first MS from mslist for fallback directory creation
     mslist = mslist.split(",")
 

@@ -947,11 +947,11 @@ def selfcal_round(
     list
         Leakage informations [Q_leakage, U_leakage, V_leakage, Q_leakage_error, U_leakage_error, V_leakage_error]
     """
-    if cpu_frac>0:
-        ncpu = max(1, int(psutil.cpu_count()*cpu_frac))
-    if mem_frac>0:
-        mem = mem_frac*(psutil.virtual_memory().available)/(1024**3)
-        
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac > 0:
+        mem = mem_frac * (psutil.virtual_memory().available) / (1024**3)
+
     limit_threads(n_threads=ncpu)
     from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager
 

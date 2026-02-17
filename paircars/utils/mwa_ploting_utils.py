@@ -1032,9 +1032,9 @@ def make_mwa_overlay(
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     logging.getLogger("reproject.common").setLevel(logging.WARNING)
 
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
-        
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+
     @delayed
     def reproject_map(smap, target_header):
         with SphericalScreen(smap.observer_coordinate):

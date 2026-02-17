@@ -59,8 +59,8 @@ def make_solar_DS(
     str
         Plot file name
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
     total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
     total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
 
@@ -71,7 +71,7 @@ def make_solar_DS(
     print("##############################################")
 
     scheduler_name = get_scheduler_name()
-    if scheduler_name=="local":
+    if scheduler_name == "local":
         ########################################
         # Number of worker limit based on memory
         ########################################
@@ -81,8 +81,8 @@ def make_solar_DS(
         max_njobs = int(mem_limit / per_job_mem)
         njobs = max(1, min(max_njobs, len(mslist)))
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
-        cpu_frac=-1
-        mem_frac=-1
+        cpu_frac = -1
+        mem_frac = -1
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
@@ -93,16 +93,20 @@ def make_solar_DS(
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print("#################################")
-        n_threads=-1
-        mem_limit=-1
-        
+        n_threads = -1
+        mem_limit = -1
+
     try:
         ###########################################
         tasks = []
         for msname in mslist:
             tasks.append(
                 delayed(calc_dynamic_spectrum)(
-                    msname, metafits, f"{outdir}/dynamic_spectra", nthreads=n_threads, cpu_frac=cpu_frac
+                    msname,
+                    metafits,
+                    f"{outdir}/dynamic_spectra",
+                    nthreads=n_threads,
+                    cpu_frac=cpu_frac,
                 )
             )
         results = []
@@ -196,9 +200,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":

@@ -90,9 +90,9 @@ def split_target_scans(
         Splited ms list
     """
     try:
-        cpu_frac = min(0.8,cpu_frac)
-        mem_frac = min(0.8,mem_frac)
-    
+        cpu_frac = min(0.8, cpu_frac)
+        mem_frac = min(0.8, mem_frac)
+
         os.chdir(workdir)
         #######################################
         # Extracting time frequency information
@@ -137,23 +137,25 @@ def split_target_scans(
             total_chunks = 1
 
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                1024**3
+            )  # In GB
             njobs = max(1, min(total_cpu, total_chunks))
             n_threads = max(1, int(total_cpu / njobs))
-            cpu_frac=-1
-            mem_frac=-1
+            cpu_frac = -1
+            mem_frac = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print(f"CPU per worker: {n_threads}")
             print("#################################")
         else:
             njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads=-1
+            n_threads = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
-            print("#################################")       
+            print("#################################")
 
         tasks = []
         splited_ms_list = []
@@ -277,9 +279,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-        
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":

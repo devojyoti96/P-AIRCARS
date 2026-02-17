@@ -4,7 +4,9 @@ from paircars.utils import *
 
 
 def cli():
-    parser = argparse.ArgumentParser(description="Manage a local Prefect server. Only for single-node work station.")
+    parser = argparse.ArgumentParser(
+        description="Manage a local Prefect server. Only for single-node work station."
+    )
     subparsers = parser.add_subparsers(dest="command", help="Sub-command help")
     # Start
     start_parser = subparsers.add_parser("start", help="Start the Prefect server")
@@ -31,7 +33,7 @@ def cli():
         parser.print_help(sys.stderr)
         sys.exit(1)
     args = parser.parse_args()
-    
+
     scheduler_name = get_scheduler_name()
     if scheduler_name == "local":
         if args.command == "start":
@@ -51,9 +53,11 @@ def cli():
         else:
             parser.print_help()
     else:
-        print("We are in multi-node cluster architechture. Prefect server mode will not work. We recomment setup and use remote logging facility.")
+        print(
+            "We are in multi-node cluster architechture. Prefect server mode will not work. We recomment setup and use remote logging facility."
+        )
         parser.print_help()
-        
+
 
 if __name__ == "__main__":
     cli()

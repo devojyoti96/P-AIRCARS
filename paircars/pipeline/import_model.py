@@ -42,9 +42,9 @@ def import_hyperdrive_model(
     verbose : bool, optional
         Verbose output or not
     """
-    cpu_frac = min(0.8,cpu_frac)
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
+    cpu_frac = min(0.8, cpu_frac)
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if datadir is None:
         print("Please setup P-AIRCARS first.")
         return
@@ -230,9 +230,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -257,21 +257,21 @@ def main(
                 "ds_plot", logfile, jobname=jobname, password=password
             )
     if observer == None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")    
-        
+        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+
     scheduler_name = get_scheduler_name()
-    if scheduler_name=="local" or dask_client is None:
+    if scheduler_name == "local" or dask_client is None:
         ms_sizes = [get_ms_size(ms) for ms in mslist]
         per_job_mem = 2 * max(ms_sizes)
         mem_limit = (psutil.virtual_memory().available * mem_frac) / (1024**3)
         max_njobs = int(mem_limit / per_job_mem)
         njobs = max(1, min(max_njobs, len(mslist)))
-        cpu_frac=-1
-        mem_frac=-1
+        cpu_frac = -1
+        mem_frac = -1
     else:
-        njobs=1
+        njobs = 1
     ncpu = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
-    
+
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
@@ -280,7 +280,7 @@ def main(
         )
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
         scale_worker_and_wait(dask_cluster, nworker + 1)
- 
+
     try:
         if len(mslist) > 0:
             tasks = []

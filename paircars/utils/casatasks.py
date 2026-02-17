@@ -58,8 +58,8 @@ def reset_weights_and_flags(
     force_reset : bool, optional
         Force reset
     """
-    if cpu_frac>0:
-        n_threads = max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
 
@@ -145,8 +145,8 @@ def single_mstransform(
     str
         Output measurement set name
     """
-    if cpu_frac>0:
-        n_threads = max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
     limit_threads(n_threads=n_threads)
     from casatasks import mstransform, initweights, flagdata

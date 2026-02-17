@@ -118,14 +118,14 @@ def perform_imaging(
     list
         List of images [[images],[models],[residuals]]
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
-    if mem_frac>0:
-        mem = mem_frac*psutil.virtual_memory().available/(1024**3)
-        
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac > 0:
+        mem = mem_frac * psutil.virtual_memory().available / (1024**3)
+
     if os.path.exists(logfile):
         os.system(f"rm -rf {logfile}")
     logger, logfile = create_logger(
@@ -625,9 +625,9 @@ def run_all_imaging(
     int
         Success message
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = sorted(mslist)
     ###########################
     # WSClean container
@@ -728,9 +728,11 @@ def run_all_imaging(
             total_fd = 1
 
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                1024**3
+            )  # In GB
             #################################
             # Determining per worker resource
             #################################
@@ -738,8 +740,8 @@ def run_all_imaging(
             njobs = max(1, min(total_cpu, njobs))
             n_threads = max(1, int(total_cpu / njobs))
             mem_limit = total_mem / njobs
-            cpu_frac=-1
-            mem_frac=-1
+            cpu_frac = -1
+            mem_frac = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print(f"CPU per worker: {n_threads}")
@@ -748,8 +750,8 @@ def run_all_imaging(
             #########################################
         else:
             njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads=-1
-            mem_limit=-1
+            n_threads = -1
+            mem_limit = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print("#################################")
@@ -947,9 +949,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":

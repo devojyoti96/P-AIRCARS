@@ -75,9 +75,9 @@ def run_pbcor(
     int
         Success message
     """
-    cpu_frac = min(0.8,cpu_frac)
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
+    cpu_frac = min(0.8, cpu_frac)
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     freq = get_fits_freq(imagename)
     outfile = f"{pbcor_dir}/{os.path.basename(imagename).split('.fits')[0]}_pbcor.fits"
     pbfile = f"{pbdir}/freq_{freq}.npy"
@@ -157,9 +157,9 @@ def pbcor_all_images(
     int
         Success message
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     imagedir = imagedir.rstrip("/")
     pbdir = f"{os.path.dirname(imagedir)}/pbdir"
     pbcor_dir = f"{os.path.dirname(imagedir)}/pbcor_images"
@@ -189,16 +189,18 @@ def pbcor_all_images(
         # Number of worker limit based on memory
         ########################################
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                1024**3
+            )  # In GB
             mem_limit = (
                 16.0 * max([os.path.getsize(image) for image in images]) / 1024**3
             )  # In GB
             njobs = max(1, min(total_cpu, int(total_mem / mem_limit)))
             n_threads = max(1, int(total_cpu / njobs))
-            cpu_frac=-1
-            mem_frac=-1
+            cpu_frac = -1
+            mem_frac = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print(f"CPU per worker: {n_threads}")
@@ -206,12 +208,12 @@ def pbcor_all_images(
             print("#################################")
         else:
             njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads=-1
-            mem_limit=-1
+            n_threads = -1
+            mem_limit = -1
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print("#################################")
-                       
+
         ###########################################
         if len(first_set) > 0:
             tasks = []
@@ -402,9 +404,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     ############
     # Logger
     ############
@@ -430,7 +432,7 @@ def main(
             mem_frac=mem_frac,
         )
         nworker = max(2, int(psutil.cpu_count() * cpu_frac))
-        scale_worker_and_wait(dask_cluster, nworker+1)
+        scale_worker_and_wait(dask_cluster, nworker + 1)
 
     try:
         if os.path.exists(imagedir):

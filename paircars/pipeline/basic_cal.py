@@ -199,14 +199,14 @@ def single_ms_cal_and_flag(
     str
         Caltables
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
-    if cpu_frac>0:
-        n_threads = max(1, int(psutil.cpu_count()*cpu_frac))
-    if mem_frac>0:
-        mem_limit = mem_frac*psutil.virtual_memory().available/(1024**3)
-        
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
+    if cpu_frac > 0:
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac > 0:
+        mem_limit = mem_frac * psutil.virtual_memory().available / (1024**3)
+
     try:
         caltable_prefix = (
             f"{workdir}/{os.path.basename(msname).split('.ms')[0]}_caltable"
@@ -385,18 +385,18 @@ def single_round_cal_and_flag(
     dict
         A python dictionary cotaining measurement set name and its caltables
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     scheduler_name = get_scheduler_name()
-    if scheduler_name=="local":
+    if scheduler_name == "local":
         njobs = len(mslist)
         total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
         total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
         n_threads = max(1, int(total_cpu / njobs))
         mem_limit = total_mem / njobs
-        cpu_frac=-1
-        mem_frac=-1
+        cpu_frac = -1
+        mem_frac = -1
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
@@ -404,12 +404,12 @@ def single_round_cal_and_flag(
         print("#################################")
     else:
         njobs = len(dask_client.scheduler_info()["workers"])
-        n_threads=-1
-        mem_limit=-1
+        n_threads = -1
+        mem_limit = -1
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print("#################################")
-                       
+
     tasks = [
         delayed(single_ms_cal_and_flag)(
             msname,
@@ -485,9 +485,9 @@ def run_basic_cal_rounds(
     list
         Caltables
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     try:
         from casatasks import flagdata
 
@@ -640,9 +640,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":

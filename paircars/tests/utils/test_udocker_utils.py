@@ -10,10 +10,10 @@ from paircars.utils.udocker_utils import *
 @pytest.mark.parametrize(
     "datadir, exists_datadir, exists_tarball, should_set",
     [
-        (None, False, False, False),          # datadir None
+        (None, False, False, False),  # datadir None
         ("/mock/data", False, False, False),  # datadir missing
-        ("/mock/data", True, False, False),   # tarball missing
-        ("/mock/data", True, True, True),     # success case
+        ("/mock/data", True, False, False),  # tarball missing
+        ("/mock/data", True, True, True),  # success case
     ],
 )
 @patch("paircars.utils.udocker_utils.os.makedirs")

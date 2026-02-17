@@ -216,8 +216,8 @@ def all_sky_beam_interpolator(
     numpy.array
         All sky primary beam Jones array
     """
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -338,8 +338,8 @@ def get_jones_array(
     numpy.array
         Jones array (shape : coordinate_arr_shape, 2 ,2)
     """
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -461,8 +461,8 @@ def get_pb_radec(
     float
         YY power beam value
     """
-    if cpu_frac>0:
-        ncpu = max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -770,7 +770,9 @@ def makeAZZA_dOMEGA(npix, projection="SIN"):
     return az, za, n_total, dOMEGA
 
 
-def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, cpu_frac=-1, baseline=[]):
+def get_fringe(
+    msname, freq, metafits, resolution=1, n_threads=1, cpu_frac=-1, baseline=[]
+):
     """
     Function to calculate all sky fringe of a baseline
 
@@ -796,8 +798,8 @@ def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, cpu_frac=-1, b
     np.array
         All-sky fringe array in sky coornidinate
     """
-    if cpu_frac>0:
-        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     try:
         msname = msname.rstrip("/")
         baseline_str = str(baseline[0]) + "&&" + str(baseline[1])
@@ -918,8 +920,8 @@ def make_primarybeammap(
     float
         Total beam area (YY)
     """
-    if cpu_frac>0:
-        n_threads=max(1,int(psutil.cpu_count()*cpu_frac))
+    if cpu_frac > 0:
+        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     warnings.filterwarnings("ignore")
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars

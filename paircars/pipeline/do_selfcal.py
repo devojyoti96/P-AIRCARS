@@ -116,14 +116,14 @@ def do_selfcal(
     str
         Final caltable
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
-    if cpu_frac>0:
-        npcu = max(1,int(psutil.cpu_count()*cpu_frac))
-    if mem_frac>0:
-        mem = mem_frac*psutil.virtual_memory().available/(1024**3)
-        
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
+    if cpu_frac > 0:
+        npcu = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac > 0:
+        mem = mem_frac * psutil.virtual_memory().available / (1024**3)
+
     limit_threads(n_threads=ncpu)
     from casatasks import split, flagdata, flagmanager
 
@@ -702,14 +702,14 @@ def do_polselfcal(
     str
         Final caltable
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
-    if cpu_frac>0:
-        npcu = max(1,int(psutil.cpu_count()*cpu_frac))
-    if mem_frac>0:
-        mem = mem_frac*psutil.virtual_memory().available/(1024**3)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
+    if cpu_frac > 0:
+        npcu = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac > 0:
+        mem = mem_frac * psutil.virtual_memory().available / (1024**3)
+
     limit_threads(n_threads=ncpu)
     from casatasks import split, flagdata, flagmanager
 
@@ -1249,9 +1249,9 @@ def main(
     cachedir = get_cachedir()
     save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
 
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+
     mslist = mslist.split(",")
 
     if workdir == "":
@@ -1365,7 +1365,7 @@ def main(
                 return 1
             else:
                 scheduler_name = get_scheduler_name()
-                if scheduler_name=="local":
+                if scheduler_name == "local":
                     for ms in mslist:
                         msmd = msmetadata()
                         msmd.open(ms)
@@ -1398,12 +1398,12 @@ def main(
                     print(f"CPU per worker: {n_threads}")
                     print(f"Memory per worker: {round(mem_limit,2)} GB")
                     print("#################################")
-                    cpu_frac=-1
-                    mem_frac=-1
+                    cpu_frac = -1
+                    mem_frac = -1
                 else:
                     njobs = len(dask_client.scheduler_info()["workers"])
-                    n_threads=-1
-                    mem_limit=-1
+                    n_threads = -1
+                    mem_limit = -1
                     print("#################################")
                     print(f"Total dask worker: {njobs}")
                     print("#################################")
