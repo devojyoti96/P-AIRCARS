@@ -20,9 +20,9 @@ Solar radio data presents unique challenges due to the high variability and brig
 
 ## Documentation
 
-P-AIRCARS documentation is available at: [paircars.readthedocs.io]
+P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
 
-[paircars.readthedocs.io]: https://p-aircars.readthedocs.io 
+[p-aircars.readthedocs.io]: https://p-aircars.readthedocs.io 
 
 ## Quickstart
 
