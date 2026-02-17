@@ -1283,7 +1283,7 @@ def run_make_overlay(
     return 0
 
 
-def send_task_notification(emails, msg, jobid, logger_timestamp):
+def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
     """
     Send notification after each task is finished
 
@@ -1295,10 +1295,12 @@ def send_task_notification(emails, msg, jobid, logger_timestamp):
         Notification message
     jobid : int
         JobID
+    obsid : int
+        Observation ID
     logger_timestamp : str
         Logger timestamp
     """
-    email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}"
+    email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
     email_msg = (
         f"P-AIRCARS user,\n\n"
         f"P-AIRCARS Job ID: {jobid}\n\n"
@@ -1647,7 +1649,7 @@ def master_control(
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             if emails != "":
-                email_subject = f"P-AIRCARS Logger Details: {timestamp}"
+                email_subject = f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
 
                 email_msg = (
                     f"P-AIRCARS user,\n\n"
@@ -1682,7 +1684,7 @@ def master_control(
                 "#############################################################################"
             )
             if emails != "":
-                email_subject = f"P-AIRCARS Logger Details: {timestamp}"
+                email_subject = f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
 
                 email_msg = (
                     f"P-AIRCARS user,\n\n"
@@ -1840,13 +1842,13 @@ def master_control(
                 msg = future_movecenter.result()
                 if emails != "":
                     email_msg = "Moving phasecenter to solar center is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print("!!! WARNING : Error in moving phasecenter to solar center. !!!")
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in moving phasecenter to solar center."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -1873,13 +1875,13 @@ def master_control(
                 msg = future_maskms.result()
                 if emails != "":
                     email_msg = "Making solar dynamic spectra are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print("!!! WARNING : Error in making dynamic spectra. !!!")
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in making dynamic spectra."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -1914,7 +1916,7 @@ def master_control(
                 msg = future_cal_split.result()
                 if emails != "":
                     email_msg = "Spliting of calibrator measurement sets are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in spliting calibrator measurement sets. !!!!"
@@ -1922,7 +1924,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Spliting calibrator measurement set is failed."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 has_cal = False
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
@@ -1958,7 +1960,7 @@ def master_control(
                 msg = future_flag.result()
                 if emails != "":
                     email_msg = "Flagging of calibrator is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
@@ -1966,7 +1968,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error in flagging calibrators."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -1993,7 +1995,7 @@ def master_control(
                 msg = future_import_model.result()
                 if emails != "":
                     email_msg = "Model import for calibrator is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in importing calibrator models. Not continuing calibration. !!!!"
@@ -2001,7 +2003,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in importing model for calibrators. Not using calibrator solutions."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 has_cal = False
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
@@ -2030,7 +2032,7 @@ def master_control(
                 msg = future_basical.result()
                 if emails != "":
                     email_msg = "Basic calibration is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in basic calibration. Starting without basic calibration. !!!!"
@@ -2038,7 +2040,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in basic calibration."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 has_cal = False
             finally:
                 scale_worker_and_wait(dask_cluster, nworker)
@@ -2070,7 +2072,7 @@ def master_control(
                 has_cal = False
                 if emails != "":
                     email_msg = "No bandpass calibration table is found."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
         else:
             has_cal = False
 
@@ -2134,7 +2136,7 @@ def master_control(
                     email_msg = (
                         "Spliting of measurement sets for self-calibration is done."
                     )
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
@@ -2143,7 +2145,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in spliting target measurement sets for self-calibration."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -2158,7 +2160,7 @@ def master_control(
             do_selfcal = False
             if emails != "":
                 email_msg = "No splited measurement set is found for self-calibration. Not continuting for self-calibration."
-                send_task_notification(emails, email_msg, jobid, timestamp)
+                send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
         if do_selfcal:
             print("Checking measurement sets before spawning self-calibrations....")
             filtered_mslist = []  # Filtering in case any ms is corrupted
@@ -2177,7 +2179,7 @@ def master_control(
                 do_selfcal = False
                 if emails != "":
                     email_msg = "No splited measurement set is found for self-calibration. Not continuting for self-calibration."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             print(f"Selfcal mslist : {[os.path.basename(i) for i in selfcal_mslist]}")
 
         #########################################################
@@ -2211,7 +2213,7 @@ def master_control(
                     email_msg = (
                         "Flagging for self-calibration measurment sets are done."
                     )
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
@@ -2221,7 +2223,7 @@ def master_control(
                     email_msg = (
                         "Error occured in flagging self-calibration measurement sets."
                     )
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
 
             ###################################
             # Apply basic calibration
@@ -2248,7 +2250,7 @@ def master_control(
                 cal_applied = True
                 if emails != "":
                     email_msg = "Applying basic calibration solution on self-calibration measurement sets are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
@@ -2259,7 +2261,7 @@ def master_control(
                 do_applycal = False
                 if emails != "":
                     email_msg = "Error occured in applying basic calibration solutions on self-calibration measurement sets."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -2294,13 +2296,13 @@ def master_control(
                     msg = future_sidereal_cor_selfcal.result()
                     if emails != "":
                         email_msg = "Correction for solar sidereal motion is done."
-                        send_task_notification(emails, email_msg, jobid, timestamp)
+                        send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 except Exception as e:
                     print("Sidereal correction is not successful.")
                     traceback.print_exc()
                     if emails != "":
                         email_msg = "Error occured in sidereal motion correction."
-                        send_task_notification(emails, email_msg, jobid, timestamp)
+                        send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 finally:
                     scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -2333,7 +2335,7 @@ def master_control(
                 msg = future_selfcal.result()
                 if emails != "":
                     email_msg = "Self-calibration is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
@@ -2342,7 +2344,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in self-calibration."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -2359,7 +2361,7 @@ def master_control(
             do_apply_selfcal = False
             if emails != "":
                 email_msg = "Self-calibration is not performed and no self-calibration caltable is available."
-                send_task_notification(emails, email_msg, jobid, timestamp)
+                send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
 
         ###########################################
         # Plotting self-caltables
@@ -2410,13 +2412,13 @@ def master_control(
                 msg = future_split.result()
                 if emails != "":
                     email_msg = "Spliting target for final processing is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print("!!!! WARNING: Error in spliting targets. !!!!")
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in spliting target for final processing."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 return 1
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
@@ -2429,7 +2431,7 @@ def master_control(
                     email_msg = (
                         "No target measurement set is present for final processing."
                     )
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 return 1
 
             ####################################
@@ -2451,7 +2453,7 @@ def master_control(
                 print("No filtered target ms are available in work directory.")
                 if emails != "":
                     email_msg = "No un-corrupted target measurement is present for final processing."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 return 1
 
             if do_applycal or do_imaging:
@@ -2487,7 +2489,7 @@ def master_control(
                 msg = future_flag.result()
                 if emails != "":
                     email_msg = "Flagging of final target measurement sets are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
@@ -2497,7 +2499,7 @@ def master_control(
                     email_msg = (
                         "Error occured in flagging of final target measurement sets."
                     )
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
 
             ####################################
             # Applying basic calibration
@@ -2523,7 +2525,7 @@ def master_control(
                 msg = future_apply_basical.result()
                 if emails != "":
                     email_msg = "Applying basic calibration solutions on final target measurement sets are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in applying basic calibration solutions on target scans. Not continuing further.!!!!"
@@ -2531,7 +2533,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in applying basic calibration on final target measurement sets. P-AIRCARS has stopped."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 return 1
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
@@ -2555,13 +2557,13 @@ def master_control(
                     msg = future_sidereal_cor.result()
                     if emails != "":
                         email_msg = "Sidereal motion correction of the Sun on final target measurement sets are done."
-                        send_task_notification(emails, email_msg, jobid, timestamp)
+                        send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 except Exception as e:
                     print("!!!! WARNING: Error in applying sidereal correction.!!!!")
                     traceback.print_exc()
                     if emails != "":
                         email_msg = "Error occured in sidereal motion correction on final target measurement sets."
-                        send_task_notification(emails, email_msg, jobid, timestamp)
+                        send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 finally:
                     scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -2591,7 +2593,7 @@ def master_control(
                 msg = future_apply_selfcal.result()
                 if emails != "":
                     email_msg = "Applying self-calibration on final target measurement sets are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in applying self-calibration solutions on targets. !!!!"
@@ -2599,7 +2601,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in applying self-calibration solutions on final target measurement sets."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
 
@@ -2652,7 +2654,7 @@ def master_control(
                 msg = future_imaging.result()
                 if emails != "":
                     email_msg = "Final imaging is done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print(
                     "!!!! WARNING: Final imaging on all measurement sets is not successful. Check the image directory. !!!!"
@@ -2660,7 +2662,7 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error occured in final imaging. P-AIRCARS has stopped."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 return 1
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
@@ -2713,7 +2715,7 @@ def master_control(
                     msg = future_pbcor.result()
                     if emails != "":
                         email_msg = "Primary beam correction is done."
-                        send_task_notification(emails, email_msg, jobid, timestamp)
+                        send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 except Exception as e:
                     print(
                         "!!!! WARNING: Primary beam corrections of the final images are not successful. !!!!"
@@ -2721,7 +2723,7 @@ def master_control(
                     traceback.print_exc()
                     if emails != "":
                         email_msg = "Error occured in primary beam correction. P-AIRCARS has stopped."
-                        send_task_notification(emails, email_msg, jobid, timestamp)
+                        send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                     return 1
                 finally:
                     scale_worker_and_wait(dask_cluster, current_worker)
@@ -2745,7 +2747,7 @@ def master_control(
                 msg = future_overlay.result()
                 if emails != "":
                     email_msg = "Making overlays are done."
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
             except Exception as e:
                 print("!!!! WARNING: Overlay of the images are not successful. !!!!")
                 traceback.print_exc()
@@ -2753,7 +2755,7 @@ def master_control(
                     email_msg = (
                         "Error occured in making overlays. P-AIRCARS has stopped."
                     )
-                    send_task_notification(emails, email_msg, jobid, timestamp)
+                    send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
                 return 1
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
@@ -2826,7 +2828,7 @@ def master_control(
         )
         if emails != "":
             email_msg = "P-AIRCARS processing is done successfully."
-            send_task_notification(emails, email_msg, jobid, timestamp)
+            send_task_notification(emails, msg, jobid,target_obsid,logger_timestamp)
         return 0
     except Exception as e:
         traceback.print_exc()
