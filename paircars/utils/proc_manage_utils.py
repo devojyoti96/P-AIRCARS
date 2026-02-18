@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 import shutil
+import yaml
+import socket
 from pathlib import Path
 from dask import delayed, compute, config
 from dask.distributed import Client, LocalCluster
@@ -311,33 +313,6 @@ def wait_for_dask_workers(client, min_worker=1, timeout=60):
     client.wait_for_workers(n_workers=min_worker, timeout=timeout)
 
 
-def get_scheduler_name():
-    """
-    Get job scheduler available
-
-    Returns
-    -------
-    str
-        Scheduler name (local, pbs, slurm)
-    """
-    if shutil.which("sbatch"):
-        return "slurm"
-    elif shutil.which("bsub"):
-        return "lsf"
-    elif shutil.which("qhost"):
-        return "sge"
-    elif shutil.which("qsub"):
-        return "pbs"
-    elif shutil.which("condor_submit"):
-        return "htcondor"
-    elif shutil.which("msub"):
-        return "mab"
-    elif shutil.which("oarsub"):
-        return "oar"
-    else:
-        return "local"
-
-
 def get_local_dask_cluster(
     dask_dir,
     mem_frac=0.8,
@@ -416,9 +391,290 @@ def get_local_dask_cluster(
     return client, cluster, dask_dir
 
 
-def get_slurm_dask_cluster(
-    config_yaml,
+def detect_best_interface():
+    """
+    Automatically detect best network interface for Dask.
+
+    Returns
+    -------
+    str
+        Best interface
+    """
+    interfaces = psutil.net_if_addrs().keys()
+    for iface in interfaces:
+        if iface.startswith("ib"):
+            return iface
+    for iface in interfaces:
+        if iface.startswith(("eth", "en")):
+            return iface
+    for iface in interfaces:
+        if (
+            iface != "lo"
+            and not iface.startswith("wl")
+            and not iface.startswith("docker")
+            and not iface.startswith("veth")
+            and not iface.startswith("br")
+        ):
+            return iface
+    return None
+
+
+def get_scheduler_name():
+    """
+    Get job scheduler available
+
+    Returns
+    -------
+    str
+        Scheduler name (local, pbs, slurm)
+    """
+    if shutil.which("sbatch"):
+        return "slurm"
+    elif shutil.which("bsub"):
+        return "lsf"
+    elif shutil.which("qhost"):
+        return "sge"
+    elif shutil.which("qsub"):
+        return "pbs"
+    elif shutil.which("condor_submit"):
+        return "htcondor"
+    elif shutil.which("msub"):
+        return "mab"
+    elif shutil.which("oarsub"):
+        return "oar"
+    else:
+        return "local"
+
+
+def get_total_nodes(partition=None):
+    """
+    Get total nodes
+
+    Parameters
+    ----------
+    partitiion : str, optional
+        Partition or queue (depending on type of scheduler)
+
+    Returns
+    -------
+    int
+        Total node number
+    """
+    if partition is None:
+        print("No partition is given. Providing nodes of entire cluster.")
+    scheduler_name = get_scheduler_name()
+    if scheduler_name == "slurm":
+        if partition is None:
+            cmd = f"sinfo -h -o '%D'"
+        else:
+            cmd = f"sinfo -p {partition} -h -o '%D'"
+        output = subprocess.check_output(cmd, shell=True).decode().strip().split()
+        return sum(int(x) for x in output)
+    elif scheduler_name == "pbs":
+        if partition is None:
+            cmd = "pbsnodes -a | grep 'Mom =' | wc -l"
+        else:
+            cmd = f"pbsnodes -a | grep 'queue = {partition}' | wc -l"
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        return int(output)
+    elif scheduler_name == "lsf":
+        cmd = "bhosts -noheader | wc -l"
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        return int(output)
+    elif scheduler_name == "sge":
+        cmd = "qhost | grep lx | wc -l"
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        return int(output)
+    elif scheduler_name == "htcondor":
+        cmd = "condor_status -noheader | wc -l"
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        return int(output)
+    elif scheduler_name == "oar":
+        if partition:
+            cmd = f"oarnodes -l | grep {partition} | wc -l"
+        else:
+            cmd = "oarnodes -s | grep Alive | wc -l"
+
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        return int(output)
+    elif scheduler_name == "moab":
+        cmd = "mdiag -n"
+        output = subprocess.check_output(cmd, shell=True).decode()
+        for line in output.splitlines():
+            if "Total Nodes" in line:
+                return int(line.split(":")[1].strip())
+        return
+    elif scheduler_name == "local":
+        return 1
+    else:
+        return None
+
+
+def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
+    """
+    Get node resources for SLURM cluster
+
+    Parameters
+    ----------
+    partition : str, optional
+        Partition name
+    cpu_frac : float, optional
+        CPU fraction to use
+    mem_frac : float, optional
+        Memory fraction to use
+
+    Returns
+    -------
+    int
+        Number of CPU threads
+    float
+        Memory in GB
+    """
+    if partition is not None:
+        cmd = ["sinfo", "-h", "-p", partition, "-o", "%c %m"]
+    else:
+        cmd = ["sinfo", "-h", "-o", "%c %m"]
+    out = subprocess.check_output(cmd).decode().strip().split("\n")
+    cores = []
+    mems = []
+    for line in out:
+        c, m = line.split()
+        cores.append(int(c.rstrip("+")))
+        mems.append(int(m.rstrip("+")))
+    total_cpu = min(cores)
+    total_mem = min(mems) / (1024)  # In GB
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+    ncpu = max(1, int(total_cpu * cpu_frac))
+    mem = total_mem * mem_frac
+    return ncpu, mem
+
+
+def create_slurm_config(
+    output_path,
     dask_dir,
+    log_dir,
+    cpu_frac=0.8,
+    mem_frac=0.8,
+    partition=None,
+    account=None,
+    project=None,
+    walltime="24:00:00",
+    job_name="paircars",
+    python_path=None,
+    exclusive=True,
+):
+    """
+    Create a SLURMCluster Dask YAML configuration file.
+
+    Parameters
+    ----------
+    output_path : str
+        Path where YAML file will be written
+    dask_dir : str
+        Slurm/Dask local directory to spill
+    log_dir : str
+        SLURM log directory (Not task log directory)
+    cpu_frac : float, optional
+        CPU fraction to use
+    mem_frac : float, optional
+        Memory fraction to use
+    partition : str, optional
+        SLURM partition name
+        Note: If your cluster requires this, you should provide. Otherwise, error will occur.
+    account : str, optional
+        SLURM account name
+        Note: If your cluster requires this, you should provide. Otherwise, error will occur.
+    project : str, optional
+        SLURM project code (if required)
+    walltime : str, optional
+        Job walltime, maximum time the SLURM job can run (HH:MM:SS)
+    job_name : str, optional
+        SLURM job name
+    log_directory : str, optional
+        Directory for SLURM logs
+    local_directory : str, optional
+        Worker scratch directory
+    interface : str, optional
+        Network interface (e.g., 'ib0', 'eth0')
+    python_path : str, optional
+        Explicit python executable (default: current python)
+    exclusive : bool
+        Whether to request exclusive node allocation
+
+    Returns
+    -------
+    str
+        Path to generated YAML file
+    """
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+    ncpu, mem = get_slurm_node_resources(
+        partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
+    )
+    if python_path is None:
+        python_path = sys.executable
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+    job_extra = [
+        f"--nodes=1",
+        f"--ntasks=1",
+        f"--cpus-per-task={ncpu}",
+        f"--mem={mem}G",
+    ]
+    if exclusive:
+        job_extra.append("--exclusive")
+    if log_directory:
+        job_extra.extend(
+            [
+                f"--output={log_dir}/dask-%j.out",
+                f"--error={log_dir}/dask-%j.err",
+            ]
+        )
+    config = {
+        "jobqueue": {
+            "slurm": {
+                "queue": partition,
+                "cores": ncpu,
+                "processes": 1,
+                "memory": mem,
+                "walltime": walltime,
+                "job-name": job_name,
+                "python": python_path,
+                "job-extra": job_extra,
+                "env-extra": [
+                    "OMP_NUM_THREADS=1",
+                    "MKL_NUM_THREADS=1",
+                    "OPENBLAS_NUM_THREADS=1",
+                    "NUMEXPR_NUM_THREADS=1",
+                    "MALLOC_TRIM_THRESHOLD_=0",
+                ],
+            }
+        }
+    }
+    interface = detect_best_interface()
+    if account:
+        config["jobqueue"]["slurm"]["account"] = account
+    if project:
+        config["jobqueue"]["slurm"]["project"] = project
+    if interface:
+        config["jobqueue"]["slurm"]["interface"] = interface
+    if dask_dir:
+        config["jobqueue"]["slurm"]["local-directory"] = dask_dir
+    with open(output_path, "w") as f:
+        yaml.dump(config, f, sort_keys=False)
+    return output_path
+
+
+def get_slurm_dask_cluster(
+    dask_dir,
+    jobid=None,
+    cpu_frac=0.8,
+    mem_frac=0.8,
+    partition=None,
+    account=None,
+    project=None,
+    walltime="24:00:00",
     spill_frac=0.7,
     verbose=True,
 ):
@@ -427,10 +683,24 @@ def get_slurm_dask_cluster(
 
     Parameters
     ----------
-    config_yaml : str
-        Path to Dask SLURMCluster YAML configuration
     dask_dir : str
         Dask working directory (for temporary files)
+    jobid : int
+        JobID of P-AIRCARS to avoid mixup of cluster configurration with other P-AIRCARS jobs.
+    cpu_frac : float, optional
+        CPU fraction to use
+    mem_frac : float, optional
+        Memory fraction to use
+    partition : str, optional
+        SLURM partition name
+        Note: If your cluster requires this, you should provide. Otherwise, error will occur.
+    account : str, optional
+        SLURM account name
+        Note: If your cluster requires this, you should provide. Otherwise, error will occur.
+    project : str, optional
+        SLURM project code (if required)
+    walltime : str, optional
+        Job walltime, maximum time the SLURM job can run (HH:MM:SS)
     spill_frac : float
         Fraction of memory to spill to disk
     verbose : bool
@@ -447,6 +717,29 @@ def get_slurm_dask_cluster(
     """
     logging.getLogger("distributed").setLevel(logging.ERROR)
 
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+    if jobid is None:
+        jobid = get_jobid()
+
+    output_path = f"{dask_dir}/slurm_config_{jobid}.yaml"
+    log_dir = f"{dask_dir}/slurm_log_{jobid}"
+    os.makedirs(log_dir, exist_ok=True)
+
+    slurm_config_yaml = create_slurm_config(
+        output_path,
+        dask_dir,
+        log_dir,
+        cpu_frac=cpu_frac,
+        mem_frac=mem_frac,
+        partition=partition,
+        account=account,
+        project=project,
+        walltime=walltime,
+        job_name=f"paircars_{jobid}",
+        exclusive=True,
+    )
+
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
@@ -461,12 +754,10 @@ def get_slurm_dask_cluster(
         }
     )
 
-    # Load cluster config from YAML
-    with open(config_yaml, "r") as f:
+    with open(slurm_config_yaml, "r") as f:
         cluster_config = yaml.safe_load(f)
     dask.config.update(cluster_config, priority="new")
 
-    # Initialize SLURM cluster
     cluster = SLURMCluster(
         local_directory=dask_dir_tmp,
         env_extra=[
@@ -474,12 +765,10 @@ def get_slurm_dask_cluster(
             f"TMP={dask_dir_tmp}",
             f"TEMP={dask_dir_tmp}",
             f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
-            "MALLOC_TRIM_THRESHOLD_=0",
             "PYTHONWARNINGS=ignore::UserWarning:contextlib",
         ],
     )
 
-    # Scale workers (1 per task/MS file ideally)
     cluster.scale(1)
     client = Client(cluster, heartbeat_interval="5s")
     client.run_on_scheduler(gc.collect)

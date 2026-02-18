@@ -3231,28 +3231,40 @@ def cli():
         dest="remote_logger",
         help="Disable remote logger",
     )
-
-    # === Advanced local system/ per node hardware resource parameters ===
-    advanced_hpc = parser.add_argument_group(
-        "###################\nAdvanced cluster environment settings\n###################"
-    )
-    advanced_hpc.add_argument(
+    advanced_resource.add_argument(
         "--cluster",
         action="store_true",
         dest="cluster",
         help="Running in cluster environment",
     )
-    advanced_hpc.add_argument(
-        "--nworker",
-        type=int,
-        default=-1,
-        help="Number of compute nodes to use",
+
+    # === Advanced job scheduler parameters ===
+    advanced_slurm = parser.add_argument_group(
+        "###################\nAdvanced slurm cluster settings\n###################"
     )
-    advanced_hpc.add_argument(
-        "--scheduler",
+    advanced_slurm.add_argument(
+        "--partition",
         type=str,
-        default="slurm",
-        help="Cluster job scheduler name (slurm, pbs)",
+        default=None,
+        help="Partition name (If your cluster requires this, you should provide. Otherwise job can not be started)",
+    )
+    advanced_slurm.add_argument(
+        "--account",
+        type=str,
+        default=None,
+        help="Account name (If your cluster requires this, you should provide. Otherwise job can not be started)",
+    )
+    advanced_slurm.add_argument(
+        "--project",
+        type=str,
+        default=None,
+        help="Project name (If your cluster requires this, you should provide. Otherwise job can not be started)",
+    )
+    advanced_slurm.add_argument(
+        "--walltime",
+        type=str,
+        default="24:00:00",
+        help="Wall time, each slurm job can execute in maximum this time",
     )
 
     if len(sys.argv) == 1:
@@ -3264,45 +3276,78 @@ def cli():
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
 
-    result = prefect_server_status()
-    if result is not True:
-        print("Prefect server is not running. Running pipeline in ephemeral mode.")
-    else:
-        homedir = os.environ.get("HOME")
-        if homedir is None:
-            homedir = os.path.expanduser("~")
-        username = os.getlogin()
-        cachedir = f"{homedir}/.paircarspipe"
-        ENV_FILE = f"{cachedir}/paircars_prefect.env"
-        load_dotenv(dotenv_path=ENV_FILE, override=False)
-
     os.system(f"rm -rf {args.workdir}/dask_*")
 
     ###############################################
     # Setup cluster environment
     ###############################################
-    if args.cluster is not True:
+    scheduler_name = get_scheduler_name()
+    jobid = get_jobid()
+    if args.cluster is True and scheduler_name == "local":
+        print(
+            "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
+        )
+        return
+    if args.cluster is not True and scheduler_name == "local":
+        ###################################################
+        # Running prefect server only for local environment
+        ###################################################
+        result = prefect_server_status()
+        if result is not True:
+            print("Prefect server is not running. Running pipeline in ephemeral mode.")
+        else:
+            homedir = os.environ.get("HOME")
+            if homedir is None:
+                homedir = os.path.expanduser("~")
+            username = os.getlogin()
+            cachedir = f"{homedir}/.paircarspipe"
+            ENV_FILE = f"{cachedir}/paircars_prefect.env"
+            load_dotenv(dotenv_path=ENV_FILE, override=False)
+        #######################################
+        # Set up local cluster
+        #######################################
         print("Setting up local cluster....")
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
             args.workdir,
             mem_frac=args.mem_frac,
         )
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
-        print(f"Total maximum dask workers: {nworker}")
         dask_addr = dask_client.scheduler.address
     else:
-        nworker = max(2, args.nworker)
-        print(f"Total maximum dask workers: {nworker}")
+        ############################################
+        # Stop prefect server in cluster environment
+        ############################################
+        result = prefect_server_status()
+        if result is True:
+            print("Stopping prefect server for cluster architecture.")
+            stop_prefect_server()
+        if scheduler_name == "slurm":
+            print("Setting up slurm cluster....")
+            dask_client, dask_cluster, dask_dir = get_slurm_dask_cluster(
+                args.workdir,
+                jobid=jobid,
+                cpu_frac=args.cpu_frac,
+                mem_frac=args.mem_frac,
+                partition=args.partition,
+                account=args.account,
+                project=args.project,
+                walltime=args.walltime,
+            )
+            nworker = get_total_nodes(partition=args.partition)
+        else:
+            print(
+                f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
+            )
+            return
 
     ##########################################
     # Starting pipeline
     ##########################################
     try:
-        print("########################################")
+        print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
-        jobid = get_jobid()
-
+        print(f"Total maximum dask workers: {nworker}")
         msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
