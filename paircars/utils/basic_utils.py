@@ -10,6 +10,7 @@ from datetime import datetime as dt
 from contextlib import contextmanager
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter1d
+from pathlib import Path
 
 
 ##########################
@@ -36,10 +37,7 @@ def get_cachedir():
     """
     Get cache directory
     """
-    homedir = os.environ.get("HOME")
-    if homedir is None:
-        homedir = os.path.expanduser("~")
-    username = os.getlogin()
+    homedir = os.path.expanduser("~")
     cachedir = f"{homedir}/.paircarspipe"
     os.makedirs(cachedir, exist_ok=True)
     os.makedirs(f"{cachedir}/pids", exist_ok=True)
