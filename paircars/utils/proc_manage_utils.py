@@ -648,7 +648,8 @@ def create_slurm_config(
                 "name": job_name,
                 "python": python_path,
                 "job-extra": job_extra,
-                "shared_temp_directory": dask_dir,
+                "death-timeout": 60,
+                "shared-temp-directory": dask_dir,
                 "env-extra": [
                     "OMP_NUM_THREADS=1",
                     "MKL_NUM_THREADS=1",
