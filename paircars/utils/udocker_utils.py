@@ -19,6 +19,7 @@ def set_udocker_env():
         or os.path.exists(datadir) is False
         or os.path.exists(f"{datadir}/udocker-englib-1.2.11.tar.gz") is False
     ):
+        print ("P-AIRCARS data directory and docker environment is not setup yet")
         return
     udocker_dir = f"{datadir}/udocker"
     os.makedirs(udocker_dir, exist_ok=True)
