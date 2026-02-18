@@ -157,14 +157,21 @@ def save_pid(pid, pid_file):
     pid_file : str
         File to save
     """
-    if os.path.exists(pid_file):
-        pids = np.loadtxt(pid_file, unpack=True, dtype="int")
-        pids = np.append(pids, pid)
-    else:
-        pids = np.array([int(pid)])
-    np.savetxt(pid_file, pids, fmt="%d")
-
-
+    try:
+        pid_file = os.path.abspath(pid_file)
+        os.makedirs(os.path.dirname(pid_file), exist_ok=True)
+        pids = []
+        if os.path.exists(pid_file):
+            with open(pid_file, "r") as f:
+                pids = [int(line.strip()) for line in f if line.strip()]
+        pids.append(int(pid))
+        with open(pid_file, "w") as f:
+            for p in pids:
+                f.write(f"{p}\n")
+    except:
+        pass
+   
+            
 def generate_activate_env(outfile="activate_env.sh"):
     """
     Generate a shell script that activates the current Python environment.

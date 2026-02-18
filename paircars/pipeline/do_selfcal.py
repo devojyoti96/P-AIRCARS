@@ -407,7 +407,8 @@ def do_selfcal(
                 else:
                     os.system("rm -rf *_selfcal_present*")
                     return msg, msname, []
-            if msg > 1:
+            elif msg > 1:
+                logger.error("Self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -864,14 +865,9 @@ def do_polselfcal(
             ##################################
             logger.info("######################################")
             logger.info(f"Selfcal iteration : " + str(num_iter))
-            # if num_iter==0:
             pbcor = True
             leakagecor = True
             pbuncor = True
-            """else:
-                pbcor=False
-                leakagecor=True
-                pbuncor=False"""
             (
                 msg,
                 gaintable,
@@ -909,7 +905,21 @@ def do_polselfcal(
                 logger.info(f"No model flux is picked up.\n")
                 os.system("rm -rf *_selfcal_present*")
                 return msg, msname, []
-            if msg > 1:
+            elif msg==2:
+                if num_iter>=min_iter:
+                    logger.warning("Minor issues in polarisation self-calibration model prediction. Stopped at previous round.")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable
+                else:
+                    logger.error("Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered.")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return msg, msname, []
+            elif msg > 2:
+                logger.error("Polarisation self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -1120,7 +1130,7 @@ def do_full_selfcal(
     if intensity_selfcal_msg != 0:
         return intensity_selfcal_msg, 1, [], []
     elif do_polcal is False:
-        return 0, 0, gaintable, []
+        return 0, 1, gaintable, []
     else:
         print(f"Starting polarisation self-calibration for ms: {msname}.")
         pol_selfcal_msg, pol_selfcal_ms, quartical_table = do_polselfcal(
@@ -1443,6 +1453,10 @@ def main(
                 gcal_list = []
                 bpass_list = []
                 dcal_list = []
+                succeed_intselfcal=0
+                failed_intselfcal=0
+                succeed_polselfcal=0
+                failed_polselfcal=0
                 for i in range(len(results)):
                     r = results[i]
                     int_msg = r[0]
@@ -1450,44 +1464,14 @@ def main(
                         print(
                             f"Intensity self-calibration was not successful for ms: {mslist[i]}."
                         )
+                        os.system(f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}")
+                        failed_intselfcal+=1
                     else:
-                        gaintables = r[2]
-                        gcal = gaintables[0]
-                        bpass = gaintables[1]
-                        cal_metadata = get_caltable_metadata(bpass)
-                        freq_start = cal_metadata["Channel 0 frequency (MHz)"]
-                        bw = cal_metadata["Bandwidth (MHz)"]
-                        freq_end = freq_start + bw
-                        ch_start = freq_to_MWA_coarse(freq_start)
-                        ch_end = freq_to_MWA_coarse(freq_end)
-                        if freq_end > freq_start and ch_end == ch_start:
-                            ch_end = ch_start + 1
-                        final_gain_caltable = (
-                            caldir
-                            + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.gcal"
-                        )
-                        os.system(f"rm -rf {final_gain_caltable}")
-                        os.system(f"cp -r {gcal} {final_gain_caltable}")
-                        gcal_list.append(final_gain_caltable)
-
-                        final_bpass_caltable = (
-                            caldir
-                            + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
-                        )
-                        os.system(f"rm -rf {final_bpass_caltable}")
-                        os.system(f"cp -r {bpass} {final_bpass_caltable}")
-                        bpass_list.append(final_bpass_caltable)
-
-                    if do_polcal:
-                        pol_msg = r[1]
-                        if pol_msg != 0:
-                            print(
-                                f"Polarisation self-calibration was not successful for ms: {mslist[i]}."
-                            )
-                        else:
-                            quartical_tables = r[3]
-                            dcal = quartical_tables[0]
-                            cal_metadata = get_quartical_table_metadata(dcal)
+                        try:
+                            gaintables = r[2]
+                            gcal = gaintables[0]
+                            bpass = gaintables[1]
+                            cal_metadata = get_caltable_metadata(bpass)
                             freq_start = cal_metadata["Channel 0 frequency (MHz)"]
                             bw = cal_metadata["Bandwidth (MHz)"]
                             freq_end = freq_start + bw
@@ -1495,13 +1479,59 @@ def main(
                             ch_end = freq_to_MWA_coarse(freq_end)
                             if freq_end > freq_start and ch_end == ch_start:
                                 ch_end = ch_start + 1
-                            final_leakage_caltable = (
+                            final_gain_caltable = (
                                 caldir
-                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.dcal"
+                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.gcal"
                             )
-                            os.system(f"rm -rf {final_leakage_caltable}")
-                            os.system(f"cp -r {dcal} {final_leakage_caltable}")
-                            dcal_list.append(final_leakage_caltable)
+                            os.system(f"rm -rf {final_gain_caltable}")
+                            os.system(f"cp -r {gcal} {final_gain_caltable}")
+                            gcal_list.append(final_gain_caltable)
+
+                            final_bpass_caltable = (
+                                caldir
+                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
+                            )
+                            os.system(f"rm -rf {final_bpass_caltable}")
+                            os.system(f"cp -r {bpass} {final_bpass_caltable}")
+                            bpass_list.append(final_bpass_caltable)
+                            os.system(f"touch {workdir}/.intselfcal_succeed_{os.path.basename(mslist[i])}")
+                            succeed_intselfcal+=1
+                        except:
+                            os.system(f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}")
+                            failed_intselfcal+=1
+
+                    if do_polcal:
+                        pol_msg = r[1]
+                        if pol_msg != 0:
+                            print(
+                                f"Polarisation self-calibration was not successful for ms: {mslist[i]}."
+                            )
+                            os.system(f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}")
+                            failed_polselfcal+=1
+                        else:
+                            try:
+                                quartical_tables = r[3]
+                                dcal = quartical_tables[0]
+                                cal_metadata = get_quartical_table_metadata(dcal)
+                                freq_start = cal_metadata["Channel 0 frequency (MHz)"]
+                                bw = cal_metadata["Bandwidth (MHz)"]
+                                freq_end = freq_start + bw
+                                ch_start = freq_to_MWA_coarse(freq_start)
+                                ch_end = freq_to_MWA_coarse(freq_end)
+                                if freq_end > freq_start and ch_end == ch_start:
+                                    ch_end = ch_start + 1
+                                final_leakage_caltable = (
+                                    caldir
+                                    + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.dcal"
+                                )
+                                os.system(f"rm -rf {final_leakage_caltable}")
+                                os.system(f"cp -r {dcal} {final_leakage_caltable}")
+                                dcal_list.append(final_leakage_caltable)
+                                os.system(f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}")
+                                succeed_polselfcal+=1
+                            except:
+                                os.system(f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}")
+                                failed_polselfcal+=1
 
                 if not keep_backup:
                     for ms in mslist:
@@ -1522,6 +1552,14 @@ def main(
                 else:
                     print("No self-calibration is successful.")
                     msg = 1
+                print (f"Total self-calibration measurement sets: {len(mslist)}")
+                print (f"Total successful intensity self-calibration: {succeed_intselfcal}")
+                print (f"Total failed intensity self-calibration: {failed_intselfcal}")
+                if do_polcal:
+                    print (f"Total successful polarisation self-calibration: {succeed_polselfcal}")
+                    print (f"Total failed polarisation self-calibration: {failed_polselfcal}")
+                if succeed_intselfcal==0:
+                    msg=1 
     except Exception as e:
         traceback.print_exc()
         msg = 1
