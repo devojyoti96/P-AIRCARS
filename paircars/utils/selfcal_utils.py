@@ -740,11 +740,21 @@ def single_image_update_leakage(
             spectro_image_header = fits.getheader(wsclean_images[i])
             spectro_image_data = fits.getdata(wsclean_images[i])
             spectro_image_data[0, 0, ...] = image_data[i, 0, ...]
-            fits.writeto(wsclean_images[i], data=spectro_image_data, header=spectro_image_header, overwrite=True)
+            fits.writeto(
+                wsclean_images[i],
+                data=spectro_image_data,
+                header=spectro_image_header,
+                overwrite=True,
+            )
             spectro_model_header = fits.getheader(wsclean_models[i])
             spectro_model_data = fits.getdata(wsclean_models[i])
             spectro_model_data[0, 0, ...] = model_data[i, 0, ...]
-            fits.writeto(wsclean_models[i], data=spectro_model_data, header=spectro_model_header, overwrite=True)
+            fits.writeto(
+                wsclean_models[i],
+                data=spectro_model_data,
+                header=spectro_model_header,
+                overwrite=True,
+            )
         return leakage_info
     else:
         return
@@ -1168,13 +1178,13 @@ def selfcal_round(
             ####################################
             # Predict models
             ####################################
-            prediction_failed=False
+            prediction_failed = False
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
             logger.info(f"WSClean command: {wsclean_cmd}\n")
             msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
-            if msg!=0:
-                prediction_failed=True
+            if msg != 0:
+                prediction_failed = True
 
             #######################################
             # Remove chunk files
@@ -1294,15 +1304,33 @@ def selfcal_round(
         ########################################
         if do_intensity_cal is False and do_polcal is False:
             logger.info("No calibration is requested. Returing only previous state.")
-            return 2, applycal_gaintable, rms_DR, rms, final_image, final_model, final_residual, []
-            
+            return (
+                2,
+                applycal_gaintable,
+                rms_DR,
+                rms,
+                final_image,
+                final_model,
+                final_residual,
+                [],
+            )
+
         #########################################
         # If model prediction failed in polcal
         #########################################
         if do_polcal and prediction_failed:
             logger.error("Error in predicting model.")
-            return 2, applycal_gaintable, rms_DR, rms, final_image, final_model, final_residual, []
-            
+            return (
+                2,
+                applycal_gaintable,
+                rms_DR,
+                rms,
+                final_image,
+                final_model,
+                final_residual,
+                [],
+            )
+
         ##############################
         # Perform intensity selfcal
         ##############################

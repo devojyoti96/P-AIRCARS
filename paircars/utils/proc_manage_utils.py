@@ -170,8 +170,8 @@ def save_pid(pid, pid_file):
                 f.write(f"{p}\n")
     except:
         pass
-   
-            
+
+
 def generate_activate_env(outfile="activate_env.sh"):
     """
     Generate a shell script that activates the current Python environment.

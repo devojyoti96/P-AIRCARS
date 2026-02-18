@@ -905,15 +905,19 @@ def do_polselfcal(
                 logger.info(f"No model flux is picked up.\n")
                 os.system("rm -rf *_selfcal_present*")
                 return msg, msname, []
-            elif msg==2:
-                if num_iter>=min_iter:
-                    logger.warning("Minor issues in polarisation self-calibration model prediction. Stopped at previous round.")
+            elif msg == 2:
+                if num_iter >= min_iter:
+                    logger.warning(
+                        "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
+                    )
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
                     return 0, msname, last_round_gaintable
                 else:
-                    logger.error("Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered.")
+                    logger.error(
+                        "Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered."
+                    )
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -1453,10 +1457,10 @@ def main(
                 gcal_list = []
                 bpass_list = []
                 dcal_list = []
-                succeed_intselfcal=0
-                failed_intselfcal=0
-                succeed_polselfcal=0
-                failed_polselfcal=0
+                succeed_intselfcal = 0
+                failed_intselfcal = 0
+                succeed_polselfcal = 0
+                failed_polselfcal = 0
                 for i in range(len(results)):
                     r = results[i]
                     int_msg = r[0]
@@ -1464,8 +1468,10 @@ def main(
                         print(
                             f"Intensity self-calibration was not successful for ms: {mslist[i]}."
                         )
-                        os.system(f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}")
-                        failed_intselfcal+=1
+                        os.system(
+                            f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}"
+                        )
+                        failed_intselfcal += 1
                     else:
                         try:
                             gaintables = r[2]
@@ -1494,11 +1500,15 @@ def main(
                             os.system(f"rm -rf {final_bpass_caltable}")
                             os.system(f"cp -r {bpass} {final_bpass_caltable}")
                             bpass_list.append(final_bpass_caltable)
-                            os.system(f"touch {workdir}/.intselfcal_succeed_{os.path.basename(mslist[i])}")
-                            succeed_intselfcal+=1
+                            os.system(
+                                f"touch {workdir}/.intselfcal_succeed_{os.path.basename(mslist[i])}"
+                            )
+                            succeed_intselfcal += 1
                         except:
-                            os.system(f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}")
-                            failed_intselfcal+=1
+                            os.system(
+                                f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}"
+                            )
+                            failed_intselfcal += 1
 
                     if do_polcal:
                         pol_msg = r[1]
@@ -1506,8 +1516,10 @@ def main(
                             print(
                                 f"Polarisation self-calibration was not successful for ms: {mslist[i]}."
                             )
-                            os.system(f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}")
-                            failed_polselfcal+=1
+                            os.system(
+                                f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
+                            )
+                            failed_polselfcal += 1
                         else:
                             try:
                                 quartical_tables = r[3]
@@ -1527,11 +1539,15 @@ def main(
                                 os.system(f"rm -rf {final_leakage_caltable}")
                                 os.system(f"cp -r {dcal} {final_leakage_caltable}")
                                 dcal_list.append(final_leakage_caltable)
-                                os.system(f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}")
-                                succeed_polselfcal+=1
+                                os.system(
+                                    f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}"
+                                )
+                                succeed_polselfcal += 1
                             except:
-                                os.system(f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}")
-                                failed_polselfcal+=1
+                                os.system(
+                                    f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
+                                )
+                                failed_polselfcal += 1
 
                 if not keep_backup:
                     for ms in mslist:
@@ -1552,14 +1568,20 @@ def main(
                 else:
                     print("No self-calibration is successful.")
                     msg = 1
-                print (f"Total self-calibration measurement sets: {len(mslist)}")
-                print (f"Total successful intensity self-calibration: {succeed_intselfcal}")
-                print (f"Total failed intensity self-calibration: {failed_intselfcal}")
+                print(f"Total self-calibration measurement sets: {len(mslist)}")
+                print(
+                    f"Total successful intensity self-calibration: {succeed_intselfcal}"
+                )
+                print(f"Total failed intensity self-calibration: {failed_intselfcal}")
                 if do_polcal:
-                    print (f"Total successful polarisation self-calibration: {succeed_polselfcal}")
-                    print (f"Total failed polarisation self-calibration: {failed_polselfcal}")
-                if succeed_intselfcal==0:
-                    msg=1 
+                    print(
+                        f"Total successful polarisation self-calibration: {succeed_polselfcal}"
+                    )
+                    print(
+                        f"Total failed polarisation self-calibration: {failed_polselfcal}"
+                    )
+                if succeed_intselfcal == 0:
+                    msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1

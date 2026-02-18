@@ -2148,6 +2148,7 @@ def master_control(
                 timeres=timeavg,
                 freqres=freqavg,
                 prefix=prefix,
+                force_split=True,
                 time_window=min(1.0, time_interval),
                 time_interval=time_interval,
                 quack_timestamps=quack_timestamps,
