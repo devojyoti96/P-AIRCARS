@@ -15,6 +15,7 @@ import tempfile
 import shutil
 import yaml
 import socket
+import traceback
 from pathlib import Path
 from dask import delayed, compute, config
 from dask.distributed import Client, LocalCluster
@@ -350,45 +351,50 @@ def get_local_dask_cluster(
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
-    total_mem = psutil.virtual_memory().total / 1024**3  # In GB
-    mem_frac = min(mem_frac, 0.8)
-    usable_mem = total_mem * mem_frac
-    # Raise file descriptor limit
-    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-    if soft < int(hard * 0.8):
-        resource.setrlimit(resource.RLIMIT_NOFILE, (int(hard * 0.8), hard))
-    dask.config.set(
-        {
-            "temporary-directory": dask_dir,
-            "distributed.worker.memory.target": spill_frac,
-            "distributed.worker.memory.spill": spill_frac + 0.1,
-            "distributed.worker.memory.pause": spill_frac + 0.2,
-            "distributed.worker.memory.terminate": spill_frac + 0.25,
-        }
-    )
-    cluster = LocalCluster(
-        n_workers=1,
-        threads_per_worker=1,
-        memory_limit=f"{usable_mem}GB",
-        local_directory=dask_dir,
-        dashboard_address=":0",
-        processes=True,
-        env={
-            "TMPDIR": dask_dir_tmp,
-            "TMP": dask_dir_tmp,
-            "TEMP": dask_dir_tmp,
-            "DASK_TEMPORARY_DIRECTORY": dask_dir_tmp,
-            "MALLOC_TRIM_THRESHOLD_": "0",
-            "PYTHONWARNINGS": "ignore::UserWarning:contextlib",
-        },
-    )
-    client = Client(cluster, heartbeat_interval="5s")
-    client.run_on_scheduler(gc.collect)
-    if verbose:
-        print("####################################################")
-        print(f"Dask dashboard available at: {client.dashboard_link}")
-        print("####################################################")
-    return client, cluster, dask_dir
+    try:
+        total_mem = psutil.virtual_memory().total / 1024**3  # In GB
+        mem_frac = min(mem_frac, 0.8)
+        usable_mem = total_mem * mem_frac
+        # Raise file descriptor limit
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        if soft < int(hard * 0.8):
+            resource.setrlimit(resource.RLIMIT_NOFILE, (int(hard * 0.8), hard))
+        dask.config.set(
+            {
+                "temporary-directory": dask_dir,
+                "distributed.worker.memory.target": spill_frac,
+                "distributed.worker.memory.spill": spill_frac + 0.1,
+                "distributed.worker.memory.pause": spill_frac + 0.2,
+                "distributed.worker.memory.terminate": spill_frac + 0.25,
+            }
+        )
+        cluster = LocalCluster(
+            n_workers=1,
+            threads_per_worker=1,
+            memory_limit=f"{usable_mem}GB",
+            local_directory=dask_dir,
+            dashboard_address=":0",
+            processes=True,
+            env={
+                "TMPDIR": dask_dir_tmp,
+                "TMP": dask_dir_tmp,
+                "TEMP": dask_dir_tmp,
+                "DASK_TEMPORARY_DIRECTORY": dask_dir_tmp,
+                "MALLOC_TRIM_THRESHOLD_": "0",
+                "PYTHONWARNINGS": "ignore::UserWarning:contextlib",
+            },
+        )
+        client = Client(cluster, heartbeat_interval="5s")
+        client.run_on_scheduler(gc.collect)
+        if verbose:
+            print("####################################################")
+            print(f"Dask dashboard available at: {client.dashboard_link}")
+            print("####################################################")
+        return client, cluster, dask_dir
+    except Exception as e:
+        print ("Error occured in creating local cluster.")
+        traceback.print_exc()
+        os.system(f"rm -rf {dask_dir_tmp}")
 
 
 def detect_best_interface():
@@ -783,7 +789,8 @@ def get_slurm_dask_cluster(
             print("####################################################")
 
         return client, cluster, dask_dir
-    except:
+    except Exception as e:
+        print ("Error occured in creating SLURM cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {output_path} {log_dir} {dask_dir_tmp}")
 
