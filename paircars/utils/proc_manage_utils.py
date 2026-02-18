@@ -729,59 +729,63 @@ def get_slurm_dask_cluster(
     output_path = f"{dask_dir}/slurm_config_{jobid}.yaml"
     log_dir = f"{dask_dir}/slurm_log_{jobid}"
     os.makedirs(log_dir, exist_ok=True)
-
-    slurm_config_yaml = create_slurm_config(
-        output_path,
-        dask_dir,
-        log_dir,
-        cpu_frac=cpu_frac,
-        mem_frac=mem_frac,
-        partition=partition,
-        account=account,
-        project=project,
-        walltime=walltime,
-        job_name=f"paircars_{jobid}",
-        exclusive=True,
-    )
-
+    
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
 
-    dask.config.set(
-        {
-            "temporary-directory": dask_dir,
-            "distributed.worker.memory.target": spill_frac,
-            "distributed.worker.memory.spill": spill_frac + 0.1,
-            "distributed.worker.memory.pause": spill_frac + 0.2,
-            "distributed.worker.memory.terminate": spill_frac + 0.25,
-        }
-    )
+    try:
+        slurm_config_yaml = create_slurm_config(
+            output_path,
+            dask_dir,
+            log_dir,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
+            partition=partition,
+            account=account,
+            project=project,
+            walltime=walltime,
+            job_name=f"paircars_{jobid}",
+            exclusive=True,
+        )
 
-    with open(slurm_config_yaml, "r") as f:
-        cluster_config = yaml.safe_load(f)
-    dask.config.set(cluster_config)
+        dask.config.set(
+            {
+                "temporary-directory": dask_dir,
+                "distributed.worker.memory.target": spill_frac,
+                "distributed.worker.memory.spill": spill_frac + 0.1,
+                "distributed.worker.memory.pause": spill_frac + 0.2,
+                "distributed.worker.memory.terminate": spill_frac + 0.25,
+            }
+        )
 
-    cluster = SLURMCluster(
-        local_directory=dask_dir_tmp,
-        env_extra=[
-            f"TMPDIR={dask_dir_tmp}",
-            f"TMP={dask_dir_tmp}",
-            f"TEMP={dask_dir_tmp}",
-            f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
-            "PYTHONWARNINGS=ignore::UserWarning:contextlib",
-        ],
-    )
+        with open(slurm_config_yaml, "r") as f:
+            cluster_config = yaml.safe_load(f)
+        dask.config.set(cluster_config)
 
-    cluster.scale(1)
-    client = Client(cluster, heartbeat_interval="5s")
-    client.run_on_scheduler(gc.collect)
-    if verbose:
-        print("####################################################")
-        print(f"Dask dashboard available at: {client.dashboard_link}")
-        print("####################################################")
+        cluster = SLURMCluster(
+            local_directory=dask_dir_tmp,
+            env_extra=[
+                f"TMPDIR={dask_dir_tmp}",
+                f"TMP={dask_dir_tmp}",
+                f"TEMP={dask_dir_tmp}",
+                f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
+                "PYTHONWARNINGS=ignore::UserWarning:contextlib",
+            ],
+        )
 
-    return client, cluster, dask_dir
+        cluster.scale(1)
+        client = Client(cluster, heartbeat_interval="5s")
+        client.run_on_scheduler(gc.collect)
+        if verbose:
+            print("####################################################")
+            print(f"Dask dashboard available at: {client.dashboard_link}")
+            print("####################################################")
+
+        return client, cluster, dask_dir
+    except:
+        traceback.print_exc()
+        os.system(f"rm -rf {output_path} {log_dir} {dask_dir_tmp}")
 
 
 # Exposing only functions
