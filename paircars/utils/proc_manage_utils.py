@@ -546,7 +546,7 @@ def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
     ncpu = max(1, int(total_cpu * cpu_frac))
-    mem = total_mem * mem_frac
+    mem = round(total_mem * mem_frac,1)
     return ncpu, mem
 
 
@@ -760,7 +760,7 @@ def get_slurm_dask_cluster(
 
     with open(slurm_config_yaml, "r") as f:
         cluster_config = yaml.safe_load(f)
-    dask.config.update(cluster_config, priority="new")
+    dask.config.set(cluster_config)
 
     cluster = SLURMCluster(
         local_directory=dask_dir_tmp,
