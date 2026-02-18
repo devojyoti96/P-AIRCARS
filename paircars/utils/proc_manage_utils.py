@@ -591,7 +591,7 @@ def create_slurm_config(
         Job walltime, maximum time the SLURM job can run (HH:MM:SS)
     job_name : str, optional
         SLURM job name
-    log_directory : str, optional
+    log_dir : str, optional
         Directory for SLURM logs
     local_directory : str, optional
         Worker scratch directory
@@ -624,7 +624,7 @@ def create_slurm_config(
     ]
     if exclusive:
         job_extra.append("--exclusive")
-    if log_directory:
+    if log_dir:
         job_extra.extend(
             [
                 f"--output={log_dir}/dask-%j.out",
@@ -715,6 +715,10 @@ def get_slurm_dask_cluster(
     str
         Dask directory used
     """
+    scheduler_name = get_scheduler_name()
+    if scheduler_name!="slurm":
+        print ("SLURM is not avilable as job scheduler in your cluster.")
+        return 
     logging.getLogger("distributed").setLevel(logging.ERROR)
 
     cpu_frac = min(0.8, cpu_frac)
