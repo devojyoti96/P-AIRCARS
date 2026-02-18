@@ -10,7 +10,6 @@ from datetime import datetime as dt
 from contextlib import contextmanager
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter1d
-from pathlib import Path
 
 
 ##########################

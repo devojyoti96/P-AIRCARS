@@ -4,6 +4,7 @@ import argparse
 import requests
 import sys
 import os
+import getpass
 from datetime import datetime as dt
 from parfive import Downloader
 from paircars.utils import *
@@ -73,7 +74,7 @@ def init_paircars_data(update=False, remote_link=None, emails=None):
     datadir = get_datadir()
     os.makedirs(datadir, exist_ok=True)
     cachedir = get_cachedir()
-    username = os.getlogin()
+    username = getpass.getuser()
     linkfile = f"{cachedir}/remotelink_{username}.txt"
     emailfile = f"{cachedir}/emails_{username}.txt"
     if not os.path.exists(linkfile):

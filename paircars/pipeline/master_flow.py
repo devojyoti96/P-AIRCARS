@@ -3296,10 +3296,7 @@ def cli():
         if result is not True:
             print("Prefect server is not running. Running pipeline in ephemeral mode.")
         else:
-            homedir = os.environ.get("HOME")
-            if homedir is None:
-                homedir = os.path.expanduser("~")
-            username = os.getlogin()
+            homedir = os.path.expanduser("~")
             cachedir = f"{homedir}/.paircarspipe"
             ENV_FILE = f"{cachedir}/paircars_prefect.env"
             load_dotenv(dotenv_path=ENV_FILE, override=False)

@@ -81,10 +81,7 @@ def drop_cache(path, verbose=False):
 
 
 def get_cachedir():
-    homedir = os.environ.get("HOME")
-    if homedir is None:
-        homedir = os.path.expanduser("~")
-    username = os.getlogin()
+    homedir = os.path.expanduser("~")
     cachedir = f"{homedir}/.paircarspipe"
     os.makedirs(cachedir, exist_ok=True)
     return cachedir
