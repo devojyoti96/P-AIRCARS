@@ -645,7 +645,7 @@ def create_slurm_config(
                 "processes": 1,
                 "memory": mem,
                 "walltime": walltime,
-                "job-name": job_name,
+                "name": job_name,
                 "python": python_path,
                 "job-extra": job_extra,
                 "shared_temp_directory": dask_dir,
