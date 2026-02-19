@@ -745,7 +745,6 @@ def get_slurm_dask_cluster(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             partition=partition,
-            project=project,
             walltime=walltime,
             job_name=f"paircars_{jobid}",
             exclusive=True,
