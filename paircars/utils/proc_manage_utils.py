@@ -726,6 +726,10 @@ def get_slurm_dask_cluster(
 
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
+    ncpu, mem = get_slurm_node_resources(
+        partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
+    )
+    
     if jobid is None:
         jobid = get_jobid()
 
@@ -738,7 +742,7 @@ def get_slurm_dask_cluster(
     os.makedirs(dask_dir_tmp, exist_ok=True)
 
     try:
-        slurm_config_yaml = create_slurm_config(
+        '''slurm_config_yaml = create_slurm_config(
             output_path,
             dask_dir,
             log_dir,
@@ -748,8 +752,7 @@ def get_slurm_dask_cluster(
             walltime=walltime,
             job_name=f"paircars_{jobid}",
             exclusive=True,
-        )
-
+        )'''
         dask.config.set(
             {
                 "temporary-directory": dask_dir,
@@ -767,6 +770,11 @@ def get_slurm_dask_cluster(
         cluster = SLURMCluster(
             queue=partition,
             account=account,
+            cores=ncpu,
+            memory=f"{mem}GB",
+            processes=1,
+            job_cpu=ncpu,
+            job_mem=f"{mem}GB",
             local_directory=dask_dir_tmp,
             env_extra=[
                 f"TMPDIR={dask_dir_tmp}",
