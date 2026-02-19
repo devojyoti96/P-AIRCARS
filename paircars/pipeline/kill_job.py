@@ -66,12 +66,12 @@ def kill_localscheduler(jobid):
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
         try:
-            client = Client(address=scheduler_address,timeout=60)
+            print("Closing dask cluster....")
+            client = Client(address=scheduler_address,timeout=30)
             client.shutdown()
             client.close()
         except:
-            print ("Dask cluster at: {scheduler_address} is already closed.")
-            traceback.print_exc()
+            print (f"Dask cluster at: {scheduler_address} is already closed.")
             
         print("Dropping caches...")
         drop_cache(msdir)
@@ -117,12 +117,12 @@ def kill_slurmscheduler(jobid):
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
         
         try:
-            client = Client(address=scheduler_address,timeput=60)
+            print("Closing dask cluster....")
+            client = Client(address=scheduler_address,timeput=30)
             client.shutdown()
             client.close()
         except:
-            print ("Dask cluster at: {scheduler_address} is already closed.")
-            traceback.print_exc()
+            print (f"Dask cluster at: {scheduler_address} is already closed.")
 
         print("Dropping caches...")
         drop_cache(msdir)
