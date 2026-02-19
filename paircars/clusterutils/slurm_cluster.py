@@ -9,6 +9,7 @@ import traceback
 import logging
 import shlex
 import re
+import sys
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
 from paircars.utils.basic_utils import *
@@ -214,7 +215,6 @@ def slurm_time_to_seconds(timestr):
     """
     if timestr.lower() in ["infinite", "unlimited"]:
         return float("inf")
-
     if "-" in timestr:
         days, hms = timestr.split("-")
         h, m, s = map(int, hms.split(":"))
