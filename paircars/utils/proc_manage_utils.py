@@ -136,7 +136,7 @@ def save_main_process_info(pid, jobid, scheduler_address, msdir, workdir, outdir
         for i in range(len(prev_jobids)):
             job_id = prev_jobids[i]
             job_time = dt.strptime(job_id.ljust(20, "0"), FORMAT)  # pad if truncated
-            if job_time < CUTOFF or job_id == 0:  # Job ID 0 is always kept
+            if job_time > CUTOFF or job_id == 0:  # Job ID 0 is always kept
                 filtered_prev_jobids.append(job_id)
             else:
                 os.system(f"rm -rf {prev_main_pids[i]}")
