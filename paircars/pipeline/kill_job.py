@@ -46,6 +46,9 @@ def kill_localscheduler(jobid):
     try:
         cachedir = get_cachedir()
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
+        if os.path.exists(jobfile_name):
+            print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
+            return 
         try:
             results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
             main_pid = int(results[1])
@@ -63,10 +66,11 @@ def kill_localscheduler(jobid):
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
         try:
-            client = Client(address=address)
+            client = Client(address=scheduler_address,timeout=60)
             client.shutdown()
             client.close()
         except:
+            print ("Dask cluster at: {scheduler_address} is already closed.")
             traceback.print_exc()
             
         print("Dropping caches...")
@@ -105,13 +109,17 @@ def kill_slurmscheduler(jobid):
             traceback.print_exc()
             return
 
-        client = Client(address=address)
-        client.shutdown()
-        client.close()
-        
         print(f"Attempting to terminate main slurm jobid: {main_jobid}")
         subprocess.run(["scancel", main_jobid])
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
+        
+        try:
+            client = Client(address=scheduler_address,timeput=60)
+            client.shutdown()
+            client.close()
+        except:
+            print ("Dask cluster at: {scheduler_address} is already closed.")
+            traceback.print_exc()
 
         print("Dropping caches...")
         drop_cache(msdir)
