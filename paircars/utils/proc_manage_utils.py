@@ -771,7 +771,7 @@ def get_slurm_dask_cluster(
             queue=partition,
             account=account,
             cores=ncpu,
-            memory=f"{mem}GB",
+            memory=f"{mem}G",
             processes=1,
             job_cpu=ncpu,
             job_mem=f"{mem}G",
