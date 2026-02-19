@@ -760,11 +760,13 @@ def get_slurm_dask_cluster(
             }
         )
 
-        with open(slurm_config_yaml, "r") as f:
+        '''with open(slurm_config_yaml, "r") as f:
             cluster_config = yaml.safe_load(f)
-        dask.config.set(cluster_config)
+        dask.config.set(cluster_config)'''
 
         cluster = SLURMCluster(
+            queue=partition,
+            account=account,
             local_directory=dask_dir_tmp,
             env_extra=[
                 f"TMPDIR={dask_dir_tmp}",
