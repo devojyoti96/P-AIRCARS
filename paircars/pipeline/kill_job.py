@@ -46,7 +46,7 @@ def kill_localscheduler(jobid):
     try:
         cachedir = get_cachedir()
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
-        if os.path.exists(jobfile_name):
+        if os.path.exists(jobfile_name) is False:
             print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
             return 
         try:
@@ -97,6 +97,9 @@ def kill_slurmscheduler(jobid):
     try:
         cachedir = get_cachedir()
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
+        if os.path.exists(jobfile_name) is False:
+            print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
+            return 
         try:
             results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
             main_jobid = int(results[1])
