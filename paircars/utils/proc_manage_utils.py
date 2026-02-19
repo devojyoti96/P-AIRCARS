@@ -773,8 +773,6 @@ def get_slurm_dask_cluster(
             cores=ncpu,
             memory=f"{mem}G",
             processes=1,
-            job_cpu=ncpu,
-            job_mem=f"{mem}G",
             local_directory=dask_dir_tmp,
             env_extra=[
                 f"TMPDIR={dask_dir_tmp}",
