@@ -663,8 +663,6 @@ def create_slurm_config(
     interface = detect_best_interface()
     if account:
         config["jobqueue"]["slurm"]["account"] = account
-    if project:
-        config["jobqueue"]["slurm"]["project"] = project
     if interface:
         config["jobqueue"]["slurm"]["interface"] = interface
     if dask_dir:
@@ -681,7 +679,6 @@ def get_slurm_dask_cluster(
     mem_frac=0.8,
     partition=None,
     account=None,
-    project=None,
     walltime="24:00:00",
     spill_frac=0.7,
     verbose=True,
@@ -705,8 +702,6 @@ def get_slurm_dask_cluster(
     account : str, optional
         SLURM account name
         Note: If your cluster requires this, you should provide. Otherwise, error will occur.
-    project : str, optional
-        SLURM project code (if required)
     walltime : str, optional
         Job walltime, maximum time the SLURM job can run (HH:MM:SS)
     spill_frac : float
@@ -750,7 +745,6 @@ def get_slurm_dask_cluster(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             partition=partition,
-            account=account,
             project=project,
             walltime=walltime,
             job_name=f"paircars_{jobid}",
