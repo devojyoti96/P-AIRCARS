@@ -54,11 +54,13 @@ def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     mem = round(total_mem * mem_frac, 1)
     return ncpu, mem
 
+
 def get_slurm_dask_cluster(
     dask_dir,
     jobid=None,
     cpu_frac=0.8,
     mem_frac=0.8,
+    max_mem=16,
     partition=None,
     account=None,
     walltime="24:00:00",
@@ -79,6 +81,8 @@ def get_slurm_dask_cluster(
         CPU fraction to use
     mem_frac : float, optional
         Memory fraction to use
+    max_mem : float, optional
+        Maximum job memory in GB
     partition : str, optional
         SLURM partition name
         Note: If your cluster requires this, you should provide. Otherwise, error will occur.
@@ -142,7 +146,7 @@ def get_slurm_dask_cluster(
             f"--nodes=1",
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
-            f"--mem={mem}G",
+            f"--mem={min(max_mem,mem)}G",
             f"--exclusive",
             f"--output={log_dir}/paircars_{jobid}-%j.out",
             f"--error={log_dir}/paircars_{jobid}-%j.err",
@@ -154,7 +158,7 @@ def get_slurm_dask_cluster(
             cores=ncpu,
             n_workers=1,
             walltime=walltime,
-            memory=f"{mem}G",
+            memory=f"{min(max_mem,mem)}G",
             processes=1,
             interface=interface,
             python=python_path,
@@ -183,6 +187,8 @@ def get_slurm_dask_cluster(
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
+            print(f"CPU per worker: {ncpu}")
+            print(f"Memory per worker: {min(max_mem,usable_mem)}GB")
             print("####################################################")
 
         return client, cluster, dask_dir
@@ -190,17 +196,17 @@ def get_slurm_dask_cluster(
         print("Error occured in creating SLURM cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {output_path} {log_dir} {dask_dir}")
-        
+
 
 def slurm_time_to_seconds(timestr):
     """
     Convert SLURM time format (D-HH:MM:SS or HH:MM:SS) to seconds.
-    
+
     Parameters
     ----------
     timestr : str
         Time string in SLURM format
-        
+
     Returns
     -------
     float
@@ -216,17 +222,17 @@ def slurm_time_to_seconds(timestr):
     else:
         h, m, s = map(int, timestr.split(":"))
         return h * 3600 + m * 60 + s
-        
-        
+
+
 def get_max_walltime(partition):
     """
     Get maximum wall time for the partition
-    
+
     Parameters
     ----------
     partition : str
         Partition name
-        
+
     Returns
     -------
     str
@@ -253,19 +259,19 @@ def get_max_walltime(partition):
         raise ValueError(f"Partition {partition} not found.")
     max_time = partitions[partition]
     return max_time, slurm_time_to_seconds(max_time)
-    
-        
-def submit_master_flow(args,jobid):
+
+
+def submit_master_flow(args, jobid):
     """
     Submit P-AIRCARS master flow to a slurm job
-    
+
     Parameters
     ----------
     args : dict
         Arparser dictionary
     jobid : int
         P-AIRCARS jobid
-        
+
     Returns
     -------
     int
@@ -273,13 +279,13 @@ def submit_master_flow(args,jobid):
     """
     scheduler_name = get_scheduler_name()
     if scheduler_name is not "slurm":
-        print ("SLURM job scheduler is not available.")
+        print("SLURM job scheduler is not available.")
         return 1
     cli_cmd = " ".join(shlex.quote(arg) for arg in sys.argv)
     if args.partition and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
-        print ("Please provide partition name to run SLURM jobs.")
+        print("Please provide partition name to run SLURM jobs.")
         return 1
 
     try:
@@ -290,17 +296,19 @@ def submit_master_flow(args,jobid):
             walltime = max_time
         else:
             wall_time_second = slurm_time_to_seconds(args.walltime)
-            if wall_time_seconod>max_time_second:
-                print (f"Walltime : {args.walltime} is larger than maximum allowed time: {max_time}.")
-                walltime=max_time
+            if wall_time_seconod > max_time_second:
+                print(
+                    f"Walltime : {args.walltime} is larger than maximum allowed time: {max_time}."
+                )
+                walltime = max_time
             else:
                 walltime = args.walltime
         #############################
         # Determining cpu and memory
         #############################
         ncpu, mem = get_slurm_node_resources(
-                partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
-            )      
+            partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
+        )
         script = f"""#!/bin/bash
         #SBATCH --job-name=paircars_{jobid}
         #SBATCH --time={walltime}
@@ -324,8 +332,8 @@ def submit_master_flow(args,jobid):
     except Exception as e:
         traceback.print_exc()
         return 1
-        
-        
+
+
 def save_slurm_jobid(jobid, slurm_jobid_file):
     """
     Save SLURM jobid
@@ -351,10 +359,10 @@ def save_slurm_jobid(jobid, slurm_jobid_file):
     except:
         pass
 
+
 # Exposing only functions
 __all__ = [
     name
     for name, obj in globals().items()
     if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
 ]
-

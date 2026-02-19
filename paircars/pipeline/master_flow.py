@@ -14,7 +14,6 @@ from casatools import msmetadata
 from astropy.io import fits
 from datetime import datetime as dt
 from multiprocessing import Process, Event
-from paircars.utils import *
 from dask.distributed import get_client
 from dotenv import load_dotenv
 from prefect import flow, task
@@ -22,6 +21,7 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from pyfiglet import Figlet
+from paircars.utils import *
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
 )
@@ -1608,12 +1608,12 @@ def master_control(
         # Job and process IDs
         ####################################
         scheduler_name = get_scheduler_name()
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             pid = os.getpid()
-        elif scheduler_name=="slurm":
+        elif scheduler_name == "slurm":
             pid = os.environ.get("SLURM_JOB_ID")
         else:
-            print ("P-AIRCARS is only ready for local or slurm cluster.")
+            print("P-AIRCARS is only ready for local or slurm cluster.")
             return 1
         if jobid is None:
             jobid = get_jobid()
@@ -3282,6 +3282,36 @@ def cli():
 
     os.system(f"rm -rf {args.workdir}/dask_*")
 
+    ###########################################################
+    # Estimating jobs memory size (5 times each measurment set)
+    ###########################################################
+    if os.path.exists(args.target_datadir) is False:
+        print(f"Target data directory: {args.target_datadir} does not exist.")
+        return
+    target_mslist = glob.glob(f"{args.target_datadir}/*.ms")
+    if len(target_mslist) == 0:
+        print(
+            f"No measurement set is present in the target directory: {args.target_datadir}"
+        )
+        return
+    target_ms_sizes = [get_ms_size(target_msname) for target_msname in target_mslist]
+    max_ms_size = max(target_ms_sizes)
+    if args.cal_datadir:
+        if os.path.exists(args.cal_datadir):
+            cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
+            if len(cal_mslist) == 0:
+                print(
+                    f"No calibrator measurement set is present in: {args.cal_datadir}"
+                )
+            else:
+                cal_ms_sizes = [get_ms_size(cal_msname) for cal_msname in cal_mslist]
+                max_cal_ms_size = max(cal_ms_sizes)
+                max_ms_size = max(max_ms_size, max_cal_ms_size)
+        else:
+            print(f"Calibrator data direcotry does not exist.")
+    max_mem = max(16, round(5 * max_ms_size, 1))  # Minimum 16 GB
+    print(f"Maximum per job memory: {max_mem}GB")
+
     ###############################################
     # Setup cluster environment
     ###############################################
@@ -3311,6 +3341,7 @@ def cli():
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
             args.workdir,
             mem_frac=args.mem_frac,
+            max_mem=max_mem,
         )
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
         dask_addr = dask_client.scheduler.address
@@ -3324,15 +3355,16 @@ def cli():
             stop_prefect_server()
         if scheduler_name == "slurm":
             if args.partition is None:
-                print ("Please provide partition name to submit SLURM jobs.")
+                print("Please provide partition name to submit SLURM jobs.")
                 return
-        
+
             print("Setting up slurm cluster....")
             dask_client, dask_cluster, dask_dir = slurm_cluster.get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
+                max_mem=max_mem,
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,

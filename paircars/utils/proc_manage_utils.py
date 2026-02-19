@@ -95,7 +95,9 @@ def get_jobid():
     return int(cur_jobid)
 
 
-def save_main_process_info(pid, jobid, scheduler_address, msdir, workdir, outdir, cpu_frac, mem_frac):
+def save_main_process_info(
+    pid, jobid, scheduler_address, msdir, workdir, outdir, cpu_frac, mem_frac
+):
     """
     Save main processes info
 
@@ -291,6 +293,7 @@ def wait_for_dask_workers(client, min_worker=1, timeout=60):
 def get_local_dask_cluster(
     dask_dir,
     mem_frac=0.8,
+    max_mem=16,
     ncpu=-1,
     mem=-1,
     spill_frac=0.7,
@@ -305,6 +308,8 @@ def get_local_dask_cluster(
         Dask temporary directory
     mem_frac : float, optional
         Fraction of total memory to use
+    max_mem : float, optional
+        Maximum job memory in GB
     spill_frac : float, optional
         Spill to disk at this fraction
     verbose : bool, optional
@@ -345,7 +350,7 @@ def get_local_dask_cluster(
         cluster = LocalCluster(
             n_workers=1,
             threads_per_worker=1,
-            memory_limit=f"{usable_mem}GB",
+            memory_limit=f"{min(max_mem,usable_mem)}GB",
             local_directory=dask_dir,
             dashboard_address=":0",
             processes=True,
@@ -363,6 +368,7 @@ def get_local_dask_cluster(
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
+            print(f"Memory per worker: {min(max_mem,usable_mem)}GB")
             print("####################################################")
         return client, cluster, dask_dir
     except Exception as e:

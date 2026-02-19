@@ -37,7 +37,7 @@ def terminate_process_and_children(pid, grace_period=3.0):
 def kill_localscheduler(jobid):
     """
     Kill local scheduler
-    
+
     Parameters
     ----------
     jobid : int
@@ -48,7 +48,7 @@ def kill_localscheduler(jobid):
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
         if os.path.exists(jobfile_name) is False:
             print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
-            return 
+            return
         try:
             results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
             main_pid = int(results[1])
@@ -60,35 +60,36 @@ def kill_localscheduler(jobid):
             print(f"Could not read job file.")
             traceback.print_exc()
             return
-                    
+
         print(f"Attempting to terminate main PID: {main_pid}")
         terminate_process_and_children(main_pid)
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
         try:
             print("Closing dask cluster....")
-            client = Client(address=scheduler_address,timeout=30)
+            client = Client(address=scheduler_address, timeout=30)
             client.shutdown()
             client.close()
         except:
-            print (f"Dask cluster at: {scheduler_address} is already closed.")
-            
+            print(f"Dask cluster at: {scheduler_address} is already closed.")
+
         print("Dropping caches...")
         drop_cache(msdir)
         drop_cache(workdir)
         drop_cache(outdir)
         drop_cache(cachedir)
-        print("Cleanup complete.")     
-        return 
+        print("Cleanup complete.")
+        return
     except Exception as e:
-        print(f"Error in killing P-AIRCARS job: {jobid}")  
+        print(f"Error in killing P-AIRCARS job: {jobid}")
         traceback.print_exc()
-        return  
+        return
+
 
 def kill_slurmscheduler(jobid):
     """
     Kill local scheduler
-    
+
     Parameters
     ----------
     jobid : int
@@ -99,7 +100,7 @@ def kill_slurmscheduler(jobid):
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
         if os.path.exists(jobfile_name) is False:
             print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
-            return 
+            return
         try:
             results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
             main_jobid = int(results[1])
@@ -115,26 +116,26 @@ def kill_slurmscheduler(jobid):
         print(f"Attempting to terminate main slurm jobid: {main_jobid}")
         subprocess.run(["scancel", main_jobid])
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
-        
+
         try:
             print("Closing dask cluster....")
-            client = Client(address=scheduler_address,timeput=30)
+            client = Client(address=scheduler_address, timeput=30)
             client.shutdown()
             client.close()
         except:
-            print (f"Dask cluster at: {scheduler_address} is already closed.")
+            print(f"Dask cluster at: {scheduler_address} is already closed.")
 
         print("Dropping caches...")
         drop_cache(msdir)
         drop_cache(workdir)
         drop_cache(outdir)
         drop_cache(cachedir)
-        print("Cleanup complete.")     
-        return 
+        print("Cleanup complete.")
+        return
     except Exception as e:
-        print(f"Error in killing P-AIRCARS job: {jobid}")  
+        print(f"Error in killing P-AIRCARS job: {jobid}")
         traceback.print_exc()
-        return 
+        return
 
 
 def kill_paircarsjob():
@@ -151,14 +152,14 @@ def kill_paircarsjob():
         sys.exit(1)
 
     args = parser.parse_args()
-    
+
     scheduler_name = get_scheduler_name()
-    
-    if scheduler_name=="local":
+
+    if scheduler_name == "local":
         kill_localscheduler(args.jobid)
-    elif scheduler_name=="slurm":
-        kill_slurmscheduler(args.jobid)    
-    
-   
+    elif scheduler_name == "slurm":
+        kill_slurmscheduler(args.jobid)
+
+
 if __name__ == "__main__":
     kill_paircarsjob()

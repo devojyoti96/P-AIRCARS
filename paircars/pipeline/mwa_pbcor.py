@@ -402,7 +402,7 @@ def main(
     if workdir == "":
         workdir = imagedir + "/workdir"
     os.makedirs(workdir, exist_ok=True)
-    
+
     ############
     # Logger
     ############
