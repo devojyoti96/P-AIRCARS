@@ -9,7 +9,6 @@ import traceback
 import logging
 import shlex
 import re
-import sys
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
 from paircars.utils.basic_utils import *
