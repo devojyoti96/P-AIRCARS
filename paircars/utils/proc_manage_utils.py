@@ -392,7 +392,7 @@ def get_local_dask_cluster(
             print("####################################################")
         return client, cluster, dask_dir
     except Exception as e:
-        print ("Error occured in creating local cluster.")
+        print("Error occured in creating local cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {dask_dir_tmp}")
 
@@ -552,7 +552,7 @@ def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
     ncpu = max(1, int(total_cpu * cpu_frac))
-    mem = round(total_mem * mem_frac,1)
+    mem = round(total_mem * mem_frac, 1)
     return ncpu, mem
 
 
@@ -720,21 +720,21 @@ def get_slurm_dask_cluster(
         Dask directory used
     """
     scheduler_name = get_scheduler_name()
-    if scheduler_name!="slurm":
-        print ("SLURM is not avilable as job scheduler in your cluster.")
-        return 
+    if scheduler_name != "slurm":
+        print("SLURM is not avilable as job scheduler in your cluster.")
+        return
     logging.getLogger("distributed").setLevel(logging.ERROR)
 
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-   
+
     if jobid is None:
         jobid = get_jobid()
 
-    os.makedirs(dask_dir,exist_ok=True)
+    os.makedirs(dask_dir, exist_ok=True)
     log_dir = f"{dask_dir}/slurm_log_{jobid}"
     os.makedirs(log_dir, exist_ok=True)
-    
+
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
@@ -755,15 +755,16 @@ def get_slurm_dask_cluster(
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()
-    
+
         job_extra = [
             f"--nodes=1",
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
             f"--mem={mem}G",
             f"--output={log_dir}/paircars_{jobid}-%j.out",
-            f"--error={log_dir}/paircars_{jobid}-%j.err",]
-        
+            f"--error={log_dir}/paircars_{jobid}-%j.err",
+        ]
+
         cluster = SLURMCluster(
             queue=partition,
             account=account,
@@ -777,7 +778,7 @@ def get_slurm_dask_cluster(
             local_directory=dask_dir_tmp,
             death_timeout=60,
             log_directory=log_dir,
-            name=f"paircars_{jobid}"
+            name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
             env_extra=[
                 "OMP_NUM_THREADS=1",
@@ -803,7 +804,7 @@ def get_slurm_dask_cluster(
 
         return client, cluster, dask_dir
     except Exception as e:
-        print ("Error occured in creating SLURM cluster.")
+        print("Error occured in creating SLURM cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {output_path} {log_dir} {dask_dir}")
 
