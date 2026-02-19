@@ -319,12 +319,12 @@ def submit_master_flow(args, jobid):
         #SBATCH --nodes=1
         #SBATCH --ntasks=1
         #SBATCH --cpus-per-task={min(8,ncpu)}
-        #SBATCH --mem={(16,mem)}G
+        #SBATCH --mem={min(16,mem)}G
         """
         if args.account:
             script += f"#SBATCH --account={args.account}\n"
         os.makedirs(args.workdir, exist_ok=True)
-        script_path = os.path.join(args.workdir, "paircars_slurm_{jobid}.sh")
+        script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
         with open(script_path, "w") as f:
             f.write(script)
         subprocess.run(["sbatch", script_path], check=True)
@@ -332,32 +332,6 @@ def submit_master_flow(args, jobid):
     except Exception as e:
         traceback.print_exc()
         return 1
-
-
-def save_slurm_jobid(jobid, slurm_jobid_file):
-    """
-    Save SLURM jobid
-
-    Parameters
-    ----------
-    jobid : int
-        Slurm job ID
-    slurm_jobid_file : str
-        File to save
-    """
-    try:
-        slurm_jobid_file = os.path.abspath(slurm_jobid_file)
-        os.makedirs(os.path.dirname(slurm_jobid_file), exist_ok=True)
-        jobids = []
-        if os.path.exists(slurm_jobid_file):
-            with open(slurm_jobid_file, "r") as f:
-                jobids = [int(line.strip()) for line in f if line.strip()]
-        jobids.append(int(jobid))
-        with open(slurm_jobid_file, "w") as f:
-            for j in jobids:
-                f.write(f"{j}\n")
-    except:
-        pass
 
 
 # Exposing only functions
