@@ -25,6 +25,7 @@ from pyfiglet import Figlet
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
 )
+from paircars.clusterutils import *
 from paircars.pipeline import (
     mwa_make_ds,
     do_target_split,
@@ -3255,12 +3256,6 @@ def cli():
         help="Account name (If your cluster requires this, you should provide. Otherwise job can not be started)",
     )
     advanced_slurm.add_argument(
-        "--project",
-        type=str,
-        default=None,
-        help="Project name (If your cluster requires this, you should provide. Otherwise job can not be started)",
-    )
-    advanced_slurm.add_argument(
         "--walltime",
         type=str,
         default="24:00:00",
@@ -3320,14 +3315,13 @@ def cli():
             stop_prefect_server()
         if scheduler_name == "slurm":
             print("Setting up slurm cluster....")
-            dask_client, dask_cluster, dask_dir = get_slurm_dask_cluster(
+            dask_client, dask_cluster, dask_dir = slurm_cluster.get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
                 partition=args.partition,
                 account=args.account,
-                project=args.project,
                 walltime=args.walltime,
             )
             nworker = get_total_nodes(partition=args.partition)
