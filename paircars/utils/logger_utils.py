@@ -153,25 +153,6 @@ class LogTailHandler(FileSystemEventHandler):
                 pass
 
 
-def ping_logger(jobid, remote_jobid, stop_event, remote_link=""):
-    """Ping a job-specific keep-alive endpoint periodically until stop_event is set."""
-    pid = os.getpid()
-    cachedir = get_cachedir()
-    save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
-    interval = 10  # 10 min interval
-    if remote_link != "":
-        url = f"{remote_link}/api/ping/{remote_jobid}"
-        while not stop_event.is_set():
-            try:
-                print(
-                    f"[ping_logger] Ping sent for job {remote_jobid} at {dt.now().isoformat()}"
-                )
-                res = requests.post(url, timeout=2)
-            except Exception as e:
-                pass
-            stop_event.wait(interval)
-
-
 def create_logger(logname, logfile, get_print=False, verbose=False):
     """
     Create logger.

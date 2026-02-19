@@ -396,17 +396,13 @@ def main(
     int
         Success message
     """
-    if workdir == "":
-        workdir = imagedir + "/workdir"
-    os.makedirs(workdir, exist_ok=True)
-
-    pid = os.getpid()
-    cachedir = get_cachedir()
-    save_pid(pid, f"{cachedir}/pids/pids_{jobid}.txt")
-
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
 
+    if workdir == "":
+        workdir = imagedir + "/workdir"
+    os.makedirs(workdir, exist_ok=True)
+    
     ############
     # Logger
     ############

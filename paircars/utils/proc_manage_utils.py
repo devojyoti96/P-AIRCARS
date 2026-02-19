@@ -95,16 +95,18 @@ def get_jobid():
     return int(cur_jobid)
 
 
-def save_main_process_info(pid, jobid, msdir, workdir, outdir, cpu_frac, mem_frac):
+def save_main_process_info(pid, jobid, scheduler_address, msdir, workdir, outdir, cpu_frac, mem_frac):
     """
     Save main processes info
 
     Parameters
     ----------
     pid : int
-        Main job process id
+        Main job process id for local cluster or scheduler job id
     jobid : int
         Job ID
+    scheduler_address : str
+        Dask scheduler address
     msdir : str
         Measurement set directory
     workdir : str
@@ -141,36 +143,10 @@ def save_main_process_info(pid, jobid, msdir, workdir, outdir, cpu_frac, mem_fra
                 if os.path.exists(f"{cachedir}/pids/pids_{job_id}.txt"):
                     os.system(f"rm -rf {cachedir}/pids/pids_{job_id}.txt")
     main_job_file = f"{cachedir}/main_pids_{jobid}.txt"
-    main_str = f"{jobid} {pid} {msdir} {workdir} {outdir} {cpu_frac} {mem_frac}"
+    main_str = f"{jobid} {pid} {scheduler_address} {msdir} {workdir} {outdir} {cpu_frac} {mem_frac}"
     with open(main_job_file, "w") as f:
         f.write(main_str)
     return main_job_file
-
-
-def save_pid(pid, pid_file):
-    """
-    Save PID
-
-    Parameters
-    ----------
-    pid : int
-        Process ID
-    pid_file : str
-        File to save
-    """
-    try:
-        pid_file = os.path.abspath(pid_file)
-        os.makedirs(os.path.dirname(pid_file), exist_ok=True)
-        pids = []
-        if os.path.exists(pid_file):
-            with open(pid_file, "r") as f:
-                pids = [int(line.strip()) for line in f if line.strip()]
-        pids.append(int(pid))
-        with open(pid_file, "w") as f:
-            for p in pids:
-                f.write(f"{p}\n")
-    except:
-        pass
 
 
 def generate_activate_env(outfile="activate_env.sh"):

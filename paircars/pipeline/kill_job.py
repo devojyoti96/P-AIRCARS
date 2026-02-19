@@ -5,6 +5,9 @@ import time
 import sys
 import os
 import signal
+import traceback
+import subprocess
+from distributed import Client
 from paircars.utils import get_cachedir, drop_cache
 
 
@@ -31,25 +34,93 @@ def terminate_process_and_children(pid, grace_period=3.0):
         pass
 
 
-def force_kill_pids_with_children(pids, max_tries=10, wait_time=0.5):
+def kill_localscheduler(jobid):
     """
-    Repeatedly try to terminate and then kill all PIDs (and their children) until none remain.
+    Kill local scheduler
+    
+    Parameters
+    ----------
+    jobid : int
+        P-AIRCARS job ID
     """
-    for attempt in range(max_tries):
-        remaining = []
-        for pid in np.atleast_1d(pids):
-            try:
-                terminate_process_and_children(int(pid))
-            except Exception:
-                remaining.append(pid)
+    try:
+        cachedir = get_cachedir()
+        jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
+        try:
+            results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
+            main_pid = int(results[1])
+            scheduler_address = str(results[2])
+            msdir = str(results[3])
+            workdir = str(results[4])
+            outdir = str(results[5])
+        except Exception as e:
+            print(f"Could not read job file.")
+            traceback.print_exc()
+            return
 
-        time.sleep(wait_time)
-        remaining = [pid for pid in np.atleast_1d(pids) if psutil.pid_exists(int(pid))]
+        client = Client(address=address)
+        client.shutdown()
+        client.close()
+        
+        print(f"Attempting to terminate main PID: {main_pid}")
+        terminate_process_and_children(main_pid)
+        os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
-        if not remaining:
-            break
-        else:
-            pids = remaining
+        print("Dropping caches...")
+        drop_cache(msdir)
+        drop_cache(workdir)
+        drop_cache(outdir)
+        drop_cache(cachedir)
+        print("Cleanup complete.")     
+        return 
+    except Exception as e:
+        print(f"Error in killing P-AIRCARS job: {jobid}")  
+        traceback.print_exc()
+        return  
+
+def kill_slurmscheduler(jobid):
+    """
+    Kill local scheduler
+    
+    Parameters
+    ----------
+    jobid : int
+        P-AIRCARS job ID
+    """
+    try:
+        cachedir = get_cachedir()
+        jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
+        try:
+            results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
+            main_jobid = int(results[1])
+            scheduler_address = str(results[2])
+            msdir = str(results[3])
+            workdir = str(results[4])
+            outdir = str(results[5])
+        except Exception as e:
+            print(f"Could not read job file.")
+            traceback.print_exc()
+            return
+
+        client = Client(address=address)
+        client.shutdown()
+        client.close()
+        
+        print(f"Attempting to terminate main slurm jobid: {main_jobid}")
+        subprocess.run(["scancel", main_jobid])
+        os.system(f"rm -rf {workdir}/tmp_paircars_*")
+
+        print("Dropping caches...")
+        drop_cache(msdir)
+        drop_cache(workdir)
+        drop_cache(outdir)
+        drop_cache(cachedir)
+        print("Cleanup complete.")     
+        return 
+    except Exception as e:
+        print(f"Error in killing P-AIRCARS job: {jobid}")  
+        traceback.print_exc()
+        return 
 
 
 def kill_paircarsjob():
@@ -66,40 +137,14 @@ def kill_paircarsjob():
         sys.exit(1)
 
     args = parser.parse_args()
-    cachedir = get_cachedir()
-    jobfile_name = f"{cachedir}/main_pids_{args.jobid}.txt"
-
-    try:
-        results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
-        main_pid = int(results[1])
-        msdir = str(results[2])
-        workdir = str(results[3])
-        outdir = str(results[4])
-    except Exception as e:
-        print(f"Could not read job file: {e}")
-        return
-
-    print(f"Attempting to terminate main PID: {main_pid}")
-    terminate_process_and_children(main_pid)
-
-    pid_file = f"{cachedir}/pids/pids_{args.jobid}.txt"
-    if os.path.exists(pid_file):
-        try:
-            pids = np.loadtxt(pid_file, unpack=True, dtype="int")
-            print(f"Terminating worker PIDs: {pids}")
-            force_kill_pids_with_children(pids)
-        except Exception as e:
-            print(f"Could not read or terminate PIDs from {pid_file}: {e}")
-
-    os.system(f"rm -rf {workdir}/tmp_paircars_*")
-
-    print("Dropping caches...")
-    drop_cache(msdir)
-    drop_cache(workdir)
-    drop_cache(outdir)
-    drop_cache(cachedir)
-    print("Cleanup complete.")
-
-
+    
+    scheduler_name = get_scheduler_name()
+    
+    if scheduler_name=="local":
+        kill_localscheduler(args.jobid)
+    elif scheduler_name=="slurm":
+        kill_slurmscheduler(args.jobid)    
+    
+   
 if __name__ == "__main__":
     kill_paircarsjob()

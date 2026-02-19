@@ -7,6 +7,8 @@ import subprocess
 import sys
 import traceback
 import logging
+import shlex
+import re
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
 from paircars.utils.basic_utils import *
@@ -189,6 +191,166 @@ def get_slurm_dask_cluster(
         traceback.print_exc()
         os.system(f"rm -rf {output_path} {log_dir} {dask_dir}")
         
+
+def slurm_time_to_seconds(timestr):
+    """
+    Convert SLURM time format (D-HH:MM:SS or HH:MM:SS) to seconds.
+    
+    Parameters
+    ----------
+    timestr : str
+        Time string in SLURM format
+        
+    Returns
+    -------
+    float
+        Time in seconds
+    """
+    if timestr.lower() in ["infinite", "unlimited"]:
+        return float("inf")
+
+    if "-" in timestr:
+        days, hms = timestr.split("-")
+        h, m, s = map(int, hms.split(":"))
+        return int(days) * 86400 + h * 3600 + m * 60 + s
+    else:
+        h, m, s = map(int, timestr.split(":"))
+        return h * 3600 + m * 60 + s
+        
+        
+def get_max_walltime(partition):
+    """
+    Get maximum wall time for the partition
+    
+    Parameters
+    ----------
+    partition : str
+        Partition name
+        
+    Returns
+    -------
+    str
+        Maximum wall time
+    """
+    result = subprocess.run(
+        ["scontrol", "show", "partition"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("Failed to query SLURM partitions.")
+    output = result.stdout
+    partitions = {}
+    blocks = output.split("\n\n")
+    for block in blocks:
+        name_match = re.search(r"PartitionName=(\S+)", block)
+        time_match = re.search(r"MaxTime=(\S+)", block)
+        if name_match and time_match:
+            part_name = name_match.group(1)
+            max_time = time_match.group(1)
+            partitions[part_name] = max_time
+    if partition not in partitions:
+        raise ValueError(f"Partition {partition} not found.")
+    max_time = partitions[partition]
+    return max_time, slurm_time_to_seconds(max_time)
+    
+        
+def submit_master_flow(args,jobid):
+    """
+    Submit P-AIRCARS master flow to a slurm job
+    
+    Parameters
+    ----------
+    args : dict
+        Arparser dictionary
+    jobid : int
+        P-AIRCARS jobid
+        
+    Returns
+    -------
+    int
+        Success message
+    """
+    scheduler_name = get_scheduler_name()
+    if scheduler_name is not "slurm":
+        print ("SLURM job scheduler is not available.")
+        return 1
+    cli_cmd = " ".join(shlex.quote(arg) for arg in sys.argv)
+    if args.partition and args.partition is not None:
+        max_time, max_time_seconds = get_max_walltime(args.partition)
+    else:
+        print ("Please provide partition name to run SLURM jobs.")
+        return 1
+
+    try:
+        #################################
+        # Determining wall time
+        #################################
+        if args.walltime is None:
+            walltime = max_time
+        else:
+            wall_time_second = slurm_time_to_seconds(args.walltime)
+            if wall_time_seconod>max_time_second:
+                print (f"Walltime : {args.walltime} is larger than maximum allowed time: {max_time}.")
+                walltime=max_time
+            else:
+                walltime = args.walltime
+        #############################
+        # Determining cpu and memory
+        #############################
+        ncpu, mem = get_slurm_node_resources(
+                partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
+            )      
+        script = f"""#!/bin/bash
+        #SBATCH --job-name=paircars_{jobid}
+        #SBATCH --time={walltime}
+        #SBATCH --output={args.workdir}/paircars_{jobid}_%j.out
+        #SBATCH --output={args.workdir}/paircars_{jobid}_%j.err
+        #SBATCH --partition={args.partition}
+        #SBATCH --partition={args.partition}
+        #SBATCH --nodes=1
+        #SBATCH --ntasks=1
+        #SBATCH --cpus-per-task={min(8,ncpu)}
+        #SBATCH --mem={(16,mem)}G
+        """
+        if args.account:
+            script += f"#SBATCH --account={args.account}\n"
+        os.makedirs(args.workdir, exist_ok=True)
+        script_path = os.path.join(args.workdir, "paircars_slurm_{jobid}.sh")
+        with open(script_path, "w") as f:
+            f.write(script)
+        subprocess.run(["sbatch", script_path], check=True)
+        return 0
+    except Exception as e:
+        traceback.print_exc()
+        return 1
+        
+        
+def save_slurm_jobid(jobid, slurm_jobid_file):
+    """
+    Save SLURM jobid
+
+    Parameters
+    ----------
+    jobid : int
+        Slurm job ID
+    slurm_jobid_file : str
+        File to save
+    """
+    try:
+        slurm_jobid_file = os.path.abspath(slurm_jobid_file)
+        os.makedirs(os.path.dirname(slurm_jobid_file), exist_ok=True)
+        jobids = []
+        if os.path.exists(slurm_jobid_file):
+            with open(slurm_jobid_file, "r") as f:
+                jobids = [int(line.strip()) for line in f if line.strip()]
+        jobids.append(int(jobid))
+        with open(slurm_jobid_file, "w") as f:
+            for j in jobids:
+                f.write(f"{j}\n")
+    except:
+        pass
+
 # Exposing only functions
 __all__ = [
     name

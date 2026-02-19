@@ -1607,12 +1607,21 @@ def master_control(
         ####################################
         # Job and process IDs
         ####################################
-        pid = os.getpid()
+        scheduler_name = get_scheduler_name()
+        if scheduler_name=="local":
+            pid = os.getpid()
+        elif scheduler_name=="slurm":
+            pid = os.environ.get("SLURM_JOB_ID")
+        else:
+            print ("P-AIRCARS is only ready for local or slurm cluster.")
+            return 1
         if jobid is None:
             jobid = get_jobid()
+        scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
             pid,
             jobid,
+            scheduler_address,
             target_datadir,
             os.path.abspath(workdir),
             os.path.abspath(outdir),
@@ -3247,7 +3256,7 @@ def cli():
         "--partition",
         type=str,
         default=None,
-        help="Partition name (If your cluster requires this, you should provide. Otherwise job can not be started)",
+        help="Partition name (Required)",
     )
     advanced_slurm.add_argument(
         "--account",
@@ -3258,7 +3267,7 @@ def cli():
     advanced_slurm.add_argument(
         "--walltime",
         type=str,
-        default="24:00:00",
+        default=None,
         help="Wall time, each slurm job can execute in maximum this time",
     )
 
@@ -3314,6 +3323,10 @@ def cli():
             print("Stopping prefect server for cluster architecture.")
             stop_prefect_server()
         if scheduler_name == "slurm":
+            if args.partition is None:
+                print ("Please provide partition name to submit SLURM jobs.")
+                return
+        
             print("Setting up slurm cluster....")
             dask_client, dask_cluster, dask_dir = slurm_cluster.get_slurm_dask_cluster(
                 args.workdir,
