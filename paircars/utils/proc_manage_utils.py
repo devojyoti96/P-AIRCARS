@@ -680,6 +680,7 @@ def get_slurm_dask_cluster(
     partition=None,
     account=None,
     walltime="24:00:00",
+    python_path=None,
     spill_frac=0.7,
     verbose=True,
 ):
@@ -726,14 +727,11 @@ def get_slurm_dask_cluster(
 
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    ncpu, mem = get_slurm_node_resources(
-        partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
-    )
-    
+   
     if jobid is None:
         jobid = get_jobid()
 
-    output_path = f"{dask_dir}/slurm_config_{jobid}.yaml"
+    os.makedirs(dask_dir,exist_ok=True)
     log_dir = f"{dask_dir}/slurm_log_{jobid}"
     os.makedirs(log_dir, exist_ok=True)
     
@@ -742,39 +740,51 @@ def get_slurm_dask_cluster(
     os.makedirs(dask_dir_tmp, exist_ok=True)
 
     try:
-        '''slurm_config_yaml = create_slurm_config(
-            output_path,
-            dask_dir,
-            log_dir,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
-            partition=partition,
-            walltime=walltime,
-            job_name=f"paircars_{jobid}",
-            exclusive=True,
-        )'''
         dask.config.set(
             {
-                "temporary-directory": dask_dir,
+                "temporary-directory": dask_dir_tmp,
                 "distributed.worker.memory.target": spill_frac,
                 "distributed.worker.memory.spill": spill_frac + 0.1,
                 "distributed.worker.memory.pause": spill_frac + 0.2,
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-
-        '''with open(slurm_config_yaml, "r") as f:
-            cluster_config = yaml.safe_load(f)
-        dask.config.set(cluster_config)'''
-
+        ncpu, mem = get_slurm_node_resources(
+            partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
+        )
+        if python_path is None:
+            python_path = sys.executable
+        interface = detect_best_interface()
+    
+        job_extra = [
+            f"--nodes=1",
+            f"--ntasks=1",
+            f"--cpus-per-task={ncpu}",
+            f"--mem={mem}G",
+            f"--output={log_dir}/paircars_{jobid}-%j.out",
+            f"--error={log_dir}/paircars_{jobid}-%j.err",]
+        
         cluster = SLURMCluster(
             queue=partition,
             account=account,
             cores=ncpu,
+            n_workers=1,
+            walltime=walltime,
             memory=f"{mem}G",
             processes=1,
+            interface=interface,
+            python=python_path,
             local_directory=dask_dir_tmp,
+            death_timeout=60,
+            log_directory=log_dir,
+            name=f"paircars_{jobid}"
+            shared_temp_directory=dask_dir_tmp,
             env_extra=[
+                "OMP_NUM_THREADS=1",
+                "MKL_NUM_THREADS=1",
+                "OPENBLAS_NUM_THREADS=1",
+                "NUMEXPR_NUM_THREADS=1",
+                "MALLOC_TRIM_THRESHOLD_=0",
                 f"TMPDIR={dask_dir_tmp}",
                 f"TMP={dask_dir_tmp}",
                 f"TEMP={dask_dir_tmp}",
@@ -795,7 +805,7 @@ def get_slurm_dask_cluster(
     except Exception as e:
         print ("Error occured in creating SLURM cluster.")
         traceback.print_exc()
-        os.system(f"rm -rf {output_path} {log_dir} {dask_dir_tmp}")
+        os.system(f"rm -rf {output_path} {log_dir} {dask_dir}")
 
 
 # Exposing only functions
