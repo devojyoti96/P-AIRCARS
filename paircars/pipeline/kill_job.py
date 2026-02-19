@@ -8,7 +8,7 @@ import signal
 import traceback
 import subprocess
 from distributed import Client
-from paircars.utils import get_cachedir, drop_cache
+from paircars.utils import get_cachedir, drop_cache, get_scheduler_name
 
 
 def terminate_process_and_children(pid, grace_period=3.0):
@@ -57,15 +57,18 @@ def kill_localscheduler(jobid):
             print(f"Could not read job file.")
             traceback.print_exc()
             return
-
-        client = Client(address=address)
-        client.shutdown()
-        client.close()
-        
+                    
         print(f"Attempting to terminate main PID: {main_pid}")
         terminate_process_and_children(main_pid)
         os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
+        try:
+            client = Client(address=address)
+            client.shutdown()
+            client.close()
+        except:
+            traceback.print_exc()
+            
         print("Dropping caches...")
         drop_cache(msdir)
         drop_cache(workdir)
