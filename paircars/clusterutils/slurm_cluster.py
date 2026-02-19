@@ -141,6 +141,7 @@ def get_slurm_dask_cluster(
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
             f"--mem={mem}G",
+            f"--exclusive",
             f"--output={log_dir}/paircars_{jobid}-%j.out",
             f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
