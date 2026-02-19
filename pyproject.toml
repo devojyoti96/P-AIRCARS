@@ -239,6 +239,7 @@ packages = [
     "paircars",
     "paircars.utils",
     "paircars.casacoreutils",
+    "paircars.clusterutils",
     "paircars.pipeline",
     "paircars.data"
 ]
