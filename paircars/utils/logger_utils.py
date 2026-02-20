@@ -219,7 +219,7 @@ def get_logid(logfile):
         "imaging_target.log": "All imaging",
         "ds_target.log": "Making dynamic spectra",
         "do_overlay.log": "Making overlays",
-        "main.log": "P-AIRCARS master log",
+        "main.log": "All master log",
     }
 
     if name in logmap:
