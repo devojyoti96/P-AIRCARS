@@ -377,6 +377,52 @@ def get_local_dask_cluster(
         os.system(f"rm -rf {dask_dir_tmp}")
 
 
+def submit_local_master_flow(args, jobid):
+    """
+    Submit P-AIRCARS master flow to a local cluster
+
+    Parameters
+    ----------
+    args : dict
+        Arparser dictionary
+    jobid : int
+        P-AIRCARS jobid
+
+    Returns
+    -------
+    int
+        Success message
+    """
+    scheduler_name = get_scheduler_name()
+    if scheduler_name is not "local":
+        print(
+            f"Job scheduler is not local. Available job scheduler is : {scheduler_name}"
+        )
+        return 1
+    cli_cmd = "run-mwa-masterflow " + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+    if hasattr(args, "workdir") and args.workdir is not None:
+        os.makedirs(args.workdir, exist_ok=True)
+    else:
+        print("Please provide a work directory.")
+        return 1
+
+    try:
+        script_args = ["#!/bin/bash", "export PYTHONUNBUFFERED=1"]
+        script_args.append(cli_cmd)
+        script_path = os.path.join(args.workdir, f"paircars_local_{jobid}.sh")
+        with open(script_path, "w") as f:
+            for script_arg in script_args:
+                f.write(f"{script_arg}\n")
+        subprocess.run(["bash", script_path], check=True)
+        return 0
+    except Exception as e:
+        traceback.print_exc()
+        return 1
+
+
+##############################################
+# Scheduler and hardware architecture related
+##############################################
 def detect_best_interface():
     """
     Automatically detect best network interface for Dask.

@@ -3242,6 +3242,12 @@ def cli():
         help="Disable remote logger",
     )
     advanced_resource.add_argument(
+        "--jobid",
+        type=int,
+        default=None,
+        help="User provided P-AIRCARS job ID",
+    )
+    advanced_resource.add_argument(
         "--cluster",
         action="store_true",
         dest="cluster",
@@ -3279,8 +3285,12 @@ def cli():
 
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
-
     os.system(f"rm -rf {args.workdir}/dask_*")
+
+    if args.jobid is None:
+        jobid = get_jobid()
+    else:
+        jobid = args.jobid
 
     ###########################################################
     # Estimating jobs memory size (5 times each measurment set)
@@ -3316,7 +3326,6 @@ def cli():
     # Setup cluster environment
     ###############################################
     scheduler_name = get_scheduler_name()
-    jobid = get_jobid()
     if args.cluster is True and scheduler_name == "local":
         print(
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."

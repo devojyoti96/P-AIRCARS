@@ -260,9 +260,9 @@ def get_max_walltime(partition):
     return max_time, slurm_time_to_seconds(max_time)
 
 
-def submit_master_flow(args, jobid):
+def submit_slurm_master_flow(args, jobid):
     """
-    Submit P-AIRCARS master flow to a slurm job
+    Submit P-AIRCARS master flow to a slurm cluster
 
     Parameters
     ----------
@@ -280,18 +280,18 @@ def submit_master_flow(args, jobid):
     if scheduler_name is not "slurm":
         print("SLURM job scheduler is not available.")
         return 1
-    cli_cmd = "run-mwa-masterflow "+" ".join(shlex.quote(arg) for arg in sys.argv[1:])
+    cli_cmd = "run-mwa-masterflow " + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
         print("Please provide partition name to run SLURM jobs.")
         return 1
     if hasattr(args, "workdir") and args.workdir is not None:
-        os.makedirs(args.workdir,exist_ok=True)
+        os.makedirs(args.workdir, exist_ok=True)
     else:
-        print ("Please provide a work directory.")
+        print("Please provide a work directory.")
         return 1
-                
+
     try:
         #################################
         # Determining wall time
@@ -324,12 +324,22 @@ def submit_master_flow(args, jobid):
         ncpu, mem = get_slurm_node_resources(
             partition=args.partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
-        script_args = ["#!/bin/bash",f"#SBATCH --job-name=paircars_{jobid}",f"#SBATCH --time={walltime}",f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.out",
-                        f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.err",f"#SBATCH --partition={args.partition}",f"#SBATCH --partition={args.partition}",
-                        "#SBATCH --nodes=1","#SBATCH --ntasks=1",f"#SBATCH --cpus-per-task={min(8,ncpu)}",f"#SBATCH --mem={min(16,mem)}G"]
+        script_args = [
+            "#!/bin/bash",
+            f"#SBATCH --job-name=paircars_{jobid}",
+            f"#SBATCH --time={walltime}",
+            f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.out",
+            f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.err",
+            f"#SBATCH --partition={args.partition}",
+            f"#SBATCH --partition={args.partition}",
+            "#SBATCH --nodes=1",
+            "#SBATCH --ntasks=1",
+            f"#SBATCH --cpus-per-task={min(8,ncpu)}",
+            f"#SBATCH --mem={min(16,mem)}G",
+        ]
         if hasattr(args, "account") and args.account is not None:
             script_args.append(f"#SBATCH --account={args.account}\n")
-        script_args.append(cli_cmd) 
+        script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
         with open(script_path, "w") as f:
             for script_arg in script_args:
