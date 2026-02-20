@@ -5,6 +5,7 @@ import tempfile
 import time
 import glob
 import os
+import subprocess
 from .basic_utils import *
 
 ####################
@@ -49,17 +50,15 @@ def check_udocker_container(name):
     """
     set_udocker_env()
     pid = os.getpid()
-    timestamp = int(time.time() * 1000)
-    tmp1 = f"tmp1_{pid}_{timestamp}.txt"
-    tmp2 = f"tmp2_{pid}_{timestamp}.txt"
-    b = os.system(
-        f"udocker --insecure --quiet inspect " + name + f" >> {tmp1} >> {tmp2}"
-    )
-    os.system(f"rm -rf {tmp1} {tmp2}")
-    if b != 0:
+    try:
+        result = subprocess.run(
+            ["udocker", "--insecure", "--quiet", "inspect", name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return result.returncode == 0
+    except Exception:
         return False
-    else:
-        return True
 
 
 def initialize_wsclean_container(name="paircarswsclean", update=False):

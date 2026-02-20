@@ -629,18 +629,6 @@ def run_all_imaging(
     mem_frac = min(0.8, mem_frac)
 
     mslist = sorted(mslist)
-    ###########################
-    # WSClean container
-    ###########################
-    container_name = "paircarswsclean"
-    container_present = check_udocker_container(container_name)
-    if not container_present:
-        container_name = initialize_wsclean_container(name=container_name)
-        if container_name is None:
-            print(
-                f"Container {container_name} is not initiated. First initiate container and then run."
-            )
-            return 1
     try:
         if len(mslist) == 0:
             print("Provide valid measurement set list.")
@@ -959,6 +947,19 @@ def main(
         outdir = workdir
     outdir = outdir.rstrip("/")
     os.makedirs(outdir, exist_ok=True)
+    
+    ###########################
+    # WSClean container
+    ###########################
+    container_name = "paircarswsclean"
+    container_present = check_udocker_container(container_name)
+    if not container_present:
+        container_name = initialize_wsclean_container(name=container_name)
+        if container_name is None:
+            print(
+                f"Container {container_name} is not initiated. First initiate container and then run."
+            )
+            return 1
 
     ############
     # Logger
