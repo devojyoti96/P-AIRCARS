@@ -281,7 +281,6 @@ def submit_master_flow(args, jobid):
         print("SLURM job scheduler is not available.")
         return 1
     cli_cmd = "run-mwa-masterflow "+" ".join(shlex.quote(arg) for arg in sys.argv[1:])
-    print (cli_cmd)
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
@@ -339,6 +338,8 @@ def submit_master_flow(args, jobid):
         """
         if hasattr(args, "account") and args.account is not None:
             script += f"#SBATCH --account={args.account}\n"
+            
+        scipt+=cli_cmd 
         os.makedirs(args.workdir, exist_ok=True)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
         with open(script_path, "w") as f:
