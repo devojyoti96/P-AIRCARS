@@ -14,6 +14,7 @@ import sys
 import tempfile
 import shutil
 import socket
+import shlex
 import traceback
 from pathlib import Path
 from dask import delayed, compute, config
