@@ -324,26 +324,15 @@ def submit_master_flow(args, jobid):
         ncpu, mem = get_slurm_node_resources(
             partition=args.partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
-        script = f"""#!/bin/bash
-#SBATCH --job-name=paircars_{jobid}
-#SBATCH --time={walltime}
-#SBATCH --output={args.workdir}/paircars_{jobid}_%j.out
-#SBATCH --output={args.workdir}/paircars_{jobid}_%j.err
-#SBATCH --partition={args.partition}
-#SBATCH --partition={args.partition}
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task={min(8,ncpu)}
-#SBATCH --mem={min(16,mem)}G
-        """
+        script_args = ["#!/bin/bash",f"#SBATCH --job-name=paircars_{jobid}",f"#SBATCH --time={walltime}",f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.out",
+                        f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.err",f"#SBATCH --partition={args.partition}",f"#SBATCH --partition={args.partition}",
+                        "#SBATCH --nodes=1","#SBATCH --ntasks=1",f"#SBATCH --cpus-per-task={min(8,ncpu)}",f"#SBATCH --mem={min(16,mem)}G"]
         if hasattr(args, "account") and args.account is not None:
-            script += f"#SBATCH --account={args.account}\n"
-            
-        script+=cli_cmd 
-        os.makedirs(args.workdir, exist_ok=True)
+            script_args.append(f"#SBATCH --account={args.account}\n")
+        script_args.append(cli_cmd) 
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
         with open(script_path, "w") as f:
-            f.write(script)
+            f.writelines(script_args)
         subprocess.run(["sbatch", script_path], check=True)
         return 0
     except Exception as e:
