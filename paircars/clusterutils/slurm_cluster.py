@@ -280,7 +280,7 @@ def submit_master_flow(args, jobid):
     if scheduler_name is not "slurm":
         print("SLURM job scheduler is not available.")
         return 1
-    cli_cmd = " ".join(shlex.quote(arg) for arg in sys.argv)
+    cli_cmd = " ".join(shlex.quote(arg) for arg in sys.argv[1:])
     if args.partition and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
