@@ -1376,6 +1376,7 @@ def master_control(
     # Remote logging
     remote_logger=False,
     jobid=None,
+    job_password=None,
 ):
     """
     Master controller of the entire pipeline
@@ -1485,6 +1486,8 @@ def master_control(
         Enable remote logging of the pipeline status
     jobid : str, optional
         Job ID
+    job_password : str, optional
+        User specified job password for remote logger
 
     Returns
     -------
@@ -1651,7 +1654,10 @@ def master_control(
             job_name = f"{hostname} :: {timestamp} :: {target_obsid}"
             timestamp1 = dt.utcnow().strftime("%Y%m%dT%H%M%S")
             remote_job_id = f"{hostname}_{timestamp1}_{target_obsid}"
-            password = generate_password()
+            if job_password is None:
+                password = generate_password()
+            else:
+                password = job_password
             np.save(
                 f"{workdir}/jobname_password.npy",
                 np.array([job_name, password], dtype="object"),
@@ -3291,6 +3297,12 @@ def cli():
         help="User provided P-AIRCARS job ID",
     )
     advanced_resource.add_argument(
+        "--job_password",
+        type=str,
+        default=None,
+        help="User specified job password",
+    )
+    advanced_resource.add_argument(
         "--cluster",
         action="store_true",
         dest="cluster",
@@ -3491,12 +3503,13 @@ def cli():
             # Resource settings
             cpu_frac=args.cpu_frac,
             mem_frac=args.mem_frac,
+            max_worker=nworker,
             keep_backup=args.keep_backup,
             keep_calibrated_ms=args.keep_calibrated_ms,
             # Remote logging
             remote_logger=args.remote_logger,
             jobid=jobid,
-            max_worker=nworker,
+            job_password=args.job_password,
         )
     except Exception as e:
         traceback.print_exc()

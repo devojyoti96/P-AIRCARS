@@ -297,6 +297,12 @@ def cli():
         help="Disable remote logger",
     )
     advanced_resource.add_argument(
+        "--job_password",
+        type=str,
+        default=None,
+        help="User specified job password",
+    )
+    advanced_resource.add_argument(
         "--cluster",
         action="store_true",
         dest="cluster",
