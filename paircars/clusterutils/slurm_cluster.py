@@ -282,22 +282,22 @@ def submit_master_flow(args, jobid):
         return 1
     cli_cmd = "run-mwa-masterflow "+" ".join(shlex.quote(arg) for arg in sys.argv[1:])
     print (cli_cmd)
-    if args.partition and args.partition is not None:
+    if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
         print("Please provide partition name to run SLURM jobs.")
         return 1
-    if args.workdir is False:
-        print("Please provide a work directory.")
-        return 1
-    else:
+    if hasattr(args, "workdir") and args.workdir is not None:
         os.makedirs(args.workdir,exist_ok=True)
-
+    else:
+        print ("Please provide a work directory.")
+        return 1
+                
     try:
         #################################
         # Determining wall time
         #################################
-        if args.walltime:
+        if hasattr(args, "walltime"):
             if args.walltime is None:
                 walltime = max_time
             else:
@@ -314,11 +314,11 @@ def submit_master_flow(args, jobid):
         #############################
         # Determining cpu and memory
         #############################
-        if args.cpu_frac is False:
+        if hasattr(args, "cpu_frac") is False:
             cpu_frac = 0.8
         else:
             cpu_frac = args.cpu_frac
-        if args.mem_frac is False:
+        if hasattr(args, "mem_frac") is False:
             mem_frac = 0.8
         else:
             mem_frac = args.mem_frac
@@ -337,7 +337,7 @@ def submit_master_flow(args, jobid):
         #SBATCH --cpus-per-task={min(8,ncpu)}
         #SBATCH --mem={min(16,mem)}G
         """
-        if args.account:
+        if hasattr(args, "account") and args.account is not None:
             script += f"#SBATCH --account={args.account}\n"
         os.makedirs(args.workdir, exist_ok=True)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
