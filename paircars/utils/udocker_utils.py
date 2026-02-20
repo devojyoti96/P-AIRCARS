@@ -49,7 +49,6 @@ def check_udocker_container(name):
         Whether present or not
     """
     set_udocker_env()
-    pid = os.getpid()
     try:
         result = subprocess.run(
             ["udocker", "--insecure", "--quiet", "inspect", name],
@@ -80,26 +79,49 @@ def initialize_wsclean_container(name="paircarswsclean", update=False):
     print("Initializing wsclean container.")
     set_udocker_env()
     image_name = "devojyoti96/wsclean-solar:latest"
-    check_cmd = f"udocker images | grep -q '{image_name}'"
-    image_exists = os.system(check_cmd) == 0
-    if not image_exists:
-        a = os.system(f"udocker pull {image_name}")
+    check_cmd = f"udocker images | grep -q {image_name}"
+    image_exists = os.system(check_cmd) 
+    if image_exists!=0:
+        result = subprocess.run(
+            ["udocker", "pull", f"{image_name}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        a=result.returncode
     else:
         if update:
-            os.system(f"udocker rm {name}")
-            os.system(f"udocker rmi {image_name}")
+            subprocess.run(
+                ["udocker", "rm", f"{name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["udocker", "rmi", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             print("Re-downloading docker image.")
-            a = os.system(f"udocker pull {image_name}")
+            result = subprocess.run(
+                ["udocker", "pull", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            a=result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
             else:
                 print("Re-downloading container image is failed.")
                 return
         else:
-            print(f"Image '{image_name}' already present.")
+            print(f"Image {image_name} already present.")
             a = 0
     if a == 0:
-        a = os.system(f"udocker create --name={name} {image_name}")
+        result = subprocess.run(
+            ["udocker", "create", f"--name={name}",f"{image_name}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        a=result.returncode
         print(f"Container started with name : {name}")
         return name
     else:
@@ -126,31 +148,55 @@ def initialize_quartical_container(name="paircarsquartical", update=False):
     print("Initializing quartical container.")
     set_udocker_env()
     image_name = "devojyoti96/quartical:0.2.6"
-    check_cmd = f"udocker images | grep -q '{image_name}'"
-    image_exists = os.system(check_cmd) == 0
-    if not image_exists:
-        a = os.system(f"udocker pull {image_name}")
+    check_cmd = f"udocker images | grep -q {image_name}"
+    image_exists = os.system(check_cmd) 
+    if image_exists!=0:
+        result = subprocess.run(
+            ["udocker", "pull", f"{image_name}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        a=result.returncode
     else:
         if update:
-            os.system(f"udocker rm {name}")
-            os.system(f"udocker rmi {image_name}")
+            subprocess.run(
+                ["udocker", "rm", f"{name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["udocker", "rmi", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             print("Re-downloading docker image.")
-            a = os.system(f"udocker pull {image_name}")
+            result = subprocess.run(
+                ["udocker", "pull", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            a=result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
             else:
                 print("Re-downloading container image is failed.")
                 return
         else:
-            print(f"Image '{image_name}' already present.")
+            print(f"Image {image_name} already present.")
             a = 0
     if a == 0:
-        a = os.system(f"udocker create --name={name} {image_name}")
+        result = subprocess.run(
+            ["udocker", "create", f"--name={name}",f"{image_name}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        a=result.returncode
         print(f"Container started with name : {name}")
         return name
     else:
         print(f"Container could not be created with name : {name}")
         return
+
 
 
 def initialize_shadems_container(name="paircarsshadems", update=False):
@@ -172,31 +218,55 @@ def initialize_shadems_container(name="paircarsshadems", update=False):
     print("Initializing shadems container.")
     set_udocker_env()
     image_name = "devojyoti96/shadems:v0.5.4"
-    check_cmd = f"udocker images | grep -q '{image_name}'"
-    image_exists = os.system(check_cmd) == 0
-    if not image_exists:
-        a = os.system(f"udocker pull {image_name}")
+    check_cmd = f"udocker images | grep -q {image_name}"
+    image_exists = os.system(check_cmd) 
+    if image_exists!=0:
+        result = subprocess.run(
+            ["udocker", "pull", f"{image_name}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        a=result.returncode
     else:
         if update:
-            os.system(f"udocker rm {name}")
-            os.system(f"udocker rmi {image_name}")
+            subprocess.run(
+                ["udocker", "rm", f"{name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["udocker", "rmi", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             print("Re-downloading docker image.")
-            a = os.system(f"udocker pull {image_name}")
+            result = subprocess.run(
+                ["udocker", "pull", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            a=result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
             else:
                 print("Re-downloading container image is failed.")
                 return
         else:
-            print(f"Image '{image_name}' already present.")
+            print(f"Image {image_name} already present.")
             a = 0
     if a == 0:
-        a = os.system(f"udocker create --name={name} {image_name}")
+        result = subprocess.run(
+            ["udocker", "create", f"--name={name}",f"{image_name}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        a=result.returncode
         print(f"Container started with name : {name}")
         return name
     else:
         print(f"Container could not be created with name : {name}")
         return
+
 
 
 def run_wsclean(
@@ -225,11 +295,6 @@ def run_wsclean(
         Success message
     """
     set_udocker_env()
-    pid = os.getpid()
-    timestamp = int(time.time() * 1000)
-    tmp1 = f"tmp1_{pid}_{timestamp}.txt"
-    tmp2 = f"tmp2_{pid}_{timestamp}.txt"
-
     def show_file(path):
         try:
             print(open(path).read())
@@ -248,7 +313,8 @@ def run_wsclean(
     msname = wsclean_cmd.split(" ")[-1]
     msname = os.path.abspath(msname)
     mspath = os.path.dirname(msname)
-    temp_docker_path = tempfile.mkdtemp(prefix="wsclean_udocker_", dir=mspath)
+    temp_name = "wsclean_udocker_" + next(tempfile._get_candidate_names())
+    temp_docker_path = os.path.join(mspath, temp_name)
     wsclean_cmd_args = wsclean_cmd.split(" ")[:-1]
     if "-fits-mask" in wsclean_cmd_args:
         index = wsclean_cmd_args.index("-fits-mask")
@@ -282,22 +348,23 @@ def run_wsclean(
         + "/"
         + os.path.basename(msname)
     )
+    wsclean_cmd_args=wsclean_cmd.split(" ")
     try:
-        full_command = f"udocker run --nobanner --volume={mspath}:{temp_docker_path} --workdir {temp_docker_path} {container_name} {wsclean_cmd}"
-        if not verbose:
-            full_command += f" >> {mspath}/{tmp1} "
-        else:
-            print(wsclean_cmd + "\n")
-        exit_code = os.system(full_command)
+        full_command = ["udocker","run","--nobanner",f"--volume={mspath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+wsclean_cmd_args
+        if verbose:
+            print(f"{wsclean_cmd}\n")
+        result = subprocess.run(
+            full_command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        exit_code = result.returncode
         if exit_code != 0:
             print("##########################")
             print(os.path.basename(msname))
             print("##########################")
-            show_file(f"{mspath}/{tmp1}")
-        os.system(f"rm -rf {temp_docker_path} {mspath}/{tmp1}")
         return 0 if exit_code == 0 else 1
     except Exception as e:
-        os.system(f"rm -rf {temp_docker_path}")
         traceback.print_exc()
         return 1
 
@@ -333,10 +400,6 @@ def run_solar_sidereal_cor(
         Success message
     """
     set_udocker_env()
-    pid = os.getpid()
-    timestamp = int(time.time() * 1000)
-    tmp1 = f"tmp1_{pid}_{timestamp}.txt"
-    tmp2 = f"tmp2_{pid}_{timestamp}.txt"
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -348,7 +411,8 @@ def run_solar_sidereal_cor(
                 return 1
     msname = os.path.abspath(msname)
     mspath = os.path.dirname(msname)
-    temp_docker_path = tempfile.mkdtemp(prefix="chgcenter_udocker_", dir=mspath)
+    temp_name = "chgcenter_udocker_" + next(tempfile._get_candidate_names())
+    temp_docker_path = os.path.join(mspath, temp_name)
     if only_uvw:
         cmd = (
             "chgcentre -only-uvw -solarcenter "
@@ -363,18 +427,19 @@ def run_solar_sidereal_cor(
             + "/"
             + os.path.basename(msname)
         )
+    cmd_args=cmd.split(" ")
     try:
-        full_command = f"udocker --quiet run --nobanner --volume={mspath}:{temp_docker_path} --workdir {temp_docker_path} paircarswsclean {cmd}"
-        if not verbose:
-            full_command += f" >> {tmp1} >> {tmp2}"
-        else:
-            print(cmd)
-        with suppress_output():
-            exit_code = os.system(full_command)
-        os.system(f"rm -rf {temp_docker_path} {tmp1} {tmp2}")
+        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={mspath}:{temp_docker_path}","--workdir",f"{temp_docker_path}","paircarswsclean"]+cmd_args
+        if verbose:
+            print(f"{cmd}\n")
+        result = subprocess.run(
+            full_command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
-        os.system(f"rm -rf {temp_docker_path} {tmp1} {tmp2}")
         traceback.print_exc()
         return 1
 
@@ -416,10 +481,6 @@ def run_chgcenter(
         Success message
     """
     set_udocker_env()
-    pid = os.getpid()
-    timestamp = int(time.time() * 1000)
-    tmp1 = f"tmp1_{pid}_{timestamp}.txt"
-    tmp2 = f"tmp2_{pid}_{timestamp}.txt"
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -431,7 +492,8 @@ def run_chgcenter(
                 return 1
     msname = os.path.abspath(msname)
     mspath = os.path.dirname(msname)
-    temp_docker_path = tempfile.mkdtemp(prefix="chgcenter_udocker_", dir=mspath)
+    temp_name = "chgcenter_udocker_" + next(tempfile._get_candidate_names())
+    temp_docker_path = os.path.join(mspath, temp_name)
     if only_uvw:
         cmd = (
             "chgcentre -only-uvw "
@@ -454,17 +516,19 @@ def run_chgcenter(
             + " "
             + dec
         )
+    cmd_args=cmd.split(" ")
     try:
-        full_command = f"udocker --quiet run --nobanner --volume={mspath}:{temp_docker_path} --workdir {temp_docker_path} {container_name} {cmd}"
-        if not verbose:
-            full_command += f" >> {tmp1} >> {tmp2}"
-        else:
-            print(cmd)
-        exit_code = os.system(full_command)
-        os.system(f"rm -rf {temp_docker_path} {tmp1} {tmp2}")
+        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={mspath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+cmd_args
+        if verbose:
+            print(f"{cmd}\n")
+        result = subprocess.run(
+            full_command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
-        os.system(f"rm -rf {temp_docker_path} {tmp1} {tmp2}")
         traceback.print_exc()
         return 1
 
@@ -495,7 +559,6 @@ def run_shadems(
         Success message
     """
     set_udocker_env()
-    pid = os.getpid()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -512,24 +575,25 @@ def run_shadems(
     else:
         msname = splited_cmd[-1]
         datapath = os.path.dirname(os.path.abspath(msname))
-    temp_docker_path = tempfile.mkdtemp(prefix="shadems_udocker_", dir=datapath)
+    temp_name = "shadems_udocker_" + next(tempfile._get_candidate_names())
+    temp_docker_path = os.path.join(datapath, temp_name)
     if splited_cmd[-1] not in ["-h", "--help"]:
         cmd = f"{' '.join(splited_cmd[:-1])} {temp_docker_path}/{os.path.basename(msname)}"
+    cmd_args=cmd.split(" ")
     try:
-        full_command = f"udocker --quiet run --nobanner --volume={datapath}:{temp_docker_path} --workdir {temp_docker_path} {container_name} {cmd}"
-        if not verbose:
-            with suppress_output():
-                exit_code = os.system(full_command)
-        else:
-            print(cmd)
-            exit_code = os.system(full_command)
+        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={datapath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+cmd_args
+        if verbose:
+            print(f"{cmd}\n")
+        result = subprocess.run(
+            full_command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
         return 1
-    finally:
-        os.system(f"rm -rf {temp_docker_path}")
-    return
 
 
 def run_quartical(
@@ -558,7 +622,6 @@ def run_quartical(
         Success message
     """
     set_udocker_env()
-    pid = os.getpid()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -571,17 +634,17 @@ def run_quartical(
     splited_cmd = cmd.split(" ")
     if len(splited_cmd) == 1 and "goquartical" in cmd:
         verbose = True
-        datapath = os.getcwd()
-        temp_docker_path = tempfile.mkdtemp(prefix="quartical_udocker_", dir=datapath)
+        datapath = os.getcwd()        
+        temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
+        temp_docker_path = os.path.join(datapath, temp_name)
     elif len(splited_cmd) > 1:
         for i in range(len(splited_cmd)):
             cmd_arg = splited_cmd[i]
             if "input_ms.path" in cmd_arg:
                 msname = cmd_arg.split("input_ms.path=")[-1]
                 datapath = os.path.dirname(os.path.abspath(msname))
-                temp_docker_path = tempfile.mkdtemp(
-                    prefix="quartical_udocker_", dir=datapath
-                )
+                temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
+                temp_docker_path = os.path.join(datapath, temp_name)
                 temp_msname = f"{temp_docker_path}/{os.path.basename(msname)}"
                 cmd_arg = f"input_ms.path={temp_msname}"
                 splited_cmd[i] = cmd_arg
@@ -613,116 +676,25 @@ def run_quartical(
     else:
         print("Please provide valid command.")
         return 1
+    cmd_args=cmd.split(" ")
     try:
-        full_command = f"udocker --quiet run --nobanner --volume={datapath}:{temp_docker_path} --workdir {temp_docker_path} {container_name} {cmd}"
-        if not verbose:
-            with suppress_output():
-                exit_code = os.system(full_command)
-        else:
-            print(cmd)
-            exit_code = os.system(full_command)
+        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={datapath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+cmd_args
+        if verbose:
+            print(f"{cmd}\n")
+        result = subprocess.run(
+            full_command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        exit_code = result.returncode
         if "load_from" in cmd_arg and gain_path != datapath:
             os.system(f"rm -rf {temp_gain_path}")
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
         return 1
-    finally:
-        os.system(f"rm -rf {temp_docker_path}")
-    return
-
-
-def run_quartical_plot(
-    cmd,
-    container_name="paircarsquartical",
-    check_container=False,
-    verbose=False,
-):
-    """
-    Run quartical plot inside a udocker container (no root permission required).
-
-    Parameters
-    ----------
-    cmd : str
-        Quartical command
-    container_name : str, optional
-        Container name
-    check_container : bool, optional
-        Check container
-    verbose : bool, optional
-        Verbose output
-
-    Returns
-    -------
-    int
-        Success message
-    """
-    set_udocker_env()
-    pid = os.getpid()
-    if check_container:
-        container_present = check_udocker_container(container_name)
-        if not container_present:
-            container_name = initialize_quartical_container(name=container_name)
-            if container_name is None:
-                print(
-                    f"Container {container_name} is not initiated. First initiate container and then run."
-                )
-                return 1
-    splited_cmd = cmd.split(" ")
-    if len(splited_cmd) == 1 and "goquartical" in cmd:
-        verbose = True
-        datapath = os.getcwd()
-        temp_docker_path = tempfile.mkdtemp(prefix="quartical_udocker_", dir=datapath)
-    elif len(splited_cmd) > 1:
-        for i in range(len(splited_cmd)):
-            cmd_arg = splited_cmd[i]
-            if "input_ms.path" in cmd_arg:
-                msname = cmd_arg.split("input_ms.path=")[-1]
-                datapath = os.path.dirname(os.path.abspath(msname))
-                temp_docker_path = tempfile.mkdtemp(
-                    prefix="quartical_udocker_", dir=datapath
-                )
-                temp_msname = f"{temp_docker_path}/{os.path.basename(msname)}"
-                cmd_arg = f"input_ms.path={temp_msname}"
-                splited_cmd[i] = cmd_arg
-            if "output.gain_directory" in cmd_arg:
-                caltable = cmd_arg.split("output.gain_directory=")[-1]
-                temp_caltable = f"{temp_docker_path}/{os.path.basename(caltable)}"
-                cmd_arg = f"output.gain_directory={temp_caltable}"
-                splited_cmd[i] = cmd_arg
-            if "output.log_directory" in cmd_arg:
-                log = cmd_arg.split("output.log_directory=")[-1]
-                temp_log = f"{temp_docker_path}/{os.path.basename(log)}"
-                cmd_arg = f"output.log_directory={temp_log}"
-                splited_cmd[i] = cmd_arg
-            if "load_from" in cmd_arg:
-                gaintable = cmd_arg.split("load_from=")[-1]
-                gaintable = gaintable.split("/")[-2:]
-                gaintable = "/".join(gaintable)
-                temp_gaintable = f"{temp_docker_path}/{gaintable}"
-                cmd_arg = f"{cmd_arg.split('=')[0]}={temp_gaintable}"
-                splited_cmd[i] = cmd_arg
-        cmd = " ".join(splited_cmd)
-    else:
-        print("Please provide valid command.")
-        return 1
-    try:
-        full_command = f"udocker --quiet run --nobanner --volume={datapath}:{temp_docker_path} --workdir {temp_docker_path} {container_name} {cmd}"
-        if not verbose:
-            with suppress_output():
-                exit_code = os.system(full_command)
-        else:
-            print(cmd)
-            exit_code = os.system(full_command)
-        return 0 if exit_code == 0 else 1
-    except Exception as e:
-        traceback.print_exc()
-        return 1
-    finally:
-        os.system(f"rm -rf {temp_docker_path}")
-    return
-
-
+        
+        
 # Expose functions and classes
 __all__ = [
     name
