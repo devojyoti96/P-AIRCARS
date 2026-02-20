@@ -406,7 +406,6 @@ def submit_local_master_flow(args, jobid):
     else:
         print("Please provide a work directory.")
         return 1
-
     try:
         script_args = ["#!/bin/bash", "export PYTHONUNBUFFERED=1"]
         script_args.append(cli_cmd)
@@ -414,8 +413,9 @@ def submit_local_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
-        subprocess.run(["bash", script_path], check=True)
-        return 0
+        result = subprocess.run(["bash", script_path])
+        exit_code = result.returncode
+        return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
         return 1
