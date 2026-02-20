@@ -1549,21 +1549,21 @@ def master_control(
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
     workdir = workdir.rstrip("/")
     workdir = f"{workdir}/{target_obsid}"
-
+    
     #################################
     # Setup logger
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/main.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
+    master_logfile = f"{logdir}/main.log"
+    if os.path.exists(master_logfile):
+        os.remove(master_logfile)
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, logfile, poll_interval=3, stop_event=stop_event
+        flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
     )
     dask_dir = None
     try:
@@ -1695,6 +1695,25 @@ def master_control(
             print(
                 "#############################################################################"
             )
+            ############
+            # Logger
+            ############
+            observer = None
+            if os.path.exists(f"{workdir}/jobname_password.npy"):
+                time.sleep(5)
+                jobname, password = np.load(
+                    f"{workdir}/jobname_password.npy", allow_pickle=True
+                )
+                if os.path.exists(master_logfile):
+                    observer = init_logger(
+                        "master_log", master_logfile, jobname=jobname, password=password
+                    )
+            if observer == None:
+                print("Remote link or jobname is blank. Not transmiting to remote logger.")
+                
+            #####################
+            # Notify over email
+            #####################
             if emails != "":
                 email_subject = (
                     f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
@@ -2950,6 +2969,8 @@ def master_control(
         scale_worker_and_wait(dask_cluster, current_worker)
         if dask_dir is not None:
             os.system(f"rm -rf {dask_dir}")
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 def cli():

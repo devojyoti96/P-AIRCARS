@@ -334,6 +334,7 @@ def cli():
 
     jobid = get_jobid()
 
+    
     try:
         msg = submit_local_master_flow(args, jobid)
     except:
