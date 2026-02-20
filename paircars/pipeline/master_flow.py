@@ -1888,7 +1888,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
-
+            print("###########################")
+            print("Starting task: Moving phasecenter to the Sun .....")
+            print("###########################")
             future_movecenter = run_solar_phasecenter_jobs.with_options(
                 task_run_name=f"moving_to_solar_center_{jobid}",
             ).submit(
@@ -1906,6 +1908,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Moving phasecenter to solar center is done.")
+                print("###########################")
             except Exception as e:
                 print("!!! WARNING : Error in moving phasecenter to solar center. !!!")
                 traceback.print_exc()
@@ -1924,6 +1929,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Making dynamic spectra of solar target .....")
+            print("###########################")
             future_maskms = run_ds_jobs.with_options(
                 task_run_name=f"making_dynamic_spectra_{jobid}",
             ).submit(
@@ -1943,6 +1951,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Making solar dynamic spectra are done.")
+                print("###########################")
             except Exception as e:
                 print("!!! WARNING : Error in making dynamic spectra. !!!")
                 traceback.print_exc()
@@ -1964,6 +1975,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print(f"Starting task: Spliting {prefix} .....")
+            print("###########################")
             future_cal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -1988,6 +2002,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Spliting of calibrator measurement sets are done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in spliting calibrator measurement sets. !!!!"
@@ -2015,6 +2032,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Flagging calibrators ....")
+            print("###########################")
             future_flag = run_flag.with_options(
                 task_run_name=f"flagging_cal_{jobid}"
             ).submit(
@@ -2036,6 +2056,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Flagging of calibrator is done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
@@ -2057,6 +2080,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Importing model visibilities ....")
+            print("###########################")
             future_import_model = run_import_model.with_options(
                 task_run_name=f"importing_model_visibilities_{jobid}"
             ).submit(
@@ -2075,6 +2101,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Model import for calibrator is done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in importing calibrator models. Not continuing calibration. !!!!"
@@ -2096,6 +2125,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Performing basic calibration .....")
+            print("###########################")
             future_basical = run_basic_cal_jobs.with_options(
                 task_run_name=f"basic_calibration_{jobid}"
             ).submit(
@@ -2116,6 +2148,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Basic calibration is done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in basic calibration. Starting without basic calibration. !!!!"
@@ -2196,6 +2231,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print(f"Starting task: Spliting {prefix} .....")
+            print("###########################")s
             future_selfcal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -2227,6 +2265,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Spliting of measurement sets for self-calibration is done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
@@ -2289,6 +2330,9 @@ def master_control(
             ############################
             # Basic flagging
             ############################
+            print("###########################")
+            print("Starting task: Flagging selfcal targets .....")
+            print("###########################")
             future_flag = run_flag.with_options(
                 task_run_name=f"flagging_selfcal_{jobid}"
             ).submit(
@@ -2312,6 +2356,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Flagging for self-calibration measurment sets are done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
@@ -2328,6 +2375,9 @@ def master_control(
             ###################################
             # Apply basic calibration
             ###################################
+            print("###########################")
+            print("Starting task: Applying basic calibration on self-calibration measurement sets.....")
+            print("###########################")
             future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
                 task_run_name=f"applying_basiccal_selfcal_{jobid}"
             ).submit(
@@ -2353,6 +2403,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
@@ -2385,6 +2438,9 @@ def master_control(
             nworker = min(max_worker, len(selfcal_mslist) + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
             if do_sidereal_cor:
+                print("###########################")
+                print("Starting task: Sidereal motion correction for self-calibration measurement sets.....")
+                print("###########################")
                 future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
                     task_run_name=f"solar_sidereal_correction_{jobid}"
                 ).submit(
@@ -2403,6 +2459,9 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
+                    print("###########################")
+                    print(f"Finished task: Correction for solar sidereal motion is done.")
+                    print("###########################")
                 except Exception as e:
                     print("Sidereal correction is not successful.")
                     traceback.print_exc()
@@ -2417,6 +2476,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, len(selfcal_mslist) + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Self-calibrations.....")
+            print("###########################")
             future_selfcal = run_selfcal_jobs.with_options(
                 task_run_name=f"selfcal_{jobid}"
             ).submit(
@@ -2446,6 +2508,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Self-calibration is done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
@@ -2503,6 +2568,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print(f"Starting task: Spliting {prefix} .....")
+            print("###########################")
             future_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -2529,6 +2597,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Spliting target for final processing is done.")
+                print("###########################")
             except Exception as e:
                 print("!!!! WARNING: Error in spliting targets. !!!!")
                 traceback.print_exc()
@@ -2593,6 +2664,9 @@ def master_control(
             ############################
             # Basic flagging
             ############################
+            print("###########################")
+            print("Starting task: Flagging final target measurement sets .....")
+            print("###########################")
             future_flag = run_flag.with_options(
                 task_run_name=f"flagging_target_{jobid}"
             ).submit(
@@ -2614,6 +2688,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Flagging of final target measurement sets are done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
@@ -2630,6 +2707,9 @@ def master_control(
             ####################################
             # Applying basic calibration
             #####################################
+            print("###########################")
+            print("Starting task: Applying basic calibration on final target measurement sets.....")
+            print("###########################")
             future_apply_basical = run_apply_basiccal_sol.with_options(
                 task_run_name=f"applying_basiccal_target_{jobid}"
             ).submit(
@@ -2654,6 +2734,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Applying basic calibration solutions on final target measurement sets are done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in applying basic calibration solutions on target scans. Not continuing further.!!!!"
@@ -2672,6 +2755,9 @@ def master_control(
                 current_worker = get_total_worker(dask_cluster)
                 nworker = min(max_worker, len(split_target_mslist) + current_worker)
                 scale_worker_and_wait(dask_cluster, nworker)
+                print("###########################")
+                print("Starting task: Sidereal motion correction for final target measurement sets.....")
+                print("###########################")
                 future_sidereal_cor = run_solar_siderealcor_jobs.with_options(
                     task_run_name=f"solar_sidereal_correction_{jobid}"
                 ).submit(
@@ -2690,6 +2776,9 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
+                    print("###########################")
+                    print(f"Finished task: Sidereal motion correction of the Sun on final target measurement sets are done.")
+                    print("###########################")
                 except Exception as e:
                     print("!!!! WARNING: Error in applying sidereal correction.!!!!")
                     traceback.print_exc()
@@ -2709,6 +2798,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, len(split_target_mslist) + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Applying self-calibration solutions on final target measurement sets.....")
+            print("###########################")
             future_apply_selfcal = run_apply_selfcal_sol.with_options(
                 task_run_name=f"applying_selfcal_{jobid}"
             ).submit(
@@ -2730,6 +2822,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Applying self-calibration on final target measurement sets are done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Error in applying self-calibration solutions on targets. !!!!"
@@ -2763,6 +2858,9 @@ def master_control(
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, len(target_mslist) + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print("Starting task: Final imaging.....")
+            print("###########################")
             future_imaging = run_imaging_jobs.with_options(
                 task_run_name=f"imaging_{jobid}"
             ).submit(
@@ -2795,6 +2893,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Final imaging is done.")
+                print("###########################")
             except Exception as e:
                 print(
                     "!!!! WARNING: Final imaging on all measurement sets is not successful. Check the image directory. !!!!"
@@ -2842,6 +2943,9 @@ def master_control(
             else:
                 current_worker = get_total_worker(dask_cluster)
                 scale_worker_and_wait(dask_cluster, max_worker)
+                print("###########################")
+                print("Starting task: Primary beam correction.....")
+                print("###########################")
                 future_pbcor = run_apply_pbcor.with_options(
                     task_run_name=f"applying_primary_beam_{jobid}"
                 ).submit(
@@ -2860,6 +2964,9 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
+                    print("###########################")
+                    print(f"Finished task: Primary beam correction is done.")
+                    print("###########################")
                 except Exception as e:
                     print(
                         "!!!! WARNING: Primary beam corrections of the final images are not successful. !!!!"
@@ -2879,6 +2986,9 @@ def master_control(
         # Make overlays
         #######################################
         if make_overlay:
+            print("###########################")
+            print("Starting task: Making overlay on EUV images.....")
+            print("###########################")
             future_overlay = run_make_overlay.with_options(
                 task_run_name=f"making_overlay_{jobid}"
             ).submit(
@@ -2896,6 +3006,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                print("###########################")
+                print(f"Finished task: Making overlays are done.")
+                print("###########################")
             except Exception as e:
                 print("!!!! WARNING: Overlay of the images are not successful. !!!!")
                 traceback.print_exc()
