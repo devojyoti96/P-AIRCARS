@@ -63,7 +63,6 @@ def kill_localscheduler(jobid):
 
         print(f"Attempting to terminate main PID: {main_pid}")
         terminate_process_and_children(main_pid)
-        os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
         try:
             print("Closing dask cluster....")
@@ -115,7 +114,6 @@ def kill_slurmscheduler(jobid):
 
         print(f"Attempting to terminate main slurm jobid: {main_jobid}")
         subprocess.run(["scancel", main_jobid])
-        os.system(f"rm -rf {workdir}/tmp_paircars_*")
 
         try:
             print("Closing dask cluster....")

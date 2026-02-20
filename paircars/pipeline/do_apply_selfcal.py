@@ -221,7 +221,6 @@ def run_all_applysol(
             return 1
     except Exception as e:
         traceback.print_exc()
-        os.system("rm -rf casa*log")
         print("##################")
         print(
             "Applying self-calibration solutions for targets are not done successfully."
