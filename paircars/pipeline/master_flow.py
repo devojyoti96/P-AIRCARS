@@ -1628,11 +1628,6 @@ def master_control(
             cpu_frac,
             mem_frac,
         )
-        print("###########################")
-        print(f"P-AIRCARS Job ID: {jobid}")
-        print(f"Work directory: {workdir}")
-        print(f"Final product directory: {outdir}")
-        print("###########################")
         #####################################
         # Moving into work directory
         #####################################
@@ -1685,16 +1680,7 @@ def master_control(
             np.save(
                 f"{workdir}/jobname_password.npy",
                 np.array([job_name, password], dtype="object"),
-            )
-            print(
-                "############################################################################"
-            )
-            print(remote_link)
-            print(f"Job ID: {job_name}")
-            print(f"Remote access password: {password}")
-            print(
-                "#############################################################################"
-            )
+            )            
             ############
             # Logger
             ############
@@ -1730,6 +1716,25 @@ def master_control(
                 success_msg, error_msg = send_notification(
                     emails, email_subject, email_msg
                 )
+                
+        #####################################
+        # Printing basic info of the pipeline
+        #####################################
+        print("###########################")
+        print(f"P-AIRCARS Job ID: {jobid}")
+        print(f"Work directory: {workdir}")
+        print(f"Final product directory: {outdir}")
+        print("###########################")
+        if remote_logger:
+            print(
+                "############################################################################"
+            )
+            print(remote_link)
+            print(f"Job ID: {job_name}")
+            print(f"Remote access password: {password}")
+            print(
+                "#############################################################################"
+            )
 
         #####################################
         # Settings for solar data
