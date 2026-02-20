@@ -326,16 +326,16 @@ def submit_master_flow(args, jobid):
             partition=args.partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
         script = f"""#!/bin/bash
-        #SBATCH --job-name=paircars_{jobid}
-        #SBATCH --time={walltime}
-        #SBATCH --output={args.workdir}/paircars_{jobid}_%j.out
-        #SBATCH --output={args.workdir}/paircars_{jobid}_%j.err
-        #SBATCH --partition={args.partition}
-        #SBATCH --partition={args.partition}
-        #SBATCH --nodes=1
-        #SBATCH --ntasks=1
-        #SBATCH --cpus-per-task={min(8,ncpu)}
-        #SBATCH --mem={min(16,mem)}G
+#SBATCH --job-name=paircars_{jobid}
+#SBATCH --time={walltime}
+#SBATCH --output={args.workdir}/paircars_{jobid}_%j.out
+#SBATCH --output={args.workdir}/paircars_{jobid}_%j.err
+#SBATCH --partition={args.partition}
+#SBATCH --partition={args.partition}
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task={min(8,ncpu)}
+#SBATCH --mem={min(16,mem)}G
         """
         if hasattr(args, "account") and args.account is not None:
             script += f"#SBATCH --account={args.account}\n"
