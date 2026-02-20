@@ -339,9 +339,16 @@ def cli():
     args = parser.parse_args()
 
     jobid = get_jobid()
+    scheduler_name = get_scheduler_name()
 
     try:
-        msg = submit_local_master_flow(args, jobid)
+        if scheduler_name=="local":
+            msg = submit_local_master_flow(args, jobid)
+        elif scheduler_name=="slurm":
+            msg = submit_slurm_master_flow(args, jobid)
+        else:
+            print(f"P-AIRCARS currently does not support {scheduler_name} job scheduler.")
+            msg=1
     except Exception:
         print("Error occured in executing P-AIRCARS master flow.")
         traceback.print_exc()

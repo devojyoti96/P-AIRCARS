@@ -344,8 +344,9 @@ def submit_slurm_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
-        subprocess.run(["sbatch", script_path], check=True)
-        return 0
+        subprocess.run(["sbatch", script_path])
+        exit_code = result.returncode
+        return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
         return 1
