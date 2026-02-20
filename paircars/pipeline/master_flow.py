@@ -1498,27 +1498,27 @@ def master_control(
     # Listing target ms
     #############################################
     if os.path.exists(target_metafits) is False:
-        print("Target metafits {target_metafits} does not exist. P-AIRCARS has stopped.")
+        print(
+            "Target metafits {target_metafits} does not exist. P-AIRCARS has stopped."
+        )
         if emails != "":
             email_msg = "Target metafits file does not exist."
-            send_task_notification(
-                emails, email_msg, jobid, "N/A", timestamp
-            )
+            send_task_notification(emails, email_msg, jobid, "N/A", timestamp)
         return 1
     target_header = fits.getheader(target_metafits)
     target_obsid = target_header["GPSTIME"]
     target_mslist = glob.glob(f"{target_datadir}/*.ms")
-    if len(target_mslist)==0:
-        print (f"No measurement set is present in target data directory: {target_datadir}")
+    if len(target_mslist) == 0:
+        print(
+            f"No measurement set is present in target data directory: {target_datadir}"
+        )
         if emails != "":
             email_msg = "No measurement set is present in the target data directory."
-            send_task_notification(
-                emails, email_msg, jobid, target_obsid, timestamp
-            ) 
+            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
     test_msname = target_mslist[0]
     target_freq_config = target_header["CHANNELS"]
     target_coarse_chans = [get_MWA_coarse_chan(ms) for ms in target_mslist]
-        
+
     ###################################
     # Preparing working directories
     ###################################
@@ -1527,7 +1527,7 @@ def master_control(
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
     workdir = workdir.rstrip("/")
     workdir = f"{workdir}/{target_obsid}"
-    
+
     #################################
     # Setup logger
     #################################
@@ -1661,7 +1661,7 @@ def master_control(
             np.save(
                 f"{workdir}/jobname_password.npy",
                 np.array([job_name, password], dtype="object"),
-            )            
+            )
             ############
             # Logger
             ############
@@ -1676,8 +1676,10 @@ def master_control(
                         "master_log", master_logfile, jobname=jobname, password=password
                     )
             if observer == None:
-                print("Remote link or jobname is blank. Not transmiting to remote logger.")
-                
+                print(
+                    "Remote link or jobname is blank. Not transmiting to remote logger."
+                )
+
             #####################
             # Notify over email
             #####################
@@ -1697,7 +1699,7 @@ def master_control(
                 success_msg, error_msg = send_notification(
                     emails, email_subject, email_msg
                 )
-                
+
         #####################################
         # Printing basic info of the pipeline
         #####################################
@@ -1716,7 +1718,7 @@ def master_control(
             print(
                 "#############################################################################"
             )
-            
+
         ############################################
         # Determining where to use calibrator or not
         #############################################
@@ -2003,7 +2005,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Spliting of calibrator measurement sets are done.")
+                print(
+                    f"Finished task: Spliting of calibrator measurement sets are done."
+                )
                 print("###########################")
             except Exception as e:
                 print(
@@ -2233,7 +2237,7 @@ def master_control(
             scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
-            print("###########################")s
+            print("###########################")
             future_selfcal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -2266,7 +2270,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Spliting of measurement sets for self-calibration is done.")
+                print(
+                    f"Finished task: Spliting of measurement sets for self-calibration is done."
+                )
                 print("###########################")
             except Exception as e:
                 print(
@@ -2357,7 +2363,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Flagging for self-calibration measurment sets are done.")
+                print(
+                    f"Finished task: Flagging for self-calibration measurment sets are done."
+                )
                 print("###########################")
             except Exception as e:
                 print(
@@ -2376,7 +2384,9 @@ def master_control(
             # Apply basic calibration
             ###################################
             print("###########################")
-            print("Starting task: Applying basic calibration on self-calibration measurement sets.....")
+            print(
+                "Starting task: Applying basic calibration on self-calibration measurement sets....."
+            )
             print("###########################")
             future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
                 task_run_name=f"applying_basiccal_selfcal_{jobid}"
@@ -2404,7 +2414,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done.")
+                print(
+                    f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
+                )
                 print("###########################")
             except Exception as e:
                 print(
@@ -2439,7 +2451,9 @@ def master_control(
             scale_worker_and_wait(dask_cluster, nworker)
             if do_sidereal_cor:
                 print("###########################")
-                print("Starting task: Sidereal motion correction for self-calibration measurement sets.....")
+                print(
+                    "Starting task: Sidereal motion correction for self-calibration measurement sets....."
+                )
                 print("###########################")
                 future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
                     task_run_name=f"solar_sidereal_correction_{jobid}"
@@ -2460,7 +2474,9 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
-                    print(f"Finished task: Correction for solar sidereal motion is done.")
+                    print(
+                        f"Finished task: Correction for solar sidereal motion is done."
+                    )
                     print("###########################")
                 except Exception as e:
                     print("Sidereal correction is not successful.")
@@ -2689,7 +2705,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Flagging of final target measurement sets are done.")
+                print(
+                    f"Finished task: Flagging of final target measurement sets are done."
+                )
                 print("###########################")
             except Exception as e:
                 print(
@@ -2708,7 +2726,9 @@ def master_control(
             # Applying basic calibration
             #####################################
             print("###########################")
-            print("Starting task: Applying basic calibration on final target measurement sets.....")
+            print(
+                "Starting task: Applying basic calibration on final target measurement sets....."
+            )
             print("###########################")
             future_apply_basical = run_apply_basiccal_sol.with_options(
                 task_run_name=f"applying_basiccal_target_{jobid}"
@@ -2735,7 +2755,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Applying basic calibration solutions on final target measurement sets are done.")
+                print(
+                    f"Finished task: Applying basic calibration solutions on final target measurement sets are done."
+                )
                 print("###########################")
             except Exception as e:
                 print(
@@ -2756,7 +2778,9 @@ def master_control(
                 nworker = min(max_worker, len(split_target_mslist) + current_worker)
                 scale_worker_and_wait(dask_cluster, nworker)
                 print("###########################")
-                print("Starting task: Sidereal motion correction for final target measurement sets.....")
+                print(
+                    "Starting task: Sidereal motion correction for final target measurement sets....."
+                )
                 print("###########################")
                 future_sidereal_cor = run_solar_siderealcor_jobs.with_options(
                     task_run_name=f"solar_sidereal_correction_{jobid}"
@@ -2777,7 +2801,9 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
-                    print(f"Finished task: Sidereal motion correction of the Sun on final target measurement sets are done.")
+                    print(
+                        f"Finished task: Sidereal motion correction of the Sun on final target measurement sets are done."
+                    )
                     print("###########################")
                 except Exception as e:
                     print("!!!! WARNING: Error in applying sidereal correction.!!!!")
@@ -2799,7 +2825,9 @@ def master_control(
             nworker = min(max_worker, len(split_target_mslist) + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
-            print("Starting task: Applying self-calibration solutions on final target measurement sets.....")
+            print(
+                "Starting task: Applying self-calibration solutions on final target measurement sets....."
+            )
             print("###########################")
             future_apply_selfcal = run_apply_selfcal_sol.with_options(
                 task_run_name=f"applying_selfcal_{jobid}"
@@ -2823,7 +2851,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Applying self-calibration on final target measurement sets are done.")
+                print(
+                    f"Finished task: Applying self-calibration on final target measurement sets are done."
+                )
                 print("###########################")
             except Exception as e:
                 print(

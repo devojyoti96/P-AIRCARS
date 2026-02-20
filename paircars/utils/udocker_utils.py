@@ -80,14 +80,14 @@ def initialize_wsclean_container(name="paircarswsclean", update=False):
     set_udocker_env()
     image_name = "devojyoti96/wsclean-solar:latest"
     check_cmd = f"udocker images | grep -q {image_name}"
-    image_exists = os.system(check_cmd) 
-    if image_exists!=0:
+    image_exists = os.system(check_cmd)
+    if image_exists != 0:
         result = subprocess.run(
             ["udocker", "pull", f"{image_name}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        a=result.returncode
+        a = result.returncode
     else:
         if update:
             subprocess.run(
@@ -106,7 +106,7 @@ def initialize_wsclean_container(name="paircarswsclean", update=False):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            a=result.returncode
+            a = result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
             else:
@@ -117,11 +117,11 @@ def initialize_wsclean_container(name="paircarswsclean", update=False):
             a = 0
     if a == 0:
         result = subprocess.run(
-            ["udocker", "create", f"--name={name}",f"{image_name}"],
+            ["udocker", "create", f"--name={name}", f"{image_name}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        a=result.returncode
+        a = result.returncode
         print(f"Container started with name : {name}")
         return name
     else:
@@ -149,14 +149,14 @@ def initialize_quartical_container(name="paircarsquartical", update=False):
     set_udocker_env()
     image_name = "devojyoti96/quartical:0.2.6"
     check_cmd = f"udocker images | grep -q {image_name}"
-    image_exists = os.system(check_cmd) 
-    if image_exists!=0:
+    image_exists = os.system(check_cmd)
+    if image_exists != 0:
         result = subprocess.run(
             ["udocker", "pull", f"{image_name}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        a=result.returncode
+        a = result.returncode
     else:
         if update:
             subprocess.run(
@@ -175,7 +175,7 @@ def initialize_quartical_container(name="paircarsquartical", update=False):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            a=result.returncode
+            a = result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
             else:
@@ -186,17 +186,16 @@ def initialize_quartical_container(name="paircarsquartical", update=False):
             a = 0
     if a == 0:
         result = subprocess.run(
-            ["udocker", "create", f"--name={name}",f"{image_name}"],
+            ["udocker", "create", f"--name={name}", f"{image_name}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        a=result.returncode
+        a = result.returncode
         print(f"Container started with name : {name}")
         return name
     else:
         print(f"Container could not be created with name : {name}")
         return
-
 
 
 def initialize_shadems_container(name="paircarsshadems", update=False):
@@ -219,14 +218,14 @@ def initialize_shadems_container(name="paircarsshadems", update=False):
     set_udocker_env()
     image_name = "devojyoti96/shadems:v0.5.4"
     check_cmd = f"udocker images | grep -q {image_name}"
-    image_exists = os.system(check_cmd) 
-    if image_exists!=0:
+    image_exists = os.system(check_cmd)
+    if image_exists != 0:
         result = subprocess.run(
             ["udocker", "pull", f"{image_name}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        a=result.returncode
+        a = result.returncode
     else:
         if update:
             subprocess.run(
@@ -245,7 +244,7 @@ def initialize_shadems_container(name="paircarsshadems", update=False):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            a=result.returncode
+            a = result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
             else:
@@ -256,17 +255,16 @@ def initialize_shadems_container(name="paircarsshadems", update=False):
             a = 0
     if a == 0:
         result = subprocess.run(
-            ["udocker", "create", f"--name={name}",f"{image_name}"],
+            ["udocker", "create", f"--name={name}", f"{image_name}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        a=result.returncode
+        a = result.returncode
         print(f"Container started with name : {name}")
         return name
     else:
         print(f"Container could not be created with name : {name}")
         return
-
 
 
 def run_wsclean(
@@ -295,6 +293,7 @@ def run_wsclean(
         Success message
     """
     set_udocker_env()
+
     def show_file(path):
         try:
             print(open(path).read())
@@ -348,9 +347,17 @@ def run_wsclean(
         + "/"
         + os.path.basename(msname)
     )
-    wsclean_cmd_args=wsclean_cmd.split(" ")
+    wsclean_cmd_args = wsclean_cmd.split(" ")
     try:
-        full_command = ["udocker","run","--nobanner",f"--volume={mspath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+wsclean_cmd_args
+        full_command = [
+            "udocker",
+            "run",
+            "--nobanner",
+            f"--volume={mspath}:{temp_docker_path}",
+            "--workdir",
+            f"{temp_docker_path}",
+            f"{container_name}",
+        ] + wsclean_cmd_args
         if verbose:
             print(f"{wsclean_cmd}\n")
         result = subprocess.run(
@@ -427,9 +434,18 @@ def run_solar_sidereal_cor(
             + "/"
             + os.path.basename(msname)
         )
-    cmd_args=cmd.split(" ")
+    cmd_args = cmd.split(" ")
     try:
-        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={mspath}:{temp_docker_path}","--workdir",f"{temp_docker_path}","paircarswsclean"]+cmd_args
+        full_command = [
+            "udocker",
+            "--quiet",
+            "run",
+            "--nobanner",
+            f"--volume={mspath}:{temp_docker_path}",
+            "--workdir",
+            f"{temp_docker_path}",
+            "paircarswsclean",
+        ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
         result = subprocess.run(
@@ -516,9 +532,18 @@ def run_chgcenter(
             + " "
             + dec
         )
-    cmd_args=cmd.split(" ")
+    cmd_args = cmd.split(" ")
     try:
-        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={mspath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+cmd_args
+        full_command = [
+            "udocker",
+            "--quiet",
+            "run",
+            "--nobanner",
+            f"--volume={mspath}:{temp_docker_path}",
+            "--workdir",
+            f"{temp_docker_path}",
+            f"{container_name}",
+        ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
         result = subprocess.run(
@@ -579,9 +604,18 @@ def run_shadems(
     temp_docker_path = os.path.join(datapath, temp_name)
     if splited_cmd[-1] not in ["-h", "--help"]:
         cmd = f"{' '.join(splited_cmd[:-1])} {temp_docker_path}/{os.path.basename(msname)}"
-    cmd_args=cmd.split(" ")
+    cmd_args = cmd.split(" ")
     try:
-        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={datapath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+cmd_args
+        full_command = [
+            "udocker",
+            "--quiet",
+            "run",
+            "--nobanner",
+            f"--volume={datapath}:{temp_docker_path}",
+            "--workdir",
+            f"{temp_docker_path}",
+            f"{container_name}",
+        ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
         result = subprocess.run(
@@ -634,7 +668,7 @@ def run_quartical(
     splited_cmd = cmd.split(" ")
     if len(splited_cmd) == 1 and "goquartical" in cmd:
         verbose = True
-        datapath = os.getcwd()        
+        datapath = os.getcwd()
         temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
         temp_docker_path = os.path.join(datapath, temp_name)
     elif len(splited_cmd) > 1:
@@ -676,9 +710,18 @@ def run_quartical(
     else:
         print("Please provide valid command.")
         return 1
-    cmd_args=cmd.split(" ")
+    cmd_args = cmd.split(" ")
     try:
-        full_command = ["udocker","--quiet","run","--nobanner",f"--volume={datapath}:{temp_docker_path}","--workdir",f"{temp_docker_path}",f"{container_name}"]+cmd_args
+        full_command = [
+            "udocker",
+            "--quiet",
+            "run",
+            "--nobanner",
+            f"--volume={datapath}:{temp_docker_path}",
+            "--workdir",
+            f"{temp_docker_path}",
+            f"{container_name}",
+        ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
         result = subprocess.run(
@@ -693,8 +736,8 @@ def run_quartical(
     except Exception as e:
         traceback.print_exc()
         return 1
-        
-        
+
+
 # Expose functions and classes
 __all__ = [
     name

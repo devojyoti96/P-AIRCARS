@@ -947,7 +947,7 @@ def main(
         outdir = workdir
     outdir = outdir.rstrip("/")
     os.makedirs(outdir, exist_ok=True)
-    
+
     ###########################
     # WSClean container
     ###########################
