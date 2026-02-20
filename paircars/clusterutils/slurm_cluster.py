@@ -332,7 +332,8 @@ def submit_master_flow(args, jobid):
         script_args.append(cli_cmd) 
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
         with open(script_path, "w") as f:
-            f.writelines(script_args)
+            for script_arg in script_args:
+                f.write(f"{script_arg}\n")
         subprocess.run(["sbatch", script_path], check=True)
         return 0
     except Exception as e:
