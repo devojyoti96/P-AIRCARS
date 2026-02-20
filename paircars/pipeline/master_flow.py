@@ -1491,6 +1491,31 @@ def master_control(
     int
         Success message
     """
+    #############################################
+    # Listing target ms
+    #############################################
+    if os.path.exists(target_metafits) is False:
+        print("Target metafits {target_metafits} does not exist. P-AIRCARS has stopped.")
+        if emails != "":
+            email_msg = "Target metafits file does not exist."
+            send_task_notification(
+                emails, email_msg, jobid, "N/A", timestamp
+            )
+        return 1
+    target_header = fits.getheader(target_metafits)
+    target_obsid = target_header["GPSTIME"]
+    target_mslist = glob.glob(f"{target_datadir}/*.ms")
+    if len(target_mslist)==0:
+        print (f"No measurement set is present in target data directory: {target_datadir}")
+        if emails != "":
+            email_msg = "No measurement set is present in the target data directory."
+            send_task_notification(
+                emails, email_msg, jobid, target_obsid, timestamp
+            ) 
+    test_msname = target_mslist[0]
+    target_freq_config = target_header["CHANNELS"]
+    target_coarse_chans = [get_MWA_coarse_chan(ms) for ms in target_mslist]
+        
     ###################################
     # Preparing working directories
     ###################################
@@ -1686,32 +1711,9 @@ def master_control(
                 "#############################################################################"
             )
             
-        #############################################
-        # Listing target and calibrator ms
+        ############################################
         # Determining where to use calibrator or not
         #############################################
-        if os.path.exists(target_metafits) is False:
-            print("Target metafits {target_metafits} does not exist. P-AIRCARS has stopped.")
-            if emails != "":
-                email_msg = "Target metafits file does not exist."
-                send_task_notification(
-                    emails, email_msg, jobid, "N/A", timestamp
-                )
-            return 1
-        target_header = fits.getheader(target_metafits)
-        target_obsid = target_header["GPSTIME"]
-        target_mslist = glob.glob(f"{target_datadir}/*.ms")
-        if len(target_mslist)==0:
-            print (f"No measurement set is present in target data directory: {target_datadir}")
-            if emails != "":
-                email_msg = "No measurement set is present in the target data directory."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                ) 
-        test_msname = target_mslist[0]
-        target_freq_config = target_header["CHANNELS"]
-        target_coarse_chans = [get_MWA_coarse_chan(ms) for ms in target_mslist]
-
         calibrator_mslist = glob.glob(f"{calibrator_datadir}/*.ms")
         calibrator_obsid = None
         if len(calibrator_mslist) == 0:
