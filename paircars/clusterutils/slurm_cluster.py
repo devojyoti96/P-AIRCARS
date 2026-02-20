@@ -280,33 +280,50 @@ def submit_master_flow(args, jobid):
     if scheduler_name is not "slurm":
         print("SLURM job scheduler is not available.")
         return 1
-    cli_cmd = " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+    cli_cmd = "run-mwa-masterflow "+" ".join(shlex.quote(arg) for arg in sys.argv[1:])
+    print (cli_cmd)
     if args.partition and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
         print("Please provide partition name to run SLURM jobs.")
         return 1
+    if args.workdir is False:
+        print("Please provide a work directory.")
+        return 1
+    else:
+        os.makedirs(args.workdir,exist_ok=True)
 
     try:
         #################################
         # Determining wall time
         #################################
-        if args.walltime is None:
-            walltime = max_time
-        else:
-            wall_time_second = slurm_time_to_seconds(args.walltime)
-            if wall_time_seconod > max_time_second:
-                print(
-                    f"Walltime : {args.walltime} is larger than maximum allowed time: {max_time}."
-                )
+        if args.walltime:
+            if args.walltime is None:
                 walltime = max_time
             else:
-                walltime = args.walltime
+                wall_time_second = slurm_time_to_seconds(args.walltime)
+                if wall_time_seconod > max_time_second:
+                    print(
+                        f"Walltime : {args.walltime} is larger than maximum allowed time: {max_time}."
+                    )
+                    walltime = max_time
+                else:
+                    walltime = args.walltime
+        else:
+            walltime = max_time
         #############################
         # Determining cpu and memory
         #############################
+        if args.cpu_frac is False:
+            cpu_frac = 0.8
+        else:
+            cpu_frac = args.cpu_frac
+        if args.mem_frac is False:
+            mem_frac = 0.8
+        else:
+            mem_frac = args.mem_frac
         ncpu, mem = get_slurm_node_resources(
-            partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
+            partition=args.partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
         script = f"""#!/bin/bash
         #SBATCH --job-name=paircars_{jobid}
