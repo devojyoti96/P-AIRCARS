@@ -45,8 +45,7 @@ from paircars.utils.mwa_utils import (
     download_MWA_metafits,
 )
 from paircars.utils.prefect_logger_utils import (
-    save_logs_by_task_id,
-    save_logs_by_task_id,
+    start_flow_log_saver,
 )
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
