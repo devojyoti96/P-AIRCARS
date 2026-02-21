@@ -193,7 +193,7 @@ def get_slurm_dask_cluster(
     except Exception as e:
         print("Error occured in creating SLURM cluster.")
         traceback.print_exc()
-        os.system(f"rm -rf {output_path} {log_dir} {dask_dir}")
+        os.system(f"rm -rf {log_dir} {dask_dir}")
 
 
 def slurm_time_to_seconds(timestr):
