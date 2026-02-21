@@ -10,7 +10,7 @@ import shlex
 import re
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
-from paircars.utils.proc_manage_utils import get_scheduler_name, detect_best_interface
+from paircars.utils.proc_manage_utils import get_scheduler_name, detect_best_interface, get_jobid
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -188,12 +188,12 @@ def get_slurm_dask_cluster(
             print(f"CPU per worker: {ncpu}")
             print(f"Memory per worker: {min(max_mem,usable_mem)}GB")
             print("####################################################")
-
         return client, cluster, dask_dir
     except Exception as e:
         print("Error occured in creating SLURM cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {log_dir} {dask_dir}")
+        return
 
 
 def slurm_time_to_seconds(timestr):

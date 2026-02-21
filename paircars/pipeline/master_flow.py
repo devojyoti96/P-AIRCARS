@@ -3823,7 +3823,7 @@ def cli():
                 return
 
             print("Setting up slurm cluster....")
-            dask_client, dask_cluster, dask_dir = get_slurm_dask_cluster(
+            cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
@@ -3833,6 +3833,10 @@ def cli():
                 account=args.account,
                 walltime=args.walltime,
             )
+            if cluster_result is not None:
+                dask_client, dask_cluster, dask_dir = cluster_result
+            else:
+                return
             nworker = get_total_nodes(partition=args.partition)
         else:
             print(
