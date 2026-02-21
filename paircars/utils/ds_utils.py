@@ -403,6 +403,9 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1, cpu_frac=-1):
     str
         Output normalised cross-correlation file name
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     n_threads = max(1, n_threads)

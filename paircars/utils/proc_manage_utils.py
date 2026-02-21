@@ -293,8 +293,6 @@ def get_local_dask_cluster(
     dask_dir,
     mem_frac=0.8,
     max_mem=16,
-    ncpu=-1,
-    mem=-1,
     spill_frac=0.7,
     verbose=True,
 ):
@@ -346,10 +344,11 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
+        mem_limit = round(min(max_mem,usable_mem),2)
         cluster = LocalCluster(
             n_workers=1,
             threads_per_worker=1,
-            memory_limit=f"{min(max_mem,usable_mem)}GB",
+            memory_limit=f"{mem_limit}GB",
             local_directory=dask_dir,
             dashboard_address=":0",
             processes=True,
@@ -367,7 +366,7 @@ def get_local_dask_cluster(
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
-            print(f"Memory per worker: {min(max_mem,usable_mem)}GB")
+            print(f"Memory per worker: {mem_limit}GB")
             print("####################################################")
         return client, cluster, dask_dir
     except Exception as e:

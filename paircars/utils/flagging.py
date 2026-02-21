@@ -181,6 +181,9 @@ def get_unflagged_antennas(
     numpy.array
         Flag fraction list
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -228,6 +231,9 @@ def get_chans_flag(
     list
         Flag channel list
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -276,6 +282,9 @@ def calc_flag_fraction(
     float
         Fraction of the total data flagged
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -310,6 +319,9 @@ def flag_outside_uvrange(
     flagbackup : bool, optional
         Flag backup
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 

@@ -212,6 +212,9 @@ def all_sky_beam_interpolator(
     numpy.array
         All sky primary beam Jones array
     """
+    cpu_frac=min(0.8,cpu_frac)
+    ncpu=max(1,ncpu)
+    
     from scipy.interpolate import RectBivariateSpline
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
@@ -219,7 +222,6 @@ def all_sky_beam_interpolator(
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    ncpu = max(1, ncpu)
     os.environ["RAYON_NUM_THREADS"] = str(ncpu)
     beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
     az_scale = np.arange(0, 360, resolution)
@@ -335,6 +337,8 @@ def get_jones_array(
     numpy.array
         Jones array (shape : coordinate_arr_shape, 2 ,2)
     """
+    cpu_frac=min(0.8,cpu_frac)
+    ncpu=max(1,ncpu)
     from joblib import Parallel, delayed as jobdelayed
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
@@ -342,7 +346,6 @@ def get_jones_array(
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    ncpu = min(max(1, ncpu), 8)
     # Change resolution based on frequency
     coarse_resolution = get_coarse_resolution(freq)
     if interpolated:
@@ -391,7 +394,6 @@ def get_jones_array(
         j11 = j11.reshape(az_arr.shape)
         jones_array = np.array([j00, j01, j10, j11]).T
     else:
-        ncpu = max(1, ncpu)
         os.environ["RAYON_NUM_THREADS"] = str(ncpu)
         beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
         sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
@@ -459,13 +461,14 @@ def get_pb_radec(
     float
         YY power beam value
     """
+    cpu_frac=min(0.8,cpu_frac)
+    ncpu=max(1,ncpu)
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    ncpu = max(1, ncpu)
     os.environ["RAYON_NUM_THREADS"] = str(ncpu)
     beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
     metadata = fits.getheader(metafits)
@@ -797,6 +800,9 @@ def get_fringe(
     np.array
         All-sky fringe array in sky coornidinate
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     try:
@@ -919,6 +925,9 @@ def make_primarybeammap(
     float
         Total beam area (YY)
     """
+    cpu_frac=min(0.8,cpu_frac)
+    n_threads=max(1,n_threads)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     warnings.filterwarnings("ignore")
@@ -926,7 +935,6 @@ def make_primarybeammap(
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    n_threads = max(1, n_threads)
     os.environ["RAYON_NUM_THREADS"] = str(n_threads)
     beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
 

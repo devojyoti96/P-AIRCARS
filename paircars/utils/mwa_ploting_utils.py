@@ -67,6 +67,10 @@ def plot_ms_diagnostics(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
+    
+    ncpu=max(1,ncpu)
+    total_mem=max(1,total_mem)
+    
     from casatools import ms as casamstool
     if outdir == "":
         outdir = os.getcwd()
@@ -1052,6 +1056,8 @@ def make_mwa_overlay(
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     logging.getLogger("reproject.common").setLevel(logging.WARNING)
 
+    ncpu=max(1,ncpu)
+    
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
 

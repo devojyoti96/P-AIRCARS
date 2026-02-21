@@ -531,6 +531,7 @@ def correct_pbcor_leakage(
     list
         Leakage and leakage error list
     """
+    ncpu = max(1,ncpu)
     leakage_info = []
     freq = fits.getheader(imagename)["CRVAL3"]
     pbfile = f"freq_{freq}_pb.npy"
@@ -716,6 +717,7 @@ def single_image_update_leakage(
     list
         Leakage informations
     """
+    ncpu = max(1,ncpu)
     valid_image = check_valid_image(image_cube)
     if valid_image:
         cor_imagename, cor_modelname, leakage_info = correct_pbcor_leakage(
@@ -794,6 +796,7 @@ def correct_spectrosnap_pbleak(
     list
         Leakage information list
     """
+    ncpu = max(1,ncpu)
     images = list(image_dic.keys())
     models = list(model_dic.keys())
     leakage_info_list = []
@@ -956,6 +959,11 @@ def selfcal_round(
     list
         Leakage informations [Q_leakage, U_leakage, V_leakage, Q_leakage_error, U_leakage_error, V_leakage_error]
     """
+    cpu_frac = min(0.8,cpu_frac)
+    mem_frac = min(0.8,mem_frac)
+    ncpu = max(1,ncpu)
+    mem = max(1,mem)
+    
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:
@@ -969,10 +977,6 @@ def selfcal_round(
     ##################################
     # Setup wsclean params
     ##################################
-    if ncpu < 1:
-        ncpu = psutil.cpu_count()
-    if mem < 0:
-        mem = round(psutil.virtual_memory().available / (1024**3), 2)
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
     os.chdir(selfcaldir)
@@ -1059,7 +1063,7 @@ def selfcal_round(
             wsclean_args.append("-pol IQUV")
             pol = "IQUV"
 
-        ngrid = int(ncpu / 2)
+        ngrid = max(1,int(ncpu / 2))
         if ngrid > 1:
             wsclean_args.append("-parallel-gridding " + str(ngrid))
 
