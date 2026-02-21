@@ -153,7 +153,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
         return
 
 
-def initialize_wsclean_container(name="paircarswsclean", update=False):
+def initialize_wsclean_container(name="paircarswsclean", update=False, verbose=False):
     """
     Initialize WSClean container
 
