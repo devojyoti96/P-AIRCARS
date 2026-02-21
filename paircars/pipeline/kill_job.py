@@ -64,9 +64,6 @@ def kill_localscheduler(jobid):
             traceback.print_exc()
             return
 
-        print(f"Attempting to terminate main PID: {main_pid}")
-        terminate_process_and_children(main_pid)
-
         try:
             print("Closing dask cluster....")
             client = Client(address=scheduler_address, timeout=30)
@@ -75,6 +72,10 @@ def kill_localscheduler(jobid):
         except:
             print(f"Dask cluster at: {scheduler_address} is already closed.")
 
+        time.sleep(1)
+        print(f"Attempting to terminate main PID: {main_pid}")
+        terminate_process_and_children(main_pid)
+        
         print("Dropping caches...")
         drop_cache(msdir)
         drop_cache(workdir)
@@ -115,17 +116,18 @@ def kill_slurmscheduler(jobid):
             traceback.print_exc()
             return
 
-        print(f"Attempting to terminate main slurm jobid: {main_jobid}")
-        subprocess.run(["scancel", f"{main_jobid}"])
-
         try:
             print("Closing dask cluster....")
-            client = Client(address=scheduler_address, timeput=30)
+            client = Client(address=scheduler_address, timeout=30)
             client.shutdown()
             client.close()
         except:
             print(f"Dask cluster at: {scheduler_address} is already closed.")
-
+        time.sleep(1)
+        
+        print(f"Attempting to terminate main slurm jobid: {main_jobid}")
+        subprocess.run(["scancel", f"{main_jobid}"])
+        
         print("Dropping caches...")
         drop_cache(msdir)
         drop_cache(workdir)

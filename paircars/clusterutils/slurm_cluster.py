@@ -278,7 +278,7 @@ def submit_slurm_master_flow(args, jobid):
     if scheduler_name is not "slurm":
         print("SLURM job scheduler is not available.")
         return 1
-    cli_cmd = "run-mwa-masterflow " + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+    cli_cmd = "run-mwa-masterflow " + " ".join(shlex.quote(arg) for arg in sys.argv[1:])+f" --jobid {jobid}"
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:
