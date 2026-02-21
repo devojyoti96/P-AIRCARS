@@ -34,7 +34,6 @@ def get_cachedir():
     homedir = os.path.expanduser("~")
     cachedir = f"{homedir}/.paircarspipe"
     os.makedirs(cachedir, exist_ok=True)
-    os.makedirs(f"{cachedir}/pids", exist_ok=True)
     return cachedir
 
 
