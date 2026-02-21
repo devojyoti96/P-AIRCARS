@@ -116,7 +116,7 @@ def get_slurm_dask_cluster(
         jobid = get_jobid()
 
     os.makedirs(dask_dir, exist_ok=True)
-    log_dir = f"{dask_dir}/slurm_log_{jobid}"
+    log_dir = f"{dask_dir}/slurm_logs"
     os.makedirs(log_dir, exist_ok=True)
 
     dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
