@@ -81,6 +81,7 @@ from paircars.pipeline import (
     mwa_pbcor,
     make_mwa_overlay,
     move_solarcenter,
+    make_ms_plot,
 )
 from paircars.pipeline.init_data import init_paircars_data
 
