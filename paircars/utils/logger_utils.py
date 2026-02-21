@@ -218,6 +218,7 @@ def get_logid(logfile):
         "ds_target.log": "Making dynamic spectra",
         "do_overlay.log": "Making overlays",
         "main.log": "All master log",
+        "do_msplot.log": "Diagnistic plot of ms",
     }
 
     if name in logmap:

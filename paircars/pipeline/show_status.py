@@ -33,8 +33,8 @@ def show_job_status(clean_old_jobs=False):
                     line = f.read().split(" ")
                 jobid = line[0]
                 pid = line[1]
-                workdir = line[3]
-                outdir = line[4]
+                workdir = line[4]
+                outdir = line[5]
                 if psutil.pid_exists(int(pid)):
                     running = "Running/Waiting"
                 else:
@@ -47,8 +47,6 @@ def show_job_status(clean_old_jobs=False):
                 )
                 if clean_old_jobs and running == "Done/Stopped":
                     os.system(f"rm -rf {pid_file}")
-                    if os.path.exists(f"rm -rf {cachedir}/pids/pids_{jobid}.txt"):
-                        os.system(f"rm -rf {cachedir}/pids/pids_{jobid}.txt")
     except Exception as e:
         traceback.print_exc()
     finally:
@@ -69,8 +67,6 @@ def cli():
     parser.add_argument(
         "--clean_old_jobs",
         action="store_true",
-        dest="clean_old_jobs",
-        default=False,
         help="Clean old jobs",
     )
     if len(sys.argv) == 1:

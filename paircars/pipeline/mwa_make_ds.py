@@ -8,6 +8,7 @@ import time
 import glob
 import sys
 import os
+import psutil
 from dask import delayed
 from paircars.utils.basic_utils import get_datadir
 from paircars.utils.ds_utils import calc_dynamic_spectrum

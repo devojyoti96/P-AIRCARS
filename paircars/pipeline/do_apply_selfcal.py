@@ -7,6 +7,7 @@ import time
 import glob
 import sys
 import os
+import psutil
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits

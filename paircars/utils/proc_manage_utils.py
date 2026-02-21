@@ -24,32 +24,6 @@ from .basic_utils import get_cachedir
 #################################
 # Process management
 #################################
-def get_nprocess_paircarspipe(jobid):
-    """
-    Get numbers of processes currently running
-
-    Parameters
-    ----------
-    workdir : str
-        Work directory name
-    jobid : int
-        Job ID
-
-    Returns
-    -------
-    int
-        Number of running processes
-    """
-    cachedir = get_cachedir()
-    pid_file = f"{cachedir}/pids/pids_{jobid}.txt"
-    pids = np.loadtxt(pid_file, unpack=True)
-    n_process = 0
-    for pid in pids:
-        if psutil.pid_exists(int(pid)):
-            n_process += 1
-    return n_process
-
-
 def get_jobid():
     """
     Get Job ID with millisecond-level uniqueness.
@@ -141,8 +115,6 @@ def save_main_process_info(
                 filtered_prev_jobids.append(job_id)
             else:
                 os.system(f"rm -rf {prev_main_pids[i]}")
-                if os.path.exists(f"{cachedir}/pids/pids_{job_id}.txt"):
-                    os.system(f"rm -rf {cachedir}/pids/pids_{job_id}.txt")
     main_job_file = f"{cachedir}/main_pids_{jobid}.txt"
     main_str = f"{jobid} {pid} {scheduler_address} {msdir} {workdir} {outdir} {cpu_frac} {mem_frac}"
     with open(main_job_file, "w") as f:

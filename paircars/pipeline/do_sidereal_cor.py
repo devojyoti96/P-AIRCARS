@@ -6,6 +6,7 @@ import traceback
 import time
 import sys
 import os
+import psutil
 from dask import delayed
 from paircars.utils.basic_utils import get_datadir
 from paircars.utils.logger_utils import (

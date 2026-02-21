@@ -9,6 +9,7 @@ import glob
 import sys
 import os
 import subprocess
+import psutil
 from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
 from dask import delayed
