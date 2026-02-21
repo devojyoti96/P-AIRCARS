@@ -3810,7 +3810,7 @@ def cli():
             mem_frac=args.mem_frac,
             max_mem=max_mem,
         )
-        nworker = min(2, int(psutil.cpu_count() * args.cpu_frac))
+        nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
     else:
         ############################################
         # Stop prefect server in cluster environment
@@ -3839,7 +3839,7 @@ def cli():
                 dask_client, dask_cluster, dask_dir = cluster_result
             else:
                 return
-            nworker = min(2,get_total_nodes(partition=args.partition))
+            nworker = max(2,get_total_nodes(partition=args.partition))
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."

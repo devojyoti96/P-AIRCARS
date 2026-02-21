@@ -7,6 +7,7 @@ import time
 import glob
 import sys
 import os
+import getpass
 import urllib.request
 import urllib.error
 from watchdog.events import FileSystemEventHandler
@@ -44,7 +45,7 @@ def generate_password(length=6):
 
 def get_remote_logger_link():
     cachedir = get_cachedir()
-    username = os.getlogin()
+    username = getpass.getuser()
     link_file = os.path.join(cachedir, f"remotelink_{username}.txt")
     try:
         if os.path.isfile(link_file):
@@ -66,7 +67,7 @@ def get_remote_logger_link():
 
 def get_emails():
     cachedir = get_cachedir()
-    username = os.getlogin()
+    username = getpass.getuser()
     email_file = os.path.join(cachedir, f"emails_{username}.txt")
     try:
         with open(email_file, "r") as f:
