@@ -86,6 +86,7 @@ def plot_ms_diagnostics(
     outdir = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_plots"
     print (f"Output directory: {outdir}.")
     output_pdf = f"{os.path.basename(msname).split('.ms')[0]}_plots"
+    suffix = os.path.basename(msname).split(".ms")[0]
     os.makedirs(outdir, exist_ok=True)
 
     msname = msname.rstrip("/")
@@ -162,7 +163,7 @@ def plot_ms_diagnostics(
                             f"--col {col} -j {ncpu} -z {nchunk} "
                             f"--xlabel '{xlabel}' --ylabel '{ylabel}' "
                             f"--corr {corr} --colour-by CORR --iter-scan --iter-field "
-                            f"--dmap tab10 --dir {outdir} {msname}"
+                            f"--dmap tab10 -s {suffix} {msname}"
                         )
 
         print(f"Making plots of: {msname}")
@@ -173,7 +174,7 @@ def plot_ms_diagnostics(
             #########################
             # Making plots
             #########################
-            pngs = glob.glob(f"{outdir}/*{yaxis}*.png")
+            pngs = glob.glob(f"{outdir}/*{yaxis}*{suffix}*.png")
             outfile = f"{outdir}/{output_pdf}_{yaxis}.pdf"
             if len(pngs) > 0:
                 images = []
