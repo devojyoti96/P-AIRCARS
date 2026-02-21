@@ -364,7 +364,7 @@ def submit_local_master_flow(args, jobid):
         Success message
     """
     scheduler_name = get_scheduler_name()
-    if scheduler_name is not "local":
+    if scheduler_name!="local":
         print(
             f"Job scheduler is not local. Available job scheduler is : {scheduler_name}"
         )
