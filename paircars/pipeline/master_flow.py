@@ -3916,6 +3916,10 @@ def cli():
             jobid=jobid,
             job_password=args.job_password,
         )
+        if msg==0:
+            print("P-AIRCARS successfully executed.")
+        else:
+            print("Issued occured in P-AIRCARS execution.")
     except Exception as e:
         traceback.print_exc()
     finally:
