@@ -145,6 +145,7 @@ def get_slurm_dask_cluster(
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
             f"--mem={mem_limit}G",
+            f"--job-name=paircars_{jobid}",
             f"--output={log_dir}/paircars_{jobid}-%j.out",
             f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
@@ -162,7 +163,6 @@ def get_slurm_dask_cluster(
             local_directory=dask_dir_tmp,
             death_timeout=60,
             log_directory=log_dir,
-            name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
             env_extra=[
                 "OMP_NUM_THREADS=1",
@@ -342,7 +342,7 @@ def submit_slurm_master_flow(args, jobid):
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
         print(f"Batch script: {script_path} is ready for submission.")
-        result = subprocess.run(["sbatch", script_path])
+        result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:

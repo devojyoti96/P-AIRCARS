@@ -3839,7 +3839,7 @@ def cli():
                 dask_client, dask_cluster, dask_dir = cluster_result
             else:
                 return
-            nworker = max(2,get_total_nodes(partition=args.partition))
+            nworker = max(5,get_total_nodes(partition=args.partition))
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
