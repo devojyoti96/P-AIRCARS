@@ -145,6 +145,8 @@ def get_slurm_dask_cluster(
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
             f"--mem={mem_limit}G",
+            f"--output={log_dir}/paircars_{jobid}-%j.out",
+            f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
 
         cluster = SLURMCluster(
@@ -160,8 +162,10 @@ def get_slurm_dask_cluster(
             local_directory=dask_dir_tmp,
             death_timeout=60,
             log_directory=log_dir,
+            name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
             env_extra=[
+                "PYTHONUNBUFFERED=1",
                 "OMP_NUM_THREADS=1",
                 "MKL_NUM_THREADS=1",
                 "OPENBLAS_NUM_THREADS=1",
@@ -172,7 +176,6 @@ def get_slurm_dask_cluster(
                 f"TEMP={dask_dir_tmp}",
                 f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
                 "PYTHONWARNINGS=ignore::UserWarning:contextlib",
-                "PYTHONUNBUFFERED=1",
             ],
         )
 
@@ -321,12 +324,10 @@ def submit_slurm_master_flow(args, jobid):
         )
         script_args = [
             "#!/bin/bash",
-            "export PYTHONUNBUFFERED=1",
             f"#SBATCH --job-name=paircars_{jobid}",
             f"#SBATCH --time={walltime}",
             f"#SBATCH --output={args.workdir}/paircars_{jobid}.log",
             f"#SBATCH --error={args.workdir}/paircars_{jobid}.log",
-            f"#SBATCH --partition={args.partition}",
             f"#SBATCH --partition={args.partition}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks=1",
@@ -335,6 +336,7 @@ def submit_slurm_master_flow(args, jobid):
         ]
         if hasattr(args, "account") and args.account is not None:
             script_args.append(f"#SBATCH --account={args.account}\n")
+        script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
         with open(script_path, "w") as f:
