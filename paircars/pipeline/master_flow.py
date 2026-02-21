@@ -1490,7 +1490,7 @@ def master_control(
     # Resource settings
     cpu_frac=0.8,
     mem_frac=0.8,
-    max_worker=-1,
+    max_worker=1,
     keep_backup=False,
     keep_calibrated_ms=False,
     # Remote logging
@@ -1701,8 +1701,9 @@ def master_control(
     os.makedirs(workdir, exist_ok=True)
     os.makedirs(outdir, exist_ok=True)
     os.makedirs(caldir, exist_ok=True)
-
-    if max_worker < 1:
+    scheduler_name = get_scheduler_name()
+    
+    if max_worker < 1 and scheduler_name=="local":
         if cpu_frac > 0.8:
             cpu_frac = 0.8
         max_worker = int(psutil.cpu_count() * cpu_frac)
@@ -1716,7 +1717,6 @@ def master_control(
         ####################################
         # Job and process IDs
         ####################################
-        scheduler_name = get_scheduler_name()
         if scheduler_name == "local":
             pid = os.getpid()
         elif scheduler_name == "slurm":
