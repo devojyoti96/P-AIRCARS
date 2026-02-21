@@ -41,7 +41,7 @@ warnings.simplefilter("ignore", category=FITSFixedWarning)
 # Plotting related functions
 #################################
 def plot_ms_diagnostics(
-    msname, outdir="", dask_client=None, ncpu=1, total_mem=1, cpu_frac=-1, mem_frac=-1
+    msname, outdir="", dask_client=None, ncpu=1, total_mem=1, cpu_frac=-1, mem_frac=-1, verbose=False,
 ):
     """
     Plot diagonistics plots for measurement set
@@ -62,6 +62,8 @@ def plot_ms_diagnostics(
         CPU fraction of current node
     mem_frac : float, optional
         Memory fraction of current node
+    verbose : bool, optional
+        Verbose output 
 
     Returns
     -------
@@ -70,6 +72,7 @@ def plot_ms_diagnostics(
     list
         Output plot file list
     """
+    msname=msname.rstrip("/")
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
 
@@ -81,6 +84,7 @@ def plot_ms_diagnostics(
     if outdir == "":
         outdir = os.getcwd()
     outdir = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_plots"
+    print (f"Output directory: {outdir}.")
     output_pdf = f"{os.path.basename(msname).split('.ms')[0]}_plots"
     os.makedirs(outdir, exist_ok=True)
 
@@ -177,8 +181,8 @@ def plot_ms_diagnostics(
                     images.append(Image.open(image).convert("RGB"))
                 images[0].save(outfile, save_all=True, append_images=images[1:])
                 output_pdf_list.append(outfile)
-                for png in pngs:
-                    os.system(f"rm -rf {png}")
+                '''for png in pngs:
+                    os.system(f"rm -rf {png}")'''
             else:
                 print(f"No plot for {ylabel} is made.")
 
