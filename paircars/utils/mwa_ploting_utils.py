@@ -73,6 +73,8 @@ def plot_ms_diagnostics(
         Output plot file list
     """
     msname=msname.rstrip("/")
+    mspath=os.path.dirname(os.path.abspath(msname))
+    
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
 
@@ -174,7 +176,8 @@ def plot_ms_diagnostics(
             #########################
             # Making plots
             #########################
-            pngs = glob.glob(f"{outdir}/*{yaxis}*{suffix}*.png")
+            print (f"{mspath}/*{yaxis}*{suffix}*.png")
+            pngs = glob.glob(f"{mspath}/*{yaxis}*{suffix}*.png")
             outfile = f"{outdir}/{output_pdf}_{yaxis}.pdf"
             if len(pngs) > 0:
                 images = []
