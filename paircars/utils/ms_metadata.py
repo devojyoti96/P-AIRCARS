@@ -1,16 +1,14 @@
-import types
 import psutil
 import numpy as np
 import glob
 import os
 from casatools import msmetadata, ms as casamstool, table, measures
-from .basic_utils import *
-from .resource_utils import *
+from .basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
+from .resource_utils import limit_threads
 
 ##########################
 # Measurement set metadata
 ##########################
-
 
 def get_phasecenter(msname, fieldID=0):
     """
@@ -738,12 +736,3 @@ def get_pol_names(msname, fullpol=True):
     return pol_names
 
 
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

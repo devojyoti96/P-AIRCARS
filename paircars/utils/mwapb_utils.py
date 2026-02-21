@@ -3,21 +3,16 @@ import glob
 import os
 import time
 import warnings
-import types
 import argparse
 import numpy as np
 import astropy.units as u
-import astropy.wcs as pywcs
 import mwa_hyperbeam
-import skyfield.api as si
-from scipy.interpolate import RectBivariateSpline, RegularGridInterpolator
-from joblib import Parallel, delayed as jobdelayed
+from scipy.interpolate import RegularGridInterpolator
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import FITSFixedWarning
 from astropy.coordinates import EarthLocation, SkyCoord, AltAz
-from .basic_utils import *
-from .udocker_utils import *
+from .basic_utils import get_datadir
 
 warnings.filterwarnings("ignore")
 
@@ -49,6 +44,7 @@ def get_azza_from_fits(filename, metafits):
     dict
         {'za_rad': theta,'astro_az_rad': phi}
     """
+    import astropy.wcs as pywcs
     f = fits.open(filename)
     h = f[0].header
     f.close()
@@ -216,6 +212,7 @@ def all_sky_beam_interpolator(
     numpy.array
         All sky primary beam Jones array
     """
+    from scipy.interpolate import RectBivariateSpline
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
@@ -338,6 +335,7 @@ def get_jones_array(
     numpy.array
         Jones array (shape : coordinate_arr_shape, 2 ,2)
     """
+    from joblib import Parallel, delayed as jobdelayed
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
@@ -664,6 +662,7 @@ def horz2eq(az, ZA, obstime):
     dict
         A python dictionary {'RA' : degress, 'DEC' : degrees}
     """
+    import skyfield.api as si
     MWA_TOPO = si.Topos(
         longitude=(116, 40, 14.93), latitude=(-26, 42, 11.95), elevation_m=377.8
     )
@@ -1065,12 +1064,3 @@ def make_primarybeammap(
     )
 
 
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

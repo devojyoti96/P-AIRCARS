@@ -1,4 +1,3 @@
-import types
 import psutil
 import numpy as np
 import traceback
@@ -6,12 +5,11 @@ import warnings
 import glob
 import os
 import dask
-from casatools import msmetadata, ms as casamstool, table
+from casatools import msmetadata, table
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
 from numpy.linalg import inv
-from .basic_utils import *
-from .ms_metadata import *
-from .imaging import *
+from .basic_utils import ceil_to_multiple, timestamp_to_mjdsec, mjdsec_to_timestamp 
+from .imaging import calc_sun_dia, calc_maxuv, calc_field_of_view 
 
 #####################################
 # Calibration related

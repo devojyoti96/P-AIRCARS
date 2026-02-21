@@ -1,4 +1,3 @@
-import types
 import numpy as np
 import traceback
 import warnings
@@ -8,8 +7,8 @@ import os
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.wcs import FITSFixedWarning
-from .basic_utils import *
-from .udocker_utils import *
+from .basic_utils import average_timestamp
+from .udocker_utils import run_wsclean
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 
@@ -488,13 +487,3 @@ def make_stokes_wsclean_imagecube(
             os.system(f"rm -rf {img}")
     return outfile_name
 
-
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

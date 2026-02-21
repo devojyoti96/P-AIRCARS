@@ -8,9 +8,9 @@ import numpy as np
 import subprocess
 import traceback
 from datetime import datetime
-from scipy.interpolate import interp1d
-from casatools import msmetadata, table as casatable, calibrater
-from paircars.utils import *
+from casatools import table as casatable
+from .basic_utils import suppress_output, average_with_padding, filter_outliers
+from .flagging import get_chans_flag
 
 warnings.filterwarnings("ignore")
 
@@ -31,6 +31,7 @@ def create_blank_table(msname, caltable):
     str
         Blank caltable name
     """
+    from casatools import calibrater
     if os.path.exists(caltable):
         os.system(f"rm -rf {caltable}")
     cb = calibrater()
@@ -302,3 +303,4 @@ def crossphasecal(
     crossphase = fitted_crossphase(freqs, crossphase)
     create_crossphase_table(msname, caltable, freqs, crossphase, chan_flags)
     return caltable
+    

@@ -1,15 +1,10 @@
-import types
-import julian
 import numpy as np
 import os
 import copy
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import Angle
-from datetime import datetime as dt
 from contextlib import contextmanager
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter1d
 
 
 ##########################
@@ -112,6 +107,7 @@ def split_into_chunks(lst, target_chunk_size):
 
 def interpolate_nans(data):
     """Linearly interpolate NaNs in 1D array."""
+    from scipy.interpolate import interp1d
     nans = np.isnan(data)
     if np.all(nans):
         raise ValueError("All values are NaN.")
@@ -223,6 +219,7 @@ def filter_outliers(data, threshold=5, max_iter=3):
     numpy.array
         Clean Y-values
     """
+    from scipy.ndimage import gaussian_filter1d
     for c in range(max_iter):
         data = np.asarray(data, dtype=np.float64)
         original_nan_mask = np.isnan(data)
@@ -357,6 +354,8 @@ def timestamp_to_mjdsec(timestamp, date_format=0):
     float
         Return correspondong MJD second of the day
     """
+    import julian
+    from datetime import datetime as dt
     if date_format == 0:
         try:
             timestamp_datetime = dt.strptime(timestamp, "%Y/%m/%d/%H:%M:%S.%f")
@@ -437,10 +436,3 @@ def mjdsec_to_timestamp(mjdsec, str_format=0):
         )
     return utcstring
 
-
-# Exposing only functions
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
-]

@@ -1,13 +1,11 @@
-import types
 import psutil
 import numpy as np
 import glob
 import os
 import traceback
 import time
-from casatools import msmetadata, ms as casamstool, table
-from .basic_utils import *
-from .resource_utils import *
+from .basic_utils import suppress_output
+from .resource_utils import limit_threads
 
 
 #############################
@@ -29,6 +27,7 @@ def check_scan_in_caltable(caltable, scan):
     bool
         Whether scan is present in the caltable or not
     """
+    from casatools import table
     tb = table()
     tb.open(caltable)
     scans = tb.getcol("SCAN_NUMBER")
@@ -62,7 +61,7 @@ def reset_weights_and_flags(
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
-
+    from casatools import msmetadata
     msname = msname.rstrip("/")
     if os.path.exists(f"{msname}/.reset") == False or force_reset:
         mspath = os.path.dirname(os.path.abspath(msname))

@@ -1,4 +1,3 @@
-import types
 import shutil
 import traceback
 import platform
@@ -177,10 +176,3 @@ def limit_threads(n_threads=-1):
         os.environ["VECLIB_MAXIMUM_THREADS"] = str(n_threads)
         os.environ["NUMEXPR_NUM_THREADS"] = str(n_threads)
 
-
-# Exposing only functions
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
-]

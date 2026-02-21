@@ -1,13 +1,11 @@
 import os
 import asyncio
 import threading
-import types
 from pathlib import Path
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.sorting import LogSort
 from prefect.client.schemas.filters import LogFilter
-from datetime import datetime, timezone, timedelta
-
+from datetime import datetime, timezone
 
 async def save_logs_by_task_id(
     task_run_id, task_name, logfile, poll_interval=5, stop_event=None
@@ -163,10 +161,3 @@ def start_flow_log_saver(
     thread.start()
     return thread
 
-
-# Exposing only functions
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
-]

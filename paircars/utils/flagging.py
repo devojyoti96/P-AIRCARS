@@ -1,4 +1,3 @@
-import types
 import psutil
 import numpy as np
 import traceback
@@ -7,10 +6,9 @@ import os
 import dask
 from datetime import datetime as dt, timezone
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
-from .basic_utils import *
-from .resource_utils import *
-from .imaging import *
-
+from .basic_utils import suppress_output 
+from .resource_utils import limit_threads 
+from .imaging import calc_maxuv
 
 ###############################
 # Flagging related functions
@@ -427,13 +425,3 @@ def flag_quartical_table(caltable, threshold=10.0):
     dask.compute(write_xds_list)
     return caltable
 
-
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

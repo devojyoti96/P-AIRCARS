@@ -1,12 +1,8 @@
-import types
 import numpy as np
 import glob
 import os
 import traceback
-from casatools import msmetadata, ms as casamstool, table
-from .basic_utils import *
-from .mwa_utils import *
-
+from casatools import msmetadata, table
 
 ##################################
 # Imaging related
@@ -169,7 +165,7 @@ def get_optimal_image_interval(
     int
         Number of channels to averages
     """
-
+    from casatools import ms as casamstool
     def is_valid_chunk(chunk, tolerance):
         mean_flux = np.nanmedian(chunk)
         if mean_flux == 0:
@@ -403,12 +399,3 @@ def get_multiscale_bias(freq, bias_min=0.6, bias_max=0.9, minfreq=100, maxfreq=2
         )
 
 
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

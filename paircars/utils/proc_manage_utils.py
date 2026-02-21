@@ -1,4 +1,3 @@
-import types
 import resource
 import psutil
 import dask
@@ -17,10 +16,9 @@ import socket
 import shlex
 import traceback
 from pathlib import Path
-from dask import delayed, compute, config
 from dask.distributed import Client, LocalCluster
 from datetime import datetime as dt, timedelta
-from .basic_utils import *
+from .basic_utils import get_cachedir
 
 
 #################################
@@ -542,10 +540,3 @@ def get_total_nodes(partition=None):
     else:
         return None
 
-
-# Exposing only functions
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
-]

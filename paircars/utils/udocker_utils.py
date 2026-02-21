@@ -1,4 +1,3 @@
-import types
 import psutil
 import traceback
 import tempfile
@@ -6,7 +5,7 @@ import time
 import glob
 import os
 import subprocess
-from .basic_utils import *
+from .basic_utils import get_datadir
 
 ####################
 # uDOCKER related
@@ -737,13 +736,3 @@ def run_quartical(
         traceback.print_exc()
         return 1
 
-
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

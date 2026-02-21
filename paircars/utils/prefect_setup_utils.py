@@ -1,5 +1,4 @@
 import os
-import types
 import subprocess
 import time
 import socket
@@ -8,7 +7,7 @@ import argparse
 import toml
 from pathlib import Path
 from dotenv import load_dotenv
-from .basic_utils import *
+from .basic_utils import get_cachedir 
 
 
 # === CONFIG ===
@@ -236,9 +235,3 @@ def show_prefect_config():
     subprocess.run(["prefect", "config", "view"], env=env)
 
 
-# Exposing only functions
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
-]
