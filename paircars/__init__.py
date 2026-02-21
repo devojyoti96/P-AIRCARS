@@ -43,12 +43,6 @@ logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 logging.getLogger("tzlocal").setLevel(logging.ERROR)
 logging.getLogger("prefect").setLevel(logging.ERROR)
 
-# ---------------------------------------------------------
-# PairCARS environment setup
-# ---------------------------------------------------------
-from .udocker_utils import set_udocker_env
-
-set_udocker_env()
 
 # ---------------------------------------------------------
 # CASA log cleanup
