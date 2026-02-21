@@ -32,7 +32,7 @@ from .ms_metadata import (
     check_datacolumn_valid,
 )
 from .resource_utils import drop_cache
-from .udocker_utils import run_shadems, check_udocker_container
+from .udocker_utils import run_shadems, check_udocker_container, initialize_wsclean_container
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 
