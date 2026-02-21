@@ -167,7 +167,7 @@ def plot_ms_diagnostics(
 
         print(f"Making plots of: {msname}")
         for cmd in cmds:
-            run_shadems(cmd, verbose=False)
+            run_shadems(cmd, verbose=verbose)
 
         for yaxis, ylabel in plot_types.items():
             #########################
