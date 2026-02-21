@@ -342,7 +342,10 @@ def submit_slurm_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
+        print("######################################################")
+        print(f"P-AIRCARS Job ID: {jobid}")
         print(f"Batch script: {script_path} is ready for submission.")
+        print("######################################################")
         result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
