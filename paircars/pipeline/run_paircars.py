@@ -167,6 +167,11 @@ def cli():
         dest="make_overlay",
         help="Make overlay plot on EUV images",
     )
+    advanced_image.add_argument(
+        "--make_msplot",
+        action="store_true",
+        help="Make diagnostic plots of measurement sets",
+    )
 
     # === Advanced options ===
     advanced = parser.add_argument_group(

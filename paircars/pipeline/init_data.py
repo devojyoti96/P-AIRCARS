@@ -156,7 +156,9 @@ def main(
         print(f"P-AIRCARS data are initiated.")
         init_udocker()
         print("uDOCKER is inititalized")
-        wsclean_container_name = initialize_wsclean_container(update=update, verbose=True)
+        wsclean_container_name = initialize_wsclean_container(
+            update=update, verbose=True
+        )
         if (
             wsclean_container_name is not None
             and wsclean_container_name == "paircarswsclean"
@@ -165,7 +167,9 @@ def main(
         else:
             print("Error in initializing WSClean container.")
             return 1
-        quartical_container_name = initialize_quartical_container(update=update, verbose=True)
+        quartical_container_name = initialize_quartical_container(
+            update=update, verbose=True
+        )
         if (
             quartical_container_name is not None
             and quartical_container_name == "paircarsquartical"
@@ -174,7 +178,9 @@ def main(
         else:
             print("Error in initializing quartical container.")
             return 1
-        shadems_container_name = initialize_shadems_container(update=update, verbose=True)
+        shadems_container_name = initialize_shadems_container(
+            update=update, verbose=True
+        )
         if (
             shadems_container_name is not None
             and shadems_container_name == "paircarsshadems"

@@ -328,7 +328,7 @@ def get_local_dask_cluster(
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
     try:
-        total_mem = psutil.virtual_memory().total / 1024**3  # In GB
+        total_mem = psutil.virtual_memory().available / 1024**3  # In GB
         mem_frac = min(mem_frac, 0.8)
         usable_mem = total_mem * mem_frac
         # Raise file descriptor limit

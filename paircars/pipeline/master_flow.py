@@ -1249,7 +1249,6 @@ def run_make_overlay(
     workdir="",
     jobid=0,
     cpu_frac=0.8,
-    mem_frac=0.8,
     remote_log=False,
 ):
     """
@@ -1271,7 +1270,7 @@ def run_make_overlay(
     Returns
     -------
     int
-        Success message for applying primary beam correction on all images
+        Success message for EUV overlays
     """
     overlay_basename = "do_overlay"
     logdir = f"{workdir}/logs"
@@ -1322,7 +1321,85 @@ def run_make_overlay(
     finally:
         stop_event.set()
         log_thread_overlay.join(timeout=5)
-    return 0
+    if msg != 0:
+        raise RuntimeError("EUV overlay is failed.")
+    else:
+        return msg
+
+
+@task(name="making_msplot", retries=2, retry_delay_seconds=60, log_prints=True)
+def run_make_msplot(
+    mslist,
+    workdir,
+    outdir,
+    cpu_frac=0.8,
+    mem_frac=0.8,
+    remote_log=False,
+):
+    """
+    Making diagnostic plots of measurement sets
+
+    Parameters
+    ----------
+    mslist : str
+        Measurement set list (comma separated)
+    workdir : str, optional
+        Work directory
+    outdir : str
+        Output directory
+    cpu_frac : float, optional
+        CPU fraction to use
+    mem_frac : float, optional
+        Memory fraction to use
+    remote_log: bool, optional
+        Start remote logger
+
+    Returns
+    -------
+    int
+        Success message for measurement set ploting
+    """
+    msplot_basename = "do_msplot"
+    logdir = f"{workdir}/logs"
+    os.makedirs(logdir, exist_ok=True)
+    logfile = f"{logdir}/{msplot_basename}.log"
+    if os.path.exists(logfile):
+        os.remove(logfile)
+    ctx = get_run_context()
+    task_id = str(ctx.task_run.id)
+    task_name = ctx.task_run.name
+    stop_event = Event()
+    log_thread_overlay = start_log_task_saver(
+        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
+    )
+    os.makedirs(outdir, exist_ok=True)
+    try:
+        ###################
+        print("###########################")
+        print("Making diagnostic plots of all measurement sets .....")
+        print("###########################")
+        #####################
+        # Making plots
+        #####################
+        with get_dask_client() as dask_client:
+            msg = make_ms_plot.main(
+                mslist,
+                workdir,
+                outdir,
+                cpu_frac=float(cpu_frac),
+                mem_frac=float(mem_frac),
+                logfile=logfile,
+                jobid=jobid,
+                start_remote_log=remote_log,
+                dask_client=dask_client,
+            )
+    finally:
+        stop_event.set()
+        log_thread_overlay.join(timeout=5)
+    if msg != 0:
+        raise RuntimeError("Measurement set diagnostic ploting is failed.")
+    else:
+        return msg
 
 
 def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
@@ -1408,6 +1485,7 @@ def master_control(
     use_multiscale=True,
     cutout_rsun=10.0,
     make_overlay=False,
+    make_msplot=False,
     # Resource settings
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -1511,6 +1589,8 @@ def master_control(
         Cutout image size from center in solar radii (default : 10.0 solar radii)
     make_overlay : bool, optional
         Make EUV MWA overlay
+    make_msplot : bool, optional
+        Make diagnostic plots of measurement sets
 
     cpu_frac : float, optional
         CPU fraction to use
@@ -3081,6 +3161,8 @@ def master_control(
         # Make overlays
         #######################################
         if make_overlay:
+            current_worker = get_total_worker(dask_cluster)
+            scale_worker_and_wait(dask_cluster, max_worker)
             print("###########################")
             print("Starting task: Making overlay on EUV images.....")
             print("###########################")
@@ -3118,6 +3200,108 @@ def master_control(
             finally:
                 scale_worker_and_wait(dask_cluster, current_worker)
             print(f"Final image directory: {os.path.dirname(outdir)}")
+
+        ##############################################
+        # Making diagnostic plots of measurement sets
+        ##############################################
+        if make_msplot:
+            msplot_outdir = f"{outdir}/ms_diagnostics_plots"
+            os.makedirs(msplot_outdir, exist_ok=True)
+
+            if has_cal and len(split_cal_mslist) > 0:
+                ###########################################
+                # Ploting calibrator ms
+                ###########################################
+                current_worker = get_total_worker(dask_cluster)
+                nworker = min(max_worker, len(split_cal_mslist) + current_worker)
+                scale_worker_and_wait(dask_cluster, nworker)
+                print("###########################")
+                print(
+                    "Starting task: Making diagnostic plots of calibrator measurement sets....."
+                )
+                print("###########################")
+                future_cal_plot = run_make_msplot.with_options(
+                    task_run_name=f"making_msplot_cal_{jobid}"
+                ).submit(
+                    ",".join(split_cal_mslist),
+                    workdir,
+                    msplot_outdir,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                )
+                try:
+                    msg = future_cal_plot.result()
+                    if emails != "":
+                        email_msg = "Making diagnostic plots for calibrator measurement sets are done."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(
+                        f"Finished task: Making diagnostic plots for calibrator measurment sets are done."
+                    )
+                    print("###########################")
+                except Exception as e:
+                    print(
+                        "!!!! WARNING: Diagnostic plot of calibrator measurment sets are not successful. !!!!"
+                    )
+                    traceback.print_exc()
+                    if emails != "":
+                        email_msg = "Error occured in making diagnostic plots of calibrator measurement sets."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                finally:
+                    scale_worker_and_wait(dask_cluster, current_worker)
+
+            ###########################################
+            # Ploting target ms
+            ###########################################
+            current_worker = get_total_worker(dask_cluster)
+            nworker = min(max_worker, len(split_target_mslist) + current_worker)
+            scale_worker_and_wait(dask_cluster, nworker)
+            print("###########################")
+            print(
+                "Starting task: Making diagnostic plots of target measurement sets....."
+            )
+            print("###########################")
+            future_target_plot = run_make_msplot.with_options(
+                task_run_name=f"making_msplot_{jobid}"
+            ).submit(
+                ",".join(split_target_mslist),
+                workdir,
+                msplot_outdir,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+            )
+            try:
+                msg = future_target_plot.result()
+                if emails != "":
+                    email_msg = (
+                        "Making diagnostic plots for target measurement sets are done."
+                    )
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                print("###########################")
+                print(
+                    f"Finished task: Making diagnostic plots for target measurment sets are done."
+                )
+                print("###########################")
+            except Exception as e:
+                print(
+                    "!!!! WARNING: Diagnostic plot of target measurment sets are not successful. !!!!"
+                )
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = "Error occured in making diagnostic plots of target measurement sets."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+            finally:
+                scale_worker_and_wait(dask_cluster, current_worker)
 
         ######################################
         # Keeping flag backups
@@ -3364,6 +3548,11 @@ def cli():
         action="store_true",
         dest="make_overlay",
         help="Make overlay plot on EUV images",
+    )
+    advanced_image.add_argument(
+        "--make_msplot",
+        action="store_true",
+        help="Make diagnostic plots of measurement sets",
     )
 
     # === Advanced options ===
@@ -3708,6 +3897,7 @@ def cli():
             use_solar_mask=args.use_solar_mask,
             cutout_rsun=args.cutout_rsun,
             make_overlay=args.make_overlay,
+            make_msplot=args.make_msplot,
             # Resource settings
             cpu_frac=args.cpu_frac,
             mem_frac=args.mem_frac,

@@ -87,7 +87,7 @@ def main(
         )
         if os.path.exists(logfile):
             observer = init_logger(
-                "do_ms_plot", logfile, jobname=jobname, password=password
+                "do_msplot", logfile, jobname=jobname, password=password
             )
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
@@ -95,7 +95,7 @@ def main(
     if len(mslist) == 0:
         print("No measurement set is given.")
         return 1
-        
+
     dask_cluster = None
     if dask_client is None:
         dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
@@ -110,7 +110,9 @@ def main(
         if scheduler_name == "local":
             njobs = len(mslist)
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+            total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                1024**3
+            )  # In GB
             n_threads = max(1, int(total_cpu / njobs))
             mem_limit = total_mem / njobs
             cpu_frac = -1
@@ -127,21 +129,31 @@ def main(
             print("#################################")
             print(f"Total dask worker: {njobs}")
             print("#################################")
-        tasks = [delayed(plot_ms_diagnostics)(msname,outdir=outdir,dask_client=dask_client,ncpu=n_threads,total_mem=mem_limit,cpu_frac=cpu_frac,mem_frac=mem_frac) for msname in mslist]
+        tasks = [
+            delayed(plot_ms_diagnostics)(
+                msname,
+                outdir=outdir,
+                ncpu=n_threads,
+                total_mem=mem_limit,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
+            )
+            for msname in mslist
+        ]
         results = list(dask_client.gather(dask_client.compute(tasks)))
-        msg=0
-        final_plots=[]
+        msg = 0
+        final_plots = []
         for res in results:
             success_msg, plots = res
-            msg+=success_msg
+            msg += success_msg
             for p in plots:
                 final_plots.append(p)
         print(f"Total measurment sets: {len(mslist)}.")
         print(f"Total successful measurement sets: {len(mslist)-msg}.")
         print(f"Total failed measurement sets: {msg}.")
         print(f"Total plots made: {len(final_plots)}.")
-        if msg>0:
-            msg=1
+        if msg > 0:
+            msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1
@@ -165,10 +177,12 @@ def cli():
     basic_args = parser.add_argument_group(
         "###################\nEssential parameters\n###################"
     )
-    basic_args.add_argument("mslist", type=str, help="Measurement set list (comma separated)")
+    basic_args.add_argument(
+        "mslist", type=str, help="Measurement set list (comma separated)"
+    )
     basic_args.add_argument("workdir", type=str, help="Name of work directory")
     basic_args.add_argument("outdir", type=str, help="Output directory")
-    
+
     # Advanced switches
     adv_args = parser.add_argument_group(
         "###################\nAdvanced parameters\n###################"
@@ -211,5 +225,7 @@ def cli():
 
 if __name__ == "__main__":
     result = cli()
-    print("\n###################\nPloting measurement set diagnostics are done.\n###################\n")
+    print(
+        "\n###################\nPloting measurement set diagnostics are done.\n###################\n"
+    )
     os._exit(result)

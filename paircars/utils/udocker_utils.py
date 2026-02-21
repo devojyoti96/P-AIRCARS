@@ -261,7 +261,9 @@ def run_wsclean(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
-            container_name = initialize_wsclean_container(name=container_name, verbose=verbose)
+            container_name = initialize_wsclean_container(
+                name=container_name, verbose=verbose
+            )
             if container_name is None:
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
@@ -372,7 +374,9 @@ def run_solar_sidereal_cor(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
-            container_name = initialize_wsclean_container(name=container_name, verbose=verbose)
+            container_name = initialize_wsclean_container(
+                name=container_name, verbose=verbose
+            )
             if container_name is None:
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
@@ -466,7 +470,9 @@ def run_chgcenter(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
-            container_name = initialize_wsclean_container(name=container_name, verbose=verbose)
+            container_name = initialize_wsclean_container(
+                name=container_name, verbose=verbose
+            )
             if container_name is None:
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
@@ -557,7 +563,9 @@ def run_shadems(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
-            container_name = initialize_shadems_container(name=container_name, verbose=verbose)
+            container_name = initialize_shadems_container(
+                name=container_name, verbose=verbose
+            )
             if container_name is None:
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
@@ -633,7 +641,9 @@ def run_quartical(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
-            container_name = initialize_quartical_container(name=container_name, verbose=verbose)
+            container_name = initialize_quartical_container(
+                name=container_name, verbose=verbose
+            )
             if container_name is None:
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
