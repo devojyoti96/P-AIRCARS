@@ -1708,9 +1708,7 @@ def master_control(
         if cpu_frac > 0.8:
             cpu_frac = 0.8
         max_worker = int(psutil.cpu_count() * cpu_frac)
-    else:
-        max_worker = 1
-
+  
     ################################################
     # Starting number of workers
     ################################################
