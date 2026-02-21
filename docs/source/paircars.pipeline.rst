@@ -113,6 +113,14 @@ paircars.pipeline.master\_flow module
    :members:
    :undoc-members:
    :show-inheritance:
+   
+paircars.pipeline.run\_paircars module
+------------------------------------------
+
+.. automodule:: paircars.pipeline.run_paircars
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 paircars.pipeline.mwa\_make\_ds module
 --------------------------------------------

@@ -2,9 +2,6 @@ P-AIRCARS Utils Module
 ==========================
 This module contains all basic functionalities required for the pipeline. 
 
-.. Note ::
-
-   All functions in submodules are also available from ``paircars.utils`` namespace as well.
 
 paircars.utils.basic\_utils module
 -----------------------------------
