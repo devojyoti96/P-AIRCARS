@@ -8,6 +8,7 @@ This page provides details of API of different modules of P-AIRCARS pipeline.
    paircars.utils
    paircars.pipeline
    paircars.casacoreutils
+   paircars.clusterutils
    paircars.data
 
 Module contents
