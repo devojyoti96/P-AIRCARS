@@ -1703,10 +1703,12 @@ def master_control(
     os.makedirs(caldir, exist_ok=True)
     scheduler_name = get_scheduler_name()
     
-    if max_worker < 1 and scheduler_name=="local":
+    if max_worker <=1 and scheduler_name=="local":
         if cpu_frac > 0.8:
             cpu_frac = 0.8
         max_worker = int(psutil.cpu_count() * cpu_frac)
+    else:
+        max_worker = 1
 
     ################################################
     # Starting number of workers
@@ -3808,7 +3810,6 @@ def cli():
             max_mem=max_mem,
         )
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
-        dask_addr = dask_client.scheduler.address
     else:
         ############################################
         # Stop prefect server in cluster environment
@@ -3848,6 +3849,7 @@ def cli():
     # Starting pipeline
     ##########################################
     try:
+        dask_addr = dask_client.scheduler.address
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
