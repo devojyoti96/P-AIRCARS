@@ -66,7 +66,7 @@ from paircars.utils.resource_utils import drop_cache
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
 )
-from paircars.clusterutils.slurm_cluster import get_slurm_dask_cluster
+from paircars.clusterutils.slurm_cluster import get_slurm_dask_cluster, get_slurm_node_resources
 from paircars.pipeline import (
     mwa_make_ds,
     do_target_split,

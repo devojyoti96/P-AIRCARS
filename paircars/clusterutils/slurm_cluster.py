@@ -172,6 +172,7 @@ def get_slurm_dask_cluster(
                 f"TEMP={dask_dir_tmp}",
                 f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
                 "PYTHONWARNINGS=ignore::UserWarning:contextlib",
+                "PYTHONUNBUFFERED=1",
             ],
         )
 
@@ -320,6 +321,7 @@ def submit_slurm_master_flow(args, jobid):
         )
         script_args = [
             "#!/bin/bash",
+            "export PYTHONUNBUFFERED=1",
             f"#SBATCH --job-name=paircars_{jobid}",
             f"#SBATCH --time={walltime}",
             f"#SBATCH --output={args.workdir}/paircars_{jobid}.log",
