@@ -123,7 +123,6 @@ def main(
     update=False,
     link=None,
     emails=None,
-    verbose=False,
 ):
     """
     Initiate P-AIRCARS setup
@@ -142,8 +141,6 @@ def main(
         Remote link
     emails : str, optional
         E-mails for notifications
-    verbose : bool, optional
-        Verbose output
     """
     required_gb = 20
     if init:
@@ -159,7 +156,7 @@ def main(
         print(f"P-AIRCARS data are initiated.")
         init_udocker()
         print("uDOCKER is inititalized")
-        wsclean_container_name = initialize_wsclean_container(update=update, verbose=verbose)
+        wsclean_container_name = initialize_wsclean_container(update=update, verbose=True)
         if (
             wsclean_container_name is not None
             and wsclean_container_name == "paircarswsclean"
@@ -168,7 +165,7 @@ def main(
         else:
             print("Error in initializing WSClean container.")
             return 1
-        quartical_container_name = initialize_quartical_container(update=update, verbose=verbose)
+        quartical_container_name = initialize_quartical_container(update=update, verbose=True)
         if (
             quartical_container_name is not None
             and quartical_container_name == "paircarsquartical"
@@ -177,7 +174,7 @@ def main(
         else:
             print("Error in initializing quartical container.")
             return 1
-        shadems_container_name = initialize_shadems_container(update=update, verbose=verbose)
+        shadems_container_name = initialize_shadems_container(update=update, verbose=True)
         if (
             shadems_container_name is not None
             and shadems_container_name == "paircarsshadems"
@@ -224,7 +221,6 @@ def cli():
         default=None,
         help="Email addresses (comma seperated) to send Job ID and password for remote logger",
     )
-    parser.add_argument("--verbose", action="store_true", help="Verbose output")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -239,7 +235,6 @@ def cli():
         update=args.update,
         link=args.link,
         emails=args.emails,
-        verbose=args.verbose,
     )
     if msg != 0:
         print("Error in initial setup.")
