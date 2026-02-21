@@ -343,7 +343,7 @@ def submit_slurm_master_flow(args, jobid):
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
         print(f"Batch script: {script_path} is ready for submission.")
-        subprocess.run(["sbatch", script_path])
+        result = subprocess.run(["sbatch", script_path])
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
