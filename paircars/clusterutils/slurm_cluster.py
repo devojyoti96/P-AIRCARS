@@ -1,4 +1,3 @@
-import types
 import dask
 import gc
 import time
@@ -11,8 +10,7 @@ import shlex
 import re
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
-from paircars.utils.basic_utils import *
-from paircars.utils.proc_manage_utils import *
+from paircars.utils.proc_manage_utils import get_scheduler_name, detect_best_interface,  
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -353,9 +351,3 @@ def submit_slurm_master_flow(args, jobid):
         return 1
 
 
-# Exposing only functions
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if isinstance(obj, types.FunctionType) and obj.__module__ == __name__
-]
