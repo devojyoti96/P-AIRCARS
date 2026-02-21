@@ -3823,7 +3823,7 @@ def cli():
                 return
 
             print("Setting up slurm cluster....")
-            dask_client, dask_cluster, dask_dir = slurm_cluster.get_slurm_dask_cluster(
+            dask_client, dask_cluster, dask_dir = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
