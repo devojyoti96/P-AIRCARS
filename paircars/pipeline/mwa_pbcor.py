@@ -13,7 +13,12 @@ from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
 from dask import delayed
 from paircars.pipeline.single_image_mwapbcor import get_pbcor_image
-from paircars.utils import *
+from paircars.utils.basic_utils import get_datadir
+from paircars.utils.image_utils import create_circular_mask_array
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.mwa_ploting_utils import save_in_hpc, plot_in_hpc
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -42,7 +47,7 @@ def run_pbcor(
     pbcor_dir,
     restore=False,
     jobid=0,
-    ncpu=8,
+    ncpu=1,
     cpu_frac=-1,
     verbose=False,
 ):
@@ -76,6 +81,8 @@ def run_pbcor(
         Success message
     """
     cpu_frac = min(0.8, cpu_frac)
+    ncpu=max(1,ncpu)
+    
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     freq = get_fits_freq(imagename)

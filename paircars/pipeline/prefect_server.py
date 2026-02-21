@@ -1,11 +1,12 @@
 import argparse
 import sys
-from paircars.utils import *
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 
 
 def cli():
     parser = argparse.ArgumentParser(
-        description="Manage a local Prefect server. Only for single-node work station."
+        description="Manage a local Prefect server. Only for single-node work station.",
+        formatter_class=SmartDefaultsHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", help="Sub-command help")
     # Start

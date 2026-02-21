@@ -25,8 +25,9 @@ from datetime import datetime as dt
 from PIL import Image
 from .basic_utils import mjdsec_to_timestamp 
 from .image_utils import calc_solar_image_stat, cutout_image
-from .ms_metadata import get_column_size, get_column_size 
+from .ms_metadata import get_column_size, get_column_size, get_ms_scan_size, check_datacolumn_valid 
 from .resource_utils import drop_cache
+from .udocker_utils import run_shadems, check_udocker_container
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 
@@ -35,7 +36,7 @@ warnings.simplefilter("ignore", category=FITSFixedWarning)
 # Plotting related functions
 #################################
 def plot_ms_diagnostics(
-    msname, outdir="", dask_client=None, cpu_frac=0.8, mem_frac=0.8
+    msname, outdir="", dask_client=None, ncpu=1, total_mem=1, cpu_frac=-1, mem_frac=-1
 ):
     """
     Plot diagonistics plots for measurement set
@@ -48,10 +49,14 @@ def plot_ms_diagnostics(
         Output directory
     dask_client : dask.client
         Dask client
+    ncpu : int, optional
+        Number of CPU threads
+    total_mem : float, optional 
+        Total memory in GB
     cpu_frac : float, optional
-        CPU fraction
+        CPU fraction of current node
     mem_frac : float, optional
-        Memory fraction
+        Memory fraction of current node
 
     Returns
     -------
@@ -60,14 +65,14 @@ def plot_ms_diagnostics(
     list
         Output plot file list
     """
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
     from casatools import ms as casamstool
     if outdir == "":
         outdir = os.getcwd()
+    outdir = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_plots"
+    output_pdf = f"{os.path.basename(msname).split('.ms')[0]}_plots"
     os.makedirs(outdir, exist_ok=True)
-    output_pdf = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_plots"
-    output_pdf_list = glob.glob(f"{output_pdf}*.pdf")
-    if len(output_pdf_list) > 0:
-        return 0, output_pdf_list
 
     msname = msname.rstrip("/")
     mstool = casamstool()
@@ -81,16 +86,24 @@ def plot_ms_diagnostics(
     msmd.close()
     scan_sizes = [get_ms_scan_size(msname, scan) for scan in scan_list]
 
-    if cpu_frac > 0.8:
-        cpu_frac = 0.8
-    ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac > 0.8:
-        mem_frac = 0.8
-    total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+    if cpu_frac>0:
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+    if mem_frac>0:
+        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
+        
     max_scan_size = max(scan_sizes)
     frac_chunk = min(1, total_mem / max_scan_size)
     nchunk = int(nrow * frac_chunk)
     output_pdf_list = []
+    
+    container_present = check_udocker_container("paircarsshadems")
+    if not container_present:
+        container_name = initialize_wsclean_container(name="paircarsshadems")
+        if container_name is None:
+            print(
+                f"Container {container_name} is not initiated. First initiate container and then run."
+            )
+            return 1, []
     try:
         #######################
         # Commands to run
@@ -105,26 +118,37 @@ def plot_ms_diagnostics(
         # Define y-axis modes and labels
         plot_types = {
             "amp": "Amplitude",
-            "phase": "Phase (deg)",
+            "phase": "Phase(deg)",
             "real": "Real",
             "imag": "Imaginary",
         }
 
         # Define x-axis settings
-        xaxes = {"uv": ("UV(m)",), "FREQ": ("Frequency (GHz)",), "TIME": ("Time",)}
+        xaxes = {"uv": ("UV(m)",), "FREQ": ("Frequency(GHz)",), "TIME": ("Time",)}
+
+        # Determine ploting coloumn
+        cols=[]
+        if check_datacolumn_valid(msname,datacolumn="CORRECTED_DATA"):
+            cols.append("CORRECTED_DATA")
+            if check_datacolumn_valid(msname,datacolumn="MODEL_DATA"):
+                cols.append("CORRECTED_DATA-MODEL_DATA")
+        else:
+            cols.append("DATA")
+            if check_datacolumn_valid(msname,datacolumn="MODEL_DATA"):
+                cols.append("DATA-MODEL_DATA")
 
         for corr, do_plot in corr_sets:
             if not do_plot:
                 continue
             for yaxis, ylabel in plot_types.items():
                 for xaxis, (xlabel,) in xaxes.items():
-                    for col in ["CORRECTED_DATA", "CORRECTED_DATA-MODEL_DATA"]:
+                    for col in cols:
                         cmds.append(
                             f"shadems --no-lim-save --xaxis {xaxis} --yaxis {yaxis} "
                             f"--col {col} -j {ncpu} -z {nchunk} "
                             f"--xlabel '{xlabel}' --ylabel '{ylabel}' "
                             f"--corr {corr} --colour-by CORR --iter-scan --iter-field "
-                            f"--dmap tab10 {msname}"
+                            f"--dmap tab10 --dir {outdir} {msname}"
                         )
 
         print(f"Making plots of: {msname}")
@@ -135,8 +159,8 @@ def plot_ms_diagnostics(
             #########################
             # Making plots
             #########################
-            pngs = glob.glob(f"*{yaxis}*.png")
-            outfile = f"{output_pdf}_{yaxis}.pdf"
+            pngs = glob.glob(f"{outdir}/*{yaxis}*.png")
+            outfile = f"{outdir}/{output_pdf}_{yaxis}.pdf"
             if len(pngs) > 0:
                 images = []
                 for image in pngs:
@@ -963,7 +987,7 @@ def make_mwa_overlay(
     ylim=[-2500, 2500],
     extensions=["png"],
     outdirs=[],
-    ncpu=-1,
+    ncpu=1,
     cpu_frac=-1,
     keep_euv_fits=False,
     showgui=False,
@@ -1103,8 +1127,6 @@ def make_mwa_overlay(
         reproject_map(euv_map, projected_header),
     ]
 
-    if ncpu < 1:
-        ncpu = 1
     pool = ThreadPool(processes=ncpu)
     with dask.config.set(pool=pool):
         mwa_reprojected, euv_reprojected = compute(*reprojected, scheduler="threads")

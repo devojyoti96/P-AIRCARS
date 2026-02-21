@@ -7,7 +7,12 @@ import time
 import sys
 import os
 from dask import delayed
-from paircars.utils import *
+from paircars.utils.basic_utils import get_datadir
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache
+from paircars.utils.sunpos_utils import correct_solar_sidereal_motion
+from paircars.utils.udocker_utils import check_udocker_container, initialize_wsclean_container
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)

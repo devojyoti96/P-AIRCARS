@@ -12,7 +12,12 @@ import subprocess
 from dask import delayed
 from casatasks import setjy
 from casatools import table as casatable, msmetadata
-from paircars.utils import *
+from paircars.utils.basic_utils import suppress_output, get_datadir
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.ms_metadata import get_ms_size
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache
+
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -20,7 +25,7 @@ datadir = get_datadir()
 
 
 def import_hyperdrive_model(
-    msname, metafits, beamfile="", sourcelist="", ncpu=-1, cpu_frac=-1, verbose=False
+    msname, metafits, beamfile="", sourcelist="", ncpu=1, cpu_frac=-1, verbose=False
 ):
     """
     Simulate visibilities and import in the measurement set
@@ -43,6 +48,8 @@ def import_hyperdrive_model(
         Verbose output or not
     """
     cpu_frac = min(0.8, cpu_frac)
+    ncpu=max(1,ncpu)
+    
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if datadir is None:

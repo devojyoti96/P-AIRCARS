@@ -10,7 +10,14 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
-from paircars.utils import *
+from paircars.utils.basic_utils import suppress_output
+from paircars.utils.flagging import flagsummary, do_flag_backup
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.ms_metadata import check_datacolumn_valid
+from paircars.utils.mwa_utils import get_bad_chans, get_mwa_bad_ants
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache, limit_threads
+
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -27,8 +34,8 @@ def single_ms_flag(
     flag_autocorr=True,
     flag_quack=True,
     threshold=5.0,
-    n_threads=-1,
-    mem_limit=-1,
+    n_threads=1,
+    mem_limit=1,
     cpu_frac=-1,
     mem_frac=-1,
 ):
@@ -73,6 +80,8 @@ def single_ms_flag(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
+    n_threads=max(1,n_threads)
+    mem_limit=max(1,mem_limit)
 
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))

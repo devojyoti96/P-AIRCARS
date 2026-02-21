@@ -8,7 +8,10 @@ import signal
 import traceback
 import subprocess
 from distributed import Client
-from paircars.utils import get_cachedir, drop_cache, get_scheduler_name
+from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.resource_utils import drop_cache 
+from paircars.utils.proc_manage_utils import get_scheduler_name
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 
 
 def terminate_process_and_children(pid, grace_period=3.0):

@@ -9,7 +9,15 @@ import glob
 import sys
 import os
 from dask import delayed
-from paircars.utils import *
+from paircars.utils.basic_utils import get_datadir
+from paircars.utils.ds_utils import calc_dynamic_spectrum
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.ms_metadata import get_ms_size
+from paircars.utils.mwa_ploting_utils import make_ds_plot
+from paircars.utils.mwa_utils import get_MWA_OBSID
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache
+
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -61,9 +69,7 @@ def make_solar_DS(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
-
+   
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     os.makedirs(f"{outdir}/dynamic_spectra", exist_ok=True)
     print("##############################################")
@@ -72,6 +78,8 @@ def make_solar_DS(
 
     scheduler_name = get_scheduler_name()
     if scheduler_name == "local":
+        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
         ########################################
         # Number of worker limit based on memory
         ########################################

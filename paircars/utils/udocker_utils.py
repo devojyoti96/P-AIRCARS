@@ -58,6 +58,98 @@ def check_udocker_container(name):
     except Exception:
         return False
 
+def initialize_container(image_name, name, update=False, verbose=False):
+    """
+    Initialize container
+    
+    Parameters
+    ----------
+    image_name: str
+        Docker image name
+    name : str
+        Container name
+    update : bool, optional
+        Update or not
+    verbose : bool, optional
+        Verbose output
+        
+    Returns
+    -------
+    bool
+        Whether initialized successfully or not
+    """
+    set_udocker_env()
+    check_cmd = f"udocker images | grep -q {image_name}"
+    image_exists = os.system(check_cmd)
+    if image_exists != 0:
+        if verbose:
+            result = subprocess.run(
+                ["udocker", "pull", f"{image_name}"],
+            )
+        else:
+            result = subprocess.run(
+                ["udocker", "pull", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        a = result.returncode
+    else:
+        if update:
+            if verbose:
+                subprocess.run(
+                    ["udocker", "rm", f"{name}"],
+                )
+                subprocess.run(
+                    ["udocker", "rmi", f"{image_name}"],
+                )
+            else:
+                subprocess.run(
+                    ["udocker", "rm", f"{name}"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(
+                    ["udocker", "rmi", f"{image_name}"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            print("Re-downloading docker image.")
+            if verbose:
+                result = subprocess.run(
+                    ["udocker", "pull", f"{image_name}"],
+                )
+            else:
+                result = subprocess.run(
+                    ["udocker", "pull", f"{image_name}"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            a = result.returncode
+            if a == 0:
+                print("Re-downloaded docker image.")
+            else:
+                print("Re-downloading container image is failed.")
+                return
+        else:
+            print(f"Image {image_name} already present.")
+            a = 0
+    if a == 0:
+        if verbose:
+            result = subprocess.run(
+                ["udocker", "pull", f"{image_name}"],
+            )
+        else:
+            result = subprocess.run(
+                ["udocker", "create", f"--name={name}", f"{image_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        a = result.returncode
+        print(f"Container started with name : {name}")
+        return name
+    else:
+        print(f"Container could not be created with name : {name}")
+        return
 
 def initialize_wsclean_container(name="paircarswsclean", update=False):
     """
@@ -76,59 +168,12 @@ def initialize_wsclean_container(name="paircarswsclean", update=False):
         Whether initialized successfully or not
     """
     print("Initializing wsclean container.")
-    set_udocker_env()
     image_name = "devojyoti96/wsclean-solar:latest"
-    check_cmd = f"udocker images | grep -q {image_name}"
-    image_exists = os.system(check_cmd)
-    if image_exists != 0:
-        result = subprocess.run(
-            ["udocker", "pull", f"{image_name}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        a = result.returncode
-    else:
-        if update:
-            subprocess.run(
-                ["udocker", "rm", f"{name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            subprocess.run(
-                ["udocker", "rmi", f"{image_name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            print("Re-downloading docker image.")
-            result = subprocess.run(
-                ["udocker", "pull", f"{image_name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            a = result.returncode
-            if a == 0:
-                print("Re-downloaded docker image.")
-            else:
-                print("Re-downloading container image is failed.")
-                return
-        else:
-            print(f"Image {image_name} already present.")
-            a = 0
-    if a == 0:
-        result = subprocess.run(
-            ["udocker", "create", f"--name={name}", f"{image_name}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        a = result.returncode
-        print(f"Container started with name : {name}")
-        return name
-    else:
-        print(f"Container could not be created with name : {name}")
-        return
+    msg = initialize_container(image_name, name, update=update, verbose=verbose)
+    return msg
 
 
-def initialize_quartical_container(name="paircarsquartical", update=False):
+def initialize_quartical_container(name="paircarsquartical", update=False, verbose=True):
     """
     Initialize quartical container
 
@@ -138,6 +183,8 @@ def initialize_quartical_container(name="paircarsquartical", update=False):
         Name of the container
     update : bool, optional
         Update container
+    verbose : bool, optional
+        Verbose output 
 
     Returns
     -------
@@ -145,59 +192,12 @@ def initialize_quartical_container(name="paircarsquartical", update=False):
         Whether initialized successfully or not
     """
     print("Initializing quartical container.")
-    set_udocker_env()
     image_name = "devojyoti96/quartical:0.2.6"
-    check_cmd = f"udocker images | grep -q {image_name}"
-    image_exists = os.system(check_cmd)
-    if image_exists != 0:
-        result = subprocess.run(
-            ["udocker", "pull", f"{image_name}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        a = result.returncode
-    else:
-        if update:
-            subprocess.run(
-                ["udocker", "rm", f"{name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            subprocess.run(
-                ["udocker", "rmi", f"{image_name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            print("Re-downloading docker image.")
-            result = subprocess.run(
-                ["udocker", "pull", f"{image_name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            a = result.returncode
-            if a == 0:
-                print("Re-downloaded docker image.")
-            else:
-                print("Re-downloading container image is failed.")
-                return
-        else:
-            print(f"Image {image_name} already present.")
-            a = 0
-    if a == 0:
-        result = subprocess.run(
-            ["udocker", "create", f"--name={name}", f"{image_name}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        a = result.returncode
-        print(f"Container started with name : {name}")
-        return name
-    else:
-        print(f"Container could not be created with name : {name}")
-        return
+    msg = initialize_container(image_name, name, update=update, verbose=verbose)
+    return msg
 
 
-def initialize_shadems_container(name="paircarsshadems", update=False):
+def initialize_shadems_container(name="paircarsshadems", update=False, verbose=False):
     """
     Initialize shadems container
 
@@ -207,6 +207,8 @@ def initialize_shadems_container(name="paircarsshadems", update=False):
         Name of the container
     update : bool, optional
         Update container
+    verbose : bool, optional
+        Verbose output
 
     Returns
     -------
@@ -214,56 +216,9 @@ def initialize_shadems_container(name="paircarsshadems", update=False):
         Whether initialized successfully or not
     """
     print("Initializing shadems container.")
-    set_udocker_env()
     image_name = "devojyoti96/shadems:v0.5.4"
-    check_cmd = f"udocker images | grep -q {image_name}"
-    image_exists = os.system(check_cmd)
-    if image_exists != 0:
-        result = subprocess.run(
-            ["udocker", "pull", f"{image_name}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        a = result.returncode
-    else:
-        if update:
-            subprocess.run(
-                ["udocker", "rm", f"{name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            subprocess.run(
-                ["udocker", "rmi", f"{image_name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            print("Re-downloading docker image.")
-            result = subprocess.run(
-                ["udocker", "pull", f"{image_name}"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            a = result.returncode
-            if a == 0:
-                print("Re-downloaded docker image.")
-            else:
-                print("Re-downloading container image is failed.")
-                return
-        else:
-            print(f"Image {image_name} already present.")
-            a = 0
-    if a == 0:
-        result = subprocess.run(
-            ["udocker", "create", f"--name={name}", f"{image_name}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        a = result.returncode
-        print(f"Container started with name : {name}")
-        return name
-    else:
-        print(f"Container could not be created with name : {name}")
-        return
+    msg = initialize_container(image_name, name, update=update, verbose=verbose)
+    return msg
 
 
 def run_wsclean(
@@ -292,7 +247,6 @@ def run_wsclean(
         Success message
     """
     set_udocker_env()
-
     def show_file(path):
         try:
             print(open(path).read())
@@ -359,11 +313,15 @@ def run_wsclean(
         ] + wsclean_cmd_args
         if verbose:
             print(f"{wsclean_cmd}\n")
-        result = subprocess.run(
-            full_command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+            result = subprocess.run(
+                full_command,
+            )
+        else:
+            result = subprocess.run(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         exit_code = result.returncode
         if exit_code != 0:
             print("##########################")
@@ -447,11 +405,15 @@ def run_solar_sidereal_cor(
         ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
-        result = subprocess.run(
-            full_command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+            result = subprocess.run(
+                full_command,
+            )
+        else:
+            result = subprocess.run(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
@@ -545,11 +507,15 @@ def run_chgcenter(
         ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
-        result = subprocess.run(
-            full_command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+            result = subprocess.run(
+                full_command,
+            )
+        else:
+            result = subprocess.run(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
@@ -617,11 +583,15 @@ def run_shadems(
         ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
-        result = subprocess.run(
-            full_command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+            result = subprocess.run(
+                full_command,
+            )
+        else:
+            result = subprocess.run(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
@@ -723,11 +693,15 @@ def run_quartical(
         ] + cmd_args
         if verbose:
             print(f"{cmd}\n")
-        result = subprocess.run(
-            full_command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+            result = subprocess.run(
+                full_command,
+            )
+        else:
+            result = subprocess.run(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         exit_code = result.returncode
         if "load_from" in cmd_arg and gain_path != datapath:
             os.system(f"rm -rf {temp_gain_path}")

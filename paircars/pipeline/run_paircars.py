@@ -3,7 +3,7 @@ import sys
 import traceback
 import argparse
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
-from paircars.utils.proc_manage_utils import get_scheduler_name, submit_local_master_flow
+from paircars.utils.proc_manage_utils import get_scheduler_name, submit_local_master_flow, get_jobid
 from paircars.clusterutils import submit_slurm_master_flow
 
 

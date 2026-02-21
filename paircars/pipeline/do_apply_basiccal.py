@@ -13,7 +13,13 @@ import os
 from casatools import table, msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils import *
+from paircars.utils.basic_utils import suppress_output
+from paircars.utils.calibration import get_nearest_bandpass_table
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.ms_metadata import check_datacolumn_valid
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache, limit_threads
+from paircars.utils.udocker_utils import run_quartical
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -72,8 +78,8 @@ def applysol(
     applymode="calflag",
     quartical_table=[],
     overwrite_datacolumn=False,
-    n_threads=-1,
-    mem_limit=-1,
+    n_threads=1,
+    mem_limit=1,
     cpu_frac=-1,
     mem_frac=-1,
     force_apply=False,
@@ -120,6 +126,9 @@ def applysol(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
+    n_threads=max(1,n_threads)
+    mem_limit=max(1,mem_limit)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:

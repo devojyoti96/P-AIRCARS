@@ -9,7 +9,15 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
-from paircars.utils import *
+from paircars.utils.basic_utils import suppress_output
+from paircars.utils.calibration import get_gleam_uvrange
+from paircars.utils.crossphasecal import crossphasecal
+from paircars.utils.flagging import flagsummary, do_flag_backup, get_unflagged_antennas
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.ms_metadata import get_uvrange_exclude
+from paircars.utils.mwa_utils import get_MWA_OBSID
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache, limit_threads
 from paircars.pipeline.flagging import single_ms_flag
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -26,11 +34,12 @@ def run_bandpass(
     gaintable=[],
     gainfield=[],
     interp=[],
-    n_threads=-1,
+    n_threads=1,
 ):
     """
     Perform bandpass calibration
     """
+    n_threads=max(1,n_threads)
     limit_threads(n_threads=n_threads)
     from casatasks import bandpass, flagdata
 
@@ -64,11 +73,12 @@ def run_crossphasecal(
     workdir,
     uvrange="",
     gaintable=[],
-    n_threads=-1,
+    n_threads=1,
 ):
     """
     Perform crosshand phase calibration
     """
+    n_threads=max(1,n_threads)
     limit_threads(n_threads=n_threads)
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
     with suppress_output():
@@ -97,11 +107,12 @@ def run_applycal(
     gainfield=[],
     interp=[],
     calwt=[],
-    n_threads=-1,
+    n_threads=1,
 ):
     """
     Perform apply calibration
     """
+    n_threads=max(1,n_threads)
     limit_threads(n_threads=n_threads)
     from casatasks import applycal
 
@@ -122,12 +133,14 @@ def run_postcal_flag(
     msname="",
     datacolumn="residual",
     threshold=5.0,
-    n_threads=-1,
-    mem_limit=-1,
+    n_threads=1,
+    mem_limit=1,
 ):
     """
     Perform apply calibration
     """
+    n_threads=max(1,n_threads)
+    mem_limit=max(1,mem_limit)
     limit_threads(n_threads=n_threads)
     msg = single_ms_flag(
         msname=msname,
@@ -157,8 +170,8 @@ def single_ms_cal_and_flag(
     applysol=True,
     do_postcal_flag=True,
     flag_threshold=5.0,
-    n_threads=-1,
-    mem_limit=-1,
+    n_threads=1,
+    mem_limit=1,
     cpu_frac=-1,
     mem_frac=-1,
 ):
@@ -201,7 +214,9 @@ def single_ms_cal_and_flag(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-
+    n_threads=max(1,n_threads)
+    mem_limit=max(1,mem_limit)
+    
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:

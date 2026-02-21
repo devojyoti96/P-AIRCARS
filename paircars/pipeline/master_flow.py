@@ -21,7 +21,17 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from pyfiglet import Figlet
-from paircars.utils import *
+from paircars.utils.calibration import calc_bw_smearing_freqwidth, calc_time_smearing_timewidth, max_time_solar_smearing
+from paircars.utils.casatasks import reset_weights_and_flags
+from paircars.utils.flagging import do_flag_backup
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, generate_password, get_remote_logger_link, get_emails, init_logger
+from paircars.utils.ms_metadata import get_ms_size, check_datacolumn_valid
+from paircars.utils.mwa_ploting_utils import plot_caltable_diagnostics
+from paircars.utils.mwa_utils import get_ncoarse, get_MWA_coarse_chan, get_MWA_OBSID, download_MWA_metafits
+from paircars.utils.prefect_logger_utils import save_logs_by_task_id, save_logs_by_task_id
+from paircars.utils.prefect_setup_utils import prefect_server_status, stop_prefect_server
+from paircars.utils.proc_manage_utils import get_jobid, save_main_process_info, get_total_worker, scale_worker_and_wait, get_total_nodes, get_total_nodes
+from paircars.utils.resource_utils import drop_cache
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
 )
@@ -1497,16 +1507,6 @@ def master_control(
     #############################################
     # Listing target ms
     #############################################
-    if os.path.exists(target_metafits) is False:
-        print(
-            "Target metafits {target_metafits} does not exist. P-AIRCARS has stopped."
-        )
-        if emails != "":
-            email_msg = "Target metafits file does not exist."
-            send_task_notification(emails, email_msg, jobid, "N/A", timestamp)
-        return 1
-    target_header = fits.getheader(target_metafits)
-    target_obsid = target_header["GPSTIME"]
     target_mslist = glob.glob(f"{target_datadir}/*.ms")
     if len(target_mslist) == 0:
         print(
@@ -1516,6 +1516,23 @@ def master_control(
             email_msg = "No measurement set is present in the target data directory."
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
     test_msname = target_mslist[0]
+    if os.path.exists(target_metafits) is False:
+        target_obsid = get_MWA_OBSID(test_msname)
+        try:
+            target_metafits = download_MWA_metafits(target_obsid, outdir = os.path.dirname(test_msname))
+        except Exception:
+            tracebcak.print_exc()
+            target_metafits = None
+        if target_metafits is None or os.path.exists(target_metafits) is False:
+            print(
+                f"Target metafits {target_metafits} does not exist. P-AIRCARS has stopped."
+            )
+            if emails != "":
+                email_msg = "Target metafits file does not exist."
+                send_task_notification(emails, email_msg, jobid, "N/A", timestamp)
+            return 1
+    target_header = fits.getheader(target_metafits)
+    target_obsid = target_header["GPSTIME"]
     target_freq_config = target_header["CHANNELS"]
     target_coarse_chans = [get_MWA_coarse_chan(ms) for ms in target_mslist]
 
@@ -1729,7 +1746,18 @@ def master_control(
                 f"No calibrator observation is provided. Continuing based on self-calibration."
             )
             has_cal = False
-        elif os.path.exists(calibrator_metafits):
+        ######################################################
+        # Downloading calibrator metafits if it does not exist
+        ######################################################
+        if os.path.exists(calibrator_metafits) is False:
+            test_cal_ms = calibrator_mslist[0]
+            cal_obsid = get_MWA_OBSID(test_cal_ms)
+            try:
+                calibrator_metafits = download_MWA_metafits(cal_obsid, outdir = os.path.dirname(test_cal_ms))
+            except Exception:
+                tracebcak.print_exc()
+                calibrator_metafits = None
+        if calibrator_metafits is not None and os.path.exists(calibrator_metafits):
             calibrator_header = fits.getheader(calibrator_metafits)
             calibrator_obsid = calibrator_header["GPSTIME"]
             calibrator_freq_config = calibrator_header["CHANNELS"]
@@ -1743,7 +1771,7 @@ def master_control(
             else:
                 has_cal = True
         else:
-            print(f"Calibrator ms is available. No calibrator metafits is provided.")
+            print(f"Calibrator ms is available, however, calibrator metafits is not available.")
             has_cal = False
 
         ######################################################

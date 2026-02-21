@@ -9,7 +9,10 @@ import numpy as np
 from numpy.linalg import inv
 from astropy.io import fits
 from astropy.coordinates import EarthLocation
-from paircars.utils import *
+from paircars.utils.basic_utils import get_datadir
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
+from paircars.utils.mwapb_utils import get_azza_from_fits, get_IQUV, get_inst_pols, B2IQUV, get_jones_array
+from paircars.utils.selfcal_utils import calc_leakage, correct_image_leakage, 
 
 warnings.filterwarnings("ignore")
 
@@ -35,7 +38,7 @@ def get_pbcor_image(
     save_pb=False,
     interpolated=True,
     gridpoint=-1,
-    nthreads=-1,
+    nthreads=1,
     restore=False,
 ):
     """
@@ -73,6 +76,7 @@ def get_pbcor_image(
     str
         Output image name
     """
+    nthreads=max(1,nthreads)
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         image_header = fits.getheader(imagename)
         if image_header["CTYPE3"] == "FREQ":
@@ -99,7 +103,6 @@ def get_pbcor_image(
     print(f"Primary beam file: {MWA_PB_file}")
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    nthreads = max(1, nthreads)
     try:
         if restore == False:
             print(

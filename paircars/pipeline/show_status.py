@@ -5,7 +5,9 @@ import glob
 import sys
 import os
 from casatasks import listobs
-from paircars.utils import get_cachedir, drop_cache, SmartDefaultsHelpFormatter
+from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.resource_utils import drop_cache
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 
 
 def show_job_status(clean_old_jobs=False):

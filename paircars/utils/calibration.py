@@ -533,13 +533,3 @@ def get_quartical_table_metadata(caltable):
     }
     return result
 
-
-# Expose functions and classes
-__all__ = [
-    name
-    for name, obj in globals().items()
-    if (
-        (isinstance(obj, types.FunctionType) or isinstance(obj, type))
-        and obj.__module__ == __name__
-    )
-]

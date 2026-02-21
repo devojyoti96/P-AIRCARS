@@ -6,7 +6,7 @@ import argparse
 import traceback
 import numpy as np
 from scipy.interpolate import CubicSpline
-from paircars.utils import *
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 
 # This script is originally developed by, Puja Majee (NCRA-TIFR), with Devojyoti Kansabanik.
 

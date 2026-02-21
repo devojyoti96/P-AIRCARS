@@ -13,7 +13,15 @@ import os
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils import *
+from paircars.utils.basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
+from paircars.utils.image_utils import create_circular_mask, make_stokes_wsclean_imagecube
+from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_npix_in_psf, calc_cellsize, calc_multiscale_scales, get_multiscale_bias
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, create_logger, init_logger 
+from paircars.utils.ms_metadata import check_datacolumn_valid
+from paircars.utils.mwa_ploting_utils import rename_mwasolar_image
+from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.resource_utils import drop_cache
+from paircars.utils.udocker_utils import check_udocker_container, initialize_wsclean_container, run_wsclean
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -40,8 +48,8 @@ def perform_imaging(
     mask_radius=40,
     savemodel=True,
     saveres=True,
-    ncpu=-1,
-    mem=-1,
+    ncpu=1,
+    mem=1,
     cpu_frac=-1,
     mem_frac=-1,
     cutout_rsun=10.0,
@@ -120,7 +128,9 @@ def perform_imaging(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-
+    ncpu=max(1,ncpu)
+    mem=max(1,mem)
+    
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:
@@ -228,10 +238,6 @@ def perform_imaging(
 
         if npol < 4 and pol == "IQUV":
             pol = "I"
-        if ncpu < 1:
-            ncpu = psutil.cpu_count()
-        if mem < 0:
-            mem = psutil.virtual_memory().total / (1024**3)
         prefix = workdir + "/imaging_" + os.path.basename(msname).split(".ms")[0]
         if imagedir == "":
             imagedir = workdir
@@ -263,7 +269,7 @@ def perform_imaging(
         if datacolumn != "CORRECTED_DATA" and datacolumn != "corrected":
             wsclean_args.append("-data-column " + datacolumn)
 
-        ngrid = int(ncpu / 2)
+        ngrid = max(1,int(ncpu / 2))
         if ngrid > 1:
             wsclean_args.append("-parallel-gridding " + str(ngrid))
 
