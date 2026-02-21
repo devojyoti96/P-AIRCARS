@@ -8,7 +8,7 @@ from paircars.utils.proc_manage_utils import (
     submit_local_master_flow,
     get_jobid,
 )
-from paircars.clusterutils import submit_slurm_master_flow
+from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow
 
 
 def cli():
