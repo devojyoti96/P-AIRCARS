@@ -10,10 +10,4 @@ paircars.clusterutils.slurm\_cluster module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: paircars.clusterutils
-   :members:
-   :undoc-members:
-   :show-inheritance:
