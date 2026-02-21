@@ -3775,7 +3775,7 @@ def cli():
                 max_ms_size = max(max_ms_size, max_cal_ms_size)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    max_mem = max(16, round(5 * max_ms_size, 1))  # Minimum 16 GB
+    max_mem = max(4, round(5 * max_ms_size, 1))  # Minimum 4 GB
     print(f"Maximum per job memory: {max_mem}GB")
 
     ###############################################
@@ -3837,7 +3837,9 @@ def cli():
                 dask_client, dask_cluster, dask_dir = cluster_result
             else:
                 return
-            nworker = max(5,get_total_nodes(partition=args.partition))
+            per_node_cpu, per_node_mem = get_slurm_node_resources(partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac)
+            max_worker_per_node = max(1, int(per_node_mem/max_mem))
+            nworker = max(2,max_worker_per_node*get_total_nodes(partition=args.partition))
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."

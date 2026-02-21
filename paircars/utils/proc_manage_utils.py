@@ -227,7 +227,7 @@ def scale_worker_and_wait(dask_cluster, nworker, timeout=60, poll_interval=1):
     """
     print(f"Start scaling to {nworker} workers")
     dask_cluster.scale(nworker)
-    time.sleep(5)
+    time.sleep(1)
     timeout = 60
     c = 0
     while c < timeout:

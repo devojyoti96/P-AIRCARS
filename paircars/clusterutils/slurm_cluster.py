@@ -145,9 +145,6 @@ def get_slurm_dask_cluster(
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
             f"--mem={mem_limit}G",
-            f"--job-name=paircars_{jobid}",
-            f"--output={log_dir}/paircars_{jobid}-%j.out",
-            f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
 
         cluster = SLURMCluster(
@@ -325,8 +322,8 @@ def submit_slurm_master_flow(args, jobid):
             "#!/bin/bash",
             f"#SBATCH --job-name=paircars_{jobid}",
             f"#SBATCH --time={walltime}",
-            f"#SBATCH --output={args.workdir}/paircars_{jobid}_%j.log",
-            f"#SBATCH --error={args.workdir}/paircars_{jobid}_%j.log",
+            f"#SBATCH --output={args.workdir}/paircars_{jobid}.log",
+            f"#SBATCH --error={args.workdir}/paircars_{jobid}.log",
             f"#SBATCH --partition={args.partition}",
             f"#SBATCH --partition={args.partition}",
             "#SBATCH --nodes=1",
