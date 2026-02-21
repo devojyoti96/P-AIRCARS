@@ -139,12 +139,12 @@ def get_slurm_dask_cluster(
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()
-
+        mem_limit = round(min(max_mem,mem),2)
         job_extra = [
             f"--nodes=1",
             f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
-            f"--mem={min(max_mem,mem)}G",
+            f"--mem={mem_limit}G",
             f"--exclusive",
             f"--output={log_dir}/paircars_{jobid}-%j.out",
             f"--error={log_dir}/paircars_{jobid}-%j.err",
@@ -186,7 +186,7 @@ def get_slurm_dask_cluster(
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
             print(f"CPU per worker: {ncpu}")
-            print(f"Memory per worker: {min(max_mem,usable_mem)}GB")
+            print(f"Memory per worker: {mem_limit}GB")
             print("####################################################")
         return client, cluster, dask_dir
     except Exception as e:
