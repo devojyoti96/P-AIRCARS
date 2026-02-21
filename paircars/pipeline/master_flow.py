@@ -60,6 +60,7 @@ from paircars.utils.proc_manage_utils import (
     get_total_nodes,
     get_total_nodes,
     get_local_dask_cluster,
+    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 from paircars.data.sendmail import (
