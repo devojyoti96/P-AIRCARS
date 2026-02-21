@@ -116,7 +116,7 @@ def kill_slurmscheduler(jobid):
             return
 
         print(f"Attempting to terminate main slurm jobid: {main_jobid}")
-        subprocess.run(["scancel", main_jobid])
+        subprocess.run(["scancel", f"{main_jobid}"])
 
         try:
             print("Closing dask cluster....")
