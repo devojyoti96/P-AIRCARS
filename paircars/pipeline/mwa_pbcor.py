@@ -15,7 +15,7 @@ from astropy.wcs import FITSFixedWarning
 from dask import delayed
 from paircars.pipeline.single_image_mwapbcor import get_pbcor_image
 from paircars.utils.basic_utils import get_datadir
-from paircars.utils.image_utils import create_circular_mask_array
+from paircars.utils.image_utils import create_circular_mask_array, generate_tb_map
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,

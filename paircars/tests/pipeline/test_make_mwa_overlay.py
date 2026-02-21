@@ -9,8 +9,6 @@ from paircars.pipeline.make_mwa_overlay import *
 @patch("paircars.pipeline.make_mwa_overlay.os.system")
 @patch("paircars.pipeline.make_mwa_overlay.os.makedirs")
 @patch("paircars.pipeline.make_mwa_overlay.os.path.exists")
-@patch("paircars.pipeline.make_mwa_overlay.get_cachedir", return_value="/tmp")
-@patch("paircars.pipeline.make_mwa_overlay.save_pid")
 @patch("paircars.pipeline.make_mwa_overlay.psutil.cpu_count", return_value=8)
 @patch("paircars.pipeline.make_mwa_overlay.np.load", return_value=("job", "pass"))
 @patch("paircars.pipeline.make_mwa_overlay.init_logger")
@@ -22,8 +20,6 @@ def test_main_make_mwa_overlay(
     mock_init_logger,
     mock_np_load,
     mock_cpu_count,
-    mock_save_pid,
-    mock_get_cachedir,
     mock_path_exists,
     mock_makedirs,
     mock_os_system,

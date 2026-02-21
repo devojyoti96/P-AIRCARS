@@ -84,7 +84,7 @@ def test_calc_dynamic_spectrum(
         "test.ms",
         "test.metafits",
         "/tmp",
-        nthreads=1,
+        n_threads=1,
     )
 
     assert ds.endswith("_ds.npy")

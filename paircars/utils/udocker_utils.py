@@ -54,7 +54,10 @@ def check_udocker_container(name):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        return result.returncode == 0
+        if result.returncode == 0:
+            return True
+        else:
+            return False
     except Exception:
         return False
 

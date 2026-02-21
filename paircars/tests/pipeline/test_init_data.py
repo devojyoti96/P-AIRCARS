@@ -194,47 +194,42 @@ def test_init_paircars_data(
 
 
 @pytest.mark.parametrize(
-    "init_flag, expected_calls",
+    "init_flag, expected_return",
     [
-        # Case 1: init=True, all functions should be called
-        (
-            True,
-            {
-                "create_datadir": 1,
-                "get_datadir": 1,
-                "init_paircars_data": 1,
-                "init_udocker": 1,
-                "initialize_wsclean_container": 1,
-            },
-        ),
-        # Case 2: init=False, nothing should be called
-        (
-            False,
-            {
-                "create_datadir": 0,
-                "get_datadir": 0,
-                "init_paircars_data": 0,
-                "init_udocker": 0,
-                "initialize_wsclean_container": 0,
-            },
-        ),
+        (True, 0),
+        (False, 1),
     ],
 )
-def test_main(init_flag, expected_calls, monkeypatch):
+def test_main(init_flag, expected_return, monkeypatch):
     from paircars.pipeline import init_data
 
-    # Create mock functions
-    mocks = {name: Mock(name=f"mock_{name}") for name in expected_calls}
+    # Mock all lower-level functions to prevent real execution
+    monkeypatch.setattr(init_data, "create_datadir", Mock())
+    monkeypatch.setattr(init_data, "get_datadir", Mock(return_value="/mockdir"))
+    monkeypatch.setattr(init_data, "has_space", Mock(return_value=True))
 
-    # Setup return values for the ones that return something
-    mocks["get_datadir"].return_value = "/mockdir"
+    # CRITICAL: prevents beam_interpolate from running
+    monkeypatch.setattr(init_data, "init_paircars_data", Mock(return_value=None))
 
-    # Patch all into the module
-    for name, mock_func in mocks.items():
-        monkeypatch.setattr(init_data, name, mock_func)
+    monkeypatch.setattr(init_data, "init_udocker", Mock())
 
-    # Call main
-    init_data.main(
+    monkeypatch.setattr(
+        init_data,
+        "initialize_wsclean_container",
+        Mock(return_value="paircarswsclean"),
+    )
+    monkeypatch.setattr(
+        init_data,
+        "initialize_quartical_container",
+        Mock(return_value="paircarsquartical"),
+    )
+    monkeypatch.setattr(
+        init_data,
+        "initialize_shadems_container",
+        Mock(return_value="paircarsshadems"),
+    )
+
+    result = init_data.main(
         init=init_flag,
         datadir="/mockdir",
         update=True,
@@ -243,35 +238,39 @@ def test_main(init_flag, expected_calls, monkeypatch):
         prefect_server=False,
     )
 
-    # Assert calls based on expectation
-    (
-        mocks["create_datadir"].assert_called_once()
-        if expected_calls["create_datadir"]
-        else mocks["create_datadir"].assert_not_called()
-    )
-    (
-        mocks["get_datadir"].assert_called_once()
-        if expected_calls["get_datadir"]
-        else mocks["get_datadir"].assert_not_called()
-    )
-    (
-        mocks["init_paircars_data"].assert_called_once_with(
-            update=True, remote_link="http://remote.url", emails="test@example.com"
-        )
-        if expected_calls["init_paircars_data"]
-        else mocks["init_paircars_data"].assert_not_called()
-    )
-    (
-        mocks["init_udocker"].assert_called_once()
-        if expected_calls["init_udocker"]
-        else mocks["init_udocker"].assert_not_called()
-    )
-    (
-        mocks["initialize_wsclean_container"].assert_called_once()
-        if expected_calls["initialize_wsclean_container"]
-        else mocks["initialize_wsclean_container"].assert_not_called()
-    )
+    assert result == expected_return
 
+    if init_flag:
+        init_data.create_datadir.assert_called_once_with(datadir="/mockdir")
+        init_data.get_datadir.assert_called_once()
+        init_data.has_space.assert_called_once_with("/mockdir", 20)
+        init_data.init_paircars_data.assert_called_once_with(
+            update=True,
+            remote_link="http://remote.url",
+            emails="test@example.com",
+        )
+        init_data.init_udocker.assert_called_once()
+        init_data.initialize_wsclean_container.assert_called_once_with(
+            update=True,
+            verbose=True,
+        )
+        init_data.initialize_quartical_container.assert_called_once_with(
+            update=True,
+            verbose=True,
+        )
+        init_data.initialize_shadems_container.assert_called_once_with(
+            update=True,
+            verbose=True,
+        )
+    else:
+        init_data.create_datadir.assert_not_called()
+        init_data.get_datadir.assert_not_called()
+        init_data.has_space.assert_not_called()
+        init_data.init_paircars_data.assert_not_called()
+        init_data.init_udocker.assert_not_called()
+        init_data.initialize_wsclean_container.assert_not_called()
+        init_data.initialize_quartical_container.assert_not_called()
+        init_data.initialize_shadems_container.assert_not_called()
 
 @pytest.mark.parametrize(
     "argv_args, expect_exit",

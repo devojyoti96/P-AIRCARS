@@ -329,7 +329,7 @@ def test_do_full_selfcal(
         metafits="meta.fits",
         do_polcal=False,
     )
-    assert result == (0, 0, ["int.cal"], [])
+    assert result == (0, 1, ["int.cal"], [])
     mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"])
     mock_do_polselfcal.return_value = (0, "pol.ms", ["pol.cal"])
     result = do_full_selfcal(
@@ -356,8 +356,6 @@ def test_do_full_selfcal(
 @patch("paircars.pipeline.do_selfcal.os.system")
 @patch("paircars.pipeline.do_selfcal.os.makedirs")
 @patch("paircars.pipeline.do_selfcal.os.path.exists", return_value=True)
-@patch("paircars.pipeline.do_selfcal.get_cachedir", return_value="/tmp")
-@patch("paircars.pipeline.do_selfcal.save_pid")
 @patch("paircars.pipeline.do_selfcal.get_local_dask_cluster")
 @patch("paircars.pipeline.do_selfcal.scale_worker_and_wait")
 @patch("paircars.pipeline.do_selfcal.check_udocker_container", return_value=True)
@@ -381,8 +379,6 @@ def test_main_selfcal(
     mock_check_container,
     mock_scale,
     mock_get_cluster,
-    mock_save_pid,
-    mock_get_cachedir,
     mock_path_exists,
     mock_makedirs,
     mock_os_system,

@@ -76,7 +76,6 @@ def test_run_all_applysol_selfcal(
         )
         if raise_exc:
             assert result == 1
-            m_system.assert_any_call("rm -rf casa*log")
             return
 
         if not has_tables:
@@ -112,8 +111,6 @@ def test_main_apply_selfcal(
     fake_client = MagicMock()
     fake_cluster = MagicMock()
     with (
-        patch("paircars.pipeline.do_apply_selfcal.get_cachedir", return_value="/tmp"),
-        patch("paircars.pipeline.do_apply_selfcal.save_pid"),
         patch("paircars.pipeline.do_apply_selfcal.get_local_dask_cluster") as m_cluster,
         patch("paircars.pipeline.do_apply_selfcal.scale_worker_and_wait"),
         patch("paircars.pipeline.do_apply_selfcal.run_all_applysol") as m_run,

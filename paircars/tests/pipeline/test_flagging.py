@@ -89,8 +89,6 @@ def test_do_flagging(
 @patch("paircars.pipeline.flagging.os.system")
 @patch("paircars.pipeline.flagging.os.makedirs")
 @patch("paircars.pipeline.flagging.os.path.exists")
-@patch("paircars.pipeline.flagging.get_cachedir", return_value="/tmp")
-@patch("paircars.pipeline.flagging.save_pid")
 @patch("paircars.pipeline.flagging.get_local_dask_cluster")
 @patch("paircars.pipeline.flagging.scale_worker_and_wait")
 @patch("paircars.pipeline.flagging.psutil.cpu_count", return_value=8)
@@ -104,8 +102,6 @@ def test_main_flagging(
     mock_cpu_count,
     mock_scale,
     mock_get_cluster,
-    mock_save_pid,
-    mock_get_cachedir,
     mock_path_exists,
     mock_makedirs,
     mock_os_system,

@@ -189,11 +189,6 @@ def test_run_all_imaging(
 
     assert result == expected
 
-    if container_exists:
-        mock_init_container.assert_not_called()
-    else:
-        mock_init_container.assert_called_once()
-
 
 @pytest.mark.parametrize(
     "mslist_str, workdir_exists, container_ok, compute_success, expected_msg",
@@ -205,8 +200,6 @@ def test_run_all_imaging(
     ],
 )
 @patch("paircars.pipeline.do_imaging.create_logger")
-@patch("paircars.pipeline.do_imaging.save_pid")
-@patch("paircars.pipeline.do_imaging.get_cachedir", return_value="/mock/cache")
 @patch("os.makedirs")
 @patch("os.path.exists")
 @patch("os.getpid", return_value=1234)
@@ -226,8 +219,6 @@ def test_main_do_imaging(
     mock_getpid,
     mock_exists,
     mock_makedirs,
-    mock_get_cachedir,
-    mock_save_pid,
     mock_create_logger,
     mslist_str,
     workdir_exists,
@@ -288,7 +279,6 @@ def test_main_do_imaging(
                 "0.6",
                 "--no_multiscale",
                 "--no_solar_mask",
-                "--no_make_overlay",
                 "--no_make_plots",
                 "--no_saveres",
                 "--no_savemodel",

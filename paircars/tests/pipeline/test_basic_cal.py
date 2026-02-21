@@ -80,6 +80,7 @@ def test_run_crossphasecal(
         expected_caltable,
         uvrange=">100lambda",
         gaintable=gaintable[0],
+        n_threads=2,
     )
 
 
@@ -431,8 +432,6 @@ def test_main(
     fake_cluster = MagicMock()
 
     with (
-        patch("paircars.pipeline.basic_cal.get_cachedir", return_value="/tmp"),
-        patch("paircars.pipeline.basic_cal.save_pid"),
         patch("paircars.pipeline.basic_cal.get_MWA_OBSID", return_value="123"),
         patch("paircars.pipeline.basic_cal.get_local_dask_cluster") as m_cluster,
         patch("paircars.pipeline.basic_cal.scale_worker_and_wait"),

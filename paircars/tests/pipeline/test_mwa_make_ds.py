@@ -119,13 +119,9 @@ def test_make_solar_DS(
 @patch("paircars.pipeline.mwa_make_ds.np.load")
 @patch("paircars.pipeline.mwa_make_ds.os.path.exists")
 @patch("paircars.pipeline.mwa_make_ds.os.makedirs")
-@patch("paircars.pipeline.mwa_make_ds.get_cachedir")
-@patch("paircars.pipeline.mwa_make_ds.save_pid")
 @patch("paircars.pipeline.mwa_make_ds.psutil.cpu_count")
 def test_main_ds(
     m_cpu_count,
-    m_save_pid,
-    m_get_cachedir,
     m_makedirs,
     m_exists,
     m_np_load,
@@ -144,7 +140,6 @@ def test_main_ds(
     ds_returns,
     raise_exception,
 ):
-    m_get_cachedir.return_value = "/cache"
     m_cpu_count.return_value = 8
     m_exists.return_value = True
     m_np_load.return_value = ("jobname", "password")
@@ -170,8 +165,6 @@ def test_main_ds(
         start_remote_log=start_remote_log,
         dask_client=dask_client,
     )
-
-    m_save_pid.assert_called_once_with(ANY, "/cache/pids/pids_42.txt")
 
     # Workdir created
     m_makedirs.assert_called()

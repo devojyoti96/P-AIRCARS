@@ -69,158 +69,459 @@ def test_init_udocker(mock_env):
 
 
 @pytest.mark.parametrize(
-    "system_return, expected",
+    "returncode, side_effect, expected",
     [
-        (0, True),  # Container present
-        (1, False),  # Container absent
+        (0, None, True),                 # container exists
+        (1, None, False),                # container does not exist
+        (None, Exception("error"), False),  # subprocess raises exception
     ],
 )
-@patch("paircars.utils.udocker_utils.os.system")
-@patch("paircars.utils.udocker_utils.set_udocker_env")
-def test_check_udocker_container(mock_env, system_mock, system_return, expected):
-    # First call: udocker inspect, Second call: cleanup
-    system_mock.side_effect = [system_return, None]
+def test_check_udocker_container(mocker, returncode, side_effect, expected):
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
+    if side_effect:
+        mock_run.side_effect = side_effect
+    else:
+        mock_result = MagicMock()
+        mock_result.returncode = returncode
+        mock_run.return_value = mock_result
     result = check_udocker_container("test_container")
     assert result is expected
-    assert system_mock.call_count == 2
 
 
 @pytest.mark.parametrize(
-    "check_container, container_present, expected_return",
+    "image_exists, update, verbose, pull_rc, expected",
     [
-        (True, False, 1),  # container check fails, fallback fails
-        (False, True, 0),  # skip check, run successfully
+        (1, False, False, 0, "test_container"),
+        (0, False, False, 0, "test_container"),
+        (0, True, False, 0, "test_container"),
+        (1, False, False, 1, None),
     ],
 )
-@patch("paircars.utils.udocker_utils.traceback.print_exc")
-@patch("paircars.utils.udocker_utils.psutil.Process")
-@patch("paircars.utils.udocker_utils.os.system")
-@patch("paircars.utils.udocker_utils.initialize_wsclean_container")
-@patch("paircars.utils.udocker_utils.check_udocker_container")
-@patch("paircars.utils.udocker_utils.tempfile.mkdtemp", return_value="/mock/temp")
-@patch("paircars.utils.udocker_utils.os.getcwd", return_value="/mock")
-@patch(
-    "paircars.utils.udocker_utils.os.path.abspath", side_effect=lambda x: f"/abs/{x}"
-)
-@patch("paircars.utils.udocker_utils.os.path.dirname", side_effect=lambda x: "/abs")
-@patch("paircars.utils.udocker_utils.set_udocker_env")
-def test_run_wsclean_param_cases(
-    mock_env,
-    mock_dirname,
-    mock_abspath,
-    mock_getcwd,
-    mock_mkdtemp,
-    mock_check,
-    mock_init,
-    mock_system,
-    mock_process,
-    mock_traceback,
-    check_container,
-    container_present,
-    expected_return,
+def test_initialize_container(
+    mocker, image_exists, update, verbose, pull_rc, expected
 ):
-    mock_check.return_value = container_present
-    mock_init.return_value = None if not container_present else "paircarswsclean"
-    mock_system.return_value = 0
-    mock_process.return_value.memory_info.return_value.rss = 2.5 * 1024**3  # 2.5 GB
-    result = run_wsclean(
-        "wsclean -name mock test.ms",
-        container_name="paircarswsclean",
-        check_container=check_container,
-        verbose=False,
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mocker.patch(
+        "paircars.utils.udocker_utils.os.system",
+        return_value=image_exists,
     )
-    assert result == expected_return
-
-
+    mock_run = mocker.patch(
+        "paircars.utils.udocker_utils.subprocess.run"
+    )
+    mock_result = MagicMock()
+    mock_result.returncode = pull_rc
+    mock_run.return_value = mock_result
+    mocker.patch("paircars.utils.udocker_utils.print")
+    result = initialize_container(
+        image_name="test_image",
+        name="test_container",
+        update=update,
+        verbose=verbose,
+    )
+    assert result == expected
+    
+    
 @pytest.mark.parametrize(
-    "container_present, expected",
+    "update, verbose, returned_value",
     [
-        (False, 0),  # Container not found, init fails
-        (True, 0),  # Normal run success
+        (False, False, "paircarswsclean"),
+        (True, False, "paircarswsclean"),
+        (False, True, "paircarswsclean"),
+        (True, True, None),  # simulate failure
     ],
 )
-@patch("paircars.utils.udocker_utils.traceback.print_exc")
-@patch("paircars.utils.udocker_utils.psutil.Process")
-@patch("paircars.utils.udocker_utils.os.system")
-@patch("paircars.utils.udocker_utils.initialize_wsclean_container")
-@patch("paircars.utils.udocker_utils.check_udocker_container")
-@patch("paircars.utils.udocker_utils.tempfile.mkdtemp", return_value="/mock/temp")
-@patch("paircars.utils.udocker_utils.os.getcwd", return_value="/mock")
-@patch(
-    "paircars.utils.udocker_utils.os.path.abspath", side_effect=lambda x: f"/abs/{x}"
+def test_initialize_wsclean_container(
+    mocker, update, verbose, returned_value
+):
+    mock_init = mocker.patch(
+        "paircars.utils.udocker_utils.initialize_container",
+        return_value=returned_value,
+    )
+    mocker.patch("paircars.utils.udocker_utils.print")
+    result = initialize_wsclean_container(
+        name="paircarswsclean",
+        update=update,
+        verbose=verbose,
+    )
+    mock_init.assert_called_once_with(
+        "devojyoti96/wsclean-solar:latest",
+        "paircarswsclean",
+        update=update,
+        verbose=verbose,
+    )
+    assert result == returned_value
+    
+    
+@pytest.mark.parametrize(
+    "update, verbose, returned_value",
+    [
+        (False, False, "paircarsquartical"),
+        (True, False, "paircarsquartical"),
+        (False, True, "paircarsquartical"),
+        (True, True, None),  # simulate failure
+    ],
 )
-@patch("paircars.utils.udocker_utils.os.path.dirname", side_effect=lambda x: "/abs")
-@patch("paircars.utils.udocker_utils.set_udocker_env")
-def test_run_solar_sidereal_cor(
-    mock_env,
-    mock_dirname,
-    mock_abspath,
-    mock_getcwd,
-    mock_mkdtemp,
-    mock_check,
-    mock_init,
-    mock_system,
-    mock_process,
-    mock_traceback,
+def test_initialize_quartical_container(
+    mocker, update, verbose, returned_value
+):
+    mock_init = mocker.patch(
+        "paircars.utils.udocker_utils.initialize_container",
+        return_value=returned_value,
+    )
+    mocker.patch("paircars.utils.udocker_utils.print")
+    result = initialize_quartical_container(
+        name="paircarsquartical",
+        update=update,
+        verbose=verbose,
+    )
+    mock_init.assert_called_once_with(
+        "devojyoti96/quartical:0.2.6",
+        "paircarsquartical",
+        update=update,
+        verbose=verbose,
+    )
+    assert result == returned_value
+    
+    
+@pytest.mark.parametrize(
+    "update, verbose, returned_value",
+    [
+        (False, False, "paircarsshadems"),
+        (True, False, "paircarsshadems"),
+        (False, True, "paircarsshadems"),
+        (True, True, None),  # simulate failure
+    ],
+)
+def test_initialize_shadems_container(
+    mocker, update, verbose, returned_value
+):
+    mock_init = mocker.patch(
+        "paircars.utils.udocker_utils.initialize_container",
+        return_value=returned_value,
+    )
+    mocker.patch("paircars.utils.udocker_utils.print")
+    result = initialize_shadems_container(
+        name="paircarsshadems",
+        update=update,
+        verbose=verbose,
+    )
+    mock_init.assert_called_once_with(
+        "devojyoti96/shadems:v0.5.4",
+        "paircarsshadems",
+        update=update,
+        verbose=verbose,
+    )
+    assert result == returned_value
+    
+    
+@pytest.mark.parametrize(
+    "container_present, init_return, run_rc, raise_exc, expected",
+    [
+        (True, None, 0, False, 0),
+        (True, None, 1, False, 1),
+        (False, "paircarswsclean", 0, False, 0),
+        (False, None, 0, False, 1),
+        (True, None, 0, True, 1),
+    ],
+)
+def test_run_wsclean(
+    mocker,
     container_present,
+    init_return,
+    run_rc,
+    raise_exc,
     expected,
 ):
-    mock_check.return_value = container_present
-    mock_init.return_value = None if not container_present else "paircarswsclean"
-    mock_system.return_value = 0
-    mock_process.return_value.memory_info.return_value.rss = 2.5 * 1024**3
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mocker.patch("paircars.utils.udocker_utils.print")
+    mocker.patch("paircars.utils.udocker_utils.traceback.print_exc")
+    mocker.patch(
+        "paircars.utils.udocker_utils.check_udocker_container",
+        return_value=container_present,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.initialize_wsclean_container",
+        return_value=init_return,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.tempfile._get_candidate_names",
+        return_value=iter(["abc123"]),
+    )
+    mock_run = mocker.patch(
+        "paircars.utils.udocker_utils.subprocess.run"
+    )
+    if raise_exc:
+        mock_run.side_effect = Exception("run failed")
+    else:
+        mock_result = MagicMock()
+        mock_result.returncode = run_rc
+        mock_run.return_value = mock_result
+    cmd = "wsclean -size 512 512 test.ms"
+    result = run_wsclean(
+        wsclean_cmd=cmd,
+        container_name="paircarswsclean",
+        check_container=True,
+        verbose=False,
+    )
+    assert result == expected
+    
+
+@pytest.mark.parametrize(
+    "container_present, init_return, only_uvw, run_rc, raise_exc, expected",
+    [
+        (True, None, False, 0, False, 0),
+        (True, None, True, 0, False, 0),
+        (True, None, False, 1, False, 1),
+        (False, "paircarswsclean", False, 0, False, 0),
+        (False, None, False, 0, False, 1),
+        (True, None, False, 0, True, 1),
+    ],
+)
+def test_run_solar_sidereal_cor(
+    mocker,
+    container_present,
+    init_return,
+    only_uvw,
+    run_rc,
+    raise_exc,
+    expected,
+):
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mocker.patch("paircars.utils.udocker_utils.print")
+    mocker.patch("paircars.utils.udocker_utils.traceback.print_exc")
+    mocker.patch(
+        "paircars.utils.udocker_utils.check_udocker_container",
+        return_value=container_present,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.initialize_wsclean_container",
+        return_value=init_return,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.tempfile._get_candidate_names",
+        return_value=iter(["abc123"]),
+    )
+    mock_run = mocker.patch(
+        "paircars.utils.udocker_utils.subprocess.run"
+    )
+    if raise_exc:
+        mock_run.side_effect = Exception("failure")
+    else:
+        mock_result = MagicMock()
+        mock_result.returncode = run_rc
+        mock_run.return_value = mock_result
     result = run_solar_sidereal_cor(
         msname="test.ms",
-        only_uvw=False,
+        only_uvw=only_uvw,
         container_name="paircarswsclean",
+        check_container=True,
         verbose=False,
     )
     assert result == expected
-
-
+    
+    
 @pytest.mark.parametrize(
-    "container_present, expected",
+    "container_present, init_return, only_uvw, run_rc, raise_exc, expected",
     [
-        (False, 0),  # container missing, init fails
-        (True, 0),  # normal run, successful
+        (True, None, False, 0, False, 0),
+        (True, None, True, 0, False, 0),
+        (True, None, False, 1, False, 1),
+        (False, "paircarswsclean", False, 0, False, 0),
+        (False, None, False, 0, False, 1),
+        (True, None, False, 0, True, 1),
     ],
 )
-@patch("paircars.utils.udocker_utils.traceback.print_exc")
-@patch("paircars.utils.udocker_utils.psutil.Process")
-@patch("paircars.utils.udocker_utils.os.system")
-@patch("paircars.utils.udocker_utils.initialize_wsclean_container")
-@patch("paircars.utils.udocker_utils.check_udocker_container")
-@patch("paircars.utils.udocker_utils.tempfile.mkdtemp", return_value="/mock/temp")
-@patch("paircars.utils.udocker_utils.os.getcwd", return_value="/mock")
-@patch(
-    "paircars.utils.udocker_utils.os.path.abspath", side_effect=lambda x: f"/abs/{x}"
-)
-@patch("paircars.utils.udocker_utils.os.path.dirname", side_effect=lambda x: "/abs")
-@patch("paircars.utils.udocker_utils.set_udocker_env")
-def test_run_chgcenter_param_cases(
-    mock_env,
-    mock_dirname,
-    mock_abspath,
-    mock_getcwd,
-    mock_mkdtemp,
-    mock_check,
-    mock_init,
-    mock_system,
-    mock_process,
-    mock_traceback,
+def test_run_chgcenter(
+    mocker,
     container_present,
+    init_return,
+    only_uvw,
+    run_rc,
+    raise_exc,
     expected,
 ):
-    mock_check.return_value = container_present
-    mock_init.return_value = None if not container_present else "paircarswsclean"
-    mock_system.return_value = 0
-    mock_process.return_value.memory_info.return_value.rss = 2.5 * 1024**3
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mocker.patch("paircars.utils.udocker_utils.print")
+    mocker.patch("paircars.utils.udocker_utils.traceback.print_exc")
+
+    mocker.patch(
+        "paircars.utils.udocker_utils.check_udocker_container",
+        return_value=container_present,
+    )
+
+    mocker.patch(
+        "paircars.utils.udocker_utils.initialize_wsclean_container",
+        return_value=init_return,
+    )
+
+    mocker.patch(
+        "paircars.utils.udocker_utils.tempfile._get_candidate_names",
+        return_value=iter(["abc123"]),
+    )
+
+    mock_run = mocker.patch(
+        "paircars.utils.udocker_utils.subprocess.run"
+    )
+
+    if raise_exc:
+        mock_run.side_effect = Exception("failure")
+    else:
+        mock_result = MagicMock()
+        mock_result.returncode = run_rc
+        mock_run.return_value = mock_result
+
     result = run_chgcenter(
         msname="test.ms",
-        ra="00:00:00.0",
-        dec="-30:00:00.0",
-        only_uvw=False,
+        ra="00h00m00.0s",
+        dec="00d00m00.0s",
+        only_uvw=only_uvw,
         container_name="paircarswsclean",
+        check_container=True,
         verbose=False,
     )
+
     assert result == expected
+    
+    
+@pytest.mark.parametrize(
+    "container_present, init_return, cmd, run_rc, raise_exc, expected",
+    [
+        (True, None, "shadems test.ms", 0, False, 0),
+        (True, None, "shadems test.ms", 1, False, 1),
+        (True, None, "shadems --help", 0, False, 0),
+        (False, "paircarsshadems", "shadems test.ms", 0, False, 0),
+        (False, None, "shadems test.ms", 0, False, 1),
+        (True, None, "shadems test.ms", 0, True, 1),
+    ],
+)
+def test_run_shadems(
+    mocker,
+    container_present,
+    init_return,
+    cmd,
+    run_rc,
+    raise_exc,
+    expected,
+):
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mocker.patch("paircars.utils.udocker_utils.print")
+    mocker.patch("paircars.utils.udocker_utils.traceback.print_exc")
+    mocker.patch(
+        "paircars.utils.udocker_utils.check_udocker_container",
+        return_value=container_present,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.initialize_shadems_container",
+        return_value=init_return,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.tempfile._get_candidate_names",
+        return_value=iter(["abc123"]),
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.os.getcwd",
+        return_value="/tmp",
+    )
+
+    mock_run = mocker.patch(
+        "paircars.utils.udocker_utils.subprocess.run"
+    )
+
+    if raise_exc:
+        mock_run.side_effect = Exception("failure")
+    else:
+        mock_result = MagicMock()
+        mock_result.returncode = run_rc
+        mock_run.return_value = mock_result
+
+    result = run_shadems(
+        cmd=cmd,
+        container_name="paircarsshadems",
+        check_container=True,
+        verbose=False,
+    )
+
+    assert result == expected
+    
+    
+@pytest.mark.parametrize(
+    "container_present, init_return, cmd, run_rc, raise_exc, expected",
+    [
+        (True, None, "goquartical", 0, False, 1),
+        (
+            True,
+            None,
+            "quartical input_ms.path=test.ms output.gain_directory=cal "
+            "output.log_directory=log load_from=/other/path/gain/table",
+            0,
+            False,
+            0,
+        ),
+        (
+            True,
+            None,
+            "quartical input_ms.path=test.ms",
+            1,
+            False,
+            1,
+        ),
+        (False, "paircarsquartical", "goquartical", 0, False, 1),
+        (False, None, "goquartical", 0, False, 1),
+        (True, None, "goquartical", 0, True, 1),
+        (True, None, "", 0, False, 1),
+    ],
+)
+def test_run_quartical(
+    mocker,
+    container_present,
+    init_return,
+    cmd,
+    run_rc,
+    raise_exc,
+    expected,
+):
+    mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
+    mocker.patch("paircars.utils.udocker_utils.print")
+    mocker.patch("paircars.utils.udocker_utils.traceback.print_exc")
+    mocker.patch(
+        "paircars.utils.udocker_utils.check_udocker_container",
+        return_value=container_present,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.initialize_quartical_container",
+        return_value=init_return,
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.tempfile._get_candidate_names",
+        return_value=iter(["abc123"]),
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.os.getcwd",
+        return_value="/tmp",
+    )
+    mocker.patch(
+        "paircars.utils.udocker_utils.os.system",
+        return_value=0,
+    )
+
+    mock_run = mocker.patch(
+        "paircars.utils.udocker_utils.subprocess.run"
+    )
+
+    if raise_exc:
+        mock_run.side_effect = Exception("failure")
+    else:
+        mock_result = MagicMock()
+        mock_result.returncode = run_rc
+        mock_run.return_value = mock_result
+
+    result = run_quartical(
+        cmd=cmd,
+        container_name="paircarsquartical",
+        check_container=True,
+        verbose=False,
+    )
+
+    assert result == expected
+    

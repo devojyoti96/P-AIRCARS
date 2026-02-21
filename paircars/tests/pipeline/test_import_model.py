@@ -62,8 +62,6 @@ def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
 @patch("paircars.pipeline.import_model.os.system")
 @patch("paircars.pipeline.import_model.os.makedirs")
 @patch("paircars.pipeline.import_model.os.path.exists")
-@patch("paircars.pipeline.import_model.get_cachedir", return_value="/tmp")
-@patch("paircars.pipeline.import_model.save_pid")
 @patch("paircars.pipeline.import_model.get_local_dask_cluster")
 @patch("paircars.pipeline.import_model.scale_worker_and_wait")
 @patch("paircars.pipeline.import_model.psutil.cpu_count", return_value=8)
@@ -83,8 +81,6 @@ def test_main_import_model(
     mock_cpu_count,
     mock_scale,
     mock_get_cluster,
-    mock_save_pid,
-    mock_get_cachedir,
     mock_path_exists,
     mock_makedirs,
     mock_os_system,

@@ -17,7 +17,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_timeranges
-from paircars.utils.mwa_utils import get_MWA_coarse_chan
+from paircars.utils.mwa_utils import get_MWA_coarse_bands
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,

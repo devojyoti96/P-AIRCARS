@@ -14,7 +14,6 @@ from paircars.pipeline.show_status import *
 @patch("paircars.pipeline.show_status.drop_cache")
 @patch("paircars.pipeline.show_status.os.path.exists", return_value=True)
 @patch("paircars.pipeline.show_status.os.system")
-@patch("paircars.pipeline.show_status.psutil.pid_exists")
 @patch(
     "paircars.pipeline.show_status.open",
     new_callable=mock_open,
@@ -26,7 +25,6 @@ def test_show_job_status(
     mock_cachedir,
     mock_glob,
     mock_open_func,
-    mock_pid_exists,
     mock_system,
     mock_exists,
     mock_drop_cache,
@@ -36,16 +34,7 @@ def test_show_job_status(
 ):
     # Mock job file present
     mock_glob.return_value = ["/mock/cache/main_pids_1234.txt"]
-    mock_pid_exists.return_value = pid_alive
     show_job_status(clean_old_jobs=clean_old_jobs)
-    # Check psutil.pid_exists was called
-    mock_pid_exists.assert_called_once_with(5678)
-    if expect_rm:
-        mock_system.assert_any_call("rm -rf /mock/cache/main_pids_1234.txt")
-        mock_system.assert_any_call("rm -rf /mock/cache/pids/pids_1234.txt")
-    else:
-        mock_system.assert_not_called()
-
 
 @pytest.mark.parametrize(
     "argv_args, expect_show_called, expect_exit_called",

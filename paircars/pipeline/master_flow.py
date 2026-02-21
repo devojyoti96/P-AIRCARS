@@ -1305,7 +1305,6 @@ def run_make_overlay(
                 logfile=logfile,
                 jobid=jobid,
                 start_remote_log=remote_log,
-                dask_client=dask_client,
             )
         else:
             with get_dask_client() as dask_client:
@@ -1333,6 +1332,7 @@ def run_make_msplot(
     mslist,
     workdir,
     outdir,
+    jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
@@ -3227,6 +3227,7 @@ def master_control(
                     ",".join(split_cal_mslist),
                     workdir,
                     msplot_outdir,
+                    jobid=jobid,
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
@@ -3273,6 +3274,7 @@ def master_control(
                 ",".join(split_target_mslist),
                 workdir,
                 msplot_outdir,
+                jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,

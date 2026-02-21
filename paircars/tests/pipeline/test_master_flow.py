@@ -908,11 +908,6 @@ def test_run_imaging_jobs(
         dask_client=mock_client,
     )
 
-
-import pytest
-from unittest.mock import patch, MagicMock
-
-
 @pytest.mark.parametrize("mock_msg,raises", [(0, False), (1, True)])
 @patch("paircars.pipeline.master_flow.get_run_context")
 @patch("paircars.pipeline.master_flow.start_log_task_saver")
@@ -983,20 +978,23 @@ def test_run_apply_pbcor(
         dask_client=mock_client,
     )
 
-
+@patch("paircars.pipeline.master_flow.get_scheduler_name", return_value="local")
 @patch("paircars.pipeline.master_flow.get_run_context")
 @patch("paircars.pipeline.master_flow.start_log_task_saver")
 @patch("paircars.pipeline.master_flow.os.makedirs")
 @patch("paircars.pipeline.master_flow.os.path.exists")
 @patch("paircars.pipeline.master_flow.os.remove")
-@patch("paircars.pipeline.make_mwa_overlay.main")
+@patch("paircars.pipeline.master_flow.Event")
+@patch("paircars.pipeline.master_flow.make_mwa_overlay.main")
 def test_run_make_overlay(
     mock_main,
+    mock_event,
     mock_remove,
     mock_exists,
     mock_makedirs,
     mock_log_task_saver,
     mock_get_ctx,
+    mock_scheduler,
 ):
     mock_exists.return_value = True
 
@@ -1005,8 +1003,13 @@ def test_run_make_overlay(
     mock_ctx.task_run.name = "mock_task"
     mock_get_ctx.return_value = mock_ctx
 
+    mock_stop_event = MagicMock()
+    mock_event.return_value = mock_stop_event
+
     mock_thread = MagicMock()
     mock_log_task_saver.return_value = mock_thread
+
+    mock_main.return_value = 0
 
     kwargs = dict(
         imagedir="/mock/imagedir",
@@ -1014,7 +1017,6 @@ def test_run_make_overlay(
         workdir="/mock/workdir",
         jobid=42,
         cpu_frac=0.5,
-        mem_frac=0.5,
         remote_log=True,
     )
 
@@ -1023,8 +1025,20 @@ def test_run_make_overlay(
 
     mock_makedirs.assert_any_call("/mock/workdir/logs", exist_ok=True)
     mock_makedirs.assert_any_call("/mock/outdir", exist_ok=True)
-    mock_remove.assert_called_once_with("/mock/workdir/logs/overlay.log")
-    mock_log_task_saver.assert_called_once()
+
+    mock_remove.assert_called_once_with(
+        "/mock/workdir/logs/do_overlay.log"
+    )
+
+    mock_log_task_saver.assert_called_once_with(
+        "abc123",
+        "mock_task",
+        "/mock/workdir/logs/do_overlay.log",
+        poll_interval=3,
+        stop_event=mock_stop_event,
+    )
+
+    mock_stop_event.set.assert_called_once()
     mock_thread.join.assert_called_once_with(timeout=5)
 
     mock_main.assert_called_once_with(
@@ -1032,7 +1046,127 @@ def test_run_make_overlay(
         "/mock/outdir",
         workdir="/mock/workdir",
         cpu_frac=0.5,
-        logfile="/mock/workdir/logs/overlay.log",
+        logfile="/mock/workdir/logs/do_overlay.log",
         jobid=42,
         start_remote_log=True,
     )
+    
+    
+@pytest.mark.parametrize("msg_return, should_raise", [(0, False), (1, True)])
+@patch("paircars.pipeline.master_flow.get_run_context")
+@patch("paircars.pipeline.master_flow.start_log_task_saver")
+@patch("paircars.pipeline.master_flow.get_dask_client")
+@patch("paircars.pipeline.master_flow.os.makedirs")
+@patch("paircars.pipeline.master_flow.os.path.exists")
+@patch("paircars.pipeline.master_flow.os.remove")
+@patch("paircars.pipeline.master_flow.Event")
+@patch("paircars.pipeline.master_flow.make_ms_plot.main")
+def test_run_make_msplot(
+    mock_main,
+    mock_event,
+    mock_remove,
+    mock_exists,
+    mock_makedirs,
+    mock_get_dask_client,
+    mock_log_task_saver,
+    mock_get_ctx,
+    msg_return,
+    should_raise,
+):
+    mock_exists.return_value = True
+
+    mock_ctx = MagicMock()
+    mock_ctx.task_run.id = "abc123"
+    mock_ctx.task_run.name = "mock_task"
+    mock_get_ctx.return_value = mock_ctx
+
+    mock_stop_event = MagicMock()
+    mock_event.return_value = mock_stop_event
+
+    mock_thread = MagicMock()
+    mock_log_task_saver.return_value = mock_thread
+
+    mock_dask_client = MagicMock()
+    mock_get_dask_client.return_value.__enter__.return_value = mock_dask_client
+
+    mock_main.return_value = msg_return
+
+    kwargs = dict(
+        mslist="a.ms,b.ms",
+        workdir="/mock/workdir",
+        outdir="/mock/outdir",
+        jobid=0,
+        cpu_frac=0.5,
+        mem_frac=0.6,
+        remote_log=True,
+    )
+
+    if should_raise:
+        with pytest.raises(RuntimeError):
+            run_make_msplot.fn(**kwargs)
+    else:
+        result = run_make_msplot.fn(**kwargs)
+        assert result == 0
+
+    logfile = "/mock/workdir/logs/do_msplot.log"
+
+    mock_makedirs.assert_any_call("/mock/workdir/logs", exist_ok=True)
+    mock_makedirs.assert_any_call("/mock/outdir", exist_ok=True)
+
+    mock_remove.assert_called_once_with(logfile)
+
+    mock_log_task_saver.assert_called_once_with(
+        "abc123",
+        "mock_task",
+        logfile,
+        poll_interval=3,
+        stop_event=mock_stop_event,
+    )
+
+    mock_main.assert_called_once_with(
+        "a.ms,b.ms",
+        "/mock/workdir",
+        "/mock/outdir",
+        cpu_frac=0.5,
+        mem_frac=0.6,
+        logfile=logfile,
+        jobid=0, 
+        start_remote_log=True,
+        dask_client=mock_dask_client,
+    )
+
+    mock_stop_event.set.assert_called_once()
+    mock_thread.join.assert_called_once_with(timeout=5)
+    
+    
+@patch("paircars.pipeline.master_flow.send_notification")
+def test_send_task_notification(mock_send_notification):
+
+    mock_send_notification.return_value = ("ok", None)
+
+    send_task_notification(
+        emails="test@example.com",
+        msg="Task completed successfully.",
+        jobid=42,
+        obsid=123456,
+        logger_timestamp="2026-02-21 20:00:00",
+    )
+
+    expected_subject = (
+        "P-AIRCARS Logger Details: 2026-02-21 20:00:00, OBSID: 123456"
+    )
+
+    expected_body = (
+        "P-AIRCARS user,\n\n"
+        "P-AIRCARS Job ID: 42\n\n"
+        "Task completed successfully.\n\n"
+        "Best,\n"
+        "P-AIRCARS"
+    )
+
+    mock_send_notification.assert_called_once_with(
+        "test@example.com",
+        expected_subject,
+        expected_body,
+    )    
+

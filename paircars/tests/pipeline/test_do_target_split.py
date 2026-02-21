@@ -108,8 +108,6 @@ def test_split_target_scans(
 @patch("paircars.pipeline.do_target_split.os.system")
 @patch("paircars.pipeline.do_target_split.os.makedirs")
 @patch("paircars.pipeline.do_target_split.os.path.exists", return_value=True)
-@patch("paircars.pipeline.do_target_split.get_cachedir", return_value="/tmp")
-@patch("paircars.pipeline.do_target_split.save_pid")
 @patch("paircars.pipeline.do_target_split.get_local_dask_cluster")
 @patch("paircars.pipeline.do_target_split.scale_worker_and_wait")
 @patch("paircars.pipeline.do_target_split.psutil.cpu_count", return_value=8)
@@ -121,8 +119,6 @@ def test_main_split_target_scans(
     mock_cpu_count,
     mock_scale,
     mock_get_cluster,
-    mock_save_pid,
-    mock_get_cachedir,
     mock_path_exists,
     mock_makedirs,
     mock_os_system,

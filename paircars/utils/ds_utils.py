@@ -7,7 +7,8 @@ from scipy.interpolate import interp1d
 from casatools import msmetadata
 from astropy.wcs import FITSFixedWarning
 from .basic_utils import mjdsec_to_timestamp
-from .mwapb_utils import get_pb_radec
+from .mwapb_utils import get_pb_radec, make_primarybeammap
+from .mwa_utils import get_bad_chans
 from .ms_metadata import get_column_size
 from .imaging import calc_sun_dia
 from .sunpos_utils import radec_sun

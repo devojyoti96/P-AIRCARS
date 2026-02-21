@@ -204,6 +204,7 @@ dev = [
     "sphinx-autobuild>=2021.3.14",
     "pytest==8.3.3",
     "pytest-mock>=3.14.0",
+    "pytest-asyncio",
 ]
 
 

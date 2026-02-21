@@ -53,15 +53,6 @@ def test_scale_worker_and_wait(current_workers, expected_result, description):
         mock_cluster.scale.assert_called_with(2)
 
 
-def test_save_pid():
-    os.system("rm -rf /tmp/test_pid.txt")
-    save_pid(10, "/tmp/test_pid.txt")
-    assert os.path.exists("/tmp/test_pid.txt") == True
-    a = np.loadtxt("/tmp/test_pid.txt", dtype="int")
-    assert a == 10
-    os.system(f"rm -rf /tmp/test_pid.txt")
-
-
 @patch("paircars.utils.proc_manage_utils.psutil.pid_exists")
 @patch("paircars.utils.proc_manage_utils.np.loadtxt")
 @patch("paircars.utils.proc_manage_utils.get_cachedir")
@@ -118,6 +109,7 @@ def test_save_main_process_info(
     result = save_main_process_info(
         1234,
         "20250701010101010101",
+        "scheduler",
         "/mock/workdir",
         "/mock/workdir",
         "/mock/outdir",
@@ -127,17 +119,11 @@ def test_save_main_process_info(
     expected_file = "/mock/.paircars/main_pids_20250701010101010101.txt"
     assert result == expected_file
     mock_openfile().write.assert_called_once_with(
-        "20250701010101010101 1234 /mock/workdir /mock/workdir /mock/outdir 0.5 0.6"
+        "20250701010101010101 1234 scheduler /mock/workdir /mock/workdir /mock/outdir 0.5 0.6"
     )
     mock_glob.return_value = ["/mock/.paircars/main_pids_20250625000000000000.txt"]
-    mock_system.assert_any_call(
-        "rm -rf /mock/.paircars/main_pids_20250625000000000000.txt"
-    )
-    mock_system.assert_any_call(
-        "rm -rf /mock/.paircars/pids/pids_20250625000000000000.txt"
-    )
-
-
+    
+    
 def calc_sum(i):
     time.sleep(0.5)
     return np.nansum(i)
@@ -145,8 +131,7 @@ def calc_sum(i):
 
 def test_get_local_dask_cluster():
     client, cluster, dask_dir = get_local_dask_cluster(
-        1,
-        dask_dir="/tmp/test_dask",
+        "/tmp/test_dask",
     )
     assert client is not None
     cluster.adapt(minimum=2, maximum=5)

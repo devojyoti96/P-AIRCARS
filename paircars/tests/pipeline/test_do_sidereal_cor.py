@@ -102,8 +102,6 @@ def test_cor_sidereal_motion(
     ],
 )
 @patch("paircars.pipeline.do_sidereal_cor.cor_sidereal_motion")
-@patch("paircars.pipeline.do_sidereal_cor.save_pid")
-@patch("paircars.pipeline.do_sidereal_cor.get_cachedir", return_value="/mock/cache")
 @patch("os.makedirs")
 @patch("os.path.exists")
 @patch("os.getpid", return_value=9876)
@@ -119,8 +117,6 @@ def test_main_sidereal(
     mock_getpid,
     mock_exists,
     mock_makedirs,
-    mock_cachedir,
-    mock_save_pid,
     mock_cor_sidereal,
     mslist_str,
     ms_exists,

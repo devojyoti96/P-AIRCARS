@@ -251,8 +251,6 @@ def test_main_applysol(
     fake_cluster = MagicMock()
 
     with (
-        patch("paircars.pipeline.do_apply_basiccal.get_cachedir", return_value="/tmp"),
-        patch("paircars.pipeline.do_apply_basiccal.save_pid"),
         patch(
             "paircars.pipeline.do_apply_basiccal.get_local_dask_cluster"
         ) as m_cluster,

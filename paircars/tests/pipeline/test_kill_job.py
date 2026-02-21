@@ -1,11 +1,10 @@
 import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock, Mock, call
 import psutil
 import numpy as np
 
 from paircars.pipeline.kill_job import (
     terminate_process_and_children,
-    force_kill_pids_with_children,
     kill_paircarsjob,
 )
 
@@ -33,67 +32,218 @@ def test_terminate_process_and_children(mock_process_cls, mock_wait_procs, has_p
         mock_process_cls.assert_called_once()
 
 
-@patch("paircars.pipeline.kill_job.terminate_process_and_children")
-@patch("paircars.pipeline.kill_job.psutil.pid_exists")
-def test_force_kill_pids_with_children(mock_pid_exists, mock_terminate):
-    mock_pid_exists.side_effect = [True, False]
-
-    pids = [111]
-    force_kill_pids_with_children(pids, max_tries=2, wait_time=0.1)
-
-    mock_terminate.assert_called_with(111)
-    assert mock_pid_exists.call_count >= 1
-
-
-@pytest.mark.parametrize("pid_file_exists", [True, False])
-@patch("paircars.pipeline.kill_job.drop_cache")
-@patch("paircars.pipeline.kill_job.os.system")
-@patch("paircars.pipeline.kill_job.force_kill_pids_with_children")
-@patch("paircars.pipeline.kill_job.os.path.exists")
-@patch("paircars.pipeline.kill_job.terminate_process_and_children")
-@patch("paircars.pipeline.kill_job.np.loadtxt")
-@patch("paircars.pipeline.kill_job.get_cachedir", return_value="/mock/cache")
-@patch("sys.argv", ["kill_paircars_job", "--jobid", "123"])
-def test_kill_paircarsjob(
-    mock_cachedir,
-    mock_loadtxt,
-    mock_terminate,
-    mock_exists,
-    mock_force_kill,
-    mock_system,
-    mock_drop_cache,
-    pid_file_exists,
+@pytest.mark.parametrize(
+    "file_exists, load_error, dask_error, outer_error",
+    [
+        (False, False, False, False),  # job file missing
+        (True, True, False, False),    # loadtxt fails
+        (True, False, False, False),   # normal execution
+        (True, False, True, False),    # dask shutdown fails
+        (True, False, False, True),    # outer exception
+    ],
+)
+def test_kill_localscheduler(
+    mocker,
+    file_exists,
+    load_error,
+    dask_error,
+    outer_error,
 ):
-    # Simulate file contents
-    mock_loadtxt.side_effect = [
-        ["123", "9999", "test.ms", "/mock/work", "/mock/out"],  # main_pids file
-        [111, 222],  # pids file
-    ]
+    from paircars.pipeline import kill_job
 
-    # Simulate file existence
-    def exists_side_effect(path):
-        if "pids/pids_123.txt" in path:
-            return pid_file_exists
-        return True
+    jobid = 123
 
-    mock_exists.side_effect = exists_side_effect
+    mocker.patch("paircars.pipeline.kill_job.print")
+    mocker.patch("paircars.pipeline.kill_job.traceback.print_exc")
 
-    kill_paircarsjob()
-
-    mock_terminate.assert_called_once_with(9999)
-
-    if pid_file_exists:
-        mock_force_kill.assert_called_once_with([111, 222])
-    else:
-        mock_force_kill.assert_not_called()
-
-    mock_system.assert_called_once_with("rm -rf /mock/work/tmp_paircars_*")
-    mock_drop_cache.assert_has_calls(
-        [
-            call("test.ms"),
-            call("/mock/work"),
-            call("/mock/out"),
-            call("/mock/cache"),
-        ],
-        any_order=False,
+    mocker.patch(
+        "paircars.pipeline.kill_job.get_cachedir",
+        side_effect=Exception("outer") if outer_error else lambda: "/mock/cache",
     )
+
+    mocker.patch(
+        "paircars.pipeline.kill_job.os.path.exists",
+        return_value=file_exists,
+    )
+
+    if file_exists and not load_error and not outer_error:
+        mocker.patch(
+            "paircars.pipeline.kill_job.np.loadtxt",
+            return_value=[
+                "0",
+                "9999",
+                "tcp://scheduler:8786",
+                "/mock/ms",
+                "/mock/work",
+                "/mock/out",
+            ],
+        )
+    elif file_exists and load_error:
+        mocker.patch(
+            "paircars.pipeline.kill_job.np.loadtxt",
+            side_effect=Exception("read error"),
+        )
+
+    mocker.patch(
+        "paircars.pipeline.kill_job.terminate_process_and_children",
+        Mock(),
+    )
+
+    if not outer_error:
+        mock_client = MagicMock()
+        if dask_error:
+            mock_client.shutdown.side_effect = Exception("dask closed")
+        mocker.patch(
+            "paircars.pipeline.kill_job.Client",
+            return_value=mock_client,
+        )
+
+    mocker.patch(
+        "paircars.pipeline.kill_job.drop_cache",
+        Mock(),
+    )
+
+    kill_job.kill_localscheduler(jobid)
+
+    if not file_exists or outer_error:
+        kill_job.terminate_process_and_children.assert_not_called()
+    elif load_error:
+        kill_job.terminate_process_and_children.assert_not_called()
+    else:
+        kill_job.terminate_process_and_children.assert_called_once_with(9999)
+        
+        
+@pytest.mark.parametrize(
+    "file_exists, load_error, dask_error, outer_error",
+    [
+        (False, False, False, False),
+        (True, True, False, False),
+        (True, False, False, False),
+        (True, False, True, False),
+        (True, False, False, True),
+    ],
+)
+def test_kill_slurmscheduler(
+    mocker,
+    file_exists,
+    load_error,
+    dask_error,
+    outer_error,
+):
+    from paircars.pipeline import kill_job
+
+    jobid = 456
+
+    mocker.patch("paircars.pipeline.kill_job.print")
+    mocker.patch("paircars.pipeline.kill_job.traceback.print_exc")
+
+    mocker.patch(
+        "paircars.pipeline.kill_job.get_cachedir",
+        side_effect=Exception("outer") if outer_error else lambda: "/mock/cache",
+    )
+
+    mocker.patch(
+        "paircars.pipeline.kill_job.os.path.exists",
+        return_value=file_exists,
+    )
+
+    if file_exists and not load_error and not outer_error:
+        mocker.patch(
+            "paircars.pipeline.kill_job.np.loadtxt",
+            return_value=[
+                "0",
+                "7777",
+                "tcp://scheduler:8786",
+                "/mock/ms",
+                "/mock/work",
+                "/mock/out",
+            ],
+        )
+    elif file_exists and load_error:
+        mocker.patch(
+            "paircars.pipeline.kill_job.np.loadtxt",
+            side_effect=Exception("read error"),
+        )
+
+    mock_run = mocker.patch(
+        "paircars.pipeline.kill_job.subprocess.run",
+        Mock(),
+    )
+
+    if not outer_error:
+        mock_client = MagicMock()
+        if dask_error:
+            mock_client.shutdown.side_effect = Exception("closed")
+        mocker.patch(
+            "paircars.pipeline.kill_job.Client",
+            return_value=mock_client,
+        )
+
+    mock_drop = mocker.patch(
+        "paircars.pipeline.kill_job.drop_cache",
+        Mock(),
+    )
+
+    kill_job.kill_slurmscheduler(jobid)
+
+    if not file_exists or outer_error or load_error:
+        mock_run.assert_not_called()
+    else:
+        mock_run.assert_called_once_with(["scancel", 7777])
+        assert mock_drop.call_count == 4
+        
+        
+@pytest.mark.parametrize(
+    "argv, scheduler_name, expect_exit, expect_local, expect_slurm",
+    [
+        (["prog"], None, True, False, False),
+        (["prog", "--jobid", "123"], "local", False, True, False),
+        (["prog", "--jobid", "123"], "slurm", False, False, True),
+    ],
+)
+def test_kill_paircarsjob(
+    mocker,
+    monkeypatch,
+    argv,
+    scheduler_name,
+    expect_exit,
+    expect_local,
+    expect_slurm,
+):
+    from paircars.pipeline import kill_job
+
+    monkeypatch.setattr(kill_job.sys, "argv", argv)
+
+    mocker.patch("paircars.pipeline.kill_job.print")
+
+    if expect_exit:
+        mock_exit = mocker.patch("paircars.pipeline.kill_job.sys.exit", side_effect=SystemExit)
+        with pytest.raises(SystemExit):
+            kill_job.kill_paircarsjob()
+        mock_exit.assert_called_once_with(1)
+        return
+
+    mocker.patch(
+        "paircars.pipeline.kill_job.get_scheduler_name",
+        return_value=scheduler_name,
+    )
+
+    mock_local = mocker.patch(
+        "paircars.pipeline.kill_job.kill_localscheduler",
+        Mock(),
+    )
+
+    mock_slurm = mocker.patch(
+        "paircars.pipeline.kill_job.kill_slurmscheduler",
+        Mock(),
+    )
+
+    kill_job.kill_paircarsjob()
+
+    if expect_local:
+        mock_local.assert_called_once_with("123")
+        mock_slurm.assert_not_called()
+    elif expect_slurm:
+        mock_slurm.assert_called_once_with("123")
+        mock_local.assert_not_called()
+        

@@ -14,7 +14,7 @@ from paircars.utils.mwa_ploting_utils import *
 @patch("paircars.utils.mwa_ploting_utils.Image.open")
 @patch("paircars.utils.mwa_ploting_utils.psutil")
 @patch("paircars.utils.mwa_ploting_utils.get_ms_scan_size")
-@patch("paircars.utils.mwa_ploting_utils.casamstool")
+@patch("casatools.ms")
 @patch("paircars.utils.mwa_ploting_utils.msmetadata")
 def test_plot_ms_diagnostics(
     mock_msmetadata,
@@ -70,7 +70,7 @@ def test_plot_ms_diagnostics(
     outdir = tmp_path / "out"
     outdir.mkdir()
     code, output_pdf_list = plot_ms_diagnostics(
-        "test.ms", str(outdir), dask_client=None
+        "test.ms", str(outdir),
     )
     assert code == 0
     assert isinstance(output_pdf_list, list)
@@ -87,7 +87,7 @@ def test_plot_ms_diagnostics(
 
 
 @patch("paircars.utils.mwa_ploting_utils.Image.open")
-@patch("paircars.utils.mwa_ploting_utils.table")
+@patch("casatools.table")
 @patch("paircars.utils.mwa_ploting_utils.os")
 @patch("paircars.utils.mwa_ploting_utils.plt")
 def test_plot_caltable_diagnostics(

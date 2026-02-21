@@ -219,13 +219,9 @@ def test_pbcor_all_images(
 @patch("paircars.pipeline.mwa_pbcor.np.load")
 @patch("paircars.pipeline.mwa_pbcor.os.path.exists")
 @patch("paircars.pipeline.mwa_pbcor.os.makedirs")
-@patch("paircars.pipeline.mwa_pbcor.get_cachedir")
-@patch("paircars.pipeline.mwa_pbcor.save_pid")
 @patch("paircars.pipeline.mwa_pbcor.psutil.cpu_count")
 def test_main_pbcor(
     m_cpu_count,
-    m_save_pid,
-    m_get_cachedir,
     m_makedirs,
     m_exists,
     m_np_load,
@@ -244,7 +240,6 @@ def test_main_pbcor(
     pb_return,
     raise_exception,
 ):
-    m_get_cachedir.return_value = "/cache"
     m_cpu_count.return_value = 8
     m_exists.return_value = imagedir_exists
     m_np_load.return_value = ("job", "pass")
@@ -274,9 +269,6 @@ def test_main_pbcor(
         start_remote_log=start_remote_log,
         dask_client=dask_client,
     )
-
-    # PID saved
-    m_save_pid.assert_called_once_with(ANY, "/cache/pids/pids_42.txt")
 
     # Workdir created
     m_makedirs.assert_called()

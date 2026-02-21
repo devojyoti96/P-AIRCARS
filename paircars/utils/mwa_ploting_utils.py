@@ -30,6 +30,7 @@ from .ms_metadata import (
     get_column_size,
     get_ms_scan_size,
     check_datacolumn_valid,
+    get_ms_scans,
 )
 from .resource_utils import drop_cache
 from .udocker_utils import (
@@ -182,7 +183,6 @@ def plot_ms_diagnostics(
             #########################
             # Making plots
             #########################
-            print(f"{mspath}/*{yaxis}*{suffix}*.png")
             pngs = glob.glob(f"{mspath}/*{yaxis}*{suffix}*.png")
             outfile = f"{outdir}/{output_pdf}_{yaxis}.pdf"
             if len(pngs) > 0:
@@ -191,8 +191,8 @@ def plot_ms_diagnostics(
                     images.append(Image.open(image).convert("RGB"))
                 images[0].save(outfile, save_all=True, append_images=images[1:])
                 output_pdf_list.append(outfile)
-                """for png in pngs:
-                    os.system(f"rm -rf {png}")"""
+                for png in pngs:
+                    os.system(f"rm -rf {png}")
             else:
                 print(f"No plot for {ylabel} is made.")
 

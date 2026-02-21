@@ -25,15 +25,11 @@ from paircars.pipeline.move_solarcenter import *
 @patch("paircars.pipeline.move_solarcenter.os.path.exists")
 @patch("paircars.pipeline.move_solarcenter.os.makedirs")
 @patch("paircars.pipeline.move_solarcenter.get_MWA_OBSID")
-@patch("paircars.pipeline.move_solarcenter.get_cachedir")
-@patch("paircars.pipeline.move_solarcenter.save_pid")
 @patch("paircars.pipeline.move_solarcenter.psutil.cpu_count")
 @patch("paircars.pipeline.move_solarcenter.delayed")
 def test_main(
     m_delayed,
     m_cpu_count,
-    m_save_pid,
-    m_get_cachedir,
     m_get_obsid,
     m_makedirs,
     m_exists,
@@ -51,7 +47,6 @@ def test_main(
     # -------------------------
     # Basic mocks
     # -------------------------
-    m_get_cachedir.return_value = "/cache"
     m_get_obsid.return_value = "12345"
     m_cpu_count.return_value = 8
     m_exists.return_value = True
@@ -81,7 +76,6 @@ def test_main(
         start_remote_log=start_remote_log,
         dask_client=dask_client,
     )
-    m_save_pid.assert_called_once_with(ANY, "/cache/pids/pids_42.txt")
     # Workdir created
     m_makedirs.assert_called()
     # Cluster created only if not injected

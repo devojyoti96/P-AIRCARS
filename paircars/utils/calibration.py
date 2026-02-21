@@ -8,7 +8,7 @@ import dask
 from casatools import msmetadata, table
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
 from numpy.linalg import inv
-from .basic_utils import ceil_to_multiple, timestamp_to_mjdsec, mjdsec_to_timestamp
+from .basic_utils import get_datadir, ceil_to_multiple, timestamp_to_mjdsec, mjdsec_to_timestamp
 from .imaging import calc_sun_dia, calc_maxuv, calc_field_of_view
 
 #####################################

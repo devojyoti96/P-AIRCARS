@@ -3,6 +3,7 @@ import glob
 import os
 import traceback
 from casatools import msmetadata, table
+from .mwa_utils import get_bad_chans
 
 
 ##################################

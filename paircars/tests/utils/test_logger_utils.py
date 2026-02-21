@@ -54,7 +54,7 @@ def test_generate_password_properties(length):
     ],
 )
 @patch("os.getlogin", return_value="dummyuser")
-@patch("paircars.utils.get_cachedir", return_value="/mock/cache")
+@patch("paircars.utils.logger_utils.get_cachedir", return_value="/mock/cache")
 def test_get_remote_logger_link(
     mock_get_cachedir,
     mock_getlogin,
@@ -183,33 +183,6 @@ def test_log_tail_handler_reads_new_lines():
     mock_logger.info.assert_any_call("New log line 2")
     assert mock_logger.info.call_count == 2
     os.remove(log_path)
-
-
-@patch("paircars.utils.logger_utils.requests.post")
-@patch("paircars.utils.logger_utils.save_pid")
-@patch(
-    "paircars.utils.logger_utils.get_cachedir",
-    return_value="/mock/.paircars",
-)
-@patch("paircars.utils.logger_utils.os.getpid", return_value=12345)
-def test_ping_logger(mock_getpid, mock_cachedir, mock_save_pid, mock_post):
-    stop_event = MagicMock()
-    stop_event.is_set.side_effect = [False, True]
-    stop_event.wait.return_value = None
-    ping_logger(
-        jobid="local123",
-        remote_jobid="remote456",
-        stop_event=stop_event,
-        remote_link="https://mock-logger.com",
-    )
-    mock_save_pid.assert_called_once_with(
-        12345, "/mock/.paircars/pids/pids_local123.txt"
-    )
-    mock_post.assert_called_once_with(
-        "https://mock-logger.com/api/ping/remote456", timeout=2
-    )
-    stop_event.wait.assert_called_once_with(10)
-
 
 def test_create_logger():
     logfile = os.getcwd() + "/logfile"
