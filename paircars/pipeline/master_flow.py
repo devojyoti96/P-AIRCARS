@@ -21,16 +21,45 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from pyfiglet import Figlet
-from paircars.utils.calibration import calc_bw_smearing_freqwidth, calc_time_smearing_timewidth, max_time_solar_smearing
+from paircars.utils.calibration import (
+    calc_bw_smearing_freqwidth,
+    calc_time_smearing_timewidth,
+    max_time_solar_smearing,
+)
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, generate_password, get_remote_logger_link, get_emails, init_logger
+from paircars.utils.logger_utils import (
+    SmartDefaultsHelpFormatter,
+    clean_shutdown,
+    generate_password,
+    get_remote_logger_link,
+    get_emails,
+    init_logger,
+)
 from paircars.utils.ms_metadata import get_ms_size, check_datacolumn_valid
 from paircars.utils.mwa_ploting_utils import plot_caltable_diagnostics
-from paircars.utils.mwa_utils import get_ncoarse, get_MWA_coarse_chan, get_MWA_OBSID, download_MWA_metafits
-from paircars.utils.prefect_logger_utils import save_logs_by_task_id, save_logs_by_task_id
-from paircars.utils.prefect_setup_utils import prefect_server_status, stop_prefect_server
-from paircars.utils.proc_manage_utils import get_jobid, save_main_process_info, get_total_worker, scale_worker_and_wait, get_total_nodes, get_total_nodes
+from paircars.utils.mwa_utils import (
+    get_ncoarse,
+    get_MWA_coarse_chan,
+    get_MWA_OBSID,
+    download_MWA_metafits,
+)
+from paircars.utils.prefect_logger_utils import (
+    save_logs_by_task_id,
+    save_logs_by_task_id,
+)
+from paircars.utils.prefect_setup_utils import (
+    prefect_server_status,
+    stop_prefect_server,
+)
+from paircars.utils.proc_manage_utils import (
+    get_jobid,
+    save_main_process_info,
+    get_total_worker,
+    scale_worker_and_wait,
+    get_total_nodes,
+    get_total_nodes,
+)
 from paircars.utils.resource_utils import drop_cache
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
@@ -1519,7 +1548,9 @@ def master_control(
     if os.path.exists(target_metafits) is False:
         target_obsid = get_MWA_OBSID(test_msname)
         try:
-            target_metafits = download_MWA_metafits(target_obsid, outdir = os.path.dirname(test_msname))
+            target_metafits = download_MWA_metafits(
+                target_obsid, outdir=os.path.dirname(test_msname)
+            )
         except Exception:
             tracebcak.print_exc()
             target_metafits = None
@@ -1753,7 +1784,9 @@ def master_control(
             test_cal_ms = calibrator_mslist[0]
             cal_obsid = get_MWA_OBSID(test_cal_ms)
             try:
-                calibrator_metafits = download_MWA_metafits(cal_obsid, outdir = os.path.dirname(test_cal_ms))
+                calibrator_metafits = download_MWA_metafits(
+                    cal_obsid, outdir=os.path.dirname(test_cal_ms)
+                )
             except Exception:
                 tracebcak.print_exc()
                 calibrator_metafits = None
@@ -1771,7 +1804,9 @@ def master_control(
             else:
                 has_cal = True
         else:
-            print(f"Calibrator ms is available, however, calibrator metafits is not available.")
+            print(
+                f"Calibrator ms is available, however, calibrator metafits is not available."
+            )
             has_cal = False
 
         ######################################################

@@ -7,6 +7,7 @@ from prefect.client.schemas.sorting import LogSort
 from prefect.client.schemas.filters import LogFilter
 from datetime import datetime, timezone
 
+
 async def save_logs_by_task_id(
     task_run_id, task_name, logfile, poll_interval=5, stop_event=None
 ):
@@ -160,4 +161,3 @@ def start_flow_log_saver(
     thread = threading.Thread(target=run_loop, daemon=True)
     thread.start()
     return thread
-

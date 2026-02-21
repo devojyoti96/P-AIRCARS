@@ -3,7 +3,11 @@ import sys
 import traceback
 import argparse
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
-from paircars.utils.proc_manage_utils import get_scheduler_name, submit_local_master_flow, get_jobid
+from paircars.utils.proc_manage_utils import (
+    get_scheduler_name,
+    submit_local_master_flow,
+    get_jobid,
+)
 from paircars.clusterutils import submit_slurm_master_flow
 
 
@@ -342,13 +346,15 @@ def cli():
     scheduler_name = get_scheduler_name()
 
     try:
-        if scheduler_name=="local":
+        if scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
-        elif scheduler_name=="slurm":
+        elif scheduler_name == "slurm":
             msg = submit_slurm_master_flow(args, jobid)
         else:
-            print(f"P-AIRCARS currently does not support {scheduler_name} job scheduler.")
-            msg=1
+            print(
+                f"P-AIRCARS currently does not support {scheduler_name} job scheduler."
+            )
+            msg = 1
     except Exception:
         print("Error occured in executing P-AIRCARS master flow.")
         traceback.print_exc()

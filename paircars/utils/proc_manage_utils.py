@@ -344,7 +344,7 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-        mem_limit = round(min(max_mem,usable_mem),2)
+        mem_limit = round(min(max_mem, usable_mem), 2)
         cluster = LocalCluster(
             n_workers=1,
             threads_per_worker=1,
@@ -538,4 +538,3 @@ def get_total_nodes(partition=None):
         return 1
     else:
         return None
-

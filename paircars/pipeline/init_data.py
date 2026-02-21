@@ -11,7 +11,12 @@ from paircars.utils.basic_utils import create_datadir, get_datadir, get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
 from paircars.utils.prefect_setup_utils import start_server
 from paircars.utils.resource_utils import has_space
-from paircars.utils.udocker_utils import init_udocker, initialize_wsclean_container, initialize_quartical_container, initialize_shadems_container
+from paircars.utils.udocker_utils import (
+    init_udocker,
+    initialize_wsclean_container,
+    initialize_quartical_container,
+    initialize_shadems_container,
+)
 from paircars.pipeline.beam_interpolate import *
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -137,14 +142,16 @@ def main(
     emails : str
         E-mails for notifications
     """
-    required_gb=20
+    required_gb = 20
     if init:
         create_datadir(datadir=datadir)
         datadir = get_datadir()
         print(f"P-AIRCARS data directory: {datadir}")
         if has_space(datadir, required_gb) is False:
-            print(f"Minimum {required_gb}GB disk space is required in data directory: {datadir}. Please check disk space.")
-             return 1
+            print(
+                f"Minimum {required_gb}GB disk space is required in data directory: {datadir}. Please check disk space."
+            )
+            return 1
         init_paircars_data(update=update, remote_link=link, emails=emails)
         print(f"P-AIRCARS data are initiated.")
         init_udocker()

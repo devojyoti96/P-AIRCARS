@@ -45,6 +45,7 @@ def get_azza_from_fits(filename, metafits):
         {'za_rad': theta,'astro_az_rad': phi}
     """
     import astropy.wcs as pywcs
+
     f = fits.open(filename)
     h = f[0].header
     f.close()
@@ -212,10 +213,11 @@ def all_sky_beam_interpolator(
     numpy.array
         All sky primary beam Jones array
     """
-    cpu_frac=min(0.8,cpu_frac)
-    ncpu=max(1,ncpu)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    ncpu = max(1, ncpu)
+
     from scipy.interpolate import RectBivariateSpline
+
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
@@ -337,9 +339,10 @@ def get_jones_array(
     numpy.array
         Jones array (shape : coordinate_arr_shape, 2 ,2)
     """
-    cpu_frac=min(0.8,cpu_frac)
-    ncpu=max(1,ncpu)
+    cpu_frac = min(0.8, cpu_frac)
+    ncpu = max(1, ncpu)
     from joblib import Parallel, delayed as jobdelayed
+
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
@@ -461,8 +464,8 @@ def get_pb_radec(
     float
         YY power beam value
     """
-    cpu_frac=min(0.8,cpu_frac)
-    ncpu=max(1,ncpu)
+    cpu_frac = min(0.8, cpu_frac)
+    ncpu = max(1, ncpu)
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
@@ -666,6 +669,7 @@ def horz2eq(az, ZA, obstime):
         A python dictionary {'RA' : degress, 'DEC' : degrees}
     """
     import skyfield.api as si
+
     MWA_TOPO = si.Topos(
         longitude=(116, 40, 14.93), latitude=(-26, 42, 11.95), elevation_m=377.8
     )
@@ -800,9 +804,9 @@ def get_fringe(
     np.array
         All-sky fringe array in sky coornidinate
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     try:
@@ -925,9 +929,9 @@ def make_primarybeammap(
     float
         Total beam area (YY)
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     warnings.filterwarnings("ignore")
@@ -1070,5 +1074,3 @@ def make_primarybeammap(
         T_fringe_XX,
         T_fringe_YY,
     )
-
-

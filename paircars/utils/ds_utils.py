@@ -7,8 +7,8 @@ from scipy.interpolate import interp1d
 from casatools import msmetadata
 from astropy.wcs import FITSFixedWarning
 from .basic_utils import mjdsec_to_timestamp
-from .mwapb_utils import get_pb_radec, get_column_size 
-from .imaging import calc_sun_dia 
+from .mwapb_utils import get_pb_radec, get_column_size
+from .imaging import calc_sun_dia
 from .sunpos_utils import radec_sun
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
@@ -293,6 +293,7 @@ def cal_norm_crosscorr(msname, ant1, ant2):
         Normalized cross-correlation of polarization YY
     """
     from casatools import ms as casamstool
+
     msmd = msmetadata()
     msmd.open(msname)
     npol = int(msmd.ncorrforpol()[0])
@@ -345,6 +346,7 @@ def get_short_baselines(msname, max_uv=100.0, nmax=6):
         List of baselines
     """
     from casatools import table
+
     tb = table()
     tb.open(msname)
     uvw = tb.getcol("UVW")
@@ -403,9 +405,9 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1, cpu_frac=-1):
     str
         Output normalised cross-correlation file name
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     n_threads = max(1, n_threads)
@@ -645,4 +647,3 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1, cpu_frac=-1):
     )
     np.save(f"{outdir}/{save_file}_rn.npy", np.array(rn_dic, dtype="object"))
     return f"{outdir}/{save_file}_ds.npy", f"{outdir}/{save_file}_rn.npy"
-

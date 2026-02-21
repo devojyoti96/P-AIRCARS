@@ -8,9 +8,17 @@ import glob
 import sys
 import os
 from dask import delayed
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.logger_utils import (
+    SmartDefaultsHelpFormatter,
+    clean_shutdown,
+    init_logger,
+)
 from paircars.utils.mwa_utils import get_MWA_OBSID
-from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.proc_manage_utils import (
+    scale_worker_and_wait,
+    get_local_dask_cluster,
+    get_scheduler_name,
+)
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.sunpos_utils import move_to_sun
 

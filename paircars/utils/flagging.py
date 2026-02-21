@@ -6,9 +6,10 @@ import os
 import dask
 from datetime import datetime as dt, timezone
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
-from .basic_utils import suppress_output 
-from .resource_utils import limit_threads 
+from .basic_utils import suppress_output
+from .resource_utils import limit_threads
 from .imaging import calc_maxuv
+
 
 ###############################
 # Flagging related functions
@@ -181,9 +182,9 @@ def get_unflagged_antennas(
     numpy.array
         Flag fraction list
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -231,9 +232,9 @@ def get_chans_flag(
     list
         Flag channel list
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -282,9 +283,9 @@ def calc_flag_fraction(
     float
         Fraction of the total data flagged
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -319,9 +320,9 @@ def flag_outside_uvrange(
     flagbackup : bool, optional
         Flag backup
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -436,4 +437,3 @@ def flag_quartical_table(caltable, threshold=10.0):
     write_xds_list = xds_to_zarr(gains, output_path)
     dask.compute(write_xds_list)
     return caltable
-

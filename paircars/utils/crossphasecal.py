@@ -32,6 +32,7 @@ def create_blank_table(msname, caltable):
         Blank caltable name
     """
     from casatools import calibrater
+
     if os.path.exists(caltable):
         os.system(f"rm -rf {caltable}")
     cb = calibrater()
@@ -303,4 +304,3 @@ def crossphasecal(
     crossphase = fitted_crossphase(freqs, crossphase)
     create_crossphase_table(msname, caltable, freqs, crossphase, chan_flags)
     return caltable
-    

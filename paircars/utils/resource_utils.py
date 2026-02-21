@@ -64,9 +64,9 @@ def drop_cache(path, verbose=False):
 def has_space(path, required_gb):
     try:
         stat = shutil.disk_usage(path)
-        free_space = round(stat.free / 1024**3,1)
-        print (f"Free space: {free_space}GB")
-        return  free_space>= required_gb
+        free_space = round(stat.free / 1024**3, 1)
+        print(f"Free space: {free_space}GB")
+        return free_space >= required_gb
     except BaseException:
         return False
 
@@ -177,4 +177,3 @@ def limit_threads(n_threads=-1):
         os.environ["MKL_NUM_THREADS"] = str(n_threads)
         os.environ["VECLIB_MAXIMUM_THREADS"] = str(n_threads)
         os.environ["NUMEXPR_NUM_THREADS"] = str(n_threads)
-

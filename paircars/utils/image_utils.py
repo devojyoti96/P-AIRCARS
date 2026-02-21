@@ -486,4 +486,3 @@ def make_stokes_wsclean_imagecube(
         for img in wsclean_images:
             os.system(f"rm -rf {img}")
     return outfile_name
-

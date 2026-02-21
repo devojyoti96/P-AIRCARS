@@ -11,11 +11,19 @@ import os
 from dask import delayed
 from paircars.utils.basic_utils import get_datadir
 from paircars.utils.ds_utils import calc_dynamic_spectrum
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.logger_utils import (
+    SmartDefaultsHelpFormatter,
+    clean_shutdown,
+    init_logger,
+)
 from paircars.utils.ms_metadata import get_ms_size
 from paircars.utils.mwa_ploting_utils import make_ds_plot
 from paircars.utils.mwa_utils import get_MWA_OBSID
-from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.proc_manage_utils import (
+    scale_worker_and_wait,
+    get_local_dask_cluster,
+    get_scheduler_name,
+)
 from paircars.utils.resource_utils import drop_cache
 
 
@@ -69,7 +77,7 @@ def make_solar_DS(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-   
+
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     os.makedirs(f"{outdir}/dynamic_spectra", exist_ok=True)
     print("##############################################")

@@ -13,10 +13,18 @@ from paircars.utils.basic_utils import suppress_output
 from paircars.utils.calibration import get_gleam_uvrange
 from paircars.utils.crossphasecal import crossphasecal
 from paircars.utils.flagging import flagsummary, do_flag_backup, get_unflagged_antennas
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.logger_utils import (
+    SmartDefaultsHelpFormatter,
+    clean_shutdown,
+    init_logger,
+)
 from paircars.utils.ms_metadata import get_uvrange_exclude
 from paircars.utils.mwa_utils import get_MWA_OBSID
-from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.proc_manage_utils import (
+    scale_worker_and_wait,
+    get_local_dask_cluster,
+    get_scheduler_name,
+)
 from paircars.utils.resource_utils import drop_cache, limit_threads
 from paircars.pipeline.flagging import single_ms_flag
 
@@ -39,7 +47,7 @@ def run_bandpass(
     """
     Perform bandpass calibration
     """
-    n_threads=max(1,n_threads)
+    n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
     from casatasks import bandpass, flagdata
 
@@ -78,7 +86,7 @@ def run_crossphasecal(
     """
     Perform crosshand phase calibration
     """
-    n_threads=max(1,n_threads)
+    n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
     with suppress_output():
@@ -112,7 +120,7 @@ def run_applycal(
     """
     Perform apply calibration
     """
-    n_threads=max(1,n_threads)
+    n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
     from casatasks import applycal
 
@@ -139,8 +147,8 @@ def run_postcal_flag(
     """
     Perform apply calibration
     """
-    n_threads=max(1,n_threads)
-    mem_limit=max(1,mem_limit)
+    n_threads = max(1, n_threads)
+    mem_limit = max(1, mem_limit)
     limit_threads(n_threads=n_threads)
     msg = single_ms_flag(
         msname=msname,
@@ -214,9 +222,9 @@ def single_ms_cal_and_flag(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    n_threads=max(1,n_threads)
-    mem_limit=max(1,mem_limit)
-    
+    n_threads = max(1, n_threads)
+    mem_limit = max(1, mem_limit)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:

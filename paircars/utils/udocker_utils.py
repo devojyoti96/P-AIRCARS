@@ -58,10 +58,11 @@ def check_udocker_container(name):
     except Exception:
         return False
 
+
 def initialize_container(image_name, name, update=False, verbose=False):
     """
     Initialize container
-    
+
     Parameters
     ----------
     image_name: str
@@ -72,7 +73,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
         Update or not
     verbose : bool, optional
         Verbose output
-        
+
     Returns
     -------
     bool
@@ -151,6 +152,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
         print(f"Container could not be created with name : {name}")
         return
 
+
 def initialize_wsclean_container(name="paircarswsclean", update=False):
     """
     Initialize WSClean container
@@ -173,7 +175,9 @@ def initialize_wsclean_container(name="paircarswsclean", update=False):
     return msg
 
 
-def initialize_quartical_container(name="paircarsquartical", update=False, verbose=True):
+def initialize_quartical_container(
+    name="paircarsquartical", update=False, verbose=True
+):
     """
     Initialize quartical container
 
@@ -184,7 +188,7 @@ def initialize_quartical_container(name="paircarsquartical", update=False, verbo
     update : bool, optional
         Update container
     verbose : bool, optional
-        Verbose output 
+        Verbose output
 
     Returns
     -------
@@ -247,6 +251,7 @@ def run_wsclean(
         Success message
     """
     set_udocker_env()
+
     def show_file(path):
         try:
             print(open(path).read())
@@ -709,4 +714,3 @@ def run_quartical(
     except Exception as e:
         traceback.print_exc()
         return 1
-

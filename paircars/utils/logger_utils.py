@@ -14,6 +14,7 @@ from watchdog.observers import Observer
 from datetime import datetime as dt
 from .basic_utils import get_cachedir
 
+
 ##################################
 # Logger related functions
 ##################################
@@ -313,4 +314,3 @@ def init_logger(logname, logfile, jobname="", password=""):
             return
     else:
         return
-

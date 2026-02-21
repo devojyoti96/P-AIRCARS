@@ -280,4 +280,3 @@ def download_MWA_metafits(OBSID, outdir="."):
             pass
     print(f"Metafits file could not be downloaded after {max_tries} tries.")
     return None
-

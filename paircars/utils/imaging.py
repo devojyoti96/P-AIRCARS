@@ -4,6 +4,7 @@ import os
 import traceback
 from casatools import msmetadata, table
 
+
 ##################################
 # Imaging related
 ##################################
@@ -166,6 +167,7 @@ def get_optimal_image_interval(
         Number of channels to averages
     """
     from casatools import ms as casamstool
+
     def is_valid_chunk(chunk, tolerance):
         mean_flux = np.nanmedian(chunk)
         if mean_flux == 0:
@@ -397,5 +399,3 @@ def get_multiscale_bias(freq, bias_min=0.6, bias_max=0.9, minfreq=100, maxfreq=2
         return round(
             np.clip(bias_min + frac * (bias_max - bias_min), bias_min, bias_max), 3
         )
-
-

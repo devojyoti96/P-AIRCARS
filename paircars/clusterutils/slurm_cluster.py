@@ -10,7 +10,7 @@ import shlex
 import re
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
-from paircars.utils.proc_manage_utils import get_scheduler_name, detect_best_interface,  
+from paircars.utils.proc_manage_utils import get_scheduler_name, detect_best_interface
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -349,5 +349,3 @@ def submit_slurm_master_flow(args, jobid):
     except Exception as e:
         traceback.print_exc()
         return 1
-
-

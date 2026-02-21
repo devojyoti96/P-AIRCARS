@@ -162,4 +162,3 @@ def correct_solar_sidereal_motion(msname="", verbose=False):
     else:
         print(f"Sidereal motion correction is already done for ms: {msname}")
         return 0
-

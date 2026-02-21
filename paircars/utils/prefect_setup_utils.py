@@ -7,7 +7,7 @@ import argparse
 import toml
 from pathlib import Path
 from dotenv import load_dotenv
-from .basic_utils import get_cachedir 
+from .basic_utils import get_cachedir
 
 
 # === CONFIG ===
@@ -233,5 +233,3 @@ def show_prefect_config():
     env = os.environ.copy()
     print("🔍 Prefect config in current environment ...")
     subprocess.run(["prefect", "config", "view"], env=env)
-
-

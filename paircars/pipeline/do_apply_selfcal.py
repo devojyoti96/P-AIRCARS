@@ -10,10 +10,18 @@ import os
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, init_logger
+from paircars.utils.logger_utils import (
+    SmartDefaultsHelpFormatter,
+    clean_shutdown,
+    init_logger,
+)
 from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import freq_to_MWA_coarse
-from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.proc_manage_utils import (
+    scale_worker_and_wait,
+    get_local_dask_cluster,
+    get_scheduler_name,
+)
 from paircars.utils.resource_utils import drop_cache
 from paircars.pipeline.do_apply_basiccal import applysol
 

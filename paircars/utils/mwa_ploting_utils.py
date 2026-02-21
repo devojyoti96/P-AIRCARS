@@ -23,9 +23,14 @@ from astroquery.jplhorizons import Horizons
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
-from .basic_utils import mjdsec_to_timestamp 
+from .basic_utils import mjdsec_to_timestamp
 from .image_utils import calc_solar_image_stat, cutout_image
-from .ms_metadata import get_column_size, get_column_size, get_ms_scan_size, check_datacolumn_valid 
+from .ms_metadata import (
+    get_column_size,
+    get_column_size,
+    get_ms_scan_size,
+    check_datacolumn_valid,
+)
 from .resource_utils import drop_cache
 from .udocker_utils import run_shadems, check_udocker_container
 
@@ -51,7 +56,7 @@ def plot_ms_diagnostics(
         Dask client
     ncpu : int, optional
         Number of CPU threads
-    total_mem : float, optional 
+    total_mem : float, optional
         Total memory in GB
     cpu_frac : float, optional
         CPU fraction of current node
@@ -67,11 +72,12 @@ def plot_ms_diagnostics(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    
-    ncpu=max(1,ncpu)
-    total_mem=max(1,total_mem)
-    
+
+    ncpu = max(1, ncpu)
+    total_mem = max(1, total_mem)
+
     from casatools import ms as casamstool
+
     if outdir == "":
         outdir = os.getcwd()
     outdir = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_plots"
@@ -90,16 +96,16 @@ def plot_ms_diagnostics(
     msmd.close()
     scan_sizes = [get_ms_scan_size(msname, scan) for scan in scan_list]
 
-    if cpu_frac>0:
+    if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac>0:
+    if mem_frac > 0:
         total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
-        
+
     max_scan_size = max(scan_sizes)
     frac_chunk = min(1, total_mem / max_scan_size)
     nchunk = int(nrow * frac_chunk)
     output_pdf_list = []
-    
+
     container_present = check_udocker_container("paircarsshadems")
     if not container_present:
         container_name = initialize_wsclean_container(name="paircarsshadems")
@@ -131,14 +137,14 @@ def plot_ms_diagnostics(
         xaxes = {"uv": ("UV(m)",), "FREQ": ("Frequency(GHz)",), "TIME": ("Time",)}
 
         # Determine ploting coloumn
-        cols=[]
-        if check_datacolumn_valid(msname,datacolumn="CORRECTED_DATA"):
+        cols = []
+        if check_datacolumn_valid(msname, datacolumn="CORRECTED_DATA"):
             cols.append("CORRECTED_DATA")
-            if check_datacolumn_valid(msname,datacolumn="MODEL_DATA"):
+            if check_datacolumn_valid(msname, datacolumn="MODEL_DATA"):
                 cols.append("CORRECTED_DATA-MODEL_DATA")
         else:
             cols.append("DATA")
-            if check_datacolumn_valid(msname,datacolumn="MODEL_DATA"):
+            if check_datacolumn_valid(msname, datacolumn="MODEL_DATA"):
                 cols.append("DATA-MODEL_DATA")
 
         for corr, do_plot in corr_sets:
@@ -207,6 +213,7 @@ def plot_caltable_diagnostics(caltable, outdir=""):
         Output file
     """
     from casatools import table
+
     caltable = caltable.rstrip("/")
     if outdir == "":
         outdir = os.getcwd()
@@ -409,7 +416,7 @@ def get_mwamap(fits_image, do_sharpen=False):
     from sunpy.map import make_fitswcs_header
     from sunpy.coordinates import frames, sun
     from astropy.coordinates import EarthLocation
-    
+
     logging.getLogger("sunpy").setLevel(logging.ERROR)
 
     MWALAT = -26.703319  # degrees
@@ -858,6 +865,7 @@ def get_suvi_map(
     """
     from parfive import Downloader
     from bs4 import BeautifulSoup
+
     def list_url_directory(url, ext=""):
         page = requests.get(url).text
         soup = BeautifulSoup(page, "html.parser")
@@ -1052,12 +1060,12 @@ def make_mwa_overlay(
     from dask import delayed, compute
     from multiprocessing.pool import ThreadPool
     from collections import namedtuple
-    
+
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     logging.getLogger("reproject.common").setLevel(logging.WARNING)
 
-    ncpu=max(1,ncpu)
-    
+    ncpu = max(1, ncpu)
+
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -1644,4 +1652,3 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     finally:
         plt.close("all")
     return plot_file
-

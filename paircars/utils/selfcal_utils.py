@@ -7,14 +7,30 @@ import os
 import subprocess
 import copy
 import time
-from casatools import msmetadata 
+from casatools import msmetadata
 from astropy.io import fits
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
 from .resource_utils import limit_threads
-from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table 
-from .calibration import fluxcal_caltable, uvrange_casa_to_quartical, quartical_matrix_normalize
-from .imaging import calc_sun_dia, get_optimal_image_interval, calc_multiscale_scales, get_multiscale_bias 
-from .image_utils import create_circular_mask, create_circular_mask_array, calc_dyn_range, generate_tb_map, make_timeavg_image, make_stokes_wsclean_imagecube 
+from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table
+from .calibration import (
+    fluxcal_caltable,
+    uvrange_casa_to_quartical,
+    quartical_matrix_normalize,
+)
+from .imaging import (
+    calc_sun_dia,
+    get_optimal_image_interval,
+    calc_multiscale_scales,
+    get_multiscale_bias,
+)
+from .image_utils import (
+    create_circular_mask,
+    create_circular_mask_array,
+    calc_dyn_range,
+    generate_tb_map,
+    make_timeavg_image,
+    make_stokes_wsclean_imagecube,
+)
 from .udocker_utils import run_wsclean, run_quartical
 
 
@@ -35,6 +51,7 @@ def determine_disk_visibility(msname):
         Timestamp list where disk may not be detected
     """
     from casatools import ms as casamstool
+
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
@@ -135,6 +152,7 @@ def make_qs_model(msname, clname="quiet_sun.cl"):
         Name of the component list file
     """
     from casatools import componentlist
+
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0, unit="MHz")
@@ -531,7 +549,7 @@ def correct_pbcor_leakage(
     list
         Leakage and leakage error list
     """
-    ncpu = max(1,ncpu)
+    ncpu = max(1, ncpu)
     leakage_info = []
     freq = fits.getheader(imagename)["CRVAL3"]
     pbfile = f"freq_{freq}_pb.npy"
@@ -717,7 +735,7 @@ def single_image_update_leakage(
     list
         Leakage informations
     """
-    ncpu = max(1,ncpu)
+    ncpu = max(1, ncpu)
     valid_image = check_valid_image(image_cube)
     if valid_image:
         cor_imagename, cor_modelname, leakage_info = correct_pbcor_leakage(
@@ -796,7 +814,7 @@ def correct_spectrosnap_pbleak(
     list
         Leakage information list
     """
-    ncpu = max(1,ncpu)
+    ncpu = max(1, ncpu)
     images = list(image_dic.keys())
     models = list(model_dic.keys())
     leakage_info_list = []
@@ -959,11 +977,11 @@ def selfcal_round(
     list
         Leakage informations [Q_leakage, U_leakage, V_leakage, Q_leakage_error, U_leakage_error, V_leakage_error]
     """
-    cpu_frac = min(0.8,cpu_frac)
-    mem_frac = min(0.8,mem_frac)
-    ncpu = max(1,ncpu)
-    mem = max(1,mem)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    mem_frac = min(0.8, mem_frac)
+    ncpu = max(1, ncpu)
+    mem = max(1, mem)
+
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:
@@ -1063,7 +1081,7 @@ def selfcal_round(
             wsclean_args.append("-pol IQUV")
             pol = "IQUV"
 
-        ngrid = max(1,int(ncpu / 2))
+        ngrid = max(1, int(ncpu / 2))
         if ngrid > 1:
             wsclean_args.append("-parallel-gridding " + str(ngrid))
 
@@ -1565,4 +1583,3 @@ def selfcal_round(
         return 4, applycal_gaintable, 0, 0, "", "", "", []
     finally:
         os.chdir(cwd)
-

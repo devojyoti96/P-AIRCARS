@@ -108,6 +108,7 @@ def split_into_chunks(lst, target_chunk_size):
 def interpolate_nans(data):
     """Linearly interpolate NaNs in 1D array."""
     from scipy.interpolate import interp1d
+
     nans = np.isnan(data)
     if np.all(nans):
         raise ValueError("All values are NaN.")
@@ -220,6 +221,7 @@ def filter_outliers(data, threshold=5, max_iter=3):
         Clean Y-values
     """
     from scipy.ndimage import gaussian_filter1d
+
     for c in range(max_iter):
         data = np.asarray(data, dtype=np.float64)
         original_nan_mask = np.isnan(data)
@@ -356,6 +358,7 @@ def timestamp_to_mjdsec(timestamp, date_format=0):
     """
     import julian
     from datetime import datetime as dt
+
     if date_format == 0:
         try:
             timestamp_datetime = dt.strptime(timestamp, "%Y/%m/%d/%H:%M:%S.%f")
@@ -435,4 +438,3 @@ def mjdsec_to_timestamp(mjdsec, str_format=0):
             hhmmss,
         )
     return utcstring
-

@@ -28,6 +28,7 @@ def check_scan_in_caltable(caltable, scan):
         Whether scan is present in the caltable or not
     """
     from casatools import table
+
     tb = table()
     tb.open(caltable)
     scans = tb.getcol("SCAN_NUMBER")
@@ -57,13 +58,14 @@ def reset_weights_and_flags(
     force_reset : bool, optional
         Force reset
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
     from casatools import msmetadata
+
     msname = msname.rstrip("/")
     if os.path.exists(f"{msname}/.reset") == False or force_reset:
         mspath = os.path.dirname(os.path.abspath(msname))
@@ -146,9 +148,9 @@ def single_mstransform(
     str
         Output measurement set name
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -206,5 +208,3 @@ def single_mstransform(
         if os.path.exists(outputms):
             os.system("rm -rf " + outputms)
         return
-
-

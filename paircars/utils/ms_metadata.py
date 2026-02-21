@@ -10,6 +10,7 @@ from .resource_utils import limit_threads
 # Measurement set metadata
 ##########################
 
+
 def get_phasecenter(msname, fieldID=0):
     """
     Get phasecenter of the measurement set
@@ -333,9 +334,9 @@ def get_bad_ants(msname="", fieldnames=[], n_threads=-1, cpu_frac=-1):
     str
         Bad antenna string
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -521,9 +522,9 @@ def get_refant(
     str
         Reference antenna
     """
-    cpu_frac=min(0.8,cpu_frac)
-    n_threads=max(1,n_threads)
-    
+    cpu_frac = min(0.8, cpu_frac)
+    n_threads = max(1, n_threads)
+
     if cpu_frac > 0:
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
@@ -740,5 +741,3 @@ def get_pol_names(msname, fullpol=True):
             else:
                 pass
     return pol_names
-
-

@@ -9,7 +9,7 @@ import traceback
 import subprocess
 from distributed import Client
 from paircars.utils.basic_utils import get_cachedir
-from paircars.utils.resource_utils import drop_cache 
+from paircars.utils.resource_utils import drop_cache
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 

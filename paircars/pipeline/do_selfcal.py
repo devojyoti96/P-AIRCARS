@@ -15,16 +15,32 @@ from dask import delayed
 from functools import partial
 from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output, get_datadir
-from paircars.utils.calibration import get_caltable_metadata, get_quartical_table_metadata
+from paircars.utils.calibration import (
+    get_caltable_metadata,
+    get_quartical_table_metadata,
+)
 from paircars.utils.flagging import uvbin_flag, get_unflagged_antennas
 from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown, create_logger, init_logger
+from paircars.utils.logger_utils import (
+    SmartDefaultsHelpFormatter,
+    clean_shutdown,
+    create_logger,
+    init_logger,
+)
 from paircars.utils.ms_metadata import get_timeranges, check_datacolumn_valid
 from paircars.utils.mwa_utils import freq_to_MWA_coarse
-from paircars.utils.proc_manage_utils import scale_worker_and_wait, get_local_dask_cluster, get_scheduler_name
+from paircars.utils.proc_manage_utils import (
+    scale_worker_and_wait,
+    get_local_dask_cluster,
+    get_scheduler_name,
+)
 from paircars.utils.resource_utils import drop_cache, limit_threads
 from paircars.utils.selfcal_utils import flag_non_disk, quiet_sun_selfcal, selfcal_round
-from paircars.utils.udocker_utils import check_udocker_container, initialize_wsclean_container, initialize_quartical_container
+from paircars.utils.udocker_utils import (
+    check_udocker_container,
+    initialize_wsclean_container,
+    initialize_quartical_container,
+)
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -128,9 +144,9 @@ def do_selfcal(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    ncpu=max(1,ncpu)
-    mem=max(1,mem)
-    
+    ncpu = max(1, ncpu)
+    mem = max(1, mem)
+
     if cpu_frac > 0:
         npcu = max(1, int(psutil.cpu_count() * cpu_frac))
     if mem_frac > 0:
@@ -717,8 +733,8 @@ def do_polselfcal(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    ncpu=max(1,ncpu)
-    mem=max(1,mem)
+    ncpu = max(1, ncpu)
+    mem = max(1, mem)
 
     if cpu_frac > 0:
         npcu = max(1, int(psutil.cpu_count() * cpu_frac))
@@ -1110,8 +1126,8 @@ def do_full_selfcal(
     """
     cpu_frac = min(0.8, cpu_frac)
     mem_frac = min(0.8, mem_frac)
-    ncpu=max(1,ncpu)
-    mem=max(1,mem)
+    ncpu = max(1, ncpu)
+    mem = max(1, mem)
 
     selfcaldir = selfcaldir.rstrip("/")
     logfile = logfile.rstrip("/")
@@ -1332,7 +1348,7 @@ def main(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
             return 1
-            
+
     if do_polcal:
         container_name = "paircarsquartical"
         container_present = check_udocker_container(container_name)
@@ -1342,8 +1358,8 @@ def main(
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1    
-            
+                return 1
+
     org_mslist = copy.deepcopy(mslist)
     try:
         if len(mslist) == 0:
