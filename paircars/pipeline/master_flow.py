@@ -3866,6 +3866,8 @@ def cli():
         if msg != 0:
             print(f"Error in starting prefect server at port: {port}")
             return
+        else:
+            load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
