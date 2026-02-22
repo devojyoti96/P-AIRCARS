@@ -2119,7 +2119,7 @@ def master_control(
         ##############################
         # If basic calibration is requested and calibrator ms and metafits are present
         future_cal_split = None
-        if do_basic_cal and has_cal:
+        if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
             prefix = "calibrator"
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
@@ -2179,7 +2179,7 @@ def master_control(
         # Run flagging jobs on calibrators
         ##################################
         # Only if basic calibration is requested
-        if do_cal_flag and do_basic_cal and has_cal:
+        if do_cal_flag and has_cal:
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
@@ -2227,7 +2227,7 @@ def master_control(
         # Import model
         #################################
         # Only if basic calibration is requested
-        if do_import_model and do_basic_cal and has_cal:
+        if do_import_model and has_cal:
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
