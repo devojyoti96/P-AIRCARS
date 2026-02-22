@@ -311,6 +311,7 @@ def stop_prefect_server(jobid="local"):
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
         print(f"Configuration file for job ID: {jobid} does not exist.")
+        os.system(f"rm -rf {cachedir}")
         return 1
     config = np.load(config_file, allow_pickle=True).all()
     pid_file = config["PID_FILE"]
