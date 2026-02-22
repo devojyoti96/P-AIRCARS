@@ -184,6 +184,7 @@ def test_log_tail_handler_reads_new_lines():
     assert mock_logger.info.call_count == 2
     os.remove(log_path)
 
+
 def test_create_logger():
     logfile = os.getcwd() + "/logfile"
     logname = "testlog"

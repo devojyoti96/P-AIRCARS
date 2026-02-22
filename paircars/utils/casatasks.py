@@ -63,6 +63,7 @@ def reset_weights_and_flags(
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
+
     msname = msname.rstrip("/")
     if os.path.exists(f"{msname}/.reset") == False or force_reset:
         mspath = os.path.dirname(os.path.abspath(msname))

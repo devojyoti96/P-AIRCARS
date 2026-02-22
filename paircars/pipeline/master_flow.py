@@ -66,7 +66,10 @@ from paircars.utils.resource_utils import drop_cache
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
 )
-from paircars.clusterutils.slurm_cluster import get_slurm_dask_cluster, get_slurm_node_resources
+from paircars.clusterutils.slurm_cluster import (
+    get_slurm_dask_cluster,
+    get_slurm_node_resources,
+)
 from paircars.pipeline import (
     mwa_make_ds,
     do_target_split,
@@ -1635,7 +1638,7 @@ def master_control(
     if outdir.startswith("~"):
         print("Please provide full path of output directory.")
         return 1
-    
+
     #############################################
     # Listing target ms
     #############################################
@@ -1722,12 +1725,12 @@ def master_control(
     os.makedirs(outdir, exist_ok=True)
     os.makedirs(caldir, exist_ok=True)
     scheduler_name = get_scheduler_name()
-    
-    if max_worker <=1 and scheduler_name=="local":
+
+    if max_worker <= 1 and scheduler_name == "local":
         if cpu_frac > 0.8:
             cpu_frac = 0.8
         max_worker = int(psutil.cpu_count() * cpu_frac)
-  
+
     ################################################
     # Starting number of workers
     ################################################
@@ -3856,9 +3859,13 @@ def cli():
                 dask_client, dask_cluster, dask_dir = cluster_result
             else:
                 return
-            per_node_cpu, per_node_mem = get_slurm_node_resources(partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac)
-            max_worker_per_node = max(1, int(per_node_mem/max_mem))
-            nworker = max(2,max_worker_per_node*get_total_nodes(partition=args.partition))
+            per_node_cpu, per_node_mem = get_slurm_node_resources(
+                partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
+            )
+            max_worker_per_node = max(1, int(per_node_mem / max_mem))
+            nworker = max(
+                2, max_worker_per_node * get_total_nodes(partition=args.partition)
+            )
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
@@ -3938,7 +3945,7 @@ def cli():
             jobid=jobid,
             job_password=args.job_password,
         )
-        if msg==0:
+        if msg == 0:
             print("P-AIRCARS successfully executed.")
         else:
             print("Issued occured in P-AIRCARS execution.")

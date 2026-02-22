@@ -70,7 +70,8 @@ def test_plot_ms_diagnostics(
     outdir = tmp_path / "out"
     outdir.mkdir()
     code, output_pdf_list = plot_ms_diagnostics(
-        "test.ms", str(outdir),
+        "test.ms",
+        str(outdir),
     )
     assert code == 0
     assert isinstance(output_pdf_list, list)

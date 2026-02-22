@@ -25,6 +25,11 @@ from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
+from paircars.utils.udocker_utils import (
+    run_hyperdrive,
+    initialize_hyperdrive_container,
+    check_udocker_container,
+)
 
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -58,11 +63,11 @@ def import_hyperdrive_model(
     cpu_frac = min(0.8, cpu_frac)
     ncpu = max(1, ncpu)
 
+    msname = msname.rstrip("/")
+    msname = os.path.abspath(msname)
+
     if cpu_frac > 0:
         ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    if datadir is None:
-        print("Please setup P-AIRCARS first.")
-        return
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -86,8 +91,7 @@ def import_hyperdrive_model(
         beamfile = beam_files[pos]
     if sourcelist == "" or os.path.exists(sourcelist) is not True:
         sourcelist = f"{datadir}/GGSM.txt"
-    if ncpu > 0:
-        os.environ["RAYON_NUM_THREADS"] = str(ncpu)
+    model_msname = msname.split(".ms")[0] + "_model.ms"
     try:
         starttime = time.time()
         print(
@@ -109,7 +113,7 @@ def import_hyperdrive_model(
             nrow = msmd.nrows()
             msmd.close()
 
-        hyperdrive_cmd = [
+        hyperdrive_cmd_args = [
             f"{datadir}/hyperdrive",
             "vis-simulate",
             "-m",
@@ -129,7 +133,7 @@ def import_hyperdrive_model(
             "-n",
             "2000",
             "--output-model-files",
-            f"{msname.split('.ms')[0]}_model.ms",
+            f"{model_msname}",
             "--output-model-freq-average",
             f"{freqres}kHz",
             "--num-fine-channels",
@@ -139,19 +143,12 @@ def import_hyperdrive_model(
             "--output-model-time-average",
             f"{timeres}s",
         ]
-        if verbose is False:
-            subprocess.run(
-                hyperdrive_cmd,
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        else:
-            subprocess.run(
-                hyperdrive_cmd,
-                check=True,
-            )
-        model_msname = msname.split(".ms")[0] + "_model.ms"
+        hyperdrive_cmd = " ".join(hyperdrive_cmd_args)
+        result = run_hyperdrive(hyperdrive_cmd, ncpu=ncpu, verbose=verbose)
+        if result != 0:
+            print("Error occured in hyperdrive.")
+            return 1
+
         ########################
         # Importing model
         ########################
@@ -189,7 +186,7 @@ def import_hyperdrive_model(
         traceback.print_exc()
         return 1
     finally:
-        os.system(f"rm -rf {msname.split('.ms')[0]}_model.ms")
+        os.system(f"rm -rf {model_msname}")
 
 
 def main(
@@ -249,6 +246,19 @@ def main(
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
+
+    ###########################
+    # Hyperdrive container
+    ###########################
+    container_name = "paircarshyperdrive"
+    container_present = check_udocker_container(container_name)
+    if not container_present:
+        container_name = initialize_hyperdrive_container(name=container_name)
+        if container_name is None:
+            print(
+                f"Container {container_name} is not initiated. First initiate container and then run."
+            )
+            return 1
 
     ############
     # Logger

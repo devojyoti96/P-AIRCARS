@@ -36,10 +36,10 @@ def test_terminate_process_and_children(mock_process_cls, mock_wait_procs, has_p
     "file_exists, load_error, dask_error, outer_error",
     [
         (False, False, False, False),  # job file missing
-        (True, True, False, False),    # loadtxt fails
-        (True, False, False, False),   # normal execution
-        (True, False, True, False),    # dask shutdown fails
-        (True, False, False, True),    # outer exception
+        (True, True, False, False),  # loadtxt fails
+        (True, False, False, False),  # normal execution
+        (True, False, True, False),  # dask shutdown fails
+        (True, False, False, True),  # outer exception
     ],
 )
 def test_kill_localscheduler(
@@ -111,8 +111,8 @@ def test_kill_localscheduler(
         kill_job.terminate_process_and_children.assert_not_called()
     else:
         kill_job.terminate_process_and_children.assert_called_once_with(9999)
-        
-        
+
+
 @pytest.mark.parametrize(
     "file_exists, load_error, dask_error, outer_error",
     [
@@ -191,8 +191,8 @@ def test_kill_slurmscheduler(
     else:
         mock_run.assert_called_once_with(["scancel", 7777])
         assert mock_drop.call_count == 4
-        
-        
+
+
 @pytest.mark.parametrize(
     "argv, scheduler_name, expect_exit, expect_local, expect_slurm",
     [
@@ -217,7 +217,9 @@ def test_kill_paircarsjob(
     mocker.patch("paircars.pipeline.kill_job.print")
 
     if expect_exit:
-        mock_exit = mocker.patch("paircars.pipeline.kill_job.sys.exit", side_effect=SystemExit)
+        mock_exit = mocker.patch(
+            "paircars.pipeline.kill_job.sys.exit", side_effect=SystemExit
+        )
         with pytest.raises(SystemExit):
             kill_job.kill_paircarsjob()
         mock_exit.assert_called_once_with(1)
@@ -246,4 +248,3 @@ def test_kill_paircarsjob(
     elif expect_slurm:
         mock_slurm.assert_called_once_with("123")
         mock_local.assert_not_called()
-        

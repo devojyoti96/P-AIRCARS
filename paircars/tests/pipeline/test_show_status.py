@@ -36,6 +36,7 @@ def test_show_job_status(
     mock_glob.return_value = ["/mock/cache/main_pids_1234.txt"]
     show_job_status(clean_old_jobs=clean_old_jobs)
 
+
 @pytest.mark.parametrize(
     "argv_args, expect_show_called, expect_exit_called",
     [

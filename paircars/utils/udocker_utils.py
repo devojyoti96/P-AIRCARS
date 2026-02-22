@@ -48,7 +48,7 @@ def check_udocker_container(name):
         Whether present or not
     """
     set_udocker_env()
-    env=os.environ
+    env = os.environ
     try:
         result = subprocess.run(
             ["udocker", "--insecure", "--quiet", "inspect", name],
@@ -85,14 +85,15 @@ def initialize_container(image_name, name, update=False, verbose=False):
         Whether initialized successfully or not
     """
     set_udocker_env()
-    env=os.environ
+    env = os.environ
     check_cmd = f"udocker images | grep -q {image_name}"
     image_exists = os.system(check_cmd)
     container_exists = check_udocker_container(name)
     if image_exists != 0:
         if verbose:
             result = subprocess.run(
-                ["udocker", "pull", f"{image_name}"],env=env,
+                ["udocker", "pull", f"{image_name}"],
+                env=env,
             )
         else:
             result = subprocess.run(
@@ -107,10 +108,12 @@ def initialize_container(image_name, name, update=False, verbose=False):
             if verbose:
                 if container_exists:
                     subprocess.run(
-                        ["udocker", "rm", f"{name}"],env=env,
+                        ["udocker", "rm", f"{name}"],
+                        env=env,
                     )
                 subprocess.run(
-                    ["udocker", "rmi", f"{image_name}"],env=env,
+                    ["udocker", "rmi", f"{image_name}"],
+                    env=env,
                 )
             else:
                 if container_exists:
@@ -129,7 +132,8 @@ def initialize_container(image_name, name, update=False, verbose=False):
             print("Re-downloading docker image.")
             if verbose:
                 result = subprocess.run(
-                    ["udocker", "pull", f"{image_name}"],env=env,
+                    ["udocker", "pull", f"{image_name}"],
+                    env=env,
                 )
             else:
                 result = subprocess.run(
@@ -243,7 +247,9 @@ def initialize_shadems_container(name="paircarsshadems", update=False, verbose=F
     return msg
 
 
-def initialize_hyperdrive_container(name="paircarshyperdrive", update=False, verbose=False):
+def initialize_hyperdrive_container(
+    name="paircarshyperdrive", update=False, verbose=False
+):
     """
     Initialize hyperdrive container
 
@@ -626,14 +632,11 @@ def run_shadems(
         cmd = f"{' '.join(splited_cmd[:-1])} {temp_docker_path}/{os.path.basename(msname)}"
     cmd_args = cmd.split(" ")
     try:
-        full_command = [
-            "udocker",
-            "--quiet",
-            "run",
-            "--nobanner"]
+        full_command = ["udocker", "--quiet", "run", "--nobanner"]
         if datapath is not None:
             full_command.append(f"--volume={datapath}:{temp_docker_path}")
-        full_command+=["--workdir",
+        full_command += [
+            "--workdir",
             f"{temp_docker_path}",
             f"{container_name}",
         ] + cmd_args
@@ -739,14 +742,11 @@ def run_quartical(
         return 1
     cmd_args = cmd.split(" ")
     try:
-        full_command = [
-            "udocker",
-            "--quiet",
-            "run",
-            "--nobanner"]
+        full_command = ["udocker", "--quiet", "run", "--nobanner"]
         if datapath is not None:
             full_command.append(f"--volume={datapath}:{temp_docker_path}")
-        full_command+=["--workdir",
+        full_command += [
+            "--workdir",
             f"{temp_docker_path}",
             f"{container_name}",
         ] + cmd_args
@@ -768,10 +768,11 @@ def run_quartical(
     except Exception as e:
         traceback.print_exc()
         return 1
-        
-        
+
+
 def run_hyperdrive(
     hyperdrive_cmd,
+    ncpu=1,
     container_name="paircarshyperdrive",
     check_container=False,
     verbose=False,
@@ -804,6 +805,9 @@ def run_hyperdrive(
         Success message
     """
     set_udocker_env()
+    if ncpu > 0:
+        os.environ["RAYON_NUM_THREADS"] = str(ncpu)
+    env = os.environ
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -816,22 +820,50 @@ def run_hyperdrive(
                 )
                 return 1
     cmd_args = hyperdrive_cmd.split(" ")
+    outpath = None
+    beampath = None
+    sourcepath = None
+    for i in range(len(cmd_args)):
+        cmd = cmd_args[i]
+        if "--output-model-files" in cmd:
+            outfile_name = cmd_args[i + 1]
+            outpath = os.path.abspath(outfile_name)
+            temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+            temp_docker_outpath = os.path.join(outpath, temp_name)
+            cmd_args[i + 1] = f"{temp_docker_outpath}/{os.path.basename(outfile_name)}"
+        if "--beam-file" in cmd:
+            beamfile = cmd_args[i + 1]
+            beampath = os.path.abspath(beamfile)
+            temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+            temp_docker_beampath = os.path.join(beampath, temp_name)
+            cmd_args[i + 1] = f"{temp_docker_beampath}/{os.path.basename(beamfile)}"
+        if "-s" in cmd:
+            sourcefile = cmd_args[i + 1]
+            sourcepath = os.path.abspath(sourcefile)
+            temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+            temp_docker_sourcepath = os.path.join(sourcepath, temp_name)
+            cmd_args[i + 1] = f"{temp_docker_sourcepath}/{os.path.basename(sourcefile)}"
     try:
-        full_command = [
-            "udocker",
-            "--quiet",
-            "run",
-            "--nobanner",
+        full_command = ["udocker", "--quiet", "run", "--nobanner"]
+        if outpath is not None:
+            full_command.append(f"--volume={outpath}:{temp_docker_outpath}")
+        if beampath is not None:
+            full_command.append(f"--volume={beampath}:{temp_docker_beampath}")
+        if sourcepath is not None:
+            full_command.append(f"--volume={sourcepath}:{temp_docker_sourcepath}")
+        full_command += [
             f"{container_name}",
         ] + cmd_args
         if verbose:
             print(f"{hyperdrive_cmd}\n")
             result = subprocess.run(
                 full_command,
+                env=env,
             )
         else:
             result = subprocess.run(
                 full_command,
+                env=env,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )

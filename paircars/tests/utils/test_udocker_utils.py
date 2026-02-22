@@ -71,8 +71,8 @@ def test_init_udocker(mock_env):
 @pytest.mark.parametrize(
     "returncode, side_effect, expected",
     [
-        (0, None, True),                 # container exists
-        (1, None, False),                # container does not exist
+        (0, None, True),  # container exists
+        (1, None, False),  # container does not exist
         (None, Exception("error"), False),  # subprocess raises exception
     ],
 )
@@ -98,17 +98,13 @@ def test_check_udocker_container(mocker, returncode, side_effect, expected):
         (1, False, False, 1, None),
     ],
 )
-def test_initialize_container(
-    mocker, image_exists, update, verbose, pull_rc, expected
-):
+def test_initialize_container(mocker, image_exists, update, verbose, pull_rc, expected):
     mocker.patch("paircars.utils.udocker_utils.set_udocker_env")
     mocker.patch(
         "paircars.utils.udocker_utils.os.system",
         return_value=image_exists,
     )
-    mock_run = mocker.patch(
-        "paircars.utils.udocker_utils.subprocess.run"
-    )
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
     mock_result = MagicMock()
     mock_result.returncode = pull_rc
     mock_run.return_value = mock_result
@@ -120,8 +116,8 @@ def test_initialize_container(
         verbose=verbose,
     )
     assert result == expected
-    
-    
+
+
 @pytest.mark.parametrize(
     "update, verbose, returned_value",
     [
@@ -131,9 +127,7 @@ def test_initialize_container(
         (True, True, None),  # simulate failure
     ],
 )
-def test_initialize_wsclean_container(
-    mocker, update, verbose, returned_value
-):
+def test_initialize_wsclean_container(mocker, update, verbose, returned_value):
     mock_init = mocker.patch(
         "paircars.utils.udocker_utils.initialize_container",
         return_value=returned_value,
@@ -151,8 +145,8 @@ def test_initialize_wsclean_container(
         verbose=verbose,
     )
     assert result == returned_value
-    
-    
+
+
 @pytest.mark.parametrize(
     "update, verbose, returned_value",
     [
@@ -162,9 +156,7 @@ def test_initialize_wsclean_container(
         (True, True, None),  # simulate failure
     ],
 )
-def test_initialize_quartical_container(
-    mocker, update, verbose, returned_value
-):
+def test_initialize_quartical_container(mocker, update, verbose, returned_value):
     mock_init = mocker.patch(
         "paircars.utils.udocker_utils.initialize_container",
         return_value=returned_value,
@@ -182,8 +174,8 @@ def test_initialize_quartical_container(
         verbose=verbose,
     )
     assert result == returned_value
-    
-    
+
+
 @pytest.mark.parametrize(
     "update, verbose, returned_value",
     [
@@ -193,9 +185,7 @@ def test_initialize_quartical_container(
         (True, True, None),  # simulate failure
     ],
 )
-def test_initialize_shadems_container(
-    mocker, update, verbose, returned_value
-):
+def test_initialize_shadems_container(mocker, update, verbose, returned_value):
     mock_init = mocker.patch(
         "paircars.utils.udocker_utils.initialize_container",
         return_value=returned_value,
@@ -213,8 +203,8 @@ def test_initialize_shadems_container(
         verbose=verbose,
     )
     assert result == returned_value
-    
-    
+
+
 @pytest.mark.parametrize(
     "container_present, init_return, run_rc, raise_exc, expected",
     [
@@ -248,9 +238,7 @@ def test_run_wsclean(
         "paircars.utils.udocker_utils.tempfile._get_candidate_names",
         return_value=iter(["abc123"]),
     )
-    mock_run = mocker.patch(
-        "paircars.utils.udocker_utils.subprocess.run"
-    )
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
     if raise_exc:
         mock_run.side_effect = Exception("run failed")
     else:
@@ -265,7 +253,7 @@ def test_run_wsclean(
         verbose=False,
     )
     assert result == expected
-    
+
 
 @pytest.mark.parametrize(
     "container_present, init_return, only_uvw, run_rc, raise_exc, expected",
@@ -302,9 +290,7 @@ def test_run_solar_sidereal_cor(
         "paircars.utils.udocker_utils.tempfile._get_candidate_names",
         return_value=iter(["abc123"]),
     )
-    mock_run = mocker.patch(
-        "paircars.utils.udocker_utils.subprocess.run"
-    )
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
     if raise_exc:
         mock_run.side_effect = Exception("failure")
     else:
@@ -319,8 +305,8 @@ def test_run_solar_sidereal_cor(
         verbose=False,
     )
     assert result == expected
-    
-    
+
+
 @pytest.mark.parametrize(
     "container_present, init_return, only_uvw, run_rc, raise_exc, expected",
     [
@@ -360,9 +346,7 @@ def test_run_chgcenter(
         return_value=iter(["abc123"]),
     )
 
-    mock_run = mocker.patch(
-        "paircars.utils.udocker_utils.subprocess.run"
-    )
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
 
     if raise_exc:
         mock_run.side_effect = Exception("failure")
@@ -382,8 +366,8 @@ def test_run_chgcenter(
     )
 
     assert result == expected
-    
-    
+
+
 @pytest.mark.parametrize(
     "container_present, init_return, cmd, run_rc, raise_exc, expected",
     [
@@ -424,9 +408,7 @@ def test_run_shadems(
         return_value="/tmp",
     )
 
-    mock_run = mocker.patch(
-        "paircars.utils.udocker_utils.subprocess.run"
-    )
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
 
     if raise_exc:
         mock_run.side_effect = Exception("failure")
@@ -443,8 +425,8 @@ def test_run_shadems(
     )
 
     assert result == expected
-    
-    
+
+
 @pytest.mark.parametrize(
     "container_present, init_return, cmd, run_rc, raise_exc, expected",
     [
@@ -505,9 +487,7 @@ def test_run_quartical(
         return_value=0,
     )
 
-    mock_run = mocker.patch(
-        "paircars.utils.udocker_utils.subprocess.run"
-    )
+    mock_run = mocker.patch("paircars.utils.udocker_utils.subprocess.run")
 
     if raise_exc:
         mock_run.side_effect = Exception("failure")
@@ -524,4 +504,3 @@ def test_run_quartical(
     )
 
     assert result == expected
-    

@@ -908,6 +908,7 @@ def test_run_imaging_jobs(
         dask_client=mock_client,
     )
 
+
 @pytest.mark.parametrize("mock_msg,raises", [(0, False), (1, True)])
 @patch("paircars.pipeline.master_flow.get_run_context")
 @patch("paircars.pipeline.master_flow.start_log_task_saver")
@@ -978,6 +979,7 @@ def test_run_apply_pbcor(
         dask_client=mock_client,
     )
 
+
 @patch("paircars.pipeline.master_flow.get_scheduler_name", return_value="local")
 @patch("paircars.pipeline.master_flow.get_run_context")
 @patch("paircars.pipeline.master_flow.start_log_task_saver")
@@ -1026,9 +1028,7 @@ def test_run_make_overlay(
     mock_makedirs.assert_any_call("/mock/workdir/logs", exist_ok=True)
     mock_makedirs.assert_any_call("/mock/outdir", exist_ok=True)
 
-    mock_remove.assert_called_once_with(
-        "/mock/workdir/logs/do_overlay.log"
-    )
+    mock_remove.assert_called_once_with("/mock/workdir/logs/do_overlay.log")
 
     mock_log_task_saver.assert_called_once_with(
         "abc123",
@@ -1050,8 +1050,8 @@ def test_run_make_overlay(
         jobid=42,
         start_remote_log=True,
     )
-    
-    
+
+
 @pytest.mark.parametrize("msg_return, should_raise", [(0, False), (1, True)])
 @patch("paircars.pipeline.master_flow.get_run_context")
 @patch("paircars.pipeline.master_flow.start_log_task_saver")
@@ -1130,15 +1130,15 @@ def test_run_make_msplot(
         cpu_frac=0.5,
         mem_frac=0.6,
         logfile=logfile,
-        jobid=0, 
+        jobid=0,
         start_remote_log=True,
         dask_client=mock_dask_client,
     )
 
     mock_stop_event.set.assert_called_once()
     mock_thread.join.assert_called_once_with(timeout=5)
-    
-    
+
+
 @patch("paircars.pipeline.master_flow.send_notification")
 def test_send_task_notification(mock_send_notification):
 
@@ -1152,9 +1152,7 @@ def test_send_task_notification(mock_send_notification):
         logger_timestamp="2026-02-21 20:00:00",
     )
 
-    expected_subject = (
-        "P-AIRCARS Logger Details: 2026-02-21 20:00:00, OBSID: 123456"
-    )
+    expected_subject = "P-AIRCARS Logger Details: 2026-02-21 20:00:00, OBSID: 123456"
 
     expected_body = (
         "P-AIRCARS user,\n\n"
@@ -1168,5 +1166,4 @@ def test_send_task_notification(mock_send_notification):
         "test@example.com",
         expected_subject,
         expected_body,
-    )    
-
+    )

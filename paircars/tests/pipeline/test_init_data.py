@@ -272,6 +272,7 @@ def test_main(init_flag, expected_return, monkeypatch):
         init_data.initialize_quartical_container.assert_not_called()
         init_data.initialize_shadems_container.assert_not_called()
 
+
 @pytest.mark.parametrize(
     "argv_args, expect_exit",
     [

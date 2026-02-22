@@ -122,8 +122,8 @@ def test_save_main_process_info(
         "20250701010101010101 1234 scheduler /mock/workdir /mock/workdir /mock/outdir 0.5 0.6"
     )
     mock_glob.return_value = ["/mock/.paircars/main_pids_20250625000000000000.txt"]
-    
-    
+
+
 def calc_sum(i):
     time.sleep(0.5)
     return np.nansum(i)

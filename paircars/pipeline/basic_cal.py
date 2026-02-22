@@ -513,6 +513,7 @@ def run_basic_cal_rounds(
 
     try:
         from casatasks import flagdata
+
         os.chdir(workdir)
         trial_ms = mslist[0]
         msmd = msmetadata()

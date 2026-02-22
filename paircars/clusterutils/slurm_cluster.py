@@ -10,7 +10,11 @@ import shlex
 import re
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
-from paircars.utils.proc_manage_utils import get_scheduler_name, detect_best_interface, get_jobid
+from paircars.utils.proc_manage_utils import (
+    get_scheduler_name,
+    detect_best_interface,
+    get_jobid,
+)
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -139,7 +143,7 @@ def get_slurm_dask_cluster(
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()
-        mem_limit = round(min(max_mem,mem),2)
+        mem_limit = round(min(max_mem, mem), 2)
         job_extra = [
             f"--nodes=1",
             f"--ntasks=1",
@@ -278,7 +282,11 @@ def submit_slurm_master_flow(args, jobid):
     if scheduler_name is not "slurm":
         print("SLURM job scheduler is not available.")
         return 1
-    cli_cmd = "run-mwa-masterflow " + " ".join(shlex.quote(arg) for arg in sys.argv[1:])+f" --jobid {jobid}"
+    cli_cmd = (
+        "run-mwa-masterflow "
+        + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+        + f" --jobid {jobid}"
+    )
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_seconds = get_max_walltime(args.partition)
     else:

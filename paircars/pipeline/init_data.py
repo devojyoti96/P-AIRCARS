@@ -28,7 +28,6 @@ all_filenames = [
     "de440s.bsp",
     "GGSM.txt",
     "haslam_map.fits",
-    "hyperdrive",
     "MWA_sweet_spots.npy",
     "Ref_mean_bandpass_final.npy",
     "mwa_full_embedded_element_pattern.h5",
