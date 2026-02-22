@@ -3859,7 +3859,7 @@ def cli():
         ############################################
         # Stop prefect server in cluster environment
         ############################################
-        port = get_free_port()
+        port = get_free_port(start_port=8072,end_port=9000)
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
             port, jobid=jobid, show_config=True,
         )
@@ -3870,7 +3870,7 @@ def cli():
             result = prefect_server_status(jobid=jobid)
             if result is not True:
                 print (f"Prefect server is not running at port: {port}") 
-                return
+                return 1
             config = np.load(config_file, allow_pickle=True).all()
             load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
             time.sleep(10)
