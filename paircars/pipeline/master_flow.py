@@ -1702,8 +1702,8 @@ def master_control(
         dask_client = get_client()
         dask_cluster = dask_client.cluster
     except:
-        if mem_frac<=0:
-            mem_frac=0.8
+        if mem_frac <= 0:
+            mem_frac = 0.8
         result = get_local_dask_cluster(
             workdir,
             mem_frac=mem_frac,
@@ -3833,10 +3833,10 @@ def cli():
         # Set up local cluster
         #######################################
         print("Setting up local cluster....")
-        if args.mem_frac<=0:
-            mem_frac=0.8
+        if args.mem_frac <= 0:
+            mem_frac = 0.8
         else:
-            mem_frac=args.mem_frac
+            mem_frac = args.mem_frac
         result = get_local_dask_cluster(
             workdir,
             mem_frac=mem_frac,

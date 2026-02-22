@@ -280,16 +280,15 @@ def main(
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
-
     if dask_client is None:
-        scheduler_name="local"
-    else:  
+        scheduler_name = "local"
+    else:
         scheduler_name = get_scheduler_name()
-        
+
     dask_cluster = None
     if dask_client is None:
-        if mem_frac<=0:
-            mem_frac=0.8
+        if mem_frac <= 0:
+            mem_frac = 0.8
         result = get_local_dask_cluster(
             workdir,
             mem_frac=mem_frac,
@@ -301,7 +300,7 @@ def main(
             dask_client, dask_cluster, dask_dir = result
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
         scale_worker_and_wait(dask_cluster, nworker + 1)
-        
+
     #################################################
     # Number of jobs in local and cluster environment
     ##################################################
@@ -316,7 +315,7 @@ def main(
     else:
         njobs = 1
     ncpu = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
-    
+
     try:
         if len(mslist) > 0:
             tasks = []

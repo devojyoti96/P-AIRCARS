@@ -98,11 +98,11 @@ def initialize_container(image_name, name, update=False, verbose=False):
                 )
             else:
                 subprocess.run(
-                        ["udocker", "rm", f"{name}"],
-                        env=env,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
+                    ["udocker", "rm", f"{name}"],
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
         if verbose:
             result = subprocess.run(
                 ["udocker", "pull", f"{image_name}"],
@@ -164,7 +164,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
         else:
             print(f"Image {image_name} already present.")
             a = 0
-    if a == 0:        
+    if a == 0:
         if verbose:
             result = subprocess.run(
                 ["udocker", "create", f"--name={name}", f"{image_name}"],
@@ -836,28 +836,30 @@ def run_hyperdrive(
     outpath = None
     beampath = None
     sourcepath = None
-    metapath=None
+    metapath = None
     for i in range(len(cmd_args)):
         cmd = cmd_args[i]
-        if cmd=="-m":
+        if cmd == "-m":
             metafits_name = cmd_args[i + 1]
             metapath = os.path.dirname(os.path.abspath(metafits_name))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
             temp_docker_metapath = os.path.join(metapath, temp_name)
-            cmd_args[i + 1] = f"{temp_docker_metapath}/{os.path.basename(metafits_name)}"
-        if cmd=="--output-model-files":
+            cmd_args[i + 1] = (
+                f"{temp_docker_metapath}/{os.path.basename(metafits_name)}"
+            )
+        if cmd == "--output-model-files":
             outfile_name = cmd_args[i + 1]
             outpath = os.path.dirname(os.path.abspath(outfile_name))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
             temp_docker_outpath = os.path.join(outpath, temp_name)
             cmd_args[i + 1] = f"{temp_docker_outpath}/{os.path.basename(outfile_name)}"
-        if cmd=="--beam-file":
+        if cmd == "--beam-file":
             beamfile = cmd_args[i + 1]
             beampath = os.path.dirname(os.path.abspath(beamfile))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
             temp_docker_beampath = os.path.join(beampath, temp_name)
             cmd_args[i + 1] = f"{temp_docker_beampath}/{os.path.basename(beamfile)}"
-        if cmd=="-s":
+        if cmd == "-s":
             sourcefile = cmd_args[i + 1]
             sourcepath = os.path.dirname(os.path.abspath(sourcefile))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())

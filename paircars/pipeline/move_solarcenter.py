@@ -95,8 +95,8 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac<=0:
-            mem_frac=0.8
+        if mem_frac <= 0:
+            mem_frac = 0.8
         result = get_local_dask_cluster(
             workdir,
             mem_frac=mem_frac,
