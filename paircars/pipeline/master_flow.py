@@ -3892,15 +3892,16 @@ def cli():
     # Starting pipeline
     ##########################################
     try:
-        dask_addr = dask_client.scheduler.address
+        #dask_addr = dask_client.scheduler.address
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
         print(f"Total maximum dask workers: {nworker}")
-        msg = master_control.with_options(
+        '''msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
-        )(
+        )('''
+        msg = master_control(
             args.target_datadir,
             args.target_metafits,
             args.workdir,
