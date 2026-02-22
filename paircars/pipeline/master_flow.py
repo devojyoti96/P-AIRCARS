@@ -3906,7 +3906,7 @@ def cli():
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
         )('''
-        msg = master_control(
+        msg = master_control.fn(
             args.target_datadir,
             args.target_metafits,
             args.workdir,
