@@ -227,6 +227,9 @@ def start_server(port, show_config=False, jobid="local"):
     print("Starting Prefect server...")
     if prefect_server_status(jobid=jobid):
         stop_prefect_server(jobid=jobid)
+    env = get_prefect_env(jobid=jobid)
+    os.makedirs(config["PREFECT_HOME"], exist_ok=True)
+    profile_path, env_file, dashboard = save_prefect_env_to_file(jobid=jobid)
     with open(config["LOG_FILE"], "w") as f:
         server_proc = subprocess.Popen(
             [
@@ -240,29 +243,27 @@ def start_server(port, show_config=False, jobid="local"):
             ],
             stdout=f,
             stderr=subprocess.STDOUT,
-            env=get_prefect_env(jobid=jobid),
+            env=env,
         )
     server_started = False
-    for _ in range(30):  # wait up to 30s for the server to respond
+    for _ in range(1800):  # wait up to 1800s for the server to respond
         if prefect_server_status(jobid=jobid):
             if show_config:
                 show_prefect_config(jobid=jobid)
             server_started = True
             break
-        time.sleep(1)
+        time.sleep(5)
     if server_started:
         with open(pid_file, "w") as pf:
             pf.write(str(server_proc.pid))
-        os.makedirs(config["PREFECT_HOME"], exist_ok=True)
-        profile_path, env_file, dashboard = save_prefect_env_to_file(jobid=jobid)
         print(f"Prefect server is now running at {config['SERVER_DASHBOARD']}")
         if os.path.exists(dashboard) is not True:
             with open(dashboard, "w") as f:
                 f.write(f"{config['SERVER_DASHBOARD']}")
         return 0, config_file, profile_path, env_file, dashboard, pid_file
     else:
-        print(f"Server did not respond in time. Check logs at {config['LOG_FILE']}")
-        return 1, "", "", "", "", ""
+        print(f"Server did not respond within 30 minutes. Check logs at {config['LOG_FILE']} for more details")
+        return 0, config_file, profile_path, env_file, dashboard, pid_file
 
 
 #########################################
