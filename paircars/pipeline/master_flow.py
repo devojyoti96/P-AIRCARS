@@ -3908,6 +3908,7 @@ def cli():
     # Starting pipeline
     ##########################################
     try:
+        print (os.environ)
         dask_addr = dask_client.scheduler.address
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
