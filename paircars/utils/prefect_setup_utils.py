@@ -262,7 +262,9 @@ def start_server(port, show_config=False, jobid="local"):
                 f.write(f"{config['SERVER_DASHBOARD']}")
         return 0, config_file, profile_path, env_file, dashboard, pid_file
     else:
-        print(f"Server did not respond within 30 minutes. Check logs at {config['LOG_FILE']} for more details")
+        print(
+            f"Server did not respond within 30 minutes. Check logs at {config['LOG_FILE']} for more details"
+        )
         return 0, config_file, profile_path, env_file, dashboard, pid_file
 
 
