@@ -48,9 +48,11 @@ def check_udocker_container(name):
         Whether present or not
     """
     set_udocker_env()
+    env=os.environ
     try:
         result = subprocess.run(
             ["udocker", "--insecure", "--quiet", "inspect", name],
+            env=env,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -83,48 +85,56 @@ def initialize_container(image_name, name, update=False, verbose=False):
         Whether initialized successfully or not
     """
     set_udocker_env()
+    env=os.environ
     check_cmd = f"udocker images | grep -q {image_name}"
     image_exists = os.system(check_cmd)
+    container_exists = check_udocker_container(name)
     if image_exists != 0:
         if verbose:
             result = subprocess.run(
-                ["udocker", "pull", f"{image_name}"],
+                ["udocker", "pull", f"{image_name}"],env=env,
             )
         else:
             result = subprocess.run(
                 ["udocker", "pull", f"{image_name}"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                env=env,
             )
         a = result.returncode
     else:
         if update:
             if verbose:
+                if container_exists:
+                    subprocess.run(
+                        ["udocker", "rm", f"{name}"],env=env,
+                    )
                 subprocess.run(
-                    ["udocker", "rm", f"{name}"],
-                )
-                subprocess.run(
-                    ["udocker", "rmi", f"{image_name}"],
+                    ["udocker", "rmi", f"{image_name}"],env=env,
                 )
             else:
-                subprocess.run(
-                    ["udocker", "rm", f"{name}"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
+                if container_exists:
+                    subprocess.run(
+                        ["udocker", "rm", f"{name}"],
+                        env=env,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
                 subprocess.run(
                     ["udocker", "rmi", f"{image_name}"],
+                    env=env,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
             print("Re-downloading docker image.")
             if verbose:
                 result = subprocess.run(
-                    ["udocker", "pull", f"{image_name}"],
+                    ["udocker", "pull", f"{image_name}"],env=env,
                 )
             else:
                 result = subprocess.run(
                     ["udocker", "pull", f"{image_name}"],
+                    env=env,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
@@ -140,11 +150,13 @@ def initialize_container(image_name, name, update=False, verbose=False):
     if a == 0:
         if verbose:
             result = subprocess.run(
-                ["udocker", "pull", f"{image_name}"],
+                ["udocker", "create", f"--name={name}", f"{image_name}"],
+                env=env,
             )
         else:
             result = subprocess.run(
                 ["udocker", "create", f"--name={name}", f"{image_name}"],
+                env=env,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
@@ -172,6 +184,7 @@ def initialize_wsclean_container(name="paircarswsclean", update=False, verbose=F
     bool
         Whether initialized successfully or not
     """
+    set_udocker_env()
     print("Initializing wsclean container.")
     image_name = "devojyoti96/wsclean-solar:latest"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
@@ -198,6 +211,7 @@ def initialize_quartical_container(
     bool
         Whether initialized successfully or not
     """
+    set_udocker_env()
     print("Initializing quartical container.")
     image_name = "devojyoti96/quartical:0.2.6"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
@@ -222,8 +236,33 @@ def initialize_shadems_container(name="paircarsshadems", update=False, verbose=F
     bool
         Whether initialized successfully or not
     """
+    set_udocker_env()
     print("Initializing shadems container.")
     image_name = "devojyoti96/shadems:v0.5.4"
+    msg = initialize_container(image_name, name, update=update, verbose=verbose)
+    return msg
+
+
+def initialize_hyperdrive_container(name="paircarshyperdrive", update=False, verbose=False):
+    """
+    Initialize hyperdrive container
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the container
+    update : bool, optional
+        Update container
+    verbose : bool, optional
+        Verbose output
+
+    Returns
+    -------
+    bool
+        Whether initialized successfully or not
+    """
+    print("Initializing hyperdrive container.")
+    image_name = "mwatelescope/hyperdrive:v0.7.0"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
     return msg
 
@@ -725,6 +764,78 @@ def run_quartical(
         exit_code = result.returncode
         if "load_from" in cmd_arg and datapath is not None and gain_path != datapath:
             os.system(f"rm -rf {temp_gain_path}")
+        return 0 if exit_code == 0 else 1
+    except Exception as e:
+        traceback.print_exc()
+        return 1
+        
+        
+def run_hyperdrive(
+    hyperdrive_cmd,
+    container_name="paircarshyperdrive",
+    check_container=False,
+    verbose=False,
+):
+    """
+    Run chgcenter inside a udocker container (no root permission required).
+
+    Parameters
+    ----------
+    msname : str
+        Name of the measurement set
+    ra : str
+        RA can either be 00h00m00.0s or 00:00:00.0
+    dec : str
+        Dec can either be 00d00m00.0s or 00.00.00.0
+    only_uvw : bool, optional
+        Update only UVW values
+        Note: This is required when visibilities are properly phase rotated in correlator,
+        but while creating the MS, UVW values are estimated using a wrong phase center.
+    check_container : bool, optional
+        Check container
+    container_name : str, optional
+        Container name
+    verbose : bool, optional
+        Verbose output
+
+    Returns
+    -------
+    int
+        Success message
+    """
+    set_udocker_env()
+    if check_container:
+        container_present = check_udocker_container(container_name)
+        if not container_present:
+            container_name = initialize_hyperdrive_container(
+                name=container_name, verbose=verbose
+            )
+            if container_name is None:
+                print(
+                    f"Container {container_name} is not initiated. First initiate container and then run."
+                )
+                return 1
+    cmd_args = hyperdrive_cmd.split(" ")
+    try:
+        full_command = [
+            "udocker",
+            "--quiet",
+            "run",
+            "--nobanner",
+            f"{container_name}",
+        ] + cmd_args
+        if verbose:
+            print(f"{hyperdrive_cmd}\n")
+            result = subprocess.run(
+                full_command,
+            )
+        else:
+            result = subprocess.run(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()

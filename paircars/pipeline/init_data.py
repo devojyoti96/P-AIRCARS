@@ -16,6 +16,7 @@ from paircars.utils.udocker_utils import (
     initialize_wsclean_container,
     initialize_quartical_container,
     initialize_shadems_container,
+    initialize_hyperdrive_container,
 )
 from paircars.pipeline.beam_interpolate import *
 
@@ -188,6 +189,17 @@ def main(
             print("Shadems container is initialized")
         else:
             print("Error in initializing shadems container.")
+            return 1
+        hyperdrive_container_name = initialize_hyperdrive_container(
+            update=update, verbose=True
+        )
+        if (
+            hyperdrive_container_name is not None
+            and hyperdrive_container_name == "paircarshyperdrive"
+        ):
+            print("Hyperdrive container is initialized")
+        else:
+            print("Error in initializing hyperdrive container.")
             return 1
         if prefect_server:
             scheduler_name = get_scheduler_name()
