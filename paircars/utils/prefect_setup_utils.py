@@ -25,8 +25,9 @@ def prefect_config():
     ENV_FILE = os.path.join(cachedir, "paircars_prefect.env")
     SERVER_HOST = "0.0.0.0"
     SERVER_PORT = "4260"
-    SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api"
-    SERVER_DASHBOARD = f"http://{SERVER_HOST}:{SERVER_PORT}/dashboard"
+    hostname = socket.gethostname()
+    SERVER_URL = f"http://{hostname}:{SERVER_PORT}/api"
+    SERVER_DASHBOARD = f"http://{hostname}:{SERVER_PORT}/dashboard"
     profile_name = "paircarspipe"
     pid_file = os.path.join(PREFECT_HOME, "server.pid")
     logging_path = os.path.join(PREFECT_HOME, "logging.yml")
