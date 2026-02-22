@@ -280,7 +280,7 @@ def kill_port(port):
     port : int
         Port number
     """
-    print(f"Closed previous prefect server at port : {port}.")
+    print(f"Closing previous prefect server at port : {port}.")
     result = subprocess.run(
         ["lsof", "-t", f"-i:{port}"],
         capture_output=True,
@@ -317,23 +317,28 @@ def stop_prefect_server(jobid="local"):
     cachedir = config["CACHEDIR"]
     try:
         if not os.path.exists(pid_file):
-            kill_port(config["SERVER_PORT"])
+            try:
+                kill_port(config["SERVER_PORT"])
+                msg = 0
+            except:
+                msg = 1
         else:
             with open(pid_file, "r") as f:
                 pid = int(f.read().strip())
             print(f"Stopping Prefect server with PID {pid} ...")
             os.kill(pid, signal.SIGTERM)
             print(f"Server stopped and {cachedir} removed.")
-            return 0
+            msg = 0
     except ProcessLookupError:
         print(f"No such process with PID {pid}. Removing stale {cachedir} directory.")
-        return 0
+        msg = 0
     except Exception as e:
         print(f"Error stopping server")
         traceback.print_exc()
-        return 1
+        msg = 1
     finally:
         os.system(f"rm -rf {cachedir}")
+        return msg
 
 
 ############################################

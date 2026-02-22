@@ -78,8 +78,8 @@ def cli():
             return 1
         config = np.load(config_file, allow_pickle=True).all()
         if args.command == "stop":
-            msg = stop_prefect_server(jobid=args.jobid)
-            if msg == 0:
+            stop_msg = stop_prefect_server(jobid=args.jobid)
+            if stop_msg == 0:
                 print(f"Prefect server stopped at: {config['SERVER_DASHBOARD']}.")
             else:
                 print(
