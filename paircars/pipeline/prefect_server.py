@@ -35,8 +35,6 @@ def cli():
         sys.exit(1)
     args = parser.parse_args()
 
-    #scheduler_name = get_scheduler_name()
-    #if scheduler_name == "local":
     if args.command == "start":
         start_server(show_config=args.show_config)
     elif args.command == "stop":
@@ -53,11 +51,6 @@ def cli():
         show_prefect_config()
     else:
         parser.print_help()
-    '''else:
-        print(
-            "We are in multi-node cluster architechture. Prefect server mode will not work. We recomment setup and use remote logging facility."
-        )
-        parser.print_help()'''
 
 
 if __name__ == "__main__":

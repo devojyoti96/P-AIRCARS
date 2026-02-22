@@ -21,6 +21,7 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from pyfiglet import Figlet
+from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
     calc_time_smearing_timewidth,
