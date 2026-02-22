@@ -9,7 +9,7 @@ from datetime import datetime as dt
 from parfive import Downloader
 from paircars.utils.basic_utils import create_datadir, get_datadir, get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
-from paircars.utils.prefect_setup_utils import start_server
+from paircars.utils.prefect_setup_utils import start_server, get_free_port
 from paircars.utils.resource_utils import has_space
 from paircars.utils.udocker_utils import (
     init_udocker,
@@ -203,10 +203,21 @@ def main(
         if prefect_server:
             scheduler_name = get_scheduler_name()
             if scheduler_name == "local":
-                start_server()
+                port = get_free_port()
+                msg, config_file, profile_path, env_file, dashboard, pid_file = (
+                    start_server(port, jobid="local")
+                )
+                if msg == 0:
+                    print(f"Prefect server started at port: {port}")
+                    print(f"Profile file: {profile_path}")
+                    print(f"Environment file: {env_file}")
+                    print(f"Dashboard file: {dashboard}")
+                    print(f"Server process ID file: {pid_file}")
+                else:
+                    print(f"Error in starting prefect server at port: {port}")
             else:
                 print(
-                    "We are in multi-node cluster architechture. Prefect server mode will not work. We recomment setup and use remote logging facility."
+                    "We are in multi-node cluster architechture. Persistent prefect server mode will not work. We recomment setup and use remote logging facility."
                 )
         return 0
     else:

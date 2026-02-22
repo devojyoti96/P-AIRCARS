@@ -52,6 +52,8 @@ from paircars.utils.prefect_logger_utils import (
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
     stop_prefect_server,
+    get_free_port,
+    start_server,
 )
 from paircars.utils.proc_manage_utils import (
     get_jobid,
@@ -3818,17 +3820,23 @@ def cli():
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
         )
         return
-    ###################################################
-    # Running prefect server only for local environment
-    ###################################################
-    result = prefect_server_status()
-    if result is not True:
-        print("Prefect server is not running. Running pipeline in ephemeral mode.")
-    else:
-        cachedir = get_cachedir()
-        ENV_FILE = f"{cachedir}/paircars_prefect.env"
-        load_dotenv(dotenv_path=ENV_FILE, override=False)
+
     if args.cluster is not True and scheduler_name == "local":
+        ###################################################
+        # Using persistent prefect server only for local environment
+        ###################################################
+        result = prefect_server_status()
+        if result is not True:
+            print("Prefect server is not running. Running pipeline in ephemeral mode.")
+        else:
+            cachedir = f"{get_cachedir()}/prefect_local"
+            config_file = f"{cachedir}/prefect.config.npy"
+            if os.path.exists(config_file) is False:
+                print(f"Configuration file for local cluster does not exist.")
+            else:
+                config = np.load(config_file, allow_pickle=True).all()
+                load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
+
         #######################################
         # Set up local cluster
         #######################################
@@ -3851,10 +3859,13 @@ def cli():
         ############################################
         # Stop prefect server in cluster environment
         ############################################
-        '''result = prefect_server_status()
-        if result is True:
-            print("Stopping prefect server for cluster architecture.")
-            stop_prefect_server()'''
+        port = get_free_port()
+        msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
+            port, jobid=jobid
+        )
+        if msg != 0:
+            print(f"Error in starting prefect server at port: {port}")
+            return
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
@@ -3965,6 +3976,11 @@ def cli():
             print("P-AIRCARS successfully executed.")
         else:
             print("Issued occured in P-AIRCARS execution.")
+        if args.cluster is True and scheduler_name != "local":
+            print("Closing prefect server...")
+            msg = stop_prefect_server(jobid=jobid)
+            if msg != 0:
+                print("Error in stopping prefect server.")
     except Exception as e:
         traceback.print_exc()
     finally:
