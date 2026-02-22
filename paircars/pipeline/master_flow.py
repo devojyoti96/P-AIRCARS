@@ -3867,6 +3867,7 @@ def cli():
             print(f"Error in starting prefect server at port: {port}")
             return
         else:
+            config = np.load(config_file, allow_pickle=True).all()
             load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
         if scheduler_name == "slurm":
             if args.partition is None:
