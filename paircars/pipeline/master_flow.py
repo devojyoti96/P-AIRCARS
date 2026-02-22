@@ -1616,10 +1616,29 @@ def master_control(
     int
         Success message
     """
+    print("P-AIRCARS workfkow started...")
+    if target_datadir.startswith("~"):
+        print("Please provide full path of target directory.")
+        return 1
+    if target_metafits.startswith("~");
+        print("Please provide full path of target metafits.")
+        return 1
+    if calibrator_datadir.startswith("~");
+        print("Please provide full path of calibrator data directory.")
+        return 1
+    if calibrator_metafits.startswith("~");
+        print("Please provide full path of calibrator metafits.")
+        return 1
+    if workdir.startswith("~");
+        print("Please provide full path of work directory.")
+        return 1
+    if outdir.startswith("~");
+        print("Please provide full path of output directory.")
+        return 1
+    
     #############################################
     # Listing target ms
     #############################################
-    print("P-AIRCARS workfkow started...")
     target_mslist = glob.glob(f"{target_datadir}/*.ms")
     if len(target_mslist) == 0:
         print(

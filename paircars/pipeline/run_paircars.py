@@ -347,11 +347,25 @@ def cli():
 
     args = parser.parse_args()
 
-    if os.path.exists(args.target_datadir) is False:
-        print("Please provide correct full path of target directory.")
+    if args.target_datadir.startswith("~"):
+        print("Please provide full path of target directory.")
         return 1
-               
-    """
+    if args.target_metafits.startswith("~");
+        print("Please provide full path of target metafits.")
+        return 1
+    if args.cal_datadir.startswith("~");
+        print("Please provide full path of calibrator data directory.")
+        return 1
+    if args.cal_metafits.startswith("~");
+        print("Please provide full path of calibrator metafits.")
+        return 1
+    if args.workdir.startswith("~");
+        print("Please provide full path of work directory.")
+        return 1
+    if args.outdir.startswith("~");
+        print("Please provide full path of output directory.")
+        return 1
+
     jobid = get_jobid()
     scheduler_name = get_scheduler_name()
 
@@ -370,7 +384,7 @@ def cli():
         traceback.print_exc()
         msg = 1
     finally:
-        return msg"""
+        return msg
 
 
 if __name__ == "__main__":
