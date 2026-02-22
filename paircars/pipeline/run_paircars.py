@@ -347,6 +347,11 @@ def cli():
 
     args = parser.parse_args()
 
+    if os.path.exists(args.target_datadir) is False:
+        print("Please provide correct full path of target directory.")
+        return 1
+               
+    """
     jobid = get_jobid()
     scheduler_name = get_scheduler_name()
 
@@ -365,7 +370,7 @@ def cli():
         traceback.print_exc()
         msg = 1
     finally:
-        return msg
+        return msg"""
 
 
 if __name__ == "__main__":
