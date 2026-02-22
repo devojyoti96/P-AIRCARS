@@ -346,6 +346,7 @@ def get_local_dask_cluster(
         print("Error occured in creating local cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {dask_dir_tmp}")
+        return 
 
 
 def submit_local_master_flow(args, jobid):

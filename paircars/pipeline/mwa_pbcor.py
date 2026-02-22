@@ -439,10 +439,17 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
+        if mem_frac<=0:
+            mem_frac=0.8
+        result = get_local_dask_cluster(
             workdir,
             mem_frac=mem_frac,
         )
+        if result is None:
+            print("Error occured in creating local cluster.")
+            return 1
+        else:
+            dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * cpu_frac))
         scale_worker_and_wait(dask_cluster, nworker + 1)
 

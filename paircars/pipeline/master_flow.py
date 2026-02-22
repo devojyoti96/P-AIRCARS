@@ -1702,9 +1702,17 @@ def master_control(
         dask_client = get_client()
         dask_cluster = dask_client.cluster
     except:
-        dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            workdir, mem_frac=mem_frac
+        if mem_frac<=0:
+            mem_frac=0.8
+        result = get_local_dask_cluster(
+            workdir,
+            mem_frac=mem_frac,
         )
+        if result is None:
+            print("Error occured in creating local cluster.")
+            return 1
+        else:
+            dask_client, dask_cluster, dask_dir = result
     current_worker = get_total_worker(dask_cluster)
 
     #####################################
@@ -2141,7 +2149,7 @@ def master_control(
         ##############################
         # If basic calibration is requested and calibrator ms and metafits are present
         future_cal_split = None
-        if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
+        if do_basic_cal and has_cal:
             prefix = "calibrator"
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
@@ -2201,7 +2209,7 @@ def master_control(
         # Run flagging jobs on calibrators
         ##################################
         # Only if basic calibration is requested
-        if do_cal_flag and has_cal:
+        if do_cal_flag and do_basic_cal and has_cal:
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
@@ -2249,7 +2257,7 @@ def master_control(
         # Import model
         #################################
         # Only if basic calibration is requested
-        if do_import_model and has_cal:
+        if do_import_model and do_basic_cal and has_cal:
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, total_ncoarse + current_worker)
             scale_worker_and_wait(dask_cluster, nworker)
@@ -3825,11 +3833,19 @@ def cli():
         # Set up local cluster
         #######################################
         print("Setting up local cluster....")
-        dask_client, dask_cluster, dask_dir = get_local_dask_cluster(
-            args.workdir,
-            mem_frac=args.mem_frac,
-            max_mem=max_mem,
+        if args.mem_frac<=0:
+            mem_frac=0.8
+        else:
+            mem_frac=args.mem_frac
+        result = get_local_dask_cluster(
+            workdir,
+            mem_frac=mem_frac,
         )
+        if result is None:
+            print("Error occured in creating local cluster.")
+            return 1
+        else:
+            dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
     else:
         ############################################

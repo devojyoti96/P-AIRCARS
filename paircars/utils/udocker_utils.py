@@ -90,6 +90,19 @@ def initialize_container(image_name, name, update=False, verbose=False):
     image_exists = os.system(check_cmd)
     container_exists = check_udocker_container(name)
     if image_exists != 0:
+        if container_exists:
+            if verbose:
+                subprocess.run(
+                    ["udocker", "rm", f"{name}"],
+                    env=env,
+                )
+            else:
+                subprocess.run(
+                        ["udocker", "rm", f"{name}"],
+                        env=env,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
         if verbose:
             result = subprocess.run(
                 ["udocker", "pull", f"{image_name}"],
@@ -151,7 +164,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
         else:
             print(f"Image {image_name} already present.")
             a = 0
-    if a == 0:
+    if a == 0:        
         if verbose:
             result = subprocess.run(
                 ["udocker", "create", f"--name={name}", f"{image_name}"],
@@ -268,7 +281,7 @@ def initialize_hyperdrive_container(
         Whether initialized successfully or not
     """
     print("Initializing hyperdrive container.")
-    image_name = "mwatelescope/hyperdrive:v0.7.0"
+    image_name = "devojyoti96/paircarshyperdrive:latest"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
     return msg
 
@@ -823,23 +836,30 @@ def run_hyperdrive(
     outpath = None
     beampath = None
     sourcepath = None
+    metapath=None
     for i in range(len(cmd_args)):
         cmd = cmd_args[i]
-        if "--output-model-files" in cmd:
+        if cmd=="-m":
+            metafits_name = cmd_args[i + 1]
+            metapath = os.path.dirname(os.path.abspath(metafits_name))
+            temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+            temp_docker_metapath = os.path.join(metapath, temp_name)
+            cmd_args[i + 1] = f"{temp_docker_metapath}/{os.path.basename(metafits_name)}"
+        if cmd=="--output-model-files":
             outfile_name = cmd_args[i + 1]
-            outpath = os.path.abspath(outfile_name)
+            outpath = os.path.dirname(os.path.abspath(outfile_name))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
             temp_docker_outpath = os.path.join(outpath, temp_name)
             cmd_args[i + 1] = f"{temp_docker_outpath}/{os.path.basename(outfile_name)}"
-        if "--beam-file" in cmd:
+        if cmd=="--beam-file":
             beamfile = cmd_args[i + 1]
-            beampath = os.path.abspath(beamfile)
+            beampath = os.path.dirname(os.path.abspath(beamfile))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
             temp_docker_beampath = os.path.join(beampath, temp_name)
             cmd_args[i + 1] = f"{temp_docker_beampath}/{os.path.basename(beamfile)}"
-        if "-s" in cmd:
+        if cmd=="-s":
             sourcefile = cmd_args[i + 1]
-            sourcepath = os.path.abspath(sourcefile)
+            sourcepath = os.path.dirname(os.path.abspath(sourcefile))
             temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
             temp_docker_sourcepath = os.path.join(sourcepath, temp_name)
             cmd_args[i + 1] = f"{temp_docker_sourcepath}/{os.path.basename(sourcefile)}"
@@ -851,6 +871,8 @@ def run_hyperdrive(
             full_command.append(f"--volume={beampath}:{temp_docker_beampath}")
         if sourcepath is not None:
             full_command.append(f"--volume={sourcepath}:{temp_docker_sourcepath}")
+        if metapath is not None:
+            full_command.append(f"--volume={metapath}:{temp_docker_metapath}")
         full_command += [
             f"{container_name}",
         ] + cmd_args
