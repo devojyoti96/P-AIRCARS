@@ -2321,7 +2321,7 @@ def master_control(
             if len(caltables) > 0 and do_basic_cal and has_cal:
                 for caltable in caltables:
                     msg, caltable_diag_plot = plot_caltable_diagnostics(
-                        caltable, outdir=f"{outdir}/diagnostic_plots"
+                        caltable, f"{outdir}/diagnostic_plots"
                     )
                     if msg == 0:
                         print(
@@ -2711,7 +2711,7 @@ def master_control(
         if len(selfcal_tables) > 0 and do_selfcal:
             for caltable in selfcal_tables:
                 msg, caltable_diag_plot = plot_caltable_diagnostics(
-                    caltable, outdir=f"{outdir}/diagnostic_plots"
+                    caltable, f"{outdir}/diagnostic_plots"
                 )
                 if msg == 0:
                     print(

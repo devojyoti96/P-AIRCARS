@@ -47,7 +47,7 @@ warnings.simplefilter("ignore", category=FITSFixedWarning)
 #################################
 def plot_ms_diagnostics(
     msname,
-    outdir="",
+    outdir,
     ncpu=1,
     total_mem=1,
     cpu_frac=-1,
@@ -92,8 +92,6 @@ def plot_ms_diagnostics(
 
     from casatools import ms as casamstool
 
-    if outdir == "":
-        outdir = os.getcwd()
     output_pdf = f"{os.path.basename(msname).split('.ms')[0]}_plots"
     suffix = os.path.basename(msname).split(".ms")[0]
     os.makedirs(outdir, exist_ok=True)
@@ -208,7 +206,7 @@ def plot_ms_diagnostics(
         os.system(f"rm -rf log-shadems.txt")
 
 
-def plot_caltable_diagnostics(caltable, outdir=""):
+def plot_caltable_diagnostics(caltable, outdir):
     """
     Plot diagonistic plot of a caltable
 
@@ -229,8 +227,6 @@ def plot_caltable_diagnostics(caltable, outdir=""):
     from casatools import table
 
     caltable = caltable.rstrip("/")
-    if outdir == "":
-        outdir = os.getcwd()
     os.makedirs(outdir, exist_ok=True)
     output_pdf = f"{outdir}/{os.path.basename(caltable)}_plots.pdf"
     if os.path.exists(output_pdf):

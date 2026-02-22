@@ -98,7 +98,6 @@ def shm_or_tmp(required_gb, workdir, prefix="solar_", verbose=False):
     tmpdir_env = os.environ.get("TMPDIR")
     if tmpdir_env is not None and has_space(tmpdir_env, required_gb):
         candidates.append(tmpdir_env)
-    candidates.append(os.getcwd())
     for i in range(len(candidates)):
         base_dir = candidates[i]
         try:
@@ -108,8 +107,6 @@ def shm_or_tmp(required_gb, workdir, prefix="solar_", verbose=False):
                     print("Using RAM")
                 elif i == 1:
                     print("Using {os.environ.get('TMPDIR')}")
-                else:
-                    print("Using {os.getcwd()}")
             break
         except Exception as e:
             print(f"[shm_or_tmp] Failed to create temp dir in {base_dir}: {e}")

@@ -401,7 +401,7 @@ def do_flagging(
             print(f"Memory per worker: {round(mem_limit,2)} GB")
             print("#################################")
         else:
-            njobs = len(client.scheduler_info()["workers"])
+            njobs = len(dask_client.scheduler_info()["workers"])
             n_threads = -1
             mem_limit = -1
             print("#################################")

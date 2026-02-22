@@ -132,7 +132,7 @@ def main(
         tasks = [
             delayed(plot_ms_diagnostics)(
                 msname,
-                outdir=outdir,
+                outdir,
                 ncpu=n_threads,
                 total_mem=mem_limit,
                 cpu_frac=cpu_frac,

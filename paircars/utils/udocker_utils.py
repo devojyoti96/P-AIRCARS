@@ -577,7 +577,7 @@ def run_shadems(
     splited_cmd = cmd.split(" ")
     if splited_cmd[-1] in ["-h", "--help"]:
         verbose = True
-        datapath = os.getcwd()
+        datapath = None
     else:
         msname = splited_cmd[-1]
         datapath = os.path.dirname(os.path.abspath(msname))
@@ -591,9 +591,10 @@ def run_shadems(
             "udocker",
             "--quiet",
             "run",
-            "--nobanner",
-            f"--volume={datapath}:{temp_docker_path}",
-            "--workdir",
+            "--nobanner"]
+        if datapath is not None:
+            full_command.append(f"--volume={datapath}:{temp_docker_path}")
+        full_command+=["--workdir",
             f"{temp_docker_path}",
             f"{container_name}",
         ] + cmd_args
@@ -655,7 +656,7 @@ def run_quartical(
     splited_cmd = cmd.split(" ")
     if len(splited_cmd) == 1 and "goquartical" in cmd:
         verbose = True
-        datapath = os.getcwd()
+        datapath = None
         temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
         temp_docker_path = os.path.join(datapath, temp_name)
     elif len(splited_cmd) > 1:
@@ -703,9 +704,10 @@ def run_quartical(
             "udocker",
             "--quiet",
             "run",
-            "--nobanner",
-            f"--volume={datapath}:{temp_docker_path}",
-            "--workdir",
+            "--nobanner"]
+        if datapath is not None:
+            full_command.append(f"--volume={datapath}:{temp_docker_path}")
+        full_command+=["--workdir",
             f"{temp_docker_path}",
             f"{container_name}",
         ] + cmd_args
@@ -721,7 +723,7 @@ def run_quartical(
                 stderr=subprocess.DEVNULL,
             )
         exit_code = result.returncode
-        if "load_from" in cmd_arg and gain_path != datapath:
+        if "load_from" in cmd_arg and datapath is not None and gain_path != datapath:
             os.system(f"rm -rf {temp_gain_path}")
         return 0 if exit_code == 0 else 1
     except Exception as e:
