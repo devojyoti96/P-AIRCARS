@@ -3838,7 +3838,7 @@ def cli():
         else:
             mem_frac = args.mem_frac
         result = get_local_dask_cluster(
-            workdir,
+            args.workdir,
             mem_frac=mem_frac,
         )
         if result is None:
