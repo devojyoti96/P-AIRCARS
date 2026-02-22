@@ -411,9 +411,7 @@ def do_flagging(
         ###########################################
         tasks = []
         for msname in mslist:
-            msname = msname.rstrip("/")
-            mspath = os.path.dirname(os.path.abspath(msname))
-            os.chdir(mspath)
+            msname = os.path.abspath(msname.rstrip("/"))
             print("###########################")
             print("Flagging measurement set : ", msname)
             print("###########################")

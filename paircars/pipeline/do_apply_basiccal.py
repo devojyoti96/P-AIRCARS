@@ -295,7 +295,6 @@ def run_all_applysol(
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
-
         calibrator_header = fits.getheader(calibrator_metafits)
         target_header = fits.getheader(target_metafits)
         calibrator_obsid = calibrator_header["GPSTIME"]
