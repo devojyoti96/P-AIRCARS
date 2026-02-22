@@ -3835,7 +3835,7 @@ def cli():
                 print(f"Configuration file for local cluster does not exist.")
             else:
                 config = np.load(config_file, allow_pickle=True).all()
-                load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
+                load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
 
         #######################################
         # Set up local cluster
@@ -3868,7 +3868,9 @@ def cli():
             return
         else:
             config = np.load(config_file, allow_pickle=True).all()
-            load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
+            load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+            time.sleep(10)
+            
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")

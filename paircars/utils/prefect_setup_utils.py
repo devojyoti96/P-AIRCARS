@@ -421,7 +421,7 @@ def show_prefect_config(jobid="local"):
         print(f"Configuration file for job ID: {jobid} does not exist.")
         return
     config = np.load(config_file, allow_pickle=True).all()
-    load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
+    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
     env = os.environ.copy()
     print("Prefect config in current environment ...")
     subprocess.run(["prefect", "config", "view"], env=env)
