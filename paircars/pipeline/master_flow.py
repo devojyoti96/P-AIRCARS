@@ -1701,8 +1701,6 @@ def master_control(
     try:
         dask_client = get_client()
         dask_cluster = dask_client.cluster
-        dask_addr = dask_client.scheduler.address
-        print (f"Connected dask address: {dask_addr}")
     except:
         if mem_frac <= 0:
             mem_frac = 0.8
@@ -1715,8 +1713,6 @@ def master_control(
             return 1
         else:
             dask_client, dask_cluster, dask_dir = result
-        dask_addr = dask_client.scheduler.address
-        print (f"New dask address: {dask_addr}")
     current_worker = get_total_worker(dask_cluster)
 
     #####################################
@@ -3899,14 +3895,12 @@ def cli():
         dask_addr = dask_client.scheduler.address
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
-        print (f"Dask scheduler address: {dask_addr}")
         print("#########################################")
         print(f"Total maximum dask workers: {nworker}")
-        '''msg = master_control.with_options(
+        msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
-        )('''
-        msg = master_control.fn(
+        )(
             args.target_datadir,
             args.target_metafits,
             args.workdir,

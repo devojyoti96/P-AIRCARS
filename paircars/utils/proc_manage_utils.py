@@ -378,7 +378,7 @@ def submit_local_master_flow(args, jobid):
         print("Please provide a work directory.")
         return 1
     try:
-        script_args = ["#!/bin/bash", "export PYTHONUNBUFFERED=1"]
+        script_args = ["#!/bin/bash", "export PYTHONUNBUFFERED=1", "export PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=true", "export PREFECT_API_URL=http://127.0.0.1:4201/api"]
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_local_{jobid}.sh")
         with open(script_path, "w") as f:
