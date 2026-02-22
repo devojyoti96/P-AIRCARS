@@ -3824,8 +3824,7 @@ def cli():
     if result is not True:
         print("Prefect server is not running. Running pipeline in ephemeral mode.")
     else:
-        homedir = os.path.expanduser("~")
-        cachedir = f"{homedir}/.paircarspipe"
+        cachedir = get_cachedir()
         ENV_FILE = f"{cachedir}/paircars_prefect.env"
         load_dotenv(dotenv_path=ENV_FILE, override=False)
     if args.cluster is not True and scheduler_name == "local":
