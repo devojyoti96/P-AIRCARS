@@ -1620,19 +1620,19 @@ def master_control(
     if target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
-    if target_metafits.startswith("~");
+    if target_metafits.startswith("~"):
         print("Please provide full path of target metafits.")
         return 1
-    if calibrator_datadir.startswith("~");
+    if calibrator_datadir.startswith("~"):
         print("Please provide full path of calibrator data directory.")
         return 1
-    if calibrator_metafits.startswith("~");
+    if calibrator_metafits.startswith("~"):
         print("Please provide full path of calibrator metafits.")
         return 1
-    if workdir.startswith("~");
+    if workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
-    if outdir.startswith("~");
+    if outdir.startswith("~"):
         print("Please provide full path of output directory.")
         return 1
     

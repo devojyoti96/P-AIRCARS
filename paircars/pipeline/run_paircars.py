@@ -350,19 +350,19 @@ def cli():
     if args.target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
-    if args.target_metafits.startswith("~");
+    if args.target_metafits.startswith("~"):
         print("Please provide full path of target metafits.")
         return 1
-    if args.cal_datadir.startswith("~");
+    if args.cal_datadir.startswith("~"):
         print("Please provide full path of calibrator data directory.")
         return 1
-    if args.cal_metafits.startswith("~");
+    if args.cal_metafits.startswith("~"):
         print("Please provide full path of calibrator metafits.")
         return 1
-    if args.workdir.startswith("~");
+    if args.workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
-    if args.outdir.startswith("~");
+    if args.outdir.startswith("~"):
         print("Please provide full path of output directory.")
         return 1
 
