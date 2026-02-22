@@ -252,7 +252,8 @@ def start_server(port, show_config=False, jobid="local"):
                 show_prefect_config(jobid=jobid)
             server_started = True
             break
-        time.sleep(5)
+        else:
+            time.sleep(5)
     if server_started:
         with open(pid_file, "w") as pf:
             pf.write(str(server_proc.pid))
