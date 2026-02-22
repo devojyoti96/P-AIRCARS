@@ -3817,18 +3817,18 @@ def cli():
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
         )
         return
+    ###################################################
+    # Running prefect server only for local environment
+    ###################################################
+    result = prefect_server_status()
+    if result is not True:
+        print("Prefect server is not running. Running pipeline in ephemeral mode.")
+    else:
+        homedir = os.path.expanduser("~")
+        cachedir = f"{homedir}/.paircarspipe"
+        ENV_FILE = f"{cachedir}/paircars_prefect.env"
+        load_dotenv(dotenv_path=ENV_FILE, override=False)
     if args.cluster is not True and scheduler_name == "local":
-        ###################################################
-        # Running prefect server only for local environment
-        ###################################################
-        result = prefect_server_status()
-        if result is not True:
-            print("Prefect server is not running. Running pipeline in ephemeral mode.")
-        else:
-            homedir = os.path.expanduser("~")
-            cachedir = f"{homedir}/.paircarspipe"
-            ENV_FILE = f"{cachedir}/paircars_prefect.env"
-            load_dotenv(dotenv_path=ENV_FILE, override=False)
         #######################################
         # Set up local cluster
         #######################################
@@ -3851,10 +3851,10 @@ def cli():
         ############################################
         # Stop prefect server in cluster environment
         ############################################
-        result = prefect_server_status()
+        '''result = prefect_server_status()
         if result is True:
             print("Stopping prefect server for cluster architecture.")
-            stop_prefect_server()
+            stop_prefect_server()'''
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
