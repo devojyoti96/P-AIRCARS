@@ -4,11 +4,19 @@ import traceback
 import glob
 import sys
 import os
-from casatasks import listobs
+import subprocess
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
+
+def is_slurm_job_running(job_id):
+    result = subprocess.run(
+        ["squeue", "-j", str(job_id), "-h"],
+        capture_output=True,
+        text=True
+    )
+    return result.stdout.strip() != ""
 
 
 def show_local_job_status(clean_old_jobs=False):
@@ -19,8 +27,14 @@ def show_local_job_status(clean_old_jobs=False):
     ----------
     clean_old_jobs : bool, optional
         Clean old informations for stopped jobs
+        
+    Returns
+    -------
+    int
+        Number of jobs running
     """
     cachedir = get_cachedir()
+    msg=0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
         if len(main_pid_files) == 0:
@@ -38,6 +52,7 @@ def show_local_job_status(clean_old_jobs=False):
                 outdir = line[5]
                 if psutil.pid_exists(int(pid)):
                     running = "Running/Waiting"
+                    msg+=1
                 else:
                     running = "Done/Stopped"
                 print(
@@ -51,7 +66,7 @@ def show_local_job_status(clean_old_jobs=False):
     except Exception as e:
         traceback.print_exc()
     finally:
-        drop_cache(cachedir)
+        return msg
 
 
 def show_slurm_job_status(clean_old_jobs=False):
@@ -62,8 +77,14 @@ def show_slurm_job_status(clean_old_jobs=False):
     ----------
     clean_old_jobs : bool, optional
         Clean old informations for stopped jobs
+        
+    Returns
+    -------
+    int
+        Number of jobs running
     """
     cachedir = get_cachedir()
+    msg=0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
         if len(main_pid_files) == 0:
@@ -79,8 +100,9 @@ def show_slurm_job_status(clean_old_jobs=False):
                 pid = line[1]
                 workdir = line[4]
                 outdir = line[5]
-                if psutil.pid_exists(int(pid)):
+                if is_slurm_job_running(int(pid)):
                     running = "Running/Waiting"
+                    msg+=1
                 else:
                     running = "Done/Stopped"
                 print(
@@ -94,7 +116,7 @@ def show_slurm_job_status(clean_old_jobs=False):
     except Exception as e:
         traceback.print_exc()
     finally:
-        drop_cache(cachedir)
+        return msg
         
         
 def cli():

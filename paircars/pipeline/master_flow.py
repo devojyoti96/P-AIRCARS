@@ -83,6 +83,7 @@ from paircars.pipeline import (
     make_mwa_overlay,
     move_solarcenter,
     make_ms_plot,
+    show_status,
 )
 from paircars.pipeline.init_data import init_paircars_data
 
@@ -3869,10 +3870,14 @@ def cli():
         else:
             print("Issued occured in P-AIRCARS execution.")
         if scheduler_name == "slurm":
-            print("Closing prefect server...")
-            msg = stop_prefect_server(jobid=jobid)
-            if msg != 0:
-                print("Error in stopping prefect server.")
+            running_paircars_jobs = show_status.show_slurm_job_status()
+            if running_paircars_jobs==0:
+                print("No other P-AIRCARS job is running. Closing prefect server...")
+                msg = stop_prefect_server(scheduler_name=scheduler_name)
+                if msg != 0:
+                    print("Error in stopping prefect server.")
+            else:
+                print (f"Number of running P-AIRCARS jobs: {running_paircars_jobs}. Not closing prefect server.")
     except Exception as e:
         traceback.print_exc()
     finally:
