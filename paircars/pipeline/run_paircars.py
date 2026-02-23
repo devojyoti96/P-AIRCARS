@@ -392,7 +392,7 @@ def cli():
                         show_config=True,
                     )
                 )
-                if msg != 0:
+                if server_msg != 0:
                     print(f"Error in starting prefect server at port: {port}")
                     if schduler_name == "local":
                         print(
