@@ -45,7 +45,7 @@ from paircars.utils.mwa_utils import (
     get_MWA_OBSID,
     download_MWA_metafits,
 )
-from paircars.utils.prefect_server_utils import prefect_server_status, stop_prefect_server
+from paircars.utils.prefect_setup_utils import prefect_server_status, stop_prefect_server
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
     start_flow_log_saver,
