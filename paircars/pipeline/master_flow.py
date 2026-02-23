@@ -3949,11 +3949,12 @@ def cli():
             print("P-AIRCARS successfully executed.")
         else:
             print("Issued occured in P-AIRCARS execution.")
-        if args.cluster is True and scheduler_name != "local":
-            print("Closing prefect server...")
-            msg = stop_prefect_server(jobid=jobid)
-            if msg != 0:
-                print("Error in stopping prefect server.")
+        if args.cluster is True:
+            if scheduler_name == "slurm":
+                print("Closing prefect server...")
+                msg = stop_prefect_server(jobid=jobid)
+                if msg != 0:
+                    print("Error in stopping prefect server.")
     except Exception as e:
         traceback.print_exc()
     finally:

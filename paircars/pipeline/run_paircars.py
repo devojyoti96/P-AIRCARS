@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import argparse
+import numpy as np
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
@@ -10,7 +11,6 @@ from paircars.utils.proc_manage_utils import (
 )
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
-    stop_prefect_server,
     get_free_port,
     start_server,
 )
