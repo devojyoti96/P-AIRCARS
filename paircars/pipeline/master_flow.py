@@ -3820,23 +3820,22 @@ def cli():
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
         )
         return
-
-    if args.cluster is not True and scheduler_name == "local":
-        ###################################################
-        # Using persistent prefect server only for local environment
-        ###################################################
-        result = prefect_server_status()
-        if result is not True:
-            print("Prefect server is not running. Running pipeline in ephemeral mode.")
+    ###################################################
+    # Using persistent prefect server only for local environment
+    ###################################################
+    result = prefect_server_status()
+    if result is not True:
+        print("Prefect server is not running. Running pipeline in ephemeral mode.")
+    else:
+        cachedir = f"{get_cachedir()}/prefect_local"
+        config_file = f"{cachedir}/prefect.config.npy"
+        if os.path.exists(config_file) is False:
+            print(f"Configuration file for local cluster does not exist.")
         else:
-            cachedir = f"{get_cachedir()}/prefect_local"
-            config_file = f"{cachedir}/prefect.config.npy"
-            if os.path.exists(config_file) is False:
-                print(f"Configuration file for local cluster does not exist.")
-            else:
-                config = np.load(config_file, allow_pickle=True).all()
-                load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
-
+            config = np.load(config_file, allow_pickle=True).all()
+            load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+                
+    if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
         #######################################
@@ -3859,7 +3858,7 @@ def cli():
         ############################################
         # Stop prefect server in cluster environment
         ############################################
-        port = get_free_port(start_port=8072,end_port=9000)
+        '''port = get_free_port(start_port=8072,end_port=9000)
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
             port, jobid=jobid, show_config=True,
         )
@@ -3873,7 +3872,7 @@ def cli():
                 return 1
             config = np.load(config_file, allow_pickle=True).all()
             load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
-            time.sleep(10)
+            time.sleep(10)'''
             
         if scheduler_name == "slurm":
             if args.partition is None:
