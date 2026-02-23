@@ -11,6 +11,7 @@ from paircars.utils.basic_utils import create_datadir, get_datadir, get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
 from paircars.utils.prefect_setup_utils import start_server, get_free_port
 from paircars.utils.resource_utils import has_space
+from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.udocker_utils import (
     init_udocker,
     initialize_wsclean_container,
