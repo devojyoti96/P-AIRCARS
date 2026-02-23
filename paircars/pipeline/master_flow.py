@@ -3611,6 +3611,12 @@ def cli():
         help="Fraction of memory usuage per node",
     )
     advanced_resource.add_argument(
+        "--max_worker",
+        type=int,
+        default=-1,
+        help="Maximum number of workers",
+    )
+    advanced_resource.add_argument(
         "--keep_backup",
         action="store_true",
         help="Keep backup of intermediate steps",
@@ -3753,6 +3759,8 @@ def cli():
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
+        if args.max_worker>0:
+            nworker = min(nworker, args.max_worker)
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
             pid,
@@ -3813,6 +3821,8 @@ def cli():
                     max_worker_per_node * get_total_nodes(partition=args.partition),
                 ),
             )
+            if args.max_worker>0:
+                nworker = min(nworker, args.max_worker)
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(

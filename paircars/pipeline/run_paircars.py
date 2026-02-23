@@ -296,6 +296,12 @@ def cli():
         help="Fraction of memory usuage per node",
     )
     advanced_resource.add_argument(
+        "--max_worker",
+        type=int,
+        default=-1,
+        help="Maximum number of workers",
+    )
+    advanced_resource.add_argument(
         "--keep_backup",
         action="store_true",
         help="Keep backup of intermediate steps",
