@@ -16,6 +16,7 @@ from datetime import datetime as dt
 from multiprocessing import Process, Event
 from dask.distributed import get_client
 from dotenv import load_dotenv
+from prefect.settings import temporary_settings, PREFECT_API_URL
 from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
@@ -3911,76 +3912,79 @@ def cli():
     # Starting pipeline
     ##########################################
     try:
-        print (os.environ)
+        env = os.environ
+        print (env)
         dask_addr = dask_client.scheduler.address
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
         print(f"Total maximum dask workers: {nworker}")
-        msg = master_control.with_options(
-            flow_run_name=f"paircars_{jobid}",
-            task_runner=DaskTaskRunner(address=dask_addr),
-        )(
-            args.target_datadir,
-            args.target_metafits,
-            args.workdir,
-            args.outdir,
-            calibrator_datadir=args.cal_datadir,
-            calibrator_metafits=args.cal_metafits,
-            solar_data=args.solar_data,
-            # Pre-calibration
-            do_forcereset_weightflag=args.do_forcereset_weightflag,
-            do_cal_flag=args.do_cal_flag,
-            do_import_model=args.do_import_model,
-            # Basic calibration
-            do_basic_cal=args.do_basic_cal,
-            do_applycal=args.do_applycal,
-            # Target data preparation
-            do_target_split=args.do_target_split,
-            freqrange=args.freqrange,
-            timerange=args.timerange,
-            uvrange=args.cal_uvrange,
-            # Polarization calibration
-            do_polcal=args.do_polcal,
-            # Self-calibration
-            do_selfcal=args.do_selfcal,
-            do_selfcal_split=args.do_selfcal_split,
-            do_apply_selfcal=args.do_apply_selfcal,
-            only_amplitude=args.only_amplitude,
-            do_ap_selfcal=args.do_ap_selfcal,
-            solar_selfcal=args.solar_selfcal,
-            solint=args.solint,
-            # Sidereal correction
-            do_sidereal_cor=args.do_sidereal_cor,
-            do_move_solarcenter=args.do_move_solarcenter,
-            # Dynamic spectra
-            make_ds=args.make_ds,
-            # Imaging
-            do_imaging=args.do_imaging,
-            do_pbcor=args.do_pbcor,
-            weight=args.weight,
-            robust=args.robust,
-            minuv=args.minuv,
-            image_freqres=args.image_freqres,
-            image_timeres=args.image_timeres,
-            pol=args.pol,
-            clean_threshold=args.clean_threshold,
-            use_multiscale=args.use_multiscale,
-            use_solar_mask=args.use_solar_mask,
-            cutout_rsun=args.cutout_rsun,
-            make_overlay=args.make_overlay,
-            make_msplot=args.make_msplot,
-            # Resource settings
-            cpu_frac=args.cpu_frac,
-            mem_frac=args.mem_frac,
-            max_worker=nworker,
-            keep_backup=args.keep_backup,
-            keep_calibrated_ms=args.keep_calibrated_ms,
-            # Remote logging
-            remote_logger=args.remote_logger,
-            jobid=jobid,
-            job_password=args.job_password,
-        )
+        api_url = env["PREFECT_API_URL"]
+        with temporary_settings({PREFECT_API_URL: api_url}):
+            msg = master_control.with_options(
+                flow_run_name=f"paircars_{jobid}",
+                task_runner=DaskTaskRunner(address=dask_addr),
+            )(
+                args.target_datadir,
+                args.target_metafits,
+                args.workdir,
+                args.outdir,
+                calibrator_datadir=args.cal_datadir,
+                calibrator_metafits=args.cal_metafits,
+                solar_data=args.solar_data,
+                # Pre-calibration
+                do_forcereset_weightflag=args.do_forcereset_weightflag,
+                do_cal_flag=args.do_cal_flag,
+                do_import_model=args.do_import_model,
+                # Basic calibration
+                do_basic_cal=args.do_basic_cal,
+                do_applycal=args.do_applycal,
+                # Target data preparation
+                do_target_split=args.do_target_split,
+                freqrange=args.freqrange,
+                timerange=args.timerange,
+                uvrange=args.cal_uvrange,
+                # Polarization calibration
+                do_polcal=args.do_polcal,
+                # Self-calibration
+                do_selfcal=args.do_selfcal,
+                do_selfcal_split=args.do_selfcal_split,
+                do_apply_selfcal=args.do_apply_selfcal,
+                only_amplitude=args.only_amplitude,
+                do_ap_selfcal=args.do_ap_selfcal,
+                solar_selfcal=args.solar_selfcal,
+                solint=args.solint,
+                # Sidereal correction
+                do_sidereal_cor=args.do_sidereal_cor,
+                do_move_solarcenter=args.do_move_solarcenter,
+                # Dynamic spectra
+                make_ds=args.make_ds,
+                # Imaging
+                do_imaging=args.do_imaging,
+                do_pbcor=args.do_pbcor,
+                weight=args.weight,
+                robust=args.robust,
+                minuv=args.minuv,
+                image_freqres=args.image_freqres,
+                image_timeres=args.image_timeres,
+                pol=args.pol,
+                clean_threshold=args.clean_threshold,
+                use_multiscale=args.use_multiscale,
+                use_solar_mask=args.use_solar_mask,
+                cutout_rsun=args.cutout_rsun,
+                make_overlay=args.make_overlay,
+                make_msplot=args.make_msplot,
+                # Resource settings
+                cpu_frac=args.cpu_frac,
+                mem_frac=args.mem_frac,
+                max_worker=nworker,
+                keep_backup=args.keep_backup,
+                keep_calibrated_ms=args.keep_calibrated_ms,
+                # Remote logging
+                remote_logger=args.remote_logger,
+                jobid=jobid,
+                job_password=args.job_password,
+            )
         if msg == 0:
             print("P-AIRCARS successfully executed.")
         else:
