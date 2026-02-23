@@ -271,6 +271,7 @@ def get_local_dask_cluster(
     dask_dir,
     mem_frac=0.8,
     max_mem=16,
+    max_worker=1,
     spill_frac=0.7,
     verbose=True,
 ):
@@ -285,6 +286,8 @@ def get_local_dask_cluster(
         Fraction of total memory to use
     max_mem : float, optional
         Maximum job memory in GB
+    max_worker : int, optional
+        Maximum worker
     spill_frac : float, optional
         Spill to disk at this fraction
     verbose : bool, optional

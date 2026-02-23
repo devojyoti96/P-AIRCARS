@@ -64,6 +64,7 @@ def get_slurm_dask_cluster(
     cpu_frac=0.8,
     mem_frac=0.8,
     max_mem=16,
+    max_worker=1,
     partition=None,
     account=None,
     walltime="24:00:00",
@@ -87,6 +88,8 @@ def get_slurm_dask_cluster(
         Memory fraction to use
     max_mem : float, optional
         Maximum job memory in GB
+    max_worker : float, optional
+        Maximum number of worker
     partition : str, optional
         SLURM partition name
         Note: If your cluster requires this, you should provide. Otherwise, error will occur.
@@ -144,6 +147,8 @@ def get_slurm_dask_cluster(
         ncpu, mem = get_slurm_node_resources(
             partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
+        ncpu = max(1, int(ncpu/max_worker))
+        
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()

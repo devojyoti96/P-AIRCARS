@@ -3782,14 +3782,28 @@ def cli():
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
                 return
-
             print("Setting up slurm cluster....")
+            per_node_cpu, per_node_mem = get_slurm_node_resources(
+                partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
+            )
+            max_worker_per_node = max(1, int(per_node_mem / max_mem))
+            nworker = max(
+                2,
+                min(
+                    len(target_mslist) + 1,
+                    max_worker_per_node * get_total_nodes(partition=args.partition),
+                ),
+            )
+            if args.max_worker > 0:
+                nworker = min(nworker, args.max_worker)
+                
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
-                max_mem=max_mem,
+                max_mem=nworker,
+                max_worker=max_worker,
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
@@ -3810,19 +3824,6 @@ def cli():
                 args.cpu_frac,
                 args.mem_frac,
             )
-            per_node_cpu, per_node_mem = get_slurm_node_resources(
-                partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
-            )
-            max_worker_per_node = max(1, int(per_node_mem / max_mem))
-            nworker = max(
-                2,
-                min(
-                    len(target_mslist) + 1,
-                    max_worker_per_node * get_total_nodes(partition=args.partition),
-                ),
-            )
-            if args.max_worker > 0:
-                nworker = min(nworker, args.max_worker)
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
