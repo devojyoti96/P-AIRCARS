@@ -1640,7 +1640,7 @@ def master_control(
     if outdir.startswith("~"):
         print("Please provide full path of output directory.")
         return 1
-    
+
     if jobid is None:
         jobid = get_jobid()
     #############################################
@@ -1717,7 +1717,7 @@ def master_control(
             return 1
         else:
             dask_client, dask_cluster, dask_dir = result
-    current_worker = get_total_worker(dask_cluster)
+    current_worker = get_total_worker(dask_client)
 
     #####################################
     # Initiating paircars data
@@ -1746,7 +1746,7 @@ def master_control(
     ################################################
     # Starting number of workers
     ################################################
-    current_worker = get_total_worker(dask_cluster)
+    current_worker = get_total_worker(dask_client)
 
     try:
         #####################################
@@ -3055,7 +3055,7 @@ def master_control(
             if len(images) == 0:
                 print(f"No image is present in image directory: {imagedir}/images")
             else:
-                current_worker = get_total_worker(dask_cluster)
+                current_worker = get_total_worker(dask_client)
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
@@ -3105,7 +3105,7 @@ def master_control(
         #######################################
         if make_overlay:
             # total_overlays = #TODO; DETERMINE IT
-            current_worker = get_total_worker(dask_cluster)
+            current_worker = get_total_worker(dask_client)
             scale_worker_and_wait(dask_cluster, dask_client, max_worker)
             print("###########################")
             print("Starting task: Making overlay on EUV images.....")
@@ -3151,7 +3151,7 @@ def master_control(
         if make_msplot:
             msplot_outdir = f"{outdir}/ms_diagnostics_plots"
             os.makedirs(msplot_outdir, exist_ok=True)
-            current_worker = get_total_worker(dask_cluster)
+            current_worker = get_total_worker(dask_client)
             nworker = min(max_worker, len(split_cal_mslist) + current_worker)
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
@@ -3733,7 +3733,7 @@ def cli():
     else:
         print("P-AIRCARS is only ready for local or slurm cluster.")
         return 1
-            
+
     if args.cluster is True and scheduler_name == "local":
         print(
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
@@ -3759,7 +3759,7 @@ def cli():
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
-        if args.max_worker>0:
+        if args.max_worker > 0:
             nworker = min(nworker, args.max_worker)
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
@@ -3796,7 +3796,7 @@ def cli():
             )
             if cluster_result is None:
                 print("Error occured in creating slurm cluster.")
-                return 1   
+                return 1
             else:
                 dask_client, dask_cluster, dask_dir = cluster_result
             scheduler_address = dask_client.scheduler.address
@@ -3821,7 +3821,7 @@ def cli():
                     max_worker_per_node * get_total_nodes(partition=args.partition),
                 ),
             )
-            if args.max_worker>0:
+            if args.max_worker > 0:
                 nworker = min(nworker, args.max_worker)
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
