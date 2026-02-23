@@ -44,8 +44,6 @@ def single_ms_flag(
     threshold=5.0,
     n_threads=1,
     mem_limit=1,
-    cpu_frac=-1,
-    mem_frac=-1,
 ):
     """
     Flag on a single ms
@@ -76,25 +74,14 @@ def single_ms_flag(
         Number of OpenMP threads
     mem_limit : float, optional
         Memory limit in GB
-    cpu_frac : float, optional
-        CPU fraction of current node
-    mem_frac : float, optional
-        Memory fraction of current node
 
     Returns
     -------
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
     n_threads = max(1, n_threads)
     mem_limit = max(1, mem_limit)
-
-    if cpu_frac > 0:
-        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac > 0:
-        mem_limit = mem_frac * psutil.virtual_memory().available / (1024**3)
 
     limit_threads(n_threads=n_threads)
     from casatasks import flagdata
@@ -394,20 +381,22 @@ def do_flagging(
             njobs = max(1, min(total_cpu, len(mslist)))
             n_threads = max(1, int(total_cpu / njobs))
             mem_limit = total_mem / njobs
-            cpu_frac = -1
-            mem_frac = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print(f"CPU per worker: {n_threads}")
-            print(f"Memory per worker: {round(mem_limit,2)} GB")
-            print("#################################")
         else:
-            njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads = -1
-            mem_limit = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print("#################################")
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_cpu_list=[]
+            worker_mem_list=[]
+            for addr, w in info.items():
+                worker_cpu_list.append(w["nthreads"])
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
+            n_threads = max(1,min(worker_cpu_list))
+            mem_limit = max(1,min(worker_mem_list))
+            
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {round(mem_limit,2)} GB")
+        print("#################################")
 
         ###########################################
         tasks = []
@@ -444,8 +433,6 @@ def do_flagging(
                     threshold=5.0,
                     n_threads=n_threads,
                     mem_limit=mem_limit,
-                    cpu_frac=cpu_frac,
-                    mem_frac=mem_frac,
                 )
             )
         print(f"Flagging mslist: {','.join(mslist)}")

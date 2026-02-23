@@ -8,11 +8,12 @@ from casatasks import listobs
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
+from paircars.utils.proc_manage_utils import get_scheduler_name
 
 
-def show_job_status(clean_old_jobs=False):
+def show_local_job_status(clean_old_jobs=False):
     """
-    Show P-AIRCARS jobs status
+    Show P-AIRCARS local cluster jobs status
 
     Parameters
     ----------
@@ -53,6 +54,49 @@ def show_job_status(clean_old_jobs=False):
         drop_cache(cachedir)
 
 
+def show_slurm_job_status(clean_old_jobs=False):
+    """
+    Show P-AIRCARS slurm cluster jobs status
+
+    Parameters
+    ----------
+    clean_old_jobs : bool, optional
+        Clean old informations for stopped jobs
+    """
+    cachedir = get_cachedir()
+    try:
+        main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
+        if len(main_pid_files) == 0:
+            print("No P-AIRCARS jobs is running.")
+        else:
+            print("####################")
+            print("P-AIRCARS Job status")
+            print("####################")
+            for pid_file in main_pid_files:
+                with open(pid_file, "r") as f:
+                    line = f.read().split(" ")
+                jobid = line[0]
+                pid = line[1]
+                workdir = line[4]
+                outdir = line[5]
+                if psutil.pid_exists(int(pid)):
+                    running = "Running/Waiting"
+                else:
+                    running = "Done/Stopped"
+                print(
+                    f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
+                )
+                print(
+                    "#########################################################################################"
+                )
+                if clean_old_jobs and running == "Done/Stopped":
+                    os.system(f"rm -rf {pid_file}")
+    except Exception as e:
+        traceback.print_exc()
+    finally:
+        drop_cache(cachedir)
+        
+        
 def cli():
     parser = argparse.ArgumentParser(
         description="Show P-AIRCARS jobs status.",
@@ -73,10 +117,16 @@ def cli():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
+    scheduler_name = get_scheduler_name()
     try:
         args = parser.parse_args()
         if args.show:
-            show_job_status(clean_old_jobs=args.clean_old_jobs)
+            if scheduler_name=="local":
+                show_local_job_status(clean_old_jobs=args.clean_old_jobs)
+            elif scheduler_name=="slurm":
+                show_slurm_job_status(clean_old_jobs=args.clean_old_jobs)    
+            else:
+                print (f"P-AIRCARS is not ready for job scheduler: {scheduler_name}")
     except Exception as e:
         traceback.print_exc()
 

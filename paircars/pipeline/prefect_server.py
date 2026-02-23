@@ -4,6 +4,7 @@ import os
 import numpy as np
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
+from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.prefect_setup_utils import (
     start_server,
     stop_prefect_server,
@@ -11,7 +12,6 @@ from paircars.utils.prefect_setup_utils import (
     prefect_config,
     save_prefect_env_to_file,
     show_prefect_config,
-    get_free_port,
 )
 
 
@@ -42,17 +42,16 @@ def cli():
     # Config
     subparsers.add_parser("config", help="Print the current Prefect config")
 
-    parser.add_argument("--jobid", default="local", help="Job ID")
-
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
     args = parser.parse_args()
-
+    port = 4260
+    scheduler_name = get_scheduler_name()
+    
     if args.command == "start":
-        port = get_free_port()
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
-            port, show_config=args.show_config, jobid=args.jobid
+            port, show_config=args.show_config, scheduler_name=scheduler_name
         )
         if msg == 0:
             print(f"Prefect server started at port: {port}")
@@ -63,22 +62,22 @@ def cli():
         else:
             print(f"Error in starting prefect server at port: {port}")
     elif args.command == "save_env":
-        profile_path, env_file, dashboard = save_prefect_env_to_file(jobid=args.jobid)
+        profile_path, env_file, dashboard = save_prefect_env_to_file(scheduler_name=scheduler_name)
         print(f"Profile file: {profile_path}")
         print(f"Environment file: {env_file}")
         print(f"Dashboard file: {dashboard}")
     elif args.command == "config":
-        show_prefect_config(jobid=args.jobid)
+        show_prefect_config(scheduler_name=scheduler_name)
     else:
-        cachedir = f"{get_cachedir()}/prefect_{args.jobid}"
+        cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
         os.makedirs(cachedir, exist_ok=True)
         config_file = f"{cachedir}/prefect.config.npy"
         if os.path.exists(config_file) is False:
-            print(f"Configuration file for job ID: {args.jobid} does not exist.")
+            print(f"Configuration file for job ID: {scheduler_name} does not exist.")
             return 1
         config = np.load(config_file, allow_pickle=True).all()
         if args.command == "stop":
-            stop_msg = stop_prefect_server(jobid=args.jobid)
+            stop_msg = stop_prefect_server(scheduler_name=scheduler_name)
             if stop_msg == 0:
                 print(f"Prefect server stopped at: {config['SERVER_DASHBOARD']}.")
             else:
@@ -86,7 +85,7 @@ def cli():
                     f"Error in stopping prefect server at: {config['SERVER_DASHBOARD']}."
                 )
         elif args.command == "status":
-            if prefect_server_status(jobid=args.jobid):
+            if prefect_server_status(scheduler_name=scheduler_name):
                 print(f"Prefect server is running at: {config['SERVER_DASHBOARD']}")
             else:
                 print(

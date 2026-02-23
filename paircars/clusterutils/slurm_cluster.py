@@ -10,6 +10,7 @@ import shlex
 import re
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
+from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
     detect_best_interface,
@@ -266,7 +267,7 @@ def get_max_walltime(partition):
     return max_time, slurm_time_to_seconds(max_time)
 
 
-def submit_slurm_master_flow(args, jobid, env=[]):
+def submit_slurm_master_flow(args, jobid):
     """
     Submit P-AIRCARS master flow to a slurm cluster
 
@@ -276,8 +277,6 @@ def submit_slurm_master_flow(args, jobid, env=[]):
         Arparser dictionary
     jobid : int
         P-AIRCARS jobid
-    env : list, optional
-        Environment list
 
     Returns
     -------
@@ -303,6 +302,21 @@ def submit_slurm_master_flow(args, jobid, env=[]):
     else:
         print("Please provide a work directory.")
         return 1
+    
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
+    
+    prefect_env_list=[
+    f"PREFECT_HOME={cachedir}/prefect_home",
+    "PREFECT_API_MODE=server",
+    f"PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:///{cachedir}/prefect_home/prefect.db",
+    "PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false",
+    "PREFECT_API_URL=http://127.0.0.1:4260/api",
+    f"PREFECT_PROFILE=paircarspipe_{scheduler_name}",
+    f"PREFECT_PROFILES_PATH={cachedir}/prefect_home/profiles.toml",
+    f"PREFECT_LOCAL_STORAGE_PATH={cachedir}/prefect_home/storage",
+    f"PREFECT_LOGGING_SETTINGS_PATH={cachedir}/prefect_home/logging.yml",
+    f"PREFECT_MEMO_STORE_PATH={cachedir}/prefect_home/memo_store.toml",
+    ]
 
     try:
         #################################
@@ -350,8 +364,9 @@ def submit_slurm_master_flow(args, jobid, env=[]):
         ]
         if hasattr(args, "account") and args.account is not None:
             script_args.append(f"#SBATCH --account={args.account}\n")
-        if len(env) > 0:
-            for i in env:
+        scripts_args.append("init-paircars-prefect start\n")
+        if len(prefect_env_list) > 0:
+            for i in prefect_env_list:
                 script_args.append(f"export {i}")
         script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)

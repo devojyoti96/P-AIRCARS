@@ -12,34 +12,8 @@ from dotenv import load_dotenv
 from .basic_utils import get_cachedir
 
 
-def get_free_port(start_port=4200, end_port=4300):
-    """
-    Get free port
-
-    Parameters
-    ----------
-    start_port : int, optional
-        Start port range
-    end_port : int, optional
-        End port range
-
-    Returns
-    -------
-    int
-        Free port
-    """
-    for port in range(start_port, end_port):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("127.0.0.1", port))
-                print(f"Free port: {port}")
-                return port
-            except OSError:
-                continue
-
-
 # === CONFIG ===
-def prefect_config(port, jobid="local"):
+def prefect_config(port, scheduler_name="local"):
     """
     Configure prefect
 
@@ -47,8 +21,8 @@ def prefect_config(port, jobid="local"):
     ----------
     port : int
         Free port
-    jobid : int, optional
-        P-AIRCARS Job ID
+    scheduler_name : str, optional
+        Scheduler name
 
     Returns
     -------
@@ -57,7 +31,7 @@ def prefect_config(port, jobid="local"):
     dict
         Configuration dictionary
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     PREFECT_HOME = f"{cachedir}/prefect_home"
@@ -74,7 +48,7 @@ def prefect_config(port, jobid="local"):
     # hostname = socket.gethostname()
     SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api"
     SERVER_DASHBOARD = f"http://{SERVER_HOST}:{SERVER_PORT}/dashboard"
-    profile_name = f"paircarspipe_{jobid}"
+    profile_name = f"paircarspipe_{scheduler_name}"
     pid_file = os.path.join(PREFECT_HOME, "server.pid")
     logging_path = os.path.join(PREFECT_HOME, "logging.yml")
     config = {
@@ -101,25 +75,25 @@ def prefect_config(port, jobid="local"):
 ####################################
 # Start and save
 ####################################
-def write_prefect_profile(jobid="local"):
+def write_prefect_profile(scheduler_name="local"):
     """
     Save prefect profile
 
     Parameters
     ----------
-    jobid : int, optional
-        P-AIRCARS Job ID
+    scheduler_name : str, optional
+        Scheduler name
 
     Returns
     -------
     str
         Profile file
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
-        print(f"Configuration file for job ID: {jobid} does not exist.")
+        print(f"Configuration file for job ID: {scheduler_name} does not exist.")
         return False
     config = np.load(config_file, allow_pickle=True).all()
     # Load existing TOML config or start new
@@ -145,14 +119,14 @@ def write_prefect_profile(jobid="local"):
     return profile_path
 
 
-def save_prefect_env_to_file(jobid="local"):
+def save_prefect_env_to_file(scheduler_name="local"):
     """
     Save current Prefect server env config to a .env file for reuse.
 
     Parameters
     ----------
-    jobid : int, optional
-        P-AIRCARS Job ID
+    scheduler_name : str, optional
+        Scheduler name
 
     Returns
     -------
@@ -163,11 +137,11 @@ def save_prefect_env_to_file(jobid="local"):
     str
         Dashboard file
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
-        print(f"Configuration file for job ID: {jobid} does not exist.")
+        print(f"Configuration file for job ID: {scheduler_name} does not exist.")
         return False
     config = np.load(config_file, allow_pickle=True).all()
     cachedir = config["CACHEDIR"]
@@ -188,11 +162,11 @@ def save_prefect_env_to_file(jobid="local"):
     if os.path.exists(dashboard) is not True:
         with open(dashboard, "w") as f:
             f.write(f"{config['SERVER_DASHBOARD']}")
-    profile_path = write_prefect_profile(jobid=jobid)
+    profile_path = write_prefect_profile(scheduler_name=scheduler_name)
     return profile_path, env_file, dashboard
 
 
-def start_server(port, show_config=False, jobid="local"):
+def start_server(port, show_config=False, scheduler_name="local"):
     """
     Start prefect server if it is not running
 
@@ -202,8 +176,8 @@ def start_server(port, show_config=False, jobid="local"):
         Free port number
     show_config : bool, optional
         Show configuration of prefect server
-    jobid : int, optional
-        P-AIRCARS job ID
+    scheduler_name : str, optional
+        Scheduler name
 
     Returns
     -------
@@ -221,46 +195,52 @@ def start_server(port, show_config=False, jobid="local"):
     str
         Server process ID file
     """
-    config_file, config = prefect_config(port, jobid=jobid)
+    config_file, config = prefect_config(port, scheduler_name=scheduler_name)
     cachedir = config["CACHEDIR"]
     pid_file = config["PID_FILE"]
+    env = get_prefect_env(scheduler_name=scheduler_name)
     print("Starting Prefect server...")
-    if prefect_server_status(jobid=jobid):
-        stop_prefect_server(jobid=jobid)
-    env = get_prefect_env(jobid=jobid)
+    if prefect_server_status(scheduler_name=scheduler_name):
+        print (f"Server is already running at port: {port}")
+        server_started = True
+        new_start=False
+    else:
+        with open(config["LOG_FILE"], "w") as f:
+            server_proc = subprocess.Popen(
+                [
+                    "prefect",
+                    "server",
+                    "start",
+                    "--host",
+                    config["SERVER_HOST"],
+                    "--port",
+                    config["SERVER_PORT"],
+                ],
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                env=env,
+            )
+        server_started = False
+        new_start=True
     os.makedirs(config["PREFECT_HOME"], exist_ok=True)
-    profile_path, env_file, dashboard = save_prefect_env_to_file(jobid=jobid)
-    with open(config["LOG_FILE"], "w") as f:
-        server_proc = subprocess.Popen(
-            [
-                "prefect",
-                "server",
-                "start",
-                "--host",
-                config["SERVER_HOST"],
-                "--port",
-                config["SERVER_PORT"],
-            ],
-            stdout=f,
-            stderr=subprocess.STDOUT,
-            env=env,
-        )
-    server_started = False
-    for _ in range(1800):  # wait up to 1800s for the server to respond
-        if prefect_server_status(jobid=jobid):
-            if show_config:
-                show_prefect_config(jobid=jobid)
-            server_started = True
-            break
-        else:
-            time.sleep(5)
+    profile_path, env_file, dashboard = save_prefect_env_to_file(scheduler_name=scheduler_name)
+    if server_started is False:
+        for _ in range(1800):  # wait up to 1800s for the server to respond
+            if prefect_server_status(scheduler_name=scheduler_name):
+                server_started = True
+                break
+            else:
+                time.sleep(5)
     if server_started:
-        with open(pid_file, "w") as pf:
-            pf.write(str(server_proc.pid))
+        if new_start:
+            with open(pid_file, "w") as pf:
+                pf.write(str(server_proc.pid))
         print(f"Prefect server is now running at {config['SERVER_DASHBOARD']}")
         if os.path.exists(dashboard) is not True:
             with open(dashboard, "w") as f:
                 f.write(f"{config['SERVER_DASHBOARD']}")
+        if show_config:
+            show_prefect_config(scheduler_name=scheduler_name)
         return 0, config_file, profile_path, env_file, dashboard, pid_file
     else:
         print(
@@ -291,27 +271,27 @@ def kill_port(port):
         os.kill(int(pid), signal.SIGKILL)
 
 
-def stop_prefect_server(jobid="local"):
+def stop_prefect_server(scheduler_name="local"):
     """
     Stop prefect server running in the current installation
     Note: it will only stop prefect server which is running from the current installation
-    For this pipeline, a free port between 4200 to 4300 is chosen.
+    For this pipeline, a port between 4260 is chosen for P-AIRCARS.
 
     Parameters
     ----------
-    jobid : int, optional
-        P-AIRCARS job ID
+    scheduler_name : str, optional
+        Scheduler name
 
     Returns
     -------
     int
         Success message
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
-        print(f"Configuration file for job ID: {jobid} does not exist.")
+        print(f"Configuration file for job ID: {scheduler_name} does not exist.")
         os.system(f"rm -rf {cachedir}")
         return 1
     config = np.load(config_file, allow_pickle=True).all()
@@ -346,20 +326,20 @@ def stop_prefect_server(jobid="local"):
 ############################################
 # Prefect server status
 ############################################
-def prefect_server_status(jobid="local"):
+def prefect_server_status(scheduler_name="local"):
     """
     Get prefect server status
 
     Parameters
     ----------
-    jobid : int, optional
-        P-AIRCARS job ID
+    scheduler_name : str, optional
+        Scheduler name
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
-        print(f"Configuration file for job ID: {jobid} does not exist.")
+        print(f"Configuration file for job ID: {scheduler_name} does not exist.")
         return False
     config = np.load(config_file, allow_pickle=True).all()
     try:
@@ -371,25 +351,25 @@ def prefect_server_status(jobid="local"):
         return False
 
 
-def get_prefect_env(jobid="local"):
+def get_prefect_env(scheduler_name="local"):
     """
     Get environment variables of prefect
 
     Parameters
     ----------
-    jobid : int, optional
-        P-AIRCARS job ID
+    scheduler_name : str, optional
+        Scheduler name
 
     Returns
     -------
     dict
         Environment dictionary
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
-        print(f"Configuration file for job ID: {jobid} does not exist.")
+        print(f"Configuration file for job ID: {scheduler_name} does not exist.")
         return
     config = np.load(config_file, allow_pickle=True).all()
     env = os.environ.copy()
@@ -406,20 +386,20 @@ def get_prefect_env(jobid="local"):
     return env
 
 
-def show_prefect_config(jobid="local"):
+def show_prefect_config(scheduler_name="local"):
     """
     Print the effective Prefect config in this environment.
 
     Parameters
     ----------
-    jobid : int, optional
-        P-AIRCARS job ID
+    scheduler_name : str, optional
+        Scheduler name
     """
-    cachedir = f"{get_cachedir()}/prefect_{jobid}"
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
     if os.path.exists(config_file) is False:
-        print(f"Configuration file for job ID: {jobid} does not exist.")
+        print(f"Configuration file for job ID: {scheduler_name} does not exist.")
         return
     config = np.load(config_file, allow_pickle=True).all()
     load_dotenv(dotenv_path=config["ENV_FILE"], override=True)

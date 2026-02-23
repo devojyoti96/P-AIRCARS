@@ -16,7 +16,6 @@ from datetime import datetime as dt
 from multiprocessing import Process, Event
 from dask.distributed import get_client
 from dotenv import load_dotenv
-from prefect.settings import temporary_settings, PREFECT_API_URL
 from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
@@ -46,6 +45,7 @@ from paircars.utils.mwa_utils import (
     get_MWA_OBSID,
     download_MWA_metafits,
 )
+from paircars.utils.prefect_server_utils import start_server, prefect_server_status
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
     start_flow_log_saver,
@@ -3757,9 +3757,6 @@ def cli():
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
         scale_worker_and_wait(dask_cluster, nworker)
     else:
-        ############################################
-        # Stop prefect server in cluster environment
-        ############################################
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
@@ -3871,12 +3868,11 @@ def cli():
             print("P-AIRCARS successfully executed.")
         else:
             print("Issued occured in P-AIRCARS execution.")
-        if args.cluster is True:
-            if scheduler_name == "slurm":
-                print("Closing prefect server...")
-                msg = stop_prefect_server(jobid=jobid)
-                if msg != 0:
-                    print("Error in stopping prefect server.")
+        if scheduler_name == "slurm":
+            print("Closing prefect server...")
+            msg = stop_prefect_server(jobid=jobid)
+            if msg != 0:
+                print("Error in stopping prefect server.")
     except Exception as e:
         traceback.print_exc()
     finally:
