@@ -45,7 +45,10 @@ from paircars.utils.mwa_utils import (
     get_MWA_OBSID,
     download_MWA_metafits,
 )
-from paircars.utils.prefect_setup_utils import prefect_server_status, stop_prefect_server
+from paircars.utils.prefect_setup_utils import (
+    prefect_server_status,
+    stop_prefect_server,
+)
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
     start_flow_log_saver,
@@ -2314,7 +2317,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-                
+
             caltables = glob.glob(
                 f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
             ) + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
@@ -2570,7 +2573,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                    
+
         if cal_applied:
             selfcal_applymode = "calonly"
         else:
@@ -2620,7 +2623,7 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                        
+
             print("###########################")
             print("Starting task: Self-calibrations.....")
             print("###########################")
@@ -3074,7 +3077,11 @@ def master_control(
                 print(f"No image is present in image directory: {imagedir}/images")
             else:
                 current_worker = get_total_worker(dask_cluster)
-                scale_worker_and_wait(dask_cluster, min(len(images)+current_worker, max_worker))
+                scale_worker_and_wait(
+                    dask_cluster,
+                    dask_client,
+                    min(len(images) + current_worker, max_worker),
+                )
                 print("###########################")
                 print("Starting task: Primary beam correction.....")
                 print("###########################")
@@ -3111,16 +3118,16 @@ def master_control(
                         )
                     return 1
                 finally:
-                    scale_worker_and_wait(dask_cluster, current_worker)
+                    scale_worker_and_wait(dask_cluster, dask_client, current_worker)
                     print(f"Final image directory: {imagedir}/images")
 
         #######################################
         # Make overlays
         #######################################
         if make_overlay:
-            #total_overlays = #TODO; DETERMINE IT 
+            # total_overlays = #TODO; DETERMINE IT
             current_worker = get_total_worker(dask_cluster)
-            scale_worker_and_wait(dask_cluster, max_worker)
+            scale_worker_and_wait(dask_cluster, dask_client, max_worker)
             print("###########################")
             print("Starting task: Making overlay on EUV images.....")
             print("###########################")
@@ -3156,7 +3163,7 @@ def master_control(
                     )
                 return 1
             finally:
-                scale_worker_and_wait(dask_cluster, current_worker)
+                scale_worker_and_wait(dask_cluster, dask_client, current_worker)
             print(f"Final image directory: {os.path.dirname(outdir)}")
 
         ##############################################
@@ -3167,7 +3174,7 @@ def master_control(
             os.makedirs(msplot_outdir, exist_ok=True)
             current_worker = get_total_worker(dask_cluster)
             nworker = min(max_worker, len(split_cal_mslist) + current_worker)
-            scale_worker_and_wait(dask_cluster, nworker)
+            scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
             if has_cal and len(split_cal_mslist) > 0:
                 ###########################################
@@ -3255,7 +3262,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                    
+
         ######################################
         # Keeping flag backups
         ######################################
@@ -3339,7 +3346,7 @@ def master_control(
         drop_cache(outdir)
         stop_event.set()
         log_thread_flow.join(timeout=5)
-        scale_worker_and_wait(dask_cluster, 1)
+        scale_worker_and_wait(dask_cluster, dask_client, 1)
         if dask_dir is not None:
             os.system(f"rm -rf {dask_dir}")
         if observer is not None:
@@ -3756,12 +3763,12 @@ def cli():
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
-        scale_worker_and_wait(dask_cluster, nworker)
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
     else:
         prefect_status = prefect_server_status(scheduler_name="slurm")
         if prefect_status is False:
             print("Prefect server is not running. It is required for SLURM.")
-            return 
+            return
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
@@ -3787,9 +3794,13 @@ def cli():
             )
             max_worker_per_node = max(1, int(per_node_mem / max_mem))
             nworker = max(
-                2, min(len(target_mslist)+1, max_worker_per_node * get_total_nodes(partition=args.partition))
+                2,
+                min(
+                    len(target_mslist) + 1,
+                    max_worker_per_node * get_total_nodes(partition=args.partition),
+                ),
             )
-            scale_worker_and_wait(dask_cluster, nworker)
+            scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
@@ -3875,14 +3886,18 @@ def cli():
             print("Issued occured in P-AIRCARS execution.")
         if scheduler_name == "slurm":
             node_name = socket.gethostname()
-            running_paircars_jobs = show_status.show_slurm_job_status(node_name=node_name)
-            if running_paircars_jobs==0:
+            running_paircars_jobs = show_status.show_slurm_job_status(
+                node_name=node_name
+            )
+            if running_paircars_jobs == 0:
                 print("No other P-AIRCARS job is running. Closing prefect server...")
                 msg = stop_prefect_server(scheduler_name="slurm")
                 if msg != 0:
                     print("Error in stopping prefect server.")
             else:
-                print (f"Number of running P-AIRCARS jobs: {running_paircars_jobs}. Not closing prefect server.")
+                print(
+                    f"Number of running P-AIRCARS jobs: {running_paircars_jobs}. Not closing prefect server."
+                )
     except Exception as e:
         traceback.print_exc()
     finally:

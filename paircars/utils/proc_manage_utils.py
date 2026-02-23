@@ -193,24 +193,26 @@ def generate_activate_env(outfile="activate_env.sh"):
     return outfile
 
 
-def get_total_worker(cluster):
+def get_total_worker(client):
     """
     Get total workers in the cluster
 
     Parameters
     ----------
-    cluster : dask.cluster
-        Dask cluster
+    client : dask.client
+        Dask client for the cluster
 
     Returns
     -------
     int
         Number of workers
     """
-    return len(cluster.workers)
+    return len(client.scheduler_info()["workers"])
 
 
-def scale_worker_and_wait(dask_cluster, nworker, timeout=60, poll_interval=1):
+def scale_worker_and_wait(
+    dask_cluster, dask_client, nworker, timeout=60, poll_interval=1
+):
     """
     Scale worker and wait until it is done
 
@@ -218,6 +220,8 @@ def scale_worker_and_wait(dask_cluster, nworker, timeout=60, poll_interval=1):
     ----------
     dask_cluster : dask.cluster
         Dask cluster
+    dask_client : dask.client
+        Dask client for the same cluster
     nworker : int
         Number of worker
     timeout : float, optional
@@ -231,7 +235,7 @@ def scale_worker_and_wait(dask_cluster, nworker, timeout=60, poll_interval=1):
     timeout = 60
     c = 0
     while c < timeout:
-        if get_total_worker(dask_cluster) == nworker:
+        if get_total_worker(dask_client) == max(1, int(nworker / 2)):
             print(f"Successfully scaled to {nworker} workers")
             return 0
         else:
@@ -377,22 +381,22 @@ def submit_local_master_flow(args, jobid):
     else:
         print("Please provide a work directory.")
         return 1
-        
+
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-    
-    prefect_env_list=[
-    f"PREFECT_HOME={cachedir}/prefect_home",
-    "PREFECT_API_MODE=server",
-    f"PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:///{cachedir}/prefect_home/prefect.db",
-    "PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false",
-    "PREFECT_API_URL=http://127.0.0.1:4260/api",
-    f"PREFECT_PROFILE=paircarspipe_{scheduler_name}",
-    f"PREFECT_PROFILES_PATH={cachedir}/prefect_home/profiles.toml",
-    f"PREFECT_LOCAL_STORAGE_PATH={cachedir}/prefect_home/storage",
-    f"PREFECT_LOGGING_SETTINGS_PATH={cachedir}/prefect_home/logging.yml",
-    f"PREFECT_MEMO_STORE_PATH={cachedir}/prefect_home/memo_store.toml",
+
+    prefect_env_list = [
+        f"PREFECT_HOME={cachedir}/prefect_home",
+        "PREFECT_API_MODE=server",
+        f"PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:///{cachedir}/prefect_home/prefect.db",
+        "PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false",
+        "PREFECT_API_URL=http://127.0.0.1:4260/api",
+        f"PREFECT_PROFILE=paircarspipe_{scheduler_name}",
+        f"PREFECT_PROFILES_PATH={cachedir}/prefect_home/profiles.toml",
+        f"PREFECT_LOCAL_STORAGE_PATH={cachedir}/prefect_home/storage",
+        f"PREFECT_LOGGING_SETTINGS_PATH={cachedir}/prefect_home/logging.yml",
+        f"PREFECT_MEMO_STORE_PATH={cachedir}/prefect_home/memo_store.toml",
     ]
-    
+
     try:
         script_args = ["#!/bin/bash\n"]
         scripts_args.append("init-paircars-prefect start\n")

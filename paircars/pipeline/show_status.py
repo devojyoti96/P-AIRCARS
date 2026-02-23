@@ -10,10 +10,11 @@ from paircars.utils.resource_utils import drop_cache
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
 
+
 def is_slurm_job_running(job_id, node_name=None):
     """
     Returns True if job_id is RUNNING on node.
-    
+
     Parameters
     ----------
     job_id : int
@@ -24,7 +25,7 @@ def is_slurm_job_running(job_id, node_name=None):
     result = subprocess.run(
         ["squeue", "-j", str(job_id), "-h", "-o", "%T %N"],
         capture_output=True,
-        text=True
+        text=True,
     )
     output = result.stdout.strip()
     if not output:
@@ -47,14 +48,14 @@ def show_local_job_status(clean_old_jobs=False):
     ----------
     clean_old_jobs : bool, optional
         Clean old informations for stopped jobs
-        
+
     Returns
     -------
     int
         Number of jobs running
     """
     cachedir = get_cachedir()
-    msg=0
+    msg = 0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
         if len(main_pid_files) == 0:
@@ -72,7 +73,7 @@ def show_local_job_status(clean_old_jobs=False):
                 outdir = line[5]
                 if psutil.pid_exists(int(pid)):
                     running = "Running/Waiting"
-                    msg+=1
+                    msg += 1
                 else:
                     running = "Done/Stopped"
                 print(
@@ -99,14 +100,14 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
         Clean old informations for stopped jobs
     node_name : str, optional
         Node name of slurm cluster
-        
+
     Returns
     -------
     int
         Number of jobs running
     """
     cachedir = get_cachedir()
-    msg=0
+    msg = 0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
         if len(main_pid_files) == 0:
@@ -123,14 +124,14 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
                 workdir = line[4]
                 outdir = line[5]
                 if node_name is not None:
-                    if is_slurm_job_running(int(pid),node_name=node_name):
+                    if is_slurm_job_running(int(pid), node_name=node_name):
                         running = f"Running/Waiting in node: {node_name}"
-                        msg+=1
+                        msg += 1
                     elif is_slurm_job_running(int(pid)):
                         running = "Running/Waiting in different node"
                 elif is_slurm_job_running(int(pid)):
                     running = "Running/Waiting in any node"
-                    msg+=1    
+                    msg += 1
                 else:
                     running = "Done/Stopped"
                 print(
@@ -145,8 +146,8 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
         traceback.print_exc()
     finally:
         return msg
-        
-        
+
+
 def cli():
     parser = argparse.ArgumentParser(
         description="Show P-AIRCARS jobs status.",
@@ -177,12 +178,14 @@ def cli():
     try:
         args = parser.parse_args()
         if args.show:
-            if scheduler_name=="local":
+            if scheduler_name == "local":
                 show_local_job_status(clean_old_jobs=args.clean_old_jobs)
-            elif scheduler_name=="slurm":
-                show_slurm_job_status(clean_old_jobs=args.clean_old_jobs, node_name=args.node_name)    
+            elif scheduler_name == "slurm":
+                show_slurm_job_status(
+                    clean_old_jobs=args.clean_old_jobs, node_name=args.node_name
+                )
             else:
-                print (f"P-AIRCARS is not ready for job scheduler: {scheduler_name}")
+                print(f"P-AIRCARS is not ready for job scheduler: {scheduler_name}")
     except Exception as e:
         traceback.print_exc()
 

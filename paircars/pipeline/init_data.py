@@ -200,8 +200,10 @@ def main(
             return 1
         scheduler_name = get_scheduler_name()
         if prefect_server:
-            if scheduler_name!="local":
-                print ("Prefect server can be initiated only in local cluster. For other cluster it will be intitated during job submission is appropriate node.")
+            if scheduler_name != "local":
+                print(
+                    "Prefect server can be initiated only in local cluster. For other cluster it will be intitated during job submission is appropriate node."
+                )
             else:
                 msg, config_file, profile_path, env_file, dashboard, pid_file = (
                     start_server(port, scheduler_name=scheduler_name)
@@ -213,7 +215,9 @@ def main(
                     print(f"Dashboard file: {dashboard}")
                     print(f"Server process ID file: {pid_file}")
                 else:
-                    print(f"Error in starting prefect server at port: {port}. P-AIRCARS will use ephemeral mode.")
+                    print(
+                        f"Error in starting prefect server at port: {port}. P-AIRCARS will use ephemeral mode."
+                    )
         return 0
     else:
         return 1

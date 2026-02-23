@@ -451,7 +451,7 @@ def main(
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * cpu_frac))
-        scale_worker_and_wait(dask_cluster, nworker + 1)
+        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
 
     try:
         if os.path.exists(imagedir):

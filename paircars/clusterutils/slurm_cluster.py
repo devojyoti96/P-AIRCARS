@@ -168,7 +168,7 @@ def get_slurm_dask_cluster(
             interface=interface,
             python=python_path,
             local_directory=dask_dir_tmp,
-            death_timeout=60,
+            death_timeout=300,
             log_directory=log_dir,
             name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
@@ -302,20 +302,20 @@ def submit_slurm_master_flow(args, jobid):
     else:
         print("Please provide a work directory.")
         return 1
-    
+
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-    
-    prefect_env_list=[
-    f"PREFECT_HOME={cachedir}/prefect_home",
-    "PREFECT_API_MODE=server",
-    f"PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:///{cachedir}/prefect_home/prefect.db",
-    "PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false",
-    "PREFECT_API_URL=http://127.0.0.1:4260/api",
-    f"PREFECT_PROFILE=paircarspipe_{scheduler_name}",
-    f"PREFECT_PROFILES_PATH={cachedir}/prefect_home/profiles.toml",
-    f"PREFECT_LOCAL_STORAGE_PATH={cachedir}/prefect_home/storage",
-    f"PREFECT_LOGGING_SETTINGS_PATH={cachedir}/prefect_home/logging.yml",
-    f"PREFECT_MEMO_STORE_PATH={cachedir}/prefect_home/memo_store.toml",
+
+    prefect_env_list = [
+        f"PREFECT_HOME={cachedir}/prefect_home",
+        "PREFECT_API_MODE=server",
+        f"PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:///{cachedir}/prefect_home/prefect.db",
+        "PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false",
+        "PREFECT_API_URL=http://127.0.0.1:4260/api",
+        f"PREFECT_PROFILE=paircarspipe_{scheduler_name}",
+        f"PREFECT_PROFILES_PATH={cachedir}/prefect_home/profiles.toml",
+        f"PREFECT_LOCAL_STORAGE_PATH={cachedir}/prefect_home/storage",
+        f"PREFECT_LOGGING_SETTINGS_PATH={cachedir}/prefect_home/logging.yml",
+        f"PREFECT_MEMO_STORE_PATH={cachedir}/prefect_home/memo_store.toml",
     ]
 
     try:

@@ -87,7 +87,7 @@ def single_ms_flag(
     from casatasks import flagdata
 
     msname = msname.rstrip("/")
-    print (f"Flagging ms: {msname}")
+    print(f"Flagging ms: {msname}")
     try:
         ##############################
         # Flagging bad channels
@@ -384,14 +384,14 @@ def do_flagging(
         else:
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
-            worker_cpu_list=[]
-            worker_mem_list=[]
+            worker_cpu_list = []
+            worker_mem_list = []
             for addr, w in info.items():
                 worker_cpu_list.append(w["nthreads"])
                 worker_mem_list.append(w["memory_limit"] / 1024**3)
-            n_threads = max(1,min(worker_cpu_list))
-            mem_limit = max(1,min(worker_mem_list))
-            
+            n_threads = max(1, min(worker_cpu_list))
+            mem_limit = max(1, min(worker_mem_list))
+
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
@@ -573,8 +573,8 @@ def main(
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac))
-        print (f"Scaling workers to {nworker+1}")
-        scale_worker_and_wait(dask_cluster, nworker + 1)
+        print(f"Scaling workers to {nworker+1}")
+        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
 
     try:
         if len(mslist) > 0:

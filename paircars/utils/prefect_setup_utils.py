@@ -201,9 +201,9 @@ def start_server(port, show_config=False, scheduler_name="local"):
     env = get_prefect_env(scheduler_name=scheduler_name)
     print("Starting Prefect server...")
     if prefect_server_status(scheduler_name=scheduler_name):
-        print (f"Server is already running at port: {port}")
+        print(f"Server is already running at port: {port}")
         server_started = True
-        new_start=False
+        new_start = False
     else:
         with open(config["LOG_FILE"], "w") as f:
             server_proc = subprocess.Popen(
@@ -221,9 +221,11 @@ def start_server(port, show_config=False, scheduler_name="local"):
                 env=env,
             )
         server_started = False
-        new_start=True
+        new_start = True
     os.makedirs(config["PREFECT_HOME"], exist_ok=True)
-    profile_path, env_file, dashboard = save_prefect_env_to_file(scheduler_name=scheduler_name)
+    profile_path, env_file, dashboard = save_prefect_env_to_file(
+        scheduler_name=scheduler_name
+    )
     if server_started is False:
         for _ in range(1800):  # wait up to 1800s for the server to respond
             if prefect_server_status(scheduler_name=scheduler_name):
