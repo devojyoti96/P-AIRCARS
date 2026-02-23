@@ -3,6 +3,7 @@ import sys
 import traceback
 import argparse
 import numpy as np
+from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
@@ -400,6 +401,16 @@ def cli():
                     with open(env_file,"r") as f:
                         env_list=f.readlines()
                     env_list=[env.rstrip("\n") for env in env_list]
+            else:
+                config_file = f"{get_cachedir()}/prefect_{scheduler_name}/prefect.config.npy"
+                if os.path.exists(config_file):
+                    config = np.load(config_file, allow_pickle=True).all()
+                    env_file = config["ENV_FILE"]
+                    with open(env_file,"r") as f:
+                        env_list=f.readlines()
+                    env_list=[env.rstrip("\n") for env in env_list]
+                else:
+                    print (f"Configuration file: {config_file} does not exist.")
         
         ############################################
         # Submitting batch script
@@ -408,6 +419,9 @@ def cli():
             msg = submit_local_master_flow(args, jobid, env = env_list)
             return msg
         elif scheduler_name=="slurm":
+            if len(env_list)==0:
+                print ("Please start and provide prefect server configuration.")
+                return 1
             msg = submit_slurm_master_flow(args, jobid, env = env_list)
             return msg
         else:
