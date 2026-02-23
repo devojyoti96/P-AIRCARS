@@ -1640,7 +1640,9 @@ def master_control(
     if outdir.startswith("~"):
         print("Please provide full path of output directory.")
         return 1
-
+    
+    if jobid is None:
+        jobid = get_jobid()
     #############################################
     # Listing target ms
     #############################################
@@ -1747,29 +1749,6 @@ def master_control(
     current_worker = get_total_worker(dask_cluster)
 
     try:
-        ####################################
-        # Job and process IDs
-        ####################################
-        if scheduler_name == "local":
-            pid = os.getpid()
-        elif scheduler_name == "slurm":
-            pid = os.environ.get("SLURM_JOB_ID")
-        else:
-            print("P-AIRCARS is only ready for local or slurm cluster.")
-            return 1
-        if jobid is None:
-            jobid = get_jobid()
-        scheduler_address = dask_client.scheduler.address
-        main_job_file = save_main_process_info(
-            pid,
-            jobid,
-            scheduler_address,
-            target_datadir,
-            os.path.abspath(workdir),
-            os.path.abspath(outdir),
-            cpu_frac,
-            mem_frac,
-        )
         #####################################
         # Moving into work directory
         #####################################
@@ -3738,6 +3717,17 @@ def cli():
     # Setup cluster environment
     ###############################################
     scheduler_name = get_scheduler_name()
+    ####################################
+    # Job and process IDs
+    ####################################
+    if scheduler_name == "local":
+        pid = os.getpid()
+    elif scheduler_name == "slurm":
+        pid = os.environ.get("SLURM_JOB_ID")
+    else:
+        print("P-AIRCARS is only ready for local or slurm cluster.")
+        return 1
+            
     if args.cluster is True and scheduler_name == "local":
         print(
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
@@ -3763,6 +3753,17 @@ def cli():
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
+        scheduler_address = dask_client.scheduler.address
+        main_job_file = save_main_process_info(
+            pid,
+            jobid,
+            scheduler_address,
+            args.target_datadir,
+            os.path.abspath(args.workdir),
+            os.path.abspath(args.outdir),
+            args.cpu_frac,
+            args.mem_frac,
+        )
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
     else:
         prefect_status = prefect_server_status(scheduler_name="slurm")
@@ -3785,10 +3786,22 @@ def cli():
                 account=args.account,
                 walltime=args.walltime,
             )
-            if cluster_result is not None:
-                dask_client, dask_cluster, dask_dir = cluster_result
+            if cluster_result is None:
+                print("Error occured in creating slurm cluster.")
+                return 1   
             else:
-                return
+                dask_client, dask_cluster, dask_dir = cluster_result
+            scheduler_address = dask_client.scheduler.address
+            main_job_file = save_main_process_info(
+                pid,
+                jobid,
+                scheduler_address,
+                args.target_datadir,
+                os.path.abspath(args.workdir),
+                os.path.abspath(args.outdir),
+                args.cpu_frac,
+                args.mem_frac,
+            )
             per_node_cpu, per_node_mem = get_slurm_node_resources(
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
