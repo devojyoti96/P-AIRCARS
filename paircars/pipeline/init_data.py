@@ -166,7 +166,6 @@ def main(
         ):
             print("WSClean container is initialized")
         else:
-            print("Error in initializing WSClean container.")
             return 1
         quartical_container_name = initialize_quartical_container(
             update=update, verbose=True
@@ -177,7 +176,6 @@ def main(
         ):
             print("Quartical container is initialized")
         else:
-            print("Error in initializing quartical container.")
             return 1
         shadems_container_name = initialize_shadems_container(
             update=update, verbose=True
@@ -188,7 +186,6 @@ def main(
         ):
             print("Shadems container is initialized")
         else:
-            print("Error in initializing shadems container.")
             return 1
         hyperdrive_container_name = initialize_hyperdrive_container(
             update=update, verbose=True
@@ -199,7 +196,6 @@ def main(
         ):
             print("Hyperdrive container is initialized")
         else:
-            print("Error in initializing hyperdrive container.")
             return 1
         scheduler_name = get_scheduler_name()
         if prefect_server or scheduler_name=="slurm":

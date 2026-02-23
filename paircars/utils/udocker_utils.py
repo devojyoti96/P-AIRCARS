@@ -163,7 +163,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
                 return
         else:
             print(f"Image {image_name} already present.")
-            a = 0
+            return name
     if a == 0:
         if verbose:
             result = subprocess.run(
