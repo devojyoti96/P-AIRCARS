@@ -28,10 +28,10 @@ def get_free_port(start_port=4200, end_port=4300):
     int
         Free port
     """
-    for port in range(4200, 4301):
+    for port in range(start_port, end_port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.bind(("0.0.0.0", port))
+                s.bind(("127.0.0.1", port))
                 print(f"Free port: {port}")
                 return port
             except OSError:
