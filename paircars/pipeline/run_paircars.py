@@ -12,7 +12,6 @@ from paircars.utils.proc_manage_utils import (
 )
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
-    get_free_port,
     start_server,
 )
 from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow

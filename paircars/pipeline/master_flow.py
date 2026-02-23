@@ -45,7 +45,7 @@ from paircars.utils.mwa_utils import (
     get_MWA_OBSID,
     download_MWA_metafits,
 )
-from paircars.utils.prefect_server_utils import start_server, prefect_server_status
+from paircars.utils.prefect_server_utils import prefect_server_status, stop_prefect_server
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
     start_flow_log_saver,
@@ -3758,6 +3758,10 @@ def cli():
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
         scale_worker_and_wait(dask_cluster, nworker)
     else:
+        prefect_status = prefect_server_status(scheduler_name="slurm")
+        if prefect_status is False:
+            print("Prefect server is not running. It is required for SLURM.")
+            return 
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
@@ -3873,7 +3877,7 @@ def cli():
             running_paircars_jobs = show_status.show_slurm_job_status()
             if running_paircars_jobs==0:
                 print("No other P-AIRCARS job is running. Closing prefect server...")
-                msg = stop_prefect_server(scheduler_name=scheduler_name)
+                msg = stop_prefect_server(scheduler_name="slurm")
                 if msg != 0:
                     print("Error in stopping prefect server.")
             else:

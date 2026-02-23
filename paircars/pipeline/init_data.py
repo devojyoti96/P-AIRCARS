@@ -9,7 +9,7 @@ from datetime import datetime as dt
 from parfive import Downloader
 from paircars.utils.basic_utils import create_datadir, get_datadir, get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
-from paircars.utils.prefect_setup_utils import start_server, get_free_port
+from paircars.utils.prefect_setup_utils import start_server
 from paircars.utils.resource_utils import has_space
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.udocker_utils import (
@@ -144,6 +144,7 @@ def main(
         E-mails for notifications
     """
     required_gb = 20
+    port = 4260
     if init:
         create_datadir(datadir=datadir)
         datadir = get_datadir()
@@ -198,21 +199,21 @@ def main(
         else:
             return 1
         scheduler_name = get_scheduler_name()
-        if prefect_server or scheduler_name == "slurm":
-            port = get_free_port()
-            msg, config_file, profile_path, env_file, dashboard, pid_file = (
-                start_server(port, jobid=scheduler_name)
-            )
-            if msg == 0:
-                print(f"Prefect server started at port: {port}")
-                print(f"Profile file: {profile_path}")
-                print(f"Environment file: {env_file}")
-                print(f"Dashboard file: {dashboard}")
-                print(f"Server process ID file: {pid_file}")
+        if prefect_server:
+            if scheduler_name!="local":
+                print ("Prefect server can be initiated only in local cluster. For other cluster it will be intitated during job submission is appropriate node.")
             else:
-                print(f"Error in starting prefect server at port: {port}")
-                if scheduler_name == "local":
-                    print("P-AIRCARS will use ephmeral temporary prefect server.")
+                msg, config_file, profile_path, env_file, dashboard, pid_file = (
+                    start_server(port, scheduler_name=scheduler_name)
+                )
+                if msg == 0:
+                    print(f"Prefect server started at port: {port}")
+                    print(f"Profile file: {profile_path}")
+                    print(f"Environment file: {env_file}")
+                    print(f"Dashboard file: {dashboard}")
+                    print(f"Server process ID file: {pid_file}")
+                else:
+                    print(f"Error in starting prefect server at port: {port}. P-AIRCARS will use ephemeral mode.")
         return 0
     else:
         return 1

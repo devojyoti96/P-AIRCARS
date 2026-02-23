@@ -344,7 +344,7 @@ def prefect_server_status(scheduler_name="local"):
     config = np.load(config_file, allow_pickle=True).all()
     try:
         with socket.create_connection(
-            (config["SERVER_HOST"], config["SERVER_PORT"]), timeout=2
+            (config["SERVER_HOST"], config["SERVER_PORT"]), timeout=60
         ):
             return True
     except OSError:
