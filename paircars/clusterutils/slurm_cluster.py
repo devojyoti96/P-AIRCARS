@@ -152,7 +152,7 @@ def get_slurm_dask_cluster(
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()
-        mem_limit = round(min(max_mem, mem), 2)
+        mem_limit = max(1, round(min(max_mem, mem), 2))
         job_extra = [
             f"--nodes=1",
             f"--ntasks=1",
@@ -168,7 +168,7 @@ def get_slurm_dask_cluster(
             cores=1,
             n_workers=1,
             walltime=walltime,
-            memory=f"{min(max_mem,mem)}G",
+            memory=f"{mem_limit}G",
             processes=1,
             interface=interface,
             python=python_path,
