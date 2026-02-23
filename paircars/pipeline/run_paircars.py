@@ -380,12 +380,12 @@ def cli():
         # Setting prefect server
         ####################################
         env_list=[]
-        if schduler_name=="local" or scheduler_name=="slurm":
-            result = prefect_server_status(jobid=schduler_name)
+        if scheduler_name=="local" or scheduler_name=="slurm":
+            result = prefect_server_status(jobid=scheduler_name)
             if result is not True:
                 port = get_free_port()
                 server_msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
-                    port, jobid=schduler_name, show_config=True,
+                    port, jobid=scheduler_name, show_config=True,
                 )
                 if msg != 0:
                     print(f"Error in starting prefect server at port: {port}")
