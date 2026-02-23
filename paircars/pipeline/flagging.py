@@ -380,13 +380,15 @@ def do_flagging(
             )  # In GB
             njobs = max(1, min(total_cpu, len(mslist)))
             n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = round(total_mem/njobs,3)
+            mem_limit = round(total_mem / njobs,3)
         else:
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
-            total_mem = psutil.virtual_memory().available / 1024**3
+            worker_mem_list = []
+            for addr, w in client_info.items():
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
             n_threads = int(os.environ.get("OMP_NUM_THREADS", 1))
-            mem_limit = round(total_mem/njobs,3)
+            mem_limit = round(min(worker_mem_list)/njobs,3)
 
         print("#################################")
         print(f"Total dask worker: {njobs}")
@@ -443,6 +445,8 @@ def do_flagging(
             )
             print(f"Flag summary: {summary_file}")
             flagsummary(msname, summary_file)
+        print ("Flagging is done successfully.")
+        print ("##############################")
         return 0
     except Exception as e:
         traceback.print_exc()
