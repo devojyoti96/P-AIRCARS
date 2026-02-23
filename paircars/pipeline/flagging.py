@@ -100,6 +100,7 @@ def single_ms_flag(
     from casatasks import flagdata
 
     msname = msname.rstrip("/")
+    print (f"Flagging ms: {msname}")
     try:
         ##############################
         # Flagging bad channels
@@ -412,21 +413,18 @@ def do_flagging(
         tasks = []
         for msname in mslist:
             msname = os.path.abspath(msname.rstrip("/"))
-            print("###########################")
-            print("Flagging measurement set : ", msname)
-            print("###########################")
             if restore_flag:
                 print("Restoring all previous flags...")
                 with suppress_output():
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
             if flag_bad_spw:
                 badspw = get_bad_chans(msname)
-                print(f"Flagging bad spws: {badspw}.")
+                print(f"Bad spws: {badspw}.")
             else:
                 badspw = ""
             if flag_bad_ants:
                 bad_ants_str = get_mwa_bad_ants(metafits)
-                print(f"Flagging bad antennas: {bad_ants_str}.")
+                print(f"Bad antennas: {bad_ants_str}.")
             else:
                 bad_ants_str = ""
 
@@ -588,6 +586,7 @@ def main(
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac))
+        print (f"Scaling workers to {nworker+1}")
         scale_worker_and_wait(dask_cluster, nworker + 1)
 
     try:

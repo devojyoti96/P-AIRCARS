@@ -2062,10 +2062,6 @@ def master_control(
         # Moving phasecenter to the solar center
         ########################################
         if solar_data and do_move_solarcenter:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print("Starting task: Moving phasecenter to the Sun .....")
             print("###########################")
@@ -2097,18 +2093,11 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         #######################################
         # Run dynamic spectra making
         #######################################
         if solar_data and make_ds:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print("Starting task: Making dynamic spectra of solar target .....")
             print("###########################")
@@ -2142,9 +2131,6 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         ##############################
         # Run spliting jobs
@@ -2153,10 +2139,6 @@ def master_control(
         future_cal_split = None
         if do_basic_cal and has_cal:
             prefix = "calibrator"
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
             print("###########################")
@@ -2200,9 +2182,6 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
             split_cal_mslist = glob.glob(f"{workdir}/{prefix}*_spw_*.ms")
             if len(split_cal_mslist) == 0:
@@ -2214,10 +2193,6 @@ def master_control(
         ##################################
         # Only if basic calibration is requested
         if do_cal_flag and do_basic_cal and has_cal:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print("Starting task: Flagging calibrators ....")
             print("###########################")
@@ -2255,19 +2230,12 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         #################################
         # Import model
         #################################
         # Only if basic calibration is requested
         if do_import_model and do_basic_cal and has_cal:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print("Starting task: Importing model visibilities ....")
             print("###########################")
@@ -2303,18 +2271,11 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         ###############################
         # Run basic calibration
         ###############################
         if do_basic_cal and has_cal:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print("Starting task: Performing basic calibration .....")
             print("###########################")
@@ -2352,9 +2313,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, nworker)
+                
             caltables = glob.glob(
                 f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
             ) + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
@@ -2419,10 +2378,6 @@ def master_control(
                     time_interval = image_timeres
                 else:
                     time_interval = -1
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
             print("###########################")
@@ -2473,9 +2428,6 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         ####################################
         # Filtering any corrupted ms
@@ -2519,10 +2471,6 @@ def master_control(
         #########################################################
         cal_applied = False
         if do_selfcal and has_cal:  # If calibrator solutions are available
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(selfcal_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             ############################
             # Basic flagging
             ############################
@@ -2621,10 +2569,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
-
+                    
         if cal_applied:
             selfcal_applymode = "calonly"
         else:
@@ -2637,10 +2582,6 @@ def master_control(
             os.system(
                 f"rm -rf {workdir}/*selfcal_int {workdir}/*selfcal_pol {workdir}/caltables/*selfcal*"
             )
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(selfcal_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             if do_sidereal_cor:
                 print("###########################")
                 print(
@@ -2678,13 +2619,7 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                finally:
-                    if scheduler_name=="local":
-                        scale_worker_and_wait(dask_cluster, current_worker)
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(selfcal_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
+                        
             print("###########################")
             print("Starting task: Self-calibrations.....")
             print("###########################")
@@ -2731,9 +2666,6 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         ########################################
         # Checking self-cal caltables
@@ -2775,10 +2707,6 @@ def master_control(
         # If corrected data is requested or imaging is requested
         if do_target_split and (do_applycal or do_imaging):
             prefix = "target"
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, total_ncoarse + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
             print("###########################")
@@ -2820,9 +2748,6 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 return 1
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         if do_imaging or do_applycal or do_apply_selfcal:
             split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
@@ -2870,10 +2795,6 @@ def master_control(
         # Applying basic solutions on target scans
         #########################################################
         if do_applycal and has_cal:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(split_target_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             ############################
             # Basic flagging
             ############################
@@ -2967,15 +2888,8 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 return 1
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
             if do_sidereal_cor:
-                if scheduler_name=="local":
-                    current_worker = get_total_worker(dask_cluster)
-                    nworker = min(max_worker, len(split_target_mslist) + current_worker)
-                    scale_worker_and_wait(dask_cluster, nworker)
                 print("###########################")
                 print(
                     "Starting task: Sidereal motion correction for final target measurement sets....."
@@ -3012,19 +2926,12 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                finally:
-                    if scheduler_name=="local":
-                        scale_worker_and_wait(dask_cluster, current_worker)
 
         ########################################
         # Apply self-calibration
         ########################################
         if do_apply_selfcal:
             split_target_mslist = sorted(split_target_mslist)
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(split_target_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print(
                 "Starting task: Applying self-calibration solutions on final target measurement sets....."
@@ -3066,9 +2973,6 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         ######################################
         # Imaging
@@ -3087,10 +2991,6 @@ def master_control(
             ):  # Only if do_polcal is False, overwrite to make only Stokes I
                 pol = "I"
             pol = pol.upper()
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(target_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print("Starting task: Final imaging.....")
             print("###########################")
@@ -3140,9 +3040,6 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 return 1
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
 
         ########################################
         # Naming of image directory
@@ -3175,9 +3072,8 @@ def master_control(
             if len(images) == 0:
                 print(f"No image is present in image directory: {imagedir}/images")
             else:
-                if scheduler_name=="local":
-                    current_worker = get_total_worker(dask_cluster)
-                    scale_worker_and_wait(dask_cluster, max_worker)
+                current_worker = get_total_worker(dask_cluster)
+                scale_worker_and_wait(dask_cluster, min(len(images)+current_worker, max_worker))
                 print("###########################")
                 print("Starting task: Primary beam correction.....")
                 print("###########################")
@@ -3214,17 +3110,16 @@ def master_control(
                         )
                     return 1
                 finally:
-                    if scheduler_name=="local":
-                        scale_worker_and_wait(dask_cluster, current_worker)
+                    scale_worker_and_wait(dask_cluster, current_worker)
                     print(f"Final image directory: {imagedir}/images")
 
         #######################################
         # Make overlays
         #######################################
         if make_overlay:
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                scale_worker_and_wait(dask_cluster, max_worker)
+            #total_overlays = #TODO; DETERMINE IT 
+            current_worker = get_total_worker(dask_cluster)
+            scale_worker_and_wait(dask_cluster, max_worker)
             print("###########################")
             print("Starting task: Making overlay on EUV images.....")
             print("###########################")
@@ -3260,8 +3155,7 @@ def master_control(
                     )
                 return 1
             finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
+                scale_worker_and_wait(dask_cluster, current_worker)
             print(f"Final image directory: {os.path.dirname(outdir)}")
 
         ##############################################
@@ -3270,15 +3164,14 @@ def master_control(
         if make_msplot:
             msplot_outdir = f"{outdir}/ms_diagnostics_plots"
             os.makedirs(msplot_outdir, exist_ok=True)
+            current_worker = get_total_worker(dask_cluster)
+            nworker = min(max_worker, len(split_cal_mslist) + current_worker)
+            scale_worker_and_wait(dask_cluster, nworker)
 
             if has_cal and len(split_cal_mslist) > 0:
                 ###########################################
                 # Ploting calibrator ms
                 ###########################################
-                if scheduler_name=="local":
-                    current_worker = get_total_worker(dask_cluster)
-                    nworker = min(max_worker, len(split_cal_mslist) + current_worker)
-                    scale_worker_and_wait(dask_cluster, nworker)
                 print("###########################")
                 print(
                     "Starting task: Making diagnostic plots of calibrator measurement sets....."
@@ -3317,17 +3210,10 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                finally:
-                    if scheduler_name=="local":
-                        scale_worker_and_wait(dask_cluster, current_worker)
 
             ###########################################
             # Ploting target ms
             ###########################################
-            if scheduler_name=="local":
-                current_worker = get_total_worker(dask_cluster)
-                nworker = min(max_worker, len(split_target_mslist) + current_worker)
-                scale_worker_and_wait(dask_cluster, nworker)
             print("###########################")
             print(
                 "Starting task: Making diagnostic plots of target measurement sets....."
@@ -3368,10 +3254,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-            finally:
-                if scheduler_name=="local":
-                    scale_worker_and_wait(dask_cluster, current_worker)
-
+                    
         ######################################
         # Keeping flag backups
         ######################################
@@ -3455,8 +3338,7 @@ def master_control(
         drop_cache(outdir)
         stop_event.set()
         log_thread_flow.join(timeout=5)
-        if scheduler_name=="local":
-            scale_worker_and_wait(dask_cluster, current_worker)
+        scale_worker_and_wait(dask_cluster, 1)
         if dask_dir is not None:
             os.system(f"rm -rf {dask_dir}")
         if observer is not None:
@@ -3873,6 +3755,7 @@ def cli():
         else:
             dask_client, dask_cluster, dask_dir = result
         nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
+        scale_worker_and_wait(dask_cluster, nworker)
     else:
         ############################################
         # Stop prefect server in cluster environment
@@ -3902,9 +3785,9 @@ def cli():
             )
             max_worker_per_node = max(1, int(per_node_mem / max_mem))
             nworker = max(
-                2, min(len(target_mslist), max_worker_per_node * get_total_nodes(partition=args.partition))
+                2, min(len(target_mslist)+1, max_worker_per_node * get_total_nodes(partition=args.partition))
             )
-            dask_cluster.adapt(minimum=2, maximum=nworker)
+            scale_worker_and_wait(dask_cluster, nworker)
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
