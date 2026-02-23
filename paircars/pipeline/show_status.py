@@ -29,13 +29,10 @@ def is_slurm_job_running(job_id, node_name):
     output = result.stdout.strip()
     if not output:
         return False  # job not active
-
     # Output format: "RUNNING node45"
     parts = output.split()
-
     state = parts[0]
-    nodes = " ".join(parts[1:])  # handles multi-node jobs
-
+    nodes = " ".join(parts[1:])  # handles multi-node jobss
     return state == "RUNNING" and node_name in nodes
 
 
