@@ -386,7 +386,7 @@ def do_flagging(
             njobs = len(client_info)
             worker_cpu_list = []
             worker_mem_list = []
-            for addr, w in info.items():
+            for addr, w in client_info.items():
                 worker_cpu_list.append(w["nthreads"])
                 worker_mem_list.append(w["memory_limit"] / 1024**3)
             n_threads = max(1, min(worker_cpu_list))

@@ -113,7 +113,6 @@ def single_mstransform(
     timerange="",
     numsubms="auto",
     n_threads=-1,
-    cpu_frac=-1,
 ):
     """
     Perform mstransform
@@ -138,19 +137,13 @@ def single_mstransform(
         Time range
     n_threads : int, optional
         Number of CPU threads
-    cpu_frac : float, optional
-        CPU fraction of current node
 
     Returns
     -------
     str
         Output measurement set name
     """
-    cpu_frac = min(0.8, cpu_frac)
     n_threads = max(1, n_threads)
-
-    if cpu_frac > 0:
-        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
     limit_threads(n_threads=n_threads)
     from casatasks import mstransform, initweights, flagdata

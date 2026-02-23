@@ -9,7 +9,6 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
-from paircars.utils.basic_utils import get_datadir
 from paircars.utils.casatasks import single_mstransform
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -28,8 +27,6 @@ from paircars.utils.resource_utils import drop_cache
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
-datadir = get_datadir()
-
 
 def chanlist_to_str(lst):
     lst = sorted(lst)
@@ -104,6 +101,8 @@ def split_target_scans(
     list
         Splited ms list
     """
+    print("#################################")
+    print(f"Spliting measurement set: {msname}")
     try:
         cpu_frac = min(0.8, cpu_frac)
         mem_frac = min(0.8, mem_frac)
@@ -159,18 +158,17 @@ def split_target_scans(
             )  # In GB
             njobs = max(1, min(total_cpu, total_chunks))
             n_threads = max(1, int(total_cpu / njobs))
-            cpu_frac = -1
-            mem_frac = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print(f"CPU per worker: {n_threads}")
-            print("#################################")
         else:
-            njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print("#################################")
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_cpu_list = []
+            for addr, w in client_info.items():
+                worker_cpu_list.append(w["nthreads"])
+            n_threads = max(1, min(worker_cpu_list))
+
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+
 
         tasks = []
         splited_ms_list = []
@@ -201,7 +199,6 @@ def split_target_scans(
                     corr="",
                     timerange=timerange,
                     n_threads=n_threads,
-                    cpu_frac=cpu_frac,
                 )
                 tasks.append(task)
         if len(tasks):
@@ -211,15 +208,13 @@ def split_target_scans(
                 splited_ms_list.append(splited_ms)
         for splited_ms in splited_ms_list:
             drop_cache(splited_ms)
-        print("##################")
-        print("Spliting of measurement sets are done successfully.")
-        print("##################")
+        print(f"Spliting of measurement set: {msname} is done successfully.")
+        print("#################################")
         return 0, splited_ms_list
     except Exception as e:
         traceback.print_exc()
-        print("##################")
-        print("Spliting of measurement sets are unsuccessful.")
-        print("##################")
+        print(f"Spliting of measurement set: {msname} is unsuccessful.")
+        print("#################################")
         return 1, []
     finally:
         time.sleep(1)
@@ -373,7 +368,11 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+        if msg==0:
+            print("All measurement sets are splited successfully.")
+        else:
+            print("Error occured in spliting measurement sets.")
+        return msg
 
 
 def cli():
