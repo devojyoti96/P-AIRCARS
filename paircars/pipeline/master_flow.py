@@ -3890,7 +3890,7 @@ def cli():
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
-                env=["PREFECT_API_UR=http://127.0.0.1:8072/api"]
+                env=["PREFECT_API_URL=http://127.0.0.1:8072/api"]
             )
             if cluster_result is not None:
                 dask_client, dask_cluster, dask_dir = cluster_result
