@@ -3802,8 +3802,8 @@ def cli():
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
-                max_mem=nworker,
-                max_worker=max_worker,
+                max_mem=max_mem,
+                max_worker=nworker,
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
@@ -3824,6 +3824,7 @@ def cli():
                 args.cpu_frac,
                 args.mem_frac,
             )
+            
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
