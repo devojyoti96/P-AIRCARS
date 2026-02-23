@@ -200,25 +200,22 @@ def main(
         else:
             print("Error in initializing hyperdrive container.")
             return 1
-        if prefect_server:
-            scheduler_name = get_scheduler_name()
-            if scheduler_name == "local":
-                port = get_free_port()
-                msg, config_file, profile_path, env_file, dashboard, pid_file = (
-                    start_server(port, jobid="local")
-                )
-                if msg == 0:
-                    print(f"Prefect server started at port: {port}")
-                    print(f"Profile file: {profile_path}")
-                    print(f"Environment file: {env_file}")
-                    print(f"Dashboard file: {dashboard}")
-                    print(f"Server process ID file: {pid_file}")
-                else:
-                    print(f"Error in starting prefect server at port: {port}")
+        scheduler_name = get_scheduler_name()
+        if prefect_server or scheduler_name=="slurm":
+            port = get_free_port()
+            msg, config_file, profile_path, env_file, dashboard, pid_file = (
+                start_server(port, jobid=scheduler_name)
+            )
+            if msg == 0:
+                print(f"Prefect server started at port: {port}")
+                print(f"Profile file: {profile_path}")
+                print(f"Environment file: {env_file}")
+                print(f"Dashboard file: {dashboard}")
+                print(f"Server process ID file: {pid_file}")
             else:
-                print(
-                    "We are in multi-node cluster architechture. Persistent prefect server mode will not work. We recomment setup and use remote logging facility."
-                )
+                print(f"Error in starting prefect server at port: {port}")
+                if scheduler_name=="local":
+                    print ("P-AIRCARS will use ephmeral temporary prefect server.")
         return 0
     else:
         return 1

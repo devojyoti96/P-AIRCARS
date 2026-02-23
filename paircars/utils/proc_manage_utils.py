@@ -383,8 +383,8 @@ def submit_local_master_flow(args, jobid, env=[]):
         script_args = ["#!/bin/bash"]
         if len(env)>0:
             for i in env:
-                scripts.args.append(f"export {i}")
-        scripts.append("export PYTHONUNBUFFERED=1\n")
+                script_args.args.append(f"export {i}")
+        script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_local_{jobid}.sh")
         with open(script_path, "w") as f:
