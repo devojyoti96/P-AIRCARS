@@ -10,13 +10,33 @@ from paircars.utils.resource_utils import drop_cache
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
 
-def is_slurm_job_running(job_id):
+def is_slurm_job_running(job_id, node_name):
+    """
+    Returns True if job_id is RUNNING on node.
+    
+    Parameters
+    ----------
+    job_id : int
+        Slurm job ID
+    node_name : str
+        Node name
+    """
     result = subprocess.run(
-        ["squeue", "-j", str(job_id), "-h"],
+        ["squeue", "-j", str(job_id), "-h", "-o", "%T %N"],
         capture_output=True,
         text=True
     )
-    return result.stdout.strip() != ""
+    output = result.stdout.strip()
+    if not output:
+        return False  # job not active
+
+    # Output format: "RUNNING node45"
+    parts = output.split()
+
+    state = parts[0]
+    nodes = " ".join(parts[1:])  # handles multi-node jobs
+
+    return state == "RUNNING" and node_name in nodes
 
 
 def show_local_job_status(clean_old_jobs=False):
