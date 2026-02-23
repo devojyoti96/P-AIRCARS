@@ -8,6 +8,12 @@ from paircars.utils.proc_manage_utils import (
     submit_local_master_flow,
     get_jobid,
 )
+from paircars.utils.prefect_setup_utils import (
+    prefect_server_status,
+    stop_prefect_server,
+    get_free_port,
+    start_server,
+)
 from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow
 
 
@@ -370,10 +376,63 @@ def cli():
     scheduler_name = get_scheduler_name()
 
     try:
+        ####################################
+        # Setting prefect server
+        ####################################
+        env_list=[]
         if scheduler_name == "local":
-            msg = submit_local_master_flow(args, jobid)
+            result = prefect_server_status(jobid="local")
+            if result is not True:
+                port = get_free_port()
+                msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
+                    port, jobid="local", show_config=True,
+                )
+                if msg != 0:
+                    print(f"Error in starting prefect server at port: {port}. P-AIRCARS will use ephemeral temporal prefect server in local cluster.")
+                else:
+                    config = np.load(config_file, allow_pickle=True).all()
+                    env_file = config["ENV_FILE"]
+                    with open(env_file,"r") as f:
+                        env_list=f.readlines()
+                    env_list=[env.rstrip("\n") for env in env_list] 
+            else:
+                cachedir = f"{get_cachedir()}/prefect_local"
+                config_file = f"{cachedir}/prefect.config.npy"
+                if os.path.exists(config_file) is False:
+                    print(f"Configuration file for local cluster does not exist.")
+                else:
+                    config = np.load(config_file, allow_pickle=True).all()
+                    env_file = config["ENV_FILE"]
+                    with open(env_file,"r") as f:
+                        env_list=f.readlines()
+                    env_list=[env.rstrip("\n") for env in env_list]   
         elif scheduler_name == "slurm":
-            msg = submit_slurm_master_flow(args, jobid)
+            env_list=[]
+            port = get_free_port()
+            msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
+                port, jobid=jobid, show_config=True,
+            )
+            if msg != 0:
+                print(f"Error in starting prefect server at port: {port}")
+                return
+            else:
+                result = prefect_server_status(jobid=jobid)
+                if result is not True:
+                    print (f"Prefect server is not running at port: {port}") 
+                    return 1
+                config = np.load(config_file, allow_pickle=True).all()
+                env_file = config["ENV_FILE"]
+                with open(env_file,"r") as f:
+                    env_list=f.readlines()
+                env_list=[env.rstrip("\n") for env in env_list]     
+        
+        ############################################
+        # Submitting batch script
+        ############################################
+        if scheduler_name=="local":
+            msg = submit_local_master_flow(args, jobid, env = env_list)
+        elif scheduler_name=="slurm":
+            msg = submit_slurm_master_flow(args, jobid, env = env_list)
         else:
             print(
                 f"P-AIRCARS currently does not support {scheduler_name} job scheduler."

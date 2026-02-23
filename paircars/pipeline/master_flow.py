@@ -50,12 +50,6 @@ from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
     start_flow_log_saver,
 )
-from paircars.utils.prefect_setup_utils import (
-    prefect_server_status,
-    stop_prefect_server,
-    get_free_port,
-    start_server,
-)
 from paircars.utils.proc_manage_utils import (
     get_jobid,
     save_main_process_info,
@@ -3821,21 +3815,7 @@ def cli():
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
         )
         return
-    ###################################################
-    # Using persistent prefect server only for local environment
-    ###################################################
-    result = prefect_server_status()
-    if result is not True:
-        print("Prefect server is not running. Running pipeline in ephemeral mode.")
-    else:
-        cachedir = f"{get_cachedir()}/prefect_local"
-        config_file = f"{cachedir}/prefect.config.npy"
-        if os.path.exists(config_file) is False:
-            print(f"Configuration file for local cluster does not exist.")
-        else:
-            config = np.load(config_file, allow_pickle=True).all()
-            load_dotenv(dotenv_path=config["ENV_FILE"], override=False)
-                
+                    
     if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
@@ -3858,23 +3838,7 @@ def cli():
     else:
         ############################################
         # Stop prefect server in cluster environment
-        ############################################
-        '''port = get_free_port(start_port=8072,end_port=9000)
-        msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
-            port, jobid=jobid, show_config=True,
-        )
-        if msg != 0:
-            print(f"Error in starting prefect server at port: {port}")
-            return
-        else:
-            result = prefect_server_status(jobid=jobid)
-            if result is not True:
-                print (f"Prefect server is not running at port: {port}") 
-                return 1
-            config = np.load(config_file, allow_pickle=True).all()
-            load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
-            time.sleep(10)'''
-            
+        ############################################    
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
@@ -3890,7 +3854,6 @@ def cli():
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
-                #env=["PREFECT_API_URL=http://127.0.0.1:8072/api"]
             )
             if cluster_result is not None:
                 dask_client, dask_cluster, dask_dir = cluster_result
@@ -3913,15 +3876,11 @@ def cli():
     # Starting pipeline
     ##########################################
     try:
-        #print (os.environ)
         dask_addr = dask_client.scheduler.address
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
         print(f"Total maximum dask workers: {nworker}")
-        #api_url = f"http://127.0.0.1:8072/api"
-
-        #with temporary_settings({PREFECT_API_URL: api_url}):
         msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),

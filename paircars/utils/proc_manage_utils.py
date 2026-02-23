@@ -349,7 +349,7 @@ def get_local_dask_cluster(
         return
 
 
-def submit_local_master_flow(args, jobid):
+def submit_local_master_flow(args, jobid, env=[]):
     """
     Submit P-AIRCARS master flow to a local cluster
 
@@ -359,6 +359,8 @@ def submit_local_master_flow(args, jobid):
         Arparser dictionary
     jobid : int
         P-AIRCARS jobid
+    env : list, optional
+        Environment list
 
     Returns
     -------
@@ -378,7 +380,11 @@ def submit_local_master_flow(args, jobid):
         print("Please provide a work directory.")
         return 1
     try:
-        script_args = ["#!/bin/bash", "export PYTHONUNBUFFERED=1"]
+        script_args = ["#!/bin/bash"]
+        if len(env)>0:
+            for i in env:
+                scripts.args.append(f"export {i}")
+        scripts.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_local_{jobid}.sh")
         with open(script_path, "w") as f:

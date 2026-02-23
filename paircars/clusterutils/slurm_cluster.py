@@ -96,6 +96,8 @@ def get_slurm_dask_cluster(
         Job walltime, maximum time the SLURM job can run (HH:MM:SS)
     spill_frac : float
         Fraction of memory to spill to disk
+    env : list, optional
+        List of environment variables
     verbose : bool
         Print Dask dashboard URL and diagnostics
 
@@ -263,7 +265,7 @@ def get_max_walltime(partition):
     return max_time, slurm_time_to_seconds(max_time)
 
 
-def submit_slurm_master_flow(args, jobid):
+def submit_slurm_master_flow(args, jobid, env=[]):
     """
     Submit P-AIRCARS master flow to a slurm cluster
 
@@ -273,6 +275,8 @@ def submit_slurm_master_flow(args, jobid):
         Arparser dictionary
     jobid : int
         P-AIRCARS jobid
+    env : list, optional
+        Environment list
 
     Returns
     -------
@@ -345,6 +349,9 @@ def submit_slurm_master_flow(args, jobid):
         ]
         if hasattr(args, "account") and args.account is not None:
             script_args.append(f"#SBATCH --account={args.account}\n")
+        if len(env)>0:
+            for i in env:
+                scripts.args.append(f"export {i}")
         script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")

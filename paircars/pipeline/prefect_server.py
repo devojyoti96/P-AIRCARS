@@ -50,7 +50,7 @@ def cli():
     args = parser.parse_args()
 
     if args.command == "start":
-        port = get_free_port(start_port=8072,end_port=9000)
+        port = get_free_port()
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
             port, show_config=args.show_config, jobid=args.jobid
         )
