@@ -183,7 +183,8 @@ def get_slurm_dask_cluster(
                 f"TEMP={dask_dir_tmp}",
                 f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
                 "PYTHONWARNINGS=ignore::UserWarning:contextlib",
-            ]+env,
+            ]
+            + env,
         )
 
         cluster.scale(1)
@@ -349,7 +350,7 @@ def submit_slurm_master_flow(args, jobid, env=[]):
         ]
         if hasattr(args, "account") and args.account is not None:
             script_args.append(f"#SBATCH --account={args.account}\n")
-        if len(env)>0:
+        if len(env) > 0:
             for i in env:
                 script_args.append(f"export {i}")
         script_args.append("export PYTHONUNBUFFERED=1\n")

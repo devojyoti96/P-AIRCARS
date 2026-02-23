@@ -380,49 +380,57 @@ def cli():
         ####################################
         # Setting prefect server
         ####################################
-        env_list=[]
-        if scheduler_name=="local" or scheduler_name=="slurm":
+        env_list = []
+        if scheduler_name == "local" or scheduler_name == "slurm":
             result = prefect_server_status(jobid=scheduler_name)
             if result is not True:
                 port = get_free_port()
-                server_msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
-                    port, jobid=scheduler_name, show_config=True,
+                server_msg, config_file, profile_path, env_file, dashboard, pid_file = (
+                    start_server(
+                        port,
+                        jobid=scheduler_name,
+                        show_config=True,
+                    )
                 )
                 if msg != 0:
                     print(f"Error in starting prefect server at port: {port}")
-                    if schduler_name=="local":
-                        print ("P-AIRCARS will use ephemeral temporal prefect server in local cluster.")
+                    if schduler_name == "local":
+                        print(
+                            "P-AIRCARS will use ephemeral temporal prefect server in local cluster."
+                        )
                     else:
-                        print ("P-AIRCARS can not be run without prefect server.")
+                        print("P-AIRCARS can not be run without prefect server.")
                         return 1
                 else:
                     config = np.load(config_file, allow_pickle=True).all()
                     env_file = config["ENV_FILE"]
-                    with open(env_file,"r") as f:
-                        env_list=f.readlines()
-                    env_list=[env.rstrip("\n") for env in env_list]
+                    with open(env_file, "r") as f:
+                        env_list = f.readlines()
+                    env_list = [env.rstrip("\n") for env in env_list]
             else:
-                config_file = f"{get_cachedir()}/prefect_{scheduler_name}/prefect.config.npy"
+                config_file = (
+                    f"{get_cachedir()}/prefect_{scheduler_name}/prefect.config.npy"
+                )
                 if os.path.exists(config_file):
                     config = np.load(config_file, allow_pickle=True).all()
                     env_file = config["ENV_FILE"]
-                    with open(env_file,"r") as f:
-                        env_list=f.readlines()
-                    env_list=[env.rstrip("\n") for env in env_list]
+                    with open(env_file, "r") as f:
+                        env_list = f.readlines()
+                    env_list = [env.rstrip("\n") for env in env_list]
                 else:
-                    print (f"Configuration file: {config_file} does not exist.")
-        
+                    print(f"Configuration file: {config_file} does not exist.")
+
         ############################################
         # Submitting batch script
         ############################################
-        if scheduler_name=="local":
-            msg = submit_local_master_flow(args, jobid, env = env_list)
+        if scheduler_name == "local":
+            msg = submit_local_master_flow(args, jobid, env=env_list)
             return msg
-        elif scheduler_name=="slurm":
-            if len(env_list)==0:
-                print ("Please start and provide prefect server configuration.")
+        elif scheduler_name == "slurm":
+            if len(env_list) == 0:
+                print("Please start and provide prefect server configuration.")
                 return 1
-            msg = submit_slurm_master_flow(args, jobid, env = env_list)
+            msg = submit_slurm_master_flow(args, jobid, env=env_list)
             return msg
         else:
             print(
@@ -434,6 +442,6 @@ def cli():
         traceback.print_exc()
         return 1
 
+
 if __name__ == "__main__":
     cli()
-    

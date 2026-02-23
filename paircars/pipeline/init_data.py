@@ -198,7 +198,7 @@ def main(
         else:
             return 1
         scheduler_name = get_scheduler_name()
-        if prefect_server or scheduler_name=="slurm":
+        if prefect_server or scheduler_name == "slurm":
             port = get_free_port()
             msg, config_file, profile_path, env_file, dashboard, pid_file = (
                 start_server(port, jobid=scheduler_name)
@@ -211,8 +211,8 @@ def main(
                 print(f"Server process ID file: {pid_file}")
             else:
                 print(f"Error in starting prefect server at port: {port}")
-                if scheduler_name=="local":
-                    print ("P-AIRCARS will use ephmeral temporary prefect server.")
+                if scheduler_name == "local":
+                    print("P-AIRCARS will use ephmeral temporary prefect server.")
         return 0
     else:
         return 1

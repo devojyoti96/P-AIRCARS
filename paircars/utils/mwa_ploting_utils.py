@@ -17,13 +17,12 @@ from aiapy.calibrate import *
 from astropy.visualization import ImageNormalize, PowerStretch, LogStretch
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, get_sun, solar_system_ephemeris
 from astropy.wcs import FITSFixedWarning
-from astroquery.jplhorizons import Horizons
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
-from .basic_utils import mjdsec_to_timestamp
+from .basic_utils import mjdsec_to_timestamp, get_datadir
 from .image_utils import calc_solar_image_stat, cutout_image
 from .ms_metadata import (
     get_column_size,
@@ -40,6 +39,15 @@ from .udocker_utils import (
 )
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
+
+#####################################
+# Sun position related
+#####################################
+datadir = get_datadir()
+try:
+    solar_system_ephemeris.set(f"{datadir}/de440s")
+except:
+    solar_system_ephemeris.set("builtin")
 
 
 #################################
@@ -1447,11 +1455,7 @@ def rename_mwasolar_image(
         else:
             hdr["POLSELF"] = "FALSE"
         try:
-            sun_jpl = Horizons(id="10", location="500", epochs=astro_time.jd)
-            eph = sun_jpl.ephemerides()
-            sun_coords = SkyCoord(
-                ra=eph["RA"][0] * u.deg, dec=eph["DEC"][0] * u.deg, frame="icrs"
-            )
+            sun_coords = get_sun(astro_time)
             hdr["CRVAL1"] = sun_coords.ra.deg
             hdr["CRVAL2"] = sun_coords.dec.deg
         except:

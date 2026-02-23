@@ -3815,7 +3815,7 @@ def cli():
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
         )
         return
-                    
+
     if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
@@ -3838,7 +3838,7 @@ def cli():
     else:
         ############################################
         # Stop prefect server in cluster environment
-        ############################################    
+        ############################################
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")

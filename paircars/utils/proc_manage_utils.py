@@ -381,7 +381,7 @@ def submit_local_master_flow(args, jobid, env=[]):
         return 1
     try:
         script_args = ["#!/bin/bash"]
-        if len(env)>0:
+        if len(env) > 0:
             for i in env:
                 script_args.append(f"export {i}")
         script_args.append("export PYTHONUNBUFFERED=1\n")
