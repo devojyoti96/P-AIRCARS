@@ -68,6 +68,7 @@ def get_slurm_dask_cluster(
     walltime="24:00:00",
     python_path=None,
     spill_frac=0.7,
+    env=[],
     verbose=True,
 ):
     """
@@ -180,7 +181,7 @@ def get_slurm_dask_cluster(
                 f"TEMP={dask_dir_tmp}",
                 f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
                 "PYTHONWARNINGS=ignore::UserWarning:contextlib",
-            ],
+            ]+env,
         )
 
         cluster.scale(1)
