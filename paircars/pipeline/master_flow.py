@@ -3874,7 +3874,8 @@ def cli():
         else:
             print("Issued occured in P-AIRCARS execution.")
         if scheduler_name == "slurm":
-            running_paircars_jobs = show_status.show_slurm_job_status()
+            node_name = socket.gethostname()
+            running_paircars_jobs = show_status.show_slurm_job_status(node_name=node_name)
             if running_paircars_jobs==0:
                 print("No other P-AIRCARS job is running. Closing prefect server...")
                 msg = stop_prefect_server(scheduler_name="slurm")

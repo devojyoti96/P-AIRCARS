@@ -89,7 +89,7 @@ def show_local_job_status(clean_old_jobs=False):
         return msg
 
 
-def show_slurm_job_status(clean_old_jobs=False):
+def show_slurm_job_status(clean_old_jobs=False, node_name=None):
     """
     Show P-AIRCARS slurm cluster jobs status
 
@@ -97,6 +97,8 @@ def show_slurm_job_status(clean_old_jobs=False):
     ----------
     clean_old_jobs : bool, optional
         Clean old informations for stopped jobs
+    node_name : str, optional
+        Node name of slurm cluster
         
     Returns
     -------
@@ -120,9 +122,15 @@ def show_slurm_job_status(clean_old_jobs=False):
                 pid = line[1]
                 workdir = line[4]
                 outdir = line[5]
-                if is_slurm_job_running(int(pid)):
-                    running = "Running/Waiting"
-                    msg+=1
+                if node_name is not None:
+                    if is_slurm_job_running(int(pid),node_name=node_name):
+                        running = f"Running/Waiting in node: {node_name}"
+                        msg+=1
+                    elif is_slurm_job_running(int(pid)):
+                        running = "Running/Waiting in different node"
+                elif is_slurm_job_running(int(pid)):
+                    running = "Running/Waiting in any node"
+                    msg+=1    
                 else:
                     running = "Done/Stopped"
                 print(
@@ -155,6 +163,12 @@ def cli():
         action="store_true",
         help="Clean old jobs",
     )
+    parser.add_argument(
+        "--node_name",
+        type=str,
+        default=None,
+        help="Slurm node name",
+    )
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -166,7 +180,7 @@ def cli():
             if scheduler_name=="local":
                 show_local_job_status(clean_old_jobs=args.clean_old_jobs)
             elif scheduler_name=="slurm":
-                show_slurm_job_status(clean_old_jobs=args.clean_old_jobs)    
+                show_slurm_job_status(clean_old_jobs=args.clean_old_jobs, node_name=args.node_name)    
             else:
                 print (f"P-AIRCARS is not ready for job scheduler: {scheduler_name}")
     except Exception as e:
