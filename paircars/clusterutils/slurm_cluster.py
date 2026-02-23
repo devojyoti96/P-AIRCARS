@@ -165,7 +165,7 @@ def get_slurm_dask_cluster(
         cluster = SLURMCluster(
             queue=partition,
             account=account,
-            cores=ncpu,
+            cores=1,
             n_workers=1,
             walltime=walltime,
             memory=f"{min(max_mem,mem)}G",

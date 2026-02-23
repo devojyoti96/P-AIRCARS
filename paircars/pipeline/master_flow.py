@@ -2205,7 +2205,7 @@ def master_control(
                 print("###########################")
             except Exception as e:
                 print(
-                    "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
+                    "!!!! WARNING: Flagging error. P-AIRCARS has stopped. !!!!"
                 )
                 traceback.print_exc()
                 if emails != "":
@@ -2213,6 +2213,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+                return 1
 
         #################################
         # Import model
