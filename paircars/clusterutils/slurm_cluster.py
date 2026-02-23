@@ -351,7 +351,7 @@ def submit_slurm_master_flow(args, jobid, env=[]):
             script_args.append(f"#SBATCH --account={args.account}\n")
         if len(env)>0:
             for i in env:
-                scripts.args.append(f"export {i}")
+                script_args.append(f"export {i}")
         script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
