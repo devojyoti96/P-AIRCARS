@@ -165,16 +165,8 @@ def get_slurm_dask_cluster(
         ]
 
         job_extra = [
-            f"--nodes=1",
-            f"--ntasks=1",
             f"--cpus-per-task={ncpu}",
-            f"--mem={mem_limit}G",
-            f"--output={log_dir}/paircars_{jobid}-%j.out",
-            f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
-
-        '''for env_param in env_extra:
-            job_extra.append(f"export {env_param}")'''
 
         cluster = SLURMCluster(
             queue=partition,
@@ -194,8 +186,6 @@ def get_slurm_dask_cluster(
             job_extra_directives=job_extra,
             job_script_prologue=env_extra,
         )
-
-        cluster.scale(1)
         client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
         if verbose:
