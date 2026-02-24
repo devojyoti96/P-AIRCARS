@@ -183,7 +183,6 @@ def get_slurm_dask_cluster(
                 f"MKL_NUM_THREADS={ncpu}",
                 f"OPENBLAS_NUM_THREADS={ncpu}",
                 f"NUMEXPR_NUM_THREADS={ncpu}",
-                f"RAYON_NUM_THREADS={ncpu}",
                 "MALLOC_TRIM_THRESHOLD_=0",
                 f"TMPDIR={dask_dir_tmp}",
                 f"TMP={dask_dir_tmp}",

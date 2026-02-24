@@ -3720,7 +3720,6 @@ def cli():
         else:
             print(f"Calibrator data direcotry does not exist.")
     max_mem = max(4, round(5 * max_ms_size, 1))  # Minimum 4 GB
-    print(f"Maximum per job memory: {max_mem}GB")
 
     ###############################################
     # Setup cluster environment

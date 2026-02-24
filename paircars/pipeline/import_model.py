@@ -312,8 +312,18 @@ def main(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        ncpu = int(os.environ.get("OMP_NUM_THREADS", 1))
         mem_limit = round(min(worker_mem_list),3)
+        ncpu = os.environ.get("OMP_NUM_THREADS")
+        if ncpu is not None:
+            ncpu = int(ncpu)
+        else:   
+            ncpu = 1
+            
+    print("#################################")
+    print(f"Total dask worker: {njobs}")
+    print(f"CPU per worker: {ncpu}")
+    print(f"Memory per worker: {mem_limit} GB")
+    print("#################################")
         
     try:
         if len(mslist) > 0:

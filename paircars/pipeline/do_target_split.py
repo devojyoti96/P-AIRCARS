@@ -161,11 +161,15 @@ def split_target_scans(
         else:
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
-            n_threads = int(os.environ.get("OMP_NUM_THREADS", 1))
+            n_threads = os.environ.get("OMP_NUM_THREADS")
+            if n_threads is not None:
+                n_threads = int(n_threads)
+            else:   
+                n_threads = 1
 
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
-
+        print(f"Memory per worker: {mem_limit} GB")
 
         tasks = []
         splited_ms_list = []
