@@ -156,6 +156,7 @@ def get_slurm_dask_cluster(
             f"export MKL_NUM_THREADS={ncpu}",
             f"export OPENBLAS_NUM_THREADS={ncpu}",
             f"export NUMEXPR_NUM_THREADS={ncpu}",
+            f"export RAYON_NUM_THREADS={ncpu}",
             "export MALLOC_TRIM_THRESHOLD_=0",
             f"export TMPDIR={dask_dir_tmp}",
             f"export TMP={dask_dir_tmp}",
@@ -189,8 +190,6 @@ def get_slurm_dask_cluster(
             job_extra_directives=job_extra,
             job_script_prologue=env_extra,
         )
-
-        cluster.scale(1)
         client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
         if verbose:
