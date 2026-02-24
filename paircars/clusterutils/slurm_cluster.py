@@ -173,8 +173,8 @@ def get_slurm_dask_cluster(
             f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
 
-        for env_param in env_extra:
-            job_extra.append(f"export {env_param}")
+        '''for env_param in env_extra:
+            job_extra.append(f"export {env_param}")'''
 
         cluster = SLURMCluster(
             queue=partition,
@@ -191,6 +191,8 @@ def get_slurm_dask_cluster(
             log_directory=log_dir,
             name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
+            job_extra_directives=job_extra,
+            env_extra=env_extra,
         )
 
         cluster.scale(1)
