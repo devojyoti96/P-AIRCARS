@@ -310,11 +310,9 @@ def main(
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
-        worker_cpu_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-            worker_cpu_list.append(w["nthreads"])
-        ncpu = min(worker_cpu_list)
+        ncpu = int(os.environ.get("OMP_NUM_THREADS", 1))
         mem_limit = round(min(worker_mem_list),3)
         
     try:

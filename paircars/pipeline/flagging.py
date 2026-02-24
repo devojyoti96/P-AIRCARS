@@ -385,12 +385,10 @@ def do_flagging(
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
             worker_mem_list = []
-            worker_cpu_list = []
             for addr, w in client_info.items():
                 worker_mem_list.append(w["memory_limit"] / 1024**3)
-                worker_cpu_list.append(w["nthreads"])
-            n_threads = min(worker_cpu_list)
-            mem_limit = round(min(worker_mem_list),3)
+            n_threads = int(os.environ.get("OMP_NUM_THREADS", 1))
+            mem_limit = round(min(worker_mem_list)/njobs,3)
 
         print("#################################")
         print(f"Total dask worker: {njobs}")
