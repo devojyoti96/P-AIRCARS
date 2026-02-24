@@ -38,7 +38,7 @@ datadir = get_datadir()
 
 
 def import_hyperdrive_model(
-    msname, metafits, beamfile="", sourcelist="", ncpu=1, cpu_frac=-1, verbose=False
+    msname, metafits, beamfile="", sourcelist="", ncpu=1, verbose=False
 ):
     """
     Simulate visibilities and import in the measurement set
@@ -55,19 +55,14 @@ def import_hyperdrive_model(
         Source file name
     ncpu : int, optional
         Number of cpu threads to use
-    cpu_frac : float, optional
-        CPU fraction of current node
     verbose : bool, optional
         Verbose output or not
     """
-    cpu_frac = min(0.8, cpu_frac)
     ncpu = max(1, ncpu)
 
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
-
-    if cpu_frac > 0:
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+    
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -310,12 +305,18 @@ def main(
         mem_limit = (psutil.virtual_memory().available * mem_frac) / (1024**3)
         max_njobs = int(mem_limit / per_job_mem)
         njobs = max(1, min(max_njobs, len(mslist)))
-        cpu_frac = -1
-        mem_frac = -1
+        ncpu = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
     else:
-        njobs = 1
-    ncpu = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
-
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        worker_cpu_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+            worker_cpu_list.append(w["nthreads"])
+        ncpu = min(worker_cpu_list)
+        mem_limit = round(min(worker_mem_list)/njobs,3)
+        
     try:
         if len(mslist) > 0:
             tasks = []
@@ -327,7 +328,6 @@ def main(
                         beamfile=beamfile,
                         sourcelist=sourcelist,
                         ncpu=ncpu,
-                        cpu_frac=cpu_frac,
                         verbose=verbose,
                     )
                 )

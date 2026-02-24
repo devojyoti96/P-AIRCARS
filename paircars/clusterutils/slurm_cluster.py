@@ -165,7 +165,7 @@ def get_slurm_dask_cluster(
         cluster = SLURMCluster(
             queue=partition,
             account=account,
-            cores=1,
+            cores=1, # This is important for CASA tasks
             n_workers=1,
             walltime=walltime,
             memory=f"{mem_limit}G",
