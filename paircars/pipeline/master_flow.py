@@ -1717,7 +1717,6 @@ def master_control(
             return 1
         else:
             dask_client, dask_cluster, dask_dir = result
-    current_worker = get_total_worker(dask_client)
 
     #####################################
     # Initiating paircars data
@@ -3054,6 +3053,10 @@ def master_control(
         # Primary beam correction
         ###########################
         if do_pbcor:
+            if current_worker < max_worker:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(images), max_worker)
+                )
             images = glob.glob(f"{imagedir}/images/*.fits")
             if len(images) == 0:
                 print(f"No image is present in image directory: {imagedir}/images")
@@ -3100,6 +3103,10 @@ def master_control(
         # Make overlays
         #######################################
         if make_overlay:
+            if current_worker < max_worker:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(images), max_worker)
+                )
             print("###########################")
             print("Starting task: Making overlay on EUV images.....")
             print("###########################")
@@ -3141,6 +3148,10 @@ def master_control(
         # Making diagnostic plots of measurement sets
         ##############################################
         if make_msplot:
+            if current_worker < max_worker:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(split_cal_mslist), max_worker)
+                )
             msplot_outdir = f"{outdir}/ms_diagnostics_plots"
             os.makedirs(msplot_outdir, exist_ok=True)
             if has_cal and len(split_cal_mslist) > 0:
@@ -3744,9 +3755,17 @@ def cli():
             return 1
         else:
             dask_client, dask_cluster, dask_dir = result
-        nworker = max(2, int(psutil.cpu_count() * args.cpu_frac))
-        if args.max_worker > 0:
+        max_estimated_worker = int(
+            psutil.cpu_count() * args.cpu_frac
+        )  # Maximum estimated workers for given cpu fraction
+        nworker = min(
+            len(target_mslist) + 1, max_estimated_worker
+        )  # Total number of workers
+        if args.max_worker > 0:  # If user provided maximum number of workers
             nworker = min(nworker, args.max_worker)
+            max_estimated_worker = args.max_worker
+        nworker = max(2, nworker)
+
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
             pid,
@@ -3772,16 +3791,22 @@ def cli():
             per_node_cpu, per_node_mem = get_slurm_node_resources(
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
-            max_worker_per_node = max(1, int(per_node_mem / max_mem))
-            nworker = max(
-                2,
-                min(
-                    len(target_mslist) + 1,
-                    max_worker_per_node * get_total_nodes(partition=args.partition),
-                ),
-            )
-            if args.max_worker > 0:
+            max_worker_per_node = max(
+                1, int(per_node_mem / max_mem)
+            )  # Maximum worker per node
+            total_nodes = get_total_nodes(
+                partition=args.partition
+            )  # Total nodes for the given partition
+            max_estimated_worker = int(
+                max_worker_per_node * total_nodes
+            )  # Maximum number of workers can be spawned
+            nworker = min(
+                len(target_mslist) + 1, max_estimated_worker
+            )  # Total number of workers
+            if args.max_worker > 0:  # If user defined maximum number of workers
                 nworker = min(nworker, args.max_worker)
+                max_estimated_worker = args.max_worker
+            nworker = max(2, nworker)
 
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
@@ -3810,7 +3835,6 @@ def cli():
                 args.cpu_frac,
                 args.mem_frac,
             )
-
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
@@ -3883,7 +3907,7 @@ def cli():
             # Resource settings
             cpu_frac=args.cpu_frac,
             mem_frac=args.mem_frac,
-            max_worker=nworker,
+            max_worker=max_estimated_worker,
             keep_backup=args.keep_backup,
             keep_calibrated_ms=args.keep_calibrated_ms,
             # Remote logging
