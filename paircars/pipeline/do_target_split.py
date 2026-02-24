@@ -169,7 +169,6 @@ def split_target_scans(
 
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
 
         tasks = []
         splited_ms_list = []
