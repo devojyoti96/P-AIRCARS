@@ -2255,6 +2255,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
+                if do_selfcal is False:
+                    print("Self-calibration is also switched off. P-AIRCARS has stopped.")
+                    return 1
 
         ###############################
         # Run basic calibration
