@@ -71,14 +71,12 @@ def perform_imaging(
     mask_radius=40,
     savemodel=True,
     saveres=True,
-    ncpu=1,
-    mem=1,
-    cpu_frac=-1,
-    mem_frac=-1,
     cutout_rsun=10.0,
     make_overlay=False,
     make_plots=True,
     logfile="imaging.log",
+    ncpu=1,
+    mem=1,
 ):
     """
     Perform spectropolarimetric snapshot imaging of a ms
@@ -137,10 +135,6 @@ def perform_imaging(
         Number of CPU threads to use
     mem : float, optional
         Memory in GB to use
-    cpu_frac : float, optional
-        CPU fraction of current node
-    mem_frac : float, optional
-        Memory fraction of current node
 
     Returns
     -------
@@ -149,15 +143,8 @@ def perform_imaging(
     list
         List of images [[images],[models],[residuals]]
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
     ncpu = max(1, ncpu)
     mem = max(1, mem)
-
-    if cpu_frac > 0:
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac > 0:
-        mem = mem_frac * psutil.virtual_memory().available / (1024**3)
 
     if os.path.exists(logfile):
         os.system(f"rm -rf {logfile}")
@@ -756,22 +743,26 @@ def run_all_imaging(
             njobs = min(len(mslist), int(new_soft_limit / total_fd))
             njobs = max(1, min(total_cpu, njobs))
             n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = total_mem / njobs
-            cpu_frac = -1
-            mem_frac = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print(f"CPU per worker: {n_threads}")
-            print(f"Memory per worker: {round(mem_limit,2)} GB")
-            print("#################################")
+            mem_limit = round(total_mem / njobs, 3)
             #########################################
         else:
-            njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads = -1
-            mem_limit = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print("#################################")
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_mem_list = []
+            for addr, w in client_info.items():
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
+            mem_limit = round(min(worker_mem_list), 3)
+            n_threads = os.environ.get("OMP_NUM_THREADS")
+            if n_threads is not None:
+                n_threads = int(n_threads)
+            else:
+                n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
 
         tasks = []
         for i in range(len(mslist)):
@@ -831,8 +822,6 @@ def run_all_imaging(
                     make_plots=make_plots,
                     ncpu=n_threads,
                     mem=mem_limit,
-                    cpu_frac=cpu_frac,
-                    mem_frac=mem_frac,
                     logfile=logfile,
                 )
             )

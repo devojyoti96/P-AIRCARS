@@ -316,7 +316,7 @@ def check_datacolumn_valid(msname, datacolumn="DATA"):
         return False
 
 
-def get_bad_ants(msname="", fieldnames=[], n_threads=-1, cpu_frac=-1):
+def get_bad_ants(msname="", fieldnames=[], n_threads=-1):
     """
     Get bad antennas
 
@@ -334,11 +334,7 @@ def get_bad_ants(msname="", fieldnames=[], n_threads=-1, cpu_frac=-1):
     str
         Bad antenna string
     """
-    cpu_frac = min(0.8, cpu_frac)
     n_threads = max(1, n_threads)
-
-    if cpu_frac > 0:
-        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
     limit_threads(n_threads=n_threads)
     from casatasks import visstat
@@ -505,7 +501,6 @@ def get_refant(
     msname="",
     field="",
     n_threads=-1,
-    cpu_frac=-1,
 ):
     """
     Get reference antenna
@@ -522,11 +517,7 @@ def get_refant(
     str
         Reference antenna
     """
-    cpu_frac = min(0.8, cpu_frac)
     n_threads = max(1, n_threads)
-
-    if cpu_frac > 0:
-        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
 
     limit_threads(n_threads=n_threads)
     from casatasks import visstat, casalog

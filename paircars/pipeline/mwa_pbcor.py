@@ -57,7 +57,6 @@ def run_pbcor(
     restore=False,
     jobid=0,
     ncpu=1,
-    cpu_frac=-1,
     verbose=False,
 ):
     """
@@ -79,8 +78,6 @@ def run_pbcor(
         Job ID
     ncpu : int, optional
         Number of CPU threads to use
-    cpu_frac : float, optional
-        CPU fraction of current node
     verbose : bool, optional
         Verbose output
 
@@ -89,11 +86,7 @@ def run_pbcor(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
     ncpu = max(1, ncpu)
-
-    if cpu_frac > 0:
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
     freq = get_fits_freq(imagename)
     outfile = f"{pbcor_dir}/{os.path.basename(imagename).split('.fits')[0]}_pbcor.fits"
     pbfile = f"{pbdir}/freq_{freq}.npy"
@@ -213,22 +206,27 @@ def pbcor_all_images(
             mem_limit = (
                 16.0 * max([os.path.getsize(image) for image in images]) / 1024**3
             )  # In GB
+            mem_limit = round(mem_limit, 3)
             njobs = max(1, min(total_cpu, int(total_mem / mem_limit)))
             n_threads = max(1, int(total_cpu / njobs))
-            cpu_frac = -1
-            mem_frac = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print(f"CPU per worker: {n_threads}")
-            print(f"Memory per worker: {round(mem_limit,5)} GB")
-            print("#################################")
         else:
-            njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads = -1
-            mem_limit = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print("#################################")
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_mem_list = []
+            for addr, w in client_info.items():
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
+            mem_limit = round(min(worker_mem_list), 3)
+            n_threads = os.environ.get("OMP_NUM_THREADS")
+            if n_threads is not None:
+                n_threads = int(n_threads)
+            else:
+                n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
 
         ###########################################
         if len(first_set) > 0:
@@ -242,7 +240,6 @@ def pbcor_all_images(
                     restore=restore,
                     jobid=jobid,
                     ncpu=n_threads,
-                    cpu_frac=cpu_frac,
                 )
                 tasks.append(task)
             results = []
@@ -268,7 +265,6 @@ def pbcor_all_images(
                     restore=restore,
                     jobid=jobid,
                     ncpu=n_threads,
-                    cpu_frac=cpu_frac,
                 )
                 tasks.append(task)
 

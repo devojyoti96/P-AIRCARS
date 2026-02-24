@@ -94,24 +94,28 @@ def make_solar_DS(
         ########################################
         ms_sizes = [get_ms_size(ms) for ms in mslist]
         per_job_mem = 2 * max(ms_sizes)
-        mem_limit = (psutil.virtual_memory().available * mem_frac) / (1024**3)
+        mem_limit = round((psutil.virtual_memory().available * mem_frac) / (1024**3), 3)
         max_njobs = int(mem_limit / per_job_mem)
         njobs = max(1, min(max_njobs, len(mslist)))
         n_threads = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
-        cpu_frac = -1
-        mem_frac = -1
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit,2)} GB")
-        print("#################################")
     else:
-        njobs = len(dask_client.scheduler_info()["workers"])
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print("#################################")
-        n_threads = -1
-        mem_limit = -1
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+    print("#################################")
+    print(f"Total dask worker: {njobs}")
+    print(f"CPU per worker: {n_threads}")
+    print(f"Memory per worker: {mem_limit} GB")
+    print("#################################")
 
     try:
         ###########################################
@@ -123,7 +127,6 @@ def make_solar_DS(
                     metafits,
                     f"{outdir}/dynamic_spectra",
                     n_threads=n_threads,
-                    cpu_frac=cpu_frac,
                 )
             )
         results = []

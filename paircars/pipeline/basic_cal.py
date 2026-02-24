@@ -180,8 +180,6 @@ def single_ms_cal_and_flag(
     flag_threshold=5.0,
     n_threads=1,
     mem_limit=1,
-    cpu_frac=-1,
-    mem_frac=-1,
 ):
     """
     Single ms calibration and post-calibration flagging
@@ -210,25 +208,14 @@ def single_ms_cal_and_flag(
         Number of OpenMP threads
     mem_limit : float, optional
         Memory limit in GB
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
 
     Returns
     -------
     str
         Caltables
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
     n_threads = max(1, n_threads)
     mem_limit = max(1, mem_limit)
-
-    if cpu_frac > 0:
-        n_threads = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac > 0:
-        mem_limit = mem_frac * psutil.virtual_memory().available / (1024**3)
 
     try:
         caltable_prefix = (
@@ -417,21 +404,25 @@ def single_round_cal_and_flag(
         total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
         total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
         n_threads = max(1, int(total_cpu / njobs))
-        mem_limit = total_mem / njobs
-        cpu_frac = -1
-        mem_frac = -1
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit,5)} GB")
-        print("#################################")
+        mem_limit = round(total_mem / njobs, 3)
     else:
-        njobs = len(dask_client.scheduler_info()["workers"])
-        n_threads = -1
-        mem_limit = -1
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print("#################################")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+    print("#################################")
+    print(f"Total dask worker: {njobs}")
+    print(f"CPU per worker: {n_threads}")
+    print(f"Memory per worker: {mem_limit} GB")
+    print("#################################")
 
     tasks = [
         delayed(single_ms_cal_and_flag)(
@@ -446,8 +437,6 @@ def single_round_cal_and_flag(
             flag_threshold=flag_threshold,
             n_threads=n_threads,
             mem_limit=mem_limit,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
         )
         for msname in mslist
     ]

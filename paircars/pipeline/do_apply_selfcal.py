@@ -145,21 +145,25 @@ def run_all_applysol(
             )  # In GB
             njobs = min(total_cpu, len(mslist))
             n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = total_mem / njobs
-            cpu_frac = -1
-            mem_frac = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print(f"CPU per worker: {n_threads}")
-            print(f"Memory per worker: {round(mem_limit,2)} GB")
-            print("#################################")
+            mem_limit = round(total_mem / njobs, 3)
         else:
-            njobs = len(dask_client.scheduler_info()["workers"])
-            n_threads = -1
-            mem_limit = -1
-            print("#################################")
-            print(f"Total dask worker: {njobs}")
-            print("#################################")
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_mem_list = []
+            for addr, w in client_info.items():
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
+            mem_limit = round(min(worker_mem_list), 3)
+            n_threads = os.environ.get("OMP_NUM_THREADS")
+            if n_threads is not None:
+                n_threads = int(n_threads)
+            else:
+                n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
 
         tasks = []
         msmd = msmetadata()
@@ -203,8 +207,6 @@ def run_all_applysol(
                         interp=["linear,linearflag"],
                         n_threads=n_threads,
                         mem_limit=mem_limit,
-                        cpu_frac=cpu_frac,
-                        mem_frac=mem_frac,
                         force_apply=force_apply,
                         soltype="selfcal",
                     )

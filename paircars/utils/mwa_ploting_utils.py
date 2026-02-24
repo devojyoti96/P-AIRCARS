@@ -58,8 +58,6 @@ def plot_ms_diagnostics(
     outdir,
     ncpu=1,
     total_mem=1,
-    cpu_frac=-1,
-    mem_frac=-1,
     verbose=False,
 ):
     """
@@ -75,10 +73,6 @@ def plot_ms_diagnostics(
         Number of CPU threads
     total_mem : float, optional
         Total memory in GB
-    cpu_frac : float, optional
-        CPU fraction of current node
-    mem_frac : float, optional
-        Memory fraction of current node
     verbose : bool, optional
         Verbose output
 
@@ -91,9 +85,6 @@ def plot_ms_diagnostics(
     """
     msname = msname.rstrip("/")
     mspath = os.path.dirname(os.path.abspath(msname))
-
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
 
     ncpu = max(1, ncpu)
     total_mem = max(1, total_mem)
@@ -115,11 +106,6 @@ def plot_ms_diagnostics(
     scan_list = msmd.scannumbers()
     msmd.close()
     scan_sizes = [get_ms_scan_size(msname, scan) for scan in scan_list]
-
-    if cpu_frac > 0:
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-    if mem_frac > 0:
-        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
 
     max_scan_size = max(scan_sizes)
     frac_chunk = min(1, total_mem / max_scan_size)
@@ -1018,7 +1004,6 @@ def make_mwa_overlay(
     extensions=["png"],
     outdirs=[],
     ncpu=1,
-    cpu_frac=-1,
     keep_euv_fits=False,
     showgui=False,
     verbose=False,
@@ -1054,8 +1039,6 @@ def make_mwa_overlay(
         Output directories for each extensions
     ncpu : int, optional
         Number of CPUs to use
-    cpu_frac : float, optional
-        CPU fraction of current node
     keep_euv_fits : bool, optional
         Keep EUV fits file
     showgui : bool, optional
@@ -1083,9 +1066,6 @@ def make_mwa_overlay(
     logging.getLogger("reproject.common").setLevel(logging.WARNING)
 
     ncpu = max(1, ncpu)
-
-    if cpu_frac > 0:
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
 
     @delayed
     def reproject_map(smap, target_header):
