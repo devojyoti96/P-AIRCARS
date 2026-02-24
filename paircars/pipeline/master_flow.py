@@ -2120,7 +2120,7 @@ def master_control(
         ##############################
         # If basic calibration is requested and calibrator ms and metafits are present
         future_cal_split = None
-        if do_basic_cal and has_cal:
+        if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
             prefix = "calibrator"
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
@@ -2175,7 +2175,7 @@ def master_control(
         # Run flagging jobs on calibrators
         ##################################
         # Only if basic calibration is requested
-        if do_cal_flag and do_basic_cal and has_cal:
+        if do_cal_flag and has_cal:
             print("###########################")
             print("Starting task: Flagging calibrators ....")
             print("###########################")
@@ -2218,8 +2218,7 @@ def master_control(
         #################################
         # Import model
         #################################
-        # Only if basic calibration is requested
-        if do_import_model and do_basic_cal and has_cal:
+        if do_import_model and has_cal:
             print("###########################")
             print("Starting task: Importing model visibilities ....")
             print("###########################")
