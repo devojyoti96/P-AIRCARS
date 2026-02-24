@@ -153,6 +153,21 @@ def get_slurm_dask_cluster(
             python_path = sys.executable
         interface = detect_best_interface()
         mem_limit = max(1, round(min(max_mem, mem), 2))
+        env_extra=[
+                "PYTHONUNBUFFERED=1",
+                f"OMP_NUM_THREADS={ncpu}",
+                f"MKL_NUM_THREADS={ncpu}",
+                f"OPENBLAS_NUM_THREADS={ncpu}",
+                f"NUMEXPR_NUM_THREADS={ncpu}",
+                "MALLOC_TRIM_THRESHOLD_=0",
+                f"TMPDIR={dask_dir_tmp}",
+                f"TMP={dask_dir_tmp}",
+                f"TEMP={dask_dir_tmp}",
+                f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
+                "PYTHONWARNINGS=ignore::UserWarning:contextlib",
+            ]
+            + env,
+        
         job_extra = [
             f"--nodes=1",
             f"--ntasks=1",
@@ -161,6 +176,9 @@ def get_slurm_dask_cluster(
             f"--output={log_dir}/paircars_{jobid}-%j.out",
             f"--error={log_dir}/paircars_{jobid}-%j.err",
         ]
+        
+        for env_param in env_extra:
+            job_extra.append(f"export {env_param}")
 
         cluster = SLURMCluster(
             queue=partition,
@@ -177,20 +195,6 @@ def get_slurm_dask_cluster(
             log_directory=log_dir,
             name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
-            env_extra=[
-                "PYTHONUNBUFFERED=1",
-                f"OMP_NUM_THREADS={ncpu}",
-                f"MKL_NUM_THREADS={ncpu}",
-                f"OPENBLAS_NUM_THREADS={ncpu}",
-                f"NUMEXPR_NUM_THREADS={ncpu}",
-                "MALLOC_TRIM_THRESHOLD_=0",
-                f"TMPDIR={dask_dir_tmp}",
-                f"TMP={dask_dir_tmp}",
-                f"TEMP={dask_dir_tmp}",
-                f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
-                "PYTHONWARNINGS=ignore::UserWarning:contextlib",
-            ]
-            + env,
         )
 
         cluster.scale(1)
