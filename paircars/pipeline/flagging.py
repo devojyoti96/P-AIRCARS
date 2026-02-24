@@ -390,7 +390,7 @@ def do_flagging(
                 worker_mem_list.append(w["memory_limit"] / 1024**3)
                 worker_cpu_list.append(w["nthreads"])
             n_threads = min(worker_cpu_list)
-            mem_limit = round(min(worker_mem_list)/njobs,3)
+            mem_limit = round(min(worker_mem_list),3)
 
         print("#################################")
         print(f"Total dask worker: {njobs}")

@@ -315,7 +315,7 @@ def main(
             worker_mem_list.append(w["memory_limit"] / 1024**3)
             worker_cpu_list.append(w["nthreads"])
         ncpu = min(worker_cpu_list)
-        mem_limit = round(min(worker_mem_list)/njobs,3)
+        mem_limit = round(min(worker_mem_list),3)
         
     try:
         if len(mslist) > 0:
