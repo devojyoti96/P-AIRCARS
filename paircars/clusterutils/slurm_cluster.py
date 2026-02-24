@@ -70,7 +70,6 @@ def get_slurm_dask_cluster(
     walltime="24:00:00",
     python_path=None,
     spill_frac=0.7,
-    env=[],
     verbose=True,
 ):
     """
@@ -100,8 +99,6 @@ def get_slurm_dask_cluster(
         Job walltime, maximum time the SLURM job can run (HH:MM:SS)
     spill_frac : float
         Fraction of memory to spill to disk
-    env : list, optional
-        List of environment variables
     verbose : bool
         Print Dask dashboard URL and diagnostics
 
@@ -166,7 +163,6 @@ def get_slurm_dask_cluster(
             f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
             "PYTHONWARNINGS=ignore::UserWarning:contextlib",
         ]
-        +env,
 
         job_extra = [
             f"--nodes=1",
