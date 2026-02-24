@@ -20,6 +20,7 @@ from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
+from pyfiglet import Figlet
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -3682,6 +3683,8 @@ def cli():
 
     args = parser.parse_args()
 
+    f = Figlet(font="big")
+    print(f.renderText("P-AIRCARS"))
     os.system(f"rm -rf {args.workdir}/dask_*")
 
     if args.jobid is None:

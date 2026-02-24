@@ -50,6 +50,7 @@ def cli():
     scheduler_name = get_scheduler_name()
 
     if args.command == "start":
+        print('######################################################")
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
             port, show_config=args.show_config, scheduler_name=scheduler_name
         )
@@ -61,6 +62,7 @@ def cli():
             print(f"Server process ID file: {pid_file}")
         else:
             print(f"Error in starting prefect server at port: {port}")
+        print('######################################################")
     elif args.command == "save_env":
         profile_path, env_file, dashboard = save_prefect_env_to_file(
             scheduler_name=scheduler_name

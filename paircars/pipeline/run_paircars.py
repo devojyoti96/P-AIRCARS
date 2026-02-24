@@ -3,7 +3,6 @@ import sys
 import traceback
 import argparse
 import numpy as np
-from pyfiglet import Figlet
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
@@ -359,9 +358,6 @@ def cli():
         sys.exit(1)
 
     args = parser.parse_args()
-    
-    f = Figlet(font="big")
-    print(f.renderText("P-AIRCARS"))
 
     if args.target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
