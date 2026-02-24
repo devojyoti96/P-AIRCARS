@@ -129,6 +129,8 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
                         msg += 1
                     elif is_slurm_job_running(int(pid)):
                         running = "Running/Waiting in different node"
+                    else:
+                        running = "Done/Stopped"
                 elif is_slurm_job_running(int(pid)):
                     running = "Running/Waiting in any node"
                     msg += 1

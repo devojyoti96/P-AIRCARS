@@ -62,7 +62,11 @@ def import_hyperdrive_model(
 
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
-
+    print(
+        "#######################\nImporting model for ms:"
+        + msname
+        + "\n###################\n"
+    )   
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -89,11 +93,6 @@ def import_hyperdrive_model(
     model_msname = msname.split(".ms")[0] + "_model.ms"
     try:
         starttime = time.time()
-        print(
-            "#######################\nImporting model for ms:"
-            + msname
-            + "\n###################\n"
-        )
         with suppress_output():
             msmd = msmetadata()
             msmd.open(msname)
@@ -184,6 +183,61 @@ def import_hyperdrive_model(
         os.system(f"rm -rf {model_msname}")
 
 
+def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
+    """
+    Run all modeling
+    
+    Parameters
+    ----------
+    mslist : list
+        Measurement set list
+    metafits : str
+        Metafits file
+    beamfile : str
+        MWA primary beam file
+    sourcelist : str
+        Source list file
+    ncpu : int
+        Number of CPU threads
+    verbose : bool
+        Verbose output
+        
+    Returns
+    -------
+    int
+        Total failure
+    """
+    msg=0
+    try:
+        if len(mslist) > 0:
+            tasks = []
+            for msname in mslist:
+                tasks.append(
+                    delayed(import_hyperdrive_model)(
+                        msname,
+                        metafits,
+                        beamfile=beamfile,
+                        sourcelist=sourcelist,
+                        ncpu=ncpu,
+                        verbose=verbose,
+                    )
+                )
+            print("Start import modeling...")
+            futures = dask_client.compute(tasks)
+            results = dask_client.gather(futures)
+            for i in range(len(results)):
+                if results[i] != 0:
+                    print(f"Error in model import for ms: {mslist[i]}.")
+                    msg+=1
+        else:
+            print("Please provide a valid measurement set list.")
+            msg = -1
+    except Exception as e:
+        traceback.print_exc()
+        msg = -1
+    return msg
+    
+    
 def main(
     mslist,
     metafits,
@@ -326,30 +380,12 @@ def main(
     print("#################################")
 
     try:
-        if len(mslist) > 0:
-            tasks = []
-            for msname in mslist:
-                tasks.append(
-                    delayed(import_hyperdrive_model)(
-                        msname,
-                        metafits,
-                        beamfile=beamfile,
-                        sourcelist=sourcelist,
-                        ncpu=ncpu,
-                        verbose=verbose,
-                    )
-                )
-            print("Start import modeling...")
-            futures = dask_client.compute(tasks)
-            results = dask_client.gather(futures)
-            msg = 0
-            for i in range(len(results)):
-                if results[i] != 0:
-                    print(f"Error in model import for ms: {mslist[i]}.")
-                    msg = 1
-        else:
-            print("Please provide a valid measurement set list.")
-            msg = 1
+        msg = run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose)
+        if msg<0:
+            msg=1
+        elif msg>0: 
+            print(f"Total model import failure: {msg}")
+            msg=1
     except Exception as e:
         traceback.print_exc()
         msg = 1

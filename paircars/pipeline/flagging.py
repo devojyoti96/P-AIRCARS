@@ -402,23 +402,24 @@ def do_flagging(
 
         ###########################################
         tasks = []
+        test_msname = os.path.abspath(mslist[0].rstrip("/"))
+        if flag_bad_spw:
+            badspw = get_bad_chans(test_msname)
+            print(f"Bad spws: {badspw}.")
+        else:
+            badspw = ""
+        if flag_bad_ants:
+            bad_ants_str = get_mwa_bad_ants(metafits)
+            print(f"Bad antennas: {bad_ants_str}.")
+        else:
+            bad_ants_str = ""
+            
         for msname in mslist:
             msname = os.path.abspath(msname.rstrip("/"))
             if restore_flag:
-                print("Restoring all previous flags...")
+                print(f"Restoring all previous flags for ms: {msname}")
                 with suppress_output():
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
-            if flag_bad_spw:
-                badspw = get_bad_chans(msname)
-                print(f"Bad spws: {badspw}.")
-            else:
-                badspw = ""
-            if flag_bad_ants:
-                bad_ants_str = get_mwa_bad_ants(metafits)
-                print(f"Bad antennas: {bad_ants_str}.")
-            else:
-                bad_ants_str = ""
-
             if flag_backup:
                 do_flag_backup(msname, flagtype="flagdata")
             tasks.append(
