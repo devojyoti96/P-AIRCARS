@@ -162,10 +162,10 @@ def split_target_scans(
         else:
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
-            print (os.environ)
+            print(os.environ)
             n_threads = os.environ.get("OMP_NUM_THREADS")
             if n_threads is not None:
-                print ("Not none")
+                print("Not none")
                 n_threads = int(n_threads)
             else:
                 n_threads = 1
