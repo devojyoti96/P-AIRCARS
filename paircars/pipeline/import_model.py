@@ -62,7 +62,7 @@ def import_hyperdrive_model(
 
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
-    
+
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -312,19 +312,19 @@ def main(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list),3)
+        mem_limit = round(min(worker_mem_list), 3)
         ncpu = os.environ.get("OMP_NUM_THREADS")
         if ncpu is not None:
             ncpu = int(ncpu)
-        else:   
+        else:
             ncpu = 1
-            
+
     print("#################################")
     print(f"Total dask worker: {njobs}")
     print(f"CPU per worker: {ncpu}")
     print(f"Memory per worker: {mem_limit} GB")
     print("#################################")
-        
+
     try:
         if len(mslist) > 0:
             tasks = []

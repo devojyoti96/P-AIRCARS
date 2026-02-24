@@ -147,8 +147,8 @@ def get_slurm_dask_cluster(
         ncpu, mem = get_slurm_node_resources(
             partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
-        ncpu = max(1, int(ncpu/max_worker))
-        
+        ncpu = max(1, int(ncpu / max_worker))
+
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()
@@ -165,7 +165,7 @@ def get_slurm_dask_cluster(
         cluster = SLURMCluster(
             queue=partition,
             account=account,
-            cores=1, # This is important for CASA tasks
+            cores=1,  # This is important for CASA tasks
             n_workers=1,
             walltime=walltime,
             memory=f"{mem_limit}G",

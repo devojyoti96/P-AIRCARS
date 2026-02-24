@@ -28,6 +28,7 @@ from paircars.utils.resource_utils import drop_cache
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
+
 def chanlist_to_str(lst):
     lst = sorted(lst)
     ranges = []
@@ -164,7 +165,7 @@ def split_target_scans(
             n_threads = os.environ.get("OMP_NUM_THREADS")
             if n_threads is not None:
                 n_threads = int(n_threads)
-            else:   
+            else:
                 n_threads = 1
 
         print(f"Total dask worker: {njobs}")
@@ -368,7 +369,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-        if msg==0:
+        if msg == 0:
             print("All measurement sets are splited successfully.")
         else:
             print("Error occured in spliting measurement sets.")

@@ -2204,9 +2204,7 @@ def master_control(
                 print(f"Finished task: Flagging of calibrator is done.")
                 print("###########################")
             except Exception as e:
-                print(
-                    "!!!! WARNING: Flagging error. P-AIRCARS has stopped. !!!!"
-                )
+                print("!!!! WARNING: Flagging error. P-AIRCARS has stopped. !!!!")
                 traceback.print_exc()
                 if emails != "":
                     email_msg = "Error in flagging calibrators."
@@ -2255,7 +2253,9 @@ def master_control(
                     )
                 has_cal = False
                 if do_selfcal is False:
-                    print("Self-calibration is also switched off. P-AIRCARS has stopped.")
+                    print(
+                        "Self-calibration is also switched off. P-AIRCARS has stopped."
+                    )
                     return 1
 
         ###############################
@@ -3798,7 +3798,7 @@ def cli():
             )
             if args.max_worker > 0:
                 nworker = min(nworker, args.max_worker)
-                
+
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
@@ -3826,7 +3826,7 @@ def cli():
                 args.cpu_frac,
                 args.mem_frac,
             )
-            
+
             scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
