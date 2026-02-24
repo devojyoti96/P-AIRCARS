@@ -151,17 +151,17 @@ def get_slurm_dask_cluster(
         interface = detect_best_interface()
         mem_limit = max(1, round(min(max_mem, mem), 2))
         env_extra = [
-            "PYTHONUNBUFFERED=1",
-            f"OMP_NUM_THREADS={ncpu}",
-            f"MKL_NUM_THREADS={ncpu}",
-            f"OPENBLAS_NUM_THREADS={ncpu}",
-            f"NUMEXPR_NUM_THREADS={ncpu}",
-            "MALLOC_TRIM_THRESHOLD_=0",
-            f"TMPDIR={dask_dir_tmp}",
-            f"TMP={dask_dir_tmp}",
-            f"TEMP={dask_dir_tmp}",
-            f"DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
-            "PYTHONWARNINGS=ignore::UserWarning:contextlib",
+            "export PYTHONUNBUFFERED=1",
+            f"export OMP_NUM_THREADS={ncpu}",
+            f"export MKL_NUM_THREADS={ncpu}",
+            f"export OPENBLAS_NUM_THREADS={ncpu}",
+            f"export NUMEXPR_NUM_THREADS={ncpu}",
+            "export MALLOC_TRIM_THRESHOLD_=0",
+            f"export TMPDIR={dask_dir_tmp}",
+            f"export TMP={dask_dir_tmp}",
+            f"export TEMP={dask_dir_tmp}",
+            f"export DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
+            "export PYTHONWARNINGS=ignore::UserWarning:contextlib",
         ]
 
         job_extra = [
@@ -192,7 +192,7 @@ def get_slurm_dask_cluster(
             name=f"paircars_{jobid}",
             shared_temp_directory=dask_dir_tmp,
             job_extra_directives=job_extra,
-            env_extra=env_extra,
+            job_script_prologue=env_extra,
         )
 
         cluster.scale(1)
