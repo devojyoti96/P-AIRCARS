@@ -413,7 +413,7 @@ def do_flagging(
             print(f"Bad antennas: {bad_ants_str}.")
         else:
             bad_ants_str = ""
-            
+
         for msname in mslist:
             msname = os.path.abspath(msname.rstrip("/"))
             if restore_flag:

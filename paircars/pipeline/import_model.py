@@ -66,7 +66,7 @@ def import_hyperdrive_model(
         "#######################\nImporting model for ms:"
         + msname
         + "\n###################\n"
-    )   
+    )
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -186,7 +186,7 @@ def import_hyperdrive_model(
 def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
     """
     Run all modeling
-    
+
     Parameters
     ----------
     mslist : list
@@ -201,13 +201,13 @@ def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
         Number of CPU threads
     verbose : bool
         Verbose output
-        
+
     Returns
     -------
     int
         Total failure
     """
-    msg=0
+    msg = 0
     try:
         if len(mslist) > 0:
             tasks = []
@@ -228,7 +228,7 @@ def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
             for i in range(len(results)):
                 if results[i] != 0:
                     print(f"Error in model import for ms: {mslist[i]}.")
-                    msg+=1
+                    msg += 1
         else:
             print("Please provide a valid measurement set list.")
             msg = -1
@@ -236,8 +236,8 @@ def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
         traceback.print_exc()
         msg = -1
     return msg
-    
-    
+
+
 def main(
     mslist,
     metafits,
@@ -381,11 +381,11 @@ def main(
 
     try:
         msg = run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose)
-        if msg<0:
-            msg=1
-        elif msg>0: 
+        if msg < 0:
+            msg = 1
+        elif msg > 0:
             print(f"Total model import failure: {msg}")
-            msg=1
+            msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1
