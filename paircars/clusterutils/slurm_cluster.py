@@ -166,6 +166,9 @@ def get_slurm_dask_cluster(
 
         job_extra = [
             f"--cpus-per-task={ncpu}",
+            f"-J paircars_{jobid}",
+            f"-o {log_dir}/paircars_{jobid}-%j.out",
+            f"-e {log_dir}/paircars_{jobid}-%j.err",
         ]
 
         cluster = SLURMCluster(
@@ -186,6 +189,8 @@ def get_slurm_dask_cluster(
             job_extra_directives=job_extra,
             job_script_prologue=env_extra,
         )
+
+        cluster.scale(1)
         client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
         if verbose:
