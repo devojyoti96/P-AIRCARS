@@ -61,9 +61,6 @@ def show_local_job_status(clean_old_jobs=False):
         if len(main_pid_files) == 0:
             print("No P-AIRCARS jobs is running.")
         else:
-            print("####################")
-            print("P-AIRCARS Job status")
-            print("####################")
             for pid_file in main_pid_files:
                 with open(pid_file, "r") as f:
                     line = f.read().split(" ")
@@ -113,9 +110,6 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
         if len(main_pid_files) == 0:
             print("No P-AIRCARS jobs is running.")
         else:
-            print("####################")
-            print("P-AIRCARS Job status")
-            print("####################")
             for pid_file in main_pid_files:
                 with open(pid_file, "r") as f:
                     line = f.read().split(" ")
@@ -177,6 +171,9 @@ def cli():
         sys.exit(1)
 
     scheduler_name = get_scheduler_name()
+    print("####################")
+    print("P-AIRCARS Job status")
+    print("####################")
     try:
         args = parser.parse_args()
         if args.show:

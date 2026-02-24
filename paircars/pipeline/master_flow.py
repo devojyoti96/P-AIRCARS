@@ -3058,12 +3058,6 @@ def master_control(
             if len(images) == 0:
                 print(f"No image is present in image directory: {imagedir}/images")
             else:
-                current_worker = get_total_worker(dask_client)
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    min(len(images) + current_worker, max_worker),
-                )
                 print("###########################")
                 print("Starting task: Primary beam correction.....")
                 print("###########################")
@@ -3100,16 +3094,12 @@ def master_control(
                         )
                     return 1
                 finally:
-                    scale_worker_and_wait(dask_cluster, dask_client, current_worker)
                     print(f"Final image directory: {imagedir}/images")
 
         #######################################
         # Make overlays
         #######################################
         if make_overlay:
-            # total_overlays = #TODO; DETERMINE IT
-            current_worker = get_total_worker(dask_client)
-            scale_worker_and_wait(dask_cluster, dask_client, max_worker)
             print("###########################")
             print("Starting task: Making overlay on EUV images.....")
             print("###########################")
@@ -3145,8 +3135,7 @@ def master_control(
                     )
                 return 1
             finally:
-                scale_worker_and_wait(dask_cluster, dask_client, current_worker)
-            print(f"Final image directory: {os.path.dirname(outdir)}")
+                print(f"Final image directory: {imagedir}/overlay_pngs")
 
         ##############################################
         # Making diagnostic plots of measurement sets
@@ -3154,10 +3143,6 @@ def master_control(
         if make_msplot:
             msplot_outdir = f"{outdir}/ms_diagnostics_plots"
             os.makedirs(msplot_outdir, exist_ok=True)
-            current_worker = get_total_worker(dask_client)
-            nworker = min(max_worker, len(split_cal_mslist) + current_worker)
-            scale_worker_and_wait(dask_cluster, dask_client, nworker)
-
             if has_cal and len(split_cal_mslist) > 0:
                 ###########################################
                 # Ploting calibrator ms
@@ -3328,7 +3313,6 @@ def master_control(
         drop_cache(outdir)
         stop_event.set()
         log_thread_flow.join(timeout=5)
-        scale_worker_and_wait(dask_cluster, dask_client, 1)
         if dask_dir is not None:
             os.system(f"rm -rf {dask_dir}")
         if observer is not None:
@@ -3933,6 +3917,7 @@ def cli():
         drop_cache(args.cal_datadir)
         drop_cache(args.workdir)
         drop_cache(args.outdir)
+        dask_client.shutdown()
         dask_client.close()
         dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
