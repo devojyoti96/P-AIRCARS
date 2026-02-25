@@ -399,7 +399,7 @@ def submit_local_master_flow(args, jobid):
 
     try:
         script_args = ["#!/bin/bash\n"]
-        scripts_args.append("init-paircars-prefect start\n")
+        script_args.append("init-paircars-prefect start\n")
         if len(prefect_env_list) > 0:
             for i in prefect_env_list:
                 script_args.append(f"{i}")
