@@ -11,7 +11,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from .basic_utils import get_cachedir, get_datadir
 from .killjob_utils import kill_port
-from .udocker_utils import run_postgres
+from .udocker_utils import run_postgres, kill_postgres
 
 
 # === CONFIG ===
@@ -232,13 +232,15 @@ def start_server(port, postgres_port, show_config=False, scheduler_name="local")
     """
     kill_port(port)
     trial = 0
-    while True:
+    while trial<5:
         running = run_postgres(
             postgres_port=postgres_port,
             verbose=True,
         )
         if running:
             break
+        else:
+            trial+=1
     config_file, config = prefect_config(
         port, postgres_port, scheduler_name=scheduler_name
     )
@@ -318,7 +320,7 @@ def stop_prefect_server(scheduler_name="local"):
     """
     Stop prefect server running in the current installation
     Note: it will only stop prefect server which is running from the current installation
-    For this pipeline, a port between 4260 is chosen for P-AIRCARS.
+    For this pipeline, a port between 4260 to 5250 is chosen for P-AIRCARS.
 
     Parameters
     ----------
@@ -338,6 +340,7 @@ def stop_prefect_server(scheduler_name="local"):
         os.system(f"rm -rf {cachedir}")
         return 1
     config = np.load(config_file, allow_pickle=True).all()
+    postgresg_port = int(config["PREFECT_API_DATABASE_CONNECTION_URL"].split(":")[-1].split("/")[0])
     pid_file = config["PID_FILE"]
     cachedir = config["CACHEDIR"]
     try:
@@ -352,8 +355,16 @@ def stop_prefect_server(scheduler_name="local"):
                 pid = int(f.read().strip())
             print(f"Stopping Prefect server with PID {pid} ...")
             os.kill(pid, signal.SIGTERM)
-            print(f"Server stopped and {cachedir} removed.")
-            msg = 0
+        try:
+            killed = kill_postgres(
+                postgres_port=postgres_port,
+            )
+            if not killed:
+                kill_port(postgres_port)
+        except:
+            kill_port(postgres_port)
+        print(f"Server stopped and {cachedir} removed.")
+        msg = 0
     except ProcessLookupError:
         print(f"No such process with PID {pid}. Removing stale {cachedir} directory.")
         msg = 0

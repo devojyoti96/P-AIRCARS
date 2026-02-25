@@ -1036,7 +1036,7 @@ def run_postgres(
     cmd = [
         "udocker",
         "run",
-        f"--publish={postgres_port}:{postgres_port}",
+        f"--publish={postgres_port}:5432",
         f"--volume={pgdata_dir}:/var/lib/postgresql/data",
         f"--env=POSTGRES_PASSWORD={postgres_pass}",
         f"--env=POSTGRES_USER={postgres_user}",

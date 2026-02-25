@@ -232,8 +232,9 @@ def main(
             return 1
 
         #########################################
-        # prefect setver setup
+        # prefect server setup
         #########################################
+        print ("Prefect setup....")
         scheduler_name = get_scheduler_name()
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
             port, postgres_port, scheduler_name=scheduler_name
