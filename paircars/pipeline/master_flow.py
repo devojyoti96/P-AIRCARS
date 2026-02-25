@@ -1439,13 +1439,7 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
         Logger timestamp
     """
     email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
-    email_msg = (
-        f"P-AIRCARS user,\n\n"
-        f"P-AIRCARS Job ID: {jobid}\n\n"
-        f"{msg}\n\n"
-        f"Best,\n"
-        f"P-AIRCARS"
-    )
+    email_msg = f"P-AIRCARS Job ID: {jobid}\n" f"{msg}"
     success_msg, error_msg = send_notification(emails, email_subject, email_msg)
 
 
@@ -1794,12 +1788,7 @@ def master_control(
                     f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
                 )
 
-                email_msg = (
-                    f"P-AIRCARS user,\n\n"
-                    f"P-AIRCARS Job ID: {jobid}\n\n"
-                    f"Best,\n"
-                    f"P-AIRCARS"
-                )
+                email_msg = f"P-AIRCARS Job ID: {jobid}"
                 success_msg, error_msg = send_notification(
                     emails, email_subject, email_msg
                 )
@@ -1847,12 +1836,9 @@ def master_control(
                 )
 
                 email_msg = (
-                    f"P-AIRCARS user,\n\n"
-                    f"P-AIRCARS Job ID: {jobid}\n\n"
+                    f"P-AIRCARS Job ID: {jobid}\n"
                     f"Remote logger Job ID: {job_name}\n"
-                    f"Remote access password: {password}\n\n"
-                    f"Best,\n"
-                    f"P-AIRCARS"
+                    f"Remote access password: {password}"
                 )
                 success_msg, error_msg = send_notification(
                     emails, email_subject, email_msg
