@@ -6,7 +6,7 @@ from paircars.utils.basic_utils import get_cachedir, check_port_status, get_free
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.prefect_setup_utils import (
-    start_server,
+    start_prefect_server,
     stop_prefect_server,
     prefect_server_status,
     prefect_config,
@@ -61,7 +61,7 @@ def cli():
             postgres_portport = get_free_port(start_port=5260, end_port=6250)
 
     if args.command == "start":
-        msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
+        msg, config_file, profile_path, env_file, dashboard, pid_file = start_prefect_server(
             port,
             postgres_port,
             show_config=args.show_config,

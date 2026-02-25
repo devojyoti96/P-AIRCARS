@@ -389,13 +389,14 @@ def submit_local_master_flow(args, jobid):
 
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
-    config = np.load(config_file, allow_pickle=True).all()
-    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
-    envlist = os.environ
-    prefect_env_list = []
-    for env in envlist:
-        if "PREFECT" in env:
-            prefect_env_list.append(f"export {env}={envlist.get(env)}")
+    prefect_env_list=[]
+    if os.path.exists(config_file):
+        config = np.load(config_file, allow_pickle=True).all()
+        load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+        envlist = os.environ
+        for env in envlist:
+            if "PREFECT" in env:
+                prefect_env_list.append(f"export {env}={envlist.get(env)}")
 
     try:
         script_args = ["#!/bin/bash\n"]

@@ -199,7 +199,7 @@ def save_prefect_env_to_file(scheduler_name="local"):
     return profile_path, env_file, dashboard
 
 
-def start_server(port, postgres_port, show_config=False, scheduler_name="local"):
+def start_prefect_server(port, postgres_port, show_config=False, scheduler_name="local"):
     """
     Start prefect server if it is not running
 

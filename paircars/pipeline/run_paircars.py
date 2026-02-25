@@ -3,7 +3,7 @@ import sys
 import traceback
 import argparse
 import numpy as np
-from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.basic_utils import get_cachedir, check_port_status, get_free_port
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
@@ -12,7 +12,7 @@ from paircars.utils.proc_manage_utils import (
 )
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
-    start_server,
+    start_prefect_server,
 )
 from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow
 
@@ -380,7 +380,41 @@ def cli():
 
     jobid = get_jobid()
     scheduler_name = get_scheduler_name()
+    
+    prefect_status = prefect_server_status(scheduler_name=scheduler_name)
+    if prefect_status is False: 
+        print ("Prefect server is not running.")
+        print ("Prefect setup is initiating ....")
+        port = 4260
+        postgres_port = 5260
 
+        if check_port_status(port) is False:
+            if scheduler_name != "local":
+                port = get_free_port(start_port=4260, end_port=5250)
+
+        if check_port_status(postgres_port) is False:
+            if scheduler_name != "local":
+                postgres_portport = get_free_port(start_port=5260, end_port=6250)
+            
+        msg, config_file, profile_path, env_file, dashboard, pid_file = start_prefect_server(
+            port, postgres_port, scheduler_name=scheduler_name
+        )
+        config = np.load(config_file, allow_pickle=True).all()
+        if msg != 0:
+            if scheduler_name != "local":
+                print(
+                    f"P-AIRCARS will not work in prefect ephemeral mode in cluster environment with job scheduler: {scheduler_name}"
+                )
+                return 1
+            else:
+                print(
+                    f"Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
+                )
+                try:
+                    stop_prefect_server(scheduler_name=scheduler_name)
+                except:
+                    pass
+                os.system(f"rm -rf {config_file} {profile_path} {env_file} {pid_file}")
     try:
         ############################################
         # Submitting batch script

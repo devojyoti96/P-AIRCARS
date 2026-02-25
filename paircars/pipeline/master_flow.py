@@ -59,6 +59,20 @@ from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
 )
+scheduler_name=get_scheduler_name()
+cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
+config_file = f"{cachedir}/prefect.config.npy"
+if os.path.exists(config_file):
+    config = np.load(config_file, allow_pickle=True).all()
+    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+elif scheduler_name!="local":
+    print (f"Prefect server is required for cluster with job scheduler: {scheduler_name}")
+    sys.exit()
+    
+from prefect import flow, task
+from prefect.context import get_run_context
+from prefect_dask.task_runners import DaskTaskRunner
+from prefect_dask import get_dask_client
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
     stop_prefect_server,
@@ -85,26 +99,6 @@ from paircars.pipeline import (
     show_status,
 )
 from paircars.pipeline.init_data import init_paircars_data
-
-def autoload_prefect():
-    scheduler_name=get_scheduler_name()
-    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-    config_file = f"{cachedir}/prefect.config.npy"
-    config = np.load(config_file, allow_pickle=True).all()
-    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
-    prefect_status = prefect_server_status(scheduler_name=scheduler_name)
-    if prefect_status is False and scheduler_name=="local": 
-        print ("Prefect server is not running. Using ephemeral mode in local environment.")
-        os.environ.pop("PREFECT_API_URL", None)
-    else:
-        print(f"Prefect server is needed for scheduler: {scheduler_name}")
-        os._exit(1)
-    
-autoload_prefect()    
-from prefect import flow, task
-from prefect.context import get_run_context
-from prefect_dask.task_runners import DaskTaskRunner
-from prefect_dask import get_dask_client
 
 
 @task(name="moving_to_solar_center", retries=2, retry_delay_seconds=60, log_prints=True)
@@ -3819,6 +3813,11 @@ def cli():
         )
         return
 
+    prefect_status = prefect_server_status(scheduler_name=scheduler_name)
+    if prefect_status is False: 
+        print ("Prefect server is not running. It is required for SLURM. First start it and then run P-AIRCARS.")
+        return
+            
     if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster

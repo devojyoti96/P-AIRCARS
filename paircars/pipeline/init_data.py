@@ -15,7 +15,7 @@ from paircars.utils.basic_utils import (
     get_free_port,
 )
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
-from paircars.utils.prefect_setup_utils import start_server
+from paircars.utils.prefect_setup_utils import start_prefect_server
 from paircars.utils.resource_utils import has_space
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.udocker_utils import (
@@ -237,7 +237,7 @@ def main(
         #########################################
         print ("Prefect setup....")
         scheduler_name = get_scheduler_name()
-        msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
+        msg, config_file, profile_path, env_file, dashboard, pid_file = start_prefect_server(
             port, postgres_port, scheduler_name=scheduler_name
         )
         config = np.load(config_file, allow_pickle=True).all()
@@ -251,6 +251,11 @@ def main(
                 print(
                     f"Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
                 )
+                try:
+                    stop_prefect_server(scheduler_name=scheduler_name)
+                except:
+                    pass
+                os.system(f"rm -rf {config_file} {profile_path} {env_file} {pid_file}")
         return 0
     else:
         return 1
