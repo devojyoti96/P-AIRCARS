@@ -8,6 +8,7 @@ import traceback
 import logging
 import shlex
 import re
+from dotenv import load_dotenv
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
 from paircars.utils.basic_utils import get_cachedir
@@ -16,7 +17,7 @@ from paircars.utils.proc_manage_utils import (
     detect_best_interface,
     get_jobid,
 )
-from dotenv import load_dotenv
+
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -364,7 +365,7 @@ def submit_slurm_master_flow(args, jobid):
         script_args.append("init-paircars-prefect start\n")
         if len(prefect_env_list) > 0:
             for i in prefect_env_list:
-                script_args.append(f"export {i}")
+                script_args.append(f"{i}")
         script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
