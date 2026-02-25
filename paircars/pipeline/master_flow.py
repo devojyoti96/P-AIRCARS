@@ -59,7 +59,7 @@ from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
 )
-
+scheduler_name=get_scheduler_name()
 cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
 config_file = f"{cachedir}/prefect.config.npy"
 config = np.load(config_file, allow_pickle=True).all()
