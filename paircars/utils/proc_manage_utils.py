@@ -237,7 +237,7 @@ def scale_worker_and_wait(
     c = 0
     while c < timeout:
         running_worker = get_total_worker(dask_client)
-        if running_worker >= max(1, int(nworker / 2)):
+        if running_worker >= max(1, int(0.8*nworker)):
             print(f"Successfully scaled to {running_worker} workers")
             return 0
         else:
