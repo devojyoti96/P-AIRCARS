@@ -361,7 +361,6 @@ def submit_slurm_master_flow(args, jobid):
         ]
         if hasattr(args, "account") and args.account is not None:
             script_args.append(f"#SBATCH --account={args.account}\n")
-        script_args.append("init-paircars-prefect start\n")
         if len(prefect_env_list) > 0:
             for i in prefect_env_list:
                 script_args.append(f"{i}")
