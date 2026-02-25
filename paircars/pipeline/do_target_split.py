@@ -153,7 +153,7 @@ def split_target_scans(
                     os.system(f"rm -rf {outputvis}")
                 if os.path.exists(f"{outputvis}.flagversions"):
                     os.system(f"rm -rf {outputvis}.flagversions")
-                msg, splited_ms = single_mstransform(
+                splited_ms = single_mstransform(
                     msname=msname,
                     outputms=outputvis,
                     width=chanwidth,
