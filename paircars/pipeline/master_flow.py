@@ -3809,6 +3809,11 @@ def cli():
         return
 
     if args.cluster is not True and scheduler_name == "local":
+        prefect_status = prefect_server_status(scheduler_name=scheduler_name)
+        if prefect_status is False: 
+            print ("Prefect server is not running. Using ephemeral mode in local environment.")
+            os.environ.pop("PREFECT_API_URL", None)
+        
         #######################################
         # Set up local cluster
         #######################################
@@ -3844,7 +3849,7 @@ def cli():
         scale_worker_and_wait(dask_cluster, dask_client, 1)
         adaptive = True  # For local cluster, always do adaptive scaling to avoid occupying resources
     else:
-        prefect_status = prefect_server_status(scheduler_name="slurm")
+        prefect_status = prefect_server_status(scheduler_name=scheduler_name)
         if prefect_status is False:
             print(
                 "Prefect server is not running. It is required for SLURM. First start it and then run P-AIRCARS."
