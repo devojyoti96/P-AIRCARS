@@ -158,4 +158,3 @@ def kill_slurmscheduler(jobid):
         print(f"Error in killing P-AIRCARS job: {jobid}")
         traceback.print_exc()
         return
-

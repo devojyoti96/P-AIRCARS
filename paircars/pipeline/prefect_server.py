@@ -52,7 +52,10 @@ def cli():
 
     if args.command == "start":
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
-            port, postgres_port, show_config=args.show_config, scheduler_name=scheduler_name
+            port,
+            postgres_port,
+            show_config=args.show_config,
+            scheduler_name=scheduler_name,
         )
         if msg == 0:
             print(f"Prefect server started at port: {port}")

@@ -2,14 +2,20 @@ import argparse
 import sys
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
-from paircars.utils.killjob_utils import terminate_process_and_children, kill_localscheduler, kill_slurmscheduler
+from paircars.utils.killjob_utils import (
+    terminate_process_and_children,
+    kill_localscheduler,
+    kill_slurmscheduler,
+)
 
 
 def kill_paircarsjob():
     """
     Gracefully terminate all processes related to a P-AIRCARS job.
     """
-    parser = argparse.ArgumentParser(description="Kill P-AIRCARS Job", formatter_class=SmartDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="Kill P-AIRCARS Job", formatter_class=SmartDefaultsHelpFormatter
+    )
     parser.add_argument(
         "--jobid", type=str, required=True, help="P-AIRCARS Job ID to kill"
     )

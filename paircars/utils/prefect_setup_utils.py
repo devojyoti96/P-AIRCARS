@@ -39,53 +39,53 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     # Postgres information
     ##################################
     datadir = get_datadir()
-    postgres_url_file=f"{datadir}/postgres.url"
+    postgres_url_file = f"{datadir}/postgres.url"
     if os.path.exists(postgres_url_file) is False:
-        print ("Start postgres server first.")
+        print("Start postgres server first.")
         return
-    
+
     ###################################
     # Prefect configuration
     ###################################
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
-    
+
     config_file = f"{cachedir}/prefect.config.npy"
-    
+
     PREFECT_HOME = f"{cachedir}/prefect_home"
     os.makedirs(PREFECT_HOME, exist_ok=True)
-    
-    with open(postgres_url_file,"r") as f:
+
+    with open(postgres_url_file, "r") as f:
         postgres_url = f.read().strip()
-    print (postgres_url)
-    PREFECT_API_DATABASE_CONNECTION_URL=postgres_url
-        
+    print(postgres_url)
+    PREFECT_API_DATABASE_CONNECTION_URL = postgres_url
+
     LOG_FILE = os.path.join(PREFECT_HOME, "server.log")
     profile_path = os.path.join(PREFECT_HOME, "profiles.toml")
     memo_path = os.path.join(PREFECT_HOME, "memo_store.toml")
     storage = os.path.join(PREFECT_HOME, "storage")
     os.makedirs(storage, exist_ok=True)
-    
+
     ENV_FILE = os.path.join(cachedir, "paircars_prefect.env")
-    
+
     SERVER_HOST = "0.0.0.0"
     SERVER_PORT = f"{port}"
 
     SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api"
     SERVER_DASHBOARD = f"http://{SERVER_HOST}:{SERVER_PORT}/dashboard"
 
-    PREFECT_SERVER_API_HOST="127.0.0.1"
+    PREFECT_SERVER_API_HOST = "127.0.0.1"
     profile_name = f"paircarspipe_{scheduler_name}"
     pid_file = os.path.join(PREFECT_HOME, "server.pid")
     logging_path = os.path.join(PREFECT_HOME, "logging.yml")
-   
+
     hostname = socket.gethostname()
-   
-    REMOTE_URL = f"http://{hostname}:{SERVER_PORT}/dashboard" 
+
+    REMOTE_URL = f"http://{hostname}:{SERVER_PORT}/dashboard"
     config = {
         "CACHEDIR": cachedir,
         "PREFECT_HOME": PREFECT_HOME,
-        "PREFECT_API_DATABASE_CONNECTION_URL":PREFECT_API_DATABASE_CONNECTION_URL,
+        "PREFECT_API_DATABASE_CONNECTION_URL": PREFECT_API_DATABASE_CONNECTION_URL,
         "LOG_FILE": LOG_FILE,
         "PROFILE_PATH": profile_path,
         "MEMO_PATH": memo_path,
@@ -98,9 +98,8 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
         "PROFILE_NAME": profile_name,
         "PID_FILE": pid_file,
         "LOGGING_PATH": logging_path,
-        "PREFECT_SERVER_API_HOST":PREFECT_SERVER_API_HOST,
-        "REMOTE_URL":REMOTE_URL,
-        
+        "PREFECT_SERVER_API_HOST": PREFECT_SERVER_API_HOST,
+        "REMOTE_URL": REMOTE_URL,
     }
     np.save(config_file, config)
     return config_file, config
@@ -145,7 +144,9 @@ def write_prefect_profile(scheduler_name="local"):
     data["profiles"][profile_name] = {
         "PREFECT_API_URL": config["SERVER_URL"],
         "PREFECT_HOME": config["PREFECT_HOME"],
-        "PREFECT_API_DATABASE_CONNECTION_URL": config["PREFECT_API_DATABASE_CONNECTION_URL"],
+        "PREFECT_API_DATABASE_CONNECTION_URL": config[
+            "PREFECT_API_DATABASE_CONNECTION_URL"
+        ],
     }
     with open(profile_path, "w") as f:
         toml.dump(data, f)
@@ -184,7 +185,9 @@ def save_prefect_env_to_file(scheduler_name="local"):
     with open(env_file, "w") as f:
         f.write(f"PREFECT_HOME={config['PREFECT_HOME']}\n")
         f.write("PREFECT_API_MODE=server\n")
-        f.write(f"PREFECT_API_DATABASE_CONNECTION_URL={config['PREFECT_API_DATABASE_CONNECTION_URL']}\n")
+        f.write(
+            f"PREFECT_API_DATABASE_CONNECTION_URL={config['PREFECT_API_DATABASE_CONNECTION_URL']}\n"
+        )
         f.write("PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false\n")
         f.write(f"PREFECT_API_URL={config['SERVER_URL']}\n")
         f.write(f"PREFECT_PROFILE={config['PROFILE_NAME']}\n")
@@ -232,7 +235,7 @@ def start_server(port, postgres_port, show_config=False, scheduler_name="local")
         Server process ID file
     """
     kill_port(port)
-    trial=0
+    trial = 0
     while True:
         running = run_postgres(
             postgres_port=postgres_port,
@@ -240,7 +243,9 @@ def start_server(port, postgres_port, show_config=False, scheduler_name="local")
         )
         if running:
             break
-    config_file, config = prefect_config(port, postgres_port, scheduler_name=scheduler_name)
+    config_file, config = prefect_config(
+        port, postgres_port, scheduler_name=scheduler_name
+    )
     cachedir = config["CACHEDIR"]
     pid_file = config["PID_FILE"]
     env = get_prefect_env(scheduler_name=scheduler_name)
@@ -260,7 +265,8 @@ def start_server(port, postgres_port, show_config=False, scheduler_name="local")
                     config["SERVER_HOST"],
                     "--port",
                     config["SERVER_PORT"],
-                    "--log-level","INFO", 
+                    "--log-level",
+                    "INFO",
                 ],
                 stdout=f,
                 stderr=subprocess.STDOUT,
@@ -283,11 +289,19 @@ def start_server(port, postgres_port, show_config=False, scheduler_name="local")
         if new_start:
             with open(pid_file, "w") as pf:
                 pf.write(str(server_proc.pid))
-        print ("##########################################################################")
-        print(f"Prefect server dashboard is now running for remote monitoring at: {config['SERVER_DASHBOARD']}")
-        if scheduler_name!="local":
-            print(f"First tunnel to prefect from your local machine: ssh -N -L {port}:localhost:{port} <username>@<remote.cluster.name>")
-        print ("##########################################################################")
+        print(
+            "##########################################################################"
+        )
+        print(
+            f"Prefect server dashboard is now running for remote monitoring at: {config['SERVER_DASHBOARD']}"
+        )
+        if scheduler_name != "local":
+            print(
+                f"First tunnel to prefect from your local machine: ssh -N -L {port}:localhost:{port} <username>@<remote.cluster.name>"
+            )
+        print(
+            "##########################################################################"
+        )
         if os.path.exists(dashboard) is not True:
             with open(dashboard, "w") as f:
                 f.write(f"{config['SERVER_DASHBOARD']}")
@@ -408,7 +422,9 @@ def get_prefect_env(scheduler_name="local"):
     env = os.environ.copy()
     env["PREFECT_HOME"] = config["PREFECT_HOME"]
     env["PREFECT_API_MODE"] = "server"
-    env["PREFECT_API_DATABASE_CONNECTION_URL"] = config["PREFECT_API_DATABASE_CONNECTION_URL"]
+    env["PREFECT_API_DATABASE_CONNECTION_URL"] = config[
+        "PREFECT_API_DATABASE_CONNECTION_URL"
+    ]
     env["PREFECT_SERVER_ALLOW_EPHEMERAL_MODE"] = "false"
     env["PREFECT_API_URL"] = config["SERVER_URL"]
     env["PREFECT_PROFILE"] = config["PROFILE_NAME"]
