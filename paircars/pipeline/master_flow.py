@@ -3803,9 +3803,10 @@ def cli():
         return
 
     prefect_status = prefect_server_status(scheduler_name=scheduler_name)
+    print (f"Prefect server running: {prefect_status}")
     if prefect_status is False:
         print(
-            "Prefect server is not running. It is required for SLURM. First start it and then run P-AIRCARS."
+            "Prefect server is not running. First start it and then run P-AIRCARS."
         )
         return
 
