@@ -19,7 +19,6 @@ from paircars.utils.proc_manage_utils import (
 )
 
 
-
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     """
     Get node resources for SLURM cluster
@@ -308,14 +307,14 @@ def submit_slurm_master_flow(args, jobid):
 
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
-    config = np.load(config_file,allow_pickle=True).all()
+    config = np.load(config_file, allow_pickle=True).all()
     load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
     envlist = os.environ
     prefect_env_list = []
     for env in envlist:
         if "PREFECT" in env:
             prefect_env_list.append(f"export {env}={envlist.get(env)}")
-            
+
     try:
         #################################
         # Determining wall time

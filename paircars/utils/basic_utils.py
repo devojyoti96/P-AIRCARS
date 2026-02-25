@@ -97,6 +97,56 @@ def wait_for_port(host, port, timeout=60):
     return False
 
 
+def get_free_port(start_port=4200, end_port=4300):
+    """
+    Get free port
+
+    Parameters
+    ----------
+    start_port : int, optional
+        Start port range
+    end_port : int, optional
+        End port range
+
+    Returns
+    -------
+    int
+        Free port
+    """
+    for port in range(start_port, end_port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("127.0.0.1", port))
+                print(f"Free port: {port}")
+                return port
+            except OSError:
+                continue
+
+
+def check_port_status(port):
+    """
+    Check port status
+
+    Parameters
+    ----------
+    port : int
+        Port number
+
+    Returns
+    -------
+    int
+        Port free status
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("127.0.0.1", port))
+            print(f"Port: {port} is free.")
+            return True
+        except OSError:
+            print(f"Port: {port} is occupied.")
+            return False
+
+
 def split_into_chunks(lst, target_chunk_size):
     """
     Split a list into equal number of elements

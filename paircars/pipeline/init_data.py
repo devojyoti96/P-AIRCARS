@@ -7,7 +7,13 @@ import os
 import getpass
 from datetime import datetime as dt
 from parfive import Downloader
-from paircars.utils.basic_utils import create_datadir, get_datadir, get_cachedir
+from paircars.utils.basic_utils import (
+    create_datadir,
+    get_datadir,
+    get_cachedir,
+    check_port_status,
+    get_free_port,
+)
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
 from paircars.utils.prefect_setup_utils import start_server
 from paircars.utils.resource_utils import has_space
@@ -31,6 +37,7 @@ all_filenames = [
     "haslam_map.fits",
     "MWA_sweet_spots.npy",
     "Ref_mean_bandpass_final.npy",
+    "postgres_credentials.npy",
     "mwa_full_embedded_element_pattern.h5",
 ]
 
@@ -119,7 +126,6 @@ def init_paircars_data(update=False, remote_link=None, emails=None):
 
 def main(
     init=False,
-    prefect_server=False,
     datadir="",
     update=False,
     link=None,
@@ -132,8 +138,6 @@ def main(
     ----------
     init : bool, optional
         Initiate setup
-    prefect_server : bool, optional
-        Initiate prefect server
     datadir : str, optional
         User provided custom data directory
     update : bool, optional
@@ -145,7 +149,23 @@ def main(
     """
     required_gb = 20
     port = 4260
+    postgres_port = 5260
+
+    port = 4260
+    postgres_port = 5260
+
+    if check_port_status(port) is False:
+        if scheduler_name != "local":
+            port = get_free_port(start_port=4260, end_port=5250)
+
+    if check_port_status(postgres_port) is False:
+        if scheduler_name != "local":
+            postgres_portport = get_free_port(start_port=5260, end_port=6250)
+
     if init:
+        ######################################
+        # Downloading data files
+        ######################################
         create_datadir(datadir=datadir)
         datadir = get_datadir()
         print(f"P-AIRCARS data directory: {datadir}")
@@ -156,6 +176,10 @@ def main(
             return 1
         init_paircars_data(update=update, remote_link=link, emails=emails)
         print(f"P-AIRCARS data are initiated.")
+        
+        #########################################
+        # Docker containers initiation
+        #########################################
         init_udocker()
         print("uDOCKER is inititalized")
         wsclean_container_name = initialize_wsclean_container(
@@ -198,26 +222,35 @@ def main(
             print("Hyperdrive container is initialized")
         else:
             return 1
+        postgres_container_name = initialize_hyperdrive_container(
+            update=update, verbose=True
+        )
+        if (
+            postgres_container_name is not None
+            and postgres_container_name == "paircarspostgres"
+        ):
+            print("PostgreSQL container is initialized")
+        else:
+            return 1
+            
+        #########################################
+        # prefect setver setup
+        #########################################
         scheduler_name = get_scheduler_name()
-        if prefect_server:
+        msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
+            port, postgres_port, scheduler_name=scheduler_name
+        )
+        config = np.load(config_file, allow_pickle=True).all()
+        if msg != 0:
             if scheduler_name != "local":
                 print(
-                    "Prefect server can be initiated only in local cluster. For other cluster it will be intitated during job submission is appropriate node."
+                    f"P-AIRCARS will not work in prefect ephemeral mode in cluster environment with job scheduler: {scheduler_name}"
                 )
+                return 1
             else:
-                msg, config_file, profile_path, env_file, dashboard, pid_file = (
-                    start_server(port, scheduler_name=scheduler_name)
+                print(
+                    f"Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
                 )
-                if msg == 0:
-                    print(f"Prefect server started at port: {port}")
-                    print(f"Profile file: {profile_path}")
-                    print(f"Environment file: {env_file}")
-                    print(f"Dashboard file: {dashboard}")
-                    print(f"Server process ID file: {pid_file}")
-                else:
-                    print(
-                        f"Error in starting prefect server at port: {port}. P-AIRCARS will use ephemeral mode."
-                    )
         return 0
     else:
         return 1
@@ -231,12 +264,6 @@ def cli():
     parser.add_argument("--init", action="store_true", help="Initiate data")
     parser.add_argument(
         "--datadir", type=str, default="", help="User provided data directory"
-    )
-    parser.add_argument(
-        "--prefect_server",
-        action="store_true",
-        dest="init_prefect_server",
-        help="Inititate prefect server",
     )
     parser.add_argument("--update", action="store_true", help="Update existing data")
     parser.add_argument(
@@ -258,7 +285,6 @@ def cli():
     msg = main(
         init=args.init,
         datadir=args.datadir,
-        prefect_server=args.init_prefect_server,
         update=args.update,
         link=args.link,
         emails=args.emails,

@@ -2,7 +2,7 @@ import argparse
 import sys
 import os
 import numpy as np
-from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.basic_utils import get_cachedir, check_port_status, get_free_port
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.prefect_setup_utils import (
@@ -46,9 +46,19 @@ def cli():
         parser.print_help(sys.stderr)
         sys.exit(1)
     args = parser.parse_args()
-    port = 4260
-    postgres_port = 5432
+
     scheduler_name = get_scheduler_name()
+
+    port = 4260
+    postgres_port = 5260
+
+    if check_port_status(port) is False:
+        if scheduler_name != "local":
+            port = get_free_port(start_port=4260, end_port=5250)
+
+    if check_port_status(postgres_port) is False:
+        if scheduler_name != "local":
+            postgres_portport = get_free_port(start_port=5260, end_port=6250)
 
     if args.command == "start":
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(

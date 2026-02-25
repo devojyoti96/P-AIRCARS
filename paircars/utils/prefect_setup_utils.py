@@ -78,7 +78,7 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     profile_name = f"paircarspipe_{scheduler_name}"
     pid_file = os.path.join(PREFECT_HOME, "server.pid")
     logging_path = os.path.join(PREFECT_HOME, "logging.yml")
-    
+
     config = {
         "CACHEDIR": cachedir,
         "PREFECT_HOME": PREFECT_HOME,

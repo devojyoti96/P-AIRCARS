@@ -59,9 +59,10 @@ from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
 )
+
 cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
 config_file = f"{cachedir}/prefect.config.npy"
-config = np.load(config_file,allow_pickle=True).all()
+config = np.load(config_file, allow_pickle=True).all()
 load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
 from prefect import flow, task
 from prefect.context import get_run_context
