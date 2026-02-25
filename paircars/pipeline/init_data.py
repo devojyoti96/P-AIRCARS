@@ -24,6 +24,7 @@ from paircars.utils.udocker_utils import (
     initialize_quartical_container,
     initialize_shadems_container,
     initialize_hyperdrive_container,
+    initialize_postgres_container,
 )
 from paircars.pipeline.beam_interpolate import *
 
