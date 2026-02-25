@@ -17,6 +17,11 @@ from multiprocessing import Process, Event
 from dask.distributed import get_client
 from dotenv import load_dotenv
 from pyfiglet import Figlet
+from prefect import flow, task
+from prefect.context import get_run_context
+from prefect_dask.task_runners import DaskTaskRunner
+from prefect_dask import get_dask_client
+from prefect.settings import get_current_settings
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -59,23 +64,6 @@ from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
 )
-
-scheduler_name = get_scheduler_name()
-cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-config_file = f"{cachedir}/prefect.config.npy"
-if os.path.exists(config_file):
-    config = np.load(config_file, allow_pickle=True).all()
-    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
-elif scheduler_name != "local":
-    print(
-        f"Prefect server is required for cluster with job scheduler: {scheduler_name}"
-    )
-    sys.exit()
-
-from prefect import flow, task
-from prefect.context import get_run_context
-from prefect_dask.task_runners import DaskTaskRunner
-from prefect_dask import get_dask_client
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
     stop_prefect_server,
@@ -3742,7 +3730,34 @@ def cli():
         sys.exit(1)
 
     args = parser.parse_args()
-
+    
+    scheduler_name = get_scheduler_name()
+    ##################################################
+    # Prefect settings check
+    ##################################################
+    prefect_settings = get_current_settings()
+    prefect_env = settings.to_environment_variables()
+    api_url = prefect_env.get("PREFECT_API_URL")
+    if api_url is None:
+        if scheduler_name=="local":
+            print("Prefect server is not running. Using prefect ephemeral mode in local environment.")
+        else:
+            print(f"Prefect server is not running. P-AIRCARS can not be run on {scheduler_name} environment. First setup prefect server and then run P-AIRCARS.")
+            return 1       
+            
+    ######################################
+    # Check connection to prefect server
+    ######################################
+    check_url = f"{api_url}/health"
+    try:
+        r = requests.get(check_url, timeout=60)
+        print(f"Prefect server at : {api_url} is reachable.")
+    except Exception:
+        print(
+            f"Could not reach prefect server at: {api_url} from compute node."
+        )
+        return 1
+    
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
     os.system(f"rm -rf {args.workdir}/dask_*")
@@ -3784,10 +3799,6 @@ def cli():
     ###############################################
     # Setup cluster environment
     ###############################################
-    scheduler_name = get_scheduler_name()
-    ####################################
-    # Job and process IDs
-    ####################################
     if scheduler_name == "local":
         pid = os.getpid()
     elif scheduler_name == "slurm":
@@ -3799,14 +3810,6 @@ def cli():
     if args.cluster is True and scheduler_name == "local":
         print(
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
-        )
-        return
-
-    prefect_status = prefect_server_status(scheduler_name=scheduler_name)
-    print (f"Prefect server running: {prefect_status}")
-    if prefect_status is False:
-        print(
-            "Prefect server is not running. First start it and then run P-AIRCARS."
         )
         return
 
@@ -4013,6 +4016,3 @@ def cli():
         dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
 
-
-if __name__ == "__main__":
-    cli()
