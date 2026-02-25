@@ -9,6 +9,7 @@ import glob
 import sys
 import os
 import socket
+import requests
 from collections import Counter
 from casatools import msmetadata
 from astropy.io import fits
@@ -3744,14 +3745,11 @@ def cli():
         else:
             print(f"Prefect server is not running. P-AIRCARS can not be run on {scheduler_name} environment. First setup prefect server and then run P-AIRCARS.")
             return 1       
-            
-    ######################################
-    # Check connection to prefect server
-    ######################################
-    check_url = f"{api_url}/health"
-    print (check_url)
-    trial=0
-    while trial<5:
+    else:        
+        ######################################
+        # Check connection to prefect server
+        ######################################
+        check_url = f"{api_url}/health"
         try:
             r = requests.get(check_url, timeout=60)
             print(f"Prefect server at : {api_url} is reachable.")
@@ -3760,9 +3758,8 @@ def cli():
             print(
                 f"Could not reach prefect server at: {api_url} from compute node."
             )
-        trial+=1
-        time.sleep(60)
-    
+            return 1
+            
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
     os.system(f"rm -rf {args.workdir}/dask_*")
