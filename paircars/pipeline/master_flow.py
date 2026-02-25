@@ -1439,7 +1439,7 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
         Logger timestamp
     """
     email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
-    email_msg = f"P-AIRCARS Job ID: {jobid}\n" f"{msg}"
+    email_msg = f"{msg}"
     success_msg, error_msg = send_notification(emails, email_subject, email_msg)
 
 
