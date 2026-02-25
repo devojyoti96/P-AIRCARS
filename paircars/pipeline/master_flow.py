@@ -16,10 +16,6 @@ from datetime import datetime as dt
 from multiprocessing import Process, Event
 from dask.distributed import get_client
 from dotenv import load_dotenv
-from prefect import flow, task
-from prefect.context import get_run_context
-from prefect_dask.task_runners import DaskTaskRunner
-from prefect_dask import get_dask_client
 from pyfiglet import Figlet
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.calibration import (
@@ -45,14 +41,6 @@ from paircars.utils.mwa_utils import (
     get_MWA_OBSID,
     download_MWA_metafits,
 )
-from paircars.utils.prefect_setup_utils import (
-    prefect_server_status,
-    stop_prefect_server,
-)
-from paircars.utils.prefect_logger_utils import (
-    start_log_task_saver,
-    start_flow_log_saver,
-)
 from paircars.utils.proc_manage_utils import (
     get_jobid,
     save_main_process_info,
@@ -70,6 +58,22 @@ from paircars.data.sendmail import (
 from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
+)
+cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
+config_file = f"{cachedir}/prefect.config.npy"
+config = np.load(config_file,allow_pickle=True).all()
+load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+from prefect import flow, task
+from prefect.context import get_run_context
+from prefect_dask.task_runners import DaskTaskRunner
+from prefect_dask import get_dask_client
+from paircars.utils.prefect_setup_utils import (
+    prefect_server_status,
+    stop_prefect_server,
+)
+from paircars.utils.prefect_logger_utils import (
+    start_log_task_saver,
+    start_flow_log_saver,
 )
 from paircars.pipeline import (
     mwa_make_ds,

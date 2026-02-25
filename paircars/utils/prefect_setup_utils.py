@@ -57,7 +57,6 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
 
     with open(postgres_url_file, "r") as f:
         postgres_url = f.read().strip()
-    print(postgres_url)
     PREFECT_API_DATABASE_CONNECTION_URL = postgres_url
 
     LOG_FILE = os.path.join(PREFECT_HOME, "server.log")
@@ -71,17 +70,15 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     SERVER_HOST = "0.0.0.0"
     SERVER_PORT = f"{port}"
 
-    SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api"
-    SERVER_DASHBOARD = f"http://{SERVER_HOST}:{SERVER_PORT}/dashboard"
+    hostname = socket.gethostname()
+    SERVER_URL = f"http://{hostname}:{SERVER_PORT}/api"
+    SERVER_DASHBOARD = f"http://{hostname}:{SERVER_PORT}/dashboard"
 
     PREFECT_SERVER_API_HOST = "127.0.0.1"
     profile_name = f"paircarspipe_{scheduler_name}"
     pid_file = os.path.join(PREFECT_HOME, "server.pid")
     logging_path = os.path.join(PREFECT_HOME, "logging.yml")
-
-    hostname = socket.gethostname()
-
-    REMOTE_URL = f"http://{hostname}:{SERVER_PORT}/dashboard"
+    
     config = {
         "CACHEDIR": cachedir,
         "PREFECT_HOME": PREFECT_HOME,
@@ -99,7 +96,6 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
         "PID_FILE": pid_file,
         "LOGGING_PATH": logging_path,
         "PREFECT_SERVER_API_HOST": PREFECT_SERVER_API_HOST,
-        "REMOTE_URL": REMOTE_URL,
     }
     np.save(config_file, config)
     return config_file, config

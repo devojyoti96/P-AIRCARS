@@ -1063,7 +1063,6 @@ def run_postgres(
         return False
     else:
         print("PostgreSQL running.")
-        print(postgres_url)
         with open(url_file, "w") as f:
             f.write(postgres_url.strip())
         return True

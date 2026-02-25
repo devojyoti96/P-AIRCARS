@@ -16,6 +16,7 @@ from paircars.utils.proc_manage_utils import (
     detect_best_interface,
     get_jobid,
 )
+from dotenv import load_dotenv
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -305,20 +306,15 @@ def submit_slurm_master_flow(args, jobid):
         return 1
 
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-
-    prefect_env_list = [
-        f"PREFECT_HOME={cachedir}/prefect_home",
-        "PREFECT_API_MODE=server",
-        f"PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:///{cachedir}/prefect_home/prefect.db",
-        "PREFECT_SERVER_ALLOW_EPHEMERAL_MODE=false",
-        "PREFECT_API_URL=http://127.0.0.1:4260/api",
-        f"PREFECT_PROFILE=paircarspipe_{scheduler_name}",
-        f"PREFECT_PROFILES_PATH={cachedir}/prefect_home/profiles.toml",
-        f"PREFECT_LOCAL_STORAGE_PATH={cachedir}/prefect_home/storage",
-        f"PREFECT_LOGGING_SETTINGS_PATH={cachedir}/prefect_home/logging.yml",
-        f"PREFECT_MEMO_STORE_PATH={cachedir}/prefect_home/memo_store.toml",
-    ]
-
+    config_file = f"{cachedir}/prefect.config.npy"
+    config = np.load(config_file,allow_pickle=True).all()
+    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+    envlist = os.environ
+    prefect_env_list = []
+    for env in envlist:
+        if "PREFECT" in env:
+            prefect_env_list.append(f"export {env}={envlist.get(env)}")
+            
     try:
         #################################
         # Determining wall time
