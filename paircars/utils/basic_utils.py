@@ -1,6 +1,9 @@
 import numpy as np
 import os
 import copy
+import time
+import socket
+import subprocess
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import Angle
@@ -71,6 +74,27 @@ def get_datadir():
         datadir = f.read().strip()
     os.makedirs(datadir, exist_ok=True)
     return datadir
+
+
+def wait_for_port(host, port, timeout=60):
+    """
+    Waiting for port
+
+    Parameters
+    ----------
+    port : int
+        Port number
+    timeout : int, optional
+        Timeout in seconds
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return True
+        except OSError:
+            time.sleep(2)
+    return False
 
 
 def split_into_chunks(lst, target_chunk_size):

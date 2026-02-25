@@ -47,12 +47,12 @@ def cli():
         sys.exit(1)
     args = parser.parse_args()
     port = 4260
+    postgres_port = 5432
     scheduler_name = get_scheduler_name()
 
     if args.command == "start":
-        print("######################################################")
         msg, config_file, profile_path, env_file, dashboard, pid_file = start_server(
-            port, show_config=args.show_config, scheduler_name=scheduler_name
+            port, postgres_port, show_config=args.show_config, scheduler_name=scheduler_name
         )
         if msg == 0:
             print(f"Prefect server started at port: {port}")
@@ -62,7 +62,6 @@ def cli():
             print(f"Server process ID file: {pid_file}")
         else:
             print(f"Error in starting prefect server at port: {port}")
-        print("######################################################")
     elif args.command == "save_env":
         profile_path, env_file, dashboard = save_prefect_env_to_file(
             scheduler_name=scheduler_name

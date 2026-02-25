@@ -5,12 +5,14 @@ import time
 import glob
 import os
 import subprocess
-from .basic_utils import get_datadir
+import numpy as np
+import socket
+from .basic_utils import get_datadir, wait_for_port
+from .killjob_utils import terminate_process_and_children, kill_port
 
 ####################
 # uDOCKER related
 ####################
-
 
 def set_udocker_env():
     datadir = get_datadir()
@@ -48,7 +50,7 @@ def check_udocker_container(name):
         Whether present or not
     """
     set_udocker_env()
-    env = os.environ
+    env = os.environ.copy()
     try:
         result = subprocess.run(
             ["udocker", "--insecure", "--quiet", "inspect", name],
@@ -85,7 +87,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
         Whether initialized successfully or not
     """
     set_udocker_env()
-    env = os.environ
+    env = os.environ.copy()
     check_cmd = f"udocker images | grep -q {image_name}"
     image_exists = os.system(check_cmd)
     container_exists = check_udocker_container(name)
@@ -115,7 +117,11 @@ def initialize_container(image_name, name, update=False, verbose=False):
                 stderr=subprocess.DEVNULL,
                 env=env,
             )
-        a = result.returncode
+        a = result.returncode    
+        if a==0:
+            create_container=True
+        else:
+            create_container=False    
     else:
         if update:
             if verbose:
@@ -158,13 +164,18 @@ def initialize_container(image_name, name, update=False, verbose=False):
             a = result.returncode
             if a == 0:
                 print("Re-downloaded docker image.")
+                create_container=True
             else:
                 print("Re-downloading container image is failed.")
+                create_container=False
                 return
         else:
             print(f"Image {image_name} already present.")
-            return name
-    if a == 0:
+            if container_exists is False:
+                create_container=True
+            else:
+                return name
+    if create_container:
         if verbose:
             result = subprocess.run(
                 ["udocker", "create", f"--name={name}", f"{image_name}"],
@@ -282,6 +293,30 @@ def initialize_hyperdrive_container(
     """
     print("Initializing hyperdrive container.")
     image_name = "devojyoti96/paircarshyperdrive:latest"
+    msg = initialize_container(image_name, name, update=update, verbose=verbose)
+    return msg
+
+
+def initialize_postgres_container(name="paircarspostgres", update=False, verbose=False):
+    """
+    Initialize postgres container
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the container
+    update : bool, optional
+        Update container
+    verbose : bool, optional
+        Verbose output
+
+    Returns
+    -------
+    bool
+        Whether initialized successfully or not
+    """
+    print("Initializing postgres container.")
+    image_name = "postgres"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
     return msg
 
@@ -820,7 +855,7 @@ def run_hyperdrive(
     set_udocker_env()
     if ncpu > 0:
         os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-    env = os.environ
+    env = os.environ.copy()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -896,3 +931,198 @@ def run_hyperdrive(
     except Exception as e:
         traceback.print_exc()
         return 1
+
+
+def run_postgres(
+    postgres_port=5432,
+    container_name="paircarspostgres",
+    verbose=False,
+):
+    """
+    Start postgres server
+    
+    Parameters
+    ----------
+    postgres_port : int, optional
+        Postgres port
+    container_name : str, optional
+        container name
+    verbose : bool, optional
+        Verbose output or not
+    
+    Returns
+    -------
+    int
+        Whether postgres server started or not
+    """
+    set_udocker_env()
+  
+    datadir = get_datadir()
+    pg_credentials = f"{datadir}/postgres_credentials.npy"
+    pgdata_dir = f"{datadir}/pgdata"
+
+    postgres_user, postgres_pass, postgres_db = np.load(pg_credentials,allow_pickle=True)
+    postgrs_addr=socket.gethostname()
+    
+    pid_file=f"{datadir}/postgres.pid"
+    log_file=f"{datadir}/postgres.log"
+    url_file=f"{datadir}/postgres.url"
+
+    if os.path.exists(log_file):
+        os.system(f"rm -rf {log_file}")
+    if os.path.exists(url_file):
+        os.system(f"rm -rf {url_file}")
+    if os.path.exists(pid_file):
+        with open(pid_file,"r") as f:
+            lines = f.readlines()
+        pids = [int(p) for p in lines]
+        for pid in pids:
+            terminate_process_and_children(pid) 
+        os.system(f"rm -rf {pid_file}")
+    kill_port(postgres_port)
+
+    env = os.environ.copy()
+
+    ########################################################
+    # Deleting any running postgres container and reinitiate
+    ########################################################
+    container_present = check_udocker_container(container_name)
+    if container_present:
+        if verbose:
+            subprocess.run(
+                ["udocker", "rm", f"{container_name}"],
+                env=env,
+            )
+        else:
+            subprocess.run(
+                ["udocker", "rm", f"{container_name}"],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        os.system(f"rm -rf {pgdata_dir}")
+    container_name = initialize_postgres_container(
+        name=container_name, verbose=verbose
+    )
+    if container_name is None:
+        print(
+            f"Container {container_name} is not initiated. First initiate container and then run."
+        )
+        return 1
+
+    ###########################################################################
+    # Setup udocker execution mode. Execmode Pn is required for port publishing 
+    ###########################################################################
+    cmd = ["udocker", "setup", "--execmode=P1", f"{container_name}"]
+    if verbose:
+        subprocess.run(
+            cmd,
+            env=env,
+        )
+    else:
+        subprocess.run(
+            cmd,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    ##########################
+    # Starting postgres server
+    ##########################
+    print ("Starting postgres server....")
+    os.makedirs(pgdata_dir, exist_ok=True)
+    cmd = ["udocker", "run", f"--publish={postgres_port}:{postgres_port}", f"--volume={pgdata_dir}:/var/lib/postgresql/data", f"--env=POSTGRES_PASSWORD={postgres_pass}",
+        f"--env=POSTGRES_USER={postgres_user}", f"--env=POSTGRES_DB={postgres_db}", f"{container_name}", "-c","listen_addresses=*", "-c","max_connections=1000", 
+        "-c","shared_buffers=1024MB"]
+    
+    with open(log_file, "ab") as log:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=log,
+            stderr=log,
+            start_new_session=True
+        )
+    pid = proc.pid
+    with open(pid_file,"w") as f:
+        f.write(f"{pid}\n")
+        
+    postgres_url = f"postgresql+asyncpg://{postgres_user}:{postgres_pass}@{postgrs_addr}:{postgres_port}/{postgres_db}"
+    print("Waiting for PostgreSQL...")
+    if not wait_for_port("127.0.0.1", postgres_port, timeout=300):
+        print("PostgreSQL failed to start.")
+        return False
+    else:
+        print("PostgreSQL running.")
+        print (postgres_url)
+        with open(url_file,"w") as f:
+            f.write(postgres_url.strip())
+        return True
+        
+        
+def kill_postgres(
+    postgres_port=5432,
+    container_name="paircarspostgres",
+    verbose=False,
+):
+    """
+    Kill postgres server
+    
+    Parameters
+    ----------
+    postgres_port : int, optional
+        Postgres server
+    container_name : str, optional
+        Container name
+    
+    Returns
+    -------
+    int
+        Whether closed or not
+    
+    """
+    set_udocker_env()
+    datadir = get_datadir()
+    pgdata_dir = f"{datadir}/pgdata"    
+    pid_file=f"{datadir}/postgres.pid"
+    log_file=f"{datadir}/postgres.log"
+    if os.path.exists(pid_file):
+        with open(pid_file,"r") as f:
+            lines = f.readlines()
+        pids = [int(p) for p in lines]
+        for pid in pids:
+            terminate_process_and_children(pid) 
+        os.system(f"rm -rf {pid_file}")
+    kill_port(postgres_port)
+    env = os.environ.copy()
+    ########################################################
+    # Deleting any running postgres container and reinitiate
+    ########################################################
+    container_present = check_udocker_container(container_name)
+    if container_present:
+        if verbose:
+            subprocess.run(
+                ["udocker", "rm", f"{container_name}"],
+                env=env,
+            )
+        else:
+            subprocess.run(
+                ["udocker", "rm", f"{container_name}"],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        os.system(f"rm -rf {pgdata_dir}")
+    
+    print("Checking for PostgreSQL status...")
+    if wait_for_port("127.0.0.1", postgres_port, timeout=10):
+        print("PostgreSQL kill is failed.")
+        return False
+    else:
+        print("PostgreSQL is killed.")
+        if os.path.exists(log_file):
+            os.system(f"rm -rf {log_file}")
+        return True
+        
+        
+        
