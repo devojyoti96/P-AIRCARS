@@ -183,7 +183,9 @@ def import_hyperdrive_model(
         os.system(f"rm -rf {model_msname}")
 
 
-def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
+def run_all_modeling(
+    mslist, dask_client, metafits, beamfile, sourcelist, ncpu, verbose
+):
     """
     Run all modeling
 
@@ -191,6 +193,8 @@ def run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose):
     ----------
     mslist : list
         Measurement set list
+    dask_client : dask. client
+        Dask client
     metafits : str
         Metafits file
     beamfile : str
@@ -380,7 +384,9 @@ def main(
     print("#################################")
 
     try:
-        msg = run_all_modeling(mslist, metafits, beamfile, sourcelist, ncpu, verbose)
+        msg = run_all_modeling(
+            mslist, dask_client, metafits, beamfile, sourcelist, ncpu, verbose
+        )
         if msg < 0:
             msg = 1
         elif msg > 0:
@@ -396,6 +402,7 @@ def main(
         drop_cache(workdir)
         clean_shutdown(observer)
         if dask_cluster is not None:
+            dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")

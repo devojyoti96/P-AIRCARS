@@ -1056,6 +1056,7 @@ def main(
         drop_cache(outdir)
         clean_shutdown(observer)
         if dask_cluster is not None:
+            dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
