@@ -52,6 +52,8 @@ def create_datadir(datadir=""):
     cachedir = get_cachedir()
     if datadir == "":
         datadir = f"{cachedir}/paircarspipe_data"
+    else:
+        datadir = f"{datadir}/paircarspipe_data"
     os.makedirs(datadir, exist_ok=True)
     with open(f"{cachedir}/paircarspipe_data_dir.txt", "w") as f:
         f.write(str(datadir) + "\n")
