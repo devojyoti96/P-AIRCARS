@@ -1507,6 +1507,7 @@ def master_control(
     remote_logger=False,
     jobid=None,
     job_password=None,
+    adaptive=False,
 ):
     """
     Master controller of the entire pipeline
@@ -1620,6 +1621,8 @@ def master_control(
         Job ID
     job_password : str, optional
         User specified job password for remote logger
+    adaptive : bool, optional
+        Whether do adaptive scaling or not
 
     Returns
     -------
@@ -1750,7 +1753,7 @@ def master_control(
     ################################################
     # Starting number of workers
     ################################################
-    current_worker = get_total_worker(dask_client)
+    starting_worker = get_total_worker(dask_client)
 
     try:
         #####################################
@@ -2045,6 +2048,11 @@ def master_control(
                 msname, n_threads=available_cpus, force_reset=do_forcereset_weightflag
             )
 
+        if adaptive:
+            scale_worker_and_wait(
+                dask_cluster, dask_client, min(len(target_mslist), max_worker)
+            )
+
         ########################################
         # Moving phasecenter to the solar center
         ########################################
@@ -2119,6 +2127,10 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
 
+        if adaptive:
+            scale_worker_and_wait(
+                dask_cluster, dask_client, min(len(calibrator_mslist), max_worker)
+            )
         ##############################
         # Run spliting jobs
         ##############################
@@ -2174,6 +2186,13 @@ def master_control(
             if len(split_cal_mslist) == 0:
                 print("No splited measurement set is present for basic calibration.")
                 has_cal = False
+            else:
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster,
+                        dask_client,
+                        min(len(split_cal_mslist), max_worker),
+                    )
 
         ##################################
         # Run flagging jobs on calibrators
@@ -2303,6 +2322,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
+            finally:
+                if adaptive:
+                    scale_worker_and_wait(dask_cluster, dask_client, 1)
 
             caltables = glob.glob(
                 f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
@@ -2368,6 +2390,12 @@ def master_control(
                     time_interval = image_timeres
                 else:
                     time_interval = -1
+
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(target_mslist), max_worker)
+                )
+
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
             print("###########################")
@@ -2418,6 +2446,9 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+            finally:
+                if adaptive:
+                    scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ####################################
         # Filtering any corrupted ms
@@ -2461,8 +2492,12 @@ def master_control(
         #########################################################
         cal_applied = False
         if do_selfcal and has_cal:  # If calibrator solutions are available
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(selfcal_mslist), max_worker)
+                )
             ############################
-            # Basic flagging
+            # Basic flagging for selfcal
             ############################
             print("###########################")
             print("Starting task: Flagging selfcal targets .....")
@@ -2572,6 +2607,10 @@ def master_control(
             os.system(
                 f"rm -rf {workdir}/*selfcal_int {workdir}/*selfcal_pol {workdir}/caltables/*selfcal*"
             )
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(selfcal_mslist), max_worker)
+                )
             if do_sidereal_cor:
                 print("###########################")
                 print(
@@ -2656,6 +2695,8 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+            if adaptive:
+                scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ########################################
         # Checking self-cal caltables
@@ -2696,6 +2737,10 @@ def master_control(
         #############################################
         # If corrected data is requested or imaging is requested
         if do_target_split and (do_applycal or do_imaging):
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(target_mslist), max_worker)
+                )
             prefix = "target"
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
@@ -2738,6 +2783,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 return 1
+            finally:
+                if adaptive:
+                    scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         if do_imaging or do_applycal or do_apply_selfcal:
             split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
@@ -2784,7 +2832,11 @@ def master_control(
         #########################################################
         # Applying basic solutions on target scans
         #########################################################
-        if do_applycal and has_cal:
+        if (do_applycal and has_cal) or do_apply_selfcal or do_imaging:
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(split_target_mslist), max_worker)
+                )
             ############################
             # Basic flagging
             ############################
@@ -2917,119 +2969,124 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
 
-        ########################################
-        # Apply self-calibration
-        ########################################
-        if do_apply_selfcal:
-            split_target_mslist = sorted(split_target_mslist)
-            print("###########################")
-            print(
-                "Starting task: Applying self-calibration solutions on final target measurement sets....."
-            )
-            print("###########################")
-            future_apply_selfcal = run_apply_selfcal_sol.with_options(
-                task_run_name=f"applying_selfcal_{jobid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                target_metafits,
-                workdir,
-                caldir,
-                overwrite_datacolumn=False,
-                applymode=selfcal_applymode,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg = future_apply_selfcal.result()
-                if emails != "":
-                    email_msg = "Applying self-calibration on final target measurement sets are done."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
+            ########################################
+            # Apply self-calibration
+            ########################################
+            if do_apply_selfcal:
+                split_target_mslist = sorted(split_target_mslist)
                 print("###########################")
                 print(
-                    f"Finished task: Applying self-calibration on final target measurement sets are done."
+                    "Starting task: Applying self-calibration solutions on final target measurement sets....."
                 )
                 print("###########################")
-            except Exception as e:
-                print(
-                    "!!!! WARNING: Error in applying self-calibration solutions on targets. !!!!"
+                future_apply_selfcal = run_apply_selfcal_sol.with_options(
+                    task_run_name=f"applying_selfcal_{jobid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    target_metafits,
+                    workdir,
+                    caldir,
+                    overwrite_datacolumn=False,
+                    applymode=selfcal_applymode,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
                 )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in applying self-calibration solutions on final target measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                try:
+                    msg = future_apply_selfcal.result()
+                    if emails != "":
+                        email_msg = "Applying self-calibration on final target measurement sets are done."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(
+                        f"Finished task: Applying self-calibration on final target measurement sets are done."
                     )
+                    print("###########################")
+                except Exception as e:
+                    print(
+                        "!!!! WARNING: Error in applying self-calibration solutions on targets. !!!!"
+                    )
+                    traceback.print_exc()
+                    if emails != "":
+                        email_msg = "Error occured in applying self-calibration solutions on final target measurement sets."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
 
-        ######################################
-        # Imaging
-        ######################################
-        if do_imaging:
-            if image_freqres > 0:
-                print(f"Image frequency resolution: {image_freqres} MHz.")
-            else:
-                print(f"Image frequency resolution: entire corase channel.")
-            if image_timeres > 0:
-                print(f"Image time resolution: {image_timeres} s.")
-            else:
-                print("Imaging entire scan.")
-            if (
-                do_polcal == False
-            ):  # Only if do_polcal is False, overwrite to make only Stokes I
-                pol = "I"
-            pol = pol.upper()
-            print("###########################")
-            print("Starting task: Final imaging.....")
-            print("###########################")
-            future_imaging = run_imaging_jobs.with_options(
-                task_run_name=f"imaging_{jobid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                workdir,
-                outdir,
-                freqrange=freqrange,
-                timerange=timerange,
-                minuv=minuv,
-                weight=weight,
-                robust=float(robust),
-                pol=pol,
-                freqres=image_freqres,
-                timeres=image_timeres,
-                threshold=float(clean_threshold),
-                use_multiscale=use_multiscale,
-                use_solar_mask=use_solar_mask,
-                cutout_rsun=cutout_rsun,
-                savemodel=keep_backup,
-                saveres=keep_backup,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg = future_imaging.result()
-                if emails != "":
-                    email_msg = "Final imaging is done."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
+            ######################################
+            # Imaging
+            ######################################
+            if do_imaging:
+                if image_freqres > 0:
+                    print(f"Image frequency resolution: {image_freqres} MHz.")
+                else:
+                    print(f"Image frequency resolution: entire corase channel.")
+                if image_timeres > 0:
+                    print(f"Image time resolution: {image_timeres} s.")
+                else:
+                    print("Imaging entire scan.")
+                if (
+                    do_polcal == False
+                ):  # Only if do_polcal is False, overwrite to make only Stokes I
+                    pol = "I"
+                pol = pol.upper()
                 print("###########################")
-                print(f"Finished task: Final imaging is done.")
+                print("Starting task: Final imaging.....")
                 print("###########################")
-            except Exception as e:
-                print(
-                    "!!!! WARNING: Final imaging on all measurement sets is not successful. Check the image directory. !!!!"
+                future_imaging = run_imaging_jobs.with_options(
+                    task_run_name=f"imaging_{jobid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    workdir,
+                    outdir,
+                    freqrange=freqrange,
+                    timerange=timerange,
+                    minuv=minuv,
+                    weight=weight,
+                    robust=float(robust),
+                    pol=pol,
+                    freqres=image_freqres,
+                    timeres=image_timeres,
+                    threshold=float(clean_threshold),
+                    use_multiscale=use_multiscale,
+                    use_solar_mask=use_solar_mask,
+                    cutout_rsun=cutout_rsun,
+                    savemodel=keep_backup,
+                    saveres=keep_backup,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
                 )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in final imaging. P-AIRCARS has stopped."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                try:
+                    msg = future_imaging.result()
+                    if emails != "":
+                        email_msg = "Final imaging is done."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(f"Finished task: Final imaging is done.")
+                    print("###########################")
+                except Exception as e:
+                    print(
+                        "!!!! WARNING: Final imaging on all measurement sets is not successful. Check the image directory. !!!!"
                     )
-                return 1
+                    traceback.print_exc()
+                    if emails != "":
+                        email_msg = (
+                            "Error occured in final imaging. P-AIRCARS has stopped."
+                        )
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    return 1
+
+        if adaptive:
+            scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ########################################
         # Naming of image directory
@@ -3058,14 +3115,14 @@ def master_control(
         # Primary beam correction
         ###########################
         if do_pbcor:
-            if current_worker < max_worker:
-                scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(images), max_worker)
-                )
             images = glob.glob(f"{imagedir}/images/*.fits")
             if len(images) == 0:
                 print(f"No image is present in image directory: {imagedir}/images")
             else:
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster, dask_client, min(len(images), max_worker)
+                    )
                 print("###########################")
                 print("Starting task: Primary beam correction.....")
                 print("###########################")
@@ -3108,7 +3165,8 @@ def master_control(
         # Make overlays
         #######################################
         if make_overlay:
-            if current_worker < max_worker:
+            # All or only coarse channels
+            if starting_worker < max_worker:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, min(len(images), max_worker)
                 )
@@ -3153,7 +3211,7 @@ def master_control(
         # Making diagnostic plots of measurement sets
         ##############################################
         if make_msplot:
-            if current_worker < max_worker:
+            if starting_worker < max_worker:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, min(len(split_cal_mslist), max_worker)
                 )
@@ -3245,6 +3303,8 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+            if adaptive:
+                scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ######################################
         # Keeping flag backups
@@ -3653,6 +3713,12 @@ def cli():
         dest="cluster",
         help="Running in cluster environment",
     )
+    advanced_resource.add_argument(
+        "--adaptive",
+        action="store_true",
+        dest="adaptive",
+        help="Whether do adaptive scaling or not in cluster environment (In local environment, it is always true)",
+    )
 
     # === Advanced job scheduler parameters ===
     advanced_slurm = parser.add_argument_group(
@@ -3763,13 +3829,6 @@ def cli():
         max_estimated_worker = int(
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
-        nworker = min(
-            len(target_mslist) + 1, max_estimated_worker
-        )  # Total number of workers
-        if args.max_worker > 0:  # If user provided maximum number of workers
-            nworker = min(nworker, args.max_worker)
-            max_estimated_worker = args.max_worker
-        nworker = max(2, nworker)
 
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
@@ -3782,11 +3841,14 @@ def cli():
             args.cpu_frac,
             args.mem_frac,
         )
-        scale_worker_and_wait(dask_cluster, dask_client, nworker)
+        scale_worker_and_wait(dask_cluster, dask_client, 1)
+        adaptive = True  # For local cluster, always do adaptive scaling to avoid occupying resources
     else:
         prefect_status = prefect_server_status(scheduler_name="slurm")
         if prefect_status is False:
-            print("Prefect server is not running. It is required for SLURM.")
+            print(
+                "Prefect server is not running. It is required for SLURM. First start it and then run P-AIRCARS."
+            )
             return
         if scheduler_name == "slurm":
             if args.partition is None:
@@ -3813,6 +3875,7 @@ def cli():
                 max_estimated_worker = args.max_worker
             nworker = max(2, nworker)
 
+            # TODO: How to estimate max estimated worker for cloud
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
@@ -3840,7 +3903,9 @@ def cli():
                 args.cpu_frac,
                 args.mem_frac,
             )
-            scale_worker_and_wait(dask_cluster, dask_client, nworker)
+            adaptive = args.adaptive
+            if not adaptive:
+                scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
@@ -3855,7 +3920,7 @@ def cli():
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
-        print(f"Total maximum dask workers: {nworker}")
+        print(f"Total maximum dask workers: {max_estimated_worker}")
         msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
@@ -3919,6 +3984,7 @@ def cli():
             remote_logger=args.remote_logger,
             jobid=jobid,
             job_password=args.job_password,
+            adaptive=adaptive,
         )
         if msg == 0:
             print("P-AIRCARS successfully executed.")

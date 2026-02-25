@@ -148,8 +148,6 @@ def main(
         E-mails for notifications
     """
     required_gb = 20
-    port = 4260
-    postgres_port = 5260
 
     port = 4260
     postgres_port = 5260
@@ -176,7 +174,7 @@ def main(
             return 1
         init_paircars_data(update=update, remote_link=link, emails=emails)
         print(f"P-AIRCARS data are initiated.")
-        
+
         #########################################
         # Docker containers initiation
         #########################################
@@ -232,7 +230,7 @@ def main(
             print("PostgreSQL container is initialized")
         else:
             return 1
-            
+
         #########################################
         # prefect setver setup
         #########################################
