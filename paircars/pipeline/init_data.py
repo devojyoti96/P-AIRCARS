@@ -235,10 +235,10 @@ def main(
         #########################################
         # prefect server setup
         #########################################
-        print ("Prefect setup....")
+        print("Prefect setup....")
         scheduler_name = get_scheduler_name()
-        msg, config_file, profile_path, env_file, dashboard, pid_file = start_prefect_server(
-            port, postgres_port, scheduler_name=scheduler_name
+        msg, config_file, profile_path, env_file, dashboard, pid_file = (
+            start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
         config = np.load(config_file, allow_pickle=True).all()
         if msg != 0:

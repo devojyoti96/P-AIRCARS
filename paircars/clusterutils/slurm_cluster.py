@@ -309,7 +309,9 @@ def submit_slurm_master_flow(args, jobid):
     config_file = f"{cachedir}/prefect.config.npy"
     config = np.load(config_file, allow_pickle=True).all()
     if os.path.exists(config_file) is False:
-        print("Prefect server is not availble. It is required for P-AIRCARS to run in cluster with scheduler: {scheduler_name}")
+        print(
+            f"Prefect server configuration is not availble. It is required for P-AIRCARS to run in cluster with scheduler: {scheduler_name}"
+        )
         return 1
     load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
     envlist = os.environ

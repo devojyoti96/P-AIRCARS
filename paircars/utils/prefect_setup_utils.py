@@ -199,7 +199,9 @@ def save_prefect_env_to_file(scheduler_name="local"):
     return profile_path, env_file, dashboard
 
 
-def start_prefect_server(port, postgres_port, show_config=False, scheduler_name="local"):
+def start_prefect_server(
+    port, postgres_port, show_config=False, scheduler_name="local"
+):
     """
     Start prefect server if it is not running
 
@@ -232,7 +234,7 @@ def start_prefect_server(port, postgres_port, show_config=False, scheduler_name=
     """
     kill_port(port)
     trial = 0
-    while trial<5:
+    while trial < 5:
         running = run_postgres(
             postgres_port=postgres_port,
             verbose=True,
@@ -240,7 +242,7 @@ def start_prefect_server(port, postgres_port, show_config=False, scheduler_name=
         if running:
             break
         else:
-            trial+=1
+            trial += 1
     config_file, config = prefect_config(
         port, postgres_port, scheduler_name=scheduler_name
     )
@@ -340,7 +342,9 @@ def stop_prefect_server(scheduler_name="local"):
         os.system(f"rm -rf {cachedir}")
         return 1
     config = np.load(config_file, allow_pickle=True).all()
-    postgresg_port = int(config["PREFECT_API_DATABASE_CONNECTION_URL"].split(":")[-1].split("/")[0])
+    postgresg_port = int(
+        config["PREFECT_API_DATABASE_CONNECTION_URL"].split(":")[-1].split("/")[0]
+    )
     pid_file = config["PID_FILE"]
     cachedir = config["CACHEDIR"]
     try:

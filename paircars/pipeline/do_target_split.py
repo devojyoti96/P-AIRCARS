@@ -49,7 +49,6 @@ def chanlist_to_str(lst):
 
 def split_target_scans(
     msname,
-    dask_client,
     workdir,
     timeres,
     freqres,
@@ -60,8 +59,7 @@ def split_target_scans(
     time_window=-1,
     quack_timestamps=-1,
     force_split=False,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=-1,
 ):
     """
     Split target scans
@@ -70,8 +68,6 @@ def split_target_scans(
     ----------
     msname : str
         Measurement set
-    dask_client : dask.client
-        Dask client
     workdir : str
         Work directory
     timeres : float
@@ -92,22 +88,18 @@ def split_target_scans(
         Number of timestamps ignored at the start and end of each scan
     force_split : bool, optional
         Force split
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        Number of threads to use
 
     Returns
     -------
     list
         Splited ms list
     """
+    n_threads = max(1, n_threads)
     print("#################################")
     print(f"Spliting measurement set: {msname}")
     try:
-        cpu_frac = min(0.8, cpu_frac)
-        mem_frac = min(0.8, mem_frac)
-
         os.chdir(workdir)
         #######################################
         # Extracting time frequency information
@@ -143,35 +135,6 @@ def split_target_scans(
             elif start_chan == end_chan:
                 chanlist.append(f"{start_chan}")
 
-        ##################################
-        # Parallel spliting
-        ##################################
-        if len(chanlist) > 0:
-            total_chunks = len(chanlist)
-        else:
-            total_chunks = 1
-
-        scheduler_name = get_scheduler_name()
-        if scheduler_name == "local":
-            total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                1024**3
-            )  # In GB
-            njobs = max(1, min(total_cpu, total_chunks))
-            n_threads = max(1, int(total_cpu / njobs))
-        else:
-            client_info = dask_client.scheduler_info()["workers"]
-            njobs = len(client_info)
-            n_threads = os.environ.get("OMP_NUM_THREADS")
-            if n_threads is not None:
-                n_threads = int(n_threads)
-            else:
-                n_threads = 1
-
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-
-        tasks = []
         splited_ms_list = []
         timerange_list = get_timeranges(
             msname,
@@ -190,7 +153,7 @@ def split_target_scans(
                     os.system(f"rm -rf {outputvis}")
                 if os.path.exists(f"{outputvis}.flagversions"):
                     os.system(f"rm -rf {outputvis}.flagversions")
-                task = delayed(single_mstransform)(
+                msg, splited_ms = single_mstransform(
                     msname=msname,
                     outputms=outputvis,
                     width=chanwidth,
@@ -201,11 +164,6 @@ def split_target_scans(
                     timerange=timerange,
                     n_threads=n_threads,
                 )
-                tasks.append(task)
-        if len(tasks):
-            futures = dask_client.compute(tasks)
-            results = list(dask_client.gather(futures))
-            for splited_ms in results:
                 splited_ms_list.append(splited_ms)
         for splited_ms in splited_ms_list:
             drop_cache(splited_ms)
@@ -336,10 +294,31 @@ def main(
             print("###################################")
             print(f"Start spliting measurement sets in coarse frequency bands.")
             print("###################################")
-            for msname in mslist:
-                msg, final_target_mslist = split_target_scans(
+            ##################################
+            # Parallel spliting
+            ##################################
+            scheduler_name = get_scheduler_name()
+            if scheduler_name == "local":
+                total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+                total_mem = (psutil.virtual_memory().available * mem_frac) / (
+                    1024**3
+                )  # In GB
+                njobs = max(1, total_cpu)
+                n_threads = max(1, int(total_cpu / njobs))
+            else:
+                client_info = dask_client.scheduler_info()["workers"]
+                njobs = len(client_info)
+                n_threads = os.environ.get("OMP_NUM_THREADS")
+                if n_threads is not None:
+                    n_threads = int(n_threads)
+                else:
+                    n_threads = 1
+
+            print(f"Total dask worker: {njobs}")
+            print(f"CPU per worker: {n_threads}")
+            tasks = [
+                delayed(split_target_scans)(
                     msname,
-                    dask_client,
                     workdir,
                     float(timeres),
                     float(freqres),
@@ -350,9 +329,28 @@ def main(
                     force_split=force_split,
                     scan=scan,
                     prefix=prefix,
-                    cpu_frac=float(cpu_frac),
-                    mem_frac=float(mem_frac),
+                    n_threads=n_threads,
                 )
+                for msname in mslist
+            ]
+
+            future = dask_client.compute(tasks)
+            results = dask_client.gather(tasks)
+            succeed = 0
+            failed = 0
+            for r in results:
+                msg, splited_ms = r
+                if msg == 0:
+                    succeed += 1
+                else:
+                    failed += 1
+            print(f"Total measurement sets: {len(mslist)}")
+            print(f"Total successful spliting: {succeed}")
+            print(f"Total failed spliting: {failed}")
+            if failed == len(mslist):
+                msg = 1
+            else:
+                msg = 0
         else:
             print("Please provide correct measurement set list.")
             msg = 1

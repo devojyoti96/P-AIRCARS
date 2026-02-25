@@ -380,11 +380,11 @@ def cli():
 
     jobid = get_jobid()
     scheduler_name = get_scheduler_name()
-    
+
     prefect_status = prefect_server_status(scheduler_name=scheduler_name)
-    if prefect_status is False: 
-        print ("Prefect server is not running.")
-        print ("Prefect setup is initiating ....")
+    if prefect_status is False:
+        print("Prefect server is not running.")
+        print("Prefect setup is initiating ....")
         port = 4260
         postgres_port = 5260
 
@@ -395,9 +395,9 @@ def cli():
         if check_port_status(postgres_port) is False:
             if scheduler_name != "local":
                 postgres_portport = get_free_port(start_port=5260, end_port=6250)
-            
-        msg, config_file, profile_path, env_file, dashboard, pid_file = start_prefect_server(
-            port, postgres_port, scheduler_name=scheduler_name
+
+        msg, config_file, profile_path, env_file, dashboard, pid_file = (
+            start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
         config = np.load(config_file, allow_pickle=True).all()
         if msg != 0:

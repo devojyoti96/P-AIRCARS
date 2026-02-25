@@ -61,11 +61,13 @@ def cli():
             postgres_portport = get_free_port(start_port=5260, end_port=6250)
 
     if args.command == "start":
-        msg, config_file, profile_path, env_file, dashboard, pid_file = start_prefect_server(
-            port,
-            postgres_port,
-            show_config=args.show_config,
-            scheduler_name=scheduler_name,
+        msg, config_file, profile_path, env_file, dashboard, pid_file = (
+            start_prefect_server(
+                port,
+                postgres_port,
+                show_config=args.show_config,
+                scheduler_name=scheduler_name,
+            )
         )
         if msg == 0:
             print(f"Prefect server started at port: {port}")

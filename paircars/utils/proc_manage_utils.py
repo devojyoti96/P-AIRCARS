@@ -237,7 +237,7 @@ def scale_worker_and_wait(
     c = 0
     while c < timeout:
         running_worker = get_total_worker(dask_client)
-        if running_worker >= max(1, int(0.8*nworker)):
+        if running_worker >= max(1, int(0.8 * nworker)):
             print(f"Successfully scaled to {running_worker} workers")
             return 0
         else:
@@ -389,7 +389,7 @@ def submit_local_master_flow(args, jobid):
 
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
-    prefect_env_list=[]
+    prefect_env_list = []
     if os.path.exists(config_file):
         config = np.load(config_file, allow_pickle=True).all()
         load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
