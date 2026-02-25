@@ -8,6 +8,7 @@ import traceback
 import logging
 import shlex
 import re
+import numpy as np
 from dotenv import load_dotenv
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
