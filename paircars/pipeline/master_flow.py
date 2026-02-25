@@ -99,12 +99,13 @@ def autoload_prefect():
     else:
         print(f"Prefect server is needed for scheduler: {scheduler_name}")
         os._exit(1)
-    from prefect import flow, task
-    from prefect.context import get_run_context
-    from prefect_dask.task_runners import DaskTaskRunner
-    from prefect_dask import get_dask_client
-
+    
 autoload_prefect()    
+from prefect import flow, task
+from prefect.context import get_run_context
+from prefect_dask.task_runners import DaskTaskRunner
+from prefect_dask import get_dask_client
+
 
 @task(name="moving_to_solar_center", retries=2, retry_delay_seconds=60, log_prints=True)
 def run_solar_phasecenter_jobs(
