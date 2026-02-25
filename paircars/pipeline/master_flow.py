@@ -3749,14 +3749,19 @@ def cli():
     # Check connection to prefect server
     ######################################
     check_url = f"{api_url}/health"
-    try:
-        r = requests.get(check_url, timeout=60)
-        print(f"Prefect server at : {api_url} is reachable.")
-    except Exception:
-        print(
-            f"Could not reach prefect server at: {api_url} from compute node."
-        )
-        return 1
+    print (check_url)
+    trial=0
+    while trial<5:
+        try:
+            r = requests.get(check_url, timeout=60)
+            print(f"Prefect server at : {api_url} is reachable.")
+        except Exception:
+            traceback.print_exc()
+            print(
+                f"Could not reach prefect server at: {api_url} from compute node."
+            )
+        trial+=1
+        time.sleep(60)
     
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
