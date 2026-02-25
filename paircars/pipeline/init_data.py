@@ -220,7 +220,7 @@ def main(
             print("Hyperdrive container is initialized")
         else:
             return 1
-        postgres_container_name = initialize_hyperdrive_container(
+        postgres_container_name = initialize_postgres_container(
             update=update, verbose=True
         )
         if (
