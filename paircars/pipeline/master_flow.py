@@ -3736,7 +3736,7 @@ def cli():
     # Prefect settings check
     ##################################################
     prefect_settings = get_current_settings()
-    prefect_env = settings.to_environment_variables()
+    prefect_env = prefect_settings.to_environment_variables()
     api_url = prefect_env.get("PREFECT_API_URL")
     if api_url is None:
         if scheduler_name=="local":
