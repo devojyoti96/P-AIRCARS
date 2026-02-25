@@ -97,7 +97,6 @@ def split_target_scans(
         Splited ms list
     """
     n_threads = max(1, n_threads)
-    print("#################################")
     print(f"Spliting measurement set: {msname}")
     try:
         os.chdir(workdir)
@@ -168,12 +167,10 @@ def split_target_scans(
         for splited_ms in splited_ms_list:
             drop_cache(splited_ms)
         print(f"Spliting of measurement set: {msname} is done successfully.")
-        print("#################################")
         return 0, splited_ms_list
     except Exception as e:
         traceback.print_exc()
         print(f"Spliting of measurement set: {msname} is unsuccessful.")
-        print("#################################")
         return 1, []
     finally:
         time.sleep(1)
@@ -335,7 +332,7 @@ def main(
             ]
 
             future = dask_client.compute(tasks)
-            results = dask_client.gather(tasks)
+            results = dask_client.gather(future)
             succeed = 0
             failed = 0
             for r in results:
@@ -344,9 +341,11 @@ def main(
                     succeed += 1
                 else:
                     failed += 1
+            print("########################################")
             print(f"Total measurement sets: {len(mslist)}")
             print(f"Total successful spliting: {succeed}")
             print(f"Total failed spliting: {failed}")
+            print("#########################################")
             if failed == len(mslist):
                 msg = 1
             else:
