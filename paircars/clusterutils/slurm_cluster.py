@@ -69,7 +69,7 @@ def get_slurm_dask_cluster(
     max_worker=1,
     partition=None,
     account=None,
-    walltime="24:00:00",
+    walltime=None,
     python_path=None,
     spill_frac=0.7,
     verbose=True,
@@ -174,6 +174,17 @@ def get_slurm_dask_cluster(
             f"-e {log_dir}/paircars_{jobid}-%j.err",
         ]
         
+        if walltime is None:
+            walltime, _ = get_max_walltime(partition)
+        else:
+            max_time, max_time_second = get_max_walltime(partition)
+            wall_time_second = slurm_time_to_seconds(walltime)
+            if wall_time_second > max_time_second:
+                print(
+                    f"Walltime : {walltime} is larger than maximum allowed time: {max_time}."
+                )
+                walltime = max_time
+            
         try:
             cluster = SLURMCluster(
                 queue=partition,
@@ -320,7 +331,7 @@ def submit_slurm_master_flow(args, jobid):
         + f" --jobid {jobid}"
     )
     if hasattr(args, "partition") and args.partition is not None:
-        max_time, max_time_seconds = get_max_walltime(args.partition)
+        max_time, max_time_second = get_max_walltime(args.partition)
     else:
         print("Please provide partition name to run SLURM jobs.")
         return 1
@@ -356,7 +367,7 @@ def submit_slurm_master_flow(args, jobid):
                 walltime = max_time
             else:
                 wall_time_second = slurm_time_to_seconds(args.walltime)
-                if wall_time_seconod > max_time_second:
+                if wall_time_second > max_time_second:
                     print(
                         f"Walltime : {args.walltime} is larger than maximum allowed time: {max_time}."
                     )

@@ -297,12 +297,16 @@ def start_prefect_server(
         print(
             "##########################################################################"
         )
-        print(
-            f"Prefect server dashboard is now running for remote monitoring at: {config['SERVER_DASHBOARD']}"
-        )
         if scheduler_name != "local":
             print(
                 f"First tunnel to prefect from your local machine: ssh -N -L {port}:localhost:{port} <username>@<remote.cluster.name>"
+            )
+            print(
+                f"Prefect server dashboard for remote monitoring is available at local machine: http://localhost:{port}/dashboard"
+            )
+        else:
+            print(
+                f"Prefect server dashboard for monitoring is available at: {config['NODE_URL']}"
             )
         print(
             "##########################################################################"
