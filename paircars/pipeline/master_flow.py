@@ -4084,7 +4084,7 @@ def cli():
         total_mem = psutil.virtual_memory().total / (1024**3)
         usable_mem = mem_frac * total_mem
         per_worker_mem = min(
-            1, usabele_mem / max_estimated_worker
+            1, usable_mem / max_estimated_worker
         )  # Minimum 1GB per worker
         max_estimated_worker = min(
             1, min(max_estimated_worker, int(total_mem / per_worker_mem))
