@@ -421,32 +421,60 @@ def submit_local_master_flow(args, jobid):
 ##############################################
 # Scheduler and hardware architecture related
 ##############################################
-def detect_best_interface():
+def detect_best_interface(scheduler_ip= None):
     """
-    Automatically detect best network interface for Dask.
+    Automatically detect best IPv4 network interface for Dask.
+
+    Parameters
+    ----------
+    scheduler_ip : str, optional
+        If provided, ensures selected interface can route to this IP.
 
     Returns
     -------
-    str
-        Best interface
+    str or None
+        Best interface name or None if not found.
     """
-    interfaces = psutil.net_if_addrs().keys()
-    for iface in interfaces:
+    stats = psutil.net_if_stats()
+    addrs = psutil.net_if_addrs()
+    candidates = []
+    for iface, iface_addrs in addrs.items():
+        if iface == "lo":
+            continue
+        if iface.startswith(("docker", "veth", "br", "wl")):
+            continue
+        # Interface must be UP
+        if iface not in stats or not stats[iface].isup:
+            continue
+        # Must have IPv4
+        ipv4 = None
+        for addr in iface_addrs:
+            if addr.family == socket.AF_INET:
+                if not addr.address.startswith("127."):
+                    ipv4 = addr.address
+                    break
+        if ipv4:
+            candidates.append((iface, ipv4))
+    if not candidates:
+        return None
+    # If scheduler_ip provided, check routing
+    if scheduler_ip:
+        for iface, ip in candidates:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind((ip, 0))
+                s.settimeout(1)
+                s.connect((scheduler_ip, 80))
+                s.close()
+                return iface
+            except Exception:
+                continue
+    # Prefer InfiniBand if available
+    for iface, _ in candidates:
         if iface.startswith("ib"):
             return iface
-    for iface in interfaces:
-        if iface.startswith(("eth", "en")):
-            return iface
-    for iface in interfaces:
-        if (
-            iface != "lo"
-            and not iface.startswith("wl")
-            and not iface.startswith("docker")
-            and not iface.startswith("veth")
-            and not iface.startswith("br")
-        ):
-            return iface
-    return None
+    # Otherwise return first valid interface
+    return candidates[0][0]
 
 
 def get_scheduler_name():

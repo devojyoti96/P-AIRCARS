@@ -173,27 +173,51 @@ def get_slurm_dask_cluster(
             f"-o {log_dir}/paircars_{jobid}-%j.out",
             f"-e {log_dir}/paircars_{jobid}-%j.err",
         ]
-
-        cluster = SLURMCluster(
-            queue=partition,
-            account=account,
-            cores=1,  # This is important for CASA tasks
-            n_workers=1,
-            walltime=walltime,
-            memory=f"{mem_limit}G",
-            processes=1,
-            interface=interface,
-            python=python_path,
-            local_directory=dask_dir_tmp,
-            death_timeout=300,
-            log_directory=log_dir,
-            name=f"paircars_{jobid}",
-            shared_temp_directory=dask_dir_tmp,
-            job_extra_directives=job_extra,
-            job_script_prologue=env_extra,
-        )
-        client = Client(cluster, heartbeat_interval="5s")
-        client.run_on_scheduler(gc.collect)
+        
+        try:
+            cluster = SLURMCluster(
+                queue=partition,
+                account=account,
+                cores=1,  # This is important for CASA tasks
+                n_workers=1,
+                walltime=walltime,
+                memory=f"{mem_limit}G",
+                processes=1,
+                python=python_path,
+                local_directory=dask_dir_tmp,
+                death_timeout=300,
+                log_directory=log_dir,
+                name=f"paircars_{jobid}",
+                shared_temp_directory=dask_dir_tmp,
+                job_extra_directives=job_extra,
+                job_script_prologue=env_extra,
+            )
+            client = Client(cluster, heartbeat_interval="5s")
+            client.run_on_scheduler(gc.collect)
+            print (f"Using interface: auto-detected")
+        except:
+            cluster = SLURMCluster(
+                queue=partition,
+                account=account,
+                cores=1,  # This is important for CASA tasks
+                n_workers=1,
+                walltime=walltime,
+                memory=f"{mem_limit}G",
+                processes=1,
+                python=python_path,
+                local_directory=dask_dir_tmp,
+                death_timeout=300,
+                log_directory=log_dir,
+                name=f"paircars_{jobid}",
+                shared_temp_directory=dask_dir_tmp,
+                job_extra_directives=job_extra,
+                job_script_prologue=env_extra,
+                interface=interface,
+            )
+            client = Client(cluster, heartbeat_interval="5s")
+            client.run_on_scheduler(gc.collect)
+            print (f"Using interface: {interface}")
+            
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
