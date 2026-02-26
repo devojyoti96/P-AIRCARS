@@ -4045,7 +4045,7 @@ def cli():
                 max_ms_size = max(max_ms_size, max_cal_ms_size)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    max_mem = max(4, round(5 * max_ms_size, 1))  # Minimum 4 GB
+    max_mem = max(1, round(5 * max_ms_size, 1))  # Minimum 1 GB
 
     ###############################################
     # Setup cluster environment
@@ -4085,6 +4085,15 @@ def cli():
         max_estimated_worker = int(
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
+        total_mem = psutil.virtual_memory().total/1024**3
+        per_worker_mem = round(total_mem/max_estimated_worker,2)
+        per_worker_mem = min(1, per_worker_mem)
+        max_estimated_worker = min(max_estimated_worker, int(total_mem/per_worker_mem))
+        
+        if args.max_worker > 0:  # If user defined maximum number of workers
+            max_estimated_worker = min(max_estimated_worker, args.max_worker)
+        if max_estimated_worker<2:
+            max_estimated_worker = max(2, max_estimated_worker)
 
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
@@ -4117,14 +4126,13 @@ def cli():
             max_estimated_worker = int(
                 max_worker_per_node * total_nodes
             )  # Maximum number of workers can be spawned
-            nworker = min(
+            max_estimated_worker = min(
                 len(target_mslist) + 1, max_estimated_worker
             )  # Total number of workers
             if args.max_worker > 0:  # If user defined maximum number of workers
-                nworker = min(nworker, args.max_worker)
-                max_estimated_worker = args.max_worker
-
-            nworker = max(2, nworker)
+                max_estimated_worker = min(max_estimated_worker, args.max_worker)
+            if max_estimated_worker<2:
+                max_estimated_worker = max(2, max_estimated_worker)
 
             # TODO: How to estimate max estimated worker for cloud
             cluster_result = get_slurm_dask_cluster(
@@ -4133,7 +4141,7 @@ def cli():
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
                 max_mem=max_mem,
-                max_worker=nworker,
+                max_worker=max_estimated_worker,
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
