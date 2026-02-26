@@ -4089,12 +4089,11 @@ def cli():
         max_estimated_worker = min(
             1, min(max_estimated_worker, int(total_mem / per_worker_mem))
         )
-
         if args.max_worker > 0:  # If user defined maximum number of workers
             max_estimated_worker = min(max_estimated_worker, args.max_worker)
-            if max_estimated_worker < 2:
-                print("Minimum 2 workers are required.")
-                max_estimated_worker = max(2, max_estimated_worker)
+        if max_estimated_worker < 2:
+            print("Minimum 2 workers are required.")
+            max_estimated_worker = max(2, max_estimated_worker)
 
         print("Setting up local cluster....")
         result = get_local_dask_cluster(
@@ -4147,9 +4146,9 @@ def cli():
 
             if args.max_worker > 0:  # If user defined maximum number of workers
                 max_estimated_worker = min(max_estimated_worker, args.max_worker)
-                if max_estimated_worker < 2:
-                    print("Minimum 2 workers are required.")
-                    max_estimated_worker = max(2, max_estimated_worker)
+            if max_estimated_worker < 2:
+                print("Minimum 2 workers are required.")
+                max_estimated_worker = max(2, max_estimated_worker)
 
             print("Setting up slurm cluster....")
             # TODO: How to estimate max estimated worker for cloud
