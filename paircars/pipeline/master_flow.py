@@ -4045,7 +4045,7 @@ def cli():
                 max_ms_size = max(max_ms_size, max_cal_ms_size)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    max_mem = max(4, round(5 * max_ms_size, 1))  # Minimum 4 GB
+    min_mem = round(5 * max_ms_size, 2) 
 
     ###############################################
     # Setup cluster environment
@@ -4084,8 +4084,8 @@ def cli():
         total_mem = psutil.virtual_memory().total / (1024**3)
         usable_mem = mem_frac * total_mem
         per_worker_mem = min(
-            1, usable_mem / max_estimated_worker
-        )  # Minimum 1GB per worker
+            min_mem, usable_mem / max_estimated_worker
+        )  # Minimum per worker is 5 times ms size (min_mem is determined earlier)
         max_estimated_worker = min(
             1, min(max_estimated_worker, int(total_mem / per_worker_mem))
         )
@@ -4099,6 +4099,7 @@ def cli():
         result = get_local_dask_cluster(
             args.workdir,
             mem_frac=mem_frac,
+            max_mem=min(min_mem,8),
             max_worker=max_estimated_worker,
         )
         if result is None:
@@ -4129,7 +4130,7 @@ def cli():
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
             max_worker_per_node = max(
-                1, int(per_node_mem / max_mem)
+                1, int(per_node_mem / min_mem)
             )  # Maximum worker per node
             total_nodes = get_total_nodes(
                 partition=args.partition
@@ -4157,7 +4158,7 @@ def cli():
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
-                max_mem=max_mem,
+                max_mem=min(min_mem,8),
                 max_worker=max_estimated_worker,
                 partition=args.partition,
                 account=args.account,
