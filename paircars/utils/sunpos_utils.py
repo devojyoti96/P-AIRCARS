@@ -128,7 +128,7 @@ def move_to_sun(msname, only_uvw=False):
     """
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.solarcenter_move_*")
-    print(f"Moving phasecenter to solar center for measurement set: {msnamne}")
+    print(f"Moving phasecenter to solar center for measurement set: {msname}")
     sun_radec_string, sunra, sundec, sunra_deg, sundec_deg = radec_sun(msname)
     msg = run_chgcenter(
         msname, sunra, sundec, only_uvw=only_uvw, container_name="paircarswsclean"
