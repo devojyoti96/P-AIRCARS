@@ -4045,7 +4045,7 @@ def cli():
                 max_ms_size = max(max_ms_size, max_cal_ms_size)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    max_mem = max(1, round(5 * max_ms_size, 1))  # Minimum 1 GB
+    min_mem = max(1, round(5 * max_ms_size, 1))  # Minimum 1 GB
 
     ###############################################
     # Setup cluster environment
@@ -4082,7 +4082,7 @@ def cli():
         )  # Maximum estimated workers for given cpu fraction
         total_mem = psutil.virtual_memory().total/1024**3
         per_worker_mem = round(total_mem/max_estimated_worker,2)
-        per_worker_mem = min(1, per_worker_mem)
+        per_worker_mem = min(min_mem, per_worker_mem)
         max_estimated_worker = min(max_estimated_worker, int(total_mem/per_worker_mem))
         
         if args.max_worker > 0:  # If user defined maximum number of workers
@@ -4126,7 +4126,7 @@ def cli():
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
             max_worker_per_node = max(
-                1, int(per_node_mem / max_mem)
+                1, int(per_node_mem / min_mem)
             )  # Maximum worker per node
             total_nodes = get_total_nodes(
                 partition=args.partition
@@ -4148,7 +4148,6 @@ def cli():
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
-                max_mem=max_mem,
                 max_worker=max_estimated_worker,
                 partition=args.partition,
                 account=args.account,
