@@ -4064,24 +4064,19 @@ def cli():
         )
         return
 
+    if args.mem_frac <= 0:
+        mem_frac = 0.8
+    else:
+        mem_frac = args.mem_frac
+    if args.cpu_frac <= 0:
+        cpu_frac = 0.8
+    else:
+        cpu_frac = args.cpu_frac
+        
     if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
         #######################################
-        print("Setting up local cluster....")
-        if args.mem_frac <= 0:
-            mem_frac = 0.8
-        else:
-            mem_frac = args.mem_frac
-        result = get_local_dask_cluster(
-            args.workdir,
-            mem_frac=mem_frac,
-        )
-        if result is None:
-            print("Error occured in creating local cluster.")
-            return 1
-        else:
-            dask_client, dask_cluster, dask_dir = result
         max_estimated_worker = int(
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
@@ -4094,6 +4089,19 @@ def cli():
             max_estimated_worker = min(max_estimated_worker, args.max_worker)
         if max_estimated_worker<2:
             max_estimated_worker = max(2, max_estimated_worker)
+            
+        print("Setting up local cluster....")
+        
+        result = get_local_dask_cluster(
+            args.workdir,
+            mem_frac=mem_frac,
+            max_worker=max_estimated_worker,
+        )
+        if result is None:
+            print("Error occured in creating local cluster.")
+            return 1
+        else:
+            dask_client, dask_cluster, dask_dir = result
 
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
