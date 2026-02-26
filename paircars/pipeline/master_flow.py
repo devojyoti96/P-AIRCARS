@@ -2313,13 +2313,28 @@ def master_control(
         # Checking presence of necessary caltables
         ##########################################
         if calibrator_obsid is not None:
+            trial=0
             print (f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal")
-            bandpass_tables = glob.glob(
-                f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
-            ) 
+            while trial<5:
+                bandpass_tables = glob.glob(
+                    f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
+                ) 
+                if len(bandpass_tables)>0:
+                    break
+                else:
+                    time.sleep(10)
+                    trial+=1
             print (f"Bandpass tables: {bandpass_tables}\n")
+            
+            trial=0
             print (f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal")
-            crossphase_tables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+            while trial<5:
+                crossphase_tables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+                if len(crossphase_tables)>0:
+                    break
+                else:
+                    time.sleep(10)
+                    trial+=1
             print (f"Crosshand phase tables: {crossphase_tables}\n")
             caltables = bandpass_tables + crossphase_tables
                     
