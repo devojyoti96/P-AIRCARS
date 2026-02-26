@@ -14,7 +14,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.basic_utils import timestamo_to_mjdsec
+from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.proc_manage_utils import get_scheduler_name
