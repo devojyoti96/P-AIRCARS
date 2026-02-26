@@ -8,7 +8,7 @@ import signal
 import traceback
 import subprocess
 from distributed import Client
-from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.basic_utils import get_cachedir, check_port_status
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
@@ -23,14 +23,15 @@ def kill_port(port):
     port : int
         Port number
     """
-    print(f"Closing port : {port}.")
-    result = subprocess.run(
-        ["lsof", "-t", f"-i:{port}"],
-        capture_output=True,
-        text=True,
-    )
-    for pid in result.stdout.split():
-        os.kill(int(pid), signal.SIGKILL)
+    if check_port_status(port) is False:
+        print(f"Closing port : {port}.")
+        result = subprocess.run(
+            ["lsof", "-t", f"-i:{port}"],
+            capture_output=True,
+            text=True,
+        )
+        for pid in result.stdout.split():
+            os.kill(int(pid), signal.SIGKILL)
 
 
 def terminate_process_and_children(pid, grace_period=3.0):
