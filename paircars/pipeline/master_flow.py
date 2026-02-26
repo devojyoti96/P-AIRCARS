@@ -2255,7 +2255,6 @@ def master_control(
         ##################################
         # Only if basic calibration is requested
         if do_cal_flag and has_cal:
-            msg = future_flag.result()
             if emails != "":
                 email_msg = "Started flagging of calibrators."
                 send_task_notification(
