@@ -3368,7 +3368,7 @@ def master_control(
                 send_task_notification(
                     emails, email_msg, jobid, target_obsid, timestamp
                 )
-                
+
         #################################################################
         # Filtering only coarse channel images for default overlay mode
         #################################################################
@@ -4064,27 +4064,49 @@ def cli():
         )
         return
 
+    if args.mem_frac <= 0:
+        mem_frac = 0.8
+    else:
+        mem_frac = args.mem_frac
+    if args.cpu_frac <= 0:
+        cpu_frac = 0.8
+    else:
+        cpu_frac = args.cpu_frac
+
     if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
         #######################################
+        print("Estimating maximum number of workers and per worker memory.")
+        max_estimated_worker = int(
+            psutil.cpu_count() * args.cpu_frac
+        )  # Maximum estimated workers for given cpu fraction
+        total_mem = psutil.virtual_memory().total / (1024**3)
+        usable_mem = mem_frac * total_mem
+        per_worker_mem = min(
+            1, usabele_mem / max_estimated_worker
+        )  # Minimum 1GB per worker
+        max_estimated_worker = min(
+            1, min(max_estimated_worker, int(total_mem / per_worker_mem))
+        )
+
+        if args.max_worker > 0:  # If user defined maximum number of workers
+            max_estimated_worker = min(max_estimated_worker, args.max_worker)
+            if max_estimated_worker < 2:
+                print("Minimum 2 workers are required.")
+                max_estimated_worker = max(2, max_estimated_worker)
+
         print("Setting up local cluster....")
-        if args.mem_frac <= 0:
-            mem_frac = 0.8
-        else:
-            mem_frac = args.mem_frac
         result = get_local_dask_cluster(
             args.workdir,
             mem_frac=mem_frac,
+            max_worker=max_estimated_worker,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
             dask_client, dask_cluster, dask_dir = result
-        max_estimated_worker = int(
-            psutil.cpu_count() * args.cpu_frac
-        )  # Maximum estimated workers for given cpu fraction
 
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
@@ -4097,14 +4119,13 @@ def cli():
             args.cpu_frac,
             args.mem_frac,
         )
-        scale_worker_and_wait(dask_cluster, dask_client, 1)
-        adaptive = True  # For local cluster, always do adaptive scaling to avoid occupying resources
+        adaptive = False  # For local cluster, do not use adaptive scaling to avoid any over subscription
     else:
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
                 return
-            print("Setting up slurm cluster....")
+            print("Estimating maximum number of workers and per worker memory.")
             per_node_cpu, per_node_mem = get_slurm_node_resources(
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
@@ -4114,18 +4135,23 @@ def cli():
             total_nodes = get_total_nodes(
                 partition=args.partition
             )  # Total nodes for the given partition
+            if total_nodes == 0:
+                print(f"No nodes available for partition: {args.partition}")
+                return 1
             max_estimated_worker = int(
                 max_worker_per_node * total_nodes
             )  # Maximum number of workers can be spawned
-            nworker = min(
+            max_estimated_worker = min(
                 len(target_mslist) + 1, max_estimated_worker
             )  # Total number of workers
+
             if args.max_worker > 0:  # If user defined maximum number of workers
-                nworker = min(nworker, args.max_worker)
-                max_estimated_worker = args.max_worker
+                max_estimated_worker = min(max_estimated_worker, args.max_worker)
+                if max_estimated_worker < 2:
+                    print("Minimum 2 workers are required.")
+                    max_estimated_worker = max(2, max_estimated_worker)
 
-            nworker = max(2, nworker)
-
+            print("Setting up slurm cluster....")
             # TODO: How to estimate max estimated worker for cloud
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
@@ -4133,7 +4159,7 @@ def cli():
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
                 max_mem=max_mem,
-                max_worker=nworker,
+                max_worker=max_estimated_worker,
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
