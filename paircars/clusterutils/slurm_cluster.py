@@ -173,7 +173,7 @@ def get_slurm_dask_cluster(
             f"-o {log_dir}/paircars_{jobid}-%j.out",
             f"-e {log_dir}/paircars_{jobid}-%j.err",
         ]
-        
+
         if walltime is None:
             walltime, _ = get_max_walltime(partition)
         else:
@@ -184,7 +184,9 @@ def get_slurm_dask_cluster(
                     f"Walltime : {walltime} is larger than maximum allowed time: {max_time}."
                 )
                 walltime = max_time
-            
+            else:
+                walltime = args.walltime
+
         try:
             cluster = SLURMCluster(
                 queue=partition,
@@ -205,7 +207,7 @@ def get_slurm_dask_cluster(
             )
             client = Client(cluster, heartbeat_interval="5s")
             client.run_on_scheduler(gc.collect)
-            print (f"Using interface: auto-detected")
+            print(f"Using interface: auto-detected")
         except:
             cluster = SLURMCluster(
                 queue=partition,
@@ -227,8 +229,8 @@ def get_slurm_dask_cluster(
             )
             client = Client(cluster, heartbeat_interval="5s")
             client.run_on_scheduler(gc.collect)
-            print (f"Using interface: {interface}")
-            
+            print(f"Using interface: {interface}")
+
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")

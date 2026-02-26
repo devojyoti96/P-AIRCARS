@@ -583,8 +583,9 @@ def run_basic_cal_rounds(
             # Flag summary
             ###############
             tasks = []
+            os.makedirs(f"{outdir}/flag_summary", exist_ok=True)
             for msname in mslist:
-                summary_file = f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_calflag_{cal_round}.summary"
+                summary_file = f"{outdir}/flag_summary/{os.path.basename(msname).split('.ms')[0]}_calflag_{cal_round}.summary"
                 tasks.append(delayed(flagsummary)(msname, summary_file))
             results = list(dask_client.gather(dask_client.compute(tasks)))
         print("##################")

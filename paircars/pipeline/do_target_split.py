@@ -163,11 +163,16 @@ def split_target_scans(
                     timerange=timerange,
                     n_threads=n_threads,
                 )
-                splited_ms_list.append(splited_ms)
-        for splited_ms in splited_ms_list:
-            drop_cache(splited_ms)
-        print(f"Spliting of measurement set: {msname} is done successfully.")
-        return 0, splited_ms_list
+                if os.path.exists(splited_ms):
+                    splited_ms_list.append(splited_ms)
+        if len(splited_ms_list) == 0:
+            print(f"Spliting of measurement set: {msname} is unsuccessful.")
+            return 1, []
+        else:
+            for splited_ms in splited_ms_list:
+                drop_cache(splited_ms)
+            print(f"Spliting of measurement set: {msname} is done successfully.")
+            return 0, splited_ms_list
     except Exception as e:
         traceback.print_exc()
         print(f"Spliting of measurement set: {msname} is unsuccessful.")

@@ -300,6 +300,8 @@ def do_selfcal(
         os.system("rm -rf *_selfcal_present*")
         fluxscale_mwa = False
         solar_attn = 1
+        if cal_applied and os.path.exists(f"{msname}/.applied_sol") is False:
+            cal_applied = False
         if cal_applied is False:
             fluxscale_mwa = True
             if os.path.exists(metafits) is False:
@@ -308,6 +310,7 @@ def do_selfcal(
                 )
                 return 1, msname, []
             solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
+            applymode = "calflag"
 
         ###########################################
         # Starting using Gaussian model

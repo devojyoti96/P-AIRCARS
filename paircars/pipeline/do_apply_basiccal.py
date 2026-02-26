@@ -363,6 +363,7 @@ def run_all_applysol(
         print("#################################")
 
         tasks = []
+        failed = 0
         for ms in mslist:
             msmd = msmetadata()
             msmd.open(ms)
@@ -377,34 +378,44 @@ def run_all_applysol(
                 )
                 final_gaintable.append(final_crossphasetable)
                 interp.append("nearest, nearestflag")
-            tasks.append(
-                delayed(applysol)(
-                    ms,
-                    workdir,
-                    gaintable=final_gaintable,
-                    overwrite_datacolumn=overwrite_datacolumn,
-                    applymode=applymode,
-                    interp=interp,
-                    n_threads=n_threads,
-                    mem_limit=mem_limit,
-                    force_apply=force_apply,
+            if len(final_gaintable) > 0:
+                tasks.append(
+                    delayed(applysol)(
+                        ms,
+                        workdir,
+                        gaintable=final_gaintable,
+                        overwrite_datacolumn=overwrite_datacolumn,
+                        applymode=applymode,
+                        interp=interp,
+                        n_threads=n_threads,
+                        mem_limit=mem_limit,
+                        force_apply=force_apply,
+                    )
                 )
-            )
+            else:
+                failed += 1
         results = list(dask_client.gather(dask_client.compute(tasks)))
-        if np.nansum(results) == 0:
-            print("##################")
-            print(
-                "Applying basic calibration solutions for target are done successfully."
-            )
-            print("##################")
-            return 0
-        else:
+        apply_failed = sum(results)
+        succeed = len(mslist) - apply_failed - failed
+        print(f"Total measurement sets: {len(mslist)}")
+        print(f"Total success: {succeed}")
+        print(f"No solutions available for: {failed}")
+        print(f"Total solution apply failed: {apply_failed}")
+
+        if failed + apply_failed == len(mslist):
             print("##################")
             print(
                 "Applying basic calibration solutions for target scans are not done successfully."
             )
             print("##################")
             return 1
+        else:
+            print("##################")
+            print(
+                "Applying basic calibration solutions for target are done successfully."
+            )
+            print("##################")
+            return 0
     except Exception as e:
         traceback.print_exc()
         print("##################")

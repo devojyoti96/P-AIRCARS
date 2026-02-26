@@ -87,6 +87,9 @@ def cor_sidereal_motion(
             print("##################")
             return 1, []
         else:
+            print(f"Total measurement sets: {len(mslist)}")
+            print(f"Total success: {len(splited_ms_list_phaserotated)}")
+            print(f"Total failure: {len(mslist)-len(splited_ms_list_phaserotated)}")
             print("##################")
             print("Sidereal motion corrections are done successfully.")
             print("##################")

@@ -8,11 +8,13 @@ import glob
 import sys
 import os
 import dask
+from astropy.io import fits
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
 )
+from paircars.utils.basic_utils import timestamo_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.proc_manage_utils import get_scheduler_name
@@ -26,6 +28,7 @@ def main(
     imagedir,
     outdir,
     workdir="",
+    all_overlay=False,
     cpu_frac=0.8,
     logfile=None,
     jobid=0,
@@ -43,6 +46,8 @@ def main(
         Output directory
     workdir : str, optional
         Working directory
+    all_overlay : bool, optional
+        Whether make overlays of all images or not
     cpu_frac : float, optional
         Fraction of total CPU resources to use. Default is 0.8.
     logfile : str or None, optional
@@ -88,11 +93,36 @@ def main(
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     imagelist = glob.glob(f"{imagedir}/*.fits")
+
     if len(imagelist) == 0:
         print("No image in the image directory.")
         return 1
 
     try:
+        ###############################################################################
+        # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
+        ###############################################################################
+        if all_overlay is False:
+            filtered_imagelist = []
+            timelist = []
+            last_mjdsec = 0.0
+            for image in imagelist:
+                header = fits.getheader(image)
+                if header["CTYPE3"] == "FREQ":
+                    bw = round(float(header["CDELT3"]) / 10**6, 2)
+                elif header["CTYPE4"] == "FREQ":
+                    bw = round(float(header["CDELT4"]) / 10**6, 2)
+                else:
+                    bw = -1
+                if bw >= 1.2:
+                    timeobs = header["DATE-OBS"].split(".")[0]
+                    mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
+                    if (mjdsec - last_mjdsec) >= 10.0:
+                        filtered_imagelist.append(image)
+                        timelist.append(mjdsec)
+                        last_mjdsec = max(timelist)
+            imagelist = filtered_imagelist
+
         scheduler_name = get_scheduler_name()
         if scheduler_name == "local" or dask_client is None:
             ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
@@ -167,6 +197,9 @@ def cli():
         "###################\nAdvanced parameters\n###################"
     )
     adv_args.add_argument(
+        "--all_overlay", action="store_true", help="Make overlays of all images"
+    )
+    adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
 
@@ -190,6 +223,7 @@ def cli():
         args.imagedir,
         args.outdir,
         workdir=args.workdir,
+        all_overlay=args.all_overlay,
         cpu_frac=args.cpu_frac,
         logfile=args.logfile,
         jobid=args.jobid,

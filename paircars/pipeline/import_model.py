@@ -61,6 +61,7 @@ def import_hyperdrive_model(
     ncpu = max(1, ncpu)
 
     msname = msname.rstrip("/")
+    os.system(f"rm -rf {msname}/.modeling_*")
     msname = os.path.abspath(msname)
     print(
         "#######################\nImporting model for ms:"
@@ -141,6 +142,7 @@ def import_hyperdrive_model(
         result = run_hyperdrive(hyperdrive_cmd, ncpu=ncpu, verbose=verbose)
         if result != 0:
             print("Error occured in hyperdrive.")
+            os.system(f"touch {msname}/.modeling_failed")
             return 1
 
         ########################
@@ -174,10 +176,12 @@ def import_hyperdrive_model(
             model_table.close()
         del m_array, model_array
         print(f"Model import done in: {round(time.time()-starttime,2)}s")
+        os.system(f"touch {msname}/.modeling_succeed")
         return 0
     except Exception as e:
         print(f"Model simulation and import failed for: {msname}.")
         traceback.print_exc()
+        os.system(f"touch {msname}/.modeling_failed")
         return 1
     finally:
         os.system(f"rm -rf {model_msname}")
@@ -211,7 +215,6 @@ def run_all_modeling(
     int
         Total failure
     """
-    msg = 0
     try:
         if len(mslist) > 0:
             tasks = []
@@ -229,16 +232,21 @@ def run_all_modeling(
             print("Start import modeling...")
             futures = dask_client.compute(tasks)
             results = dask_client.gather(futures)
-            for i in range(len(results)):
-                if results[i] != 0:
-                    print(f"Error in model import for ms: {mslist[i]}.")
-                    msg += 1
+            failed = sum(results)
+            succeed = len(mslist) - failed
+            print(f"Total measurement setds: {len(mslist)}")
+            print(f"Total failure: {failed}")
+            print(f"Total success: {succeed}")
+            if len(mslist) == failed:
+                msg = 1
+            else:
+                msg = 0
         else:
             print("Please provide a valid measurement set list.")
-            msg = -1
+            msg = 1
     except Exception as e:
         traceback.print_exc()
-        msg = -1
+        msg = 1
     return msg
 
 

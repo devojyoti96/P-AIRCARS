@@ -112,7 +112,15 @@ def main(
     try:
         tasks = [delayed(move_to_sun)(msname) for msname in mslist]
         results = list(dask_client.gather(dask_client.compute(tasks)))
-        msg = 0
+        failed = sum(results)
+        succeed = len(mslist) - failed
+        print(f"Total measurement sets: {len(mslist)}")
+        print(f"Total success: {succeed}")
+        print(f"Total failure: {failed}")
+        if len(mslist) == failed:
+            msg = 1
+        else:
+            msg = 0
     except Exception as e:
         traceback.print_exc()
         msg = 1

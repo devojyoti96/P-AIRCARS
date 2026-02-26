@@ -460,9 +460,6 @@ def perform_imaging(
                         os.makedirs(imagedir + "/images", exist_ok=True)
                         final_image_list = []
                         for imagename in imagelist:
-                            image_bw = (
-                                fits.getheader(imagename)["CDELT3"] / 10**6
-                            )  # In MHz
                             renamed_image = rename_mwasolar_image(
                                 imagename,
                                 imagetype="image",

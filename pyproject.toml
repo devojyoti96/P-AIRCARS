@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paircars"
-version = "2.1.11"
+version = "3.0.0"
 description = "A package to calibrate MWA solar observation"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = "MIT"
@@ -13,8 +13,13 @@ authors = [
 ]
 requires-python = ">=3.10,<3.11"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent"
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
 ]
 dependencies = [
     "aiapy==0.10.1",

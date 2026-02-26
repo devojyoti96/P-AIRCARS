@@ -126,12 +126,18 @@ def move_to_sun(msname, only_uvw=False):
     int
         Success message
     """
+    msname = msname.rstrip("/")
+    os.system(f"rm -rf {msname}/.solarcenter_move_*")
+    print(f"Moving phasecenter to solar center for measurement set: {msnamne}")
     sun_radec_string, sunra, sundec, sunra_deg, sundec_deg = radec_sun(msname)
     msg = run_chgcenter(
         msname, sunra, sundec, only_uvw=only_uvw, container_name="paircarswsclean"
     )
     if msg != 0:
         print("Phasecenter could not be shifted.")
+        os.system(f"touch {msname}/.solarcenter_move_failed")
+    else:
+        os.system(f"touch {msname}/.solarcenter_move_succeed")
     return msg
 
 

@@ -87,6 +87,7 @@ def single_ms_flag(
     from casatasks import flagdata
 
     msname = msname.rstrip("/")
+    os.system(f"rm -rf {msname}/.flag_*")
     print(f"Flagging ms: {msname}")
     try:
         ##############################
@@ -209,6 +210,7 @@ def single_ms_flag(
                 print(
                     "Corrected data column is chosen for flagging, but it is not present."
                 )
+                os.system(f"touch {msname}/.flag_failed")
                 return 1
             else:
                 datacolumn = "corrected"
@@ -220,6 +222,7 @@ def single_ms_flag(
             datacolumn_present = check_datacolumn_valid(msname, datacolumn="DATA")
             if not datacolumn_present:
                 print("Data column is chosen for flagging, but it is not present.")
+                os.system(f"touch {msname}/.flag_failed")
                 return 1
             else:
                 datacolumn = "data"
@@ -296,9 +299,11 @@ def single_ms_flag(
                     )
             except BaseException:
                 pass
+        os.system(f"touch {msname}/.flag_succeed")
         return 0
     except Exception as e:
         traceback.print_exc()
+        os.system(f"touch {msname}/.flag_failed")
         return 1
 
 
@@ -450,9 +455,16 @@ def do_flagging(
             )
             print(f"Flag summary: {summary_file}")
             flagsummary(msname, summary_file)
-        print("Flagging is done successfully.")
+        failed = sum(results)
+        succeed = len(mslist) - failed
+        print(f"Total measurement set: {len(mslist)}")
+        print(f"Total success: {succeed}")
+        print(f"Total failure: {failed}")
         print("##############################")
-        return 0
+        if len(mslist) == failed:
+            return 1
+        else:
+            return 0
     except Exception as e:
         traceback.print_exc()
         return 1
@@ -543,6 +555,8 @@ def main(
     if outdir == "":
         outdir = workdir
     os.makedirs(outdir, exist_ok=True)
+    flag_summary_dir = f"{outdir}/flag_summary"
+    os.makedirs(flag_summary_dir, exist_ok=True)
 
     ############
     # Logger
@@ -588,7 +602,7 @@ def main(
                 metafits,
                 dask_client,
                 workdir,
-                outdir,
+                flag_summary_dir,
                 datacolumn=datacolumn,
                 flag_bad_ants=flag_bad_ants,
                 flag_bad_spw=flag_bad_spw,

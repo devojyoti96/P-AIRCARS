@@ -421,7 +421,7 @@ def submit_local_master_flow(args, jobid):
 ##############################################
 # Scheduler and hardware architecture related
 ##############################################
-def detect_best_interface(scheduler_ip= None):
+def detect_best_interface(scheduler_ip=None):
     """
     Automatically detect best IPv4 network interface for Dask.
 
