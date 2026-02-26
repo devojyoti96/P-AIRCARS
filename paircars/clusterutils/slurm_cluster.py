@@ -148,10 +148,12 @@ def get_slurm_dask_cluster(
         )
         ncpu = max(1, int(ncpu / max_worker))
 
+        mem_limit = round(mem/max_worker,2)
+        mem_limit = min(max_mem,mem_limit)
+
+        interface = detect_best_interface()        
         if python_path is None:
             python_path = sys.executable
-        interface = detect_best_interface()
-        mem_limit = max(1, round(min(max_mem, mem), 2))
         env_extra = [
             "export PYTHONUNBUFFERED=1",
             f"export OMP_NUM_THREADS={ncpu}",

@@ -4081,14 +4081,6 @@ def cli():
         max_estimated_worker = int(
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
-        total_mem = psutil.virtual_memory().total / (1024**3)
-        usable_mem = mem_frac * total_mem
-        per_worker_mem = min(
-            min_mem, usable_mem / max_estimated_worker
-        )  # Minimum per worker is 5 times ms size (min_mem is determined earlier)
-        max_estimated_worker = min(
-            1, min(max_estimated_worker, int(total_mem / per_worker_mem))
-        )
         if args.max_worker > 0:  # If user defined maximum number of workers
             max_estimated_worker = min(max_estimated_worker, args.max_worker)
         if max_estimated_worker < 2:
@@ -4099,7 +4091,6 @@ def cli():
         result = get_local_dask_cluster(
             args.workdir,
             mem_frac=mem_frac,
-            max_mem=min(min_mem,8),
             max_worker=max_estimated_worker,
         )
         if result is None:
@@ -4141,9 +4132,6 @@ def cli():
             max_estimated_worker = int(
                 max_worker_per_node * total_nodes
             )  # Maximum number of workers can be spawned
-            max_estimated_worker = min(
-                len(target_mslist) + 1, max_estimated_worker
-            )  # Total number of workers
 
             if args.max_worker > 0:  # If user defined maximum number of workers
                 max_estimated_worker = min(max_estimated_worker, args.max_worker)
@@ -4158,7 +4146,6 @@ def cli():
                 jobid=jobid,
                 cpu_frac=args.cpu_frac,
                 mem_frac=args.mem_frac,
-                max_mem=min(min_mem,8),
                 max_worker=max_estimated_worker,
                 partition=args.partition,
                 account=args.account,
