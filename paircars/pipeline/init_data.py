@@ -26,6 +26,7 @@ from paircars.utils.udocker_utils import (
     initialize_hyperdrive_container,
     initialize_postgres_container,
 )
+from paircars.utils.killjob_utils import kill_port
 from paircars.pipeline.beam_interpolate import *
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -152,9 +153,19 @@ def main(
 
     port = 4260
     postgres_port = 5260
-    
+
+    try:
+        kill_port(port)
+    except:
+        pass
+
+    try:
+        kill_port(postgres_port)
+    except:
+        pass
+
     scheduler_name = get_scheduler_name()
-    
+
     if check_port_status(port) is False:
         if scheduler_name != "local":
             port = get_free_port(start_port=4260, end_port=5250)

@@ -2313,31 +2313,37 @@ def master_control(
         # Checking presence of necessary caltables
         ##########################################
         if calibrator_obsid is not None:
-            trial=0
-            print (f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal")
-            while trial<5:
+            trial = 0
+            print(
+                f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal"
+            )
+            while trial < 5:
                 bandpass_tables = glob.glob(
                     f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
-                ) 
-                if len(bandpass_tables)>0:
+                )
+                if len(bandpass_tables) > 0:
                     break
                 else:
                     time.sleep(10)
-                    trial+=1
-            print (f"Bandpass tables: {bandpass_tables}\n")
-            
-            trial=0
-            print (f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal")
-            while trial<5:
-                crossphase_tables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-                if len(crossphase_tables)>0:
+                    trial += 1
+            print(f"Bandpass tables: {bandpass_tables}\n")
+
+            trial = 0
+            print(
+                f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
+            )
+            while trial < 5:
+                crossphase_tables = glob.glob(
+                    f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal"
+                )
+                if len(crossphase_tables) > 0:
                     break
                 else:
                     time.sleep(10)
-                    trial+=1
-            print (f"Crosshand phase tables: {crossphase_tables}\n")
+                    trial += 1
+            print(f"Crosshand phase tables: {crossphase_tables}\n")
             caltables = bandpass_tables + crossphase_tables
-                    
+
             if len(bandpass_tables) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."
@@ -2352,7 +2358,7 @@ def master_control(
                 has_cal = False
         else:
             has_cal = False
-        
+
         ###############################################
         # Making diagnostic plots
         ###############################################
@@ -3758,7 +3764,7 @@ def cli():
         sys.exit(1)
 
     args = parser.parse_args()
-    
+
     scheduler_name = get_scheduler_name()
     ##################################################
     # Prefect settings check
@@ -3768,7 +3774,7 @@ def cli():
     api_url = prefect_env.get("PREFECT_API_URL")
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
-    
+
     ######################################
     # Check connection to prefect server
     ######################################
@@ -3778,18 +3784,18 @@ def cli():
             r = requests.get(check_url, timeout=60)
         except Exception:
             traceback.print_exc()
-            print(
-                f"Could not reach prefect server at: {api_url} from compute node."
-            )
+            print(f"Could not reach prefect server at: {api_url} from compute node.")
             return 1
     else:
-        print ("Prefecr server is not running.")
-        if scheduler_name=="local":
-            print ("P-AIRCARS will use ephmeral mode.")
+        print("Prefecr server is not running.")
+        if scheduler_name == "local":
+            print("P-AIRCARS will use ephmeral mode.")
         else:
-            print (f"First start prefect server to run P-AIRCARS in {scheduler_name} cluster.")
+            print(
+                f"First start prefect server to run P-AIRCARS in {scheduler_name} cluster."
+            )
             return 1
-            
+
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
     os.system(f"rm -rf {args.workdir}/dask_*")
@@ -4047,4 +4053,3 @@ def cli():
         dask_client.close()
         dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
-
