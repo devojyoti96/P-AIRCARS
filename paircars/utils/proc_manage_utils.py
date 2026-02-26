@@ -326,7 +326,7 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-        mem_limit = round(usable_mem/max_worker,2)
+        mem_limit = round(usable_mem / max_worker, 2)
         mem_limit = min(max_mem, mem_limit)
         cluster = LocalCluster(
             n_workers=1,

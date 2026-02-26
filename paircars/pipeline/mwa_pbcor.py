@@ -225,7 +225,7 @@ def pbcor_all_images(
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
+        print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
         print("#################################")
 
         ###########################################

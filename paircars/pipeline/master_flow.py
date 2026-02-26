@@ -4072,7 +4072,7 @@ def cli():
         cpu_frac = 0.8
     else:
         cpu_frac = args.cpu_frac
-        
+
     if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
@@ -4080,18 +4080,20 @@ def cli():
         max_estimated_worker = int(
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
-        total_mem = psutil.virtual_memory().total/1024**3
-        per_worker_mem = round(total_mem/max_estimated_worker,2)
+        total_mem = psutil.virtual_memory().total / 1024**3
+        per_worker_mem = round(total_mem / max_estimated_worker, 2)
         per_worker_mem = min(min_mem, per_worker_mem)
-        max_estimated_worker = min(max_estimated_worker, int(total_mem/per_worker_mem))
-        
+        max_estimated_worker = min(
+            max_estimated_worker, int(total_mem / per_worker_mem)
+        )
+
         if args.max_worker > 0:  # If user defined maximum number of workers
             max_estimated_worker = min(max_estimated_worker, args.max_worker)
-        if max_estimated_worker<2:
+        if max_estimated_worker < 2:
             max_estimated_worker = max(2, max_estimated_worker)
-            
+
         print("Setting up local cluster....")
-        
+
         result = get_local_dask_cluster(
             args.workdir,
             mem_frac=mem_frac,
@@ -4139,7 +4141,7 @@ def cli():
             )  # Total number of workers
             if args.max_worker > 0:  # If user defined maximum number of workers
                 max_estimated_worker = min(max_estimated_worker, args.max_worker)
-            if max_estimated_worker<2:
+            if max_estimated_worker < 2:
                 max_estimated_worker = max(2, max_estimated_worker)
 
             # TODO: How to estimate max estimated worker for cloud

@@ -114,7 +114,7 @@ def make_solar_DS(
     print("#################################")
     print(f"Total dask worker: {njobs}")
     print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {mem_limit} GB")
+    print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
     print("#################################")
 
     try:
