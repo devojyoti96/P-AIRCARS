@@ -4165,7 +4165,7 @@ def cli():
     ##########################################
     # Starting pipeline
     ##########################################
-    max_estimated_worker = max(100, max_estimated_worker)
+    max_estimated_worker = min(100, max_estimated_worker)
     try:
         dask_addr = dask_client.scheduler.address
         print("#########################################")
