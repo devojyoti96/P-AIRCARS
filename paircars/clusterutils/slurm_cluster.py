@@ -316,6 +316,8 @@ def submit_slurm_master_flow(args, jobid):
         return 1
     load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
     envlist = os.environ
+    envlist["PREFECT_API_URL"]=config["NODE_URL"]
+    
     prefect_env_list = []
     for env in envlist:
         if "PREFECT" in env:

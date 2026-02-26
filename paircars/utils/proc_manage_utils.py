@@ -394,6 +394,7 @@ def submit_local_master_flow(args, jobid):
         config = np.load(config_file, allow_pickle=True).all()
         load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
         envlist = os.environ
+        envlist["PREFECT_API_URL"]=config["NODE_URL"]
         for env in envlist:
             if "PREFECT" in env:
                 prefect_env_list.append(f"export {env}={envlist.get(env)}")

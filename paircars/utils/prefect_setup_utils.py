@@ -69,9 +69,13 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
 
     SERVER_HOST = "0.0.0.0"
     SERVER_PORT = f"{port}"
-
+   
     hostname = socket.gethostname()
-    SERVER_URL = f"http://{hostname}:{SERVER_PORT}/api"
+    REMOTE_URL = f"http://{hostname}:{SERVER_PORT}"
+    
+    SERVER_URL = f"http://0.0.0.0:{SERVER_PORT}/api"
+    NODE_URL = f"http://{hostname}:{SERVER_PORT}/api" 
+    
     SERVER_DASHBOARD = f"http://{hostname}:{SERVER_PORT}/dashboard"
 
     PREFECT_SERVER_API_HOST = "127.0.0.1"
@@ -91,6 +95,7 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
         "SERVER_HOST": SERVER_HOST,
         "SERVER_PORT": SERVER_PORT,
         "SERVER_URL": SERVER_URL,
+        "NODE_URL": NODE_URL,
         "SERVER_DASHBOARD": SERVER_DASHBOARD,
         "PROFILE_NAME": profile_name,
         "PID_FILE": pid_file,

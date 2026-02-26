@@ -2309,28 +2309,21 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-            caltables = glob.glob(
-                f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
-            ) + glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-            if len(caltables) > 0 and do_basic_cal and has_cal:
-                for caltable in caltables:
-                    msg, caltable_diag_plot = plot_caltable_diagnostics(
-                        caltable, f"{outdir}/diagnostic_plots"
-                    )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
-                        )
-                    else:
-                        print(
-                            f"Error in creating diagnostic plots for caltable {caltable}."
-                        )
-
         ##########################################
         # Checking presence of necessary caltables
         ##########################################
         if calibrator_obsid is not None:
-            if len(glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")) == 0:
+            print (f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal")
+            bandpass_tables = glob.glob(
+                f"{caldir}/calibrator_{calibrator_obsid}*.bcal"
+            ) 
+            print (f"Bandpass tables: {bandpass_tables}\n")
+            print (f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal")
+            crossphase_tables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+            print (f"Crosshand phase tables: {crossphase_tables}\n")
+            caltables = bandpass_tables + crossphase_tables
+                    
+            if len(bandpass_tables) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."
                 )
@@ -2340,8 +2333,27 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+            else:
+                has_cal = False
         else:
             has_cal = False
+        
+        ###############################################
+        # Making diagnostic plots
+        ###############################################
+        if len(caltables) > 0 and do_basic_cal and has_cal:
+            for caltable in caltables:
+                msg, caltable_diag_plot = plot_caltable_diagnostics(
+                    caltable, f"{outdir}/diagnostic_plots"
+                )
+                if msg == 0:
+                    print(
+                        f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
+                    )
+                else:
+                    print(
+                        f"Error in creating diagnostic plots for caltable {caltable}."
+                    )
 
         ############################################
         # Spliting for self-cals
@@ -3739,25 +3751,28 @@ def cli():
     prefect_settings = get_current_settings()
     prefect_env = prefect_settings.to_environment_variables()
     api_url = prefect_env.get("PREFECT_API_URL")
-    if api_url is None:
-        if scheduler_name=="local":
-            print("Prefect server is not running. Using prefect ephemeral mode in local environment.")
-        else:
-            print(f"Prefect server is not running. P-AIRCARS can not be run on {scheduler_name} environment. First setup prefect server and then run P-AIRCARS.")
-            return 1       
-    else:        
-        ######################################
-        # Check connection to prefect server
-        ######################################
+    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
+    config_file = f"{cachedir}/prefect.config.npy"
+    
+    ######################################
+    # Check connection to prefect server
+    ######################################
+    if api_url is not None:
         check_url = f"{api_url}/health"
         try:
             r = requests.get(check_url, timeout=60)
-            print(f"Prefect server at : {api_url} is reachable.")
         except Exception:
             traceback.print_exc()
             print(
                 f"Could not reach prefect server at: {api_url} from compute node."
             )
+            return 1
+    else:
+        print ("Prefecr server is not running.")
+        if scheduler_name=="local":
+            print ("P-AIRCARS will use ephmeral mode.")
+        else:
+            print (f"First start prefect server to run P-AIRCARS in {scheduler_name} cluster.")
             return 1
             
     f = Figlet(font="big")
