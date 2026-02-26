@@ -65,7 +65,7 @@ def get_slurm_dask_cluster(
     jobid=None,
     cpu_frac=0.8,
     mem_frac=0.8,
-    max_mem=16,
+    max_mem=8,
     max_worker=1,
     partition=None,
     account=None,

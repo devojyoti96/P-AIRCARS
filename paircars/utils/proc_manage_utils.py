@@ -271,7 +271,7 @@ def wait_for_dask_workers(client, min_worker=1, timeout=60):
 def get_local_dask_cluster(
     dask_dir,
     mem_frac=0.8,
-    max_mem=16,
+    max_mem=8,
     max_worker=1,
     spill_frac=0.7,
     verbose=True,
@@ -326,7 +326,8 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-        mem_limit = round(min(max_mem, usable_mem), 2)
+        mem_limit = round(usable_mem/max_worker,2)
+        mem_limit = min(max_mem, mem_limit)
         cluster = LocalCluster(
             n_workers=1,
             threads_per_worker=1,
