@@ -3372,8 +3372,8 @@ def master_control(
         # Filtering only coarse channel images for default overlay mode
         #################################################################
         if make_overlay is False:
-            filtered_imagelist = []
-            for image in imagelist:
+            filtered_images = []
+            for image in images:
                 header = fits.getheader(image)
                 if header["CTYPE3"] == "FREQ":
                     bw = round(float(header["CDELT3"]) / 10**6, 2)
@@ -3382,8 +3382,8 @@ def master_control(
                 else:
                     bw = -1
                 if bw >= 1.2:
-                    filtered_imagelist.append(image)
-            images = filtered_imagelist
+                    filtered_images.append(image)
+            images = filtered_images
 
         #################################
         # Start overlays

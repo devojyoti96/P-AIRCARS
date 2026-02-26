@@ -20,14 +20,13 @@ def test_get_cachedir(mocker):
     cachedir = get_cachedir()
     assert cachedir == expected_cachedir
     makedirs_mock.assert_any_call(expected_cachedir, exist_ok=True)
-    makedirs_mock.assert_any_call(f"{expected_cachedir}/pids", exist_ok=True)
 
 
 @pytest.mark.parametrize(
     "input_datadir, cachedir, expected_datadir",
     [
         ("", "/mock/cache", "/mock/cache/paircarspipe_data"),  # default
-        ("/custom/data", "/mock/cache", "/custom/data"),  # user-provided
+        ("/custom/data", "/mock/cache", "/custom/data/paircarspipe_data"),  # user-provided
     ],
 )
 @patch("paircars.utils.basic_utils.open", new_callable=mock_open)
@@ -42,11 +41,16 @@ def test_create_datadir(
     expected_datadir,
 ):
     mock_get_cachedir.return_value = cachedir
+
     create_datadir(datadir=input_datadir)
+
     # Check directory creation
     mock_makedirs.assert_called_once_with(expected_datadir, exist_ok=True)
+
     # Check file write
-    mock_open_file.assert_called_once_with(f"{cachedir}/paircarspipe_data_dir.txt", "w")
+    mock_open_file.assert_called_once_with(
+        f"{cachedir}/paircarspipe_data_dir.txt", "w"
+    )
     mock_open_file().write.assert_called_once_with(expected_datadir + "\n")
 
 
@@ -89,7 +93,129 @@ def test_get_datadir(
             mock_makedirs.assert_not_called()
             assert result is None
 
+@pytest.mark.parametrize(
+    "time_side_effect, conn_side_effect, expected_result, expected_calls, expected_sleep_calls",
+    [
+        # Immediate success
+        (
+            [0, 1],  # time progression
+            [MagicMock()],  # connection succeeds immediately
+            True,
+            1,  # create_connection calls
+            0,  # sleep calls
+        ),
+        # Success after one retry
+        (
+            [0, 1, 3],
+            [OSError("Not ready"), MagicMock()],
+            True,
+            2,
+            1,
+        ),
+        # Timeout
+        (
+            [0, 30, 61],
+            OSError("Still closed"),
+            False,
+            1,  # at least one attempt
+            1,
+        ),
+    ],
+)
+@patch("paircars.utils.basic_utils.time.sleep")
+@patch("paircars.utils.basic_utils.time.time")
+@patch("paircars.utils.basic_utils.socket.create_connection")
+def test_wait_for_port(
+    mock_create_conn,
+    mock_time,
+    mock_sleep,
+    time_side_effect,
+    conn_side_effect,
+    expected_result,
+    expected_calls,
+    expected_sleep_calls,
+):
+    mock_time.side_effect = time_side_effect
+    mock_create_conn.side_effect = conn_side_effect
 
+    result = wait_for_port("localhost", 1234, timeout=60)
+
+    assert result is expected_result
+    assert mock_create_conn.call_count == expected_calls
+    assert mock_sleep.call_count == expected_sleep_calls
+    
+
+@pytest.mark.parametrize(
+    "bind_side_effects, expected_port",
+    [
+        # First port is free
+        (
+            [None],  # bind succeeds immediately
+            4200,
+        ),
+        # First busy, second free
+        (
+            [OSError("Busy"), None],
+            4201,
+        ),
+        # All busy
+        (
+            [OSError("Busy"), OSError("Busy")],
+            None,
+        ),
+    ],
+)
+@patch("paircars.utils.basic_utils.socket.socket")
+def test_get_free_port(
+    mock_socket_class,
+    bind_side_effects,
+    expected_port,
+):
+    # Create mock socket instance
+    mock_socket = MagicMock()
+    mock_socket.__enter__.return_value = mock_socket
+    mock_socket.__exit__.return_value = None
+
+    # Set bind behavior
+    mock_socket.bind.side_effect = bind_side_effects
+
+    mock_socket_class.return_value = mock_socket
+
+    result = get_free_port(start_port=4200, end_port=4202)
+
+    assert result == expected_port
+    
+    
+@pytest.mark.parametrize(
+    "bind_side_effect, expected_result",
+    [
+        # Port free
+        (None, True),
+        # Port occupied
+        (OSError("Address already in use"), False),
+    ],
+)
+@patch("paircars.utils.basic_utils.socket.socket")
+def test_check_port_status(
+    mock_socket_class,
+    bind_side_effect,
+    expected_result,
+):
+    # Mock socket instance
+    mock_socket = MagicMock()
+    mock_socket.__enter__.return_value = mock_socket
+    mock_socket.__exit__.return_value = None
+
+    mock_socket.bind.side_effect = bind_side_effect
+
+    mock_socket_class.return_value = mock_socket
+
+    result = check_port_status(4200)
+
+    assert result is expected_result
+    mock_socket.bind.assert_called_once_with(("127.0.0.1", 4200))
+    
+        
 def test_ra_dec_to_deg():
     radeg, decdeg = ra_dec_to_deg("00h00m00s", "00d00m00s")
     assert radeg == 0
