@@ -152,7 +152,9 @@ def main(
 
     port = 4260
     postgres_port = 5260
-
+    
+    scheduler_name = get_scheduler_name()
+    
     if check_port_status(port) is False:
         if scheduler_name != "local":
             port = get_free_port(start_port=4260, end_port=5250)
@@ -236,7 +238,6 @@ def main(
         # prefect server setup
         #########################################
         print("Prefect setup....")
-        scheduler_name = get_scheduler_name()
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
