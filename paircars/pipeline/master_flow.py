@@ -2238,7 +2238,7 @@ def master_control(
                     )
                 has_cal = False
 
-        split_cal_mslist = glob.glob(f"{workdir}/{prefix}*_spw_*.ms")
+        split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
         if len(split_cal_mslist) == 0:
             print("No splited measurement set is present for basic calibration.")
             has_cal = False
@@ -3368,6 +3368,7 @@ def master_control(
                 send_task_notification(
                     emails, email_msg, jobid, target_obsid, timestamp
                 )
+                
         #################################################################
         # Filtering only coarse channel images for default overlay mode
         #################################################################
