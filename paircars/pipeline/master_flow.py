@@ -3910,6 +3910,7 @@ def cli():
             if args.max_worker > 0:  # If user defined maximum number of workers
                 nworker = min(nworker, args.max_worker)
                 max_estimated_worker = args.max_worker
+            
             nworker = max(2, nworker)
 
             # TODO: How to estimate max estimated worker for cloud
@@ -3952,6 +3953,7 @@ def cli():
     ##########################################
     # Starting pipeline
     ##########################################
+    max_estimated_worker=max(100,max_estimated_worker)
     try:
         dask_addr = dask_client.scheduler.address
         print("#########################################")

@@ -347,7 +347,7 @@ def stop_prefect_server(scheduler_name="local"):
         os.system(f"rm -rf {cachedir}")
         return 1
     config = np.load(config_file, allow_pickle=True).all()
-    postgresg_port = int(
+    postgres_port = int(
         config["PREFECT_API_DATABASE_CONNECTION_URL"].split(":")[-1].split("/")[0]
     )
     pid_file = config["PID_FILE"]
