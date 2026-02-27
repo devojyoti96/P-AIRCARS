@@ -1519,6 +1519,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         dsfiles = [dsfiles]
     start_freqs = []
     dsfiles = np.array(dsfiles)
+
     for dsfile in dsfiles:
         freqs, _, _, _, _, _ = np.load(dsfile, allow_pickle=True)
         start_freqs.append(freqs[0])
@@ -1526,8 +1527,8 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     start_freqs = np.array(start_freqs)
     pos = np.argsort(start_freqs)
     dsfiles = dsfiles[pos]
-    dsfiles = dsfile.tolist()
-
+    dsfiles = dsfiles.tolist()
+  
     for i, dsfile in enumerate(dsfiles):
         freqs_i, times_i, timestamps_i, T_data_i, S_data_i, flags = np.load(
             dsfile, allow_pickle=True
