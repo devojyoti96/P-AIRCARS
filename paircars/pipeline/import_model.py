@@ -215,6 +215,7 @@ def run_all_modeling(
     int
         Total failure
     """
+    ncpu = max(1, ncpu)
     try:
         if len(mslist) > 0:
             tasks = []
@@ -299,8 +300,8 @@ def main(
     int
         Success messsage
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -362,38 +363,35 @@ def main(
         nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
         scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
 
-    #################################################
-    # Number of jobs in local and cluster environment
-    ##################################################
+    ########################################
+    # Number of worker limit based on memory
+    ########################################
+    scheduler_name = get_scheduler_name()
+    client_info = dask_client.scheduler_info()["workers"]
+    njobs = len(client_info)
+    worker_mem_list = []
+    for addr, w in client_info.items():
+        worker_mem_list.append(w["memory_limit"] / 1024**3)
+    mem_limit = round(min(worker_mem_list), 3)
     if scheduler_name == "local":
-        ms_sizes = [get_ms_size(ms) for ms in mslist]
-        per_job_mem = 2 * max(ms_sizes)
-        mem_limit = (psutil.virtual_memory().available * mem_frac) / (1024**3)
-        max_njobs = int(mem_limit / per_job_mem)
-        njobs = max(1, min(max_njobs, len(mslist)))
-        ncpu = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
+        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+        n_threads = max(1, int(total_cpu / njobs))
     else:
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
-        ncpu = os.environ.get("OMP_NUM_THREADS")
-        if ncpu is not None:
-            ncpu = int(ncpu)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
         else:
-            ncpu = 1
+            n_threads = 1
 
     print("#################################")
     print(f"Total dask worker: {njobs}")
-    print(f"CPU per worker: {ncpu}")
-    print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+    print(f"CPU per worker: {n_threads}")
+    print(f"Memory per worker: {mem_limit} GB")
     print("#################################")
 
     try:
         msg = run_all_modeling(
-            mslist, dask_client, metafits, beamfile, sourcelist, ncpu, verbose
+            mslist, dask_client, metafits, beamfile, sourcelist, n_threads, verbose
         )
         if msg < 0:
             msg = 1
@@ -505,10 +503,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\Visibility simulation is finished.\n###################\n"
-    )
-    os._exit(result)

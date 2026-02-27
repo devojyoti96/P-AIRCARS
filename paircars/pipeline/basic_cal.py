@@ -148,7 +148,7 @@ def run_postcal_flag(
     Perform apply calibration
     """
     n_threads = max(1, n_threads)
-    mem_limit = max(1, mem_limit)
+    mem_limit = abs(mem_limit)
     limit_threads(n_threads=n_threads)
     msg = single_ms_flag(
         msname=msname,
@@ -215,7 +215,7 @@ def single_ms_cal_and_flag(
         Caltables
     """
     n_threads = max(1, n_threads)
-    mem_limit = max(1, mem_limit)
+    mem_limit = abs(mem_limit)
 
     try:
         caltable_prefix = (
@@ -395,23 +395,23 @@ def single_round_cal_and_flag(
     dict
         A python dictionary cotaining measurement set name and its caltables
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
+    ########################################
+    # Number of worker limit based on memory
+    ########################################
     scheduler_name = get_scheduler_name()
+    client_info = dask_client.scheduler_info()["workers"]
+    njobs = len(client_info)
+    worker_mem_list = []
+    for addr, w in client_info.items():
+        worker_mem_list.append(w["memory_limit"] / 1024**3)
+    mem_limit = round(min(worker_mem_list), 3)
     if scheduler_name == "local":
-        njobs = len(mslist)
         total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
         n_threads = max(1, int(total_cpu / njobs))
-        mem_limit = round(total_mem / njobs, 3)
     else:
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
         n_threads = os.environ.get("OMP_NUM_THREADS")
         if n_threads is not None:
             n_threads = int(n_threads)
@@ -421,7 +421,7 @@ def single_round_cal_and_flag(
     print("#################################")
     print(f"Total dask worker: {njobs}")
     print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+    print(f"Memory per worker: {mem_limit} GB")
     print("#################################")
 
     tasks = [
@@ -497,8 +497,8 @@ def run_basic_cal_rounds(
     list
         Caltables
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     try:
         from casatasks import flagdata
@@ -649,8 +649,8 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -852,11 +852,4 @@ def cli():
         jobid=args.jobid,
     )
     return msg
-
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\nBasic calibration is finished.\n###################\n"
-    )
-    os._exit(result)
+    

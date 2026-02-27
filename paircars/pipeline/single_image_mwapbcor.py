@@ -82,7 +82,7 @@ def get_pbcor_image(
     str
         Output image name
     """
-    nthreads = max(1, nthreads)
+    nthreads = max(1, abs(nthreads))
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         image_header = fits.getheader(imagename)
         if image_header["CTYPE3"] == "FREQ":

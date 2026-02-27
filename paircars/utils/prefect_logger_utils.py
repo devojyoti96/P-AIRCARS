@@ -28,7 +28,7 @@ async def save_logs_by_task_id(
         Optional external signal to stop logging
     """
     logdir = os.path.dirname(os.path.abspath(logfile))
-    os.makedirs(logdir,exist_ok=True)
+    os.makedirs(logdir, exist_ok=True)
     seen_ids = set()
     start_time = datetime.now(timezone.utc)
     while not (stop_event and stop_event.is_set()):
@@ -74,7 +74,7 @@ async def save_logs_by_flow_id(
         Optional external signal to stop logging
     """
     logdir = os.path.dirname(os.path.abspath(logfile))
-    os.makedirs(logdir,exist_ok=True)
+    os.makedirs(logdir, exist_ok=True)
     seen_ids = set()
     start_time = datetime.now(timezone.utc)
     while not (stop_event and stop_event.is_set()):
@@ -122,6 +122,7 @@ def start_log_task_saver(
     stop_event : threading.Event
         Optional external signal to stop logging
     """
+
     def run_loop():
         asyncio.run(
             save_logs_by_task_id(
@@ -153,6 +154,7 @@ def start_flow_log_saver(
     stop_event : threading.Event
         Optional external signal to stop logging
     """
+
     def run_loop():
         asyncio.run(
             save_logs_by_flow_id(

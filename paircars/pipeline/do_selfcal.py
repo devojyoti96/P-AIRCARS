@@ -137,7 +137,7 @@ def do_selfcal(
         Final caltable
     """
     ncpu = max(1, ncpu)
-    mem = max(1, mem)
+    mem = abs(mem)
 
     limit_threads(n_threads=ncpu)
     from casatasks import split, flagdata, flagmanager
@@ -716,7 +716,7 @@ def do_polselfcal(
         Final caltable
     """
     ncpu = max(1, ncpu)
-    mem = max(1, mem)
+    mem = abs(mem)
 
     limit_threads(n_threads=ncpu)
     from casatasks import split, flagdata, flagmanager
@@ -1100,7 +1100,7 @@ def do_full_selfcal(
     Perform both intensity and polarisation self-calibration
     """
     ncpu = max(1, ncpu)
-    mem = max(1, mem)
+    mem = abs(mem)
 
     selfcaldir = selfcaldir.rstrip("/")
     logfile = logfile.rstrip("/")
@@ -1263,8 +1263,8 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -1399,6 +1399,12 @@ def main(
             else:
                 scheduler_name = get_scheduler_name()
                 if scheduler_name == "local":
+                    client_info = dask_client.scheduler_info()["workers"]
+                    njobs = len(client_info)
+                    worker_mem_list = []
+                    for addr, w in client_info.items():
+                        worker_mem_list.append(w["memory_limit"] / 1024**3)
+                    worker_mem_limit = round(min(worker_mem_list), 3)
                     for ms in mslist:
                         msmd = msmetadata()
                         msmd.open(ms)
@@ -1426,6 +1432,7 @@ def main(
                     #####################################
                     n_threads = max(1, int(total_cpu / njobs))
                     mem_limit = round(total_mem / njobs, 3)
+                    mem_limit = min(mem_limit, worker_mem_limit)
                 else:
                     client_info = dask_client.scheduler_info()["workers"]
                     njobs = len(client_info)
@@ -1442,7 +1449,7 @@ def main(
                 print("#################################")
                 print(f"Total dask worker: {njobs}")
                 print(f"CPU per worker: {n_threads}")
-                print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+                print(f"Memory per worker: {mem_limit} GB")
                 print("#################################")
 
                 #####################################s
@@ -1827,10 +1834,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    if result > 0:
-        result = 1
-    print("\n###################\nSelf-calibration is done.\n###################\n")
-    os._exit(result)

@@ -76,8 +76,8 @@ def make_solar_DS(
     str
         Plot file name
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     os.makedirs(f"{outdir}/dynamic_spectra", exist_ok=True)
@@ -85,26 +85,20 @@ def make_solar_DS(
     print(f"Start making dynamic spectra for ms: {mslist}")
     print("##############################################")
 
+    ########################################
+    # Number of worker limit based on memory
+    ########################################
     scheduler_name = get_scheduler_name()
+    client_info = dask_client.scheduler_info()["workers"]
+    njobs = len(client_info)
+    worker_mem_list = []
+    for addr, w in client_info.items():
+        worker_mem_list.append(w["memory_limit"] / 1024**3)
+    mem_limit = round(min(worker_mem_list), 3)
     if scheduler_name == "local":
         total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        total_mem = (psutil.virtual_memory().available * mem_frac) / (1024**3)  # In GB
-        ########################################
-        # Number of worker limit based on memory
-        ########################################
-        ms_sizes = [get_ms_size(ms) for ms in mslist]
-        per_job_mem = 2 * max(ms_sizes)
-        mem_limit = round((psutil.virtual_memory().available * mem_frac) / (1024**3), 3)
-        max_njobs = int(mem_limit / per_job_mem)
-        njobs = max(1, min(max_njobs, len(mslist)))
-        n_threads = max(1, int(psutil.cpu_count() * cpu_frac / njobs))
+        n_threads = max(1, int(total_cpu / njobs))
     else:
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
         n_threads = os.environ.get("OMP_NUM_THREADS")
         if n_threads is not None:
             n_threads = int(n_threads)
@@ -114,7 +108,7 @@ def make_solar_DS(
     print("#################################")
     print(f"Total dask worker: {njobs}")
     print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+    print(f"Memory per worker: {mem_limit} GB")
     print("#################################")
 
     try:
@@ -216,8 +210,8 @@ def main(
     int
         Success messsage
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -391,10 +385,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\nDynamic spectra are produced successfully.\n###################\n"
-    )
-    os._exit(result)

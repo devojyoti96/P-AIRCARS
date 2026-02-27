@@ -1632,7 +1632,9 @@ def master_control(
     else:
         target_datadir = os.path.abspath(target_datadir)
         if os.path.exists(target_datadir) is False:
-            print(f"Target data directory: {target_datadir} does not exist. Provide correct full path.")
+            print(
+                f"Target data directory: {target_datadir} does not exist. Provide correct full path."
+            )
             return 1
     if target_metafits.startswith("~"):
         print("Please provide full path of target metafits.")
@@ -1646,13 +1648,13 @@ def master_control(
         print("Please provide full path of calibrator data directory.")
         return 1
     else:
-        if calibrator_datadir!="":
+        if calibrator_datadir != "":
             calibrator_datadir = os.path.abspath(calibrator_datadir)
     if calibrator_metafits.startswith("~"):
         print("Please provide full path of calibrator metafits.")
         return 1
     else:
-        if calibrator_metafits!="":
+        if calibrator_metafits != "":
             calibrator_metafits = os.path.abspath(calibrator_metafits)
     if workdir.startswith("~"):
         print("Please provide full path of work directory.")
@@ -1730,12 +1732,14 @@ def master_control(
         outdir = workdir
     workdir = f"{workdir}/{target_obsid}"
     try:
-        os.makedirs(workdir,exist_ok=True)
+        os.makedirs(workdir, exist_ok=True)
     except:
-        print(f"Work directory: {workdir} can not be created. Please check the path carefully.")
+        print(
+            f"Work directory: {workdir} can not be created. Please check the path carefully."
+        )
         traceback.print_exc()
         return 1
-        
+
     #################################
     # Setup logger
     #################################
@@ -1783,15 +1787,18 @@ def master_control(
     try:
         os.makedirs(outdir, exist_ok=True)
     except:
-        print(f"Output directory: {outdir} can not created. Please check the path carefully.")
+        print(
+            f"Output directory: {outdir} can not created. Please check the path carefully."
+        )
         traceback.print_exc()
         return 1
-        
     os.makedirs(caldir, exist_ok=True)
-    scheduler_name = get_scheduler_name()
-
-    max_worker = max(2, max_worker) # Minimum 2 workers are needed
     
+    scheduler_name = get_scheduler_name()
+    max_worker = max(2, max_worker)  # Minimum 2 workers are needed
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
+
     try:
         #####################################
         # Reading remotelink and emails
@@ -4108,8 +4115,10 @@ def cli():
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
         total_mem = psutil.virtual_memory().total / 1024**3
-        if total_mem< min_mem:
-            print (f"Available allocated memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB.")
+        if total_mem < min_mem:
+            print(
+                f"Available allocated memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB."
+            )
             return 1
         per_worker_mem = round(total_mem / max_estimated_worker, 2)
         per_worker_mem = min(min_mem, per_worker_mem)
@@ -4118,7 +4127,7 @@ def cli():
         )
         if args.max_worker > 0:  # If user defined maximum number of workers
             max_estimated_worker = min(max_estimated_worker, args.max_worker)
-        if max_estimated_worker < 2: # Minimum 2 workers are needed
+        if max_estimated_worker < 2:  # Minimum 2 workers are needed
             max_estimated_worker = max(2, max_estimated_worker)
 
         #######################################
@@ -4161,8 +4170,10 @@ def cli():
             per_node_cpu, per_node_mem = get_slurm_node_resources(
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
-            if per_node_mem< min_mem:
-                print (f"Available allocated per node memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB.")
+            if per_node_mem < min_mem:
+                print(
+                    f"Available allocated per node memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB."
+                )
                 return 1
             max_worker_per_node = max(
                 1, int(per_node_mem / min_mem)
@@ -4175,7 +4186,7 @@ def cli():
             )  # Maximum number of workers can be spawned
             if args.max_worker > 0:  # If user defined maximum number of workers
                 max_estimated_worker = min(max_estimated_worker, args.max_worker)
-            if max_estimated_worker < 2: # Minimum 2 workers are needed
+            if max_estimated_worker < 2:  # Minimum 2 workers are needed
                 max_estimated_worker = max(2, max_estimated_worker)
 
             # TODO: How to estimate max estimated worker for cloud

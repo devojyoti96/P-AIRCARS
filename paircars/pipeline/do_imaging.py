@@ -144,7 +144,7 @@ def perform_imaging(
         List of images [[images],[models],[residuals]]
     """
     ncpu = max(1, ncpu)
-    mem = max(1, mem)
+    mem = abs(mem)
 
     if os.path.exists(logfile):
         os.system(f"rm -rf {logfile}")
@@ -638,8 +638,8 @@ def run_all_imaging(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = sorted(mslist)
     try:
@@ -708,40 +708,42 @@ def run_all_imaging(
                 nchan = max(1, min(len(freqs), int(np.ceil(bw / freqres))))
                 nchan_list.append(nchan)
 
-        ######################################
-        # Resetting maximum file limit
-        ######################################
-        soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-        new_soft_limit = max(soft_limit, int(0.8 * hard_limit))
-        if soft_limit < new_soft_limit:
-            resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft_limit, hard_limit))
-        total_fd = 0
-        npol = len(pol)
-        for i in range(len(mslist)):
-            ms = mslist[i]
-            nchan = nchan_list[i]
-            ntime = ntime_list[i]
-            per_job_fd = (
-                npol * (nchan + 1) * ntime * 4 * 2
-            )  # 4 types of images, 2 is fudge factor
-            total_fd += per_job_fd
-        if total_fd <= 0:
-            total_fd = 1
-
         scheduler_name = get_scheduler_name()
         if scheduler_name == "local":
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_mem_list = []
+            for addr, w in client_info.items():
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
+            worker_mem_limit = round(min(worker_mem_list), 3)
+            for ms in mslist:
+                msmd = msmetadata()
+                msmd.open(ms)
+                times = msmd.timesforspws(0)
+                timeres = np.diff(times)
+                pos = np.where(timeres > 3 * np.nanmedian(timeres))[0]
+                max_intervals = min(1, len(pos))
+                msmd.close()
+                per_job_fd = (
+                    max_intervals * 4 * 2
+                )  # 4 types of images, 2 is fudge factor
+                if per_job_fd == 0:
+                    per_job_fd = 1
+                num_fd_list.append(per_job_fd)
+            total_fd = max(num_fd_list) * len(mslist)
+
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
             total_mem = (psutil.virtual_memory().available * mem_frac) / (
                 1024**3
             )  # In GB
-            #################################
-            # Determining per worker resource
-            #################################
             njobs = min(len(mslist), int(new_soft_limit / total_fd))
             njobs = max(1, min(total_cpu, njobs))
+            #####################################
+            # Determining per jobs resource
+            #####################################
             n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = round(total_mem / njobs, 3)
-            #########################################
+            mem_limit = total_mem/njobs
+            mem_limit = round(min(mem_limit, worker_mem_limit),3)
         else:
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
@@ -758,7 +760,7 @@ def run_all_imaging(
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+        print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
 
         tasks = []
@@ -948,8 +950,8 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -1257,10 +1259,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    if result > 0:
-        result = 1
-    print("\n###################\nImaging is done.\n###################\n")
-    os._exit(result)

@@ -158,10 +158,6 @@ def single_mstransform(
     if os.path.exists(outputms + ".flagversions"):
         os.system("rm -rf " + outputms + ".flagversions")
     try:
-        if n_threads < 1:
-            n_threads = 2
-        else:
-            n_threads = min(n_threads, 2)
         print(f"Spliting ms: {msname}, Outputvis: {outputms}.")
         with suppress_output():
             mstransform(

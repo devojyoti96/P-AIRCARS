@@ -246,8 +246,8 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -507,10 +507,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\nSpliting measurement set into coarse channels are done.\n###################\n"
-    )
-    os._exit(result)

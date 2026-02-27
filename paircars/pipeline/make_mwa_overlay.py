@@ -64,7 +64,7 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
 
     if workdir == "":
         workdir = f"{imagedir}/workdir"
@@ -231,8 +231,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print("\n###################\nOverlay of images are done.\n###################\n")
-    os._exit(result)

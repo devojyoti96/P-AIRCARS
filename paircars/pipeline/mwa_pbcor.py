@@ -166,8 +166,8 @@ def pbcor_all_images(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     imagedir = imagedir.rstrip("/")
     pbdir = f"{os.path.dirname(imagedir)}/pbdir"
@@ -198,24 +198,16 @@ def pbcor_all_images(
         # Number of worker limit based on memory
         ########################################
         scheduler_name = get_scheduler_name()
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
         if scheduler_name == "local":
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                1024**3
-            )  # In GB
-            mem_limit = (
-                16.0 * max([os.path.getsize(image) for image in images]) / 1024**3
-            )  # In GB
-            mem_limit = round(mem_limit, 3)
-            njobs = max(1, min(total_cpu, int(total_mem / mem_limit)))
             n_threads = max(1, int(total_cpu / njobs))
         else:
-            client_info = dask_client.scheduler_info()["workers"]
-            njobs = len(client_info)
-            worker_mem_list = []
-            for addr, w in client_info.items():
-                worker_mem_list.append(w["memory_limit"] / 1024**3)
-            mem_limit = round(min(worker_mem_list), 3)
             n_threads = os.environ.get("OMP_NUM_THREADS")
             if n_threads is not None:
                 n_threads = int(n_threads)
@@ -225,7 +217,7 @@ def pbcor_all_images(
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+        print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
 
         ###########################################
@@ -408,8 +400,8 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     if workdir == "":
         workdir = imagedir + "/workdir"
@@ -560,10 +552,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\nPrimary beam corrections are done.\n###################\n"
-    )
-    os._exit(result)

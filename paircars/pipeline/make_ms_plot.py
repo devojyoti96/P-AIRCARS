@@ -64,8 +64,8 @@ def main(
     int
         Success message
     """
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     mslist = mslist.split(",")
 
@@ -113,22 +113,20 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
 
     try:
+        ########################################
+        # Number of worker limit based on memory
+        ########################################
         scheduler_name = get_scheduler_name()
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
         if scheduler_name == "local":
-            njobs = len(mslist)
             total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                1024**3
-            )  # In GB
             n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = round(total_mem / njobs, 3)
         else:
-            client_info = dask_client.scheduler_info()["workers"]
-            njobs = len(client_info)
-            worker_mem_list = []
-            for addr, w in client_info.items():
-                worker_mem_list.append(w["memory_limit"] / 1024**3)
-            mem_limit = round(min(worker_mem_list), 3)
             n_threads = os.environ.get("OMP_NUM_THREADS")
             if n_threads is not None:
                 n_threads = int(n_threads)
@@ -138,7 +136,7 @@ def main(
         print("#################################")
         print(f"Total dask worker: {njobs}")
         print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {round(mem_limit/njobs,2)} GB")
+        print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
 
         tasks = [
@@ -237,10 +235,3 @@ def cli():
     )
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\nPloting measurement set diagnostics are done.\n###################\n"
-    )
-    os._exit(result)
