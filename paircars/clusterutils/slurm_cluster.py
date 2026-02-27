@@ -210,7 +210,7 @@ def get_slurm_dask_cluster(
                 cores=1,  # This is important for CASA tasks
                 n_workers=1,
                 walltime=walltime,
-                memory=f"{mem_limit}G",
+                memory=f"{mem_limit}GiB",
                 processes=1,
                 python=python_path,
                 local_directory=dask_dir_tmp,
@@ -231,7 +231,7 @@ def get_slurm_dask_cluster(
                 cores=1,  # This is important for CASA tasks
                 n_workers=1,
                 walltime=walltime,
-                memory=f"{mem_limit}G",
+                memory=f"{mem_limit}GiB",
                 processes=1,
                 python=python_path,
                 local_directory=dask_dir_tmp,

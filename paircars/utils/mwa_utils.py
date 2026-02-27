@@ -167,23 +167,27 @@ def get_bad_chans(msname):
     nchan = msmd.nchan(0)
     msmd.close()
     msmd.done()
-    n_per_coarse_chan = int(1.28 / chanres)
-    n_edge_chan = max(1, int(0.16 / chanres))
-    spw = ""
-    for i in range(0, int(nchan / n_per_coarse_chan), n_per_coarse_chan):
-        if i == i + n_edge_chan - 1:
-            spw += f"{i};"
-        else:
-            spw += f"{i}~{i+n_edge_chan-1};"
-        if n_edge_chan >= 1:
-            spw += f"{i+int(nchan/2)-1}~{i+int(nchan/2)};"
-        if i + nchan - n_edge_chan == i + nchan - 1:
-            spw += f"{i+nchan-1};"
-        else:
-            spw += f"{i+nchan-n_edge_chan}~{i+nchan-1};"
-    if spw != "":
-        spw = f"0:{spw[:-1]}"
-    return spw
+    if chanres>0.16:
+        print (f"Frequency resolution: {round(chanres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing.")
+        return ""
+    else:
+        n_per_coarse_chan = int(1.28 / chanres)
+        n_edge_chan = max(1, int(0.16 / chanres))
+        spw = ""
+        for i in range(0, int(nchan / n_per_coarse_chan), n_per_coarse_chan):
+            if i == i + n_edge_chan - 1:
+                spw += f"{i};"
+            else:
+                spw += f"{i}~{i+n_edge_chan-1};"
+            if n_edge_chan >= 1:
+                spw += f"{i+int(nchan/2)-1}~{i+int(nchan/2)};"
+            if i + nchan - n_edge_chan == i + nchan - 1:
+                spw += f"{i+nchan-1};"
+            else:
+                spw += f"{i+nchan-n_edge_chan}~{i+nchan-1};"
+        if spw != "":
+            spw = f"0:{spw[:-1]}"
+        return spw
 
 
 def get_good_chans(msname):

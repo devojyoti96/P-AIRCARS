@@ -412,6 +412,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     msmd = msmetadata()
     msmd.open(msname)
     freqs = msmd.chanfreqs(0, unit="MHz")
+    freqres = msmd.chanres(0, unit="kHz")[0]
     npol = int(msmd.ncorrforpol()[0])
     msmd.close()
     highest_freq = np.nanmax(freqs)
@@ -604,14 +605,17 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     ######################################
     # Extracting metadata
     ######################################
-    bad_chans = get_bad_chans(msname)
-    if bad_chans != "":
-        bad_chans = bad_chans.replace("0:", "").split(";")
-        for bad_chan in bad_chans:
-            s = int(bad_chan.split("~")[0])
-            e = int(bad_chan.split("~")[-1]) + 1
-            T_sun[s:e, :] = np.nan
-            S_sun[s:e, :] = np.nan
+    if freqres>160:
+        print("Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging.")
+    else:
+        bad_chans = get_bad_chans(msname)
+        if bad_chans != "":
+            bad_chans = bad_chans.replace("0:", "").split(";")
+            for bad_chan in bad_chans:
+                s = int(bad_chan.split("~")[0])
+                e = int(bad_chan.split("~")[-1]) + 1
+                T_sun[s:e, :] = np.nan
+                S_sun[s:e, :] = np.nan
     msmd = msmetadata()
     msmd.open(msname)
     freqs = msmd.chanfreqs(0, unit="MHz")
