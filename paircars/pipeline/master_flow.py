@@ -2361,17 +2361,17 @@ def master_control(
                     )
                 has_cal = False
 
-            split_cal_mslist = glob.glob(f"{workdir}/{prefix}*_spw_*.ms")
-            if len(split_cal_mslist) == 0:
-                print("No splited measurement set is present for basic calibration.")
-                has_cal = False
-            else:
-                if adaptive and len(split_cal_mslist) != len(calibrator_mslist):
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        min(len(split_cal_mslist) + 1, max_worker),
-                    )
+        split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
+        if len(split_cal_mslist) == 0:
+            print("No splited measurement set is present for basic calibration.")
+            has_cal = False
+        else:
+            if adaptive and len(split_cal_mslist) != len(calibrator_mslist):
+                scale_worker_and_wait(
+                    dask_cluster,
+                    dask_client,
+                    min(len(split_cal_mslist) + 1, max_worker),
+                )
 
         ##################################
         # Run flagging jobs on calibrators
