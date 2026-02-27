@@ -4130,6 +4130,8 @@ def cli():
         if max_estimated_worker < 2:  # Minimum 2 workers are needed
             max_estimated_worker = max(2, max_estimated_worker)
 
+        max_estimated_worker = min(100, max_estimated_worker) # Maximum 50 workers
+        
         #######################################
         # Set up local cluster
         #######################################
@@ -4188,7 +4190,8 @@ def cli():
                 max_estimated_worker = min(max_estimated_worker, args.max_worker)
             if max_estimated_worker < 2:  # Minimum 2 workers are needed
                 max_estimated_worker = max(2, max_estimated_worker)
-
+            max_estimated_worker = min(50, max_estimated_worker) # Maximum 50 workers
+            
             # TODO: How to estimate max estimated worker for cloud
             ########################################
             # Setting up lslurm cluster
@@ -4222,6 +4225,7 @@ def cli():
             )
             adaptive = args.adaptive
             if not adaptive:
+                nworker = min(len(target_mslist)+1, max_estimated_worker)
                 scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
@@ -4232,7 +4236,6 @@ def cli():
     ##########################################
     # Starting pipeline
     ##########################################
-    max_estimated_worker = min(100, max_estimated_worker)
     try:
         dask_addr = dask_client.scheduler.address
         print("#########################################")
