@@ -2599,24 +2599,16 @@ def master_control(
                         f"Error in creating diagnostic plots for caltable {caltable}."
                     )
 
-        ############################################
-        # Spliting for self-cals
-        ############################################
-        # Spliting only if self-cal is requested
-        if not do_selfcal_split and do_selfcal:
-            selfcal_target_mslist = glob.glob(
-                workdir + "/selfcal*{target_obsid}*_spw_*.ms"
-            )
-            if len(selfcal_target_mslist) == 0:
-                print(
-                    "No measurement set is present for self-calibration. Spliting them.."
-                )
-                do_selfcal_split = True
-
+        ###############################################
+        # Removing previous self-calibration artificats
+        ###############################################
+        print("Removing all previous self-calibration artificats...")
+        os.system(f"{workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*")
+        
         ###################################################
-        # Start spliting selfcal ms, if not started already
+        # Start spliting selfcal ms
         ###################################################
-        if do_selfcal and do_selfcal_split:
+        if do_selfcal or do_selfcal_split:
             prefix = "selfcal"
             try:
                 time_interval = float(solint)

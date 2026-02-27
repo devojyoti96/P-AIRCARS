@@ -975,7 +975,7 @@ def selfcal_round(
     mem = max(1, mem)
 
     limit_threads(n_threads=ncpu)
-    from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager, uvsub
+    from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager
     from casatools import table
 
     cwd = os.getcwd()
@@ -1545,18 +1545,15 @@ def selfcal_round(
         # UVsub flagging
         ######################################
         if do_uvsub_flag:
-            logger.info("UVsub flagging on residual data. Threshold: 10.0.\n")
-            uvsub(vis=msname)
+            logger.info("UVsub flagging on residual data. Threshold: 5.0.\n")
             uvbin_flag(
                 msname,
                 uvbin_size=50,
                 datacolumn="residual",
                 mode="rflag",
-                threshold=10.0,
+                threshold=5.0,
                 flagbackup=False,
             )
-            uvsub(vis=msname,restore=True)
-            
 
         return (
             0,
