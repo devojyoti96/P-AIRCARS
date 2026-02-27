@@ -807,30 +807,6 @@ def do_polselfcal(
                 )
         msname = selfcalms
 
-        ################################################################
-        # Initial flagging -- zeros, extreme bad data
-        ################################################################
-        logger.info("Initial flagging -- zeros and extreme bad data.")
-        with suppress_output():
-            flagdata(
-                vis=msname,
-                mode="clip",
-                clipzeros=True,
-                datacolumn="data",
-                flagbackup=False,
-            )
-            result = uvbin_flag(
-                msname,
-                uvbin_size=10,
-                datacolumn="data",
-                mode="rflag",
-                threshold=10.0,
-                flagbackup=False,
-            )
-            if result != 0:
-                logger.info(f"UV-bin flagging is not successful.")
-
-        cont=input("?")
         ############################################
         # Imaging and calibration parameters
         ############################################
