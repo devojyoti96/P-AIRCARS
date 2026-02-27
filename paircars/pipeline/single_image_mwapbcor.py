@@ -401,7 +401,7 @@ def cli():
             if "POLSELF" in header.keys():
                 if header["POLSELF"] == "FALSE":
                     print(
-                        f"Estimating and correcting image based leakage for image: {imagename}.\n"
+                        f"Estimating and correcting image based leakage for image: {args.imagename}.\n"
                     )
                     (
                         q_leakage,
