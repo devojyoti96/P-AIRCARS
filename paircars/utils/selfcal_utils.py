@@ -975,7 +975,7 @@ def selfcal_round(
     mem = max(1, mem)
 
     limit_threads(n_threads=ncpu)
-    from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager
+    from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager, uvsub
     from casatools import table
 
     cwd = os.getcwd()
@@ -1124,7 +1124,7 @@ def selfcal_round(
 
         wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " " + msname
         logger.info(f"WSClean command: {wsclean_cmd}\n")
-        msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+        msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=True)
         if msg != 0:
             logger.error(f"Imaging is not successful.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", []
@@ -1545,15 +1545,17 @@ def selfcal_round(
         # UVsub flagging
         ######################################
         if do_uvsub_flag:
-            logger.info("UVsub flagging on residual data. Threshold: 5.0.\n")
+            logger.info("UVsub flagging on residual data. Threshold: 10.0.\n")
+            uvsub(vis=msname)
             uvbin_flag(
                 msname,
                 uvbin_size=50,
                 datacolumn="residual",
                 mode="rflag",
-                threshold=5.0,
+                threshold=10.0,
                 flagbackup=False,
-            )
+            uvsub(vis=msname,restore=True)
+            
 
         return (
             0,

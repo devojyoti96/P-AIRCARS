@@ -790,7 +790,6 @@ def do_polselfcal(
                     outputvis=selfcalms,
                     timerange=timerange,
                     datacolumn="corrected",
-                    keepflags=False,
                 )
         else:
             logger.warning("Corrected data column is not present.")
@@ -803,9 +802,31 @@ def do_polselfcal(
                     outputvis=selfcalms,
                     timerange=timerange,
                     datacolumn="data",
-                    keepflags=False,
                 )
         msname = selfcalms
+
+        ################################################################
+        # Initial flagging -- zeros, extreme bad data
+        ################################################################
+        logger.info("Initial flagging -- zeros and extreme bad data.")
+        with suppress_output():
+            flagdata(
+                vis=msname,
+                mode="clip",
+                clipzeros=True,
+                datacolumn="data",
+                flagbackup=False,
+            )
+            result = uvbin_flag(
+                msname,
+                uvbin_size=10,
+                datacolumn="data",
+                mode="rflag",
+                threshold=10.0,
+                flagbackup=False,
+            )
+            if result != 0:
+                logger.info(f"UV-bin flagging is not successful.")
 
         ############################################
         # Imaging and calibration parameters
