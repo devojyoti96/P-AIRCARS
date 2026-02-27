@@ -427,10 +427,6 @@ def run_wsclean(
                 stderr=subprocess.DEVNULL,
             )
         exit_code = result.returncode
-        if exit_code != 0:
-            print("##########################")
-            print(os.path.basename(msname))
-            print("##########################")
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()

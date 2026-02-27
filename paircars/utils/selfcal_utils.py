@@ -1043,7 +1043,7 @@ def selfcal_round(
             weight += " " + str(robust)
 
         wsclean_args = [
-            "-quiet",
+            #"-quiet",
             "-scale " + str(cellsize) + "asec",
             "-size " + str(imsize) + " " + str(imsize),
             "-no-dirty",
@@ -1189,7 +1189,7 @@ def selfcal_round(
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
             logger.info(f"WSClean command: {wsclean_cmd}\n")
-            msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+            msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=True)
             if msg != 0:
                 prediction_failed = True
 
