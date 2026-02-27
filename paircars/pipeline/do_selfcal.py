@@ -165,8 +165,10 @@ def do_selfcal(
     try:
         msname = os.path.abspath(msname.rstrip("/"))
         selfcaldir = selfcaldir.rstrip("/")
+        if os.path.exists(selfcaldir):
+            print(f"Removing pre-existing intensity selfcal directory: {selfcaldir}")
+        os.system(f"rm -rf {selfcaldir}")
         os.makedirs(selfcaldir, exist_ok=True)
-        os.system(f"rm -rf {selfcaldir}/*")
     
         os.chdir(selfcaldir)
         selfcalms = selfcaldir + "/intselfcal_" + os.path.basename(msname)
@@ -745,9 +747,10 @@ def do_polselfcal(
     try:
         msname = os.path.abspath(msname.rstrip("/"))
         selfcaldir = selfcaldir.rstrip("/")
+        if os.path.exists(selfcaldir):
+            print(f"Removing pre-existing polarisation selfcal directory: {selfcaldir}")
+            os.system(f"rm -rf {selfcaldir}")
         os.makedirs(selfcaldir, exist_ok=True)
-        os.system(f"rm -rf {selfcaldir}/*")
-
         os.chdir(selfcaldir)
         selfcalms = selfcaldir + "/polselfcal_" + os.path.basename(msname)
         if os.path.exists(selfcalms):
@@ -1109,6 +1112,9 @@ def do_full_selfcal(
     mem = abs(mem)
 
     selfcaldir = selfcaldir.rstrip("/")
+    if os.path.exists(selfcaldir):
+        print(f"Removing pre-existing selfcal directory: {selfcaldir}")
+        os.system(f"rm -rf {selfcaldir}")
     logfile = logfile.rstrip("/")
     print(f"Starting intensity self-calibration for ms: {msname}.")
     unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
@@ -1555,7 +1561,7 @@ def main(
                         + os.path.basename(ms).split(".ms")[0]
                         + "_selfcal"
                     )
-                    os.system(f"rm -rf {selfcaldir}*")
+                    os.system(f"rm -rf {selfcaldir}/*")
             if len(gcal_list) > 0:
                 print(f"Final gaincal selfcal caltables: {gcal_list}")
                 msg = 0
