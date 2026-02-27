@@ -15,7 +15,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.ms_metadata import get_timeranges
+from paircars.utils.ms_metadata import get_timeranges, get_ms_size
 from paircars.utils.mwa_utils import get_MWA_coarse_bands
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -275,89 +275,96 @@ def main(
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        msg = 1
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
+        max_ms_size = max(target_ms_sizes)
+        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(mslist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
-        nworker = max(2, int(psutil.cpu_count() * cpu_frac))
+            dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        if len(mslist) > 0:
-            print("###################################")
-            print(f"Start spliting measurement sets in coarse frequency bands.")
-            print("###################################")
-            ##################################
-            # Parallel spliting
-            ##################################
-            scheduler_name = get_scheduler_name()
-            if scheduler_name == "local":
-                total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-                total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                    1024**3
-                )  # In GB
-                njobs = max(1, total_cpu)
-                n_threads = max(1, int(total_cpu / njobs))
-            else:
-                client_info = dask_client.scheduler_info()["workers"]
-                njobs = len(client_info)
-                n_threads = os.environ.get("OMP_NUM_THREADS")
-                if n_threads is not None:
-                    n_threads = int(n_threads)
-                else:
-                    n_threads = 1
-
-            print(f"Total dask worker: {njobs}")
-            print(f"CPU per worker: {n_threads}")
-            tasks = [
-                delayed(split_target_scans)(
-                    msname,
-                    workdir,
-                    float(timeres),
-                    float(freqres),
-                    datacolumn,
-                    time_window=float(time_window),
-                    time_interval=float(time_interval),
-                    quack_timestamps=int(quack_timestamps),
-                    force_split=force_split,
-                    scan=scan,
-                    prefix=prefix,
-                    n_threads=n_threads,
-                )
-                for msname in mslist
-            ]
-
-            future = dask_client.compute(tasks)
-            results = dask_client.gather(future)
-            succeed = 0
-            failed = 0
-            for r in results:
-                msg, splited_ms = r
-                if msg == 0:
-                    succeed += 1
-                else:
-                    failed += 1
-            print("########################################")
-            print(f"Total measurement sets: {len(mslist)}")
-            print(f"Total successful spliting: {succeed}")
-            print(f"Total failed spliting: {failed}")
-            print("#########################################")
-            if failed == len(mslist):
-                msg = 1
-            else:
-                msg = 0
+        print("###################################")
+        print(f"Start spliting measurement sets in coarse frequency bands.")
+        print("###################################")
+        ##################################
+        # Parallel spliting
+        ##################################
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
         else:
-            print("Please provide correct measurement set list.")
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
+
+        tasks = [
+            delayed(split_target_scans)(
+                msname,
+                workdir,
+                float(timeres),
+                float(freqres),
+                datacolumn,
+                time_window=float(time_window),
+                time_interval=float(time_interval),
+                quack_timestamps=int(quack_timestamps),
+                force_split=force_split,
+                scan=scan,
+                prefix=prefix,
+                n_threads=n_threads,
+            )
+            for msname in mslist
+        ]
+
+        future = dask_client.compute(tasks)
+        results = dask_client.gather(future)
+        succeed = 0
+        failed = 0
+        for r in results:
+            msg, splited_ms = r
+            if msg == 0:
+                succeed += 1
+            else:
+                failed += 1
+        print("########################################")
+        print(f"Total measurement sets: {len(mslist)}")
+        print(f"Total successful spliting: {succeed}")
+        print(f"Total failed spliting: {failed}")
+        print("#########################################")
+        if failed == len(mslist):
             msg = 1
+        else:
+            msg = 0
     except Exception as e:
         traceback.print_exc()
         msg = 1

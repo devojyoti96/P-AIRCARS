@@ -18,7 +18,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.ms_metadata import get_uvrange_exclude
+from paircars.utils.ms_metadata import get_uvrange_exclude, get_ms_size
 from paircars.utils.mwa_utils import get_MWA_OBSID
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -398,25 +398,17 @@ def single_round_cal_and_flag(
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
-    ########################################
-    # Number of worker limit based on memory
-    ########################################
-    scheduler_name = get_scheduler_name()
     client_info = dask_client.scheduler_info()["workers"]
     njobs = len(client_info)
     worker_mem_list = []
     for addr, w in client_info.items():
         worker_mem_list.append(w["memory_limit"] / 1024**3)
     mem_limit = round(min(worker_mem_list), 3)
-    if scheduler_name == "local":
-        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        n_threads = max(1, int(total_cpu / njobs))
+    n_threads = os.environ.get("OMP_NUM_THREADS")
+    if n_threads is not None:
+        n_threads = int(n_threads)
     else:
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is not None:
-            n_threads = int(n_threads)
-        else:
-            n_threads = 1
+        n_threads = 1
 
     print("#################################")
     print(f"Total dask worker: {njobs}")
@@ -685,62 +677,71 @@ def main(
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        msg = 1
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
+        max_ms_size = max(target_ms_sizes)
+        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(mslist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
-        nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
-        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        if len(mslist) > 0:
-            print("###################################")
-            print("Starting initial calibration.")
-            print("###################################")
-            msg, caltables = run_basic_cal_rounds(
-                mslist,
-                dask_client,
-                workdir,
-                outdir,
-                refant=refant,
-                uvrange=uvrange,
-                perform_polcal=perform_polcal,
-                keep_backup=keep_backup,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-            )
-            if len(caltables) == 0:
-                print("No caltable is made.")
-            else:
-                bcals = []
-                kcrosscals = []
-                for caltable in caltables:
-                    if caltable.endswith(".bcal"):
-                        bcals.append(caltable)
-                    elif caltable.endswith("kcrosscal"):
-                        kcrosscals.append(caltable)
-                if len(bcals) > 0:
-                    print(f"All bandpass caltables: {bcals}.")
-                if len(kcrosscals) > 0:
-                    print(f"All cross-phase caltables: {kcrosscals}.")
-                for caltable in caltables:
-                    if caltable is not None and os.path.exists(caltable):
-                        dest = caldir + "/" + os.path.basename(caltable)
-                        if os.path.exists(dest):
-                            os.system("rm -rf " + dest)
-                        os.system("mv " + caltable + " " + caldir)
-        else:
-            print("Please provide a valid measurement set.")
+        print("###################################")
+        print("Starting initial calibration.")
+        print("###################################")
+        msg, caltables = run_basic_cal_rounds(
+            mslist,
+            dask_client,
+            workdir,
+            outdir,
+            refant=refant,
+            uvrange=uvrange,
+            perform_polcal=perform_polcal,
+            keep_backup=keep_backup,
+            cpu_frac=float(cpu_frac),
+            mem_frac=float(mem_frac),
+        )
+        if len(caltables) == 0:
+            print("No caltable is made.")
             msg = 1
+        else:
+            bcals = []
+            kcrosscals = []
+            for caltable in caltables:
+                if caltable.endswith(".bcal"):
+                    bcals.append(caltable)
+                elif caltable.endswith("kcrosscal"):
+                    kcrosscals.append(caltable)
+            if len(bcals) > 0:
+                print(f"All bandpass caltables: {bcals}.")
+            if len(kcrosscals) > 0:
+                print(f"All cross-phase caltables: {kcrosscals}.")
+            for caltable in caltables:
+                if caltable is not None and os.path.exists(caltable):
+                    dest = caldir + "/" + os.path.basename(caltable)
+                    if os.path.exists(dest):
+                        os.system("rm -rf " + dest)
+                    os.system("mv " + caltable + " " + caldir)
     except Exception as e:
         traceback.print_exc()
         msg = 1

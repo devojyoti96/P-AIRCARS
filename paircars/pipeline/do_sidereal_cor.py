@@ -9,6 +9,7 @@ import os
 import psutil
 from dask import delayed
 from paircars.utils.basic_utils import get_datadir
+from paircars.utils.ms_metadata import get_ms_size
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -170,32 +171,40 @@ def main(
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        msg = 1
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
+        max_ms_size = max(target_ms_sizes)
+        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(mslist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
-        nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
-        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        if len(mslist) == 0:
-            print("Please provide a list of measurement sets.")
-            msg = 1
-        else:
-            msg, final_target_mslist = cor_sidereal_motion(
-                mslist,
-                dask_client,
-                workdir,
-            )
+        msg, final_target_mslist = cor_sidereal_motion(
+            mslist,
+            dask_client,
+            workdir,
+        )
     except Exception as e:
         traceback.print_exc()
         msg = 1

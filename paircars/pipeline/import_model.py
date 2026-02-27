@@ -347,41 +347,45 @@ def main(
     else:
         scheduler_name = get_scheduler_name()
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        msg = 1
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
+        max_ms_size = max(target_ms_sizes)
+        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(mslist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
-        nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
-        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
-    ########################################
-    # Number of worker limit based on memory
-    ########################################
-    scheduler_name = get_scheduler_name()
     client_info = dask_client.scheduler_info()["workers"]
     njobs = len(client_info)
     worker_mem_list = []
     for addr, w in client_info.items():
         worker_mem_list.append(w["memory_limit"] / 1024**3)
     mem_limit = round(min(worker_mem_list), 3)
-    if scheduler_name == "local":
-        total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        n_threads = max(1, int(total_cpu / njobs))
+    n_threads = os.environ.get("OMP_NUM_THREADS")
+    if n_threads is not None:
+        n_threads = int(n_threads)
     else:
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is not None:
-            n_threads = int(n_threads)
-        else:
-            n_threads = 1
+        n_threads = 1
 
     print("#################################")
     print(f"Total dask worker: {njobs}")

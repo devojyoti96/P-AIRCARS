@@ -32,7 +32,7 @@ from paircars.utils.logger_utils import (
     create_logger,
     init_logger,
 )
-from paircars.utils.ms_metadata import check_datacolumn_valid
+from paircars.utils.ms_metadata import check_datacolumn_valid, get_ms_size
 from paircars.utils.mwa_ploting_utils import rename_mwasolar_image
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -680,82 +680,17 @@ def run_all_imaging(
             print("No valid measurement set is found.")
             return 1
 
-        #################################################
-        # Determining maximum spectro-temporal chunks
-        #################################################
-        if timeres < 0:
-            ntime_list = [1] * len(mslist)
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
         else:
-            ntime_list = []
-            msmd = msmetadata()
-            for ms in mslist:
-                msmd.open(ms)
-                times = msmd.timesforspws(0)
-                msmd.close()
-                tw = max(times) - min(times)
-                ntime = max(1, min(len(times), int(tw / timeres)))
-                ntime_list.append(ntime)
-        if freqres < 0:
-            nchan_list = [1] * len(mslist)
-        else:
-            nchan_list = []
-            msmd = msmetadata()
-            for ms in mslist:
-                msmd.open(ms)
-                freqs = msmd.chanfreqs(0, unit="MHz")
-                msmd.close()
-                bw = max(freqs) - min(freqs)
-                nchan = max(1, min(len(freqs), int(np.ceil(bw / freqres))))
-                nchan_list.append(nchan)
-
-        scheduler_name = get_scheduler_name()
-        if scheduler_name == "local":
-            client_info = dask_client.scheduler_info()["workers"]
-            njobs = len(client_info)
-            worker_mem_list = []
-            for addr, w in client_info.items():
-                worker_mem_list.append(w["memory_limit"] / 1024**3)
-            worker_mem_limit = round(min(worker_mem_list), 3)
-            for ms in mslist:
-                msmd = msmetadata()
-                msmd.open(ms)
-                times = msmd.timesforspws(0)
-                timeres = np.diff(times)
-                pos = np.where(timeres > 3 * np.nanmedian(timeres))[0]
-                max_intervals = min(1, len(pos))
-                msmd.close()
-                per_job_fd = (
-                    max_intervals * 4 * 2
-                )  # 4 types of images, 2 is fudge factor
-                if per_job_fd == 0:
-                    per_job_fd = 1
-                num_fd_list.append(per_job_fd)
-            total_fd = max(num_fd_list) * len(mslist)
-
-            total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                1024**3
-            )  # In GB
-            njobs = min(len(mslist), int(new_soft_limit / total_fd))
-            njobs = max(1, min(total_cpu, njobs))
-            #####################################
-            # Determining per jobs resource
-            #####################################
-            n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = total_mem / njobs
-            mem_limit = round(min(mem_limit, worker_mem_limit), 3)
-        else:
-            client_info = dask_client.scheduler_info()["workers"]
-            njobs = len(client_info)
-            worker_mem_list = []
-            for addr, w in client_info.items():
-                worker_mem_list.append(w["memory_limit"] / 1024**3)
-            mem_limit = round(min(worker_mem_list), 3)
-            n_threads = os.environ.get("OMP_NUM_THREADS")
-            if n_threads is not None:
-                n_threads = int(n_threads)
-            else:
-                n_threads = 1
+            n_threads = 1
 
         print("#################################")
         print(f"Total dask worker: {njobs}")
@@ -998,52 +933,60 @@ def main(
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        msg = 1
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
+        max_ms_size = max(target_ms_sizes)
+        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(mslist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
-        nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
-        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        if len(mslist) == 0:
-            print("Please provide a valid measurement set list.")
-            msg = 1
-        else:
-            msg = run_all_imaging(
-                mslist,
-                dask_client,
-                workdir=workdir,
-                outdir=outdir,
-                freqrange=freqrange,
-                timerange=timerange,
-                datacolumn=datacolumn,
-                freqres=freqres,
-                timeres=timeres,
-                weight=weight,
-                robust=robust,
-                minuv=minuv,
-                threshold=threshold,
-                use_multiscale=use_multiscale,
-                use_solar_mask=use_solar_mask,
-                pol=pol,
-                make_plots=make_plots,
-                cutout_rsun=cutout_rsun,
-                make_overlay=make_overlay,
-                savemodel=savemodel,
-                saveres=saveres,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
-            )
+        msg = run_all_imaging(
+            mslist,
+            dask_client,
+            workdir=workdir,
+            outdir=outdir,
+            freqrange=freqrange,
+            timerange=timerange,
+            datacolumn=datacolumn,
+            freqres=freqres,
+            timeres=timeres,
+            weight=weight,
+            robust=robust,
+            minuv=minuv,
+            threshold=threshold,
+            use_multiscale=use_multiscale,
+            use_solar_mask=use_solar_mask,
+            pol=pol,
+            make_plots=make_plots,
+            cutout_rsun=cutout_rsun,
+            make_overlay=make_overlay,
+            savemodel=savemodel,
+            saveres=saveres,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
+        )
     except Exception:
         traceback.print_exc()
         msg = 1

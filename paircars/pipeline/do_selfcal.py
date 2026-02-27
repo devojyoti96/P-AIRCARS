@@ -27,7 +27,11 @@ from paircars.utils.logger_utils import (
     create_logger,
     init_logger,
 )
-from paircars.utils.ms_metadata import get_timeranges, check_datacolumn_valid
+from paircars.utils.ms_metadata import (
+    get_timeranges,
+    check_datacolumn_valid,
+    get_ms_size,
+)
 from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -1296,21 +1300,33 @@ def main(
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        msg = 1
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
+        max_ms_size = max(target_ms_sizes)
+        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(mslist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
-        nworker = min(len(mslist), int(psutil.cpu_count() * cpu_frac) - 1)
-        scale_worker_and_wait(dask_cluster, dask_client, nworker + 1)
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     ###########################
     # WSClean container
@@ -1383,129 +1399,128 @@ def main(
                     print(f"Issue in : {ms}")
                     os.system(f"rm -rf {ms}")
             mslist = filtered_mslist
-
-            ######################################
-            # Resetting maximum file limit
-            ######################################
-            soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-            new_soft_limit = max(soft_limit, int(0.8 * hard_limit))
-            if soft_limit < new_soft_limit:
-                resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft_limit, hard_limit))
-
-            num_fd_list = []
             if len(mslist) == 0:
                 print("No filtered ms to continue.")
                 return 1
+
+            client_info = dask_client.scheduler_info()["workers"]
+            njobs = len(client_info)
+            worker_mem_list = []
+            for addr, w in client_info.items():
+                worker_mem_list.append(w["memory_limit"] / 1024**3)
+            mem_limit = round(min(worker_mem_list), 3)
+            n_threads = os.environ.get("OMP_NUM_THREADS")
+            if n_threads is not None:
+                n_threads = int(n_threads)
             else:
-                scheduler_name = get_scheduler_name()
-                if scheduler_name == "local":
-                    client_info = dask_client.scheduler_info()["workers"]
-                    njobs = len(client_info)
-                    worker_mem_list = []
-                    for addr, w in client_info.items():
-                        worker_mem_list.append(w["memory_limit"] / 1024**3)
-                    worker_mem_limit = round(min(worker_mem_list), 3)
-                    for ms in mslist:
-                        msmd = msmetadata()
-                        msmd.open(ms)
-                        times = msmd.timesforspws(0)
-                        timeres = np.diff(times)
-                        pos = np.where(timeres > 3 * np.nanmedian(timeres))[0]
-                        max_intervals = min(1, len(pos))
-                        msmd.close()
-                        per_job_fd = (
-                            max_intervals * 4 * 2
-                        )  # 4 types of images, 2 is fudge factor
-                        if per_job_fd == 0:
-                            per_job_fd = 1
-                        num_fd_list.append(per_job_fd)
-                    total_fd = max(num_fd_list) * len(mslist)
+                n_threads = 1
 
-                    total_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-                    total_mem = (psutil.virtual_memory().available * mem_frac) / (
-                        1024**3
-                    )  # In GB
-                    njobs = min(len(mslist), int(new_soft_limit / total_fd))
-                    njobs = max(1, min(total_cpu, njobs))
-                    #####################################
-                    # Determining per jobs resource
-                    #####################################
-                    n_threads = max(1, int(total_cpu / njobs))
-                    mem_limit = round(total_mem / njobs, 3)
-                    mem_limit = min(mem_limit, worker_mem_limit)
-                else:
-                    client_info = dask_client.scheduler_info()["workers"]
-                    njobs = len(client_info)
-                    worker_mem_list = []
-                    for addr, w in client_info.items():
-                        worker_mem_list.append(w["memory_limit"] / 1024**3)
-                    mem_limit = round(min(worker_mem_list), 3)
-                    n_threads = os.environ.get("OMP_NUM_THREADS")
-                    if n_threads is not None:
-                        n_threads = int(n_threads)
-                    else:
-                        n_threads = 1
+            print("#################################")
+            print(f"Total dask worker: {njobs}")
+            print(f"CPU per worker: {n_threads}")
+            print(f"Memory per worker: {mem_limit} GB")
+            print("#################################")
 
-                print("#################################")
-                print(f"Total dask worker: {njobs}")
-                print(f"CPU per worker: {n_threads}")
-                print(f"Memory per worker: {mem_limit} GB")
-                print("#################################")
-
-                #####################################s
-                os.makedirs(f"{workdir}/logs", exist_ok=True)
-                tasks = []
-                for ms in mslist:
-                    logfile = (
+            os.makedirs(f"{workdir}/logs", exist_ok=True)
+            tasks = []
+            for ms in mslist:
+                logfile = (
+                    workdir
+                    + "/logs/"
+                    + os.path.basename(ms).split(".ms")[0]
+                    + "_selfcal.log"
+                )
+                print(f"Measurement set name: {ms}.")
+                print(f"Self-cal log file: {logfile}.int")
+                if do_polcal:
+                    print(f"Polarisation self-cal log file: {logfile}.pol")
+                tasks.append(
+                    delayed(partial_do_selfcal)(
+                        ms,
+                        workdir,
                         workdir
-                        + "/logs/"
+                        + "/"
                         + os.path.basename(ms).split(".ms")[0]
-                        + "_selfcal.log"
+                        + "_selfcal",
+                        ncpu=n_threads,
+                        mem=mem_limit,
+                        logfile=logfile,
                     )
-                    print(f"Measurement set name: {ms}.")
-                    print(f"Self-cal log file: {logfile}.int")
-                    if do_polcal:
-                        print(f"Polarisation self-cal log file: {logfile}.pol")
-                    tasks.append(
-                        delayed(partial_do_selfcal)(
-                            ms,
-                            workdir,
-                            workdir
-                            + "/"
-                            + os.path.basename(ms).split(".ms")[0]
-                            + "_selfcal",
-                            ncpu=n_threads,
-                            mem=mem_limit,
-                            logfile=logfile,
-                        )
-                    )
-                print("Starting all self-calibration...\n")
-                results = list(dask_client.gather(dask_client.compute(tasks)))
+                )
+            print("Starting all self-calibration...\n")
+            results = list(dask_client.gather(dask_client.compute(tasks)))
 
-                gcal_list = []
-                bpass_list = []
-                dcal_list = []
-                succeed_intselfcal = 0
-                failed_intselfcal = 0
-                succeed_polselfcal = 0
-                failed_polselfcal = 0
-                for i in range(len(results)):
-                    r = results[i]
-                    int_msg = r[0]
-                    if int_msg != 0:
-                        print(
-                            f"Intensity self-calibration was not successful for ms: {mslist[i]}."
+            gcal_list = []
+            bpass_list = []
+            dcal_list = []
+            succeed_intselfcal = 0
+            failed_intselfcal = 0
+            succeed_polselfcal = 0
+            failed_polselfcal = 0
+            for i in range(len(results)):
+                r = results[i]
+                int_msg = r[0]
+                if int_msg != 0:
+                    print(
+                        f"Intensity self-calibration was not successful for ms: {mslist[i]}."
+                    )
+                    os.system(
+                        f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}"
+                    )
+                    failed_intselfcal += 1
+                else:
+                    try:
+                        gaintables = r[2]
+                        gcal = gaintables[0]
+                        bpass = gaintables[1]
+                        cal_metadata = get_caltable_metadata(bpass)
+                        freq_start = cal_metadata["Channel 0 frequency (MHz)"]
+                        bw = cal_metadata["Bandwidth (MHz)"]
+                        freq_end = freq_start + bw
+                        ch_start = freq_to_MWA_coarse(freq_start)
+                        ch_end = freq_to_MWA_coarse(freq_end)
+                        if freq_end > freq_start and ch_end == ch_start:
+                            ch_end = ch_start + 1
+                        final_gain_caltable = (
+                            caldir
+                            + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.gcal"
                         )
+                        os.system(f"rm -rf {final_gain_caltable}")
+                        os.system(f"cp -r {gcal} {final_gain_caltable}")
+                        gcal_list.append(final_gain_caltable)
+
+                        final_bpass_caltable = (
+                            caldir
+                            + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
+                        )
+                        os.system(f"rm -rf {final_bpass_caltable}")
+                        os.system(f"cp -r {bpass} {final_bpass_caltable}")
+                        bpass_list.append(final_bpass_caltable)
+                        os.system(
+                            f"touch {workdir}/.intselfcal_succeed_{os.path.basename(mslist[i])}"
+                        )
+                        succeed_intselfcal += 1
+                    except:
                         os.system(
                             f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}"
                         )
                         failed_intselfcal += 1
+
+                if do_polcal:
+                    pol_msg = r[1]
+                    if pol_msg != 0:
+                        print(
+                            f"Polarisation self-calibration was not successful for ms: {mslist[i]}."
+                        )
+                        os.system(
+                            f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
+                        )
+                        failed_polselfcal += 1
                     else:
                         try:
-                            gaintables = r[2]
-                            gcal = gaintables[0]
-                            bpass = gaintables[1]
-                            cal_metadata = get_caltable_metadata(bpass)
+                            quartical_tables = r[3]
+                            dcal = quartical_tables[0]
+                            cal_metadata = get_quartical_table_metadata(dcal)
                             freq_start = cal_metadata["Channel 0 frequency (MHz)"]
                             bw = cal_metadata["Bandwidth (MHz)"]
                             freq_end = freq_start + bw
@@ -1513,103 +1528,54 @@ def main(
                             ch_end = freq_to_MWA_coarse(freq_end)
                             if freq_end > freq_start and ch_end == ch_start:
                                 ch_end = ch_start + 1
-                            final_gain_caltable = (
+                            final_leakage_caltable = (
                                 caldir
-                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.gcal"
+                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.dcal"
                             )
-                            os.system(f"rm -rf {final_gain_caltable}")
-                            os.system(f"cp -r {gcal} {final_gain_caltable}")
-                            gcal_list.append(final_gain_caltable)
-
-                            final_bpass_caltable = (
-                                caldir
-                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
-                            )
-                            os.system(f"rm -rf {final_bpass_caltable}")
-                            os.system(f"cp -r {bpass} {final_bpass_caltable}")
-                            bpass_list.append(final_bpass_caltable)
+                            os.system(f"rm -rf {final_leakage_caltable}")
+                            os.system(f"cp -r {dcal} {final_leakage_caltable}")
+                            dcal_list.append(final_leakage_caltable)
                             os.system(
-                                f"touch {workdir}/.intselfcal_succeed_{os.path.basename(mslist[i])}"
+                                f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}"
                             )
-                            succeed_intselfcal += 1
+                            succeed_polselfcal += 1
                         except:
-                            os.system(
-                                f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}"
-                            )
-                            failed_intselfcal += 1
-
-                    if do_polcal:
-                        pol_msg = r[1]
-                        if pol_msg != 0:
-                            print(
-                                f"Polarisation self-calibration was not successful for ms: {mslist[i]}."
-                            )
                             os.system(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
                             )
                             failed_polselfcal += 1
-                        else:
-                            try:
-                                quartical_tables = r[3]
-                                dcal = quartical_tables[0]
-                                cal_metadata = get_quartical_table_metadata(dcal)
-                                freq_start = cal_metadata["Channel 0 frequency (MHz)"]
-                                bw = cal_metadata["Bandwidth (MHz)"]
-                                freq_end = freq_start + bw
-                                ch_start = freq_to_MWA_coarse(freq_start)
-                                ch_end = freq_to_MWA_coarse(freq_end)
-                                if freq_end > freq_start and ch_end == ch_start:
-                                    ch_end = ch_start + 1
-                                final_leakage_caltable = (
-                                    caldir
-                                    + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.dcal"
-                                )
-                                os.system(f"rm -rf {final_leakage_caltable}")
-                                os.system(f"cp -r {dcal} {final_leakage_caltable}")
-                                dcal_list.append(final_leakage_caltable)
-                                os.system(
-                                    f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}"
-                                )
-                                succeed_polselfcal += 1
-                            except:
-                                os.system(
-                                    f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
-                                )
-                                failed_polselfcal += 1
 
-                if not keep_backup:
-                    for ms in mslist:
-                        selfcaldir = (
-                            workdir
-                            + "/"
-                            + os.path.basename(ms).split(".ms")[0]
-                            + "_selfcal"
-                        )
-                        os.system(f"rm -rf {selfcaldir}*")
-                if len(gcal_list) > 0:
-                    print(f"Final gaincal selfcal caltables: {gcal_list}")
-                    msg = 0
-                    if len(bpass_list) > 0:
-                        print(f"Final bandpass selfcal caltables: {bpass_list}")
-                    if len(dcal_list) > 0:
-                        print(f"Final polarisation selfcal caltables: {dcal_list}")
-                else:
-                    print("No self-calibration is successful.")
-                    msg = 1
-                print(f"Total self-calibration measurement sets: {len(mslist)}")
+            if not keep_backup:
+                for ms in mslist:
+                    selfcaldir = (
+                        workdir
+                        + "/"
+                        + os.path.basename(ms).split(".ms")[0]
+                        + "_selfcal"
+                    )
+                    os.system(f"rm -rf {selfcaldir}*")
+            if len(gcal_list) > 0:
+                print(f"Final gaincal selfcal caltables: {gcal_list}")
+                msg = 0
+                if len(bpass_list) > 0:
+                    print(f"Final bandpass selfcal caltables: {bpass_list}")
+                if len(dcal_list) > 0:
+                    print(f"Final polarisation selfcal caltables: {dcal_list}")
+            else:
+                print("No self-calibration is successful.")
+                msg = 1
+            print(f"Total self-calibration measurement sets: {len(mslist)}")
+            print(f"Total successful intensity self-calibration: {succeed_intselfcal}")
+            print(f"Total failed intensity self-calibration: {failed_intselfcal}")
+            if do_polcal:
                 print(
-                    f"Total successful intensity self-calibration: {succeed_intselfcal}"
+                    f"Total successful polarisation self-calibration: {succeed_polselfcal}"
                 )
-                print(f"Total failed intensity self-calibration: {failed_intselfcal}")
-                if do_polcal:
-                    print(
-                        f"Total successful polarisation self-calibration: {succeed_polselfcal}"
-                    )
-                    print(
-                        f"Total failed polarisation self-calibration: {failed_polselfcal}"
-                    )
-                if succeed_intselfcal == 0:
-                    msg = 1
+                print(
+                    f"Total failed polarisation self-calibration: {failed_polselfcal}"
+                )
+            if succeed_intselfcal == 0:
+                msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1

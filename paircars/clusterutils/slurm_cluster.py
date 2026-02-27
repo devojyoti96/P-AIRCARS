@@ -67,7 +67,7 @@ def get_slurm_dask_cluster(
     cpu_frac=0.8,
     mem_frac=0.8,
     min_mem=1,
-    max_worker=1,
+    max_worker=-1,
     partition=None,
     account=None,
     walltime=None,
@@ -76,7 +76,7 @@ def get_slurm_dask_cluster(
     verbose=True,
 ):
     """
-    Launch a SLURMCluster using a YAML configuration and return a connected Dask client.
+    Launch a SLURMCluster
 
     Parameters
     ----------
@@ -115,14 +115,13 @@ def get_slurm_dask_cluster(
         Dask directory used
     """
     logging.getLogger("distributed").setLevel(logging.ERROR)
-    max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     scheduler_name = get_scheduler_name()
     if scheduler_name != "slurm":
         print("SLURM is not avilable as job scheduler in your cluster.")
         return
 
-    cpu_frac = min(0.8, cpu_frac)
-    mem_frac = min(0.8, mem_frac)
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     if jobid is None:
         jobid = get_jobid()
@@ -149,13 +148,25 @@ def get_slurm_dask_cluster(
             python_path = sys.executable
         interface = detect_best_interface()
 
+        max_worker = max(2, max_worker)
         per_node_cpu, per_node_mem = get_slurm_node_resources(
             partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
         total_nodes = get_total_nodes(partition=partition)
-        max_worker_per_node = max(1, max_worker // total_nodes)
-        ncpu = max(1, per_node_cpu // max_worker_per_node)
-        mem_limit = min(min_mem, per_node_mem / max_worker_per_node)
+        workers_per_node_mem = int(per_node_mem / min_mem)
+        if workers_per_node_mem < 1:
+            print(
+                "Minimum available memory per node is not sufficient for at-least one worker per node."
+            )
+            return
+        workers_per_node_cpu = per_node_cpu
+        workers_per_node = min(workers_per_node_mem, workers_per_node_cpu)
+        max_workers_cluster = workers_per_node * total_nodes
+        if max_worker > 0:
+            max_workers_cluster = min(max_workers_cluster, max_worker)
+            max_workers_cluster = max(2, max_workers_cluster)
+        mem_limit = round(per_node_mem / workers_per_node, 2)
+        ncpu = max(1, int(per_node_cpu / workers_per_node))
 
         env_extra = [
             "export PYTHONUNBUFFERED=1",
@@ -239,10 +250,13 @@ def get_slurm_dask_cluster(
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
+            print(f"Total usable cpu per node: {per_node_cpu}")
+            print(f"Total usable memory per node: {per_node_mem} GB")
             print(f"CPU per worker: {ncpu}")
             print(f"Memory per worker: {mem_limit}GB")
+            print(f"Maximum number of workers: {n_worker}")
             print("####################################################")
-        return client, cluster, dask_dir
+        return client, cluster, dask_dir, n_worker
     except Exception as e:
         print("Error occured in creating SLURM cluster.")
         traceback.print_exc()

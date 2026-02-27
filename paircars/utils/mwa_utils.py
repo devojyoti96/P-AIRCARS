@@ -176,7 +176,7 @@ def get_bad_chans(msname):
         else:
             spw += f"{i}~{i+n_edge_chan-1};"
         if n_edge_chan >= 1:
-            spw += f"{i+int(nchan/2)-1};"
+            spw += f"{i+int(nchan/2)-1}~{i+int(nchan/2)};"
         if i + nchan - n_edge_chan == i + nchan - 1:
             spw += f"{i+nchan-1};"
         else:
@@ -202,22 +202,24 @@ def get_good_chans(msname):
     """
     msmd = msmetadata()
     msmd.open(msname)
-    chanres = msmd.chanres(0, unit="MHz")[0]
     nchan = msmd.nchan(0)
     msmd.close()
     msmd.done()
-    if nchan == 1:
-        return "0:0"
-    n_per_coarse_chan = int(1.28 / chanres)
-    n_edge_chan = int(0.16 / chanres)
-    spw = "0:"
-    for i in range(0, nchan, n_per_coarse_chan):
-        if n_edge_chan > 1:
-            spw += f"{i+n_edge_chan}~{i+int(n_chan/2)-1};{i+int(n_chan/2)+1}~{i+nchan-n_edge_chan};"
-        else:
-            spw += f"{i+n_edge_chan}~{i+nchan-n_edge_chan};"
-    spw = spw[:-1]
-    return spw
+    bad_spw = get_bad_chans(msname)
+    if bad_spw == "":
+        good_spw = f"0:0~{nchan-1}"
+    else:
+        bad_chan_list = bad_spw.split("0:")[-1].split(";")
+        good_chan_list = []
+        start_chan = 0
+        for bad_chans in bad_chan_list:
+            end_chan = int(bad_chans.split("~")[0])
+            if end_chan > start_chan:
+                good_chan_list.append(f"{start_chan+1}~{end_chan-1}")
+            start_chan = int(bad_chans.split("~")[-1])
+        good_chan_list.append(f"{start_chan+1}~{nchan-1}")
+        good_spw = f"0:{';'.join(good_chan_list)}"
+    return good_spw
 
 
 def get_mwa_bad_ants(metafits):

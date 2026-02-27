@@ -270,9 +270,10 @@ def wait_for_dask_workers(client, min_worker=1, timeout=60):
 
 def get_local_dask_cluster(
     dask_dir,
+    cpu_frac=0.8,
     mem_frac=0.8,
     min_mem=1,
-    max_worker=2,
+    max_worker=-1,
     spill_frac=0.7,
     verbose=True,
 ):
@@ -283,6 +284,8 @@ def get_local_dask_cluster(
     ----------
     dask_dir : str
         Dask temporary directory
+    cpu_frac : float, optional
+        CPU fraction to use
     mem_frac : float, optional
         Fraction of total memory to use
     min_mem : float, optional
@@ -302,9 +305,11 @@ def get_local_dask_cluster(
         Dask cluster
     str
         Dask directory
+    int
+        Number of workers
     """
+    cpu_frac = min(abs(cpu_frac), 0.8)
     mem_frac = min(abs(mem_frac), 0.8)
-    max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     logging.getLogger("distributed").setLevel(logging.ERROR)
     print("Creating local cluster on the current node.")
     # Set up Dask working directories
@@ -312,9 +317,6 @@ def get_local_dask_cluster(
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
     try:
-        total_mem = psutil.virtual_memory().total / 1024**3  # In GB
-        usable_mem = total_mem * mem_frac
-
         # Raise file descriptor limit
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
         if soft < int(hard * 0.8):
@@ -328,7 +330,22 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-        mem_limit = round(usable_mem / max_worker, 2)
+        usable_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+        total_mem = psutil.virtual_memory().total / 1024**3  # In GB
+        usable_mem = round(total_mem * mem_frac, 2)
+        n_worker_mem = int(usable_mem / min_mem)
+        if n_worker_mem < 2:
+            print("Minimum available memory is not sufficient for at-least 2 workers.")
+            return
+        n_worker_cpu = usable_cpu
+        n_worker = min(n_worker_cpu, n_worker_mem)
+        if max_worker > 0:
+            n_worker = min(n_worker, max_worker)
+            n_worker = max(2, n_worker)
+
+        mem_limit = round(usable_mem / n_worker, 2)
+        ncpu = max(1, int(usable_cpu / n_worker))
+
         cluster = LocalCluster(
             n_workers=1,
             threads_per_worker=1,
@@ -337,11 +354,17 @@ def get_local_dask_cluster(
             dashboard_address=":0",
             processes=True,
             env={
-                "TMPDIR": dask_dir_tmp,
-                "TMP": dask_dir_tmp,
-                "TEMP": dask_dir_tmp,
-                "DASK_TEMPORARY_DIRECTORY": dask_dir_tmp,
+                "PYTHONUNBUFFERED": "1",
+                "OMP_NUM_THREADS": f"{ncpu}",
+                "MKL_NUM_THREADS": f"{ncpu}",
+                "export OPENBLAS_NUM_THREADS": f"{ncpu}",
+                "NUMEXPR_NUM_THREADS": f"{ncpu}",
+                "RAYON_NUM_THREADS": f"{ncpu}",
                 "MALLOC_TRIM_THRESHOLD_": "0",
+                "TMPDIR": f"{dask_dir_tmp}",
+                "TMP": f"{dask_dir_tmp}",
+                "TEMP": f"{dask_dir_tmp}",
+                "DASK_TEMPORARY_DIRECTORY": f"{dask_dir_tmp}",
                 "PYTHONWARNINGS": "ignore::UserWarning:contextlib",
             },
         )
@@ -350,9 +373,13 @@ def get_local_dask_cluster(
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
+            print(f"Total usable cpu: {usable_cpu}")
+            print(f"Total usable memory: {usable_mem} GB")
+            print(f"CPU per worker: {ncpu}")
             print(f"Memory per worker: {mem_limit}GB")
+            print(f"Maximum number of workers: {n_worker}")
             print("####################################################")
-        return client, cluster, dask_dir
+        return client, cluster, dask_dir, n_worker
     except Exception as e:
         print("Error occured in creating local cluster.")
         traceback.print_exc()

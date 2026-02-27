@@ -140,6 +140,7 @@ def main(
                 )
         else:
             tasks = []
+            ncpu = os.environ.get("OMP_NUM_THREADS")
             for image in imagelist:
                 task = delayed(make_mwa_overlay)(
                     image,
@@ -148,7 +149,7 @@ def main(
                     extensions=["png"],
                     outdirs=[outdir],
                     keep_euv_fits=True,
-                    cpu_frac=cpu_frac,
+                    npcu=ncpu,
                     verbose=False,
                 )
                 tasks.append(task)

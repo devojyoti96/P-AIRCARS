@@ -2151,7 +2151,7 @@ def master_control(
                         print(
                             f"Issue in moving phasecneter to solar center for measurement set: {t_ms}"
                         )
-                if adaptive and len(filtered_ms) < len(target_mslist):
+                if adaptive and len(filtered_ms) != len(target_mslist):
                     scale_worker_and_wait(
                         dask_cluster, dask_client, min(len(target_mslist), max_worker)
                     )
@@ -2325,7 +2325,7 @@ def master_control(
                         filtered_ms.append(c_ms)
                     else:
                         print(f"Issue in flagging of measurement set: {c_ms}")
-                if adaptive and len(filtered_ms) < len(split_cal_mslist):
+                if adaptive and len(filtered_ms) != len(split_cal_mslist):
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
@@ -2387,7 +2387,7 @@ def master_control(
                         print(
                             f"Issue in importing calibrator sky model of measurement set: {c_ms}"
                         )
-                if adaptive and len(filtered_ms) < len(split_cal_mslist):
+                if adaptive and len(filtered_ms) != len(split_cal_mslist):
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
@@ -3939,7 +3939,7 @@ def cli():
     advanced_resource.add_argument(
         "--max_worker",
         type=int,
-        default=-1,
+        default=None,
         help="Maximum number of workers",
     )
     advanced_resource.add_argument(
@@ -4079,7 +4079,7 @@ def cli():
                 max_ms_size = max(max_ms_size, max_cal_ms_size)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    min_mem = round(10 * max_ms_size, 1)  # 10 times the size of the ms
+    min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
 
     ###############################################
     # Setup cluster environment
@@ -4107,46 +4107,28 @@ def cli():
     else:
         cpu_frac = args.cpu_frac
 
-    if args.cluster is not True and scheduler_name == "local":
-        #######################################
-        # Estimating maximum number of workers
-        #######################################
-        max_estimated_worker = int(
-            psutil.cpu_count() * args.cpu_frac
-        )  # Maximum estimated workers for given cpu fraction
-        total_mem = psutil.virtual_memory().total / 1024**3
-        if total_mem < min_mem:
-            print(
-                f"Available allocated memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB."
-            )
-            return 1
-        per_worker_mem = round(total_mem / max_estimated_worker, 2)
-        per_worker_mem = min(min_mem, per_worker_mem)
-        max_estimated_worker = min(
-            max_estimated_worker, int(total_mem / per_worker_mem)
-        )
-        if args.max_worker > 0:  # If user defined maximum number of workers
-            max_estimated_worker = min(max_estimated_worker, args.max_worker)
-        if max_estimated_worker < 2:  # Minimum 2 workers are needed
-            max_estimated_worker = max(2, max_estimated_worker)
+    if args.max_worker is None:
+        max_worker = len(target_mslist) + 1
+    else:
+        max_worker = max(int(args.max_worker), len(target_mslist) + 1)
 
-        max_estimated_worker = min(100, max_estimated_worker) # Maximum 50 workers
-        
+    if args.cluster is not True and scheduler_name == "local":
         #######################################
         # Set up local cluster
         #######################################
         print("Setting up local cluster....")
         result = get_local_dask_cluster(
             args.workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            max_worker=max_estimated_worker,
             min_mem=min_mem,
+            max_worker=max_worker,
         )
         if result is None:
             print("Error occured in creating local cluster.")
             return 1
         else:
-            dask_client, dask_cluster, dask_dir = result
+            dask_client, dask_cluster, dask_dir, nworker = result
 
         scheduler_address = dask_client.scheduler.address
         main_job_file = save_main_process_info(
@@ -4159,40 +4141,12 @@ def cli():
             args.cpu_frac,
             args.mem_frac,
         )
-        scale_worker_and_wait(dask_cluster, dask_client, 1)
         adaptive = True  # For local cluster, always do adaptive scaling to avoid occupying resources
     else:
         if scheduler_name == "slurm":
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
                 return
-            #######################################
-            # Estimating maximum number of workers
-            #######################################
-            per_node_cpu, per_node_mem = get_slurm_node_resources(
-                partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
-            )
-            if per_node_mem < min_mem:
-                print(
-                    f"Available allocated per node memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB."
-                )
-                return 1
-            max_worker_per_node = max(
-                1, int(per_node_mem / min_mem)
-            )  # Maximum worker per node
-            total_nodes = get_total_nodes(
-                partition=args.partition
-            )  # Total nodes for the given partition
-            max_estimated_worker = int(
-                max_worker_per_node * total_nodes
-            )  # Maximum number of workers can be spawned
-            if args.max_worker > 0:  # If user defined maximum number of workers
-                max_estimated_worker = min(max_estimated_worker, args.max_worker)
-            if max_estimated_worker < 2:  # Minimum 2 workers are needed
-                max_estimated_worker = max(2, max_estimated_worker)
-            max_estimated_worker = min(50, max_estimated_worker) # Maximum 50 workers
-            
-            # TODO: How to estimate max estimated worker for cloud
             ########################################
             # Setting up lslurm cluster
             ########################################
@@ -4200,9 +4154,10 @@ def cli():
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
-                cpu_frac=args.cpu_frac,
-                mem_frac=args.mem_frac,
-                max_worker=max_estimated_worker,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
+                max_worker=max_worker,
+                min_mem=min_mem,
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
@@ -4211,7 +4166,7 @@ def cli():
                 print("Error occured in creating slurm cluster.")
                 return 1
             else:
-                dask_client, dask_cluster, dask_dir = cluster_result
+                dask_client, dask_cluster, dask_dir, nworker = cluster_result
             scheduler_address = dask_client.scheduler.address
             main_job_file = save_main_process_info(
                 pid,
@@ -4225,7 +4180,7 @@ def cli():
             )
             adaptive = args.adaptive
             if not adaptive:
-                nworker = min(len(target_mslist)+1, max_estimated_worker)
+                nworker = min(len(target_mslist) + 1, nworker)
                 scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
@@ -4298,7 +4253,7 @@ def cli():
             # Resource settings
             cpu_frac=args.cpu_frac,
             mem_frac=args.mem_frac,
-            max_worker=max_estimated_worker,
+            max_worker=nworker,
             keep_backup=args.keep_backup,
             keep_calibrated_ms=args.keep_calibrated_ms,
             # Remote logging
