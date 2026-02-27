@@ -807,7 +807,6 @@ def do_polselfcal(
                 )
         msname = selfcalms
 
-        cont=input("?")
         ################################################################
         # Initial flagging -- zeros, extreme bad data
         ################################################################
