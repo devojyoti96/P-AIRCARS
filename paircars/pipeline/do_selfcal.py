@@ -178,6 +178,26 @@ def do_selfcal(
             os.system("rm -rf " + selfcalms + ".flagversions")
 
         ##############################
+        # Restoring any previous flags
+        ##############################
+        with suppress_output():
+            flags = flagmanager(vis=msname, mode="list")
+        keys = flags.keys()
+        for k in keys:
+            if k == "MS":
+                pass
+            else:
+                version = flags[0]["name"]
+                try:
+                    with suppress_output():
+                        flagmanager(vis=msname, mode="restore", versionname=version)
+                        flagmanager(vis=msname, mode="delete", versionname=version)
+                except BaseException:
+                    pass
+        if os.path.exists(msname + ".flagversions"):
+            os.system("rm -rf " + msname + ".flagversions")
+
+        ##############################
         # Spliting corrected data
         ##############################
         hascor = check_datacolumn_valid(msname, datacolumn="CORRECTED_DATA")
@@ -196,7 +216,6 @@ def do_selfcal(
                     scan=str(scan),
                     outputvis=selfcalms,
                     datacolumn="corrected",
-                    keepflags=False,
                 )
         else:
             logger.info(f"Spliting data to ms : {selfcalms}")
@@ -207,7 +226,6 @@ def do_selfcal(
                     scan=str(scan),
                     outputvis=selfcalms,
                     datacolumn="data",
-                    keepflags=False,
                 )
         msname = selfcalms
 
