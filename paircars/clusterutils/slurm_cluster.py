@@ -17,6 +17,7 @@ from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
     detect_best_interface,
     get_jobid,
+    get_total_nodes,
 )
 
 
