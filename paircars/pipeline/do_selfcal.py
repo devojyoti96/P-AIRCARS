@@ -166,7 +166,8 @@ def do_selfcal(
         msname = os.path.abspath(msname.rstrip("/"))
         selfcaldir = selfcaldir.rstrip("/")
         os.makedirs(selfcaldir, exist_ok=True)
-
+        os.system(f"rm -rf {selfcaldir}/*")
+    
         os.chdir(selfcaldir)
         selfcalms = selfcaldir + "/intselfcal_" + os.path.basename(msname)
         if os.path.exists(selfcalms):
@@ -745,6 +746,7 @@ def do_polselfcal(
         msname = os.path.abspath(msname.rstrip("/"))
         selfcaldir = selfcaldir.rstrip("/")
         os.makedirs(selfcaldir, exist_ok=True)
+        os.system(f"rm -rf {selfcaldir}/*")
 
         os.chdir(selfcaldir)
         selfcalms = selfcaldir + "/polselfcal_" + os.path.basename(msname)
