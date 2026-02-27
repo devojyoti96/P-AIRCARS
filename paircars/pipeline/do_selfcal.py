@@ -178,26 +178,6 @@ def do_selfcal(
             os.system("rm -rf " + selfcalms + ".flagversions")
 
         ##############################
-        # Restoring any previous flags
-        ##############################
-        with suppress_output():
-            flags = flagmanager(vis=msname, mode="list")
-        keys = flags.keys()
-        for k in keys:
-            if k == "MS":
-                pass
-            else:
-                version = flags[0]["name"]
-                try:
-                    with suppress_output():
-                        flagmanager(vis=msname, mode="restore", versionname=version)
-                        flagmanager(vis=msname, mode="delete", versionname=version)
-                except BaseException:
-                    pass
-        if os.path.exists(msname + ".flagversions"):
-            os.system("rm -rf " + msname + ".flagversions")
-
-        ##############################
         # Spliting corrected data
         ##############################
         hascor = check_datacolumn_valid(msname, datacolumn="CORRECTED_DATA")
@@ -216,6 +196,7 @@ def do_selfcal(
                     scan=str(scan),
                     outputvis=selfcalms,
                     datacolumn="corrected",
+                    keepflags=False,
                 )
         else:
             logger.info(f"Spliting data to ms : {selfcalms}")
@@ -226,6 +207,7 @@ def do_selfcal(
                     scan=str(scan),
                     outputvis=selfcalms,
                     datacolumn="data",
+                    keepflags=False,
                 )
         msname = selfcalms
 
@@ -754,9 +736,9 @@ def do_polselfcal(
         os.chdir(selfcaldir)
         selfcalms = selfcaldir + "/polselfcal_" + os.path.basename(msname)
         if os.path.exists(selfcalms):
-            os.system("rm -rf " + selfcalms)
-        if os.path.exists(selfcalms + ".flagversions"):
-            os.system("rm -rf " + selfcalms + ".flagversions")
+            os.system(f"rm -rf {selfcalms}")
+        if os.path.exists(f"{selfcalms}.flagversions"):
+            os.system(f"rm -rf {selfcalms}.flagversions")
 
         ##############################
         # Spliting corrected data
@@ -790,6 +772,7 @@ def do_polselfcal(
                     outputvis=selfcalms,
                     timerange=timerange,
                     datacolumn="corrected",
+                    keepflags=False,
                 )
         else:
             logger.warning("Corrected data column is not present.")
@@ -802,9 +785,11 @@ def do_polselfcal(
                     outputvis=selfcalms,
                     timerange=timerange,
                     datacolumn="data",
+                    keepflags=False,
                 )
         msname = selfcalms
 
+        cont=input("?")
         ################################################################
         # Initial flagging -- zeros, extreme bad data
         ################################################################
@@ -828,6 +813,7 @@ def do_polselfcal(
             if result != 0:
                 logger.info(f"UV-bin flagging is not successful.")
 
+        cont=input("?")
         ############################################
         # Imaging and calibration parameters
         ############################################
@@ -1112,9 +1098,6 @@ def do_full_selfcal(
     mem = abs(mem)
 
     selfcaldir = selfcaldir.rstrip("/")
-    if os.path.exists(selfcaldir):
-        print(f"Removing pre-existing selfcal directory: {selfcaldir}")
-        os.system(f"rm -rf {selfcaldir}")
     logfile = logfile.rstrip("/")
     print(f"Starting intensity self-calibration for ms: {msname}.")
     unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
