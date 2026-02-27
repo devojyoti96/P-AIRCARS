@@ -230,4 +230,3 @@ def cli():
         start_remote_log=args.start_remote_log,
     )
     return msg
-

@@ -359,7 +359,7 @@ def run_all_applysol(
         print(f"CPU per worker: {n_threads}")
         print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
-        
+
         tasks = []
         failed = 0
         for ms in mslist:
@@ -679,4 +679,3 @@ def cli():
         jobid=args.jobid,
     )
     return msg
-

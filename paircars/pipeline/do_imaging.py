@@ -742,8 +742,8 @@ def run_all_imaging(
             # Determining per jobs resource
             #####################################
             n_threads = max(1, int(total_cpu / njobs))
-            mem_limit = total_mem/njobs
-            mem_limit = round(min(mem_limit, worker_mem_limit),3)
+            mem_limit = total_mem / njobs
+            mem_limit = round(min(mem_limit, worker_mem_limit), 3)
         else:
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
@@ -1258,4 +1258,3 @@ def cli():
         jobid=args.jobid,
     )
     return msg
-

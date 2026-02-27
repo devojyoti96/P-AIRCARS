@@ -376,6 +376,7 @@ def do_flagging(
 
     try:
         from casatasks import flagdata
+
         ########################################
         # Number of worker limit based on memory
         ########################################
@@ -749,4 +750,3 @@ def cli():
         start_remote_log=args.start_remote_log,
     )
     return msg
-

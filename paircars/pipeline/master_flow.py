@@ -1793,7 +1793,7 @@ def master_control(
         traceback.print_exc()
         return 1
     os.makedirs(caldir, exist_ok=True)
-    
+
     scheduler_name = get_scheduler_name()
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     cpu_frac = min(0.8, abs(cpu_frac))

@@ -476,4 +476,3 @@ def cli():
         jobid=args.jobid,
     )
     return msg
-
