@@ -167,8 +167,10 @@ def get_bad_chans(msname):
     nchan = msmd.nchan(0)
     msmd.close()
     msmd.done()
-    if chanres>0.16:
-        print (f"Frequency resolution: {round(chanres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing.")
+    if chanres > 0.16:
+        print(
+            f"Frequency resolution: {round(chanres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing."
+        )
         return ""
     else:
         n_per_coarse_chan = int(1.28 / chanres)

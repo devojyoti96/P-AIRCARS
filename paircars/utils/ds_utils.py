@@ -605,8 +605,10 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     ######################################
     # Extracting metadata
     ######################################
-    if freqres>160:
-        print("Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging.")
+    if freqres > 160:
+        print(
+            "Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging."
+        )
     else:
         bad_chans = get_bad_chans(msname)
         if bad_chans != "":
