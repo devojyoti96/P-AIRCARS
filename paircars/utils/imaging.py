@@ -207,14 +207,14 @@ def get_optimal_image_interval(
     bad_chans = get_bad_chans(msname)
     if bad_chans != "":
         bad_chan_blocks = [i for i in bad_chans.split("0:")[1].split(";")]
-        bad_chan_list=[]
+        bad_chan_list = []
         for bad_chan in bad_chan_blocks:
             if "~" not in bad_chan:
                 bad_chan_list.append(int(bad_chan))
             else:
                 start_bad_chan = int(bad_chan.split("~")[0])
                 end_bad_chan = int(bad_chan.split("~")[-1])
-                for b in range(start_bad_chan,end_bad_chan+1):
+                for b in range(start_bad_chan, end_bad_chan + 1):
                     bad_chan_list.append(int(b))
     else:
         bad_chan_list = []

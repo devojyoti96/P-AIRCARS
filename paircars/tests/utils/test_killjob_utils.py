@@ -190,5 +190,3 @@ def test_kill_slurmscheduler(
     else:
         mock_run.assert_called_once_with(["scancel", 7777])
         assert mock_drop.call_count == 4
-
-

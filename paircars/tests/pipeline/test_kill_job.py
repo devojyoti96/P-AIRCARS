@@ -7,6 +7,7 @@ from paircars.pipeline.kill_job import (
     kill_paircarsjob,
 )
 
+
 @pytest.mark.parametrize(
     "argv, scheduler_name, expect_exit, expect_local, expect_slurm",
     [
