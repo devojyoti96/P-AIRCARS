@@ -3068,19 +3068,20 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-        if do_imaging or do_applycal or do_apply_selfcal:
-            split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
-            if len(split_target_mslist) == 0:
-                print("!!!! WARNING: No target ms are present. !!!!")
-                if emails != "":
-                    email_msg = (
-                        "No target measurement set is present for final processing."
-                    )
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                return 1
 
+        split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
+        if len(split_target_mslist) == 0:
+            print("!!!! WARNING: No target ms are present. !!!!")
+            if emails != "":
+                email_msg = (
+                    "No target measurement set is present for final processing."
+                )
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            return 1
+
+        if do_imaging or do_applycal or do_apply_selfcal:
             ####################################
             # Filtering any corrupted ms
             #####################################
