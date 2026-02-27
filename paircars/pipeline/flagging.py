@@ -400,12 +400,18 @@ def do_flagging(
         test_msname = os.path.abspath(mslist[0].rstrip("/"))
         if flag_bad_spw:
             badspw = get_bad_chans(test_msname)
-            print(f"Bad spws: {badspw}.")
+            if badspw!="":
+                print(f"Bad spws: {badspw}.")
+            else:
+                print("No bad spectral window.")
         else:
             badspw = ""
         if flag_bad_ants:
             bad_ants_str = get_mwa_bad_ants(metafits)
-            print(f"Bad antennas: {bad_ants_str}.")
+            if bad_ants_str!="":
+                print(f"Bad antennas: {bad_ants_str}.")
+            else:
+                print("No bad antennas.")
         else:
             bad_ants_str = ""
 

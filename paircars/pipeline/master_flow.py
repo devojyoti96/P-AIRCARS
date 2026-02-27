@@ -18,6 +18,8 @@ from multiprocessing import Process, Event
 from dask.distributed import get_client
 from dotenv import load_dotenv
 from pyfiglet import Figlet
+from distributed import CommClosedError
+from dask.distributed import CancelledError
 from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
@@ -92,8 +94,19 @@ from paircars.pipeline import (
 )
 from paircars.pipeline.init_data import init_paircars_data
 
+def retry_on_transient(task, exc):
+    transient_errors = (
+        OSError,               
+        TimeoutError,          
+        CommClosedError,        
+        CancelledError,        
+        ConnectionError,      
+    )
+    if isinstance(exc, MemoryError): # Not trying on memory error
+        return False
+    return isinstance(exc, transient_errors)
 
-@task(name="moving_to_solar_center", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="moving_to_solar_center", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_solar_phasecenter_jobs(
     mslist,
     workdir,
@@ -167,7 +180,7 @@ def run_solar_phasecenter_jobs(
         return msg
 
 
-@task(name="making_dynamic_spectra", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="making_dynamic_spectra", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_ds_jobs(
     mslist,
     metafits,
@@ -250,7 +263,7 @@ def run_ds_jobs(
         return msg
 
 
-@task(name="spliting_ms", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="spliting_ms", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_target_split_jobs(
     mslist,
     workdir,
@@ -353,7 +366,7 @@ def run_target_split_jobs(
         return msg
 
 
-@task(name="flagging", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="flagging", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_flag(
     mslist,
     metafits,
@@ -544,7 +557,7 @@ def run_import_model(
         return msg
 
 
-@task(name="basic_calibration", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="basic_calibration", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_basic_cal_jobs(
     mslist,
     workdir,
@@ -731,7 +744,7 @@ def run_apply_basiccal_sol(
 
 
 @task(
-    name="solar_sidereal_correction", retries=2, retry_delay_seconds=60, log_prints=True
+    name="solar_sidereal_correction", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True
 )
 def run_solar_siderealcor_jobs(
     mslist,
@@ -806,7 +819,7 @@ def run_solar_siderealcor_jobs(
         return msg
 
 
-@task(name="selfcal", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="selfcal", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_selfcal_jobs(
     mslist,
     workdir,
@@ -956,7 +969,7 @@ def run_selfcal_jobs(
 
 
 @task(
-    name="applying_self-calibration", retries=2, retry_delay_seconds=60, log_prints=True
+    name="applying_self-calibration", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True
 )
 def run_apply_selfcal_sol(
     mslist,
@@ -1044,7 +1057,7 @@ def run_apply_selfcal_sol(
         return msg
 
 
-@task(name="imaging", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="imaging", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_imaging_jobs(
     mslist,
     workdir,
@@ -1175,7 +1188,7 @@ def run_imaging_jobs(
         return msg
 
 
-@task(name="applying_primary_beam", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="applying_primary_beam", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_apply_pbcor(
     imagedir,
     metafits,
@@ -1250,7 +1263,7 @@ def run_apply_pbcor(
         return msg
 
 
-@task(name="making_overlay", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="making_overlay", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_make_overlay(
     imagedir,
     outdir,
@@ -1339,7 +1352,7 @@ def run_make_overlay(
         return msg
 
 
-@task(name="making_msplot", retries=2, retry_delay_seconds=60, log_prints=True)
+@task(name="making_msplot", retries=1, retry_delay_seconds=60, retry_condition_fn=retry_on_transient,log_prints=True)
 def run_make_msplot(
     mslist,
     workdir,
