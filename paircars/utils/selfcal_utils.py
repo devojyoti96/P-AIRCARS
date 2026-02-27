@@ -1043,7 +1043,7 @@ def selfcal_round(
             weight += " " + str(robust)
 
         wsclean_args = [
-            #"-quiet",
+            "-quiet",
             "-scale " + str(cellsize) + "asec",
             "-size " + str(imsize) + " " + str(imsize),
             "-no-dirty",
@@ -1124,7 +1124,7 @@ def selfcal_round(
 
         wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " " + msname
         logger.info(f"WSClean command: {wsclean_cmd}\n")
-        msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=True)
+        msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         if msg != 0:
             logger.error(f"Imaging is not successful.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", []
@@ -1189,7 +1189,7 @@ def selfcal_round(
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
             logger.info(f"WSClean command: {wsclean_cmd}\n")
-            msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=True)
+            msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
             if msg != 0:
                 prediction_failed = True
 
