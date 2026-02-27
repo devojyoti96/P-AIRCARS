@@ -1554,6 +1554,7 @@ def selfcal_round(
                 mode="rflag",
                 threshold=10.0,
                 flagbackup=False,
+            )
             uvsub(vis=msname,restore=True)
             
 
