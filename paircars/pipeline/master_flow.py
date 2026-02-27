@@ -4198,7 +4198,7 @@ def cli():
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
-        print(f"Total maximum dask workers: {max_estimated_worker}")
+        print(f"Total maximum dask workers: {nworker}")
         msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
