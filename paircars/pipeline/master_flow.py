@@ -2035,6 +2035,8 @@ def master_control(
             msmd.close()
             freqres_list.append(freqres)
         freqres = min(freqres_list)
+        if freqres>0.16:
+            print (f"Frequency resolution: {round(freqres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing.")
         max_freqres = min(max_freqres_list)
         if image_freqres > 0:
             image_freqres = max(image_freqres, freqres)
