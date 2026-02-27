@@ -2603,7 +2603,7 @@ def master_control(
         # Removing previous self-calibration artificats
         ###############################################
         print("Removing all previous self-calibration artificats...")
-        os.system(f"{workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*")
+        os.system(f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*")
         
         ###################################################
         # Start spliting selfcal ms
