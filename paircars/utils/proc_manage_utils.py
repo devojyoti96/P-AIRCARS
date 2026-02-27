@@ -271,8 +271,8 @@ def wait_for_dask_workers(client, min_worker=1, timeout=60):
 def get_local_dask_cluster(
     dask_dir,
     mem_frac=0.8,
-    max_mem=8,
-    max_worker=1,
+    min_mem=1,
+    max_worker=2,
     spill_frac=0.7,
     verbose=True,
 ):
@@ -285,8 +285,8 @@ def get_local_dask_cluster(
         Dask temporary directory
     mem_frac : float, optional
         Fraction of total memory to use
-    max_mem : float, optional
-        Maximum job memory in GB
+    min_mem : float, optional
+        Minimum required per job memory in GB
     max_worker : int, optional
         Maximum worker
     spill_frac : float, optional
@@ -303,6 +303,8 @@ def get_local_dask_cluster(
     str
         Dask directory
     """
+    mem_frac = min(abs(mem_frac), 0.8)
+    max_worker = max(2, max_worker) # Minimum 2 workers are needed
     logging.getLogger("distributed").setLevel(logging.ERROR)
     print("Creating local cluster on the current node.")
     # Set up Dask working directories
@@ -310,9 +312,9 @@ def get_local_dask_cluster(
     dask_dir_tmp = os.path.join(dask_dir, "tmp")
     os.makedirs(dask_dir_tmp, exist_ok=True)
     try:
-        total_mem = psutil.virtual_memory().available / 1024**3  # In GB
-        mem_frac = min(mem_frac, 0.8)
+        total_mem = psutil.virtual_memory().total / 1024**3  # In GB
         usable_mem = total_mem * mem_frac
+                
         # Raise file descriptor limit
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
         if soft < int(hard * 0.8):
@@ -327,7 +329,6 @@ def get_local_dask_cluster(
             }
         )
         mem_limit = round(usable_mem / max_worker, 2)
-        mem_limit = min(max_mem, mem_limit)
         cluster = LocalCluster(
             n_workers=1,
             threads_per_worker=1,

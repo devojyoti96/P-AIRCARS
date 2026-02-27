@@ -65,7 +65,7 @@ def get_slurm_dask_cluster(
     jobid=None,
     cpu_frac=0.8,
     mem_frac=0.8,
-    max_mem=8,
+    min_mem=1,
     max_worker=1,
     partition=None,
     account=None,
@@ -87,8 +87,8 @@ def get_slurm_dask_cluster(
         CPU fraction to use
     mem_frac : float, optional
         Memory fraction to use
-    max_mem : float, optional
-        Maximum job memory in GB
+    min_mem : float, optional
+        Minimum per job memory in GB
     max_worker : float, optional
         Maximum number of worker
     partition : str, optional
@@ -114,6 +114,7 @@ def get_slurm_dask_cluster(
         Dask directory used
     """
     logging.getLogger("distributed").setLevel(logging.ERROR)
+    max_worker = max(2, max_worker) # Minimum 2 workers are needed
     scheduler_name = get_scheduler_name()
     if scheduler_name != "slurm":
         print("SLURM is not avilable as job scheduler in your cluster.")
@@ -143,15 +144,20 @@ def get_slurm_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-        ncpu, mem = get_slurm_node_resources(
-            partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
-        )
-        ncpu = max(1, int(ncpu / max_worker))
-
         if python_path is None:
             python_path = sys.executable
         interface = detect_best_interface()
-        mem_limit = max(1, round(min(max_mem, mem), 2))
+        
+        per_node_cpu, per_node_mem = get_slurm_node_resources(
+            partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
+        )
+        total_nodes = get_total_nodes(
+                partition=partition
+            ) 
+        max_worker_per_node = max(1, max_worker // total_nodes)
+        ncpu = max(1, per_node_cpu // max_worker_per_node)
+        mem_limit = min(min_mem, per_node_mem / max_worker_per_node)
+        
         env_extra = [
             "export PYTHONUNBUFFERED=1",
             f"export OMP_NUM_THREADS={ncpu}",

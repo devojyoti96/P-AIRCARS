@@ -1496,7 +1496,7 @@ def master_control(
     # Resource settings
     cpu_frac=0.8,
     mem_frac=0.8,
-    max_worker=1,
+    max_worker=2,
     keep_backup=False,
     keep_calibrated_ms=False,
     # Remote logging
@@ -1629,21 +1629,41 @@ def master_control(
     if target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
+    else:
+        target_datadir = os.path.abspath(target_datadir)
+        if os.path.exists(target_datadir) is False:
+            print(f"Target data directory: {target_datadir} does not exist. Provide correct full path.")
+            return 1
     if target_metafits.startswith("~"):
         print("Please provide full path of target metafits.")
         return 1
+    else:
+        target_metafits = os.path.abspath(target_metafits)
+        if os.path.exists(target_metafits) is False:
+            print(f"Target metafits: {target_metafits} does not exist.")
+            return 1
     if calibrator_datadir.startswith("~"):
         print("Please provide full path of calibrator data directory.")
         return 1
+    else:
+        if calibrator_datadir!="":
+            calibrator_datadir = os.path.abspath(calibrator_datadir)
     if calibrator_metafits.startswith("~"):
         print("Please provide full path of calibrator metafits.")
         return 1
+    else:
+        if calibrator_metafits!="":
+            calibrator_metafits = os.path.abspath(calibrator_metafits)
     if workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
+    else:
+        workdir = os.path.abspath(workdir)
     if outdir.startswith("~"):
         print("Please provide full path of output directory.")
         return 1
+    else:
+        outdir = os.path.abspath(outdir)
 
     if jobid is None:
         jobid = get_jobid()
@@ -1706,8 +1726,16 @@ def master_control(
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
     workdir = workdir.rstrip("/")
+    if outdir == "":
+        outdir = workdir
     workdir = f"{workdir}/{target_obsid}"
-
+    try:
+        os.makedirs(workdir,exist_ok=True)
+    except:
+        print(f"Work directory: {workdir} can not be created. Please check the path carefully.")
+        traceback.print_exc()
+        return 1
+        
     #################################
     # Setup logger
     #################################
@@ -1748,27 +1776,26 @@ def master_control(
     ###################################################
     # Measurement set check and other working directory
     ###################################################
-    if outdir == "":
-        outdir = workdir
     outdir = outdir.rstrip("/")
     outdir = f"{outdir}/{target_obsid}"
     caldir = f"{outdir}/caltables"
     caldir = caldir.rstrip("/")
-    os.makedirs(workdir, exist_ok=True)
-    os.makedirs(outdir, exist_ok=True)
+    try:
+        os.makedirs(outdir, exist_ok=True)
+    except:
+        print(f"Output directory: {outdir} can not created. Please check the path carefully.")
+        traceback.print_exc()
+        return 1
+        
     os.makedirs(caldir, exist_ok=True)
     scheduler_name = get_scheduler_name()
 
-    if max_worker <= 1 and scheduler_name == "local":
-        if cpu_frac > 0.8:
-            cpu_frac = 0.8
-        max_worker = int(psutil.cpu_count() * cpu_frac)
-
+    max_worker = max(2, max_worker) # Minimum 2 workers are needed
+    
     try:
         #####################################
-        # Moving into work directory
+        # Reading remotelink and emails
         #####################################
-        os.chdir(workdir)
         remote_link = ""
         if remote_logger:
             trial = 0
@@ -4045,7 +4072,7 @@ def cli():
                 max_ms_size = max(max_ms_size, max_cal_ms_size)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    min_mem = max(1, round(5 * max_ms_size, 1))  # Minimum 1 GB
+    min_mem = round(10 * max_ms_size, 1)  # 10 times the size of the ms
 
     ###############################################
     # Setup cluster environment
@@ -4075,29 +4102,34 @@ def cli():
 
     if args.cluster is not True and scheduler_name == "local":
         #######################################
-        # Set up local cluster
+        # Estimating maximum number of workers
         #######################################
         max_estimated_worker = int(
             psutil.cpu_count() * args.cpu_frac
         )  # Maximum estimated workers for given cpu fraction
         total_mem = psutil.virtual_memory().total / 1024**3
+        if total_mem< min_mem:
+            print (f"Available allocated memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB.")
+            return 1
         per_worker_mem = round(total_mem / max_estimated_worker, 2)
         per_worker_mem = min(min_mem, per_worker_mem)
         max_estimated_worker = min(
             max_estimated_worker, int(total_mem / per_worker_mem)
         )
-
         if args.max_worker > 0:  # If user defined maximum number of workers
             max_estimated_worker = min(max_estimated_worker, args.max_worker)
-        if max_estimated_worker < 2:
+        if max_estimated_worker < 2: # Minimum 2 workers are needed
             max_estimated_worker = max(2, max_estimated_worker)
 
+        #######################################
+        # Set up local cluster
+        #######################################
         print("Setting up local cluster....")
-
         result = get_local_dask_cluster(
             args.workdir,
             mem_frac=mem_frac,
             max_worker=max_estimated_worker,
+            min_mem=min_mem,
         )
         if result is None:
             print("Error occured in creating local cluster.")
@@ -4123,10 +4155,15 @@ def cli():
             if args.partition is None:
                 print("Please provide partition name to submit SLURM jobs.")
                 return
-            print("Setting up slurm cluster....")
+            #######################################
+            # Estimating maximum number of workers
+            #######################################
             per_node_cpu, per_node_mem = get_slurm_node_resources(
                 partition=args.partition, cpu_frac=args.cpu_frac, mem_frac=args.mem_frac
             )
+            if per_node_mem< min_mem:
+                print (f"Available allocated per node memory {total_mem}GB is not sufficient for processing a single measurement set requirement: {min_mem}GB.")
+                return 1
             max_worker_per_node = max(
                 1, int(per_node_mem / min_mem)
             )  # Maximum worker per node
@@ -4136,15 +4173,16 @@ def cli():
             max_estimated_worker = int(
                 max_worker_per_node * total_nodes
             )  # Maximum number of workers can be spawned
-            max_estimated_worker = min(
-                len(target_mslist) + 1, max_estimated_worker
-            )  # Total number of workers
             if args.max_worker > 0:  # If user defined maximum number of workers
                 max_estimated_worker = min(max_estimated_worker, args.max_worker)
-            if max_estimated_worker < 2:
+            if max_estimated_worker < 2: # Minimum 2 workers are needed
                 max_estimated_worker = max(2, max_estimated_worker)
 
             # TODO: How to estimate max estimated worker for cloud
+            ########################################
+            # Setting up lslurm cluster
+            ########################################
+            print("Setting up slurm cluster....")
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
