@@ -2703,6 +2703,7 @@ def master_control(
                 send_task_notification(
                     emails, email_msg, jobid, target_obsid, timestamp
                 )
+                
         if do_selfcal:
             print("Checking measurement sets before spawning self-calibrations....")
             filtered_mslist = []  # Filtering in case any ms is corrupted
@@ -2730,7 +2731,7 @@ def master_control(
         # Applying solutions on targets for self-calibration
         #########################################################
         cal_applied = False
-        if do_selfcal and has_cal:  # If calibrator solutions are available
+        if do_selfcal:  # If calibrator solutions are available
             if adaptive:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
@@ -2793,95 +2794,31 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
 
-            ###################################
-            # Apply basic calibration
-            ###################################
-            if emails != "":
-                email_msg = "Started applying basic calibration solution on self-calibration measurement sets."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print(
-                "Starting task: Applying basic calibration on self-calibration measurement sets....."
-            )
-            print("###########################")
-            future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
-                task_run_name=f"applying_basiccal_selfcal_{jobid}"
-            ).submit(
-                ",".join(selfcal_mslist),
-                calibrator_metafits,
-                target_metafits,
-                workdir,
-                caldir,
-                overwrite_datacolumn=False,
-                only_amplitude=only_amplitude,
-                applymode="calflag",
-                prefix="selfcal",
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg = future_apply_basical_selfcal.result()
-                cal_applied = True
+            if has_cal:
+                ###################################
+                # Apply basic calibration
+                ###################################
                 if emails != "":
-                    email_msg = "Applying basic calibration solution on self-calibration measurement sets are done."
+                    email_msg = "Started applying basic calibration solution on self-calibration measurement sets."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
+                    "Starting task: Applying basic calibration on self-calibration measurement sets....."
                 )
                 print("###########################")
-            except Exception as e:
-                print(
-                    "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
-                )
-                traceback.print_exc()
-                cal_applied = False
-                do_selfcal = True
-                do_applycal = False
-                if emails != "":
-                    email_msg = "Error occured in applying basic calibration solutions on self-calibration measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-
-        if cal_applied:
-            selfcal_applymode = "calonly"
-        else:
-            selfcal_applymode = "calflag"
-
-        ########################################
-        # Performing self-calibration
-        ########################################
-        if do_selfcal:
-            os.system(
-                f"rm -rf {workdir}/*selfcal_int {workdir}/*selfcal_pol {workdir}/caltables/*selfcal*"
-            )
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
-                )
-            if do_sidereal_cor:
-                if emails != "":
-                    email_msg = "Started correcting for solar sidereal motion."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Starting task: Sidereal motion correction for self-calibration measurement sets....."
-                )
-                print("###########################")
-                future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
-                    task_run_name=f"solar_sidereal_correction_{jobid}"
+                future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
+                    task_run_name=f"applying_basiccal_selfcal_{jobid}"
                 ).submit(
                     ",".join(selfcal_mslist),
+                    calibrator_metafits,
+                    target_metafits,
                     workdir,
+                    caldir,
+                    overwrite_datacolumn=False,
+                    only_amplitude=only_amplitude,
+                    applymode="calflag",
                     prefix="selfcal",
                     jobid=jobid,
                     cpu_frac=round(cpu_frac, 2),
@@ -2889,82 +2826,146 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_sidereal_cor_selfcal.result()
+                    msg = future_apply_basical_selfcal.result()
+                    cal_applied = True
                     if emails != "":
-                        email_msg = "Correction for solar sidereal motion is done."
+                        email_msg = "Applying basic calibration solution on self-calibration measurement sets are done."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Correction for solar sidereal motion is done."
+                        f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
                     )
                     print("###########################")
                 except Exception as e:
-                    print("Sidereal correction is not successful.")
+                    print(
+                        "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
+                    )
                     traceback.print_exc()
+                    cal_applied = False
+                    do_applycal = False
                     if emails != "":
-                        email_msg = "Error occured in sidereal motion correction."
+                        email_msg = "Error occured in applying basic calibration solutions on self-calibration measurement sets."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
 
-            #############################
-            # Self-calibration
-            #############################
-            if emails != "":
-                email_msg = "Started self-calibration."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+            if cal_applied:
+                selfcal_applymode = "calonly"
+            else:
+                selfcal_applymode = "calflag"
+
+            ########################################
+            # Performing self-calibration
+            ########################################
+            if do_selfcal:
+                os.system(
+                    f"rm -rf {workdir}/*selfcal_int {workdir}/*selfcal_pol {workdir}/caltables/*selfcal*"
                 )
-            print("###########################")
-            print("Starting task: Self-calibrations.....")
-            print("###########################")
-            future_selfcal = run_selfcal_jobs.with_options(
-                task_run_name=f"selfcal_{jobid}"
-            ).submit(
-                ",".join(selfcal_mslist),
-                workdir,
-                caldir,
-                target_metafits,
-                cal_applied,
-                solint=solint,
-                do_apcal=do_ap_selfcal,
-                do_polcal=do_polcal,
-                solar_selfcal=solar_selfcal,
-                keep_backup=keep_backup,
-                uvrange=uvrange,
-                weight="briggs",
-                robust=0.0,
-                applymode=selfcal_applymode,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg = future_selfcal.result()
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
+                    )
+                if do_sidereal_cor:
+                    if emails != "":
+                        email_msg = "Started correcting for solar sidereal motion."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(
+                        "Starting task: Sidereal motion correction for self-calibration measurement sets....."
+                    )
+                    print("###########################")
+                    future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
+                        task_run_name=f"solar_sidereal_correction_{jobid}"
+                    ).submit(
+                        ",".join(selfcal_mslist),
+                        workdir,
+                        prefix="selfcal",
+                        jobid=jobid,
+                        cpu_frac=round(cpu_frac, 2),
+                        mem_frac=round(mem_frac, 2),
+                        remote_log=remote_logger,
+                    )
+                    try:
+                        msg = future_sidereal_cor_selfcal.result()
+                        if emails != "":
+                            email_msg = "Correction for solar sidereal motion is done."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
+                        print("###########################")
+                        print(
+                            f"Finished task: Correction for solar sidereal motion is done."
+                        )
+                        print("###########################")
+                    except Exception as e:
+                        print("Sidereal correction is not successful.")
+                        traceback.print_exc()
+                        if emails != "":
+                            email_msg = "Error occured in sidereal motion correction."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
+
+                #############################
+                # Self-calibration
+                #############################
                 if emails != "":
-                    email_msg = "Self-calibration is done."
+                    email_msg = "Started self-calibration."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Self-calibration is done.")
+                print("Starting task: Self-calibrations.....")
                 print("###########################")
-            except Exception as e:
-                print(
-                    "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
+                future_selfcal = run_selfcal_jobs.with_options(
+                    task_run_name=f"selfcal_{jobid}"
+                ).submit(
+                    ",".join(selfcal_mslist),
+                    workdir,
+                    caldir,
+                    target_metafits,
+                    cal_applied,
+                    solint=solint,
+                    do_apcal=do_ap_selfcal,
+                    do_polcal=do_polcal,
+                    solar_selfcal=solar_selfcal,
+                    keep_backup=keep_backup,
+                    uvrange=uvrange,
+                    weight="briggs",
+                    robust=0.0,
+                    applymode=selfcal_applymode,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
                 )
-                do_apply_selfcal = False
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in self-calibration."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                try:
+                    msg = future_selfcal.result()
+                    if emails != "":
+                        email_msg = "Self-calibration is done."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(f"Finished task: Self-calibration is done.")
+                    print("###########################")
+                except Exception as e:
+                    print(
+                        "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
                     )
-            if adaptive:
-                scale_worker_and_wait(dask_cluster, dask_client, 1)
+                    do_apply_selfcal = False
+                    traceback.print_exc()
+                    if emails != "":
+                        email_msg = "Error occured in self-calibration."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                if adaptive:
+                    scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ########################################
         # Checking self-cal caltables
