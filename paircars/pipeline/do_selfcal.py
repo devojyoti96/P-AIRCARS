@@ -19,7 +19,7 @@ from paircars.utils.calibration import (
     get_caltable_metadata,
     get_quartical_table_metadata,
 )
-from paircars.utils.flagging import uvbin_flag, get_unflagged_antennas, get_chans_flag
+from paircars.utils.flagging import uvbin_flag, get_unflagged_antennas, get_chans_flag, do_flag_backup
 from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
