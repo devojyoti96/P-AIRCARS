@@ -185,15 +185,13 @@ def interpolate_nans(data):
     from scipy.interpolate import interp1d
 
     nans = np.isnan(data)
-    if np.all(nans):
-        raise ValueError("All values are NaN.")
     x = np.arange(len(data))
     interp_func = interp1d(
         x[~nans],
         data[~nans],
         kind="linear",
         bounds_error=False,
-        fill_value=0.0,
+        fill_value="extrapolate",
     )
     return interp_func(x)
     
@@ -207,7 +205,7 @@ def average_timestamp(timestamps):
     ----------
     timestamps : list
         timestamps (list of str): List of timestamp strings in 'YYYY-MM-DDTHH:MM:SS' format.
-
+retries
     Returns
     --------
     str
