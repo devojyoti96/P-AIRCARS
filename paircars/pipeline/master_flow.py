@@ -4125,7 +4125,7 @@ def cli():
             
     target_ms_sizes = [get_ms_size(target_msname) for target_msname in target_mslist]
     total_ms_size_target = sum(target_ms_sizes)
-    min_mem_target = round(10* total_ms_size/total_ncoarse, 2)
+    min_mem_target = round(10* total_ms_size_target/total_ncoarse, 2)
     min_mem_cal=0.0
     
     if args.cal_datadir:
