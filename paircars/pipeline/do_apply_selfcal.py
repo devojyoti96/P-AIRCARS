@@ -17,7 +17,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import check_datacolumn_valid, get_ms_size
-from paircars.utils.mwa_utils import freq_to_MWA_coarse
+from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -321,6 +321,12 @@ def main(
         print("Please provide a valid measurement set list.")
         msg = 1
 
+    total_ncoarse = 0
+    for msname in mslist:
+        ncoarse = get_ncoarse(msname)
+        total_ncoarse += ncoarse
+    total_ncoarse = max(1, total_ncoarse)
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
@@ -330,6 +336,7 @@ def main(
         target_ms_sizes = [get_ms_size(msname) for msname in mslist]
         max_ms_size = max(target_ms_sizes)
         min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+        min_mem /= total_ncoarse
 
         result = get_local_dask_cluster(
             workdir,

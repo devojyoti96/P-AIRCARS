@@ -8,6 +8,7 @@ import glob
 import sys
 import os
 import dask
+from dask import delayed
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -15,13 +16,13 @@ from paircars.utils.logger_utils import (
 )
 from paircars.utils.ms_metadata import get_ms_size
 from paircars.utils.mwa_ploting_utils import plot_ms_diagnostics
+from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
     get_scheduler_name,
 )
-from dask import delayed
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -70,7 +71,11 @@ def main(
 
     mslist = mslist.split(",")
 
-    os.makedirs(workdir, exist_ok=True)
+    if workdir == "":
+        workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
+
+    if outdir == "":
+        outdir = workdir
     os.makedirs(outdir, exist_ok=True)
 
     ############
@@ -97,6 +102,12 @@ def main(
         print("Please provide a valid measurement set list.")
         msg = 1
 
+    total_ncoarse = 0
+    for msname in mslist:
+        ncoarse = get_ncoarse(msname)
+        total_ncoarse += ncoarse
+    total_ncoarse = max(1, total_ncoarse)
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
@@ -106,6 +117,7 @@ def main(
         target_ms_sizes = [get_ms_size(msname) for msname in mslist]
         max_ms_size = max(target_ms_sizes)
         min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+        min_mem /= total_ncoarse
 
         result = get_local_dask_cluster(
             workdir,

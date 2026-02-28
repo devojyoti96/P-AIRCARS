@@ -70,6 +70,8 @@ def main(
         workdir = f"{imagedir}/workdir"
     os.makedirs(workdir, exist_ok=True)
 
+    if outdir == "":
+        outdir = workdir
     os.makedirs(outdir, exist_ok=True)
 
     ############

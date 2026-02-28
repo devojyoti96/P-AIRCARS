@@ -1218,7 +1218,7 @@ def run_apply_pbcor(
     imagedir,
     metafits,
     workdir,
-    leakagedir="",
+    leakage_dir="",
     jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -1235,7 +1235,7 @@ def run_apply_pbcor(
         Metafits file
     workdir : str
         Work directory
-    leakagedir : str, optional
+    leakage_dir : str, optional
         Leakage dile directory
     cpu_frac : float, optional
         CPU fraction to use
@@ -1274,7 +1274,7 @@ def run_apply_pbcor(
             msg = mwa_pbcor.main(
                 imagedir,
                 metafits,
-                leakagedir=leakagedir,
+                leakage_dir=leakage_dir,
                 workdir=workdir,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
@@ -2099,10 +2099,12 @@ def master_control(
             freqavg = freqres
         freqavg = min(0.16, freqavg)
         image_freqres = round(image_freqres, 2)
+
         total_ncoarse = 0
         for msname in target_mslist:
             ncoarse = get_ncoarse(msname)
             total_ncoarse += ncoarse
+        total_ncoarse = max(1, total_ncoarse)
 
         ################################################
         # Determining maximum allowed temporal averaging
@@ -3422,7 +3424,7 @@ def master_control(
                     f"{imagedir}/images",
                     target_metafits,
                     workdir,
-                    leakagedir=caldir,
+                    leakage_dir=caldir,
                     jobid=jobid,
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
@@ -4155,6 +4157,7 @@ def cli():
     for msname in target_mslist:
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
+    total_ncoarse = max(1, total_ncoarse)
 
     target_ms_sizes = [get_ms_size(target_msname) for target_msname in target_mslist]
     total_ms_size_target = sum(target_ms_sizes)

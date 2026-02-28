@@ -17,7 +17,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_timeranges, get_ms_size
-from paircars.utils.mwa_utils import get_MWA_coarse_bands
+from paircars.utils.mwa_utils import get_MWA_coarse_bands, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -49,8 +49,9 @@ def chanlist_to_str(lst):
 
 
 def split_target_scans(
-    msname,
+    mslist,
     metafits,
+    dask_client,
     workdir,
     timeres,
     freqres,
@@ -68,10 +69,12 @@ def split_target_scans(
 
     Parameters
     ----------
-    msname : str
-        Measurement set
+    mslist : list
+        Measurement set list
     metafits : str
         Metafits file
+    dask_client : dask.client
+        Dask client
     workdir : str
         Work directory
     timeres : float
@@ -101,7 +104,6 @@ def split_target_scans(
         Splited ms list
     """
     n_threads = max(1, n_threads)
-    print(f"Spliting measurement set: {msname}")
     try:
         os.chdir(workdir)
         #######################################
@@ -113,76 +115,87 @@ def split_target_scans(
             flag_central_chan = False
         else:
             flag_central_chan = True
-        msmd = msmetadata()
-        msmd.open(msname)
-        chanres = msmd.chanres(0, unit="MHz")[0]
-        freqs = msmd.chanfreqs(0, unit="MHz")
-        bw = max(freqs) - min(freqs)
-        nchan = msmd.nchan(0)
-        msmd.close()
-        if freqres > 0:  # Image resolution is in MHz
-            chanwidth = int(freqres / chanres)
-            if chanwidth < 1:
-                chanwidth = 1
-        else:
-            chanwidth = 1
-        if timeres > 0:  # Image resolution is in seconds
-            timebin = str(timeres) + "s"
-        else:
-            timebin = ""
 
-        #############################
-        # Making spectral chunks
-        #############################
-        coarse_channel_bands = get_MWA_coarse_bands(
-            msname, flag_central_chan=flag_central_chan
-        )
-        chanlist = []
-        good_spwlist = []
-        for chan in coarse_channel_bands:
-            start_chan = chan[0]
-            end_chan = chan[1]
-            good_chans = chan[2]
-            if end_chan > start_chan:
-                chanlist.append(f"{start_chan}~{end_chan}")
-            elif start_chan == end_chan:
-                chanlist.append(f"{start_chan}")
-            good_chans = [f"{i}" for i in good_chans]
-            good_spwlist.append(f"0:{';'.join(good_chans)}")
-
+        tasks = []
         splited_ms_list = []
-        timerange_list = get_timeranges(
-            msname,
-            time_interval,
-            time_window,
-            quack_timestamps=quack_timestamps,
-        )
-        timerange = ",".join(timerange_list)
-        for i in range(len(chanlist)):
-            chanrange = chanlist[i]
-            good_spw = good_spwlist[i]
-            outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_spw_{chanrange}.ms"
-            if os.path.exists(f"{outputvis}/.splited") and force_split is False:
-                print(f"{outputvis} is already splited successfully.")
-                splited_ms_list.append(outputvis)
+
+        for msname in mslist:
+            print(f"Spliting measurement set: {msname}")
+            msmd = msmetadata()
+            msmd.open(msname)
+            chanres = msmd.chanres(0, unit="MHz")[0]
+            freqs = msmd.chanfreqs(0, unit="MHz")
+            bw = max(freqs) - min(freqs)
+            nchan = msmd.nchan(0)
+            msmd.close()
+            if freqres > 0:  # Image resolution is in MHz
+                chanwidth = int(freqres / chanres)
+                if chanwidth < 1:
+                    chanwidth = 1
             else:
-                if os.path.exists(outputvis):
-                    os.system(f"rm -rf {outputvis}")
-                if os.path.exists(f"{outputvis}.flagversions"):
-                    os.system(f"rm -rf {outputvis}.flagversions")
-                splited_ms = single_mstransform(
-                    msname=msname,
-                    outputms=outputvis,
-                    width=chanwidth,
-                    timebin=timebin,
-                    datacolumn=datacolumn,
-                    spw=good_spw,
-                    corr="",
-                    timerange=timerange,
-                    n_threads=n_threads,
-                )
-                if os.path.exists(splited_ms):
-                    splited_ms_list.append(splited_ms)
+                chanwidth = 1
+            if timeres > 0:  # Image resolution is in seconds
+                timebin = str(timeres) + "s"
+            else:
+                timebin = ""
+
+            #############################
+            # Making spectral chunks
+            #############################
+            coarse_channel_bands = get_MWA_coarse_bands(
+                msname, flag_central_chan=flag_central_chan
+            )
+            chanlist = []
+            good_spwlist = []
+            for chan in coarse_channel_bands:
+                start_chan = chan[0]
+                end_chan = chan[1]
+                good_chans = chan[2]
+                if end_chan > start_chan:
+                    chanlist.append(f"{start_chan}~{end_chan}")
+                elif start_chan == end_chan:
+                    chanlist.append(f"{start_chan}")
+                good_chans = [f"{i}" for i in good_chans]
+                good_spwlist.append(f"0:{';'.join(good_chans)}")
+
+            timerange_list = get_timeranges(
+                msname,
+                time_interval,
+                time_window,
+                quack_timestamps=quack_timestamps,
+            )
+            timerange = ",".join(timerange_list)
+            for i in range(len(chanlist)):
+                chanrange = chanlist[i]
+                good_spw = good_spwlist[i]
+                outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_spw_{chanrange}.ms"
+                if os.path.exists(f"{outputvis}/.splited") and force_split is False:
+                    print(f"{outputvis} is already splited successfully.")
+                    splited_ms_list.append(outputvis)
+                else:
+                    if os.path.exists(outputvis):
+                        os.system(f"rm -rf {outputvis}")
+                    if os.path.exists(f"{outputvis}.flagversions"):
+                        os.system(f"rm -rf {outputvis}.flagversions")
+                    tasks.append(
+                        delayed(single_mstransform)(
+                            msname=msname,
+                            outputms=outputvis,
+                            width=chanwidth,
+                            timebin=timebin,
+                            datacolumn=datacolumn,
+                            spw=good_spw,
+                            corr="",
+                            timerange=timerange,
+                            n_threads=n_threads,
+                        )
+                    )
+
+        future = dask_client.compute(tasks)
+        result = dask_client.gather(future)
+
+        splited_ms_list = splited_ms_list + result
+
         if len(splited_ms_list) == 0:
             print(f"Spliting of measurement set: {msname} is unsuccessful.")
             return 1, []
@@ -300,6 +313,12 @@ def main(
         print("Please provide a valid measurement set list.")
         msg = 1
 
+    total_ncoarse = 0
+    for msname in mslist:
+        ncoarse = get_ncoarse(msname)
+        total_ncoarse += ncoarse
+    total_ncoarse = max(1, total_ncoarse)
+
     dask_cluster = None
     if dask_client is None:
         if mem_frac <= 0:
@@ -309,13 +328,14 @@ def main(
         target_ms_sizes = [get_ms_size(msname) for msname in mslist]
         max_ms_size = max(target_ms_sizes)
         min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+        min_mem /= total_ncoarse
 
         result = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             min_mem=min_mem,
-            max_worker=len(mslist) + 1,
+            max_worker=total_ncoarse + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
@@ -349,41 +369,29 @@ def main(
         print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
 
-        tasks = [
-            delayed(split_target_scans)(
-                msname,
-                metafits,
-                workdir,
-                float(timeres),
-                float(freqres),
-                datacolumn,
-                time_window=float(time_window),
-                time_interval=float(time_interval),
-                quack_timestamps=int(quack_timestamps),
-                force_split=force_split,
-                scan=scan,
-                prefix=prefix,
-                n_threads=n_threads,
-            )
-            for msname in mslist
-        ]
+        msg, splited_mslist = split_target_scans(
+            mslist,
+            metafits,
+            dask_client,
+            workdir,
+            float(timeres),
+            float(freqres),
+            datacolumn,
+            time_window=float(time_window),
+            time_interval=float(time_interval),
+            quack_timestamps=int(quack_timestamps),
+            force_split=force_split,
+            scan=scan,
+            prefix=prefix,
+            n_threads=n_threads,
+        )
 
-        future = dask_client.compute(tasks)
-        results = dask_client.gather(future)
-        succeed = 0
-        failed = 0
-        for r in results:
-            msg, splited_ms = r
-            if msg == 0:
-                succeed += 1
-            else:
-                failed += 1
         print("########################################")
         print(f"Total measurement sets: {len(mslist)}")
-        print(f"Total successful spliting: {succeed}")
-        print(f"Total failed spliting: {failed}")
+        print(f"Total expected splited ms: {total_ncoarse}")
+        print(f"Total splited ms: {len(splited_mslist)}")
         print("#########################################")
-        if failed == len(mslist):
+        if len(splited_mslist) == 0:
             msg = 1
         else:
             msg = 0
