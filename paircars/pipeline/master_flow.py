@@ -462,7 +462,7 @@ def run_flag(
                 outdir=outdir,
                 datacolumn=datacolumn,
                 flag_bad_ants=True,
-                flag_bad_spw=True,
+                flag_bad_spw=False,
                 use_tfcrop=use_tfcrop,
                 flag_autocorr=True,
                 flag_quack=flag_quack,
