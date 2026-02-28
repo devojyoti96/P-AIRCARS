@@ -1044,9 +1044,7 @@ def selfcal_round(
             else:
                 flag_central_chan = True
             if calmode == "ap" or do_polcal:
-                nchans = max(
-                    1, round(bw / 0.32)
-                )  # Fixed to 320 kHz, 4 channels per coarse channels
+                nchans = max(1, int(bw / 0.32))  # Fixed to 320 kHz
             else:
                 nchans = 1
             if min_tol_factor <= 0:
@@ -1132,6 +1130,7 @@ def selfcal_round(
             wsclean_args.append(f"-intervals-out {nintervals}")
         if nchans > 1:
             wsclean_args.append(f"-channels-out {nchans}")
+            wsclean_args.append("-gap-channel-division")
             wsclean_args.append("-no-mf-weighting")
 
         #####################################

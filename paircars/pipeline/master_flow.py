@@ -92,6 +92,7 @@ from paircars.pipeline import (
 )
 from paircars.pipeline.init_data import init_paircars_data
 
+
 @task(
     name="moving_to_solar_center",
     retries=1,
@@ -2583,7 +2584,7 @@ def master_control(
                 elif solint == "int":
                     time_interval = image_timeres
                 else:
-                    time_interval = -1
+                    time_interval = 60.0
 
             if adaptive:
                 scale_worker_and_wait(
@@ -4117,17 +4118,17 @@ def cli():
             f"No measurement set is present in the target directory: {args.target_datadir}"
         )
         return
-        
+
     total_ncoarse = 0
     for msname in target_mslist:
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
-            
+
     target_ms_sizes = [get_ms_size(target_msname) for target_msname in target_mslist]
     total_ms_size_target = sum(target_ms_sizes)
-    min_mem_target = round(10* total_ms_size_target/total_ncoarse, 2)
-    min_mem_cal=0.0
-    
+    min_mem_target = round(10 * total_ms_size_target / total_ncoarse, 2)
+    min_mem_cal = 0.0
+
     if args.cal_datadir:
         if os.path.exists(args.cal_datadir):
             cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
@@ -4138,10 +4139,10 @@ def cli():
             else:
                 cal_ms_sizes = [get_ms_size(cal_msname) for cal_msname in cal_mslist]
                 total_ms_size_cal = sum(cal_ms_sizes)
-                min_mem_cal = round(10* total_ms_size_cal/total_ncoarse, 2)
+                min_mem_cal = round(10 * total_ms_size_cal / total_ncoarse, 2)
         else:
             print(f"Calibrator data direcotry does not exist.")
-            
+
     min_mem = max(min_mem_target, min_mem_cal)
 
     ###############################################

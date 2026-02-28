@@ -12,7 +12,12 @@ from dask import delayed
 from paircars.utils.basic_utils import suppress_output
 from paircars.utils.calibration import get_gleam_uvrange
 from paircars.utils.crossphasecal import crossphasecal
-from paircars.utils.flagging import flagsummary, do_flag_backup, get_unflagged_antennas, get_chans_flag
+from paircars.utils.flagging import (
+    flagsummary,
+    do_flag_backup,
+    get_unflagged_antennas,
+    get_chans_flag,
+)
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -323,12 +328,14 @@ def single_ms_cal_and_flag(
                     mem_limit=mem_limit,
                 )
                 unflag_chans, flag_chans = get_chans_flag(msname, n_threads=n_threads)
-                if len(flag_chans)/(len(unflag_chans)+len(flag_chans))>0.5:
-                    print("Restoring flags because of large number of channels flagged.")
+                if len(flag_chans) / (len(unflag_chans) + len(flag_chans)) > 0.5:
+                    print(
+                        "Restoring flags because of large number of channels flagged."
+                    )
                     with suppress_output():
-                        flagmanager(vis=msname,mode="restore",versionname="postcal_1")
+                        flagmanager(vis=msname, mode="restore", versionname="postcal_1")
                 with suppress_output():
-                    flagmanager(vis=msname,mode="delete",versionname="postcal_1")
+                    flagmanager(vis=msname, mode="delete", versionname="postcal_1")
 
         ###############################
         # Finished calibration round

@@ -617,7 +617,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
         if "MWAX" in mode:
             flag_central_chan = False
         else:
-            if freqres>finechan:
+            if freqres > finechan:
                 flag_central_chan = False
             else:
                 flag_central_chan = True
@@ -641,7 +641,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
         timestamps[0].split("T")[-1].split(".")[0].split(":")
     )
     msmd.close()
-    flags = np.where(T_sun <= 0)    
+    flags = np.where(T_sun <= 0)
 
     save_file = f"freq_{mid_freq}MHz_time_{t_string}"
     np.save(

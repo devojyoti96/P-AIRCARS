@@ -172,8 +172,8 @@ def get_bad_chans(msname, flag_central_chan=False):
     nchan = msmd.nchan(0)
     msmd.close()
     msmd.done()
-    bw = nchan*chanres
-    if chanres > 0.16 or bw<1.28:
+    bw = nchan * chanres
+    if chanres > 0.16 or bw < 1.28:
         return ""
     n_per_coarse = int(round(1.28 / chanres))
     n_edge = max(1, int(round(0.16 / chanres)))
