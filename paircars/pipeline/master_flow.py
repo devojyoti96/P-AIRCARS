@@ -570,6 +570,7 @@ def run_import_model(
 )
 def run_basic_cal_jobs(
     mslist,
+    metafits,
     workdir,
     outdir,
     perform_polcal=False,
@@ -586,6 +587,8 @@ def run_basic_cal_jobs(
     ----------
     mslist: str
         Name of the measurement sets (comma seperated)
+    metafits: str
+        Metafits file
     workdir : str
         Working directory
     outdir : str
@@ -630,6 +633,7 @@ def run_basic_cal_jobs(
         with get_dask_client() as dask_client:
             msg = basic_cal.main(
                 mslist,
+                metafits,
                 workdir,
                 outdir,
                 perform_polcal=perform_polcal,
@@ -2482,6 +2486,7 @@ def master_control(
                 task_run_name=f"basic_calibration_{jobid}"
             ).submit(
                 ",".join(split_cal_mslist),
+                calibrator_metafits,
                 workdir,
                 outdir,
                 perform_polcal=do_polcal,
