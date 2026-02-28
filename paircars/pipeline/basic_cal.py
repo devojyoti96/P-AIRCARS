@@ -324,8 +324,11 @@ def single_ms_cal_and_flag(
                 )
                 unflag_chans, flag_chans = get_chans_flag(msname, n_threads=n_threads)
                 if len(flag_chans)/(len(unflag_chans)+len(flag_chans))>0.5:
-                    flagmanager(vis=msname,mode="restore",versionname="postcal_1")
-                flagmanager(vis=msname,mode="delete",versionname="postcal_1")
+                    print("Restoring flags because of large number of channels flagged.")
+                    with suppress_output():
+                        flagmanager(vis=msname,mode="restore",versionname="postcal_1")
+                with suppress_output():
+                    flagmanager(vis=msname,mode="delete",versionname="postcal_1")
 
         ###############################
         # Finished calibration round

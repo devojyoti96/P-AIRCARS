@@ -4124,7 +4124,10 @@ def cli():
         total_ncoarse += ncoarse
             
     target_ms_sizes = [get_ms_size(target_msname) for target_msname in target_mslist]
-    max_ms_size = max(target_ms_sizes)
+    total_ms_size_target = sum(target_ms_sizes)
+    min_mem_target = round(10* total_ms_size/total_ncoarse, 2)
+    min_mem_cal=0.0
+    
     if args.cal_datadir:
         if os.path.exists(args.cal_datadir):
             cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
@@ -4134,11 +4137,12 @@ def cli():
                 )
             else:
                 cal_ms_sizes = [get_ms_size(cal_msname) for cal_msname in cal_mslist]
-                max_cal_ms_size = max(cal_ms_sizes)
-                max_ms_size = max(max_ms_size, max_cal_ms_size)
+                total_ms_size_cal = sum(cal_ms_sizes)
+                min_mem_cal = round(10* total_ms_size_cal/total_ncoarse, 2)
         else:
             print(f"Calibrator data direcotry does not exist.")
-    min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+            
+    min_mem = max(min_mem_target, min_mem_cal)
 
     ###############################################
     # Setup cluster environment
@@ -4176,6 +4180,8 @@ def cli():
         # Set up local cluster
         #######################################
         print("Setting up local cluster....")
+        print(f"Maximum allowed worker: {max_worker}")
+        print(f"Minimum per worker memory: {min_mem}GB")
         result = get_local_dask_cluster(
             args.workdir,
             cpu_frac=cpu_frac,
@@ -4210,6 +4216,8 @@ def cli():
             # Setting up lslurm cluster
             ########################################
             print("Setting up slurm cluster....")
+            print(f"Maximum allowed worker: {max_worker}")
+            print(f"Minimum per worker memory: {min_mem}GB")
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
@@ -4255,7 +4263,7 @@ def cli():
         print("#########################################")
         print("Starting P-AIRCARS Pipeline....")
         print("#########################################")
-        print(f"Total maximum dask workers: {nworker}")
+        print(f"Total dask workers: {nworker}")
         msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
             task_runner=DaskTaskRunner(address=dask_addr),
