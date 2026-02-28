@@ -126,13 +126,17 @@ def split_target_scans(
         #############################
         coarse_channel_bands = get_MWA_coarse_bands(msname)
         chanlist = []
+        good_spwlist=[]
         for chan in coarse_channel_bands:
             start_chan = chan[0]
-            end_chan = chan[-1]
+            end_chan = chan[1]
+            good_chans = chan[2]
             if end_chan > start_chan:
                 chanlist.append(f"{start_chan}~{end_chan-1}")
             elif start_chan == end_chan:
                 chanlist.append(f"{start_chan}")
+            good_chans = [f"{i}" for i in good_chans]
+            good_spwlist.append(f"0:{';'.join(good_chans)}")
 
         splited_ms_list = []
         timerange_list = get_timeranges(
@@ -142,7 +146,9 @@ def split_target_scans(
             quack_timestamps=quack_timestamps,
         )
         timerange = ",".join(timerange_list)
-        for chanrange in chanlist:
+        for i in range(len(chanlist)):
+            chanrange = chanlist[i]
+            good_spw = good_spwlist[i]
             outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_spw_{chanrange}.ms"
             if os.path.exists(f"{outputvis}/.splited") and force_split is False:
                 print(f"{outputvis} is already splited successfully.")
@@ -158,7 +164,7 @@ def split_target_scans(
                     width=chanwidth,
                     timebin=timebin,
                     datacolumn=datacolumn,
-                    spw="0:" + chanrange,
+                    spw=good_spw,
                     corr="",
                     timerange=timerange,
                     n_threads=n_threads,
