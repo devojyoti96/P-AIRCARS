@@ -115,8 +115,8 @@ def run_pbcor(
     cmd.append(metafits)
     cmd.append(outfile)
 
-    if verbose:
-        print("Executing:", " ".join(cmd))
+    #if verbose:
+    print("Executing:", " ".join(cmd))
 
     try:
         result = subprocess.run(

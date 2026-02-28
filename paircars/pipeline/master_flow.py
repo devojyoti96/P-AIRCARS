@@ -3482,7 +3482,7 @@ def master_control(
                 else:
                     bw = -1
                 bws.append(bw)
-            max_bw = max(bw)
+            max_bw = max(bws)
             bws = np.array(bws)
             pos = np.where(bws == max_bw)
             filtered_images = images[pos]
