@@ -58,7 +58,6 @@ def get_ncoarse(msname):
     msmd.open(msname)
     freqs = msmd.chanfreqs(0, unit="MHz")
     bw = max(freqs) - min(freqs)
-    print (bw)
     ncoarse = max(1, math.ceil(bw / 1.28))
     return ncoarse
 
