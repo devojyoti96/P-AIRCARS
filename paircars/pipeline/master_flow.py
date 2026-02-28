@@ -2271,17 +2271,16 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
 
-        if adaptive:
-            scale_worker_and_wait(
-                dask_cluster, dask_client, min(len(calibrator_mslist) + 1, max_worker)
-            )
-
         ##############################
         # Run spliting jobs
         ##############################
         # If basic calibration is requested and calibrator ms and metafits are present
         future_cal_split = None
         if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(total_ncoarse+1, max_worker)
+                )
             prefix = "calibrator"
             if emails != "":
                 email_msg = "Started spliting of calibrator measurement sets."
@@ -2339,7 +2338,7 @@ def master_control(
             print("No splited measurement set is present for basic calibration.")
             has_cal = False
         else:
-            if adaptive and len(split_cal_mslist) != len(calibrator_mslist):
+            if adaptive:
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
@@ -2600,7 +2599,7 @@ def master_control(
 
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
+                    dask_cluster, dask_client, min(total_ncoarse + 1, max_worker)
                 )
 
             ######################
@@ -2989,7 +2988,7 @@ def master_control(
         if do_target_split and (do_applycal or do_imaging):
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
+                    dask_cluster, dask_client, min(total_ncoarse + 1, max_worker)
                 )
             prefix = "target"
             if emails != "":
