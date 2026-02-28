@@ -10,6 +10,7 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
+from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
 from paircars.utils.flagging import flagsummary, do_flag_backup
 from paircars.utils.logger_utils import (

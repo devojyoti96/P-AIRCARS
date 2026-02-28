@@ -9,6 +9,7 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
+from astropy.io import fits
 from paircars.utils.casatasks import single_mstransform
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
