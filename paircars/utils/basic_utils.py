@@ -181,21 +181,41 @@ def split_into_chunks(lst, target_chunk_size):
 
 
 def interpolate_nans(data):
-    """Linearly interpolate NaNs in 1D array."""
+    """Linearly interpolate NaNs in 1D array.
+    
+    Parameters
+    ----------
+    data : numpy.array
+        1D numpy array
+    
+    Returns
+    -------
+    numpy.array
+        Interpolated nan values (It will not extrapolate edge nan values)
+    """
     from scipy.interpolate import interp1d
-
+    data = np.asarray(data, dtype=float)
     nans = np.isnan(data)
     if np.all(nans):
-        raise ValueError("All values are NaN.")
+        print("All values are NaN.")
+        return data
     x = np.arange(len(data))
+    valid = ~nans
+    if np.sum(valid) < 2:
+        return data
     interp_func = interp1d(
-        x[~nans],
-        data[~nans],
+        x[valid],
+        data[valid],
         kind="linear",
         bounds_error=False,
-        fill_value="extrapolate",
+        fill_value=np.nan,  
     )
-    return interp_func(x)
+    result = data.copy()
+    first_valid = np.where(valid)[0][0]
+    last_valid = np.where(valid)[0][-1]
+    mid_range = (x >= first_valid) & (x <= last_valid)
+    result[mid_range] = interp_func(x[mid_range])
+    return result
 
 
 def average_timestamp(timestamps):

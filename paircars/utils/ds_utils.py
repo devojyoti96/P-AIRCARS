@@ -637,8 +637,6 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
         timestamps[0].split("T")[-1].split(".")[0].split(":")
     )
     msmd.close()
-    flags = np.where(T_sun <= 0)
-
     total_timestamps = T_sun.shape[1]
     for t in range(total_timestamps):
         t_sun = T_sun[:, t]
@@ -649,6 +647,8 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
         s_sun_interpolated = interpolate_nans(s_sun)
         S_sun[:, t] = s_sun_interpolated
 
+    flags = np.where((T_sun <= 0)|(np.isnan(T_sun)))
+    
     save_file = f"freq_{mid_freq}MHz_time_{t_string}"
     np.save(
         f"{outdir}/{save_file}_ds.npy",
