@@ -647,8 +647,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
         s_sun_interpolated = interpolate_nans(s_sun)
         S_sun[:, t] = s_sun_interpolated
 
-    T_sun[np.isnan(T_sun)]=0
-    flags = np.where(T_sun <= 0) 
+    flags = np.where(T_sun <= 0)    
 
     save_file = f"freq_{mid_freq}MHz_time_{t_string}"
     np.save(
