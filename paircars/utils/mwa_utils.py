@@ -173,13 +173,7 @@ def get_bad_chans(msname, flag_central_chan=False):
     msmd.close()
     msmd.done()
     bw = nchan*chanres
-    if chanres > 0.16:
-        print(
-            f"Frequency resolution: {round(chanres*1000,1)} kHz is >160 kHz. Assuming edge flagging already done."
-        )
-        return ""
-    if bw<1.28:
-        print ("Bandwidth is smaller than 1.28 MHz. Edge channels may have already been removed.")
+    if chanres > 0.16 or bw<1.28:
         return ""
     n_per_coarse = int(round(1.28 / chanres))
     n_edge = max(1, int(round(0.16 / chanres)))

@@ -956,10 +956,8 @@ def do_polselfcal(
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
-            if num_iter == 0:
-                msg = 2  # TODO; for testing
             if msg == 1:
-                logger.info(f"No model flux is picked up.\n")
+                logger.info(f"No model flux is picked up.")
                 os.system("rm -rf *_selfcal_present*")
                 return msg, msname, []
             elif msg > 2:
