@@ -354,16 +354,19 @@ def cli():
     )
     adv_args.add_argument(
         "--MWA_PB_file",
+        type=str,
         default="",
         help="MWA primary beam file",
     )
     adv_args.add_argument(
         "--sweetspot_file",
+        type=str,
         default="",
         help="MWA primary beam sweetspot file path",
     )
     adv_args.add_argument(
         "--leakage_file",
+        type=str,
         default="",
         help="Leakage information file",
     )
