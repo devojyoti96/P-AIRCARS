@@ -140,7 +140,6 @@ def fitted_crossphase(freqs, crossphase):
     gain_r = np.cos(np.radians(crossphase))
     gain_i = np.sin(np.radians(crossphase))
     gains = [gain_r, gain_i]
-
     for i in range(len(gains)):
         gain = filter_outliers(gains[i])
         valid = ~np.isnan(gain)
@@ -301,6 +300,9 @@ def crossphasecal(
         chan_flags = np.array([False] * len(crossphase))
         chan_flags[flag_chans] = True
     crossphase[flag_chans] = np.nan
-    crossphase = fitted_crossphase(freqs, crossphase)
+    if len(freqs)>8:
+        freqres = freqs[1]-freqs[0]
+        if freqres<=40*10**3:
+            crossphase = fitted_crossphase(freqs, crossphase)
     create_crossphase_table(msname, caltable, freqs, crossphase, chan_flags)
     return caltable

@@ -12,7 +12,7 @@ from dask import delayed
 from paircars.utils.basic_utils import suppress_output
 from paircars.utils.calibration import get_gleam_uvrange
 from paircars.utils.crossphasecal import crossphasecal
-from paircars.utils.flagging import flagsummary, do_flag_backup, get_unflagged_antennas
+from paircars.utils.flagging import flagsummary, do_flag_backup, get_unflagged_antennas, get_chans_flag
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -216,6 +216,8 @@ def single_ms_cal_and_flag(
     """
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
+    limit_threads(n_threads=n_threads)
+    from casatasks import flagmanager
 
     try:
         caltable_prefix = (
@@ -309,7 +311,7 @@ def single_ms_cal_and_flag(
             # Post calibration flagging
             ##############################
             if do_postcal_flag:
-                do_flag_backup(msname, flagtype="flagdata")
+                do_flag_backup(msname, flagtype="postcal")
                 print(
                     f"Performing post-calibration flagging - MS: {msname}, threshold: {flag_threshold}"
                 )
@@ -320,6 +322,10 @@ def single_ms_cal_and_flag(
                     n_threads=n_threads,
                     mem_limit=mem_limit,
                 )
+                unflag_chan, flag_chans = get_chans_flag(msname, n_threads=n_threads)
+                if len(flag_chans)/(len(unflag_chans)+len(flag_chans))>0.5:
+                    flagmanager(vis=msname,mode="restore",versionname="postcal_1")
+                flagmanager(vis=msname,mode="delete",versionname="postcal_1")
 
         ###############################
         # Finished calibration round
