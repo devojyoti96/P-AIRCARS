@@ -104,68 +104,48 @@ def get_MWA_coarse_bands(msname, flag_central_chan=False):
     """
     Get MWA coarse channel bands.
 
+    Parameters
+    ----------
+    msname : str
+        Name of the measurement set
+    flag_central_chan : bool, optional
+        Flag central channel or not
+
     Returns
     -------
     list of tuples
         (start_chan, end_chan, good_chan_list)
     """
-
-    # ----------------------------
-    # Get bad channels
-    # ----------------------------
     bad_spw = get_bad_chans(msname, flag_central_chan=flag_central_chan)
-
     if bad_spw:
         bad_chans = set(int(i) for i in bad_spw.split("0:")[1].split(";"))
     else:
         bad_chans = set()
-
-    # ----------------------------
-    # Read MS metadata
-    # ----------------------------
     msmd = msmetadata()
     msmd.open(msname)
-
     freqs = msmd.chanfreqs(0, unit="MHz")
     freqres = msmd.chanres(0, unit="MHz")[0]
-
     msmd.close()
     msmd.done()
-
     nchan = len(freqs)
     nchan_coarse = int(round(1.28 / freqres))
-
     start_ms_freq = np.nanmin(freqs)
     end_ms_freq = np.nanmax(freqs)
 
     coarse_chans = []
     seen = set()
-
-    # ----------------------------
-    # Loop over coarse bands
-    # ----------------------------
     for start_chan in range(0, nchan, nchan_coarse):
-
         end_chan = min(start_chan + nchan_coarse - 1, nchan - 1)
-
-        # Compute central frequency of this coarse band
-        cent_freq = np.nanmean(freqs[start_chan:end_chan + 1])
-
+        cent_freq = np.nanmean(freqs[start_chan : end_chan + 1])
         if cent_freq < start_ms_freq or cent_freq > end_ms_freq:
             continue
-
-        # Collect good channels
         good_chunk = [
-            ch for ch in range(start_chan, end_chan + 1)
-            if ch not in bad_chans
+            ch for ch in range(start_chan, end_chan + 1) if ch not in bad_chans
         ]
-
         entry = (start_chan, end_chan, tuple(good_chunk))
-
         if entry not in seen:
             coarse_chans.append((start_chan, end_chan, good_chunk))
             seen.add(entry)
-
     return coarse_chans
 
 
