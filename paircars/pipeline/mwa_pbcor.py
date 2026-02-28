@@ -109,7 +109,8 @@ def run_pbcor(
         cmd.append("--restore")
 
     if leakage_file != "" and os.path.exists(leakage_file):
-        cmd.append(f"--leakage_file {leakage_file}")
+        cmd.append("--leakage_file") 
+        cmd.append(f"{leakage_file}")
 
     cmd.append(imagename)
     cmd.append(metafits)
@@ -121,8 +122,8 @@ def run_pbcor(
     try:
         result = subprocess.run(
             cmd,
-            #stdout=subprocess.PIPE,
-            #stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             check=False,  # Set to True if you want to raise on error
         )
