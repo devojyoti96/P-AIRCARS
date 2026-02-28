@@ -1542,6 +1542,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         for t in range(total_timestamps):
             t_data = data_i[:, t]
             t_data_interp = interpolate_nans(t_data)
+            t_data_interp[t_data_interp==0]=np.nan
             data_i[:, t] = t_data_interp
 
         if i == 0:

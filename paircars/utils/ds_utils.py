@@ -613,10 +613,14 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     else:
         header = fits.getheader(metafits)
         mode = header["MODE"]
+        finechan = float(header["FINECHAN"])
         if "MWAX" in mode:
             flag_central_chan = False
         else:
-            flag_central_chan = True
+            if freqres>finechan:
+                flag_central_chan = False
+            else:
+                flag_central_chan = True
         bad_chans = get_bad_chans(msname, flag_central_chan=flag_central_chan)
         if bad_chans != "":
             bad_chans = bad_chans.replace("0:", "").split(";")
