@@ -195,7 +195,8 @@ def interpolate_nans(data):
         bounds_error=False,
         fill_value=0.0,
     )
-    interpolated_data = nterp_func(x)
+    return interp_func(x)
+    
 
 
 def average_timestamp(timestamps):
