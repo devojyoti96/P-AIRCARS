@@ -282,8 +282,9 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
         msg = 1
         bpass_caltable = ""
     finally:
-        flagmanager(vis=msname, mode="restore", versionname="qs_selfcal_1")
-        flagmanager(vis=msname, mode="delete", versionname="qs_selfcal_1")
+        with suppress_output():
+            flagmanager(vis=msname, mode="restore", versionname="qs_selfcal_1")
+            flagmanager(vis=msname, mode="delete", versionname="qs_selfcal_1")
         return msg, bpass_caltable
 
 
