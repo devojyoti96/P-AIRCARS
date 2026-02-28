@@ -134,9 +134,11 @@ def split_target_scans(
         #############################
         # Making spectral chunks
         #############################
-        coarse_channel_bands = get_MWA_coarse_bands(msname, flag_central_chan=flag_central_chan)
+        coarse_channel_bands = get_MWA_coarse_bands(
+            msname, flag_central_chan=flag_central_chan
+        )
         chanlist = []
-        good_spwlist=[]
+        good_spwlist = []
         for chan in coarse_channel_bands:
             start_chan = chan[0]
             end_chan = chan[1]

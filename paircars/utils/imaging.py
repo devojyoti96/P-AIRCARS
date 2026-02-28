@@ -137,6 +137,7 @@ def get_optimal_image_interval(
     spectral_tol_factor=0.1,
     chan_range="",
     timestamp_range="",
+    flag_central_chan=False,
     max_nchan=-1,
     max_ntime=-1,
 ):
@@ -155,6 +156,8 @@ def get_optimal_image_interval(
         Channel range
     timestamp_range : str, optional
         Timestamp range
+    flag_central_chan : bool, optional
+        Flag central channel
     max_nchan : int, optional
         Maxmium number of spectral chunk
     max_ntime : int, optional
@@ -204,7 +207,7 @@ def get_optimal_image_interval(
     tb.open(msname)
     u, v, w = tb.getcol("UVW")
     tb.close()
-    bad_chans = get_bad_chans(msname, flag_central_chan=True)
+    bad_chans = get_bad_chans(msname, flag_central_chan=flag_central_chan)
     if bad_chans != "":
         bad_chan_blocks = [i for i in bad_chans.split("0:")[1].split(";")]
         bad_chan_list = []

@@ -19,7 +19,7 @@ from paircars.utils.calibration import (
     get_caltable_metadata,
     get_quartical_table_metadata,
 )
-from paircars.utils.flagging import uvbin_flag, get_unflagged_antennas
+from paircars.utils.flagging import uvbin_flag, get_unflagged_antennas, get_chans_flag
 from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -39,7 +39,7 @@ from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache, limit_threads
-from paircars.utils.selfcal_utils import flag_non_disk, quiet_sun_selfcal, selfcal_round
+from paircars.utils.selfcal_utils import quiet_sun_selfcal, selfcal_round
 from paircars.utils.udocker_utils import (
     check_udocker_container,
     initialize_wsclean_container,
@@ -241,6 +241,7 @@ def do_selfcal(
                 datacolumn="data",
                 flagbackup=False,
             )
+            do_flag_backup(msname, flagtype="int_selfcal")
             result = uvbin_flag(
                 msname,
                 uvbin_size=10,
@@ -249,14 +250,30 @@ def do_selfcal(
                 threshold=10.0,
                 flagbackup=False,
             )
+            unflag_chans, flag_chans = get_chans_flag(msname)
             if result != 0:
                 logger.info(f"UV-bin flagging is not successful.")
-            result = flag_non_disk(msname)
-            if result != 0:
-                logger.info(f"Could not flag non-disk time properly.")
-                start_gauss_source = False
+                restore_initial_flag = True
+            elif len(unflag_chans) == 0:
+                logger.info(
+                    "All channels are getting flagged in uvbin flagging. Restoring the flags."
+                )
+                restore_initial_flag = True
             else:
-                start_gauss_source = True
+                restore_initial_flag = False
+            if restore_initial_flag:
+                flagmanager(vis=msname, mode="restore", versionname="int_selfcal_1")
+                flagmanager(vis=msname, mode="delete", versionname="int_selfcal_1")
+                if len(unflag_chans) > 0:
+                    temp_ms = f"{msname}/.tempsplit"
+                    unflag_chans = [f"{i}" for i in unflag_chans]
+                    unflag_spw = f"0:{';'.join(unflag_chans)}"
+                    print(f"Spliting only unflagged spectral window: {unflag_spw}")
+                    split(
+                        vis=msname, outputvis=temp_ms, datacolumn="all", spw=unflag_spw
+                    )
+                    os.system(f"rm -rf {msname} {msname}.flagversions")
+                    os.system(f"mv {temp_ms} {msname}")
 
         ############################################
         # Imaging and calibration parameters
@@ -322,19 +339,16 @@ def do_selfcal(
         ###########################################
         # Starting using Gaussian model
         ###########################################
-        if start_gauss_source:
-            logger.info(f"Starting self-calibration using Gaussian source model.")
-            msg, caltable = quiet_sun_selfcal(
-                msname, logger, selfcaldir, refant=str(refant), solint=solint
+        logger.info(f"Starting self-calibration using Gaussian source model.")
+        msg, _ = quiet_sun_selfcal(
+            msname, logger, selfcaldir, refant=str(refant), solint=solint
+        )
+        if msg == 0:
+            logger.info("Starting self-calibration using Gaussian model is successful.")
+        else:
+            logger.info(
+                "Starting self-calibration using Gaussian model is not successful."
             )
-            if msg == 0:
-                logger.info(
-                    "Starting self-calibration using Gaussian model is successful."
-                )
-            else:
-                logger.info(
-                    "Starting self-calibration using Gaussian model is not successful."
-                )
 
         ##########################################
         # Starting selfcal loops
@@ -817,6 +831,7 @@ def do_polselfcal(
                 datacolumn="data",
                 flagbackup=False,
             )
+            do_flag_backup(msname, flagtype="pol_selfcal")
             result = uvbin_flag(
                 msname,
                 uvbin_size=10,
@@ -825,8 +840,30 @@ def do_polselfcal(
                 threshold=10.0,
                 flagbackup=False,
             )
+            unflag_chans, flag_chans = get_chans_flag(msname)
             if result != 0:
                 logger.info(f"UV-bin flagging is not successful.")
+                restore_initial_flag = True
+            elif len(unflag_chans) == 0:
+                logger.info(
+                    "All channels are getting flagged in uvbin flagging. Restoring the flags."
+                )
+                restore_initial_flag = True
+            else:
+                restore_initial_flag = False
+            if restore_initial_flag:
+                flagmanager(vis=msname, mode="restore", versionname="pol_selfcal_1")
+                flagmanager(vis=msname, mode="delete", versionname="pol_selfcal_1")
+                if len(unflag_chans) > 0:
+                    temp_ms = f"{msname}/.tempsplit"
+                    unflag_chans = [f"{i}" for i in unflag_chans]
+                    unflag_spw = f"0:{';'.join(unflag_chans)}"
+                    print(f"Spliting only unflagged spectral window: {unflag_spw}")
+                    split(
+                        vis=msname, outputvis=temp_ms, datacolumn="all", spw=unflag_spw
+                    )
+                    os.system(f"rm -rf {msname} {msname}.flagversions")
+                    os.system(f"mv {temp_ms} {msname}")
 
         ############################################
         # Imaging and calibration parameters
@@ -869,6 +906,7 @@ def do_polselfcal(
         UL1 = UL2 = UL3 = 1.0
         VL1 = VL2 = VL3 = 1.0
         num_iter = 0
+        calc_chunks = True
         last_round_gaintable = []
         os.system("rm -rf *_selfcal_present*")
 
@@ -904,6 +942,7 @@ def do_polselfcal(
                 uvrange=uvrange,
                 minuv=minuv,
                 solint="60s",
+                calc_chunks=calc_chunks,
                 refant=str(refant),
                 threshold=threshold,
                 weight=weight,
@@ -917,160 +956,174 @@ def do_polselfcal(
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
+            if num_iter == 0:
+                msg = 2  # TODO; for testing
             if msg == 1:
                 logger.info(f"No model flux is picked up.\n")
                 os.system("rm -rf *_selfcal_present*")
                 return msg, msname, []
-            elif msg == 2:
-                if num_iter >= min_iter:
-                    logger.warning(
-                        "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
-                    )
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable
-                else:
-                    logger.error(
-                        "Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered."
-                    )
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return msg, msname, []
             elif msg > 2:
                 logger.error("Polarisation self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
                 return msg, msname, []
-            leakage_info = np.array(leakage_info)
-            avg_leakage = np.nanmedian(leakage_info, axis=0)
-            q_leakage, u_leakage, v_leakage, _, _, _ = avg_leakage
-            if num_iter == 0:
-                DR1 = DR3 = DR2 = dyn
-                RMS1 = RMS2 = RMS3 = rms
-                QL1 = QL2 = QL3 = q_leakage
-                UL1 = UL2 = UL3 = u_leakage
-                VL1 = VL2 = VL3 = v_leakage
-            elif num_iter == 1:
-                DR3 = dyn
-                RMS2 = RMS1
-                RMS1 = rms
-                QL3 = q_leakage
-                UL3 = u_leakage
-                VL3 = v_leakage
+            elif msg == 2:
+                if calc_chunks is False:
+                    if num_iter >= min_iter:
+                        logger.warning(
+                            "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
+                        )
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, last_round_gaintable
+                    else:
+                        logger.error(
+                            "Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered."
+                        )
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return msg, msname, []
+                else:
+                    logger.warning(
+                        "Minor issues in polarisation self-calibration model prediction. Retrying with entire spectro-temporal chunks."
+                    )
+                    calc_chunks = False
             else:
-                DR1 = DR2
-                DR2 = DR3
-                DR3 = dyn
-                RMS3 = RMS2
-                RMS2 = RMS1
-                RMS1 = rms
-                QL1 = QL2
-                UL1 = UL2
-                VL1 = VL2
-                QL2 = QL3
-                UL2 = UL3
-                VL2 = VL3
-                QL3 = q_leakage
-                UL3 = u_leakage
-                VL3 = v_leakage
-            logger.info(
-                f"RMS based dynamic ranges: "
-                + str(DR1)
-                + ","
-                + str(DR2)
-                + ","
-                + str(DR3)
-            )
-            logger.info(
-                f"RMS of the images: " + str(RMS1) + "," + str(RMS2) + "," + str(RMS3)
-            )
-            logger.info(
-                f"Stokes I to Q leakage: {round(QL1*100.0,3)}, {round(QL2*100.0,3)}, {round(QL3*100.0,3)}%."
-            )
-            logger.info(
-                f"Stokes I to U leakage: {round(UL1*100.0,3)}, {round(UL2*100.0,3)}, {round(UL3*100.0,3)}%."
-            )
-            logger.info(
-                f"Stokes I to V leakage: {round(VL1*100.0,3)}, {round(VL2*100.0,3)}, {round(VL3*100.0,3)}%.\n"
-            )
-            leakage_coverged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (
-                (QL2 - QL3) <= 0.01 and (UL2 - UL3) <= 0.01 and (VL2 - VL3) <= 0.01
-            )
-
-            ##############################################################
-            # If DR is decreasing (DR decrease in pol selfcal)
-            ##############################################################
-            if (
-                (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
-                and num_iter > min_iter
-                and leakage_coverged
-            ):
+                leakage_info = np.array(leakage_info)
+                avg_leakage = np.nanmedian(leakage_info, axis=0)
+                q_leakage, u_leakage, v_leakage, _, _, _ = avg_leakage
+                if num_iter == 0:
+                    DR1 = DR3 = DR2 = dyn
+                    RMS1 = RMS2 = RMS3 = rms
+                    QL1 = QL2 = QL3 = q_leakage
+                    UL1 = UL2 = UL3 = u_leakage
+                    VL1 = VL2 = VL3 = v_leakage
+                elif num_iter == 1:
+                    DR3 = dyn
+                    RMS2 = RMS1
+                    RMS1 = rms
+                    QL3 = q_leakage
+                    UL3 = u_leakage
+                    VL3 = v_leakage
+                else:
+                    DR1 = DR2
+                    DR2 = DR3
+                    DR3 = dyn
+                    RMS3 = RMS2
+                    RMS2 = RMS1
+                    RMS1 = rms
+                    QL1 = QL2
+                    UL1 = UL2
+                    VL1 = VL2
+                    QL2 = QL3
+                    UL2 = UL3
+                    VL2 = VL3
+                    QL3 = q_leakage
+                    UL3 = u_leakage
+                    VL3 = v_leakage
                 logger.info(
-                    f"Dynamic range is decreasing after minimum numbers of rounds.\n"
+                    f"RMS based dynamic ranges: "
+                    + str(DR1)
+                    + ","
+                    + str(DR2)
+                    + ","
+                    + str(DR3)
                 )
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable
-
-            ###########################
-            # If maximum DR has reached
-            ###########################
-            if DR3 >= max_DR and num_iter > min_iter and leakage_coverged:
-                logger.info(f"Maximum dynamic range is reached.\n")
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, gaintable
-
-            ##########################
-            # If DR suddenly decreased
-            ##########################
-            if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_coverged:
                 logger.info(
-                    f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
+                    f"RMS of the images: "
+                    + str(RMS1)
+                    + ","
+                    + str(RMS2)
+                    + ","
+                    + str(RMS3)
                 )
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable
-
-            ###########################
-            # Checking DR convergence
-            ###########################
-            ########################################
-            # Condition 1
-            # If DR does not increase a certain percentage
-            # Leakage becomes zero or did not reduce
-            ########################################
-            if (
-                abs(DR1 - DR2) / DR2 < DR_convergence_frac
-                and num_iter > min_iter
-                and leakage_coverged
-            ):
-                logger.info(f"Self-calibration has converged.\n")
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, gaintable
-            #########################################
-            # In apcal and maximum iteration has reached
-            #########################################
-            elif num_iter > min_iter and num_iter == max_iter:
                 logger.info(
-                    f"Self-calibration is finished. Maximum iteration is reached.\n"
+                    f"Stokes I to Q leakage: {round(QL1*100.0,3)}, {round(QL2*100.0,3)}, {round(QL3*100.0,3)}%."
                 )
-                if leakage_coverged is False:
-                    logger.warning("Leakage did not converge.\n")
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, gaintable
-            num_iter += 1
-            last_round_gaintable = gaintable
+                logger.info(
+                    f"Stokes I to U leakage: {round(UL1*100.0,3)}, {round(UL2*100.0,3)}, {round(UL3*100.0,3)}%."
+                )
+                logger.info(
+                    f"Stokes I to V leakage: {round(VL1*100.0,3)}, {round(VL2*100.0,3)}, {round(VL3*100.0,3)}%.\n"
+                )
+                leakage_coverged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (
+                    (QL2 - QL3) <= 0.01 and (UL2 - UL3) <= 0.01 and (VL2 - VL3) <= 0.01
+                )
+
+                ##############################################################
+                # If DR is decreasing (DR decrease in pol selfcal)
+                ##############################################################
+                if (
+                    (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
+                    and num_iter > min_iter
+                    and leakage_coverged
+                ):
+                    logger.info(
+                        f"Dynamic range is decreasing after minimum numbers of rounds.\n"
+                    )
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable
+
+                ###########################
+                # If maximum DR has reached
+                ###########################
+                if DR3 >= max_DR and num_iter > min_iter and leakage_coverged:
+                    logger.info(f"Maximum dynamic range is reached.\n")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, gaintable
+
+                ##########################
+                # If DR suddenly decreased
+                ##########################
+                if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_coverged:
+                    logger.info(
+                        f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
+                    )
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable
+
+                ###########################
+                # Checking DR convergence
+                ###########################
+                ########################################
+                # Condition 1
+                # If DR does not increase a certain percentage
+                # Leakage becomes zero or did not reduce
+                ########################################
+                if (
+                    abs(DR1 - DR2) / DR2 < DR_convergence_frac
+                    and num_iter > min_iter
+                    and leakage_coverged
+                ):
+                    logger.info(f"Self-calibration has converged.\n")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, gaintable
+                #########################################
+                # In apcal and maximum iteration has reached
+                #########################################
+                elif num_iter > min_iter and num_iter == max_iter:
+                    logger.info(
+                        f"Self-calibration is finished. Maximum iteration is reached.\n"
+                    )
+                    if leakage_coverged is False:
+                        logger.warning("Leakage did not converge.\n")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, gaintable
+                num_iter += 1
+                last_round_gaintable = gaintable
     except Exception as e:
         traceback.print_exc()
         os.system("rm -rf *_selfcal_present*")

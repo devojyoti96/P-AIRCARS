@@ -11,7 +11,7 @@ from casatools import msmetadata
 from astropy.io import fits
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
 from .resource_utils import limit_threads
-from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table
+from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table, get_chans_flag
 from .calibration import (
     fluxcal_caltable,
     uvrange_casa_to_quartical,
@@ -74,7 +74,7 @@ def determine_disk_visibility(msname):
     mstool.close()
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
-    pos = np.where(r_I >= 0.03)
+    pos = np.where(r_I >= 0.05)
     chans = pos[0]
     timestamps = pos[1]
     r_I[pos] = np.nan
@@ -98,7 +98,6 @@ def flag_non_disk(msname):
         msmd.open(msname)
         times = msmd.timesforspws(0)
         msmd.close()
-
         for i in range(len(chans)):
             spw = f"0:{chans[i]}"
             timerange = f"{mjdsec_to_timestamp(times[timestamps[i]], str_format=1)}"
@@ -109,8 +108,11 @@ def flag_non_disk(msname):
                 timerange=timerange,
                 flagbackup=False,
             )
-
-        return 0
+        unflag_chans, flag_chans = get_chans_flag(msname)
+        if len(unflag_chans) == 0:
+            return 1
+        else:
+            return 0
     except Exception as e:
         traceback.print_exc()
         return 1
@@ -211,7 +213,7 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
     str
         Caltable name
     """
-    from casatasks import ft, delmod, gaincal, applycal
+    from casatasks import ft, delmod, gaincal, applycal, flagmanager
 
     prefix = (
         selfcaldir + "/" + os.path.basename(msname).split(".ms")[0] + "_selfcal_present"
@@ -219,61 +221,69 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
     bpass_caltable = prefix.replace("present", f"{0}") + ".gcal"
     if os.path.exists(bpass_caltable):
         os.system("rm -rf " + bpass_caltable)
+    do_flag_backup(msname, flagtype="qs_selfcal")
 
     try:
-        ###################################
-        # Import simulated QS model
-        ###################################
-        qs_model = make_qs_model(
-            msname, clname=f"{os.path.basename(msname).split('.ms')[0]}_qs.cl"
-        )
-        delmod(vis=msname, otf=True, scr=True)
-        ft(vis=msname, complist=qs_model, usescratch=True)
-        os.system(f"rm -rf {qs_model}")
-
-        #####################
-        # Perform calibration
-        #####################
-        logger.info(
-            f"gaincal(vis='{msname}',caltable='{bpass_caltable}',uvrange='<100lambda',refant='{refant}',solint='{solint}',minsnr=1,calmode='p')\n"
-        )
-        with suppress_output():
-            gaincal(
-                vis=msname,
-                caltable=bpass_caltable,
-                uvrange="<100lambda",
-                refant=refant,
-                minsnr=1,
-                solint=f"{solint}",
-                solnorm=True,
-                calmode="p",
-            )
-        if os.path.exists(bpass_caltable) == False:
-            logger.info(f"No gain solutions are found.\n")
-            msg = 2
-            bpass_caltable = ""
+        result = flag_non_disk(msname)
+        if result != 0:
+            logger.info(f"Could not flag non-disk time properly.")
+            msg = 1
         else:
-            ########################
-            # Applying solutions
-            ########################
+            ###################################
+            # Import simulated QS model
+            ###################################
+            qs_model = make_qs_model(
+                msname, clname=f"{os.path.basename(msname).split('.ms')[0]}_qs.cl"
+            )
+            delmod(vis=msname, otf=True, scr=True)
+            ft(vis=msname, complist=qs_model, usescratch=True)
+            os.system(f"rm -rf {qs_model}")
 
+            #####################
+            # Perform calibration
+            #####################
             logger.info(
-                f"applycal(vis={msname},gaintable=[{bpass_caltable}],interp=['linear'],applymode='calonly',calwt=[False])\n"
+                f"gaincal(vis='{msname}',caltable='{bpass_caltable}',uvrange='<100lambda',refant='{refant}',solint='{solint}',minsnr=1,calmode='p')\n"
             )
             with suppress_output():
-                applycal(
+                gaincal(
                     vis=msname,
-                    gaintable=[bpass_caltable],
-                    interp=["linear"],
-                    applymode="calonly",
-                    calwt=[False],
+                    caltable=bpass_caltable,
+                    uvrange="<100lambda",
+                    refant=refant,
+                    minsnr=1,
+                    solint=f"{solint}",
+                    solnorm=True,
+                    calmode="p",
                 )
-            msg = 0
+            if os.path.exists(bpass_caltable) == False:
+                logger.info(f"No gain solutions are found.\n")
+                msg = 1
+                bpass_caltable = ""
+            else:
+                ########################
+                # Applying solutions
+                ########################
+
+                logger.info(
+                    f"applycal(vis={msname},gaintable=[{bpass_caltable}],interp=['linear'],applymode='calonly',calwt=[False])\n"
+                )
+                with suppress_output():
+                    applycal(
+                        vis=msname,
+                        gaintable=[bpass_caltable],
+                        interp=["linear"],
+                        applymode="calonly",
+                        calwt=[False],
+                    )
+                msg = 0
     except Exception as e:
         traceback.print_exc()
         msg = 1
         bpass_caltable = ""
     finally:
+        flagmanager(vis=msname, mode="restore", versionname="qs_selfcal_1")
+        flagmanager(vis=msname, mode="delete", versionname="qs_selfcal_1")
         return msg, bpass_caltable
 
 
@@ -869,6 +879,7 @@ def selfcal_round(
     use_solar_mask=True,
     mask_radius=40,
     min_tol_factor=-1,
+    calc_chunks=True,
     fluxscale_mwa=False,
     solar_attn=10,
     pbcor=True,
@@ -927,6 +938,8 @@ def selfcal_round(
         Mask radius in arcminute
     min_tol_factor : float, optional
         Minimum tolerance factor
+    calc_chunks : bool, optional
+        Whether calculate spectro-temporal chunks or not
     fluxscale_mwa : bool, optional
         Fluxscale caltable using reference bandpass
     solar_attn : float, optional
@@ -1023,19 +1036,30 @@ def selfcal_round(
         ######################################
         # Determine spectro-temporal chunking
         ######################################
-        if calmode == "ap" or do_polcal:
-            nchans = max(
-                1, round(bw / 0.32)
-            )  # Fixed to 320 kHz, 4 channels per coarse channels
+        if calc_chunks:
+            header = fits.getheader(metafits)
+            mode = header["MODE"]
+            if "MWAX" in mode:
+                flag_central_chan = False
+            else:
+                flag_central_chan = True
+            if calmode == "ap" or do_polcal:
+                nchans = max(
+                    1, round(bw / 0.32)
+                )  # Fixed to 320 kHz, 4 channels per coarse channels
+            else:
+                nchans = 1
+            if min_tol_factor <= 0:
+                min_tol_factor = 1.0  # In percentage
+            nintervals, _ = get_optimal_image_interval(
+                msname,
+                temporal_tol_factor=float(min_tol_factor / 100.0),
+                spectral_tol_factor=0.1,
+                flag_central_chan=flag_central_chan,
+            )
         else:
             nchans = 1
-        if min_tol_factor <= 0:
-            min_tol_factor = 1.0  # In percentage
-        nintervals, _ = get_optimal_image_interval(
-            msname,
-            temporal_tol_factor=float(min_tol_factor / 100.0),
-            spectral_tol_factor=0.1,
-        )
+            nintervals = 1
 
         os.system(f"rm -rf {prefix}*image.fits {prefix}*residual.fits")
 
@@ -1189,8 +1213,8 @@ def selfcal_round(
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
             logger.info(f"WSClean command: {wsclean_cmd}\n")
-            msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
-            if msg != 0:
+            prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+            if prediction_msg != 0:
                 prediction_failed = True
 
             #######################################
