@@ -191,7 +191,7 @@ def interpolate_nans(data):
     interp_func = interp1d(
         x[~nans],
         data[~nans],
-        kind="linear",
+        kind="cubic",
         bounds_error=False,
         fill_value=0.0,
     )
