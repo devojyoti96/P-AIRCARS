@@ -22,7 +22,7 @@ from astropy.wcs import FITSFixedWarning
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
-from .basic_utils import mjdsec_to_timestamp, get_datadir
+from .basic_utils import mjdsec_to_timestamp, get_datadir, interpolate_nans
 from .image_utils import calc_solar_image_stat, cutout_image
 from .ms_metadata import (
     get_column_size,
@@ -1538,6 +1538,12 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         else:
             data_i = S_data_i
         data_i[flags] = np.nan
+        total_timestamps = data_i.shape[1]
+        for t in range(total_timestamps):
+            t_data = data_i[:, t]
+            t_data_interp = interpolate_nans(t_data)
+            data_i[:, t] = t_data_interp
+
         if i == 0:
             freqs = freqs_i
             times = times_i
