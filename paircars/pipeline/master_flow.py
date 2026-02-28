@@ -286,6 +286,7 @@ def run_ds_jobs(
 )
 def run_target_split_jobs(
     mslist,
+    metafits,
     workdir,
     datacolumn="data",
     timeres=-1,
@@ -307,6 +308,8 @@ def run_target_split_jobs(
     ----------
     mslist: str
         Name of the measurement sets (comma separated)
+    metafits : str
+        Metafits file
     workdir : str
         Working directory
     datacolumn : str, optional
@@ -2325,6 +2328,7 @@ def master_control(
             ).submit(
                 ",".join(calibrator_mslist),
                 workdir,
+                calibrator_metafits,
                 datacolumn="data",
                 timeres=10.0,
                 freqres=0.16,
@@ -2644,6 +2648,7 @@ def master_control(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
                 ",".join(target_mslist),
+                target_metafits,
                 workdir,
                 datacolumn="data",
                 timeres=timeavg,
@@ -3029,6 +3034,7 @@ def master_control(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
                 ",".join(target_mslist),
+                target_metafits,
                 workdir,
                 datacolumn="data",
                 freqres=freqavg,

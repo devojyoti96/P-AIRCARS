@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from casatools import msmetadata
 from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
-from .basic_utils import mjdsec_to_timestamp
+from .basic_utils import mjdsec_to_timestamp, interpolate_nans
 from .mwapb_utils import get_pb_radec, make_primarybeammap
 from .mwa_utils import get_bad_chans
 from .ms_metadata import get_column_size
@@ -638,6 +638,17 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     )
     msmd.close()
     flags = np.where(T_sun <= 0)
+
+    total_timestamps = T_sun.shape[1]
+    for t in range(total_timestamps):
+        t_sun = T_sun[:, t]
+        t_sun_interpolated = interpolate_nans(t_sun)
+        T_sun[:, t] = t_sun_interpolated
+    for t in range(total_timestamps):
+        s_sun = S_sun[:, t]
+        s_sun_interpolated = interpolate_nans(s_sun)
+        S_sun[:, t] = s_sun_interpolated
+
     save_file = f"freq_{mid_freq}MHz_time_{t_string}"
     np.save(
         f"{outdir}/{save_file}_ds.npy",
