@@ -182,18 +182,19 @@ def split_into_chunks(lst, target_chunk_size):
 
 def interpolate_nans(data):
     """Linearly interpolate NaNs in 1D array.
-    
+
     Parameters
     ----------
     data : numpy.array
         1D numpy array
-    
+
     Returns
     -------
     numpy.array
         Interpolated nan values (It will not extrapolate edge nan values)
     """
     from scipy.interpolate import interp1d
+
     data = np.asarray(data, dtype=float)
     nans = np.isnan(data)
     if np.all(nans):
@@ -208,7 +209,7 @@ def interpolate_nans(data):
         data[valid],
         kind="linear",
         bounds_error=False,
-        fill_value=np.nan,  
+        fill_value=np.nan,
     )
     result = data.copy()
     first_valid = np.where(valid)[0][0]
