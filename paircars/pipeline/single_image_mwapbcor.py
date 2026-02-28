@@ -18,7 +18,6 @@ from paircars.utils.mwapb_utils import (
     B2IQUV,
     get_jones_array,
 )
-from paircars.utils.selfcal_utils import calc_leakage, correct_image_leakage
 
 warnings.filterwarnings("ignore")
 
@@ -39,6 +38,7 @@ def get_pbcor_image(
     metafits,
     MWA_PB_file="",
     sweet_spot_file="",
+    leakage_file="",
     iau_order=False,
     pb_jones_file="",
     save_pb=False,
@@ -62,6 +62,8 @@ def get_pbcor_image(
         MWA primary beam file path
     sweet_spot_file : str, optional
         MWA sweet spot file
+    leakage_file : str, optional
+        Leakage information file
     iau_order : bool
         PB Jones in IAU order or not
     pb_jones_file : str
@@ -262,29 +264,59 @@ def get_pbcor_image(
             os.system(f"rm -rf {outfile}")
         fits.writeto(outfile, data=imagedata, header=imageheader, overwrite=True)
         if fullpol:
-            with fits.open(outfile, mode="update") as hdul:
-                hdr = hdul[0].header
-                (
-                    q_leakage,
-                    u_leakage,
-                    v_leakage,
-                    q_leakage_err,
-                    u_leakage_err,
-                    v_leakage_err,
-                ) = calc_leakage(outfile)
-                hdr["LEAKUNIT"] = "PERCENT"
-                if np.isnan(q_leakage):
-                    hdr["QLEAK"] = "NAN"
-                else:
-                    hdr["QLEAK"] = abs(round(q_leakage * 100.0, 4))
-                if np.isnan(u_leakage):
-                    hdr["ULEAK"] = "NAN"
-                else:
-                    hdr["ULEAK"] = abs(round(u_leakage * 100.0, 4))
-                if np.isnan(v_leakage):
-                    hdr["VLEAK"] = "NAN"
-                else:
-                    hdr["VLEAK"] = abs(round(v_leakage * 100.0, 4))
+            if leakage_file != "" and os.path.exists(leakage_file):
+                try:
+                    (
+                        q_leakage,
+                        u_leakage,
+                        v_leakage,
+                        res_q_leakage,
+                        res_u_leakage,
+                        res_v_leakage,
+                    ) = np.load(leakage_file, allow_pickle=True)
+                    ########################################################################################
+                    # Image based leakage correction if polarisation selfcal solutions could not be applied, but leakage information available
+                    ########################################################################################
+                    header = fits.getheader(pbcor_image)
+                    if "POLSELF" in header.keys():
+                        if header["POLSELF"] == "FALSE":
+                            leakagecor_image, _ = correct_image_leakage(
+                                outfile,
+                                modelname="",
+                                q_leakage=q_leakage,
+                                u_leakage=u_leakage,
+                                v_leakage=v_leakage,
+                            )
+                            if os.path.exists(leakagecor_image):
+                                os.system(f"rm -rf {outfile}")
+                                os.system(f"mv {leakagecor_image} {outfile}")
+                    #####################################################
+                    # Writing leakage information
+                    ######################################################
+                    with fits.open(outfile, mode="update") as hdul:
+                        hdr = hdul[0].header
+                        hdr["LEAKCOR"] = "TRUE"
+                        hdr["LEAKUNIT"] = "PERCENT"
+                        if np.isnan(res_q_leakage):
+                            hdr["QLEAK"] = "NAN"
+                        else:
+                            hdr["QLEAK"] = abs(round(res_q_leakage * 100.0, 4))
+                        if np.isnan(res_u_leakage):
+                            hdr["ULEAK"] = "NAN"
+                        else:
+                            hdr["ULEAK"] = abs(round(res_u_leakage * 100.0, 4))
+                        if np.isnan(res_v_leakage):
+                            hdr["VLEAK"] = "NAN"
+                        else:
+                            hdr["VLEAK"] = abs(round(res_v_leakage * 100.0, 4))
+                except:
+                    with fits.open(outfile, mode="update") as hdul:
+                        hdr = hdul[0].header
+                        hdr["LEAKCOR"] = "FALSE"
+            else:
+                with fits.open(outfile, mode="update") as hdul:
+                    hdr = hdul[0].header
+                    hdr["LEAKCOR"] = "FALSE"
         print(f"Output image written to : {outfile}\n")
         return outfile
     except Exception as e:
@@ -329,6 +361,11 @@ def cli():
         "--sweetspot_file",
         default="",
         help="MWA primary beam sweetspot file path",
+    )
+    adv_args.add_argument(
+        "--leakage_file",
+        default="",
+        help="Leakage information file",
     )
     adv_args.add_argument(
         "--iau_order",
@@ -388,6 +425,7 @@ def cli():
             args.metafits,
             MWA_PB_file=args.MWA_PB_file,
             sweet_spot_file=args.sweetspot_file,
+            leakage_file=args.leakage_file,
             iau_order=args.iau_order,
             pb_jones_file=args.pb_jones_file,
             save_pb=args.save_pb,
@@ -396,34 +434,6 @@ def cli():
             nthreads=args.num_threads,
             restore=args.restore,
         )
-        if pbcor_image is not None:
-            header = fits.getheader(pbcor_image)
-            if "POLSELF" in header.keys():
-                if header["POLSELF"] == "FALSE":
-                    print(
-                        f"Estimating and correcting image based leakage for image: {args.imagename}.\n"
-                    )
-                    (
-                        q_leakage,
-                        u_leakage,
-                        v_leakage,
-                        q_leakage_err,
-                        u_leakage_err,
-                        v_leakage_err,
-                    ) = calc_leakage(pbcor_image)
-                    print(
-                        f"Q leakage: {round(q_leakage*100.0,3)}, U leakage: {round(u_leakage*100.0,3)}, V leakage: {round(v_leakage*100.0,3)}%.\n"
-                    )
-                    leakagecor_image, _ = correct_image_leakage(
-                        pbcor_image,
-                        modelname="",
-                        q_leakage=q_leakage,
-                        u_leakage=u_leakage,
-                        v_leakage=v_leakage,
-                    )
-                    if os.path.exists(leakagecor_image):
-                        os.system(f"rm -rf {pbcor_image}")
-                        os.system(f"mv {leakagecor_image} {pbcor_image}")
         return 0
     except Exception:
         traceback.print_exc()

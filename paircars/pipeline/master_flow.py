@@ -1214,6 +1214,7 @@ def run_apply_pbcor(
     imagedir,
     metafits,
     workdir,
+    leakagedir="",
     jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -1230,6 +1231,8 @@ def run_apply_pbcor(
         Metafits file
     workdir : str
         Work directory
+    leakagedir : str, optional
+        Leakage dile directory
     cpu_frac : float, optional
         CPU fraction to use
     mem_frac : float, optional
@@ -1267,6 +1270,7 @@ def run_apply_pbcor(
             msg = mwa_pbcor.main(
                 imagedir,
                 metafits,
+                leakagedir=leakagedir,
                 workdir=workdir,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
@@ -3411,6 +3415,7 @@ def master_control(
                     f"{imagedir}/images",
                     target_metafits,
                     workdir,
+                    leakagedir=caldir,
                     jobid=jobid,
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),

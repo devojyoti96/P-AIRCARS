@@ -319,6 +319,30 @@ def filter_outliers(data, threshold=5, max_iter=3):
     return filtered_data
 
 
+def weighted_mean(x, xerr):
+    """
+    Calculate weighted mean
+
+    Parameters
+    ----------
+    x : numpy.array
+        Data array
+    xerr : numpy.array
+        Error array
+
+    Returns
+    -------
+    float
+        Weighted mean
+    float
+        Weighted error
+    """
+    w = 1.0 / xerr**2
+    mean = np.sum(w * x) / np.sum(w)
+    err = np.sqrt(1.0 / np.sum(w))
+    return mean, err
+
+
 def angular_separation_equatorial(ra1, dec1, ra2, dec2):
     """
     Calculate angular seperation between two equatorial coordinates

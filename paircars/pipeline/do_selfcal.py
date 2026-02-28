@@ -14,7 +14,7 @@ from casatasks import flagmanager
 from dask import delayed
 from functools import partial
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output, get_datadir
+from paircars.utils.basic_utils import suppress_output, get_datadir, weighted_mean
 from paircars.utils.calibration import (
     get_caltable_metadata,
     get_quartical_table_metadata,
@@ -740,6 +740,8 @@ def do_polselfcal(
         Polarisation self-calibrated measurement set
     str
         Final caltable
+    str
+        Leakage file
     """
     ncpu = max(1, ncpu)
     mem = abs(mem)
@@ -913,6 +915,7 @@ def do_polselfcal(
         num_iter = 0
         calc_chunks = True
         last_round_gaintable = []
+        last_leakage_file = ""
         os.system("rm -rf *_selfcal_present*")
 
         ##########################################
@@ -964,13 +967,13 @@ def do_polselfcal(
             if msg == 1:
                 logger.info(f"No model flux is picked up.")
                 os.system("rm -rf *_selfcal_present*")
-                return msg, msname, []
+                return msg, msname, [], ""
             elif msg > 2:
                 logger.error("Polarisation self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return msg, msname, []
+                return msg, msname, [], ""
             elif msg == 2:
                 if calc_chunks is False:
                     if num_iter >= min_iter:
@@ -980,7 +983,7 @@ def do_polselfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return 0, msname, last_round_gaintable
+                        return 0, msname, last_round_gaintable, last_leakage_file
                     else:
                         logger.error(
                             "Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered."
@@ -988,7 +991,7 @@ def do_polselfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return msg, msname, []
+                        return msg, msname, [], ""
                 else:
                     logger.warning(
                         "Minor issues in polarisation self-calibration model prediction. Retrying with entire spectro-temporal chunks."
@@ -996,8 +999,19 @@ def do_polselfcal(
                     calc_chunks = False
             else:
                 leakage_info = np.array(leakage_info)
-                avg_leakage = np.nanmedian(leakage_info, axis=0)
-                q_leakage, u_leakage, v_leakage, _, _, _ = avg_leakage
+                Q = leakage_info[:, 0]
+                U = leakage_info[:, 1]
+                V = leakage_info[:, 2]
+                Qe = leakage_info[:, 3]
+                Ue = leakage_info[:, 4]
+                Ve = leakage_info[:, 5]
+                q_leakage, q_err = weighted_mean(Q, Qe)
+                u_leakage, u_err = weighted_mean(U, Ue)
+                v_leakage, v_err = weighted_mean(V, Ve)
+                leakage_file = f"{gaintable.split('.dcal')[0]}.leakage.npy"
+                np.save(
+                    leakage_file, [q_leakage, u_leakage, v_leakage, q_err, u_err, v_err]
+                )
                 if num_iter == 0:
                     DR1 = DR3 = DR2 = dyn
                     RMS1 = RMS2 = RMS3 = rms
@@ -1070,7 +1084,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable
+                    return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # If maximum DR has reached
@@ -1080,7 +1094,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable
+                    return 0, msname, gaintable, leakage_file
 
                 ##########################
                 # If DR suddenly decreased
@@ -1092,7 +1106,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable
+                    return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # Checking DR convergence
@@ -1111,7 +1125,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable
+                    return 0, msname, gaintable, leakage_file
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
@@ -1127,12 +1141,13 @@ def do_polselfcal(
                     return 0, msname, gaintable
                 num_iter += 1
                 last_round_gaintable = gaintable
+                last_leakage_file = leakage_file
     except Exception as e:
         traceback.print_exc()
         os.system("rm -rf *_selfcal_present*")
         time.sleep(5)
         clean_shutdown(sub_observer)
-        return 1, msname, []
+        return 1, msname, [], ""
 
 
 def do_full_selfcal(
@@ -1163,6 +1178,19 @@ def do_full_selfcal(
 ):
     """
     Perform both intensity and polarisation self-calibration
+
+    Returns
+    -------
+    int
+        Intensity selfcal success message
+    int
+        Polarisation selfcal success message
+    list
+        Intensity selfcal gaintables
+    list
+        Polarisation selfcal gaintables
+    str
+        Leakage information file
     """
     ncpu = max(1, ncpu)
     mem = abs(mem)
@@ -1203,12 +1231,12 @@ def do_full_selfcal(
         logfile=f"{logfile}.int",
     )
     if intensity_selfcal_msg != 0:
-        return intensity_selfcal_msg, 1, [], []
+        return intensity_selfcal_msg, 1, [], [], ""
     elif do_polcal is False:
-        return 0, 1, gaintable, []
+        return 0, 1, gaintable, [], ""
     else:
         print(f"Starting polarisation self-calibration for ms: {msname}.")
-        pol_selfcal_msg, pol_selfcal_ms, quartical_table = do_polselfcal(
+        pol_selfcal_msg, pol_selfcal_ms, quartical_table, leakage_file = do_polselfcal(
             msname=selfcal_ms,
             workdir=workdir,
             selfcaldir=f"{selfcaldir}_pol",
@@ -1228,7 +1256,13 @@ def do_full_selfcal(
             mem=mem,
             logfile=f"{logfile}.pol",
         )
-        return intensity_selfcal_msg, pol_selfcal_msg, gaintable, quartical_table
+        return (
+            intensity_selfcal_msg,
+            pol_selfcal_msg,
+            gaintable,
+            quartical_table,
+            leakage_file,
+        )
 
 
 def main(
@@ -1514,6 +1548,7 @@ def main(
             gcal_list = []
             bpass_list = []
             dcal_list = []
+            leakage_file_list = []
             succeed_intselfcal = 0
             failed_intselfcal = 0
             succeed_polselfcal = 0
@@ -1579,6 +1614,7 @@ def main(
                         failed_polselfcal += 1
                     else:
                         try:
+                            leakage_file = r[4]
                             quartical_tables = r[3]
                             dcal = quartical_tables[0]
                             cal_metadata = get_quartical_table_metadata(dcal)
@@ -1596,6 +1632,13 @@ def main(
                             os.system(f"rm -rf {final_leakage_caltable}")
                             os.system(f"cp -r {dcal} {final_leakage_caltable}")
                             dcal_list.append(final_leakage_caltable)
+                            final_leakage_info = (
+                                caldir
+                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.leakage"
+                            )
+                            os.system(f"rm -rf {final_leakage_info}")
+                            os.system(f"cp -r {leakage_file} {final_leakage_info}")
+                            leakage_file_list.append(final_leakage_info)
                             os.system(
                                 f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}"
                             )

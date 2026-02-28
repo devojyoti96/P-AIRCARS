@@ -21,6 +21,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
+from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.mwa_ploting_utils import save_in_hpc, plot_in_hpc
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -54,6 +55,7 @@ def run_pbcor(
     metafits,
     pbdir,
     pbcor_dir,
+    leakage_file="",
     restore=False,
     jobid=0,
     ncpu=1,
@@ -72,6 +74,8 @@ def run_pbcor(
         Primary beam directory
     pbcor_dir : str
         Primary beam corrected image directory
+    leakage_file : str, optional
+        Leakage information file
     restore : bool, optional
         Restore primary beam correction
     jobid : int, optional
@@ -103,6 +107,10 @@ def run_pbcor(
 
     if restore:
         cmd.append("--restore")
+
+    if leakage_file != "" and os.path.exists(leakage_file):
+        cmd.append(f"--leakage_file {leakage_file}")
+
     cmd.append(imagename)
     cmd.append(metafits)
     cmd.append(outfile)
@@ -126,10 +134,48 @@ def run_pbcor(
         return 1
 
 
+def get_leakage_file(image, leakage_dir):
+    """
+    Get leakage file for the image
+
+    Parameters
+    ----------
+    image : str
+        Imagename
+    leakage_dir : str, optional
+        Leakage file directory
+
+    Returns
+    -------
+    str
+        Leakage file name
+    """
+    header = fits.getheader(image)
+    if header["CTYPE3"] == "FREQ":
+        image_freq = round(float(header["CRVAL3"]) / 10**6, 3)
+    elif header["CTYPE4"] == "FREQ":
+        image_freq = round(float(header["CRVAL4"]) / 10**6, 3)
+    else:
+        image_freq = -1
+    if image_freq > 0 and leakage_dir != 0 and os.path.exists(leakage_dir):
+        image_coarse = freq_to_MWA_coarse(image_freq)
+        leakage_file_list = glob.glob(
+            f"{leakage_dir}/selfcal_*{image_coarse}_*.leakage"
+        )
+        if len(leakage_file_list) > 0:
+            leakage_file = leakage_file_list[0]
+        else:
+            leakage_file = ""
+    else:
+        leakage_file = ""
+    return leakage_file
+
+
 def pbcor_all_images(
     imagedir,
     metafits,
     dask_client,
+    leakage_dir="",
     make_TB=True,
     make_plots=True,
     restore=False,
@@ -148,6 +194,8 @@ def pbcor_all_images(
         Metafits file
     dask_client : dask.client
         Dask client
+    leakage_dir : str, optional
+        Leakage file directory
     make_TB : bool, optional
         Make brightness temperature map
     make_plots : bool, optional
@@ -215,11 +263,13 @@ def pbcor_all_images(
         if len(first_set) > 0:
             tasks = []
             for image in first_set:
+                leakage_file = get_leakage_file(image, leakage_dir=leakage_dir)
                 task = delayed(run_pbcor)(
                     image,
                     metafits,
                     pbdir,
                     pbcor_dir,
+                    leakage_file=leakage_file,
                     restore=restore,
                     jobid=jobid,
                     ncpu=n_threads,
@@ -240,11 +290,13 @@ def pbcor_all_images(
         if len(remaining_set) > 0:
             tasks = []
             for image in remaining_set:
+                leakage_file = get_leakage_file(image, leakage_dir=leakage_dir)
                 task = delayed(run_pbcor)(
                     image,
                     metafits,
                     pbdir,
                     pbcor_dir,
+                    leakage_file=leakage_file,
                     restore=restore,
                     jobid=jobid,
                     ncpu=n_threads,
@@ -346,6 +398,7 @@ def main(
     imagedir,
     metafits,
     workdir="",
+    leakage_dir="",
     make_TB=True,
     make_plots=True,
     restore=False,
@@ -367,6 +420,8 @@ def main(
         Metafits file
     workdir : str, optional
         Work directory
+    leakage_dir : str, optional
+        Leakage file directory
     make_TB : bool, optional
         Make brightness temperature map or not
     make_plots : bool, optional
@@ -440,13 +495,14 @@ def main(
             msg = pbcor_all_images(
                 imagedir,
                 metafits,
+                dask_client,
+                leakage_dir=leakage_dir,
                 make_TB=make_TB,
                 make_plots=make_plots,
                 restore=restore,
                 jobid=jobid,
                 cpu_frac=cpu_frac,
                 mem_frac=mem_frac,
-                dask_client=dask_client,
             )
         else:
             print("Please provide correct image directory path.")
@@ -484,6 +540,12 @@ def cli():
     # Advanced parameters
     adv_args = parser.add_argument_group(
         "###################\nAdvanced parameters\n###################"
+    )
+    adv_args.add_argument(
+        "--leakage_dir",
+        type=str,
+        default="",
+        help="Leakage file directory",
     )
     adv_args.add_argument(
         "--no_make_TB",
@@ -535,6 +597,7 @@ def cli():
         args.imagedir,
         args.metafits,
         workdir=args.workdir,
+        leakage_dir=args.leakage_dir,
         make_TB=args.make_TB,
         make_plots=args.make_plots,
         restore=args.restore,
