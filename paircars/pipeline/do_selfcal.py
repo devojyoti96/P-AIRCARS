@@ -1008,7 +1008,7 @@ def do_polselfcal(
                 q_leakage, q_err = weighted_mean(Q, Qe)
                 u_leakage, u_err = weighted_mean(U, Ue)
                 v_leakage, v_err = weighted_mean(V, Ve)
-                leakage_file = f"{gaintable.split('.dcal')[0]}.leakage.npy"
+                leakage_file = f"{gaintable[0].split('.dcal')[0]}.leakage.npy"
                 np.save(
                     leakage_file, [q_leakage, u_leakage, v_leakage, q_err, u_err, v_err]
                 )
