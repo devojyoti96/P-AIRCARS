@@ -395,11 +395,17 @@ def do_flagging(
         print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
 
-        ###########################################
+        header = fits.getheader(metafits)
+        mode = header["MODE"]
+        if "MWAX" in mode:
+            flag_central_chan = False
+        else:
+            flag_central_chan = True
+
         tasks = []
         test_msname = os.path.abspath(mslist[0].rstrip("/"))
         if flag_bad_spw:
-            badspw = get_bad_chans(test_msname)
+            badspw = get_bad_chans(test_msname, flag_central_chan=flag_central_chan)
             if badspw != "":
                 print(f"Bad spws: {badspw}.")
             else:

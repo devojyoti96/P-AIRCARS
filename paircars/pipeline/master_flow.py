@@ -2603,8 +2603,10 @@ def master_control(
         # Removing previous self-calibration artificats
         ###############################################
         print("Removing all previous self-calibration artificats...")
-        os.system(f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*")
-        
+        os.system(
+            f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*"
+        )
+
         ###################################################
         # Start spliting selfcal ms
         ###################################################
@@ -2703,7 +2705,7 @@ def master_control(
                 send_task_notification(
                     emails, email_msg, jobid, target_obsid, timestamp
                 )
-                
+
         if do_selfcal:
             print("Checking measurement sets before spawning self-calibrations....")
             filtered_mslist = []  # Filtering in case any ms is corrupted
@@ -2865,7 +2867,9 @@ def master_control(
                 )
                 if adaptive:
                     scale_worker_and_wait(
-                        dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
+                        dask_cluster,
+                        dask_client,
+                        min(len(selfcal_mslist) + 1, max_worker),
                     )
                 if do_sidereal_cor:
                     if emails != "":
@@ -2878,16 +2882,18 @@ def master_control(
                         "Starting task: Sidereal motion correction for self-calibration measurement sets....."
                     )
                     print("###########################")
-                    future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
-                        task_run_name=f"solar_sidereal_correction_{jobid}"
-                    ).submit(
-                        ",".join(selfcal_mslist),
-                        workdir,
-                        prefix="selfcal",
-                        jobid=jobid,
-                        cpu_frac=round(cpu_frac, 2),
-                        mem_frac=round(mem_frac, 2),
-                        remote_log=remote_logger,
+                    future_sidereal_cor_selfcal = (
+                        run_solar_siderealcor_jobs.with_options(
+                            task_run_name=f"solar_sidereal_correction_{jobid}"
+                        ).submit(
+                            ",".join(selfcal_mslist),
+                            workdir,
+                            prefix="selfcal",
+                            jobid=jobid,
+                            cpu_frac=round(cpu_frac, 2),
+                            mem_frac=round(mem_frac, 2),
+                            remote_log=remote_logger,
+                        )
                     )
                     try:
                         msg = future_sidereal_cor_selfcal.result()
@@ -3061,14 +3067,11 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-
         split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
         if len(split_target_mslist) == 0:
             print("!!!! WARNING: No target ms are present. !!!!")
             if emails != "":
-                email_msg = (
-                    "No target measurement set is present for final processing."
-                )
+                email_msg = "No target measurement set is present for final processing."
                 send_task_notification(
                     emails, email_msg, jobid, target_obsid, timestamp
                 )

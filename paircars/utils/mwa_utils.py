@@ -10,6 +10,7 @@ from astropy.wcs import FITSFixedWarning
 from astropy.io import fits
 from astropy.time import Time
 from casatools import msmetadata
+from .ds_utils import cal_norm_crosscorr
 from .udocker_utils import run_wsclean
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
@@ -100,7 +101,7 @@ def get_MWA_coarse_chan(msname):
     return ncoarse
 
 
-def get_MWA_coarse_bands(msname):
+def get_MWA_coarse_bands(msname, flag_central_chan=False):
     """
     Get coarse channel bands of the MWA
 
@@ -108,12 +109,16 @@ def get_MWA_coarse_bands(msname):
     ----------
     msname : str
         Measurement set
+    flag_central_chan : bool, optional
+        Flag central channel
 
     Returns
     -------
     list
-        Coarse channel list
+        Coarse channel list of tuple (start_channel, end_channel, good_chan_list)
     """
+    bad_spw = get_bad_chans(msname, flag_central_chan=flag_central_chan)
+    bad_chans = [int(i) for i in bad_spw.split("0:")[1].split(";")]
     msmd = msmetadata()
     msmd.open(msname)
     freqs = msmd.chanfreqs(0, unit="MHz")
@@ -123,15 +128,19 @@ def get_MWA_coarse_bands(msname):
     start_ms_freq = round(np.nanmin(freqs), 2)
     end_ms_freq = round(np.nanmax(freqs), 2)
     coarse_channels = np.arange(55, 235)
-    coarse_chans = []
+    coarse_chans = {}
     for coarse_chan in coarse_channels:
         cent_freq = round(coarse_chan * 1.28, 2)
         start_freq = round(cent_freq - 0.64, 2)
         end_freq = round(cent_freq + 0.64, 2)
         if start_ms_freq == end_ms_freq:
             start_chan = np.argmin(np.abs(start_freq - freqs))
-            if [start_chan] not in coarse_chans:
-                coarse_chans.append([start_chan])
+            if start_chan in bad_chans:
+                good_chunk = []
+            else:
+                good_chunk = [start_chan]
+            if (start_chan, good_chunk) not in coarse_chans:
+                coarse_chans.append((start_chan, good_chunk))
         elif cent_freq > start_ms_freq and cent_freq < end_ms_freq:
             start_chan = np.argmin(np.abs(start_freq - freqs))
             end_chan = np.argmin(np.abs(end_freq - freqs))
@@ -142,12 +151,16 @@ def get_MWA_coarse_bands(msname):
             if end_chan > 0:
                 end_chan = max((end_chan // nchan_coarse) * nchan_coarse, nchan_coarse)
             if end_chan > start_chan:
-                if [start_chan, end_chan] not in coarse_chans:
-                    coarse_chans.append([start_chan, end_chan])
+                good_chunk = []
+                for i in range(start_chan, end_chan + 1):
+                    if i not in bad_chans:
+                        good_chunk.append(i)
+                if (start_chan, end_chan, good_chunk) not in coarse_chans:
+                    coarse_chans.append((start_chan, end_chan, good_chunk))
     return coarse_chans
 
 
-def get_bad_chans(msname):
+def get_bad_chans(msname, flag_central_chan=False):
     """
     Get bad channels to flag
 
@@ -155,6 +168,8 @@ def get_bad_chans(msname):
     ----------
     msname : str
         Name of the ms
+    flag_central_chan : bool, optional
+        Flag central channel
 
     Returns
     -------
@@ -163,33 +178,36 @@ def get_bad_chans(msname):
     """
     msmd = msmetadata()
     msmd.open(msname)
-    chanres = msmd.chanres(0, unit="MHz")[0]
+    chanres = msmd.chanres(0, unit="MHz")[0]  # MHz
     nchan = msmd.nchan(0)
     msmd.close()
     msmd.done()
     if chanres > 0.16:
         print(
-            f"Frequency resolution: {round(chanres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing."
+            f"Frequency resolution: {round(chanres*1000,1)} kHz is >160 kHz. Assuming edge flagging already done."
         )
         return ""
-    else:
-        n_per_coarse_chan = int(1.28 / chanres)
-        n_edge_chan = max(1, int(0.16 / chanres))
-        spw = ""
-        for i in range(0, int(nchan / n_per_coarse_chan)+1, n_per_coarse_chan):
-            if i == i + n_edge_chan - 1:
-                spw += f"{i};"
-            else:
-                spw += f"{i}~{i+n_edge_chan-1};"
-            #if n_edge_chan >= 1:
-            #    spw += f"{i+int(nchan/2)-1};"#~{i+int(nchan/2)};"
-            if i + nchan - n_edge_chan == i + nchan - 1:
-                spw += f"{i+nchan-1};"
-            else:
-                spw += f"{i+nchan-n_edge_chan}~{i+nchan-1};"
-        if spw != "":
-            spw = f"0:{spw[:-1]}"
-        return spw
+    n_per_coarse = int(round(1.28 / chanres))
+    n_edge = max(1, int(round(0.16 / chanres)))
+    bad_channels = set()
+    for start in range(0, nchan, n_per_coarse):
+        coarse_end = min(start + n_per_coarse - 1, nchan - 1)
+        # First 160 kHz
+        for ch in range(start, min(start + n_edge, coarse_end + 1)):
+            bad_channels.add(ch)
+        # Last 160 kHz
+        for ch in range(max(coarse_end - n_edge + 1, start), coarse_end + 1):
+            bad_channels.add(ch)
+        if flag_central_chan:
+            # Central channel
+            central_chan = start + (coarse_end - start) // 2
+            bad_channels.add(central_chan)
+    if not bad_channels:
+        return ""
+    # Sort and format
+    sorted_chans = sorted(bad_channels)
+    chan_string = ";".join(str(ch) for ch in sorted_chans)
+    return f"0:{chan_string}"
 
 
 def get_good_chans(msname):

@@ -204,7 +204,7 @@ def get_optimal_image_interval(
     tb.open(msname)
     u, v, w = tb.getcol("UVW")
     tb.close()
-    bad_chans = get_bad_chans(msname)
+    bad_chans = get_bad_chans(msname, flag_central_chan=True)
     if bad_chans != "":
         bad_chan_blocks = [i for i in bad_chans.split("0:")[1].split(";")]
         bad_chan_list = []
