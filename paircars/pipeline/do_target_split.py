@@ -49,6 +49,7 @@ def chanlist_to_str(lst):
 
 def split_target_scans(
     msname,
+    metafits,
     workdir,
     timeres,
     freqres,
@@ -68,6 +69,8 @@ def split_target_scans(
     ----------
     msname : str
         Measurement set
+    metafits : str
+        Metafits file
     workdir : str
         Work directory
     timeres : float
@@ -103,6 +106,12 @@ def split_target_scans(
         #######################################
         # Extracting time frequency information
         #######################################
+        header = fits.getheader(metafits)
+        mode = header["MODE"]
+        if "MWAX" in mode:
+            flag_central_chan = False
+        else:
+            flag_central_chan = True
         msmd = msmetadata()
         msmd.open(msname)
         chanres = msmd.chanres(0, unit="MHz")[0]
@@ -124,7 +133,7 @@ def split_target_scans(
         #############################
         # Making spectral chunks
         #############################
-        coarse_channel_bands = get_MWA_coarse_bands(msname)
+        coarse_channel_bands = get_MWA_coarse_bands(msname, flag_central_chan=flag_central_chan)
         chanlist = []
         good_spwlist=[]
         for chan in coarse_channel_bands:
@@ -190,6 +199,7 @@ def split_target_scans(
 
 def main(
     mslist,
+    metafits,
     workdir="",
     datacolumn="data",
     scan=1,
@@ -214,6 +224,8 @@ def main(
     ----------
     mslist : str
         Measurement sets (comma separated).
+    metafits : str
+        Metafits file
     workdir : str, optional
         Working directory for intermediate and output products. If empty, defaults to `<msname>/workdir`.
     datacolumn : str, optional
@@ -337,6 +349,7 @@ def main(
         tasks = [
             delayed(split_target_scans)(
                 msname,
+                metafits,
                 workdir,
                 float(timeres),
                 float(freqres),
@@ -406,6 +419,11 @@ def cli():
         "mslist",
         type=str,
         help="Name of measurement sets (required positional argument)",
+    )
+    basic_args.add_argument(
+        "metafits",
+        type=str,
+        help="Metafits file (required positional argument)",
     )
     basic_args.add_argument(
         "--workdir",
@@ -501,7 +519,8 @@ def cli():
     args = parser.parse_args()
 
     msg = main(
-        mslist=args.mslist,
+        args.mslist,
+        args.metafits,
         workdir=args.workdir,
         datacolumn=args.datacolumn,
         scan=args.scan,

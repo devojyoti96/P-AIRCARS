@@ -610,7 +610,13 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
             "Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging."
         )
     else:
-        bad_chans = get_bad_chans(msname)
+        header = fits.getheader(metafits)
+        mode = header["MODE"]
+        if "MWAX" in mode:
+            flag_central_chan = False
+        else:
+            flag_central_chan = True
+        bad_chans = get_bad_chans(msname, flag_central_chan=flag_central_chan)
         if bad_chans != "":
             bad_chans = bad_chans.replace("0:", "").split(";")
             for bad_chan in bad_chans:
