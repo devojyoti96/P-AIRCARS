@@ -952,7 +952,7 @@ def main(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             min_mem=min_mem,
-            max_worker=len(mslist) + 1,
+            max_worker=len(mslist),
         )
         if result is None:
             print("Error occured in creating local cluster.")

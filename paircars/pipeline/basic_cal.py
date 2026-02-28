@@ -322,7 +322,7 @@ def single_ms_cal_and_flag(
                     n_threads=n_threads,
                     mem_limit=mem_limit,
                 )
-                unflag_chan, flag_chans = get_chans_flag(msname, n_threads=n_threads)
+                unflag_chans, flag_chans = get_chans_flag(msname, n_threads=n_threads)
                 if len(flag_chans)/(len(unflag_chans)+len(flag_chans))>0.5:
                     flagmanager(vis=msname,mode="restore",versionname="postcal_1")
                 flagmanager(vis=msname,mode="delete",versionname="postcal_1")
@@ -702,7 +702,7 @@ def main(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             min_mem=min_mem,
-            max_worker=len(mslist) + 1,
+            max_worker=len(mslist),
         )
         if result is None:
             print("Error occured in creating local cluster.")

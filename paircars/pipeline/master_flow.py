@@ -2154,7 +2154,7 @@ def master_control(
 
         if adaptive:
             scale_worker_and_wait(
-                dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
+                dask_cluster, dask_client, min(len(target_mslist), max_worker)
             )
 
         ########################################
@@ -2202,7 +2202,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        min(len(target_mslist) + 1, max_worker),
+                        min(len(target_mslist), max_worker),
                     )
                 target_mslist = filtered_ms  # Filtered target mslist
             except Exception as e:
@@ -2262,7 +2262,7 @@ def master_control(
 
         if adaptive:
             scale_worker_and_wait(
-                dask_cluster, dask_client, min(len(calibrator_mslist) + 1, max_worker)
+                dask_cluster, dask_client, min(len(calibrator_mslist), max_worker)
             )
 
         ##############################
@@ -2331,7 +2331,7 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    min(len(split_cal_mslist) + 1, max_worker),
+                    min(len(split_cal_mslist), max_worker),
                 )
 
         ##################################
@@ -2379,7 +2379,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        min(len(split_cal_mslist) + 1, max_worker),
+                        min(len(split_cal_mslist), max_worker),
                     )
                 split_cal_mslist = filtered_ms  # Filtered target mslist
                 print("###########################")
@@ -2441,7 +2441,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        min(len(split_cal_mslist) + 1, max_worker),
+                        min(len(split_cal_mslist), max_worker),
                     )
                 split_cal_mslist = filtered_ms  # Filtered target mslist
             except Exception as e:
@@ -2587,7 +2587,7 @@ def master_control(
 
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
+                    dask_cluster, dask_client, min(len(target_mslist), max_worker)
                 )
 
             ######################
@@ -2698,7 +2698,7 @@ def master_control(
         if do_selfcal:  # If calibrator solutions are available
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
+                    dask_cluster, dask_client, min(len(selfcal_mslist), max_worker)
                 )
             ############################
             # Basic flagging for selfcal
@@ -2831,7 +2831,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        min(len(selfcal_mslist) + 1, max_worker),
+                        min(len(selfcal_mslist), max_worker),
                     )
                 if do_sidereal_cor:
                     if emails != "":
@@ -2976,7 +2976,7 @@ def master_control(
         if do_target_split and (do_applycal or do_imaging):
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
+                    dask_cluster, dask_client, min(len(target_mslist), max_worker)
                 )
             prefix = "target"
             if emails != "":
@@ -3078,7 +3078,7 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    min(len(split_target_mslist) + 1, max_worker),
+                    min(len(split_target_mslist), max_worker),
                 )
             ############################
             # Basic flagging
@@ -3394,7 +3394,7 @@ def master_control(
             else:
                 if adaptive:
                     scale_worker_and_wait(
-                        dask_cluster, dask_client, min(len(images) + 1, max_worker)
+                        dask_cluster, dask_client, min(len(images), max_worker)
                     )
                 if emails != "":
                     email_msg = "Started primary beam correction."
@@ -3476,7 +3476,7 @@ def master_control(
         #################################
         if adaptive:
             scale_worker_and_wait(
-                dask_cluster, dask_client, min(len(images) + 1, max_worker)
+                dask_cluster, dask_client, min(len(images), max_worker)
             )
         if emails != "":
             email_msg = "Started making overlays."
@@ -3524,7 +3524,7 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    min(len(split_cal_mslist) + 1, max_worker),
+                    min(len(split_cal_mslist), max_worker),
                 )
             msplot_outdir = f"{outdir}/ms_diagnostics_plots"
             os.makedirs(msplot_outdir, exist_ok=True)
@@ -4117,6 +4117,12 @@ def cli():
             f"No measurement set is present in the target directory: {args.target_datadir}"
         )
         return
+        
+    total_ncoarse = 0
+    for msname in target_mslist:
+        ncoarse = get_ncoarse(msname)
+        total_ncoarse += ncoarse
+            
     target_ms_sizes = [get_ms_size(target_msname) for target_msname in target_mslist]
     max_ms_size = max(target_ms_sizes)
     if args.cal_datadir:
@@ -4161,9 +4167,9 @@ def cli():
         cpu_frac = args.cpu_frac
 
     if args.max_worker is None:
-        max_worker = len(target_mslist) + 1
+        max_worker = total_ncoarse
     else:
-        max_worker = max(int(args.max_worker), len(target_mslist) + 1)
+        max_worker = max(int(args.max_worker), total_ncoarse)
 
     if args.cluster is not True and scheduler_name == "local":
         #######################################
@@ -4233,7 +4239,7 @@ def cli():
             )
             adaptive = args.adaptive
             if not adaptive:
-                nworker = min(len(target_mslist) + 1, nworker)
+                nworker = min(total_ncoarse, nworker)
                 scale_worker_and_wait(dask_cluster, dask_client, nworker)
         else:
             print(
