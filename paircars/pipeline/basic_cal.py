@@ -9,6 +9,7 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
+from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
 from paircars.utils.calibration import get_gleam_uvrange, get_caltable_metadata
 from paircars.utils.crossphasecal import crossphasecal
