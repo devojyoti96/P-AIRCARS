@@ -18,8 +18,6 @@ from multiprocessing import Process, Event
 from dask.distributed import get_client
 from dotenv import load_dotenv
 from pyfiglet import Figlet
-from distributed.comm.core import CommClosedError
-from dask.distributed import CancelledError
 from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
@@ -94,25 +92,10 @@ from paircars.pipeline import (
 )
 from paircars.pipeline.init_data import init_paircars_data
 
-
-def retry_on_transient(task, exc):
-    transient_errors = (
-        OSError,
-        TimeoutError,
-        CommClosedError,
-        CancelledError,
-        ConnectionError,
-    )
-    if isinstance(exc, MemoryError):  # Not trying on memory error
-        return False
-    return isinstance(exc, transient_errors)
-
-
 @task(
     name="moving_to_solar_center",
     retries=1,
     retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_solar_phasecenter_jobs(
@@ -192,7 +175,6 @@ def run_solar_phasecenter_jobs(
     name="making_dynamic_spectra",
     retries=1,
     retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_ds_jobs(
@@ -281,7 +263,6 @@ def run_ds_jobs(
     name="spliting_ms",
     retries=1,
     retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_target_split_jobs(
@@ -392,9 +373,6 @@ def run_target_split_jobs(
 
 @task(
     name="flagging",
-    retries=1,
-    retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_flag(
@@ -509,8 +487,6 @@ def run_flag(
 
 @task(
     name="importing_model_visibilities",
-    retries=2,
-    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_import_model(
@@ -589,9 +565,6 @@ def run_import_model(
 
 @task(
     name="basic_calibration",
-    retries=1,
-    retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_basic_cal_jobs(
@@ -678,8 +651,6 @@ def run_basic_cal_jobs(
 
 @task(
     name="applying_basic_calibration",
-    retries=2,
-    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_apply_basiccal_sol(
@@ -783,7 +754,6 @@ def run_apply_basiccal_sol(
     name="solar_sidereal_correction",
     retries=1,
     retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_solar_siderealcor_jobs(
@@ -861,9 +831,6 @@ def run_solar_siderealcor_jobs(
 
 @task(
     name="selfcal",
-    retries=1,
-    retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_selfcal_jobs(
@@ -1016,9 +983,6 @@ def run_selfcal_jobs(
 
 @task(
     name="applying_self-calibration",
-    retries=1,
-    retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_apply_selfcal_sol(
@@ -1109,9 +1073,6 @@ def run_apply_selfcal_sol(
 
 @task(
     name="imaging",
-    retries=1,
-    retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_imaging_jobs(
@@ -1246,9 +1207,6 @@ def run_imaging_jobs(
 
 @task(
     name="applying_primary_beam",
-    retries=1,
-    retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_apply_pbcor(
@@ -1329,7 +1287,6 @@ def run_apply_pbcor(
     name="making_overlay",
     retries=1,
     retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_make_overlay(
@@ -1424,7 +1381,6 @@ def run_make_overlay(
     name="making_msplot",
     retries=1,
     retry_delay_seconds=60,
-    retry_condition_fn=retry_on_transient,
     log_prints=True,
 )
 def run_make_msplot(
