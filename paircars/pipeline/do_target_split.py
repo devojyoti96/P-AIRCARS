@@ -132,7 +132,7 @@ def split_target_scans(
             end_chan = chan[1]
             good_chans = chan[2]
             if end_chan > start_chan:
-                chanlist.append(f"{start_chan}~{end_chan-1}")
+                chanlist.append(f"{start_chan}~{end_chan}")
             elif start_chan == end_chan:
                 chanlist.append(f"{start_chan}")
             good_chans = [f"{i}" for i in good_chans]
