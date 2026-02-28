@@ -364,6 +364,7 @@ def run_target_split_jobs(
         with get_dask_client() as dask_client:
             msg = do_target_split.main(
                 mslist,
+                metafits,
                 workdir=workdir,
                 datacolumn=datacolumn,
                 time_window=time_window,
@@ -2327,8 +2328,8 @@ def master_control(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
                 ",".join(calibrator_mslist),
-                workdir,
                 calibrator_metafits,
+                workdir,
                 datacolumn="data",
                 timeres=10.0,
                 freqres=0.16,
