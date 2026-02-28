@@ -176,7 +176,7 @@ def get_bad_chans(msname):
         n_per_coarse_chan = int(1.28 / chanres)
         n_edge_chan = max(1, int(0.16 / chanres))
         spw = ""
-        for i in range(0, int(nchan / n_per_coarse_chan), n_per_coarse_chan):
+        for i in range(0, int(nchan / n_per_coarse_chan)+1, n_per_coarse_chan):
             if i == i + n_edge_chan - 1:
                 spw += f"{i};"
             else:
