@@ -3459,7 +3459,7 @@ def master_control(
         # Filtering only coarse channel images for default overlay mode
         #################################################################
         if make_overlay is False:
-            filtered_images = []
+            bws = []
             for image in images:
                 header = fits.getheader(image)
                 if header["CTYPE3"] == "FREQ":
@@ -3468,54 +3468,74 @@ def master_control(
                     bw = round(float(header["CDELT4"]) / 10**6, 2)
                 else:
                     bw = -1
-                if bw >= 1.2:
-                    filtered_images.append(image)
-            images = filtered_images
+                bws.append(bw)
+            max_bw = max(bw)
+            bws = np.array(bws)
+            pos = np.where(bws == max_bw)
+            filtered_images = images[pos]
 
-        #################################
-        # Start overlays
-        #################################
-        if adaptive:
-            scale_worker_and_wait(
-                dask_cluster, dask_client, min(len(images), max_worker)
+            last_mjdsec = 0.0
+            final_images = []
+            timelist = []
+            for image in filtered_imaeglist:
+                header = fits.getheader(image)
+                timeobs = header["DATE-OBS"].split(".")[0]
+                mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
+                if (mjdsec - last_mjdsec) >= 10.0:
+                    final_images.append(image)
+                    timelist.append(mjdsec)
+                    last_mjdsec = max(timelist)
+            images = final_images
+
+        if len(images) > 0:
+            #################################
+            # Start overlays
+            #################################
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(images), max_worker)
+                )
+            if emails != "":
+                email_msg = "Started making overlays."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            print("###########################")
+            print("Starting task: Making overlay on EUV images.....")
+            print("###########################")
+            future_overlay = run_make_overlay.with_options(
+                task_run_name=f"making_overlay_{jobid}"
+            ).submit(
+                f"{imagedir}/images",
+                f"{imagedir}/overlay_pngs",
+                workdir=workdir,
+                all_overlay=make_overlay,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                remote_log=remote_logger,
             )
-        if emails != "":
-            email_msg = "Started making overlays."
-            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
-        print("###########################")
-        print("Starting task: Making overlay on EUV images.....")
-        print("###########################")
-        future_overlay = run_make_overlay.with_options(
-            task_run_name=f"making_overlay_{jobid}"
-        ).submit(
-            f"{imagedir}/images",
-            f"{imagedir}/overlay_pngs",
-            workdir=workdir,
-            all_overlay=make_overlay,
-            jobid=jobid,
-            cpu_frac=round(cpu_frac, 2),
-            remote_log=remote_logger,
-        )
-        try:
-            msg = future_overlay.result()
-            if emails != "":
-                email_msg = "Making overlays are done."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print(f"Finished task: Making overlays are done.")
-            print(f"Final image directory: {imagedir}/overlay_pngs")
-            print("###########################")
-        except Exception as e:
-            print("!!!! WARNING: Overlay of the images are not successful. !!!!")
-            traceback.print_exc()
-            if emails != "":
-                email_msg = "Error occured in making overlays. P-AIRCARS has stopped."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            return 1
+            try:
+                msg = future_overlay.result()
+                if emails != "":
+                    email_msg = "Making overlays are done."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                print("###########################")
+                print(f"Finished task: Making overlays are done.")
+                print(f"Final image directory: {imagedir}/overlay_pngs")
+                print("###########################")
+            except Exception as e:
+                print("!!!! WARNING: Overlay of the images are not successful. !!!!")
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = (
+                        "Error occured in making overlays. P-AIRCARS has stopped."
+                    )
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                return 1
 
         ##############################################
         # Making diagnostic plots of measurement sets

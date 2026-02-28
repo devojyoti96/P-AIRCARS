@@ -10,7 +10,7 @@ import os
 from casatools import msmetadata
 from dask import delayed
 from paircars.utils.basic_utils import suppress_output
-from paircars.utils.calibration import get_gleam_uvrange
+from paircars.utils.calibration import get_gleam_uvrange, get_caltable_metadata
 from paircars.utils.crossphasecal import crossphasecal
 from paircars.utils.flagging import (
     flagsummary,
@@ -24,7 +24,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_uvrange_exclude, get_ms_size
-from paircars.utils.mwa_utils import get_MWA_OBSID
+from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -607,6 +607,7 @@ def run_basic_cal_rounds(
 
 def main(
     mslist,
+    metafits,
     workdir,
     outdir,
     refant="",
@@ -627,6 +628,8 @@ def main(
     ----------
     mslist : str
         Measurement set list (comma separated)
+    metafits : str
+        Metafits file
     workdir : str
         Work directory
     outdir : str
@@ -660,10 +663,11 @@ def main(
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
-    mslist = mslist.split(",")
+    header = fits.getheader(metafits)
+    obsid = header["GPSTIME"]
 
+    mslist = mslist.split(",")
     if workdir == "":
-        obsid = get_MWA_OBSID(mslist[0])
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
 
@@ -749,15 +753,41 @@ def main(
                 elif caltable.endswith("kcrosscal"):
                     kcrosscals.append(caltable)
             if len(bcals) > 0:
-                print(f"All bandpass caltables: {bcals}.")
+                print(
+                    f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}."
+                )
             if len(kcrosscals) > 0:
-                print(f"All cross-phase caltables: {kcrosscals}.")
+                print(
+                    f"All cross-phase caltables: {[os.path.basename(i) for i in kcrosscals]}."
+                )
             for caltable in caltables:
                 if caltable is not None and os.path.exists(caltable):
-                    dest = caldir + "/" + os.path.basename(caltable)
-                    if os.path.exists(dest):
-                        os.system("rm -rf " + dest)
-                    os.system("mv " + caltable + " " + caldir)
+                    cal_metadata = get_caltable_metadata(caltable)
+                    freq_start = cal_metadata["Channel 0 frequency (MHz)"]
+                    bw = cal_metadata["Bandwidth (MHz)"]
+                    freq_end = freq_start + bw
+                    ch_start = freq_to_MWA_coarse(freq_start)
+                    ch_end = freq_to_MWA_coarse(freq_end)
+                    if freq_end > freq_start and ch_end == ch_start:
+                        ch_end = ch_start + 1
+                    if caltable.endswith(".bcal"):
+                        final_caltable = (
+                            caldir
+                            + f"/calibrator_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
+                        )
+                    elif caltable.endswith(".kcrosscal"):
+                        final_caltable = (
+                            caldir
+                            + f"/calibrator_{obsid}_coarsechan_{ch_start}_{ch_end}.kcrosscal"
+                        )
+                    else:
+                        final_caltable = (
+                            caldir
+                            + f"/calibrator_{obsid}_coarsechan_{ch_start}_{ch_end}.cal"
+                        )
+                    os.system(f"rm -rf {final_caltable}")
+                    os.system(f"cp -r {caltable} {final_caltable}")
+                    os.system("rm -rf " + caltable)
     except Exception as e:
         traceback.print_exc()
         msg = 1

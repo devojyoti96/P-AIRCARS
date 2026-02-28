@@ -103,9 +103,7 @@ def main(
         # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
         ###############################################################################
         if all_overlay is False:
-            filtered_imagelist = []
-            timelist = []
-            last_mjdsec = 0.0
+            bws = []
             for image in imagelist:
                 header = fits.getheader(image)
                 if header["CTYPE3"] == "FREQ":
@@ -114,14 +112,24 @@ def main(
                     bw = round(float(header["CDELT4"]) / 10**6, 2)
                 else:
                     bw = -1
-                if bw >= 1.2:
-                    timeobs = header["DATE-OBS"].split(".")[0]
-                    mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
-                    if (mjdsec - last_mjdsec) >= 10.0:
-                        filtered_imagelist.append(image)
-                        timelist.append(mjdsec)
-                        last_mjdsec = max(timelist)
-            imagelist = filtered_imagelist
+                bws.append(bw)
+            max_bw = max(bw)
+            bws = np.array(bws)
+            pos = np.where(bws == max_bw)
+            filtered_imagelist = imagelist[pos]
+
+            last_mjdsec = 0.0
+            final_imagelist = []
+            timelist = []
+            for image in filtered_imaeglist:
+                header = fits.getheader(image)
+                timeobs = header["DATE-OBS"].split(".")[0]
+                mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
+                if (mjdsec - last_mjdsec) >= 10.0:
+                    final_imagelist.append(image)
+                    timelist.append(mjdsec)
+                    last_mjdsec = max(timelist)
+            imagelist = final_imagelist
 
         scheduler_name = get_scheduler_name()
         if scheduler_name == "local" or dask_client is None:
