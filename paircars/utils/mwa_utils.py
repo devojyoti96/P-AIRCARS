@@ -182,7 +182,7 @@ def get_bad_chans(msname):
             else:
                 spw += f"{i}~{i+n_edge_chan-1};"
             if n_edge_chan >= 1:
-                spw += f"{i+int(nchan/2)-1};}"#~{i+int(nchan/2)};"
+                spw += f"{i+int(nchan/2)-1}};"#~{i+int(nchan/2)};"
             if i + nchan - n_edge_chan == i + nchan - 1:
                 spw += f"{i+nchan-1};"
             else:
