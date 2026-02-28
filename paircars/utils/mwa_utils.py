@@ -10,7 +10,6 @@ from astropy.wcs import FITSFixedWarning
 from astropy.io import fits
 from astropy.time import Time
 from casatools import msmetadata
-from .ds_utils import cal_norm_crosscorr
 from .udocker_utils import run_wsclean
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
