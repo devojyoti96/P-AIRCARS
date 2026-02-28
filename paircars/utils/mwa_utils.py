@@ -102,60 +102,70 @@ def get_MWA_coarse_chan(msname):
 
 def get_MWA_coarse_bands(msname, flag_central_chan=False):
     """
-    Get coarse channel bands of the MWA
-
-    Parameters
-    ----------
-    msname : str
-        Measurement set
-    flag_central_chan : bool, optional
-        Flag central channel
+    Get MWA coarse channel bands.
 
     Returns
     -------
-    list
-        Coarse channel list of tuple (start_channel, end_channel, good_chan_list)
+    list of tuples
+        (start_chan, end_chan, good_chan_list)
     """
+
+    # ----------------------------
+    # Get bad channels
+    # ----------------------------
     bad_spw = get_bad_chans(msname, flag_central_chan=flag_central_chan)
-    bad_chans = [int(i) for i in bad_spw.split("0:")[1].split(";")]
+
+    if bad_spw:
+        bad_chans = set(int(i) for i in bad_spw.split("0:")[1].split(";"))
+    else:
+        bad_chans = set()
+
+    # ----------------------------
+    # Read MS metadata
+    # ----------------------------
     msmd = msmetadata()
     msmd.open(msname)
+
     freqs = msmd.chanfreqs(0, unit="MHz")
     freqres = msmd.chanres(0, unit="MHz")[0]
+
     msmd.close()
-    nchan_coarse = int(1.28 / freqres)
-    start_ms_freq = round(np.nanmin(freqs), 2)
-    end_ms_freq = round(np.nanmax(freqs), 2)
-    coarse_channels = np.arange(55, 235)
-    coarse_chans = {}
-    for coarse_chan in coarse_channels:
-        cent_freq = round(coarse_chan * 1.28, 2)
-        start_freq = round(cent_freq - 0.64, 2)
-        end_freq = round(cent_freq + 0.64, 2)
-        if start_ms_freq == end_ms_freq:
-            start_chan = np.argmin(np.abs(start_freq - freqs))
-            if start_chan in bad_chans:
-                good_chunk = []
-            else:
-                good_chunk = [start_chan]
-            if (start_chan, good_chunk) not in coarse_chans:
-                coarse_chans.append((start_chan, good_chunk))
-        elif cent_freq > start_ms_freq and cent_freq < end_ms_freq:
-            start_chan = np.argmin(np.abs(start_freq - freqs))
-            end_chan = np.argmin(np.abs(end_freq - freqs))
-            if start_chan > 0:
-                start_chan = max(
-                    (start_chan // nchan_coarse) * nchan_coarse, nchan_coarse
-                )
-            if end_chan > 0:
-                end_chan = max((end_chan // nchan_coarse) * nchan_coarse, nchan_coarse)
-            if end_chan > start_chan:
-                good_chunk = []
-                for i in range(start_chan, end_chan + 1):
-                    if i not in bad_chans:
-                        good_chunk.append(i)
-                if (start_chan, end_chan, good_chunk) not in coarse_chans:
-                    coarse_chans.append((start_chan, end_chan, good_chunk))
+    msmd.done()
+
+    nchan = len(freqs)
+    nchan_coarse = int(round(1.28 / freqres))
+
+    start_ms_freq = np.nanmin(freqs)
+    end_ms_freq = np.nanmax(freqs)
+
+    coarse_chans = []
+    seen = set()
+
+    # ----------------------------
+    # Loop over coarse bands
+    # ----------------------------
+    for start_chan in range(0, nchan, nchan_coarse):
+
+        end_chan = min(start_chan + nchan_coarse - 1, nchan - 1)
+
+        # Compute central frequency of this coarse band
+        cent_freq = np.nanmean(freqs[start_chan:end_chan + 1])
+
+        if cent_freq < start_ms_freq or cent_freq > end_ms_freq:
+            continue
+
+        # Collect good channels
+        good_chunk = [
+            ch for ch in range(start_chan, end_chan + 1)
+            if ch not in bad_chans
+        ]
+
+        entry = (start_chan, end_chan, tuple(good_chunk))
+
+        if entry not in seen:
+            coarse_chans.append((start_chan, end_chan, good_chunk))
+            seen.add(entry)
+
     return coarse_chans
 
 
