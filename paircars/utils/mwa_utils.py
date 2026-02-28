@@ -6,6 +6,7 @@ import traceback
 import warnings
 import astropy.units as u
 import requests
+import math
 from astropy.wcs import FITSFixedWarning
 from astropy.io import fits
 from astropy.time import Time
@@ -57,7 +58,8 @@ def get_ncoarse(msname):
     msmd.open(msname)
     freqs = msmd.chanfreqs(0, unit="MHz")
     bw = max(freqs) - min(freqs)
-    ncoarse = max(1, int(bw / 1.28))
+    print (bw)
+    ncoarse = max(1, math.ceil(bw / 1.28))
     return ncoarse
 
 
