@@ -95,7 +95,6 @@ def main(
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     imagelist = glob.glob(f"{imagedir}/*.fits")
-    print (imagelist)
 
     if len(imagelist) == 0:
         print("No image in the image directory.")
@@ -109,6 +108,7 @@ def main(
             bws = []
             for image in imagelist:
                 header = fits.getheader(image)
+                print (image)
                 if header["CTYPE3"] == "FREQ":
                     bw = round(float(header["CDELT3"]) / 10**6, 2)
                 elif header["CTYPE4"] == "FREQ":
