@@ -9,6 +9,7 @@ import sys
 import os
 import dask
 from astropy.io import fits
+from dask import delayed
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -17,8 +18,8 @@ from paircars.utils.logger_utils import (
 from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
-from paircars.utils.proc_manage_utils import get_scheduler_name
-from dask import delayed
+from paircars.utils.proc_manage_utils import get_scheduler_name, get_local_dask_cluster
+
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
