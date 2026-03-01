@@ -135,8 +135,8 @@ def main(
                     last_mjdsec = max(timelist)
             imagelist = final_imagelist
 
-        if len(imagelist)>0:
-            print (f"Total images to overlay: {len(imagelist)}")
+        if len(imagelist) > 0:
+            print(f"Total images to overlay: {len(imagelist)}")
             scheduler_name = get_scheduler_name()
             if scheduler_name == "local" or dask_client is None:
                 ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
@@ -178,7 +178,7 @@ def main(
                 print(f"Total overlays: {len(outimage_list)}")
                 msg = 0
         else:
-            msg=1
+            msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1

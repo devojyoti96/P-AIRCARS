@@ -109,7 +109,7 @@ def run_pbcor(
         cmd.append("--restore")
 
     if leakage_file != "" and os.path.exists(leakage_file):
-        cmd.append("--leakage_file") 
+        cmd.append("--leakage_file")
         cmd.append(f"{leakage_file}")
 
     cmd.append(imagename)

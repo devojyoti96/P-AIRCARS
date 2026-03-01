@@ -2277,7 +2277,7 @@ def master_control(
         if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, min(total_ncoarse+1, max_worker)
+                    dask_cluster, dask_client, min(total_ncoarse + 1, max_worker)
                 )
             prefix = "calibrator"
             if emails != "":
@@ -2330,7 +2330,6 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-                
 
         if (do_cal_flag or do_import_model or do_basic_cal) and has_cal:
             split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
@@ -2525,7 +2524,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-                
+
         if (do_cal_flag or do_import_model or do_basic_cal) and adaptive:
             scale_worker_and_wait(dask_cluster, dask_client, 1)
 
@@ -2686,7 +2685,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                    
+
             filtered_mslist = []  # Filtering in case any ms is corrupted
             for ms in selfcal_target_mslist:
                 checkcol = check_datacolumn_valid(ms)
@@ -3048,13 +3047,14 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-
         if do_imaging or do_applycal or do_apply_selfcal:
             split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
             if len(split_target_mslist) == 0:
                 print("!!!! WARNING: No target ms are present. !!!!")
                 if emails != "":
-                    email_msg = "No target measurement set is present for final processing."
+                    email_msg = (
+                        "No target measurement set is present for final processing."
+                    )
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -3550,20 +3550,17 @@ def master_control(
                 print("!!!! WARNING: Overlay of the images are not successful. !!!!")
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = (
-                        "Error occured in making overlays."
-                    )
+                    email_msg = "Error occured in making overlays."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-
 
         ##############################################
         # Making diagnostic plots of measurement sets
         ##############################################
         if make_msplot:
             split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
-            if len(split_cal_mslist)==0:
+            if len(split_cal_mslist) == 0:
                 print("No calibrator measurement set is present for ploting.")
             else:
                 if adaptive:
@@ -3626,7 +3623,7 @@ def master_control(
             # Ploting target ms
             ###########################################
             split_target_mslist = glob.glob(f"{workdir}/target*_spw_*.ms")
-            if len(split_target_mslist)==0:
+            if len(split_target_mslist) == 0:
                 print("No target measurment set is present for ploting.")
             else:
                 print("###########################")
@@ -3648,9 +3645,7 @@ def master_control(
                 try:
                     msg = future_target_plot.result()
                     if emails != "":
-                        email_msg = (
-                            "Making diagnostic plots for target measurement sets are done."
-                        )
+                        email_msg = "Making diagnostic plots for target measurement sets are done."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
