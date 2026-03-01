@@ -357,7 +357,7 @@ def get_local_dask_cluster(
                 "PYTHONUNBUFFERED": "1",
                 "OMP_NUM_THREADS": f"{ncpu}",
                 "MKL_NUM_THREADS": f"{ncpu}",
-                "export OPENBLAS_NUM_THREADS": f"{ncpu}",
+                "OPENBLAS_NUM_THREADS": f"{ncpu}",
                 "NUMEXPR_NUM_THREADS": f"{ncpu}",
                 "RAYON_NUM_THREADS": f"{ncpu}",
                 "MALLOC_TRIM_THRESHOLD_": "0",
@@ -383,6 +383,7 @@ def get_local_dask_cluster(
     except Exception as e:
         print("Error occured in creating local cluster.")
         traceback.print_exc()
+        os.system(f"rm -rf {dask_dir}")
         os.system(f"rm -rf {dask_dir_tmp}")
         return
 

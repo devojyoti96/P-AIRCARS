@@ -1718,7 +1718,8 @@ def main(
     finally:
         time.sleep(5)
         for ms in org_mslist:
-            drop_cache(ms)
+            if os.path.exists(ms):
+                drop_cache(ms)
         drop_cache(workdir)
         clean_shutdown(observer)
         if dask_cluster is not None:

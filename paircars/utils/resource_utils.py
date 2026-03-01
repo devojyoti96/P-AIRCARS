@@ -22,6 +22,8 @@ def drop_file_cache(filepath, verbose=False):
     if platform.system() != "Linux":
         raise NotImplementedError("drop_file_cache is only supported on Linux")
     try:
+        if os.path.exists(filepath) is False:
+            return
         if not os.path.isfile(filepath):
             return
         fd = os.open(filepath, os.O_RDONLY)

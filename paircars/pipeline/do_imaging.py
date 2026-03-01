@@ -930,7 +930,7 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return 1, 0, 0
+        return 1, 0, 0, 0
     else:
         succeed = 0
         failed = len(mslist)
@@ -995,7 +995,7 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1, succeed, failed
+            return 1, succeed, failed, total_images
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
@@ -1041,7 +1041,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return succeed, failed, total_images
+    return msg, succeed, failed, total_images
 
 
 def cli():
