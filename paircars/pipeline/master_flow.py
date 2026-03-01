@@ -2572,18 +2572,17 @@ def master_control(
                         f"Error in creating diagnostic plots for caltable {caltable}."
                     )
 
-        ###############################################
-        # Removing previous self-calibration artificats
-        ###############################################
-        print("Removing all previous self-calibration artificats...")
-        os.system(
-            f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*"
-        )
-
         ###################################################
         # Start spliting selfcal ms
         ###################################################
         if do_selfcal and do_selfcal_split:
+            ###############################################
+            # Removing previous self-calibration artificats
+            ###############################################
+            print("Removing all previous self-calibration artificats...")
+            os.system(
+                f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*"
+            )
             prefix = "selfcal"
             try:
                 time_interval = float(solint)

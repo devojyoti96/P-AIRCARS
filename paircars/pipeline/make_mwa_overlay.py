@@ -115,9 +115,10 @@ def main(
                 else:
                     bw = -1
                 bws.append(bw)
-            max_bw = max(bw)
+            max_bw = max(bws)
             bws = np.array(bws)
             pos = np.where(bws == max_bw)
+            imagelist = np.array(imagelist)
             filtered_imagelist = imagelist[pos]
 
             last_mjdsec = 0.0
