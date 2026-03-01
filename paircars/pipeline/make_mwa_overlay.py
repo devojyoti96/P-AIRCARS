@@ -18,7 +18,7 @@ from paircars.utils.logger_utils import (
 from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
-from paircars.utils.proc_manage_utils import get_scheduler_name, get_local_dask_cluster
+from paircars.utils.proc_manage_utils import get_scheduler_name, get_local_dask_cluster, scale_worker_and_wait
 
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
