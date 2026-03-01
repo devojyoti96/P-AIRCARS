@@ -176,7 +176,11 @@ def main(
                     )
             else:"""
             tasks = []
-            ncpu = int(os.environ.get("OMP_NUM_THREADS"))
+            ncpu = os.environ.get("OMP_NUM_THREADS")
+            if ncpu is not None:
+                ncpu = max(1, int(ncpu))
+            else:
+                ncpu=1
             for image in imagelist:
                 task = delayed(make_mwa_overlay)(
                     image,
