@@ -329,7 +329,7 @@ def main(
             ncoarse = get_ncoarse(msname)
             total_ncoarse += ncoarse
         total_ncoarse = max(1, total_ncoarse)
-        expected = total_noarse
+        expected = total_ncoarse
         succeed = 0
 
     dask_cluster = None
