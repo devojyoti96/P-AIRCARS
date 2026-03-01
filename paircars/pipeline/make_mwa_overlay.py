@@ -136,7 +136,7 @@ def main(
             imagelist = final_imagelist
 
         if len(imagelist)>0:
-            print (f"Total images to overlaye: {len(imagelist)}")
+            print (f"Total images to overlay: {len(imagelist)}")
             scheduler_name = get_scheduler_name()
             if scheduler_name == "local" or dask_client is None:
                 ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
