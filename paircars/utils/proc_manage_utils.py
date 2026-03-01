@@ -429,7 +429,7 @@ def submit_local_master_flow(args, jobid):
             if "PREFECT" in env:
                 prefect_env_list.append(f"export {env}={envlist.get(env)}")
     log_file = f"{args.workdir}/main_paircars_{jobid}.log"
-    cli_cmd.append += f"--masterlog {log_file}"
+    cli_cmd += f"--masterlog {log_file}"
 
     try:
         script_args = ["#!/bin/bash\n"]
