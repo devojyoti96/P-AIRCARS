@@ -106,23 +106,17 @@ def main(
         ###############################################################################
         if all_overlay is False:
             bws = []
-            filtered_imagelist=[]
             for image in imagelist:
                 header = fits.getheader(image)
                 keys = header.keys()
-                if "PIPELINE" in keys and header["PIPELINE"]=="P-AIRCARS" and ("CTYPE3" in keys or "CTYPE4" in keys):
-                    filtered_imagelist.append(image)
-            imagelist=filtered_imagelist
-            del filtered_imagelist
-            for image in imagelist:
-                header = fits.getheader(image)
-                if header["CTYPE3"] == "FREQ":
+                if "CTYPE3" in keys and header["CTYPE3"] == "FREQ":
                     bw = round(float(header["CDELT3"]) / 10**6, 2)
-                elif header["CTYPE4"] == "FREQ":
+                elif "CTYPE3" in keys and header["CTYPE4"] == "FREQ":
                     bw = round(float(header["CDELT4"]) / 10**6, 2)
                 else:
                     bw = -1
                 bws.append(bw)
+            print (bws)
             max_bw = max(bws)
             bws = np.array(bws)
             pos = np.where(bws == max_bw)
