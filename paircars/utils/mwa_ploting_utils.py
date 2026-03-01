@@ -1072,6 +1072,7 @@ def make_mwa_overlay(
         with SphericalScreen(smap.observer_coordinate):
             return smap.reproject_to(target_header)
 
+    print(f"Making overlay for image: {mwa_image}")
     if showgui:
         matplotlib.use("TkAgg")
     else:
