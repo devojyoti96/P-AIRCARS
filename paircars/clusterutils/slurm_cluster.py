@@ -440,6 +440,7 @@ def submit_slurm_master_flow(args, jobid):
         print("######################################################")
         print(f"P-AIRCARS Job ID: {jobid}")
         print(f"Batch script: {script_path} is ready for submission.")
+        print(f"Main logger: {log_file}")
         print("######################################################")
         result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
         exit_code = result.returncode

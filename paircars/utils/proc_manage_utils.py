@@ -451,7 +451,13 @@ def submit_local_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
+        print("######################################################")
+        print(f"P-AIRCARS Job ID: {jobid}")
+        print(f"Batch script: {script_path} is ready for submission.")
+        print(f"Main logger: {log_file}")
+        print("######################################################")
         if log2term:
+            print("Logging in terminal....")
             with open(log_file, "a", buffering=1) as log:
                 process = subprocess.Popen(
                     ["bash", script_path],
