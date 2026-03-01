@@ -442,7 +442,7 @@ def submit_local_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
-        with open(logfile, "a", buffering=1) as log:
+        with open(log_file, "a", buffering=1) as log:
             process = subprocess.Popen(
                 ["bash", script_path],
                 stdout=subprocess.PIPE,
