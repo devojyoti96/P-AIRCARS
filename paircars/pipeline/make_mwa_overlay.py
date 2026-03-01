@@ -106,9 +106,16 @@ def main(
         ###############################################################################
         if all_overlay is False:
             bws = []
+            filtered_imagelist=[]
             for image in imagelist:
                 header = fits.getheader(image)
-                print (image)
+                keys = header.keys()
+                if "PIPELINE" in keys and header["PIPELINE"]=="P-AIRCARS" and ("CTYPE3" in keys or "CTYPE4" in keys):
+                    filtered_imagelist.append(image)
+            imagelist=filtered_imagelist
+            del filtered_imagelist
+            for image in imagelist:
+                header = fits.getheader(image)
                 if header["CTYPE3"] == "FREQ":
                     bw = round(float(header["CDELT3"]) / 10**6, 2)
                 elif header["CTYPE4"] == "FREQ":
