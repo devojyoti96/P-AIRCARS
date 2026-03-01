@@ -23,7 +23,7 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from prefect.settings import get_current_settings
-from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.basic_utils import get_cachedir, timestamp_to_mjdsec
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
     calc_time_smearing_timewidth,
@@ -3484,7 +3484,6 @@ def master_control(
                 bws.append(bw)
             max_bw = max(bws)
             bws = np.array(bws)
-            print(bws,max_bw)
             pos = np.where(bws == max_bw)
             images = np.array(images)
             filtered_images = images[pos]
