@@ -318,6 +318,11 @@ def cli():
         help="Disable remote logger",
     )
     advanced_resource.add_argument(
+        "--log2term",
+        action="store_true",
+        help="Show logs in terminal",
+    )
+    advanced_resource.add_argument(
         "--job_password",
         type=str,
         default=None,

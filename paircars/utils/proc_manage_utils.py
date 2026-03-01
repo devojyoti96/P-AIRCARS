@@ -410,13 +410,22 @@ def submit_local_master_flow(args, jobid):
             f"Job scheduler is not local. Available job scheduler is : {scheduler_name}"
         )
         return 1
-    cli_cmd = "run-mwa-masterflow " + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+    args_list = shlex.quote(arg) for arg in sys.argv[1:]
+    if "--log2term" in args_list:
+        args_list.remove("--log2term")
+    
+    cli_cmd = "run-mwa-masterflow " + " ".join(args_list)
     if hasattr(args, "workdir") and args.workdir is not None:
         os.makedirs(args.workdir, exist_ok=True)
     else:
         print("Please provide a work directory.")
         return 1
 
+    if hasattr(args, "log2term"):
+        log2term=True
+    else:
+        log2term=False
+         
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
     prefect_env_list = []
@@ -442,22 +451,29 @@ def submit_local_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
-        with open(log_file, "a", buffering=1) as log:
-            process = subprocess.Popen(
-                ["bash", script_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            )
+        if log2term:
+            with open(log_file, "a", buffering=1) as log:
+                process = subprocess.Popen(
+                    ["bash", script_path],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )
 
-            for line in process.stdout:
-                sys.stdout.write(line)   # show in terminal
-                log.write(line)          # write to file
-                log.flush()
+                for line in process.stdout:
+                    sys.stdout.write(line)   # show in terminal
+                    log.write(line)          # write to file
+                    log.flush()
 
-            process.stdout.close()
-            exit_code = process.wait()
+                process.stdout.close()
+                exit_code = process.wait()
+        else:
+            with open(log_file, "w") as log:
+                result = subprocess.run(
+                    ["bash", script_path], stdout=log, stderr=log, text=True
+                )
+            exit_code = result.returncode
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
