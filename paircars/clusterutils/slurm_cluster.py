@@ -416,7 +416,7 @@ def submit_slurm_master_flow(args, jobid):
             f"#SBATCH --job-name=paircars_{jobid}",
             f"#SBATCH --time={walltime}",
             f"#SBATCH --output={args.workdir}/main_paircars_{jobid}.log",
-            f"#SBATCH --error={args.workdir}/main_paircars_{jobid}.error",
+            f"#SBATCH --error={args.workdir}/main_paircars_{jobid}.log",
             f"#SBATCH --partition={args.partition}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks=1",
