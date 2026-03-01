@@ -185,7 +185,7 @@ def main(
                     extensions=["png"],
                     outdirs=[outdir],
                     keep_euv_fits=True,
-                    npcu=ncpu,
+                    ncpu=ncpu,
                     verbose=False,
                 )
                 tasks.append(task)
