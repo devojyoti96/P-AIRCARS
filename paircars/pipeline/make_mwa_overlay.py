@@ -173,13 +173,13 @@ def main(
         else:
             print(f"Total images: {len(imagelist)}")
             print(f"Total overlays: {len(outimage_list)}")
-            os.system(f"rm -rf {imagedir}/aia.lev1_euv*.fits")
-            os.system(f"rm -rf {imagedir}/*suvi-l2*.fits")
             msg = 0
     except Exception as e:
         traceback.print_exc()
         msg = 1
     finally:
+        os.system(f"rm -rf {imagedir}/aia.lev1_euv*.fits")
+        os.system(f"rm -rf {imagedir}/*suvi-l2*.fits")
         time.sleep(1)
         drop_cache(imagedir)
         drop_cache(workdir)

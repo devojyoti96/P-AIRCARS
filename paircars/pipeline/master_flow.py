@@ -3391,6 +3391,8 @@ def master_control(
                 + f"/imagedir_f_{image_freqres}_t_{image_timeres}_pol_{pol}_w_{weight_str}"
             )
 
+        os.system(f"rm -rf {imagedir}/images/aia*.fits")
+        os.system(f"rm -rf {imagedir}/images/suvi*.fits")
         ###########################
         # Primary beam correction
         ###########################
