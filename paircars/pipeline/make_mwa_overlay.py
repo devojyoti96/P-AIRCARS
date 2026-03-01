@@ -95,6 +95,7 @@ def main(
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     imagelist = glob.glob(f"{imagedir}/*.fits")
+    print (imagelist)
 
     if len(imagelist) == 0:
         print("No image in the image directory.")
@@ -108,7 +109,6 @@ def main(
             bws = []
             for image in imagelist:
                 header = fits.getheader(image)
-                print(image)
                 if header["CTYPE3"] == "FREQ":
                     bw = round(float(header["CDELT3"]) / 10**6, 2)
                 elif header["CTYPE4"] == "FREQ":
@@ -179,8 +179,8 @@ def main(
         traceback.print_exc()
         msg = 1
     finally:
-        os.system(f"rm -rf {imagedir}/aia.lev1_euv*.fits")
-        os.system(f"rm -rf {imagedir}/*suvi-l2*.fits")
+        os.system(f"rm -rf {imagedir}/*aia*.fits")
+        os.system(f"rm -rf {imagedir}/*suvi*.fits")
         time.sleep(1)
         drop_cache(imagedir)
         drop_cache(workdir)
