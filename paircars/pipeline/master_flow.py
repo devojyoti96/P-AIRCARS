@@ -1294,8 +1294,6 @@ def run_apply_pbcor(
 
 @task(
     name="making_overlay",
-    retries=1,
-    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_make_overlay(
