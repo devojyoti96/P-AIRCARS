@@ -31,6 +31,7 @@ from paircars.utils.calibration import (
 )
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup
+from paircars.utils.image_utils import filter_images
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -3641,35 +3642,7 @@ def master_control(
         # Filtering only coarse channel images for default overlay mode
         #################################################################
         if make_overlay is False:
-            bws = []
-            for image in images:
-                header = fits.getheader(image)
-                if header["CTYPE3"] == "FREQ":
-                    bw = round(float(header["CDELT3"]) / 10**6, 2)
-                elif header["CTYPE4"] == "FREQ":
-                    bw = round(float(header["CDELT4"]) / 10**6, 2)
-                else:
-                    bw = -1
-                bws.append(bw)
-            max_bw = max(bws)
-            bws = np.array(bws)
-            pos = np.where(bws == max_bw)
-            images = np.array(images)
-            filtered_images = images[pos]
-
-            last_mjdsec = 0.0
-            final_images = []
-            timelist = []
-            for image in filtered_images:
-                header = fits.getheader(image)
-                timeobs = header["DATE-OBS"].split(".")[0]
-                mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
-                if (mjdsec - last_mjdsec) >= 10.0:
-                    final_images.append(image)
-                    timelist.append(mjdsec)
-                    last_mjdsec = max(timelist)
-            images = final_images
-
+            images = filter_images(images)
         if len(images) > 0:
             #################################
             # Start overlays

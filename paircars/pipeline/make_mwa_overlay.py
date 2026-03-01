@@ -17,6 +17,7 @@ from paircars.utils.logger_utils import (
 from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
+from paircars.utils.image_utils import filter_images
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -107,36 +108,7 @@ def main(
         # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
         ###############################################################################
         if all_overlay is False:
-            bws = []
-            for image in imagelist:
-                header = fits.getheader(image)
-                keys = header.keys()
-                if "CTYPE3" in keys and header["CTYPE3"] == "FREQ":
-                    bw = round(float(header["CDELT3"]) / 10**6, 2)
-                elif "CTYPE3" in keys and header["CTYPE4"] == "FREQ":
-                    bw = round(float(header["CDELT4"]) / 10**6, 2)
-                else:
-                    bw = -1
-                bws.append(bw)
-            max_bw = max(bws)
-            bws = np.array(bws)
-            pos = np.where(bws == max_bw)
-            imagelist = np.array(imagelist)
-            filtered_imagelist = imagelist[pos]
-
-            last_mjdsec = 0.0
-            final_imagelist = []
-            timelist = []
-            for image in filtered_imagelist:
-                header = fits.getheader(image)
-                timeobs = header["DATE-OBS"].split(".")[0]
-                mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
-                if (mjdsec - last_mjdsec) >= 10.0:
-                    final_imagelist.append(image)
-                    timelist.append(mjdsec)
-                    last_mjdsec = max(timelist)
-            imagelist = final_imagelist
-
+            imagelist = filter_images(imagelist)
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
             ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
