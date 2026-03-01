@@ -56,7 +56,17 @@ def cor_sidereal_motion(
         Success message
     list
         List of sidereal motion corrected measurement sets
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, [], 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
     try:
         container_name = "paircarswsclean"
         container_present = check_udocker_container(container_name)
@@ -66,7 +76,7 @@ def cor_sidereal_motion(
                 print(
                     "Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1, []
+                return 1, [], succeed, failed
 
         tasks = []
         for ms in mslist:
@@ -81,13 +91,16 @@ def cor_sidereal_motion(
             if msg == 0:
                 if os.path.exists(ms + "/.sidereal_cor"):
                     splited_ms_list_phaserotated.append(ms)
+        succeed = len(splited_ms_list_phaserotated)
+        failed = len(mslist)-succeed
+        
         if len(splited_ms_list_phaserotated) == 0:
             print("##################")
             print(
                 "Sidereal motion correction is not successful for any measurement set."
             )
             print("##################")
-            return 1, []
+            return 1, [], succeed, failed
         else:
             print(f"Total measurement sets: {len(mslist)}")
             print(f"Total success: {len(splited_ms_list_phaserotated)}")
@@ -95,13 +108,13 @@ def cor_sidereal_motion(
             print("##################")
             print("Sidereal motion corrections are done successfully.")
             print("##################")
-            return 0, splited_ms_list_phaserotated
+            return 0, splited_ms_list_phaserotated, succeed, failed
     except Exception as e:
         traceback.print_exc()
         print("##################")
         print("Sidereal motion correction is not successful for any measurement set.")
         print("##################")
-        return 1, []
+        return 1, [], succeed, failed
 
 
 def main(
@@ -142,6 +155,10 @@ def main(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -174,7 +191,10 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -208,7 +228,7 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        msg, final_target_mslist = cor_sidereal_motion(
+        msg, final_target_mslist, succeed, failed = cor_sidereal_motion(
             mslist,
             dask_client,
             workdir,
@@ -227,7 +247,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succeed, failed
 
 
 def cli():
@@ -282,7 +302,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         mslist=args.mslist,
         workdir=args.workdir,
         cpu_frac=args.cpu_frac,

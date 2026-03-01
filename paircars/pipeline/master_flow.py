@@ -131,7 +131,7 @@ def run_solar_phasecenter_jobs(
     int
         Success message
     int
-        Success ms number
+        Succeeded ms number
     int
         Failed ms number
     """
@@ -219,6 +219,10 @@ def run_ds_jobs(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     ds_basename = "ds_target"
     logdir = f"{workdir}/logs"
@@ -242,7 +246,7 @@ def run_ds_jobs(
         # Making dynamic spectrum
         ##########################
         with get_dask_client() as dask_client:
-            msg = mwa_make_ds.main(
+            msg, succeed, failed = mwa_make_ds.main(
                 mslist,
                 metafits,
                 workdir,
@@ -261,7 +265,7 @@ def run_ds_jobs(
     if msg != 0:
         raise RuntimeError("Dynamic spectrum making is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -325,6 +329,10 @@ def run_target_split_jobs(
     -------
     int
         Success message for spliting measurement set
+    int
+        Expected splited ms number
+    int
+        Succeeded splited ms number
     """
     split_basename = f"split_{prefix}"
     logdir = f"{workdir}/logs"
@@ -348,7 +356,7 @@ def run_target_split_jobs(
         # Spliting ms
         ##################
         with get_dask_client() as dask_client:
-            msg = do_target_split.main(
+            msg, expected, succeed = do_target_split.main(
                 mslist,
                 metafits,
                 workdir=workdir,
@@ -373,7 +381,7 @@ def run_target_split_jobs(
     if msg != 0:
         raise RuntimeError("Spliting measurement set into coarse channels is failed.")
     else:
-        return msg
+        return msg, expected, succeed
 
 
 @task(
@@ -428,6 +436,10 @@ def run_flag(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     if flag_calibrators:
         flagdimension = "freqtime"
@@ -460,7 +472,7 @@ def run_flag(
         # Calibrator ms flagging
         ########################
         with get_dask_client() as dask_client:
-            msg = flagging.main(
+            msg, succeed, failed = flagging.main(
                 mslist,
                 metafits,
                 workdir=workdir,
@@ -487,7 +499,7 @@ def run_flag(
     if msg != 0:
         raise RuntimeError("Flagging is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -525,6 +537,10 @@ def run_import_model(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     model_basename = "modeling"
     logdir = f"{workdir}/logs"
@@ -548,7 +564,7 @@ def run_import_model(
         # Calibrator ms visibility import
         ###################################
         with get_dask_client() as dask_client:
-            msg = import_model.main(
+            msg, succeed, failed = import_model.main(
                 mslist,
                 metafits,
                 workdir,
@@ -565,7 +581,7 @@ def run_import_model(
     if msg != 0:
         raise RuntimeError("Importing calibrator model is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -612,6 +628,10 @@ def run_basic_cal_jobs(
     -------
     int
         Success message for basic calibration
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cal_basename = "basic_cal"
     logdir = f"{workdir}/logs"
@@ -635,7 +655,7 @@ def run_basic_cal_jobs(
         # Basic calibration
         ########################
         with get_dask_client() as dask_client:
-            msg = basic_cal.main(
+            msg, succeed, failed = basic_cal.main(
                 mslist,
                 metafits,
                 workdir,
@@ -655,7 +675,7 @@ def run_basic_cal_jobs(
     if msg != 0:
         raise RuntimeError("Basic calibration is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -711,6 +731,10 @@ def run_apply_basiccal_sol(
     -------
     int
         Success message for applying calibration solutions and spliting target scans
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     applycal_basename = f"apply_basiccal_{prefix}"
     logdir = f"{workdir}/logs"
@@ -734,7 +758,7 @@ def run_apply_basiccal_sol(
         # Applying basic calibration
         ######################
         with get_dask_client() as dask_client:
-            msg = do_apply_basiccal.main(
+            msg, succeed, failed = do_apply_basiccal.main(
                 mslist,
                 calibrator_metafits,
                 target_metafits,
@@ -756,7 +780,7 @@ def run_apply_basiccal_sol(
     if msg != 0:
         raise RuntimeError("Applying basic calibration solutions is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -796,6 +820,10 @@ def run_solar_siderealcor_jobs(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     sidereal_basename = f"cor_sidereal_{prefix}"
     logdir = f"{workdir}/logs"
@@ -819,7 +847,7 @@ def run_solar_siderealcor_jobs(
         # Sidereal motion correction
         #######################
         with get_dask_client() as dask_client:
-            msg = do_sidereal_cor.main(
+            msg, succeed, failed = do_sidereal_cor.main(
                 mslist,
                 workdir=workdir,
                 cpu_frac=float(cpu_frac),
@@ -835,7 +863,7 @@ def run_solar_siderealcor_jobs(
     if msg != 0:
         raise RuntimeError("Solar sidereal motion correction is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -928,6 +956,14 @@ def run_selfcal_jobs(
     -------
     int
         Success message for self-calibration
+    int
+        Intensity self-calibration succeeded ms number
+    int
+        Intensity self-calibration failed ms number
+    int
+        Polarisation self-calibration succeed ms number
+    int
+        Polarisation self-calibration failed ms number
     """
     selfcal_basename = "selfcal_target"
     logdir = f"{workdir}/logs"
@@ -951,7 +987,7 @@ def run_selfcal_jobs(
         # Selfcal jobs
         ########################
         with get_dask_client() as dask_client:
-            msg = do_selfcal.main(
+            msg, int_succeed, int_failed, pol_succeed, pol_failed = do_selfcal.main(
                 mslist,
                 metafits,
                 workdir,
@@ -987,7 +1023,7 @@ def run_selfcal_jobs(
     if msg != 0:
         raise RuntimeError("Self-calibration is failed.")
     else:
-        return msg
+        return msg, int_succeed, int_failed, pol_succeed, pol_failed 
 
 
 @task(
@@ -1034,6 +1070,10 @@ def run_apply_selfcal_sol(
     -------
     int
         Success message for applying calibration solutions and spliting target scans
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     applycal_basename = "apply_selfcal"
     logdir = f"{workdir}/logs"
@@ -1057,7 +1097,7 @@ def run_apply_selfcal_sol(
         # Applying self-calibration
         ########################
         with get_dask_client() as dask_client:
-            msg = do_apply_selfcal.main(
+            msg, succeed, failed = do_apply_selfcal.main(
                 mslist,
                 metafits,
                 workdir,
@@ -1077,7 +1117,7 @@ def run_apply_selfcal_sol(
     if msg != 0:
         raise RuntimeError("Applying self-calibration solutions is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -1157,6 +1197,12 @@ def run_imaging_jobs(
     -------
     int
         Success message for imaging
+    int
+        Succeeded ms number
+    int
+        Failed ms number
+    int
+        Total images 
     """
     imaging_basename = "imaging_target"
     logdir = f"{workdir}/logs"
@@ -1180,7 +1226,7 @@ def run_imaging_jobs(
         # Performing imaging
         #######################
         with get_dask_client() as dask_client:
-            msg = do_imaging.main(
+            msg, succeed, failed, total_images = do_imaging.main(
                 mslist,
                 workdir,
                 outdir,
@@ -1211,7 +1257,7 @@ def run_imaging_jobs(
     if msg != 0:
         raise RuntimeError("Imaging is failed.")
     else:
-        return msg
+        return msg, succeed, failed, total_images
 
 
 @task(
@@ -1252,6 +1298,10 @@ def run_apply_pbcor(
     -------
     int
         Success message for applying primary beam correction on all images
+    int
+        Succeeded image number
+    int
+        Failed image number
     """
     applypbcor_basename = "apply_pbcor"
     logdir = f"{workdir}/logs"
@@ -1275,7 +1325,7 @@ def run_apply_pbcor(
         # Applying primary beam correction
         #####################
         with get_dask_client() as dask_client:
-            msg = mwa_pbcor.main(
+            msg, succeed, failed = mwa_pbcor.main(
                 imagedir,
                 metafits,
                 leakage_dir=leakage_dir,
@@ -1293,7 +1343,7 @@ def run_apply_pbcor(
     if msg != 0:
         raise RuntimeError("Primary beam correction is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -1331,6 +1381,10 @@ def run_make_overlay(
     -------
     int
         Success message for EUV overlays
+    int
+        Succeeded image number
+    int
+        Failed image number
     """
     overlay_basename = "do_overlay"
     logdir = f"{workdir}/logs"
@@ -1356,7 +1410,7 @@ def run_make_overlay(
         #####################
         scheduler_name = get_scheduler_name()
         if scheduler_name == "local":
-            msg = make_mwa_overlay.main(
+            msg, succeed, failed = make_mwa_overlay.main(
                 imagedir,
                 outdir,
                 workdir=workdir,
@@ -1368,7 +1422,7 @@ def run_make_overlay(
             )
         else:
             with get_dask_client() as dask_client:
-                msg = make_mwa_overlay.main(
+                msg, succeed, failed = make_mwa_overlay.main(
                     imagedir,
                     outdir,
                     workdir=workdir,
@@ -1385,7 +1439,7 @@ def run_make_overlay(
     if msg != 0:
         raise RuntimeError("EUV overlay is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -2191,7 +2245,7 @@ def master_control(
             try:
                 msg, succeed, failed = future_movecenter.result()
                 if emails != "":
-                    email_msg = "Moving phasecenter to solar center is done.\n Succeed: {succeed}, failed: {failed}."
+                    email_msg = f"Moving phasecenter to solar center is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2251,9 +2305,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_maskms.result()
+                msg, succeed, failed = future_maskms.result()
                 if emails != "":
-                    email_msg = "Making solar dynamic spectra are done."
+                    email_msg = f"Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2307,9 +2361,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_cal_split.result()
+                msg, expected, succeed = future_cal_split.result()
                 if emails != "":
-                    email_msg = "Spliting of calibrator measurement sets are done."
+                    email_msg = f"Spliting of calibrator measurement sets are done.\nExpected: {expected}, succeeded: {succeed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2377,9 +2431,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_flag.result()
+                msg, succeed, failed = future_flag.result()
                 if emails != "":
-                    email_msg = "Flagging of calibrator is done."
+                    email_msg = f"Flagging of calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2434,9 +2488,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_import_model.result()
+                msg, succeed, failed = future_import_model.result()
                 if emails != "":
-                    email_msg = "Model import for calibrator is done."
+                    email_msg = f"Model import for calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2503,9 +2557,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_basical.result()
+                msg, succeed, failed = future_basical.result()
                 if emails != "":
-                    email_msg = "Basic calibration is done."
+                    email_msg = f"Basic calibration is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2642,10 +2696,10 @@ def master_control(
             )
             print("Checking status of spliting of target for selfcal ...")
             try:
-                msg = future_selfcal_split.result()
+                msg, expected, succeed = future_selfcal_split.result()
                 if emails != "":
                     email_msg = (
-                        "Spliting of measurement sets for self-calibration is done."
+                        f"Spliting of measurement sets for self-calibration is done.\nExpected: {expected}, succeeded: {succeed}."
                     )
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
@@ -2746,10 +2800,10 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_flag.result()
+                msg, succeed, failed = future_flag.result()
                 if emails != "":
                     email_msg = (
-                        "Flagging for self-calibration measurment sets are done."
+                        f"Flagging for self-calibration measurment sets are done.\nSucceeded: {succeed}, failed: {failed}."
                     )
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
@@ -2810,10 +2864,10 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_apply_basical_selfcal.result()
+                    msg, succeed, failed = future_apply_basical_selfcal.result()
                     cal_applied = True
                     if emails != "":
-                        email_msg = "Applying basic calibration solution on self-calibration measurement sets are done."
+                        email_msg = f"Applying basic calibration solution on self-calibration measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -2877,9 +2931,9 @@ def master_control(
                     )
                 )
                 try:
-                    msg = future_sidereal_cor_selfcal.result()
+                    msg, succeed, failed = future_sidereal_cor_selfcal.result()
                     if emails != "":
-                        email_msg = "Correction for solar sidereal motion is done."
+                        email_msg = f"Correction for solar sidereal motion is done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -2931,9 +2985,11 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_selfcal.result()
+                msg, int_succeed, int_failed, pol_succeed, pol_failed = future_selfcal.result()
                 if emails != "":
-                    email_msg = "Self-calibration is done."
+                    email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}."
+                    if do_polcal:
+                        email_msg+="\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {polfailed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -3028,9 +3084,9 @@ def master_control(
             ##########################################
             print("Checking spliting of targets status...")
             try:
-                msg = future_split.result()
+                msg, expected, succeed = future_split.result()
                 if emails != "":
-                    email_msg = "Spliting target for final processing is done."
+                    email_msg = f"Spliting target for final processing is done.\nExpected: {expected}, succeeded: {succeed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -3126,9 +3182,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_flag.result()
+                msg, succeed, failed  = future_flag.result()
                 if emails != "":
-                    email_msg = "Flagging of final target measurement sets are done."
+                    email_msg = f"Flagging of final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -3182,9 +3238,9 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_apply_basical.result()
+                    msg, succeed, failed = future_apply_basical.result()
                     if emails != "":
-                        email_msg = "Applying basic calibration solutions on final target measurement sets are done."
+                        email_msg = f"Applying basic calibration solutions on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -3231,9 +3287,9 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_sidereal_cor.result()
+                    msg, succeed, failed = future_sidereal_cor.result()
                     if emails != "":
-                        email_msg = "Sidereal motion correction of the Sun on final target measurement sets are done."
+                        email_msg = f"Sidereal motion correction of the Sun on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -3280,9 +3336,9 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_apply_selfcal.result()
+                    msg, succeed, failed = future_apply_selfcal.result()
                     if emails != "":
-                        email_msg = "Applying self-calibration on final target measurement sets are done."
+                        email_msg = f"Applying self-calibration on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -3353,9 +3409,9 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_imaging.result()
+                    msg, succeed, failed, total_images = future_imaging.result()
                     if emails != "":
-                        email_msg = "Final imaging is done."
+                        email_msg = f"Final imaging is done.\nSucceeded: {succeed}, failed: {failed}.\nTotal images made: {total_images}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -3441,9 +3497,9 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_pbcor.result()
+                    msg, succeed, failed = future_pbcor.result()
                     if emails != "":
-                        email_msg = "Primary beam correction is done."
+                        email_msg = f"Primary beam correction is done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -3543,9 +3599,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_overlay.result()
+                msg, succeed, failed = future_overlay.result()
                 if emails != "":
-                    email_msg = "Making overlays are done."
+                    email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )

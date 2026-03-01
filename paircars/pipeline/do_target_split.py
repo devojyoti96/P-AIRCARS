@@ -104,6 +104,13 @@ def split_target_scans(
         Splited ms list
     """
     n_threads = max(1, n_threads)
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+        
     try:
         os.chdir(workdir)
         #######################################
@@ -279,6 +286,10 @@ def main(
     -------
     int
         Success message
+    int
+        Expected splited ms
+    int
+        Succeeded splited ms
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -311,13 +322,15 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
-
-    total_ncoarse = 0
-    for msname in mslist:
-        ncoarse = get_ncoarse(msname)
-        total_ncoarse += ncoarse
-    total_ncoarse = max(1, total_ncoarse)
+        return 1, 0, 0
+    else:
+        total_ncoarse = 0
+        for msname in mslist:
+            ncoarse = get_ncoarse(msname)
+            total_ncoarse += ncoarse
+        total_ncoarse = max(1, total_ncoarse)
+        expected = total_noarse
+        succeed = 0
 
     dask_cluster = None
     if dask_client is None:
@@ -339,7 +352,7 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 1, expected, succeed
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
@@ -385,11 +398,12 @@ def main(
             prefix=prefix,
             n_threads=n_threads,
         )
-
+        succeed = len(splited_mslist) 
+        
         print("########################################")
         print(f"Total measurement sets: {len(mslist)}")
         print(f"Total expected splited ms: {total_ncoarse}")
-        print(f"Total splited ms: {len(splited_mslist)}")
+        print(f"Total splited ms: {succeed}")
         print("#########################################")
         if len(splited_mslist) == 0:
             msg = 1
@@ -413,7 +427,7 @@ def main(
             print("All measurement sets are splited successfully.")
         else:
             print("Error occured in spliting measurement sets.")
-        return msg
+        return msg, expected, succeed
 
 
 def cli():
@@ -529,7 +543,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         args.mslist,
         args.metafits,
         workdir=args.workdir,

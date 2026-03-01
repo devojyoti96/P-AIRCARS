@@ -73,9 +73,21 @@ def run_all_applysol(
     --------
     list
         Calibrated target scans
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
+    
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+        
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
@@ -94,7 +106,7 @@ def run_all_applysol(
         print(f"Polarisation selfcal caltables: {selfcal_quartical_tables}")
         if len(selfcal_tables) == 0:
             print(f"No self-cal caltable is present in {caldir}.")
-            return 1
+            return 1, succeed, failed
         selfcal_tables_start_chans = np.array(
             [
                 int(
@@ -131,7 +143,7 @@ def run_all_applysol(
         mslist = filtered_mslist
         if len(mslist) == 0:
             print("No valid measurement set.")
-            return 1
+            return 1, succeed, failed
 
         ####################################
         # Applycal jobs
@@ -204,27 +216,30 @@ def run_all_applysol(
         if len(tasks) > 0:
             print("Applying solutions...")
             results = list(dask_client.gather(dask_client.compute(tasks)))
-            if np.nansum(results) == 0:
-                print("##################")
+            failed = sum(results)
+            succeed = len(mslist)-failed
+            print("##################")
+            print(f"Total measurement sets: {len(mslist)}")
+            print(f"Succeeded: {succeed}")
+            print(f"Failed: {failed}")
+            if failed == 0:
                 print(
                     "Applying self-calibration solutions for targets are done successfully."
                 )
-                print("##################")
-                return 0
+                msg=0
             else:
-                print("##################")
                 print(
                     "Applying self-calibration solutions for targets are not done successfully."
                 )
-                print("##################")
-                return 1
+                msg=1
+            print("##################")
         else:
             print("##################")
             print(
                 "Applying self-calibration solutions for targets are not done successfully. No suitable calibration solutions are found."
             )
             print("##################")
-            return 1
+            msg=1
     except Exception as e:
         traceback.print_exc()
         print("##################")
@@ -232,7 +247,9 @@ def run_all_applysol(
             "Applying self-calibration solutions for targets are not done successfully."
         )
         print("##################")
-        return 1
+        msg=1
+    finally:
+        return msg, succeed, failed
 
 
 def main(
@@ -286,6 +303,10 @@ def main(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -319,7 +340,10 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -361,7 +385,7 @@ def main(
             print("Provide existing caltable directory.")
             msg = 1
         else:
-            msg = run_all_applysol(
+            msg, succeed, failed = run_all_applysol(
                 mslist,
                 metafits,
                 dask_client,
@@ -387,7 +411,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succeed, failed
 
 
 def cli():
@@ -472,7 +496,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         args.mslist,
         args.metafits,
         args.workdir,

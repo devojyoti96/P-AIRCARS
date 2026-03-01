@@ -63,6 +63,10 @@ def main(
     -------
     int
         Success message
+    int
+        Succeeded image number
+    int
+        Failed image number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
 
@@ -98,8 +102,25 @@ def main(
 
     if len(imagelist) == 0:
         print("No image in the image directory.")
-        return 1
+        return 1, 0, 0
+    else:
+        succeed=0
+        failed = len(imagelist)
 
+    dask_cluster = None
+    if dask_client is None:
+        result = get_local_dask_cluster(
+            workdir,
+            cpu_frac=cpu_frac,
+            mem_frac=cpu_frac,
+        )
+        if result is None:
+            print("Error occured in creating local cluster.")
+            return 1, succeed, failed
+        else:
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
+        
     try:
         ###############################################################################
         # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
@@ -137,7 +158,7 @@ def main(
 
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
-            scheduler_name = get_scheduler_name()
+            '''scheduler_name = get_scheduler_name()
             if scheduler_name == "local" or dask_client is None:
                 ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
                 outimage_list = []
@@ -152,31 +173,35 @@ def main(
                         ncpu=ncpu,
                         verbose=False,
                     )
-            else:
-                tasks = []
-                ncpu = os.environ.get("OMP_NUM_THREADS")
-                for image in imagelist:
-                    task = delayed(make_mwa_overlay)(
-                        image,
-                        plot_file_prefix=os.path.basename(image).split(".fits")[0]
-                        + "_euv_mwa_overlay",
-                        extensions=["png"],
-                        outdirs=[outdir],
-                        keep_euv_fits=True,
-                        npcu=ncpu,
-                        verbose=False,
-                    )
-                    tasks.append(task)
-                futures = dask_client.compute(batch)
-                outimage_list = list(dask_client.gather(futures))
+            else:'''
+            tasks = []
+            ncpu = os.environ.get("OMP_NUM_THREADS")
+            for image in imagelist:
+                task = delayed(make_mwa_overlay)(
+                    image,
+                    plot_file_prefix=os.path.basename(image).split(".fits")[0]
+                    + "_euv_mwa_overlay",
+                    extensions=["png"],
+                    outdirs=[outdir],
+                    keep_euv_fits=True,
+                    npcu=ncpu,
+                    verbose=False,
+                )
+                tasks.append(task)
+            futures = dask_client.compute(tasks)
+            outimage_list = list(dask_client.gather(futures))
             outimage_list.append(outimage)
             if len(outimage_list) == 0:
                 print("No overlay is made.")
                 msg = 1
+                succeed = 0
+                failed = len(imagelist)
             else:
                 print(f"Total images: {len(imagelist)}")
                 print(f"Total overlays: {len(outimage_list)}")
                 msg = 0
+                succeed = len(outimage_list)
+                failed = len(imagelist)-succeed
         else:
             msg = 1
     except Exception as e:
@@ -190,7 +215,7 @@ def main(
         drop_cache(workdir)
         drop_cache(outdir)
         clean_shutdown(observer)
-    return msg
+    return msg, succeed, failed
 
 
 def cli():
@@ -236,7 +261,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         args.imagedir,
         args.outdir,
         workdir=args.workdir,

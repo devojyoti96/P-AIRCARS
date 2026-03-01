@@ -1399,7 +1399,12 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0, 0, 0,
+    else:
+        int_succeed = 0
+        int_failed = len(mslist)
+        pol_succeed = 0
+        pol_failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -1443,7 +1448,7 @@ def main(
             print(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
-            return 1
+            return 1, int_succeed, int_failed, pol_succeed, pol_failed 
 
     if do_polcal:
         container_name = "paircarsquartical"
@@ -1454,7 +1459,7 @@ def main(
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed 
 
     org_mslist = copy.deepcopy(mslist)
     try:
@@ -1505,7 +1510,7 @@ def main(
             mslist = filtered_mslist
             if len(mslist) == 0:
                 print("No filtered ms to continue.")
-                return 1
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed 
 
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
@@ -1690,6 +1695,7 @@ def main(
             print(f"Total self-calibration measurement sets: {len(mslist)}")
             print(f"Total successful intensity self-calibration: {succeed_intselfcal}")
             print(f"Total failed intensity self-calibration: {failed_intselfcal}")
+            int_succeed, int_failed = succeed_intselfcal, failed_intselfcal
             if do_polcal:
                 print(
                     f"Total successful polarisation self-calibration: {succeed_polselfcal}"
@@ -1697,6 +1703,7 @@ def main(
                 print(
                     f"Total failed polarisation self-calibration: {failed_polselfcal}"
                 )
+                pol_succeed, pol_failed = succeed_polselfcal, failed_polselfcal
             if succeed_intselfcal == 0:
                 msg = 1
     except Exception as e:
@@ -1713,7 +1720,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, int_succeed, int_failed, pol_succeed, pol_failed 
 
 
 def cli():
@@ -1893,7 +1900,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _, _, _ = main(
         mslist=args.mslist,
         metafits=args.metafits,
         workdir=args.workdir,

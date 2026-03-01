@@ -638,11 +638,26 @@ def run_all_imaging(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
+    int
+        Total images
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
     mslist = sorted(mslist)
+    
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+        total_images=0
+        
     try:
         if len(mslist) == 0:
             print("Provide valid measurement set list.")
@@ -782,17 +797,24 @@ def run_all_imaging(
                     all_imaged_ms_list.append(mslist[i])
                     for image in image_list:
                         all_image_list.append(image)
+                        
+        succeed = len(all_imaged_ms_list)
+        failed = len(mslist) - succeed
+        total_images = len(all_image_list)
         print(
             f"Numbers of input measurement sets : {len(mslist)}.",
         )
         print(
-            f"Imaging successfully done for: {len(all_imaged_ms_list)} measurement sets.",
+            f"Imaging successfully done for: {succeed} measurement sets.",
         )
-        print(f"Total images made: {len(all_image_list)}.")
-        return 0
+        print(
+            f"Imaging failed for: {failed} measurement sets.",
+        )
+        print(f"Total images made: {total_images}.")
+        return 0, succeed, failed, total_images
     except Exception as e:
         traceback.print_exc()
-        return 1
+        return 1, succeed, failed, total_images
 
 
 def main(
@@ -885,6 +907,12 @@ def main(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
+    int
+        Total images
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -900,6 +928,14 @@ def main(
     outdir = outdir.rstrip("/")
     os.makedirs(outdir, exist_ok=True)
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+        total_images=0
+        
     ###########################
     # WSClean container
     ###########################
@@ -911,7 +947,7 @@ def main(
             print(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
-            return 1
+            return 1, succeed, failed, total_images
 
     ############
     # Logger
@@ -932,10 +968,6 @@ def main(
             )
     if observer == None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
-
-    if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
-        msg = 1
 
     total_ncoarse = 0
     for msname in mslist:
@@ -963,13 +995,13 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 1, succeed, failed
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        msg = run_all_imaging(
+        msg, succeed, failed, total_images = run_all_imaging(
             mslist,
             dask_client,
             workdir=workdir,
@@ -1009,7 +1041,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return succeed, failed, total_images
 
 
 def cli():
@@ -1181,7 +1213,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _, _ = main(
         mslist=args.mslist,
         workdir=args.workdir,
         outdir=args.outdir,

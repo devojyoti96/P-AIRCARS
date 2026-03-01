@@ -64,7 +64,7 @@ def main(
     int
         Success message
     int
-        Success ms number
+        Succeeded ms number
     int
         Failed ms number
     """
@@ -99,9 +99,7 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
-        succeed=0
-        failed=0
+        return 1, 0, 0
     else:
         succeed = 0
         failed = len(mslist)
@@ -132,7 +130,7 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 1, succeed, failed
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
@@ -210,7 +208,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg, succeed, failed = main(
+    msg, _, _ = main(
         args.mslist,
         workdir=args.workdir,
         cpu_frac=args.cpu_frac,

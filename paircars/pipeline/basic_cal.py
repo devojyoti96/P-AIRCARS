@@ -411,9 +411,20 @@ def single_round_cal_and_flag(
     -------
     dict
         A python dictionary cotaining measurement set name and its caltables
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
+    
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return {}, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     client_info = dask_client.scheduler_info()["workers"]
     njobs = len(client_info)
@@ -451,14 +462,19 @@ def single_round_cal_and_flag(
     ]
     results = list(dask_client.gather(dask_client.compute(tasks)))
     caltable_dic = {}
+    succeed=0
+    failed=0
     for i in range(len(mslist)):
         msname = mslist[i]
         caltables = results[i]
         caltables_clean = [x for x in caltables if x is not None]
         if len(caltables_clean) == 0:
             print(f"Basic calibration is not succssful for ms : {msname}")
+            failed+=1
+        else:
+            succeed+=1
         caltable_dic[msname] = caltables_clean
-    return caltable_dic
+    return caltable_dic, succeed, failed
 
 
 def run_basic_cal_rounds(
@@ -505,10 +521,21 @@ def run_basic_cal_rounds(
         Success message
     list
         Caltables
+    int 
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, [], 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+        
     try:
         from casatasks import flagdata
 
@@ -557,7 +584,7 @@ def run_basic_cal_rounds(
                 if perform_polcal:
                     do_polcal = True
                 flag_threshold = 5.0
-            caltable_dic = single_round_cal_and_flag(
+            caltable_dic, succeed, failed = single_round_cal_and_flag(
                 mslist,
                 dask_client,
                 workdir,
@@ -600,10 +627,10 @@ def run_basic_cal_rounds(
         print("##################")
         print("Basic calibration is done successfully.")
         print("##################")
-        return 0, caltables
+        return 0, caltables, succeed, failed
     except Exception as e:
         traceback.print_exc()
-        return 1, []
+        return 1, [], succeed, failed
 
 
 def main(
@@ -700,7 +727,10 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -728,7 +758,7 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 1, succeed, failed
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
@@ -737,7 +767,7 @@ def main(
         print("###################################")
         print("Starting initial calibration.")
         print("###################################")
-        msg, caltables = run_basic_cal_rounds(
+        msg, caltables, succeed, failed = run_basic_cal_rounds(
             mslist,
             dask_client,
             workdir,
@@ -811,7 +841,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succeed, failed
 
 
 def cli():
@@ -892,7 +922,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         args.mslist,
         args.workdir,
         args.outdir,

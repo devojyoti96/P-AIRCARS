@@ -277,9 +277,21 @@ def run_all_applysol(
     --------
     list
         Calibrated target scans
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
+    
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
@@ -329,7 +341,7 @@ def run_all_applysol(
         mslist = filtered_mslist
         if len(mslist) == 0:
             print("No valid measurement set.")
-            return 1
+            return 1, 0, 0
 
         ####################################
         # Applycal jobs
@@ -400,14 +412,14 @@ def run_all_applysol(
                 "Applying basic calibration solutions for target scans are not done successfully."
             )
             print("##################")
-            return 1
+            return 1, succeed, failed+apply_failed
         else:
             print("##################")
             print(
                 "Applying basic calibration solutions for target are done successfully."
             )
             print("##################")
-            return 0
+            return 0, succeed, failed+apply_failed
     except Exception as e:
         traceback.print_exc()
         print("##################")
@@ -415,7 +427,7 @@ def run_all_applysol(
             "Applying basic calibration solutions for target scans are not done successfully."
         )
         print("##################")
-        return 1
+        return 1, succeed, failed
 
 
 def main(
@@ -476,6 +488,10 @@ def main(
     -------
     int
         Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -508,7 +524,10 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -549,7 +568,7 @@ def main(
             print("Provide existing caltable directory.")
             msg = 1
         else:
-            msg = run_all_applysol(
+            msg, succeed, failed = run_all_applysol(
                 mslist,
                 target_metafits,
                 calibrator_metafits,
@@ -577,7 +596,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succeed, failed
 
 
 def cli():
@@ -674,7 +693,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg,_, _ = main(
         args.mslist,
         args.calibrator_metafits,
         args.target_metafits,

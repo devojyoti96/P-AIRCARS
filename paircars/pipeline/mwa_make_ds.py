@@ -73,8 +73,14 @@ def make_solar_DS(
 
     Returns
     -------
+    int
+        Success message
     str
         Plot file name
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -103,6 +109,13 @@ def make_solar_DS(
     print(f"Memory per worker: {mem_limit} GB")
     print("#################################")
 
+    if len(mslist) == 0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
+    
     try:
         ###########################################
         tasks = []
@@ -125,8 +138,14 @@ def make_solar_DS(
         ds_files = []
         for r in results:
             ds_files.append(r[0])
-        print(f"DS files: {ds_files}")
-
+        
+        succeed = len(ds_files)
+        failed = len(mslist) - succeed
+        print(f"Total measurement sets: {len(mslist)}")
+        print(f"Total success: {succeed}")
+        print(f"Total failure: {failed}")
+        print(f"DS files: {[os.path.basename(i) for in in ds_files]}")
+        
         ###########################################
         # Plotting dynamic spectrum
         ###########################################
@@ -142,10 +161,10 @@ def make_solar_DS(
         goes_files = glob.glob(f"{outdir}/dynamic_spectra/sci*.nc")
         for f in goes_files:
             os.system(f"rm -rf {f}")
-        return plot_file
+        return 0, plot_file, succeed, failed
     except Exception as e:
         traceback.print_exc()
-        return
+        return 1, "", succeed, failed
     finally:
         time.sleep(5)
         for msname in mslist:
@@ -201,6 +220,10 @@ def main(
     -------
     int
         Success messsage
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -235,7 +258,10 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -263,13 +289,13 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 1, succeed, failed
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        ds_plot_file = make_solar_DS(
+        msg, ds_plot_file, succeed, failed = make_solar_DS(
             mslist,
             dask_client,
             metafits,
@@ -280,10 +306,6 @@ def main(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
         )
-        if ds_plot_file is not None:
-            msg = 0
-        else:
-            msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1
@@ -298,7 +320,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succeed, failed
 
 
 def cli():
@@ -378,7 +400,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         args.mslist,
         args.metafits,
         args.workdir,

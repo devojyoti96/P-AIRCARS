@@ -214,42 +214,45 @@ def run_all_modeling(
     Returns
     -------
     int
-        Total failure
+        Success message
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     ncpu = max(1, ncpu)
+    if len(mslist)==0:
+        print("Please provide a valid measurement set list.")
+        return 1, 0, 0
     try:
-        if len(mslist) > 0:
-            tasks = []
-            for msname in mslist:
-                tasks.append(
-                    delayed(import_hyperdrive_model)(
-                        msname,
-                        metafits,
-                        beamfile=beamfile,
-                        sourcelist=sourcelist,
-                        ncpu=ncpu,
-                        verbose=verbose,
-                    )
+        tasks = []
+        for msname in mslist:
+            tasks.append(
+                delayed(import_hyperdrive_model)(
+                    msname,
+                    metafits,
+                    beamfile=beamfile,
+                    sourcelist=sourcelist,
+                    ncpu=ncpu,
+                    verbose=verbose,
                 )
-            print("Start import modeling...")
-            futures = dask_client.compute(tasks)
-            results = dask_client.gather(futures)
-            failed = sum(results)
-            succeed = len(mslist) - failed
-            print(f"Total measurement setds: {len(mslist)}")
-            print(f"Total failure: {failed}")
-            print(f"Total success: {succeed}")
-            if len(mslist) == failed:
-                msg = 1
-            else:
-                msg = 0
-        else:
-            print("Please provide a valid measurement set list.")
+            )
+        print("Start import modeling...")
+        futures = dask_client.compute(tasks)
+        results = dask_client.gather(futures)
+        failed = sum(results)
+        succeed = len(mslist) - failed
+        print(f"Total measurement setds: {len(mslist)}")
+        print(f"Total failure: {failed}")
+        print(f"Total success: {succeed}")
+        if len(mslist) == failed:
             msg = 1
+        else:
+            msg = 0
     except Exception as e:
         traceback.print_exc()
         msg = 1
-    return msg
+    return msg, succeed, failed
 
 
 def main(
@@ -300,6 +303,10 @@ def main(
     -------
     int
         Success messsage
+    int
+        Succeeded ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -350,7 +357,10 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        msg = 1
+        return 1, 0, 0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -402,14 +412,9 @@ def main(
     print("#################################")
 
     try:
-        msg = run_all_modeling(
+        msg, succeed, failed = run_all_modeling(
             mslist, dask_client, metafits, beamfile, sourcelist, n_threads, verbose
         )
-        if msg < 0:
-            msg = 1
-        elif msg > 0:
-            print(f"Total model import failure: {msg}")
-            msg = 1
     except Exception as e:
         traceback.print_exc()
         msg = 1
@@ -424,7 +429,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succeed, failed
 
 
 ################################
@@ -500,7 +505,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, _, _ = main(
         args.mslist,
         args.metafits,
         args.workdir,
