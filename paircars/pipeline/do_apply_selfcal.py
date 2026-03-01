@@ -80,14 +80,14 @@ def run_all_applysol(
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
-    
+
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
         failed = len(mslist)
-        
+
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
@@ -217,7 +217,7 @@ def run_all_applysol(
             print("Applying solutions...")
             results = list(dask_client.gather(dask_client.compute(tasks)))
             failed = sum(results)
-            succeed = len(mslist)-failed
+            succeed = len(mslist) - failed
             print("##################")
             print(f"Total measurement sets: {len(mslist)}")
             print(f"Succeeded: {succeed}")
@@ -226,12 +226,12 @@ def run_all_applysol(
                 print(
                     "Applying self-calibration solutions for targets are done successfully."
                 )
-                msg=0
+                msg = 0
             else:
                 print(
                     "Applying self-calibration solutions for targets are not done successfully."
                 )
-                msg=1
+                msg = 1
             print("##################")
         else:
             print("##################")
@@ -239,7 +239,7 @@ def run_all_applysol(
                 "Applying self-calibration solutions for targets are not done successfully. No suitable calibration solutions are found."
             )
             print("##################")
-            msg=1
+            msg = 1
     except Exception as e:
         traceback.print_exc()
         print("##################")
@@ -247,7 +247,7 @@ def run_all_applysol(
             "Applying self-calibration solutions for targets are not done successfully."
         )
         print("##################")
-        msg=1
+        msg = 1
     finally:
         return msg, succeed, failed
 

@@ -385,7 +385,7 @@ def do_flagging(
     else:
         succeed = 0
         failed = len(mslist)
-        
+
     try:
         from casatasks import flagdata
 
@@ -603,7 +603,7 @@ def main(
     else:
         succeed = 0
         failed = len(mslist)
-        
+
     total_ncoarse = 0
     for msname in mslist:
         ncoarse = get_ncoarse(msname)

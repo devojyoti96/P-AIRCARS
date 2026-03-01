@@ -284,7 +284,7 @@ def run_all_applysol(
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
-    
+
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
@@ -412,14 +412,14 @@ def run_all_applysol(
                 "Applying basic calibration solutions for target scans are not done successfully."
             )
             print("##################")
-            return 1, succeed, failed+apply_failed
+            return 1, succeed, failed + apply_failed
         else:
             print("##################")
             print(
                 "Applying basic calibration solutions for target are done successfully."
             )
             print("##################")
-            return 0, succeed, failed+apply_failed
+            return 0, succeed, failed + apply_failed
     except Exception as e:
         traceback.print_exc()
         print("##################")
@@ -693,7 +693,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg,_, _ = main(
+    msg, _, _ = main(
         args.mslist,
         args.calibrator_metafits,
         args.target_metafits,

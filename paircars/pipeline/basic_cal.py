@@ -418,7 +418,7 @@ def single_round_cal_and_flag(
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
-    
+
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return {}, 0, 0
@@ -462,17 +462,17 @@ def single_round_cal_and_flag(
     ]
     results = list(dask_client.gather(dask_client.compute(tasks)))
     caltable_dic = {}
-    succeed=0
-    failed=0
+    succeed = 0
+    failed = 0
     for i in range(len(mslist)):
         msname = mslist[i]
         caltables = results[i]
         caltables_clean = [x for x in caltables if x is not None]
         if len(caltables_clean) == 0:
             print(f"Basic calibration is not succssful for ms : {msname}")
-            failed+=1
+            failed += 1
         else:
-            succeed+=1
+            succeed += 1
         caltable_dic[msname] = caltables_clean
     return caltable_dic, succeed, failed
 
@@ -521,7 +521,7 @@ def run_basic_cal_rounds(
         Success message
     list
         Caltables
-    int 
+    int
         Succeeded ms number
     int
         Failed ms number
@@ -535,7 +535,7 @@ def run_basic_cal_rounds(
     else:
         succeed = 0
         failed = len(mslist)
-        
+
     try:
         from casatasks import flagdata
 

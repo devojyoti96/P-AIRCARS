@@ -104,7 +104,7 @@ def main(
         print("No image in the image directory.")
         return 1, 0, 0
     else:
-        succeed=0
+        succeed = 0
         failed = len(imagelist)
 
     dask_cluster = None
@@ -120,7 +120,7 @@ def main(
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
-        
+
     try:
         ###############################################################################
         # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
@@ -158,7 +158,7 @@ def main(
 
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
-            '''scheduler_name = get_scheduler_name()
+            """scheduler_name = get_scheduler_name()
             if scheduler_name == "local" or dask_client is None:
                 ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
                 outimage_list = []
@@ -173,7 +173,7 @@ def main(
                         ncpu=ncpu,
                         verbose=False,
                     )
-            else:'''
+            else:"""
             tasks = []
             ncpu = os.environ.get("OMP_NUM_THREADS")
             for image in imagelist:
@@ -201,7 +201,7 @@ def main(
                 print(f"Total overlays: {len(outimage_list)}")
                 msg = 0
                 succeed = len(outimage_list)
-                failed = len(imagelist)-succeed
+                failed = len(imagelist) - succeed
         else:
             msg = 1
     except Exception as e:

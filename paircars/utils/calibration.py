@@ -525,7 +525,7 @@ def get_quartical_table_metadata(caltable):
     caltable_dirs = filtered
     if len(caltable_dirs) == 0:
         print("Could not determine solution type.")
-        return 
+        return
     soltype = caltable_dirs[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     jonestype = gains[0].TYPE

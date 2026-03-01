@@ -221,7 +221,7 @@ def run_all_modeling(
         Failed ms number
     """
     ncpu = max(1, ncpu)
-    if len(mslist)==0:
+    if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
     try:

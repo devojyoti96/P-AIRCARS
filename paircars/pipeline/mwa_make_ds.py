@@ -115,7 +115,7 @@ def make_solar_DS(
     else:
         succeed = 0
         failed = len(mslist)
-    
+
     try:
         ###########################################
         tasks = []
@@ -138,14 +138,14 @@ def make_solar_DS(
         ds_files = []
         for r in results:
             ds_files.append(r[0])
-        
+
         succeed = len(ds_files)
         failed = len(mslist) - succeed
         print(f"Total measurement sets: {len(mslist)}")
         print(f"Total success: {succeed}")
         print(f"Total failure: {failed}")
-        print(f"DS files: {[os.path.basename(i) for in in ds_files]}")
-        
+        print(f"DS files: {[os.path.basename(i) for i in ds_files]}")
+
         ###########################################
         # Plotting dynamic spectrum
         ###########################################

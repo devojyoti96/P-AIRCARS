@@ -92,8 +92,8 @@ def cor_sidereal_motion(
                 if os.path.exists(ms + "/.sidereal_cor"):
                     splited_ms_list_phaserotated.append(ms)
         succeed = len(splited_ms_list_phaserotated)
-        failed = len(mslist)-succeed
-        
+        failed = len(mslist) - succeed
+
         if len(splited_ms_list_phaserotated) == 0:
             print("##################")
             print(

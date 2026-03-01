@@ -1023,7 +1023,7 @@ def run_selfcal_jobs(
     if msg != 0:
         raise RuntimeError("Self-calibration is failed.")
     else:
-        return msg, int_succeed, int_failed, pol_succeed, pol_failed 
+        return msg, int_succeed, int_failed, pol_succeed, pol_failed
 
 
 @task(
@@ -1202,7 +1202,7 @@ def run_imaging_jobs(
     int
         Failed ms number
     int
-        Total images 
+        Total images
     """
     imaging_basename = "imaging_target"
     logdir = f"{workdir}/logs"
@@ -1901,7 +1901,7 @@ def master_control(
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
     if keep_backup:
-        keep_calibrated_ms=True
+        keep_calibrated_ms = True
 
     try:
         #####################################
@@ -2588,11 +2588,15 @@ def master_control(
             print(
                 f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal"
             )
-            bandpass_tables = sorted(glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal"))
+            bandpass_tables = sorted(
+                glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")
+            )
             print(
                 f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
             )
-            crossphase_tables = sorted(glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal"))
+            crossphase_tables = sorted(
+                glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+            )
             if len(bandpass_tables) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."
@@ -2698,9 +2702,7 @@ def master_control(
             try:
                 msg, expected, succeed = future_selfcal_split.result()
                 if emails != "":
-                    email_msg = (
-                        f"Spliting of measurement sets for self-calibration is done.\nExpected: {expected}, succeeded: {succeed}."
-                    )
+                    email_msg = f"Spliting of measurement sets for self-calibration is done.\nExpected: {expected}, succeeded: {succeed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2769,7 +2771,7 @@ def master_control(
         # Flagging on targets for self-calibration
         #########################################################
         cal_applied = False
-        if do_selfcal: 
+        if do_selfcal:
             if adaptive:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
@@ -2802,9 +2804,7 @@ def master_control(
             try:
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
-                    email_msg = (
-                        f"Flagging for self-calibration measurment sets are done.\nSucceeded: {succeed}, failed: {failed}."
-                    )
+                    email_msg = f"Flagging for self-calibration measurment sets are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2831,7 +2831,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-        
+
             ###################################
             # Apply basic calibration
             ###################################
@@ -2917,18 +2917,16 @@ def master_control(
                     "Starting task: Sidereal motion correction for self-calibration measurement sets....."
                 )
                 print("###########################")
-                future_sidereal_cor_selfcal = (
-                    run_solar_siderealcor_jobs.with_options(
-                        task_run_name=f"solar_sidereal_correction_{jobid}"
-                    ).submit(
-                        ",".join(selfcal_mslist),
-                        workdir,
-                        prefix="selfcal",
-                        jobid=jobid,
-                        cpu_frac=round(cpu_frac, 2),
-                        mem_frac=round(mem_frac, 2),
-                        remote_log=remote_logger,
-                    )
+                future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
+                    task_run_name=f"solar_sidereal_correction_{jobid}"
+                ).submit(
+                    ",".join(selfcal_mslist),
+                    workdir,
+                    prefix="selfcal",
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
                 )
                 try:
                     msg, succeed, failed = future_sidereal_cor_selfcal.result()
@@ -2985,11 +2983,13 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg, int_succeed, int_failed, pol_succeed, pol_failed = future_selfcal.result()
+                msg, int_succeed, int_failed, pol_succeed, pol_failed = (
+                    future_selfcal.result()
+                )
                 if emails != "":
                     email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}."
                     if do_polcal:
-                        email_msg+="\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {polfailed}."
+                        email_msg += "\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {polfailed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -3013,9 +3013,9 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        selfcal_tables = sorted(glob.glob(
-            f"{caldir}/selfcal_{target_obsid}*.gcal"
-        )) + sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
+        selfcal_tables = sorted(
+            glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal")
+        ) + sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
         if len(selfcal_tables) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
@@ -3182,7 +3182,7 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg, succeed, failed  = future_flag.result()
+                msg, succeed, failed = future_flag.result()
                 if emails != "":
                     email_msg = f"Flagging of final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
@@ -3735,7 +3735,7 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                        
+
         if adaptive:
             scale_worker_and_wait(dask_cluster, dask_client, 1)
 
@@ -3814,7 +3814,7 @@ def master_control(
                     )
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
                 if keep_calibrated_ms is False:
-                    os.system(f"rm -rf {target_ms}")      
+                    os.system(f"rm -rf {target_ms}")
         drop_cache(workdir)
         drop_cache(outdir)
         stop_event.set()

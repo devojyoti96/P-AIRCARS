@@ -110,7 +110,7 @@ def split_target_scans(
     else:
         succeed = 0
         failed = len(mslist)
-        
+
     try:
         os.chdir(workdir)
         #######################################
@@ -398,8 +398,8 @@ def main(
             prefix=prefix,
             n_threads=n_threads,
         )
-        succeed = len(splited_mslist) 
-        
+        succeed = len(splited_mslist)
+
         print("########################################")
         print(f"Total measurement sets: {len(mslist)}")
         print(f"Total expected splited ms: {total_ncoarse}")

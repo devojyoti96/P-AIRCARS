@@ -649,15 +649,15 @@ def run_all_imaging(
     mem_frac = min(0.8, abs(mem_frac))
 
     mslist = sorted(mslist)
-    
+
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
         failed = len(mslist)
-        total_images=0
-        
+        total_images = 0
+
     try:
         if len(mslist) == 0:
             print("Provide valid measurement set list.")
@@ -797,7 +797,7 @@ def run_all_imaging(
                     all_imaged_ms_list.append(mslist[i])
                     for image in image_list:
                         all_image_list.append(image)
-                        
+
         succeed = len(all_imaged_ms_list)
         failed = len(mslist) - succeed
         total_images = len(all_image_list)
@@ -934,8 +934,8 @@ def main(
     else:
         succeed = 0
         failed = len(mslist)
-        total_images=0
-        
+        total_images = 0
+
     ###########################
     # WSClean container
     ###########################

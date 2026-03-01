@@ -214,10 +214,10 @@ def pbcor_all_images(
     -------
     int
         Success message
-    int 
+    int
         Succeeded image number
     int
-        Failed image number 
+        Failed image number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -228,8 +228,8 @@ def pbcor_all_images(
     os.makedirs(pbdir, exist_ok=True)
     os.makedirs(pbcor_dir, exist_ok=True)
     successful_pbcor = 0
-    succeed=0
-    failed=0
+    succeed = 0
+    failed = 0
     try:
         images = glob.glob(f"{imagedir}/*.fits")
         if make_TB:
@@ -241,7 +241,7 @@ def pbcor_all_images(
         else:
             succeed = 0
             failed = len(images)
-            
+
         first_set = []
         remaining_set = []
         freqs = []
@@ -399,10 +399,10 @@ def pbcor_all_images(
                 print(f"Total brightness temperatures maps: {len(tb_images)}")
         else:
             print(f"Total primary beam corrected images: 0")
-        msg=0
+        msg = 0
     except Exception as e:
         traceback.print_exc()
-        msg=1
+        msg = 1
     finally:
         os.system(f"rm -rf {pbdir}")
         return msg, succeed, failed
@@ -508,8 +508,8 @@ def main(
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
-    succeed=0
-    failed =0
+    succeed = 0
+    failed = 0
     try:
         if os.path.exists(imagedir):
             msg, succeed, failed = pbcor_all_images(

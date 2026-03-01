@@ -1399,7 +1399,13 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return 1, 0, 0, 0, 0,
+        return (
+            1,
+            0,
+            0,
+            0,
+            0,
+        )
     else:
         int_succeed = 0
         int_failed = len(mslist)
@@ -1448,7 +1454,7 @@ def main(
             print(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
-            return 1, int_succeed, int_failed, pol_succeed, pol_failed 
+            return 1, int_succeed, int_failed, pol_succeed, pol_failed
 
     if do_polcal:
         container_name = "paircarsquartical"
@@ -1459,7 +1465,7 @@ def main(
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1, int_succeed, int_failed, pol_succeed, pol_failed 
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed
 
     org_mslist = copy.deepcopy(mslist)
     try:
@@ -1510,7 +1516,7 @@ def main(
             mslist = filtered_mslist
             if len(mslist) == 0:
                 print("No filtered ms to continue.")
-                return 1, int_succeed, int_failed, pol_succeed, pol_failed 
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed
 
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
@@ -1681,7 +1687,7 @@ def main(
                         + "_selfcal_pol"
                     )
                     os.system(f"rm -rf {pol_selfcaldir}")
-                    
+
             if len(gcal_list) > 0:
                 print(f"Final gaincal selfcal caltables: {gcal_list}")
                 msg = 0
@@ -1720,7 +1726,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg, int_succeed, int_failed, pol_succeed, pol_failed 
+    return msg, int_succeed, int_failed, pol_succeed, pol_failed
 
 
 def cli():
