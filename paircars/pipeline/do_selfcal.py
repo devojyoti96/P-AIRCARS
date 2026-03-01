@@ -1127,7 +1127,7 @@ def do_polselfcal(
                     clean_shutdown(sub_observer)
                     return 0, msname, gaintable, leakage_file
                 #########################################
-                # In apcal and maximum iteration has reached
+                # If maximum iteration has reached
                 #########################################
                 elif num_iter > min_iter and num_iter == max_iter:
                     logger.info(
@@ -1138,7 +1138,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable
+                    return 0, msname, gaintable, leakage_file
                 num_iter += 1
                 last_round_gaintable = gaintable
                 last_leakage_file = leakage_file
