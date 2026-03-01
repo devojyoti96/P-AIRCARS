@@ -422,7 +422,7 @@ def submit_local_master_flow(args, jobid):
         return 1
 
     if hasattr(args, "log2term"):
-        log2term = True
+        log2term = args.log2term
     else:
         log2term = False
 
