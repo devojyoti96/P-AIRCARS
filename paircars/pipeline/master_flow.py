@@ -2750,11 +2750,11 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                for c_ms in split_cal_mslist:
-                    c_ms = c_ms.rstrip("/")
-                    if os.path.exists(f"{c_ms}/.flag_sfailed"):
+                for s_ms in selfcal_mslist:
+                    s_ms = s_ms.rstrip("/")
+                    if os.path.exists(f"{s_ms}/.flag_failed"):
                         print(
-                            f"Issue in flagging of measurement set: {c_ms}. Check calibration solutions carefully."
+                            f"Issue in flagging of measurement set: {s_ms}. Check calibration solutions carefully."
                         )
                 print("###########################")
                 print(
