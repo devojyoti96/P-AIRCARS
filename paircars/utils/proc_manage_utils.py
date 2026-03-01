@@ -410,10 +410,10 @@ def submit_local_master_flow(args, jobid):
             f"Job scheduler is not local. Available job scheduler is : {scheduler_name}"
         )
         return 1
-    args_list = shlex.quote(arg) for arg in sys.argv[1:]
+    args_list = [shlex.quote(arg) for arg in sys.argv[1:]]
     if "--log2term" in args_list:
         args_list.remove("--log2term")
-    
+
     cli_cmd = "run-mwa-masterflow " + " ".join(args_list)
     if hasattr(args, "workdir") and args.workdir is not None:
         os.makedirs(args.workdir, exist_ok=True)
@@ -422,10 +422,10 @@ def submit_local_master_flow(args, jobid):
         return 1
 
     if hasattr(args, "log2term"):
-        log2term=True
+        log2term = True
     else:
-        log2term=False
-         
+        log2term = False
+
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
     prefect_env_list = []
@@ -468,8 +468,8 @@ def submit_local_master_flow(args, jobid):
                 )
 
                 for line in process.stdout:
-                    sys.stdout.write(line)   # show in terminal
-                    log.write(line)          # write to file
+                    sys.stdout.write(line)  # show in terminal
+                    log.write(line)  # write to file
                     log.flush()
 
                 process.stdout.close()

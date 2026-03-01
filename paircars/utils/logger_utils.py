@@ -306,7 +306,7 @@ def init_logger(logname, logfile, jobname="", password=""):
             except Exception:
                 pass
         if os.path.exists(logfile):
-            if os.path.islink(logfile): 
+            if os.path.islink(logfile):
                 logfile = os.readlink(logfile)
             event_handler = LogTailHandler(logfile, logger)
             observer = Observer()
