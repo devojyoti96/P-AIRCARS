@@ -127,7 +127,6 @@ def split_target_scans(
         splited_ms_list = []
 
         for msname in mslist:
-            print(f"Spliting measurement set: {msname}")
             msmd = msmetadata()
             msmd.open(msname)
             chanres = msmd.chanres(0, unit="MHz")[0]

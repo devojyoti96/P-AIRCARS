@@ -379,6 +379,10 @@ def submit_slurm_master_flow(args, jobid):
         if "PREFECT" in env:
             prefect_env_list.append(f"export {env}={envlist.get(env)}")
 
+    log_file = f"{args.workdir}/main_paircars_{jobid}.log"
+    cli_cmd.append("--masterlog")
+    cli_cmd.append(f"{log_file}")
+    
     try:
         #################################
         # Determining wall time
@@ -415,8 +419,8 @@ def submit_slurm_master_flow(args, jobid):
             "#!/bin/bash",
             f"#SBATCH --job-name=paircars_{jobid}",
             f"#SBATCH --time={walltime}",
-            f"#SBATCH --output={args.workdir}/main_paircars_{jobid}.log",
-            f"#SBATCH --error={args.workdir}/main_paircars_{jobid}.log",
+            f"#SBATCH --output={log_file}",
+            f"#SBATCH --error={log_file}",
             f"#SBATCH --partition={args.partition}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks=1",

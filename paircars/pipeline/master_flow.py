@@ -1587,6 +1587,7 @@ def master_control(
     keep_backup=False,
     keep_calibrated_ms=False,
     # Remote logging
+    masterlog=None,
     remote_logger=False,
     jobid=None,
     job_password=None,
@@ -1694,6 +1695,8 @@ def master_control(
     keep_calibrated_ms : bool, optional
         Keep calibrated measurement sets or not
 
+    masterlog : str, optional
+        Master logfile
     remote_logger : bool, optional
         Enable remote logging of the pipeline status
     jobid : str, optional
@@ -1828,16 +1831,21 @@ def master_control(
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    master_logfile = f"{logdir}/main.log"
-    if os.path.exists(master_logfile):
-        os.remove(master_logfile)
-    ctx = get_run_context()
-    flow_id = str(ctx.flow_run.id)
-    flow_name = ctx.flow_run.name
-    stop_event = Event()
-    log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
-    )
+    if masterlog is None or os.path.exists(masterlog) is False:
+        master_logfile = f"{logdir}/main.log"
+        ctx = get_run_context()
+        flow_id = str(ctx.flow_run.id)
+        flow_name = ctx.flow_run.name
+        stop_event = Event()
+        log_thread_flow = start_flow_log_saver(
+            flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
+        )
+        master_log_created=True
+    else:
+        master_log_created=False
+        master_logfile = f"{logdir}/main.log"
+        os.symlink(masterlog, master_logfile)
+        
     dask_dir = None
     try:
         dask_client = get_client()
@@ -3764,8 +3772,9 @@ def master_control(
                     os.system(f"rm -rf {target_ms}")
         drop_cache(workdir)
         drop_cache(outdir)
-        stop_event.set()
-        log_thread_flow.join(timeout=5)
+        if master_log_created:
+            stop_event.set()
+            log_thread_flow.join(timeout=5)
         if dask_dir is not None:
             os.system(f"rm -rf {dask_dir}")
         if observer is not None:
@@ -4073,6 +4082,12 @@ def cli():
         help="User specified job password",
     )
     advanced_resource.add_argument(
+        "--masterlog",
+        type=str,
+        default=None,
+        help="Master log file",
+    )
+    advanced_resource.add_argument(
         "--cluster",
         action="store_true",
         dest="cluster",
@@ -4373,6 +4388,7 @@ def cli():
             keep_backup=args.keep_backup,
             keep_calibrated_ms=args.keep_calibrated_ms,
             # Remote logging
+            masterlog=args.masterlog,
             remote_logger=args.remote_logger,
             jobid=jobid,
             job_password=args.job_password,
