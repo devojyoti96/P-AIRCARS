@@ -254,9 +254,9 @@ def get_slurm_dask_cluster(
             print(f"Total usable memory per node: {per_node_mem} GB")
             print(f"CPU per worker: {ncpu}")
             print(f"Memory per worker: {mem_limit}GB")
-            print(f"Maximum number of workers: {n_worker}")
+            print(f"Maximum number of workers: {max_workers_cluster}")
             print("####################################################")
-        return client, cluster, dask_dir, n_worker
+        return client, cluster, dask_dir, max_workers_cluster
     except Exception as e:
         print("Error occured in creating SLURM cluster.")
         traceback.print_exc()
