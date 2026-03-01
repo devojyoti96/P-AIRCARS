@@ -130,6 +130,10 @@ def run_solar_phasecenter_jobs(
     -------
     int
         Success message
+    int
+        Success ms number
+    int
+        Failed ms number
     """
     phasecor_basename = f"cor_phasecenter_{prefix}"
     logdir = f"{workdir}/logs"
@@ -153,7 +157,7 @@ def run_solar_phasecenter_jobs(
         # Moving phasecenter motion correction
         #######################
         with get_dask_client() as dask_client:
-            msg = move_solarcenter.main(
+            msg, succeed, failed = move_solarcenter.main(
                 mslist,
                 workdir=workdir,
                 cpu_frac=float(cpu_frac),
@@ -169,7 +173,7 @@ def run_solar_phasecenter_jobs(
     if msg != 0:
         raise RuntimeError("Moving phasecenter to solar center is failed.")
     else:
-        return msg
+        return msg, succeed, failed
 
 
 @task(
@@ -1510,7 +1514,6 @@ def master_control(
     do_applycal=True,
     only_amplitude=False,
     # Target data preparation
-    do_target_split=True,
     freqrange="",
     timerange="",
     uvrange="",
@@ -1518,7 +1521,6 @@ def master_control(
     do_polcal=False,
     # Self-calibration
     do_selfcal=True,
-    do_selfcal_split=True,
     do_apply_selfcal=True,
     do_ap_selfcal=True,
     solar_selfcal=True,
@@ -1589,8 +1591,6 @@ def master_control(
     only_amplitude : bool, optional
         Apply only amplitude part of gain solution from calibrator
 
-    do_target_split : bool, optional
-        Split target scans into chunks
     freqrange : str, optional
         Frequency range to image in MHz (xx1~xx2,xx3~xx4,)
     timerange : str, optional
@@ -1603,8 +1603,6 @@ def master_control(
 
     do_selfcal : bool, optional
         Perform self-calibration
-    do_selfcal_split : bool, optional
-        Split data after each round of self-calibration
     do_apply_selfcal : bool, optional
         Apply self-calibration solutions
     do_ap_selfcal : bool, optional
@@ -1657,7 +1655,7 @@ def master_control(
     max_worker: int, optional
         Maximum workers
     keep_backup : bool, optional
-        Keep backup of self-cal rounds and final models and residual images
+        Keep backup of of all intermediate data poducts, calibrated ms, self-cal rounds and including images, models and residual images
     keep_calibrated_ms : bool, optional
         Keep calibrated measurement sets or not
 
@@ -1722,7 +1720,7 @@ def master_control(
     #############################################
     # Listing target ms
     #############################################
-    target_mslist = glob.glob(f"{target_datadir}/*.ms")
+    target_mslist = sorted(glob.glob(f"{target_datadir}/*.ms"))
     if len(target_mslist) == 0:
         print(
             f"No measurement set is present in target data directory: {target_datadir}"
@@ -1848,6 +1846,8 @@ def master_control(
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
+    if keep_backup:
+        keep_calibrated_ms=True
 
     try:
         #####################################
@@ -1957,7 +1957,7 @@ def master_control(
         ############################################
         # Determining where to use calibrator or not
         #############################################
-        calibrator_mslist = glob.glob(f"{calibrator_datadir}/*.ms")
+        calibrator_mslist = sorted(glob.glob(f"{calibrator_datadir}/*.ms"))
         calibrator_obsid = None
         if len(calibrator_mslist) == 0:
             print(
@@ -2189,9 +2189,9 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg = future_movecenter.result()
+                msg, succeed, failed = future_movecenter.result()
                 if emails != "":
-                    email_msg = "Moving phasecenter to solar center is done."
+                    email_msg = "Moving phasecenter to solar center is done.\n Succeed: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -2273,7 +2273,6 @@ def master_control(
         # Run spliting jobs
         ##############################
         # If basic calibration is requested and calibrator ms and metafits are present
-        future_cal_split = None
         if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
             if adaptive:
                 scale_worker_and_wait(
@@ -2332,7 +2331,7 @@ def master_control(
                 has_cal = False
 
         if (do_cal_flag or do_import_model or do_basic_cal) and has_cal:
-            split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
+            split_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_spw_*.ms"))
             if len(split_cal_mslist) == 0:
                 print("No splited measurement set is present for basic calibration.")
                 has_cal = False
@@ -2535,13 +2534,11 @@ def master_control(
             print(
                 f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal"
             )
-            bandpass_tables = glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")
+            bandpass_tables = sorted(glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal"))
             print(
                 f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
             )
-            crossphase_tables = glob.glob(
-                f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal"
-            )
+            crossphase_tables = sorted(glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal"))
             if len(bandpass_tables) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."
@@ -2554,8 +2551,15 @@ def master_control(
                     )
             else:
                 has_cal = True
-                print(f"Bandpass tables: {bandpass_tables}\n")
-                print(f"Crosshand phase tables: {crossphase_tables}\n")
+                print("###################################################")
+                print(f"Bandpass tables in calibration directory: {caldir}")
+                for bpass in bandpass_tables:
+                    print(f"{os.path.basename(bpass)}")
+                print("####################################################")
+                print(f"Crosshand phase tables in calibration directory: {caldir}")
+                for kcross in crossphase_tables:
+                    print(f"{os.path.basename(kcross)}")
+                print("####################################################")
                 caltables = bandpass_tables + crossphase_tables
         else:
             has_cal = False
@@ -2580,7 +2584,7 @@ def master_control(
         ###################################################
         # Start spliting selfcal ms
         ###################################################
-        if do_selfcal and do_selfcal_split:
+        if do_selfcal:
             ###############################################
             # Removing previous self-calibration artificats
             ###############################################
@@ -2636,9 +2640,6 @@ def master_control(
                 mem_frac=float(mem_frac),
                 remote_log=remote_logger,
             )
-            ######################################
-            # Checking status of self-cal split
-            ######################################
             print("Checking status of spliting of target for selfcal ...")
             try:
                 msg = future_selfcal_split.result()
@@ -2669,12 +2670,15 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
+        ######################################
+        # Checking status of self-cal split
+        ######################################
         if do_selfcal:
             print("Checking measurement sets before spawning self-calibrations....")
             ####################################
             # Filtering any corrupted ms
             #####################################
-            selfcal_target_mslist = glob.glob(workdir + "/selfcal*_spw_*.ms")
+            selfcal_target_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
             if (selfcal_target_mslist) == 0:
                 print(
                     "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
@@ -2708,10 +2712,10 @@ def master_control(
             print(f"Selfcal mslist : {[os.path.basename(i) for i in selfcal_mslist]}")
 
         #########################################################
-        # Applying solutions on targets for self-calibration
+        # Flagging on targets for self-calibration
         #########################################################
         cal_applied = False
-        if do_selfcal:  # If calibrator solutions are available
+        if do_selfcal: 
             if adaptive:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, min(len(selfcal_mslist) + 1, max_worker)
@@ -2773,11 +2777,11 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-
+        
+            ###################################
+            # Apply basic calibration
+            ###################################
             if has_cal:
-                ###################################
-                # Apply basic calibration
-                ###################################
                 if emails != "":
                     email_msg = "Started applying basic calibration solution on self-calibration measurement sets."
                     send_task_notification(
@@ -2836,127 +2840,126 @@ def master_control(
             else:
                 selfcal_applymode = "calflag"
 
-            ########################################
-            # Performing self-calibration
-            ########################################
-            if do_selfcal:
-                os.system(
-                    f"rm -rf {workdir}/*selfcal_int {workdir}/*selfcal_pol {workdir}/caltables/*selfcal*"
+            ###############################################
+            # Performing sidereal correction before selfcal
+            ###############################################
+            os.system(
+                f"rm -rf {workdir}/*selfcal_int* {workdir}/*selfcal_pol* {workdir}/caltables/*selfcal*"
+            )
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster,
+                    dask_client,
+                    min(len(selfcal_mslist) + 1, max_worker),
                 )
-                if adaptive:
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        min(len(selfcal_mslist) + 1, max_worker),
-                    )
-                if do_sidereal_cor:
-                    if emails != "":
-                        email_msg = "Started correcting for solar sidereal motion."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print(
-                        "Starting task: Sidereal motion correction for self-calibration measurement sets....."
-                    )
-                    print("###########################")
-                    future_sidereal_cor_selfcal = (
-                        run_solar_siderealcor_jobs.with_options(
-                            task_run_name=f"solar_sidereal_correction_{jobid}"
-                        ).submit(
-                            ",".join(selfcal_mslist),
-                            workdir,
-                            prefix="selfcal",
-                            jobid=jobid,
-                            cpu_frac=round(cpu_frac, 2),
-                            mem_frac=round(mem_frac, 2),
-                            remote_log=remote_logger,
-                        )
-                    )
-                    try:
-                        msg = future_sidereal_cor_selfcal.result()
-                        if emails != "":
-                            email_msg = "Correction for solar sidereal motion is done."
-                            send_task_notification(
-                                emails, email_msg, jobid, target_obsid, timestamp
-                            )
-                        print("###########################")
-                        print(
-                            f"Finished task: Correction for solar sidereal motion is done."
-                        )
-                        print("###########################")
-                    except Exception as e:
-                        print("Sidereal correction is not successful.")
-                        traceback.print_exc()
-                        if emails != "":
-                            email_msg = "Error occured in sidereal motion correction."
-                            send_task_notification(
-                                emails, email_msg, jobid, target_obsid, timestamp
-                            )
-
-                #############################
-                # Self-calibration
-                #############################
+            if do_sidereal_cor:
                 if emails != "":
-                    email_msg = "Started self-calibration."
+                    email_msg = "Started correcting for solar sidereal motion."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print("Starting task: Self-calibrations.....")
+                print(
+                    "Starting task: Sidereal motion correction for self-calibration measurement sets....."
+                )
                 print("###########################")
-                future_selfcal = run_selfcal_jobs.with_options(
-                    task_run_name=f"selfcal_{jobid}"
-                ).submit(
-                    ",".join(selfcal_mslist),
-                    workdir,
-                    caldir,
-                    target_metafits,
-                    cal_applied,
-                    solint=solint,
-                    do_apcal=do_ap_selfcal,
-                    do_polcal=do_polcal,
-                    solar_selfcal=solar_selfcal,
-                    keep_backup=keep_backup,
-                    uvrange=uvrange,
-                    weight="briggs",
-                    robust=0.0,
-                    applymode=selfcal_applymode,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
+                future_sidereal_cor_selfcal = (
+                    run_solar_siderealcor_jobs.with_options(
+                        task_run_name=f"solar_sidereal_correction_{jobid}"
+                    ).submit(
+                        ",".join(selfcal_mslist),
+                        workdir,
+                        prefix="selfcal",
+                        jobid=jobid,
+                        cpu_frac=round(cpu_frac, 2),
+                        mem_frac=round(mem_frac, 2),
+                        remote_log=remote_logger,
+                    )
                 )
                 try:
-                    msg = future_selfcal.result()
+                    msg = future_sidereal_cor_selfcal.result()
                     if emails != "":
-                        email_msg = "Self-calibration is done."
+                        email_msg = "Correction for solar sidereal motion is done."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
-                    print(f"Finished task: Self-calibration is done.")
+                    print(
+                        f"Finished task: Correction for solar sidereal motion is done."
+                    )
                     print("###########################")
                 except Exception as e:
-                    print(
-                        "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
-                    )
-                    do_apply_selfcal = False
+                    print("Sidereal correction is not successful.")
                     traceback.print_exc()
                     if emails != "":
-                        email_msg = "Error occured in self-calibration."
+                        email_msg = "Error occured in sidereal motion correction."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                if adaptive:
-                    scale_worker_and_wait(dask_cluster, dask_client, 1)
+
+            #############################
+            # Self-calibration
+            #############################
+            if emails != "":
+                email_msg = "Started self-calibration."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            print("###########################")
+            print("Starting task: Self-calibrations.....")
+            print("###########################")
+            future_selfcal = run_selfcal_jobs.with_options(
+                task_run_name=f"selfcal_{jobid}"
+            ).submit(
+                ",".join(selfcal_mslist),
+                workdir,
+                caldir,
+                target_metafits,
+                cal_applied,
+                solint=solint,
+                do_apcal=do_ap_selfcal,
+                do_polcal=do_polcal,
+                solar_selfcal=solar_selfcal,
+                keep_backup=keep_backup,
+                uvrange=uvrange,
+                weight="briggs",
+                robust=0.0,
+                applymode=selfcal_applymode,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+            )
+            try:
+                msg = future_selfcal.result()
+                if emails != "":
+                    email_msg = "Self-calibration is done."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                print("###########################")
+                print(f"Finished task: Self-calibration is done.")
+                print("###########################")
+            except Exception as e:
+                print(
+                    "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
+                )
+                do_apply_selfcal = False
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = "Error occured in self-calibration."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+            if adaptive:
+                scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ########################################
         # Checking self-cal caltables
         ########################################
-        selfcal_tables = glob.glob(
+        selfcal_tables = sorted(glob.glob(
             f"{caldir}/selfcal_{target_obsid}*.gcal"
-        ) + glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal")
+        )) + sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
         if len(selfcal_tables) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
@@ -2989,7 +2992,7 @@ def master_control(
         # Spliting targets if not started already
         #############################################
         # If corrected data is requested or imaging is requested
-        if do_target_split and (do_applycal or do_imaging):
+        if do_applycal or do_apply_selfcal or do_imaging:
             if adaptive:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, min(total_ncoarse + 1, max_worker)
@@ -3047,8 +3050,10 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-        if do_imaging or do_applycal or do_apply_selfcal:
-            split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
+            ################################
+            # Checking splited final ms list
+            ################################
+            split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
             if len(split_target_mslist) == 0:
                 print("!!!! WARNING: No target ms are present. !!!!")
                 if emails != "":
@@ -3082,16 +3087,13 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 return 1
+            print(
+                f"Target mslist : {[os.path.basename(i) for i in split_target_mslist]}"
+            )
 
-            if do_applycal or do_imaging:
-                print(
-                    f"Target mslist : {[os.path.basename(i) for i in split_target_mslist]}"
-                )
-
-        #########################################################
-        # Applying basic solutions on target scans
-        #########################################################
-        if (do_applycal and has_cal) or do_apply_selfcal or do_imaging:
+            #########################################################
+            # Applying basic solutions on target scans
+            #########################################################
             if adaptive:
                 scale_worker_and_wait(
                     dask_cluster,
@@ -3151,57 +3153,61 @@ def master_control(
             ####################################
             # Applying basic calibration
             #####################################
-            if emails != "":
-                email_msg = "Started applying basic calibration solutions on final target measurement sets."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print(
-                "Starting task: Applying basic calibration on final target measurement sets....."
-            )
-            print("###########################")
-            future_apply_basical = run_apply_basiccal_sol.with_options(
-                task_run_name=f"applying_basiccal_target_{jobid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                calibrator_metafits,
-                target_metafits,
-                workdir,
-                caldir,
-                overwrite_datacolumn=True,
-                only_amplitude=only_amplitude,
-                applymode="calflag",
-                prefix="target",
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg = future_apply_basical.result()
+            if do_applycal and has_cal:
                 if emails != "":
-                    email_msg = "Applying basic calibration solutions on final target measurement sets are done."
+                    email_msg = "Started applying basic calibration solutions on final target measurement sets."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Applying basic calibration solutions on final target measurement sets are done."
+                    "Starting task: Applying basic calibration on final target measurement sets....."
                 )
                 print("###########################")
-            except Exception as e:
-                print(
-                    "!!!! WARNING: Error in applying basic calibration solutions on target scans. Not continuing further.!!!!"
+                future_apply_basical = run_apply_basiccal_sol.with_options(
+                    task_run_name=f"applying_basiccal_target_{jobid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    calibrator_metafits,
+                    target_metafits,
+                    workdir,
+                    caldir,
+                    overwrite_datacolumn=True,
+                    only_amplitude=only_amplitude,
+                    applymode="calflag",
+                    prefix="target",
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
                 )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in applying basic calibration on final target measurement sets. P-AIRCARS has stopped."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                try:
+                    msg = future_apply_basical.result()
+                    if emails != "":
+                        email_msg = "Applying basic calibration solutions on final target measurement sets are done."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(
+                        f"Finished task: Applying basic calibration solutions on final target measurement sets are done."
                     )
-                return 1
+                    print("###########################")
+                except Exception as e:
+                    print(
+                        "!!!! WARNING: Error in applying basic calibration solutions on target scans. Not continuing further.!!!!"
+                    )
+                    traceback.print_exc()
+                    if emails != "":
+                        email_msg = "Error occured in applying basic calibration on final target measurement sets. P-AIRCARS has stopped."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    return 1
 
+            ###################################
+            # Correct sidereal motion
+            ###################################
             if do_sidereal_cor:
                 if emails != "":
                     email_msg = "Start correcting sidereal motion of the Sun on final target measurement sets."
@@ -3249,7 +3255,6 @@ def master_control(
             # Apply self-calibration
             ########################################
             if do_apply_selfcal:
-                split_target_mslist = sorted(split_target_mslist)
                 if emails != "":
                     email_msg = "Started applying self-calibration on final target measurement sets."
                     send_task_notification(
@@ -3370,9 +3375,8 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     return 1
-
-        if adaptive:
-            scale_worker_and_wait(dask_cluster, dask_client, 1)
+            if adaptive:
+                scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ########################################
         # Naming of image directory
@@ -3403,7 +3407,7 @@ def master_control(
         # Primary beam correction
         ###########################
         if do_pbcor:
-            images = glob.glob(f"{imagedir}/images/*.fits")
+            images = sorted(glob.glob(f"{imagedir}/images/*.fits"))
             if len(images) == 0:
                 print(f"No image is present in image directory: {imagedir}/images")
                 if emails != "":
@@ -3458,11 +3462,14 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     return 1
+                finally:
+                    if adaptive:
+                        scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         #######################################
         # Make overlays
         #######################################
-        images = glob.glob(f"{imagedir}/images/*.fits")
+        images = sorted(glob.glob(f"{imagedir}/images/*.fits"))
         if len(images) == 0:
             print(
                 f"No image is present in image directory: {imagedir}/images for making overlays"
@@ -3559,7 +3566,10 @@ def master_control(
         # Making diagnostic plots of measurement sets
         ##############################################
         if make_msplot:
-            split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
+            ###########################################
+            # Ploting calibrator ms
+            ###########################################
+            split_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_spw_*.ms"))
             if len(split_cal_mslist) == 0:
                 print("No calibrator measurement set is present for ploting.")
             else:
@@ -3571,10 +3581,7 @@ def master_control(
                     )
                 msplot_outdir = f"{outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
-                if has_cal and len(split_cal_mslist) > 0:
-                    ###########################################
-                    # Ploting calibrator ms
-                    ###########################################
+                if len(split_cal_mslist) > 0:
                     if emails != "":
                         email_msg = "Started making diagnostic plots for calibrator measurement sets."
                         send_task_notification(
@@ -3622,10 +3629,18 @@ def master_control(
             ###########################################
             # Ploting target ms
             ###########################################
-            split_target_mslist = glob.glob(f"{workdir}/target*_spw_*.ms")
+            split_target_mslist = sorted(glob.glob(f"{workdir}/target*_spw_*.ms"))
             if len(split_target_mslist) == 0:
                 print("No target measurment set is present for ploting.")
             else:
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster,
+                        dask_client,
+                        min(len(split_target_mslist) + 1, max_worker),
+                    )
+                msplot_outdir = f"{outdir}/ms_diagnostics_plots"
+                os.makedirs(msplot_outdir, exist_ok=True)
                 print("###########################")
                 print(
                     "Starting task: Making diagnostic plots of target measurement sets....."
@@ -3664,67 +3679,9 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-            if adaptive:
-                scale_worker_and_wait(dask_cluster, dask_client, 1)
-
-        ######################################
-        # Keeping flag backups
-        ######################################
-        # Flag backups of calibrator measurement sets
-        ######################################
-        final_cal_mslist = glob.glob(workdir + "/calibrator*_spw_*.ms")
-        if len(final_cal_mslist) > 0:
-            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup in: {outdir}/ms_flags")
-            for cal_ms in final_cal_mslist:
-                do_flag_backup(cal_ms, flagtype="finalflag")
-                if os.path.exists(
-                    f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
-                ):
-                    os.system(
-                        f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
-                    )
-                os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
-                if keep_calibrated_ms is False:
-                    os.system(f"rm -rf {cal_ms}")
-
-        ######################################
-        # Flag backups of selfcal measurement sets
-        ######################################
-        final_selfcal_mslist = glob.glob(workdir + "/selfcal*_spw_*.ms")
-        if len(final_selfcal_mslist) > 0:
-            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup in: {outdir}/ms_flags")
-            for selfcal_ms in final_selfcal_mslist:
-                do_flag_backup(selfcal_ms, flagtype="finalflag")
-                if os.path.exists(
-                    f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
-                ):
-                    os.system(
-                        f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
-                    )
-                os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
-                if keep_calibrated_ms is False:
-                    os.system(f"rm -rf {selfcal_ms}")
-
-        ######################################
-        # Flag backups of target measurement sets
-        ######################################
-        final_split_target_mslist = glob.glob(workdir + "/target*_spw_*.ms")
-        if len(final_split_target_mslist) > 0:
-            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup in: {outdir}/ms_flags")
-            for target_ms in final_split_target_mslist:
-                do_flag_backup(target_ms, flagtype="finalflag")
-                if os.path.exists(
-                    f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
-                ):
-                    os.system(
-                        f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
-                    )
-                os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
-                if keep_calibrated_ms is False:
-                    os.system(f"rm -rf {target_ms}")
+                        
+        if adaptive:
+            scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ###########################################
         # Successful exit
@@ -3740,12 +3697,68 @@ def master_control(
         traceback.print_exc()
         return 1
     finally:
-        datalist = glob.glob(f"{target_datadir}/*")
+        datalist = sorted(glob.glob(f"{target_datadir}/*"))
         for data in datalist:
             drop_cache(data)
-        callist = glob.glob(f"{calibrator_datadir}/*")
+        callist = sorted(glob.glob(f"{calibrator_datadir}/*"))
         for cal in callist:
             drop_cache(cal)
+        ######################################
+        # Keeping flag backups
+        ######################################
+        # Flag backups of calibrator measurement sets
+        ######################################
+        final_cal_mslist = sorted(glob.glob(workdir + "/calibrator*_spw_*.ms"))
+        if len(final_cal_mslist) > 0:
+            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup in: {outdir}/ms_flags")
+            for cal_ms in final_cal_mslist:
+                do_flag_backup(cal_ms, flagtype="finalflag")
+                if os.path.exists(
+                    f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                ):
+                    os.system(
+                        f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                    )
+                os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
+                if keep_calibrated_ms is False:
+                    os.system(f"rm -rf {cal_ms}")
+        ######################################
+        # Flag backups of selfcal measurement sets
+        ######################################
+        final_selfcal_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
+        if len(final_selfcal_mslist) > 0:
+            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup in: {outdir}/ms_flags")
+            for selfcal_ms in final_selfcal_mslist:
+                do_flag_backup(selfcal_ms, flagtype="finalflag")
+                if os.path.exists(
+                    f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
+                ):
+                    os.system(
+                        f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
+                    )
+                os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
+                if keep_calibrated_ms is False:
+                    os.system(f"rm -rf {selfcal_ms}")
+        ######################################
+        # Flag backups of target measurement sets
+        ######################################
+        final_split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
+        if len(final_split_target_mslist) > 0:
+            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup in: {outdir}/ms_flags")
+            for target_ms in final_split_target_mslist:
+                do_flag_backup(target_ms, flagtype="finalflag")
+                if os.path.exists(
+                    f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                ):
+                    os.system(
+                        f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                    )
+                os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
+                if keep_calibrated_ms is False:
+                    os.system(f"rm -rf {target_ms}")      
         drop_cache(workdir)
         drop_cache(outdir)
         stop_event.set()
@@ -3970,12 +3983,6 @@ def cli():
         help="Disable moving phaseceneter to solar center",
     )
     advanced.add_argument(
-        "--no_selfcal_split",
-        action="store_false",
-        dest="do_selfcal_split",
-        help="Disable split for self-calibration",
-    )
-    advanced.add_argument(
         "--no_selfcal",
         action="store_false",
         dest="do_selfcal",
@@ -3992,12 +3999,6 @@ def cli():
         action="store_false",
         dest="solar_selfcal",
         help="Disable solar-specific self-calibration parameters",
-    )
-    advanced.add_argument(
-        "--no_target_split",
-        action="store_false",
-        dest="do_target_split",
-        help="Disable target data split",
     )
     advanced.add_argument(
         "--no_applycal",
@@ -4330,7 +4331,6 @@ def cli():
             do_basic_cal=args.do_basic_cal,
             do_applycal=args.do_applycal,
             # Target data preparation
-            do_target_split=args.do_target_split,
             freqrange=args.freqrange,
             timerange=args.timerange,
             uvrange=args.cal_uvrange,
@@ -4338,7 +4338,6 @@ def cli():
             do_polcal=args.do_polcal,
             # Self-calibration
             do_selfcal=args.do_selfcal,
-            do_selfcal_split=args.do_selfcal_split,
             do_apply_selfcal=args.do_apply_selfcal,
             only_amplitude=args.only_amplitude,
             do_ap_selfcal=args.do_ap_selfcal,

@@ -1662,13 +1662,21 @@ def main(
 
             if not keep_backup:
                 for ms in mslist:
-                    selfcaldir = (
+                    int_selfcaldir = (
                         workdir
                         + "/"
                         + os.path.basename(ms).split(".ms")[0]
-                        + "_selfcal"
+                        + "_selfcal_int"
                     )
-                    os.system(f"rm -rf {selfcaldir}/*")
+                    os.system(f"rm -rf {int_selfcaldir}")
+                    pol_selfcaldir = (
+                        workdir
+                        + "/"
+                        + os.path.basename(ms).split(".ms")[0]
+                        + "_selfcal_pol"
+                    )
+                    os.system(f"rm -rf {pol_selfcaldir}")
+                    
             if len(gcal_list) > 0:
                 print(f"Final gaincal selfcal caltables: {gcal_list}")
                 msg = 0

@@ -63,6 +63,10 @@ def main(
     -------
     int
         Success message
+    int
+        Success ms number
+    int
+        Failed ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -96,6 +100,11 @@ def main(
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         msg = 1
+        succed=0
+        failed=0
+    else:
+        succeed = 0
+        failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -154,7 +163,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg
+    return msg, succed, failed
 
 
 def cli():
@@ -201,7 +210,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg = main(
+    msg, succeed, failed = main(
         args.mslist,
         workdir=args.workdir,
         cpu_frac=args.cpu_frac,
