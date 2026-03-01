@@ -100,7 +100,7 @@ def main(
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         msg = 1
-        succed=0
+        succeed=0
         failed=0
     else:
         succeed = 0
@@ -163,7 +163,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             os.system(f"rm -rf {dask_dir}")
-    return msg, succed, failed
+    return msg, succeed, failed
 
 
 def cli():
