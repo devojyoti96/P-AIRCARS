@@ -1230,6 +1230,7 @@ def do_full_selfcal(
         mem=mem,
         logfile=f"{logfile}.int",
     )
+    print(f"Polcal msg: {msname},{intensity_selfcal_msg}")
     if intensity_selfcal_msg != 0:
         return intensity_selfcal_msg, 1, [], [], ""
     elif do_polcal is False:
@@ -1256,6 +1257,7 @@ def do_full_selfcal(
             mem=mem,
             logfile=f"{logfile}.pol",
         )
+        print(f"Polcal msg: {selfcal_ms},{pol_selfcal_msg}")
         return (
             intensity_selfcal_msg,
             pol_selfcal_msg,
