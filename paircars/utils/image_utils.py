@@ -487,20 +487,20 @@ def make_stokes_wsclean_imagecube(
         for img in wsclean_images:
             os.system(f"rm -rf {img}")
     return outfile_name
-    
+
 
 def filter_images(imagelist, min_time_sep=10.0):
     """
     Select images with maximum bandwidth, then for each frequency
     keep images separated by at least `min_time_sep` seconds.
-    
+
     Parameters
     ----------
     imagelist : list
         Image list
     min_time_sep : float, optional
         Minimum time seperation in seconds
-        
+
     Returns
     -------
     list
@@ -520,12 +520,7 @@ def filter_images(imagelist, min_time_sep=10.0):
         bw = round(bw, 2)
         timeobs = header["DATE-OBS"].split(".")[0]
         mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
-        image_info.append({
-            "image": image,
-            "bw": bw,
-            "freq": freq,
-            "mjdsec": mjdsec
-        })
+        image_info.append({"image": image, "bw": bw, "freq": freq, "mjdsec": mjdsec})
     bws = np.array([info["bw"] for info in image_info])
     max_bw = np.max(bws)
     image_info = [info for info in image_info if info["bw"] == max_bw]
@@ -541,4 +536,3 @@ def filter_images(imagelist, min_time_sep=10.0):
                 final_images.append(info["image"])
                 last_time = info["mjdsec"]
     return final_images
-    

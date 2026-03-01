@@ -1840,12 +1840,12 @@ def master_control(
         log_thread_flow = start_flow_log_saver(
             flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
         )
-        master_log_created=True
+        master_log_created = True
     else:
-        master_log_created=False
+        master_log_created = False
         master_logfile = f"{logdir}/main.log"
         os.symlink(masterlog, master_logfile)
-        
+
     dask_dir = None
     try:
         dask_client = get_client()

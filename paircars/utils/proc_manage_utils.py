@@ -429,8 +429,8 @@ def submit_local_master_flow(args, jobid):
             if "PREFECT" in env:
                 prefect_env_list.append(f"export {env}={envlist.get(env)}")
     log_file = f"{args.workdir}/main_paircars_{jobid}.log"
-    cli_cmd.append("--masterlog")
-    cli_cmd.append(f"{log_file}")
+    cli_cmd.append += f"--masterlog {log_file}"
+
     try:
         script_args = ["#!/bin/bash\n"]
         if len(prefect_env_list) > 0:
@@ -441,13 +441,10 @@ def submit_local_master_flow(args, jobid):
         script_path = os.path.join(args.workdir, f"paircars_local_{jobid}.sh")
         with open(script_path, "w") as f:
             for script_arg in script_args:
-                f.write(f"{script_arg}\n")        
+                f.write(f"{script_arg}\n")
         with open(log_file, "w") as log:
             result = subprocess.run(
-                ["bash", script_path],
-                stdout=log,
-                stderr=log,
-                text=True
+                ["bash", script_path], stdout=log, stderr=log, text=True
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
