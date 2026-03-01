@@ -343,7 +343,7 @@ def submit_slurm_master_flow(args, jobid):
         Success message
     """
     scheduler_name = get_scheduler_name()
-    if scheduler_name is not "slurm":
+    if scheduler_name!="slurm":
         print("SLURM job scheduler is not available.")
         return 1
     cli_cmd = (
