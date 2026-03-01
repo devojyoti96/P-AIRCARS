@@ -380,7 +380,7 @@ def submit_slurm_master_flow(args, jobid):
             prefect_env_list.append(f"export {env}={envlist.get(env)}")
 
     log_file = f"{args.workdir}/main_paircars_{jobid}.log"
-    cli_cmd += f"--masterlog {log_file}"
+    cli_cmd += f" --masterlog {log_file}"
 
     try:
         #################################

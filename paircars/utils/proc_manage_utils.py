@@ -429,7 +429,7 @@ def submit_local_master_flow(args, jobid):
             if "PREFECT" in env:
                 prefect_env_list.append(f"export {env}={envlist.get(env)}")
     log_file = f"{args.workdir}/main_paircars_{jobid}.log"
-    cli_cmd += f"--masterlog {log_file}"
+    cli_cmd += f" --masterlog {log_file}"
 
     try:
         script_args = ["#!/bin/bash\n"]
@@ -443,10 +443,20 @@ def submit_local_master_flow(args, jobid):
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
         with open(log_file, "w") as log:
-            result = subprocess.run(
-                ["bash", script_path], stdout=log, stderr=log, text=True
+            process = subprocess.Popen(
+                ["bash", script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
             )
-        exit_code = result.returncode
+
+            for line in process.stdout:
+                sys.stdout.write(line)   # show in terminal
+                log.write(line)          # write to file
+
+            process.stdout.close()
+            exit_code = process.wait()
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
