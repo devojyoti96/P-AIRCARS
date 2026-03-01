@@ -176,7 +176,7 @@ def main(
                     )
             else:"""
             tasks = []
-            ncpu = os.environ.get("OMP_NUM_THREADS")
+            ncpu = int(os.environ.get("OMP_NUM_THREADS"))
             for image in imagelist:
                 task = delayed(make_mwa_overlay)(
                     image,
