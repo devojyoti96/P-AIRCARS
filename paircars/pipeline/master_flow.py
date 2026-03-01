@@ -3543,12 +3543,12 @@ def master_control(
                 traceback.print_exc()
                 if emails != "":
                     email_msg = (
-                        "Error occured in making overlays. P-AIRCARS has stopped."
+                        "Error occured in making overlays."
                     )
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                return 1
+
 
         ##############################################
         # Making diagnostic plots of measurement sets

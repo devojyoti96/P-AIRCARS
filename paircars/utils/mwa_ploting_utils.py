@@ -997,7 +997,7 @@ def make_mwa_overlay(
     plot_mwa_colormap=True,
     enhance_offdisk=False,
     contour_levels=[0.05, 0.1, 0.2, 0.4, 0.6, 0.8],
-    euv_image_scaling=0.25,
+    euv_image_scaling=1.0,
     do_sharpen_euv=True,
     xlim=[-2500, 2500],
     ylim=[-2500, 2500],
@@ -1026,7 +1026,7 @@ def make_mwa_overlay(
     contour_levels : list, optional
         Contour levels in fraction of peak
     euv_image_scaling : float, optional
-       EUV image pixel scaling (should be smaller than 1.0)
+       EUV image pixel scaling (should be equal or smaller than 1.0)
     do_sharpen_euv : bool, optional
         Do sharpen EUV images
     xlim : list, optional
