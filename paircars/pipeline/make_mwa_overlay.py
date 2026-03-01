@@ -124,7 +124,7 @@ def main(
             last_mjdsec = 0.0
             final_imagelist = []
             timelist = []
-            for image in filtered_imaeglist:
+            for image in filtered_imagelist:
                 header = fits.getheader(image)
                 timeobs = header["DATE-OBS"].split(".")[0]
                 mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
