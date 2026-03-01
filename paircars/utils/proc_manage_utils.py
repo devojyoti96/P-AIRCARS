@@ -475,11 +475,17 @@ def submit_local_master_flow(args, jobid):
                 process.stdout.close()
                 exit_code = process.wait()
         else:
-            with open(log_file, "w") as log:
-                result = subprocess.run(
-                    ["bash", script_path], stdout=log, stderr=log, text=True
+            log = open(log_file, "w")
+            try:
+                process = subprocess.Popen(
+                    ["bash", script_path],
+                    stdout=log,
+                    stderr=log,
+                    text=True,
                 )
-            exit_code = result.returncode
+                exit_code=0
+            except:
+                exit_code=1
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
