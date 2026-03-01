@@ -3484,13 +3484,15 @@ def master_control(
                 bws.append(bw)
             max_bw = max(bws)
             bws = np.array(bws)
+            print(bws,max_bw)
             pos = np.where(bws == max_bw)
+            images = np.array(images)
             filtered_images = images[pos]
 
             last_mjdsec = 0.0
             final_images = []
             timelist = []
-            for image in filtered_imaeglist:
+            for image in filtered_images:
                 header = fits.getheader(image)
                 timeobs = header["DATE-OBS"].split(".")[0]
                 mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
