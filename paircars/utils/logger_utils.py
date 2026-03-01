@@ -112,6 +112,7 @@ class RemoteLogger(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
+        print(msg)
         try:
             requests.post(
                 f"{self.remote_link}/api/log",
@@ -305,6 +306,8 @@ def init_logger(logname, logfile, jobname="", password=""):
             except Exception:
                 pass
         if os.path.exists(logfile):
+            if os.path.islink(logfile): 
+                logfile = os.readlink(logfile)
             event_handler = LogTailHandler(logfile, logger)
             observer = Observer()
             observer.schedule(
