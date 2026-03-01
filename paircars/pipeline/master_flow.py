@@ -3554,32 +3554,82 @@ def master_control(
         # Making diagnostic plots of measurement sets
         ##############################################
         if make_msplot:
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    min(len(split_cal_mslist) + 1, max_worker),
-                )
-            msplot_outdir = f"{outdir}/ms_diagnostics_plots"
-            os.makedirs(msplot_outdir, exist_ok=True)
-            if has_cal and len(split_cal_mslist) > 0:
-                ###########################################
-                # Ploting calibrator ms
-                ###########################################
-                if emails != "":
-                    email_msg = "Started making diagnostic plots for calibrator measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+            split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
+            if len(split_cal_mslist)==0:
+                print("No calibrator measurement set is present for ploting.")
+            else:
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster,
+                        dask_client,
+                        min(len(split_cal_mslist) + 1, max_worker),
                     )
+                msplot_outdir = f"{outdir}/ms_diagnostics_plots"
+                os.makedirs(msplot_outdir, exist_ok=True)
+                if has_cal and len(split_cal_mslist) > 0:
+                    ###########################################
+                    # Ploting calibrator ms
+                    ###########################################
+                    if emails != "":
+                        email_msg = "Started making diagnostic plots for calibrator measurement sets."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print(
+                        "Starting task: Making diagnostic plots of calibrator measurement sets....."
+                    )
+                    print("###########################")
+                    future_cal_plot = run_make_msplot.with_options(
+                        task_run_name=f"making_msplot_cal_{jobid}"
+                    ).submit(
+                        ",".join(split_cal_mslist),
+                        workdir,
+                        msplot_outdir,
+                        jobid=jobid,
+                        cpu_frac=round(cpu_frac, 2),
+                        mem_frac=round(mem_frac, 2),
+                        remote_log=remote_logger,
+                    )
+                    try:
+                        msg = future_cal_plot.result()
+                        if emails != "":
+                            email_msg = "Making diagnostic plots for calibrator measurement sets are done."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
+                        print("###########################")
+                        print(
+                            f"Finished task: Making diagnostic plots for calibrator measurment sets are done."
+                        )
+                        print("###########################")
+                    except Exception as e:
+                        print(
+                            "!!!! WARNING: Diagnostic plot of calibrator measurment sets are not successful. !!!!"
+                        )
+                        traceback.print_exc()
+                        if emails != "":
+                            email_msg = "Error occured in making diagnostic plots of calibrator measurement sets."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
+
+            ###########################################
+            # Ploting target ms
+            ###########################################
+            split_target_mslist = glob.glob(f"{workdir}/target*_spw_*.ms")
+            if len(split_target_mslist)==0:
+                print("No target measurment set is present for ploting.")
+            else:
                 print("###########################")
                 print(
-                    "Starting task: Making diagnostic plots of calibrator measurement sets....."
+                    "Starting task: Making diagnostic plots of target measurement sets....."
                 )
                 print("###########################")
-                future_cal_plot = run_make_msplot.with_options(
-                    task_run_name=f"making_msplot_cal_{jobid}"
+                future_target_plot = run_make_msplot.with_options(
+                    task_run_name=f"making_msplot_{jobid}"
                 ).submit(
-                    ",".join(split_cal_mslist),
+                    ",".join(split_target_mslist),
                     workdir,
                     msplot_outdir,
                     jobid=jobid,
@@ -3588,71 +3638,29 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg = future_cal_plot.result()
+                    msg = future_target_plot.result()
                     if emails != "":
-                        email_msg = "Making diagnostic plots for calibrator measurement sets are done."
+                        email_msg = (
+                            "Making diagnostic plots for target measurement sets are done."
+                        )
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Making diagnostic plots for calibrator measurment sets are done."
+                        f"Finished task: Making diagnostic plots for target measurment sets are done."
                     )
                     print("###########################")
                 except Exception as e:
                     print(
-                        "!!!! WARNING: Diagnostic plot of calibrator measurment sets are not successful. !!!!"
+                        "!!!! WARNING: Diagnostic plot of target measurment sets are not successful. !!!!"
                     )
                     traceback.print_exc()
                     if emails != "":
-                        email_msg = "Error occured in making diagnostic plots of calibrator measurement sets."
+                        email_msg = "Error occured in making diagnostic plots of target measurement sets."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-
-            ###########################################
-            # Ploting target ms
-            ###########################################
-            print("###########################")
-            print(
-                "Starting task: Making diagnostic plots of target measurement sets....."
-            )
-            print("###########################")
-            future_target_plot = run_make_msplot.with_options(
-                task_run_name=f"making_msplot_{jobid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                workdir,
-                msplot_outdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg = future_target_plot.result()
-                if emails != "":
-                    email_msg = (
-                        "Making diagnostic plots for target measurement sets are done."
-                    )
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    f"Finished task: Making diagnostic plots for target measurment sets are done."
-                )
-                print("###########################")
-            except Exception as e:
-                print(
-                    "!!!! WARNING: Diagnostic plot of target measurment sets are not successful. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in making diagnostic plots of target measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
             if adaptive:
                 scale_worker_and_wait(dask_cluster, dask_client, 1)
 
