@@ -509,7 +509,15 @@ def get_quartical_table_metadata(caltable):
         A python dictionary with keywords JonesType, Channel 0 frequency (MHz), Central channel frequency (MHz), Channel width (kHz), Bandwidth (MHz), Start time, End time
     """
     caltable = caltable.rstrip("/")
-    caltable_dirs = os.listdir(caltable)
+    caltable_dirs = [os.path.basename(i) for i in glob.glob(f"{caltable}/*")]
+    filtered = []
+    for caldir in caltable_dirs:
+        if caldir.startswith(".") is False:
+            filtered.append(caldir)
+    caltable_dirs = filtered
+    if len(caltable_dirs) == 0:
+        print("Could not determine solution type.")
+        return 
     soltype = caltable_dirs[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     jonestype = gains[0].TYPE

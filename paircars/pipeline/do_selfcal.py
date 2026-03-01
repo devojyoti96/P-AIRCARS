@@ -1605,7 +1605,8 @@ def main(
                             f"touch {workdir}/.intselfcal_succeed_{os.path.basename(mslist[i])}"
                         )
                         succeed_intselfcal += 1
-                    except:
+                    except Exception:
+                        traceback.print_exc()
                         os.system(
                             f"touch {workdir}/.intselfcal_failed_{os.path.basename(mslist[i])}"
                         )
@@ -1652,7 +1653,8 @@ def main(
                                 f"touch {workdir}/.polselfcal_succeed_{os.path.basename(mslist[i])}"
                             )
                             succeed_polselfcal += 1
-                        except:
+                        except Exception:
+                            traceback.print_exc()
                             os.system(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
                             )
