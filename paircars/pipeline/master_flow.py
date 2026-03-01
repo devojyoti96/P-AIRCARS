@@ -2161,7 +2161,7 @@ def master_control(
                 msname, n_threads=available_cpus, force_reset=do_forcereset_weightflag
             )
 
-        if move_solarcenter or make_ds and adaptive:
+        if (move_solarcenter or make_ds) and adaptive:
             scale_worker_and_wait(
                 dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
             )
