@@ -451,7 +451,15 @@ def quartical_matrix_normalize(caltable, overwrite=False):
         New caltable name
     """
     caltable = caltable.rstrip("/")
-    caltable_dirs = os.listdir(caltable)
+    caltable_dirs = [os.path.basename(i) for i in glob.glob(f"{caltable}/*")]
+    filtered = []
+    for caldir in caltable_dirs:
+        if caldir.startswith(".") is False:
+            filtered.append(caldir)
+    caltable_dirs = filtered
+    if len(caltable_dirs) == 0:
+        print("Could not determine solution type. Returning ithout normalisation.")
+        return caltable
     soltype = caltable_dirs[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
