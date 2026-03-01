@@ -108,6 +108,7 @@ def main(
             bws = []
             for image in imagelist:
                 header = fits.getheader(image)
+                print(image)
                 if header["CTYPE3"] == "FREQ":
                     bw = round(float(header["CDELT3"]) / 10**6, 2)
                 elif header["CTYPE4"] == "FREQ":

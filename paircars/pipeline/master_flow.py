@@ -2163,7 +2163,7 @@ def master_control(
                 msname, n_threads=available_cpus, force_reset=do_forcereset_weightflag
             )
 
-        if adaptive:
+        if move_solarcenter or make_ds and adaptive:
             scale_worker_and_wait(
                 dask_cluster, dask_client, min(len(target_mslist) + 1, max_worker)
             )
@@ -2332,18 +2332,26 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
+                
 
-        split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
-        if len(split_cal_mslist) == 0:
-            print("No splited measurement set is present for basic calibration.")
-            has_cal = False
-        else:
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    min(len(split_cal_mslist) + 1, max_worker),
-                )
+        if (do_cal_flag or do_import_model or do_basic_cal) and has_cal:
+            split_cal_mslist = glob.glob(f"{workdir}/calibrator*_spw_*.ms")
+            if len(split_cal_mslist) == 0:
+                print("No splited measurement set is present for basic calibration.")
+                has_cal = False
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster,
+                        dask_client,
+                        1,
+                    )
+            else:
+                if adaptive:
+                    scale_worker_and_wait(
+                        dask_cluster,
+                        dask_client,
+                        min(len(split_cal_mslist) + 1, max_worker),
+                    )
 
         ##################################
         # Run flagging jobs on calibrators
@@ -2519,9 +2527,9 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 has_cal = False
-            finally:
-                if adaptive:
-                    scale_worker_and_wait(dask_cluster, dask_client, 1)
+                
+        if (do_cal_flag or do_import_model or do_basic_cal) and adaptive:
+            scale_worker_and_wait(dask_cluster, dask_client, 1)
 
         ##########################################
         # Checking presence of necessary caltables
@@ -2664,23 +2672,23 @@ def master_control(
                 if adaptive:
                     scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-        ####################################
-        # Filtering any corrupted ms
-        #####################################
-        selfcal_target_mslist = glob.glob(workdir + "/selfcal*_spw_*.ms")
-        if (selfcal_target_mslist) == 0:
-            print(
-                "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
-            )
-            do_selfcal = False
-            if emails != "":
-                email_msg = "No splited measurement set is found for self-calibration. Not continuting for self-calibration."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-
         if do_selfcal:
             print("Checking measurement sets before spawning self-calibrations....")
+            ####################################
+            # Filtering any corrupted ms
+            #####################################
+            selfcal_target_mslist = glob.glob(workdir + "/selfcal*_spw_*.ms")
+            if (selfcal_target_mslist) == 0:
+                print(
+                    "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
+                )
+                do_selfcal = False
+                if emails != "":
+                    email_msg = "No splited measurement set is found for self-calibration. Not continuting for self-calibration."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                    
             filtered_mslist = []  # Filtering in case any ms is corrupted
             for ms in selfcal_target_mslist:
                 checkcol = check_datacolumn_valid(ms)
