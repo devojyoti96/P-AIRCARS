@@ -2583,7 +2583,7 @@ def master_control(
         ###################################################
         # Start spliting selfcal ms
         ###################################################
-        if do_selfcal or do_selfcal_split:
+        if do_selfcal and do_selfcal_split:
             prefix = "selfcal"
             try:
                 time_interval = float(solint)
