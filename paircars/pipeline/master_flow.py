@@ -65,10 +65,6 @@ from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
 )
-from paircars.utils.prefect_setup_utils import (
-    prefect_server_status,
-    stop_prefect_server,
-)
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
     start_flow_log_saver,
@@ -88,7 +84,6 @@ from paircars.pipeline import (
     make_mwa_overlay,
     move_solarcenter,
     make_ms_plot,
-    show_status,
 )
 from paircars.pipeline.init_data import init_paircars_data
 
@@ -1408,31 +1403,16 @@ def run_make_overlay(
         #####################
         # Making overlays
         #####################
-        scheduler_name = get_scheduler_name()
-        if scheduler_name == "local":
-            msg, succeed, failed = make_mwa_overlay.main(
-                imagedir,
-                outdir,
-                workdir=workdir,
-                all_overlay=all_overlay,
-                cpu_frac=float(cpu_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-            )
-        else:
-            with get_dask_client() as dask_client:
-                msg, succeed, failed = make_mwa_overlay.main(
-                    imagedir,
-                    outdir,
-                    workdir=workdir,
-                    all_overlay=all_overlay,
-                    cpu_frac=float(cpu_frac),
-                    logfile=logfile,
-                    jobid=jobid,
-                    start_remote_log=remote_log,
-                    dask_client=dask_client,
-                )
+        msg, succeed, failed = make_mwa_overlay.main(
+            imagedir,
+            outdir,
+            workdir=workdir,
+            all_overlay=all_overlay,
+            cpu_frac=float(cpu_frac),
+            logfile=logfile,
+            jobid=jobid,
+            start_remote_log=remote_log,
+        )
     finally:
         stop_event.set()
         log_thread_overlay.join(timeout=5)
@@ -3522,102 +3502,6 @@ def master_control(
                     if adaptive:
                         scale_worker_and_wait(dask_cluster, dask_client, 1)
 
-        #######################################
-        # Make overlays
-        #######################################
-        images = sorted(glob.glob(f"{imagedir}/images/*.fits"))
-        if len(images) == 0:
-            print(
-                f"No image is present in image directory: {imagedir}/images for making overlays"
-            )
-            if emails != "":
-                email_msg = (
-                    "No image is present in image directory for making overlays."
-                )
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-
-        #################################################################
-        # Filtering only coarse channel images for default overlay mode
-        #################################################################
-        if make_overlay is False:
-            bws = []
-            for image in images:
-                header = fits.getheader(image)
-                if header["CTYPE3"] == "FREQ":
-                    bw = round(float(header["CDELT3"]) / 10**6, 2)
-                elif header["CTYPE4"] == "FREQ":
-                    bw = round(float(header["CDELT4"]) / 10**6, 2)
-                else:
-                    bw = -1
-                bws.append(bw)
-            max_bw = max(bws)
-            bws = np.array(bws)
-            pos = np.where(bws == max_bw)
-            images = np.array(images)
-            filtered_images = images[pos]
-
-            last_mjdsec = 0.0
-            final_images = []
-            timelist = []
-            for image in filtered_images:
-                header = fits.getheader(image)
-                timeobs = header["DATE-OBS"].split(".")[0]
-                mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
-                if (mjdsec - last_mjdsec) >= 10.0:
-                    final_images.append(image)
-                    timelist.append(mjdsec)
-                    last_mjdsec = max(timelist)
-            images = final_images
-
-        if len(images) > 0:
-            #################################
-            # Start overlays
-            #################################
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster, dask_client, min(len(images) + 1, max_worker)
-                )
-            if emails != "":
-                email_msg = "Started making overlays."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Making overlay on EUV images.....")
-            print("###########################")
-            future_overlay = run_make_overlay.with_options(
-                task_run_name=f"making_overlay_{jobid}"
-            ).submit(
-                f"{imagedir}/images",
-                f"{imagedir}/overlay_pngs",
-                workdir=workdir,
-                all_overlay=make_overlay,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_overlay.result()
-                if emails != "":
-                    email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(f"Finished task: Making overlays are done.")
-                print(f"Final image directory: {imagedir}/overlay_pngs")
-                print("###########################")
-            except Exception as e:
-                print("!!!! WARNING: Overlay of the images are not successful. !!!!")
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in making overlays."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-
         ##############################################
         # Making diagnostic plots of measurement sets
         ##############################################
@@ -3736,8 +3620,98 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
 
-        if adaptive:
-            scale_worker_and_wait(dask_cluster, dask_client, 1)
+        scale_worker_and_wait(dask_cluster, dask_client, 1)
+        #######################################
+        # Make overlays
+        #######################################
+        images = sorted(glob.glob(f"{imagedir}/images/*.fits"))
+        if len(images) == 0:
+            print(
+                f"No image is present in image directory: {imagedir}/images for making overlays"
+            )
+            if emails != "":
+                email_msg = (
+                    "No image is present in image directory for making overlays."
+                )
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+
+        #################################################################
+        # Filtering only coarse channel images for default overlay mode
+        #################################################################
+        if make_overlay is False:
+            bws = []
+            for image in images:
+                header = fits.getheader(image)
+                if header["CTYPE3"] == "FREQ":
+                    bw = round(float(header["CDELT3"]) / 10**6, 2)
+                elif header["CTYPE4"] == "FREQ":
+                    bw = round(float(header["CDELT4"]) / 10**6, 2)
+                else:
+                    bw = -1
+                bws.append(bw)
+            max_bw = max(bws)
+            bws = np.array(bws)
+            pos = np.where(bws == max_bw)
+            images = np.array(images)
+            filtered_images = images[pos]
+
+            last_mjdsec = 0.0
+            final_images = []
+            timelist = []
+            for image in filtered_images:
+                header = fits.getheader(image)
+                timeobs = header["DATE-OBS"].split(".")[0]
+                mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
+                if (mjdsec - last_mjdsec) >= 10.0:
+                    final_images.append(image)
+                    timelist.append(mjdsec)
+                    last_mjdsec = max(timelist)
+            images = final_images
+
+        if len(images) > 0:
+            #################################
+            # Start overlays
+            #################################
+            if emails != "":
+                email_msg = "Started making overlays."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            print("###########################")
+            print("Starting task: Making overlay on EUV images.....")
+            print("###########################")
+            future_overlay = run_make_overlay.with_options(
+                task_run_name=f"making_overlay_{jobid}"
+            ).submit(
+                f"{imagedir}/images",
+                f"{imagedir}/overlay_pngs",
+                workdir=workdir,
+                all_overlay=make_overlay,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                remote_log=remote_logger,
+            )
+            try:
+                msg, succeed, failed = future_overlay.result()
+                if emails != "":
+                    email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                print("###########################")
+                print(f"Finished task: Making overlays are done.")
+                print(f"Final image directory: {imagedir}/overlay_pngs")
+                print("###########################")
+            except Exception as e:
+                print("!!!! WARNING: Overlay of the images are not successful. !!!!")
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = "Error occured in making overlays."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
 
         ###########################################
         # Successful exit
@@ -4431,24 +4405,12 @@ def cli():
             job_password=args.job_password,
             adaptive=adaptive,
         )
+        print("##########################################")
         if msg == 0:
             print("P-AIRCARS successfully executed.")
         else:
             print("Issued occured in P-AIRCARS execution.")
-        if scheduler_name == "slurm":
-            node_name = socket.gethostname()
-            running_paircars_jobs = show_status.show_slurm_job_status(
-                node_name=node_name
-            )
-            if running_paircars_jobs == 0:
-                print("No other P-AIRCARS job is running. Closing prefect server...")
-                msg = stop_prefect_server(scheduler_name="slurm")
-                if msg != 0:
-                    print("Error in stopping prefect server.")
-            else:
-                print(
-                    f"Number of running P-AIRCARS jobs: {running_paircars_jobs}. Not closing prefect server."
-                )
+        print("##########################################")
     except Exception as e:
         traceback.print_exc()
     finally:

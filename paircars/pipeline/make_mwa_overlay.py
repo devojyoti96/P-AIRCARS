@@ -9,7 +9,6 @@ import sys
 import os
 import dask
 from astropy.io import fits
-from dask import delayed
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -18,8 +17,6 @@ from paircars.utils.logger_utils import (
 from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
-from paircars.utils.proc_manage_utils import get_scheduler_name, get_local_dask_cluster, scale_worker_and_wait
-
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -34,7 +31,6 @@ def main(
     logfile=None,
     jobid=0,
     start_remote_log=False,
-    dask_client=None,
 ):
     """
     Run the EUV overlays
@@ -57,8 +53,6 @@ def main(
         Numeric job ID used for PID tracking. Default is 0.
     start_remote_log : bool, optional
         Whether to enable remote logging using credentials in the workdir. Default is False.
-    dask_client : dask.client
-        Dask client
 
     Returns
     -------
@@ -108,20 +102,6 @@ def main(
         succeed = 0
         failed = len(imagelist)
 
-    dask_cluster = None
-    if dask_client is None:
-        result = get_local_dask_cluster(
-            workdir,
-            cpu_frac=cpu_frac,
-            mem_frac=cpu_frac,
-        )
-        if result is None:
-            print("Error occured in creating local cluster.")
-            return 1, succeed, failed
-        else:
-            dask_client, dask_cluster, dask_dir, nworker = result
-        scale_worker_and_wait(dask_cluster, dask_client, nworker)
-
     try:
         ###############################################################################
         # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
@@ -159,30 +139,10 @@ def main(
 
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
-            """scheduler_name = get_scheduler_name()
-            if scheduler_name == "local" or dask_client is None:
-                ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-                outimage_list = []
-                for image in imagelist:
-                    outimage = make_mwa_overlay(
-                        image,
-                        plot_file_prefix=os.path.basename(image).split(".fits")[0]
-                        + "_euv_mwa_overlay",
-                        extensions=["png"],
-                        outdirs=[outdir],
-                        keep_euv_fits=True,
-                        ncpu=ncpu,
-                        verbose=False,
-                    )
-            else:"""
-            tasks = []
-            ncpu = os.environ.get("OMP_NUM_THREADS")
-            if ncpu is not None:
-                ncpu = max(1, int(ncpu))
-            else:
-                ncpu=1
+            ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
+            outimage_list = []
             for image in imagelist:
-                task = delayed(make_mwa_overlay)(
+                outimage = make_mwa_overlay(
                     image,
                     plot_file_prefix=os.path.basename(image).split(".fits")[0]
                     + "_euv_mwa_overlay",
@@ -192,10 +152,7 @@ def main(
                     ncpu=ncpu,
                     verbose=False,
                 )
-                tasks.append(task)
-            futures = dask_client.compute(tasks)
-            outimage_list = list(dask_client.gather(futures))
-            outimage_list.append(outimage)
+                outimage_list.append(outimage)
             if len(outimage_list) == 0:
                 print("No overlay is made.")
                 msg = 1

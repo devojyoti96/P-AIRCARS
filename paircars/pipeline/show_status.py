@@ -87,7 +87,7 @@ def show_local_job_status(clean_old_jobs=False):
         return msg
 
 
-def show_slurm_job_status(clean_old_jobs=False, node_name=None):
+def show_slurm_job_status(clean_old_jobs=False, node_name=None, print_status=True):
     """
     Show P-AIRCARS slurm cluster jobs status
 
@@ -97,6 +97,8 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
         Clean old informations for stopped jobs
     node_name : str, optional
         Node name of slurm cluster
+    print_status : bool, optional
+        Print status on terminal
 
     Returns
     -------
@@ -107,7 +109,7 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
     msg = 0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
-        if len(main_pid_files) == 0:
+        if len(main_pid_files) == 0 and print_status:
             print("No P-AIRCARS jobs is running.")
         else:
             for pid_file in main_pid_files:
@@ -130,12 +132,13 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None):
                     msg += 1
                 else:
                     running = "Done/Stopped"
-                print(
-                    f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
-                )
-                print(
-                    "#########################################################################################"
-                )
+                if print_status:
+                    print(
+                        f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
+                    )
+                    print(
+                        "#########################################################################################"
+                    )
                 if clean_old_jobs and running == "Done/Stopped":
                     os.system(f"rm -rf {pid_file}")
     except Exception as e:
