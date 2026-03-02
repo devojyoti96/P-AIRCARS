@@ -1,14 +1,23 @@
-API Reference
-=================
-This page provides details of API of different modules of P-AIRCARS pipeline.
+paircars package
+================
+
+Subpackages
+-----------
 
 .. toctree::
-   :maxdepth: 2
-   
-   paircars.utils
-   paircars.pipeline
+   :maxdepth: 4
+
    paircars.casacoreutils
    paircars.clusterutils
    paircars.data
+   paircars.pipeline
+   paircars.tests
+   paircars.utils
 
+Module contents
+---------------
 
+.. automodule:: paircars
+   :members:
+   :undoc-members:
+   :show-inheritance:

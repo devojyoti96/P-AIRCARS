@@ -1,6 +1,8 @@
-P-AIRCARS Cluster Utils Module
-===============================
-This module contains all functionalities required for the HPC cluster and job schedulers. 
+paircars.clusterutils package
+=============================
+
+Submodules
+----------
 
 paircars.clusterutils.slurm\_cluster module
 -------------------------------------------
@@ -10,4 +12,10 @@ paircars.clusterutils.slurm\_cluster module
    :undoc-members:
    :show-inheritance:
 
+Module contents
+---------------
 
+.. automodule:: paircars.clusterutils
+   :members:
+   :undoc-members:
+   :show-inheritance:
