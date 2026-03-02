@@ -459,7 +459,7 @@ def submit_local_master_flow(args, jobid):
         if log2term:
             print("Logging in terminal....")
         try:
-            with open(log_file, "a", buffering=1) as log:
+            with open(log_file, "w", buffering=1) as log:
                 process = subprocess.Popen(
                     ["bash", script_path],
                     stdout=subprocess.PIPE,
