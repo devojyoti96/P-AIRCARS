@@ -459,22 +459,20 @@ def submit_slurm_master_flow(args, jobid):
         if log2term:
             print("Logging to terminal....")
             seen = set()
-            with subprocess.Popen(
+            process= subprocess.Popen(
                 ["tail", "-F", log_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,
                 bufsize=1,
-            ) as tail_proc:
-                for line in tail_proc.stdout:
-                    if (
-                        line not in seen
-                        and "flow run" in line.lower()
-                        and "task run" in line.lower()
-                    ):
+            ) 
+            for line in process.stdout:
+                seen.add(line)
+                if "task run" in line.lower() or "flow run" in line.lower():
+                    if line not in seen:
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                        seen.add(line)
+            process.stdout.close()
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
