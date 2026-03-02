@@ -459,6 +459,7 @@ def submit_local_master_flow(args, jobid):
         if log2term:
             print("Logging in terminal....")
         try:
+            last_line=None
             with open(log_file, "w", buffering=1) as log:
                 process = subprocess.Popen(
                     ["bash", script_path],
@@ -467,14 +468,14 @@ def submit_local_master_flow(args, jobid):
                     text=True,
                     bufsize=1,
                 )
-
                 for line in process.stdout:
                     if "task run" in line.lower() or "flow run" in line.lower():
-                        if log2term:
-                            sys.stdout.write(line)  # show in terminal
-                        log.write(line)  # write to file
-                        log.flush()
-
+                        if line!=last_line:
+                            if log2term:
+                                sys.stdout.write(line)  # show in terminal
+                            log.write(line)  # write to file
+                            log.flush()
+                            last_line = line
                 process.stdout.close()
             exit_code=0
         except:
