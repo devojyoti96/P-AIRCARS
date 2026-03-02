@@ -104,7 +104,23 @@ def cli():
                 )
         elif args.command == "status":
             if prefect_server_status(scheduler_name=scheduler_name):
-                print(f"Prefect server is running at: {config['SERVER_DASHBOARD']}")
+                print(
+                    "##########################################################################"
+                )
+                if scheduler_name != "local":
+                    print(
+                        f"First tunnel to prefect from your local machine: ssh -N -L {config['SERVER_PORT'}:localhost:{config['SERVER_PORT']} <username>@<remote.cluster.name>"
+                    )
+                    print(
+                        f"Prefect server dashboard for remote monitoring is available at local machine: http://localhost:{config['SERVER_PORT']}/dashboard"
+                    )
+                else:
+                    print(
+                        f"Prefect server dashboard for monitoring is available at: http://localhost:{config['SERVER_PORT']}/dashboard"
+                    )
+                print(
+                    "##########################################################################"
+                )
             else:
                 print(
                     f"Prefect server is not running at: {config['SERVER_DASHBOARD']}."

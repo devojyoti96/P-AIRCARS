@@ -76,7 +76,7 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     SERVER_URL = f"http://0.0.0.0:{SERVER_PORT}/api"
     NODE_URL = f"http://{hostname}:{SERVER_PORT}/api"
 
-    SERVER_DASHBOARD = f"http://{hostname}:{SERVER_PORT}/dashboard"
+    SERVER_DASHBOARD = f"http://localhost:{SERVER_PORT}/dashboard"
 
     PREFECT_SERVER_API_HOST = "127.0.0.1"
     profile_name = f"paircarspipe_{scheduler_name}"
