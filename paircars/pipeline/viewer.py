@@ -130,19 +130,23 @@ def get_logid(logfile):
         name = name.split("_selfcal.log.int")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
-        return f"Intensity self-calibration for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+        spw = name.split("_")[-1]
+        return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     elif ".log.pol" in name:
         name = name.split("_selfcal.log.pol")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
-        return f"Polarisation self-calibration for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+        spw = name.split("_")[-1]
+        return f"Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     elif "imaging_target" in name:
         name = name.rstrip(".log").split("imaging_target_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
-        return f"Imaging for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+        spw = name.split("_")[-1]
+        return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     else:
         return name
+
 
 
 class TailWatcher(FileSystemEventHandler, QObject):
@@ -342,51 +346,35 @@ def cli():
         default=None,
         help="Name of log directory",
     )
-    parser.add_argument(
-        "--no-prefect",
-        action="store_false",
-        dest="prefect",
-        help="Do not use prefect logger",
-    )
     args = parser.parse_args()
 
     cachedir = get_cachedir()
-    use_prefect = args.prefect
 
-    if use_prefect:
-        if os.path.exists(f"{cachedir}/prefect.dashboard"):
-            with open(f"{cachedir}/prefect.dashboard", "r") as f:
-                SERVER_DASHBOARD = f.read()
-            webbrowser.open(SERVER_DASHBOARD)
-            sys.exit(0)
-        else:
-            use_prefect = False
-            if args.jobid is None and args.logdir is None:
-                print("Please provide either job ID or log directory.")
-                sys.exit(1)
+    if args.jobid is None and args.logdir is None:
+        print("Please provide either job ID or log directory.")
+        sys.exit(1)
 
-    if use_prefect is not True:
-        if args.jobid is not None:
-            jobfile_name = f"{cachedir}/main_pids_{args.jobid}.txt"
-            if not os.path.exists(jobfile_name):
-                print(
-                    f"Job ID: {args.jobid} is not available. Provide log directory name."
-                )
-                sys.exit(1)
-            else:
-                results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
-                workdir = str(results[3])
-                if not os.path.exists(workdir):
-                    print(f"Work directory : {workdir} is not present.")
-                    sys.exit(1)
-                LOG_DIR = workdir.rstrip("/") + "/logs"
+    if args.jobid is not None:
+        jobfile_name = f"{cachedir}/main_pids_{args.jobid}.txt"
+        if not os.path.exists(jobfile_name):
+            print(
+                f"Job ID: {args.jobid} is not available. Provide log directory name."
+            )
+            sys.exit(1)
         else:
-            if not os.path.exists(args.logdir):
-                print(
-                    f"Log directory: {args.logdir} is not present. Please provide a valid log directory."
-                )
+            results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
+            workdir = str(results[3])
+            if not os.path.exists(workdir):
+                print(f"Work directory : {workdir} is not present.")
                 sys.exit(1)
-            LOG_DIR = args.logdir
+            LOG_DIR = workdir.rstrip("/") + "/logs"
+    else:
+        if not os.path.exists(args.logdir):
+            print(
+                f"Log directory: {args.logdir} is not present. Please provide a valid log directory."
+            )
+            sys.exit(1)
+        LOG_DIR = args.logdir
 
     os.environ["QT_OPENGL"] = "software"
     os.environ["QT_XCB_GL_INTEGRATION"] = "none"

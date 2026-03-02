@@ -14,8 +14,8 @@ Download P-AIRCARS metadata
     
 .. admonition:: Click here to see parameters
    :class: dropdown
-
-    .. program-output:: init-paircars-setup -h
+   
+   .. program-output:: init-paircars-setup -h
    
     
 2. If data files are present, but needs to updated, run:

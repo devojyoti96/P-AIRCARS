@@ -24,6 +24,10 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
 
 [p-aircars.readthedocs.io]: https://p-aircars.readthedocs.io 
 
+## Software environment
+
+**P-AIRCARS** is tested on Ubuntu22 and Ubuntu 24 and with Python 3.10. P-AIRCARS may not work in other operating system and python versions. If user wants to use P-AIRCARS in other environments, limited support is available in debugging or solving the issues. User may look at **Containersed Use** section in the docuement for these scenarios.
+
 ## Quickstart
 
 <!-- start quickstart -->
@@ -43,10 +47,10 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
    pip install paircars
    ```
 
-3. Initiate necessary metadata and prefect server
+3. Initiate necessary metadata 
 
     ```text
-    init-paircars-setup --init --prefect_server
+    init-paircars-setup --init
     ```
     
 4. Before running the pipeline, setup your data as following:
@@ -58,10 +62,10 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
 5. Run P-AIRCARS pipeline
 
     ```text
-    run-mwa-paircars <path of target measurement set directory> <path of target metafits file> --cal_datadir <path of calibrator measurement set directory> --cal_metafits <path of calibrator metafits> --workdir <path of work directory> --outdir <path of output products directory>
+    run-mwa-paircars <full path of target measurement set directory> <full path of target metafits file> --cal_datadir <full path of calibrator measurement set directory> --cal_metafits <full path of calibrator metafits> --workdir <full path of work directory> --outdir <full path of output products directory>
     ```    
     
-    N.B.: Keep target measurement sets for a single OBSID and calibrator measurement sets for a single OBSID must be kept in seperate directories. If calibrator is not present, do not provide these information.
+    N.B.: Always provide the entire direcotry path. Short path or only directory name may cause errors. Keep target measurement sets for a single OBSID and calibrator measurement sets for a single OBSID must be kept in seperate directories. If calibrator is not present, do not provide these information.
 
 That's all. You started P-AIRCARS pipeline for analysing your MWA solar observation 🎉.
 
@@ -71,17 +75,14 @@ That's all. You started P-AIRCARS pipeline for analysing your MWA solar observat
     show-paircars-status --show
     ```
     
-7. To see prefect dashboard (only work if you started prefect server)
-
-   ```text
-   run-mwa-mwalogger
-   ```
-      
-8. If you did not start prefect server, see local log of any job using the <jobid>
+7. If P-AIRCARS is running in a local machine, see local log of any job using the <jobid>
 
    ```text
    run-mwa-mwalogger --jobid <jobid>
    ```
+   
+   N.B.: If you are running P-AIRCARS is cluster environment, first checkout **HPC Settings** in the document for viewing P-AIRCARS log remotely using prefect dashboard.
+
    
 9. Output products will be saved in : `<path of output products directory>`
 
@@ -95,14 +96,16 @@ User can download and test entire P-AIRCARS pipeline using the sample dataset av
 
 ## Acknowledgements
 
-P-AIRCARS is developed by Devojyoti Kansabanik (NCRA-TIFR, Pune, India and CPAESS-UCAR, Boulder, USA) and Surajt Mondal (NCRA-TIFR, Pune, India) and an incarnation of [AIRCARS][aircars]. If you use **P-AIRCARS** for analysing your MWA solar observations, include the following statement in your paper, and cite the following papers:
+P-AIRCARS is developed by Devojyoti Kansabanik (NCRA-TIFR, Pune, India and CPAESS-UCAR, Boulder, USA) and an incarnation of [AIRCARS][aircars]. Other contributors are, Surajt Mondal (NCRA-TIFR, Pune, India) and and Puja Majee (NCRA-TIFR, Pune, India). If you use **P-AIRCARS** for analysing your MWA solar observations, include the following statement in your paper, and cite the following papers:
 
 [aircars]: https://github.com/devojyoti96/AIRCARS 
 ```text
 This MWA solar observations are analysed using P-AIRCARS pipeline. 
 ```
 
-1. Cite P-AIRCARS software in zenodo: https://doi.org/10.5281/zenodo.18625477
+1. Cite P-AIRCARS software in zenodo: [https://doi.org/10.5281/zenodo.18625477][kansbanikzenodo]
+
+[kansabanikzenodo]: https://doi.org/10.5281/zenodo.18625477
 
 2. [Kansabanik et al., 2025, ApJS, v278:26][kansabanik2025]
 

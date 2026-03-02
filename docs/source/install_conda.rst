@@ -38,7 +38,7 @@ Install Miniconda in a Custom Directory
       
    .. note::
       
-      In HPC cluster, it is recommended to set **/path/to/miniconda3_custom** to a location which is accessible by all nodes. Read you HPC documentation carefully and check whether **conda** is already installed and available as **module** or not. 
+      In HPC cluster, it is recommended to set **/path/to/miniconda3_custom** to a location which is accessible by all nodes and with fast disk speed. Read you HPC documentation carefully and check whether **conda** is already installed and available as **module** or not. 
       
 3. **Enable the 'conda' Command**
    
@@ -76,7 +76,7 @@ Install Anaconda in a Custom Directory
       
    .. note::
       
-      In HPC cluster, it is recommended to set **/path/to/anaconda3_custom** to a location which is accessible by all nodes.
+      In HPC cluster, it is recommended to set **/path/to/anaconda3_custom** to a location which is accessible by all nodes and fast disk speed.
 
 3. **Enable the 'conda' Command**
 

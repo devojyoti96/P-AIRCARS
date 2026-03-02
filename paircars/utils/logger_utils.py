@@ -229,17 +229,20 @@ def get_logid(logfile):
         name = name.split("_selfcal.log.int")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
-        return f"Intensity self-calibration for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+        spw = name.split("_")[-1]
+        return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     elif ".log.pol" in name:
         name = name.split("_selfcal.log.pol")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
-        return f"Polarisation self-calibration for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+        spw = name.split("_")[-1]
+        return f"Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     elif "imaging_target" in name:
         name = name.rstrip(".log").split("imaging_target_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
-        return f"Imaging for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+        spw = name.split("_")[-1]
+        return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     else:
         return name
 

@@ -23,6 +23,10 @@ P-AIRCARS serves as a reference pipeline for science-ready processing of **P-AIR
 - Designed to use on personal computer, single-node workstations, as well as in high-performance computing multi-node cluster
 - A free-tier cloud-based remote logger to monitor pipeline over the internet
 
+Software environment
+--------------------
+P-AIRCARS is tested on operating systems, Ubunut 22 and Ubunut 24, and under Python 3.10 environment. Using P-AIRCARS in other operating systems and python version does not gurantee successful run and limited support for debugging is available. User may look at **Containersed Use** section in those scenarios. 
+
 Sample dataset
 ---------------
 

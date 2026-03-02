@@ -17,7 +17,10 @@ In many HPC clusters, **conda** may be installed already. In that case, it is re
   
 .. code-block:: bash
   
-   module load anaconda3  
+   module load anaconda3 
+   
+   module load miniconda3 
+  
      
 Otherwise, install it following the steps below.
     

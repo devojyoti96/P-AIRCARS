@@ -16,11 +16,11 @@ P-AIRCARS is distributed on
 
       pip install paircars
 
-3. Initiate necessary post-installation setup for metadata and ``prefect`` server
+3. Initiate necessary post-installation setup for metadata 
 
    .. code-block:: bash
 
-      init-paircars-setup --init --prefect_server
+      init-paircars-setup --init 
 
 4. Before running the pipeline, setup your data as following:
     
@@ -32,11 +32,11 @@ P-AIRCARS is distributed on
 
    .. code-block:: bash
 
-      run-mwa-paircars <path of target measurement set directory> <path of target metafits file> --cal_datadir <path of calibrator measurement set directory> --cal_metafits <path of calibrator metafits> --workdir <path of work directory> --outdir <path of output products directory>
+      run-mwa-paircars <full path of target measurement set directory> <full path of target metafits file> --cal_datadir <full path of calibrator measurement set directory> --cal_metafits <full path of calibrator metafits> --workdir <full path of work directory> --outdir <full path of output products directory>
 
 .. note ::
 
-   Keep target measurement sets for a single OBSID and calibrator measurement sets for a single OBSID must be kept in seperate directories. If calibrator is not present, do not provide these information.
+   Always provide the entire direcotry path. Short path or only directory name may cause errors. Keep target measurement sets for a single OBSID and calibrator measurement sets for a single OBSID must be kept in seperate directories. If calibrator is not present, do not provide these information.
 
 That’s all. You started P-AIRCARS pipeline for analysing your MWA solar observation 🎉. Read the ``Directory Structure and Data Products`` section to understand how to find final images.
 
@@ -46,24 +46,17 @@ That’s all. You started P-AIRCARS pipeline for analysing your MWA solar observ
         
       show-paircars-status --show
       
-       
-7. To see ``prefect`` dashboard, if ``prefect`` server is running:
-
-   .. code-block :: bash
-    
-      run-mwa-mwalogger
-
-8. If ``prefect`` dashboard is not showing logs, use local log of any job using the <jobid>:
+   
+7. If P-AIRCARS is running in local machine, view local log of any job using the <jobid>:
 
    .. code-block :: bash
     
       run-mwa-mwalogger --jobid <jobid>
       
-9. If ``prefect`` dashboard is running, to see local log of any job using the <jobid>:
+.. note::
 
-   .. code-block :: bash
-    
-      run-mwa-mwalogger --jobid <jobid> --no-prefect
+   If you are running P-AIRCARS is cluster environment, first checkout **HPC Settings** in the document for viewing P-AIRCARS log remotely using prefect dashboard.
       
-10. Output products will be saved in : ``<path of output products directory>``.
+      
+8. Output products will be saved in : ``<path of output products directory>``.
 

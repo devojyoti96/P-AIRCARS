@@ -14,7 +14,7 @@ Install latest stable version of P-AIRCARS pipeline, use PyPI as:
 Install P-AIRCARS from source code
 ----------------------------------------
 
-Install development version from https://github.com/devojyoti96/P-AIRCARS 
+Install from ssource code: https://github.com/devojyoti96/P-AIRCARS 
 
 .. code-block :: bash
 
@@ -23,3 +23,18 @@ Install development version from https://github.com/devojyoti96/P-AIRCARS
     cd P-AIRCARS
     
     pip install .
+    
+Install P-AIRCARS in developer mode
+----------------------------------------
+
+If you want to contribute to P-AIRCARS, install it in developer mode.
+
+Install development version from https://github.com/devojyoti96/P-AIRCARS 
+
+.. code-block :: bash
+
+    git clone https://github.com/devojyoti96/P-AIRCARS.git
+   
+    cd P-AIRCARS
+    
+    pip install .[dev]
