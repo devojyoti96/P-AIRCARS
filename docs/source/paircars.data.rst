@@ -1,8 +1,5 @@
-paircars.data package
-=====================
-
-Submodules
-----------
+P-AIRCARS Pre-compiled Module
+=============================
 
 paircars.data.sendmail module
 -----------------------------
@@ -12,10 +9,3 @@ paircars.data.sendmail module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: paircars.data
-   :members:
-   :undoc-members:
-   :show-inheritance:
