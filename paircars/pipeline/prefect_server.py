@@ -109,7 +109,7 @@ def cli():
                 )
                 if scheduler_name != "local":
                     print(
-                        f"First tunnel to prefect from your local machine: ssh -N -L {config['SERVER_PORT'}:localhost:{config['SERVER_PORT']} <username>@<remote.cluster.name>"
+                        f"First tunnel to prefect from your local machine: ssh -N -L {config['SERVER_PORT']}:localhost:{config['SERVER_PORT']} <username>@<remote.cluster.name>"
                     )
                     print(
                         f"Prefect server dashboard for remote monitoring is available at local machine: http://localhost:{config['SERVER_PORT']}/dashboard"
