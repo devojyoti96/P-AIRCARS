@@ -1832,31 +1832,20 @@ def master_control(
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    scheduler_name = get_scheduler_name()
-    master_logfile = f"{logdir}/main_paircars.log"
-
-    if scheduler_name == "slurm":
-        master_log_created = False
-        master_logfile = masterlog
+    if masterlog is None or os.path.exists(masterlog) is False:
+        master_logfile = f"{logdir}/main.log"
+        ctx = get_run_context()
+        flow_id = str(ctx.flow_run.id)
+        flow_name = ctx.flow_run.name
+        stop_event = Event()
+        log_thread_flow = start_flow_log_saver(
+            flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
+        )
+        master_log_created = True
     else:
-        if masterlog is None:
-            ctx = get_run_context()
-            flow_id = str(ctx.flow_run.id)
-            flow_name = ctx.flow_run.name
-
-            stop_event = Event()
-            log_thread_flow = start_flow_log_saver(
-                flow_id,
-                flow_name,
-                master_logfile,
-                poll_interval=3,
-                stop_event=stop_event,
-            )
-
-            master_log_created = True
-        else:
-            master_logfile = masterlog
-            master_log_created = False
+        master_log_created = False
+        master_logfile = f"{logdir}/main.log"
+        os.symlink(masterlog, master_logfile)
 
 
     dask_dir = None
