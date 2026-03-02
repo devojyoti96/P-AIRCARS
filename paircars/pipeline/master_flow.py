@@ -65,7 +65,7 @@ from paircars.data.sendmail import (
 from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
-    slurm_job,
+    is_slurm_job,
 )
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
