@@ -314,9 +314,11 @@ def get_local_dask_cluster(
     logging.getLogger("distributed").setLevel(logging.ERROR)
     print("Creating local cluster on the current node.")
     # Set up Dask working directories
-    dask_dir = os.path.join(dask_dir.rstrip("/"), f"dask_{int(time.time())}")
-    dask_dir_tmp = os.path.join(dask_dir, "tmp")
+    dask_dir = f"{dask_dir.rstrip('/')}/dask_{int(time.time())}"
+    os.makedirs(dask_dir, exist_ok=True)
+    dask_dir_tmp = f"{dask_dir}/tmp"
     os.makedirs(dask_dir_tmp, exist_ok=True)
+
     try:
         # Raise file descriptor limit
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -384,7 +386,6 @@ def get_local_dask_cluster(
     except Exception as e:
         print("Error occured in creating local cluster.")
         traceback.print_exc()
-        os.system(f"rm -rf {dask_dir}")
         os.system(f"rm -rf {dask_dir_tmp}")
         return
 

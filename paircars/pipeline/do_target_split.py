@@ -207,6 +207,8 @@ def split_target_scans(
             return 1, []
         else:
             print(f"Spliting of measurement set: {msname} is done successfully.")
+            for splited_ms in splited_ms_list:
+                drop_cache(splited_ms)
             return 0, splited_ms_list
     except Exception as e:
         traceback.print_exc()
@@ -293,6 +295,7 @@ def main(
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
 
     ############
     # Logger
@@ -409,12 +412,12 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
+        for msname in mslist:
+            drop_cache(msname)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
-            for msname in mslist:
-                drop_cache(msname)
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
         if msg == 0:

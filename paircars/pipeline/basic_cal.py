@@ -536,7 +536,6 @@ def run_basic_cal_rounds(
     try:
         from casatasks import flagdata
 
-        os.chdir(workdir)
         trial_ms = mslist[0]
         msmd = msmetadata()
         msmd.open(trial_ms)
@@ -695,6 +694,7 @@ def main(
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
 
     if outdir == "":
         outdir = workdir
@@ -829,12 +829,12 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
+        for msname in mslist:
+            drop_cache(msname)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
-            for msname in mslist:
-                drop_cache(msname)
             drop_cache(workdir)
             drop_cache(caldir)
             os.system(f"rm -rf {dask_dir}")

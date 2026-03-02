@@ -1399,6 +1399,7 @@ def main(
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
 
     if caldir == "" or not os.path.exists(caldir):
         caldir = f"{workdir}/caltables"
@@ -1749,13 +1750,13 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
+        for ms in org_mslist:
+            if os.path.exists(ms):
+                drop_cache(ms)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
-            for ms in org_mslist:
-                if os.path.exists(ms):
-                    drop_cache(ms)
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, int_succeed, int_failed, pol_succeed, pol_failed

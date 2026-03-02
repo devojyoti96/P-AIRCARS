@@ -470,6 +470,7 @@ def main(
     if workdir == "":
         workdir = imagedir + "/workdir"
     os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
 
     ############
     # Logger

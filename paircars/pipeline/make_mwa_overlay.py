@@ -69,6 +69,7 @@ def main(
     if workdir == "":
         workdir = f"{imagedir}/workdir"
     os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
 
     if outdir == "":
         outdir = workdir
@@ -146,8 +147,6 @@ def main(
         os.system(f"rm -rf {imagedir}/*suvi*.fits")
         time.sleep(5)
         drop_cache(imagedir)
-        drop_cache(workdir)
-        drop_cache(outdir)
         clean_shutdown(observer)
     return msg, succeed, failed
 

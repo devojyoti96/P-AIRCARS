@@ -93,7 +93,7 @@ from paircars.pipeline.init_data import init_paircars_data
 
 @task(
     name="moving_to_solar_center",
-    retries=1,
+    retries=2,
     retry_delay_seconds=60,
     log_prints=True,
 )
@@ -133,6 +133,8 @@ def run_solar_phasecenter_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     phasecor_basename = f"cor_phasecenter_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -176,7 +178,7 @@ def run_solar_phasecenter_jobs(
 
 @task(
     name="making_dynamic_spectra",
-    retries=1,
+    retries=2,
     retry_delay_seconds=60,
     log_prints=True,
 )
@@ -222,6 +224,8 @@ def run_ds_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     ds_basename = "ds_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -268,7 +272,7 @@ def run_ds_jobs(
 
 @task(
     name="spliting_ms",
-    retries=1,
+    retries=2,
     retry_delay_seconds=60,
     log_prints=True,
 )
@@ -332,6 +336,8 @@ def run_target_split_jobs(
     int
         Succeeded splited ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     split_basename = f"split_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -384,6 +390,8 @@ def run_target_split_jobs(
 
 @task(
     name="flagging",
+    retries=2,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_flag(
@@ -439,6 +447,8 @@ def run_flag(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     if flag_calibrators:
         flagdimension = "freqtime"
         flagfield_type = "cal"
@@ -502,6 +512,8 @@ def run_flag(
 
 @task(
     name="importing_model_visibilities",
+    retries=2,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_import_model(
@@ -540,6 +552,8 @@ def run_import_model(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     model_basename = "modeling"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -584,6 +598,8 @@ def run_import_model(
 
 @task(
     name="basic_calibration",
+    retries=2,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_basic_cal_jobs(
@@ -631,6 +647,8 @@ def run_basic_cal_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     cal_basename = "basic_cal"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -678,6 +696,8 @@ def run_basic_cal_jobs(
 
 @task(
     name="applying_basic_calibration",
+    retries=2,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_apply_basiccal_sol(
@@ -734,6 +754,8 @@ def run_apply_basiccal_sol(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     applycal_basename = f"apply_basiccal_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -783,7 +805,7 @@ def run_apply_basiccal_sol(
 
 @task(
     name="solar_sidereal_correction",
-    retries=1,
+    retries=2,
     retry_delay_seconds=60,
     log_prints=True,
 )
@@ -823,6 +845,8 @@ def run_solar_siderealcor_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     sidereal_basename = f"cor_sidereal_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -963,6 +987,8 @@ def run_selfcal_jobs(
     int
         Polarisation self-calibration failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     selfcal_basename = "selfcal_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1026,6 +1052,8 @@ def run_selfcal_jobs(
 
 @task(
     name="applying_self-calibration",
+    retries=2,
+    retry_delay_seconds=60,
     log_prints=True,
 )
 def run_apply_selfcal_sol(
@@ -1073,6 +1101,8 @@ def run_apply_selfcal_sol(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     applycal_basename = "apply_selfcal"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1202,6 +1232,8 @@ def run_imaging_jobs(
     int
         Total images
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     imaging_basename = "imaging_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1301,6 +1333,8 @@ def run_apply_pbcor(
     int
         Failed image number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     applypbcor_basename = "apply_pbcor"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1384,6 +1418,8 @@ def run_make_overlay(
     int
         Failed image number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     overlay_basename = "do_overlay"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1427,7 +1463,7 @@ def run_make_overlay(
 
 @task(
     name="making_msplot",
-    retries=1,
+    retries=2,
     retry_delay_seconds=60,
     log_prints=True,
 )
@@ -1463,6 +1499,8 @@ def run_make_msplot(
     int
         Success message for measurement set ploting
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     msplot_basename = "do_msplot"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1828,6 +1866,7 @@ def master_control(
         traceback.print_exc()
         return 1
 
+    os.chdir(workdir)
     scheduler_name = get_scheduler_name()
     #################################
     # Setup logger
@@ -3785,6 +3824,7 @@ def master_control(
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
                 if keep_calibrated_ms is False:
                     os.system(f"rm -rf {target_ms}")
+        time.sleep(5)
         drop_cache(workdir)
         drop_cache(outdir)
         if master_log_created:
@@ -4419,6 +4459,7 @@ def cli():
     except Exception:
         traceback.print_exc()
     finally:
+        time.sleep(5)
         print("Clearning caches...")
         drop_cache(args.target_datadir)
         drop_cache(args.cal_datadir)
