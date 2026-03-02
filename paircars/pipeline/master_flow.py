@@ -4253,7 +4253,7 @@ def cli():
         max_worker = max(int(args.max_worker), total_ncoarse + 1)
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
 
-    if args.cluster is not True and scheduler_name == "local":
+    if args.cluster is not True or scheduler_name == "local" or "SLURM_JOB_ID" not in os.environ:
         #######################################
         # Set up local cluster
         #######################################

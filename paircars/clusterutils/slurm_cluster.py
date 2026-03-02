@@ -456,6 +456,23 @@ def submit_slurm_master_flow(args, jobid):
             print(f"P-AIRCARS job with Job ID: {jobid} is submitted successfully.")
         else:
             print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
+        if log2term:
+            print("Logging to terminal....")
+            seen = set()
+            with subprocess.Popen(
+                ["tail", "-F", log_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                bufsize=1,
+            ) as tail_proc:
+                for line in tail_proc.stdout:
+                    seen.add(line)
+                    if "task run" in line.lower() or "flow run" in line.lower():
+                        if line not in seen:
+                            sys.stdout.write(line)
+                            sys.stdout.flush()
+                        
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
