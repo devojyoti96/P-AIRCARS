@@ -564,7 +564,7 @@ def run_chgcenter(
     set_udocker_env()
     if check_container:
         container_present = check_udocker_container(container_name)
-        if not container_present:   
+        if not container_present:
             print(f"Initializing {container_name}...")
             container_name = initialize_wsclean_container(
                 name=container_name, verbose=True

@@ -112,10 +112,10 @@ def plot_ms_diagnostics(
     nchunk = int(nrow * frac_chunk)
     output_pdf_list = []
 
-    container_name="paircarsshadems"
+    container_name = "paircarsshadems"
     container_present = check_udocker_container(container_name)
     if not container_present:
-        print (f"Initializing {container_name}...")
+        print(f"Initializing {container_name}...")
         container_name = initialize_wsclean_container(name=container_name, verbose=True)
         if container_name is None:
             print(

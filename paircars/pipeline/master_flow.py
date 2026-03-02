@@ -3369,14 +3369,14 @@ def master_control(
                 else:
                     print("Imaging entire scan.")
                 pol = pol.upper()
-                if pol not in ["I","IQUV"]:
+                if pol not in ["I", "IQUV"]:
                     pol = "IQUV"
-                    
+
                 if (
                     do_polcal == False
                 ):  # Only if do_polcal is False, overwrite to make only Stokes I
                     pol = "I"
-                
+
                 if emails != "":
                     email_msg = "Started final imaging."
                     send_task_notification(

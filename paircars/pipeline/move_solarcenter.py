@@ -22,7 +22,10 @@ from paircars.utils.proc_manage_utils import (
 )
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.sunpos_utils import move_to_sun
-from paircars.utils.udocker_utils import check_udocker_container, initialize_wsclean_container
+from paircars.utils.udocker_utils import (
+    check_udocker_container,
+    initialize_wsclean_container,
+)
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -77,7 +80,7 @@ def main(
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
-    
+
     ############
     # Logger
     ############
@@ -104,7 +107,7 @@ def main(
     else:
         succeed = 0
         failed = len(mslist)
-        
+
     ###########################
     # WSClean container
     ###########################
