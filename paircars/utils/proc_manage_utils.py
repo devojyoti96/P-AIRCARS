@@ -19,6 +19,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from dask.distributed import Client, LocalCluster
 from datetime import datetime as dt, timedelta
+from pyfiglet import Figlet
 from .basic_utils import get_cachedir
 
 
@@ -456,6 +457,8 @@ def submit_local_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
+        f = Figlet(font="big")
+        print(f.renderText("P-AIRCARS"))
         print("######################################################")
         print(f"P-AIRCARS Job ID: {jobid}")
         print(f"Batch script: {script_path} is ready for submission.")

@@ -12,6 +12,7 @@ import numpy as np
 from dotenv import load_dotenv
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
+from pyfiglet import Figlet
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
@@ -446,6 +447,8 @@ def submit_slurm_master_flow(args, jobid):
         with open(script_path, "w") as f:
             for script_arg in script_args:
                 f.write(f"{script_arg}\n")
+        f = Figlet(font="big")
+        print(f.renderText("P-AIRCARS"))
         print("######################################################")
         print(f"P-AIRCARS Job ID: {jobid}")
         print(f"Batch script: {script_path} is ready for submission.")
