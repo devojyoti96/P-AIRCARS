@@ -9,14 +9,22 @@ Developer Instruction
 Instructions for testing
 -------------------------
 ## Steps to test
-Install ``pytest`` using ``pip install pytest`` before running the test.
+Install P-AIRCARS in developer mode
+
+.. code-block:: bash
+    
+   git clone git@github.com:devojyoti96/P-AIRCARS.git
+   
+   cd P-AIRCARS
+    
+   pip install .[dev] 
 
 
 1. Go to test directory
    
    .. code-block:: bash
    
-      cd <repo_path>/paircars/tests
+      cd </full/path/to/repository>/paircars/tests
 
 2. Download test data
 

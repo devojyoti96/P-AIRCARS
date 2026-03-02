@@ -43,14 +43,12 @@ Contents
    tutorial
    output
    kill
+   hpc
    cli
+   paircars
+   dev
    ack
    lic
-   dev
-   paircars
+   
 
-Indices
-=======
-
-* :ref:`genindex`
 

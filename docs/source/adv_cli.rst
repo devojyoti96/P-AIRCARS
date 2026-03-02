@@ -53,6 +53,23 @@ Calibration related CLI
 
    .. program-output:: run-mwa-apply-selfcal -h
    
+8. Move phasecenter to solar center, use ``run-mwa-movetosun`` .
+
+.. admonition:: Click here to see parameters
+   :class: dropdown
+
+   .. program-output:: run-mwa-movetosun -h   
+   
+   
+MWA specific CLI
+----------------
+1. Make frequency interpolated MWA primary beam, use ``run-mwa-beam-interpolate`` .
+
+.. admonition:: Click here to see parameters
+   :class: dropdown
+
+   .. program-output:: run-mwa-beam-interpolate -h
+   
 Solar specific CLI
 ------------------
 
@@ -69,6 +86,14 @@ Solar specific CLI
    :class: dropdown
 
    .. program-output:: run-mwa-makeds -h
+ 
+3. Make overlays on EUV images, use ``run-mwa-euvoverlay`` .
+
+.. admonition:: Click here to see parameters
+   :class: dropdown
+
+   .. program-output:: run-mwa-euvoverlay -h  
+   
    
 Imaging related CLI
 -------------------
@@ -87,9 +112,23 @@ Imaging related CLI
 
    .. program-output:: run-mwa-singlepbcor -h
    
-2. Perform primary beam corrections of MWA primary beam for all images in a directory, use ``run-mwa-pbcor`` .
+3. Perform primary beam corrections of MWA primary beam for all images in a directory, use ``run-mwa-pbcor`` .
 
 .. admonition:: Click here to see parameters
    :class: dropdown
 
    .. program-output:: run-mwa-pbcor -h
+   
+Ploting related CLI
+--------------------
+1. To make diagnostic plots of measurement sets, use ``run-mwa-msplot`` .
+
+.. admonition:: Click here to see parameters
+   :class: dropdown
+
+   .. program-output:: run-mwa-msplot -h
+   
+
+
+
+
