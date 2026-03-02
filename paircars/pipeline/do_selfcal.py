@@ -144,6 +144,8 @@ def do_selfcal(
         Self-calibrated measurement set
     str
         Final caltable
+    bool
+        Whether non-disk data chunks flagging was successful or not
     """
     ncpu = max(1, ncpu)
     mem = abs(mem)
@@ -328,6 +330,7 @@ def do_selfcal(
         use_previous_model = False
         os.system("rm -rf *_selfcal_present*")
         fluxscale_mwa = False
+        nondisk_flag = True
         solar_attn = 1
         if cal_applied and os.path.exists(f"{msname}/.applied_sol") is False:
             cal_applied = False
@@ -337,7 +340,7 @@ def do_selfcal(
                 logger.error(
                     "Calibration solutions were not applied and target metafits is also not supplied. Provide any one of them."
                 )
-                return 1, msname, []
+                return 1, msname, [], False
             solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
             applymode = "calflag"
 
@@ -351,6 +354,8 @@ def do_selfcal(
         if msg == 0:
             logger.info("Starting self-calibration using Gaussian model is successful.")
         else:
+            if msg == 2:
+                nondisk_flag = False
             logger.info(
                 "Starting self-calibration using Gaussian model is not successful."
             )
@@ -445,18 +450,18 @@ def do_selfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return msg, msname, []
+                        return msg, msname, [], nondisk_flag
                     else:
                         threshold = end_threshold
                 else:
                     os.system("rm -rf *_selfcal_present*")
-                    return msg, msname, []
+                    return msg, msname, [], nondisk_flag
             elif msg > 1:
                 logger.error("Self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return msg, msname, []
+                return msg, msname, [], nondisk_flag
             if num_iter == 0:
                 DR1 = DR3 = DR2 = dyn
                 RMS1 = RMS2 = RMS3 = rms
@@ -510,7 +515,7 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable
+                    return 0, msname, last_round_gaintable, nondisk_flag
 
             ##############################################################
             # If DR is decreasing (DR decrease in amplitude-phase selfcal)
@@ -526,7 +531,7 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable
+                return 0, msname, last_round_gaintable, nondisk_flag
 
             ###########################
             # If maximum DR has reached
@@ -536,7 +541,7 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return 0, msname, gaintable
+                return 0, msname, gaintable, nondisk_flag
 
             ##########################
             # If DR suddenly decreased
@@ -548,7 +553,7 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable
+                return 0, msname, last_round_gaintable, nondisk_flag
 
             ###########################
             # Checking DR convergence
@@ -587,7 +592,7 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable
+                    return 0, msname, gaintable, nondisk_flag
             else:
                 ########################################
                 # Condition 2
@@ -621,7 +626,7 @@ def do_selfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return 0, msname, gaintable
+                        return 0, msname, gaintable, nondisk_flag
                 ######################################
                 # Condition 3
                 # Reducing threshold if not converged
@@ -653,7 +658,7 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable
+                    return 0, msname, gaintable, nondisk_flag
             num_iter += 1
             last_round_gaintable = gaintable
             if calmode == "ap":
@@ -664,7 +669,7 @@ def do_selfcal(
         os.system("rm -rf *_selfcal_present*")
         time.sleep(5)
         clean_shutdown(sub_observer)
-        return 1, msname, []
+        return 1, msname, [], False
 
 
 def do_polselfcal(
@@ -684,6 +689,7 @@ def do_polselfcal(
     weight="briggs",
     robust=0.0,
     solar_selfcal=True,
+    try_nondisk_flag=True,
     ncpu=1,
     mem=1,
     logfile="selfcal.log",
@@ -725,6 +731,8 @@ def do_polselfcal(
         Briggs weighting robust parameter (-1 to 1)
     solar_selfcal : bool, optional
         Whether is is solar selfcal or not
+    try_nondisk_flag : bool, optional
+        Try to flag non-disk data chunks or not
     ncpu : int, optional
         Number of CPU threads to use
     mem : float, optional
@@ -782,16 +790,20 @@ def do_polselfcal(
         ################################
         # Trying to flag non-disk chunks
         ################################
-        do_flag_backup(msname, flagtype="nondisk")
-        result = flag_non_disk(msname)
-        if result == 0:
-            print("Flagged non-disk data chunks.")
-        else:
-            print("Could not flag non-disk data chunks.")
-        with suppress_output():
-            if result != 0:
-                flagmanager(vis=msname, mode="restore", versionname="nondisk_1")
-            flagmanager(vis=msname, mode="delete", versionname="nondisk_1")
+        if try_nondisk_flag:
+            print(
+                "Non-disk data chunk flagging was successful dueing intensity self-calibration. Trying before polarisation self-calibration."
+            )
+            do_flag_backup(msname, flagtype="nondisk")
+            result = flag_non_disk(msname)
+            if result == 0:
+                print("Flagged non-disk data chunks.")
+            else:
+                print("Could not flag non-disk data chunks.")
+            with suppress_output():
+                if result != 0:
+                    flagmanager(vis=msname, mode="restore", versionname="nondisk_1")
+                flagmanager(vis=msname, mode="delete", versionname="nondisk_1")
 
         ##############################
         # Spliting corrected data
@@ -1218,7 +1230,7 @@ def do_full_selfcal(
     msmd.open(msname)
     refant = str(msmd.antennaids(refant)[0])
     msmd.close()
-    intensity_selfcal_msg, selfcal_ms, gaintable = do_selfcal(
+    intensity_selfcal_msg, selfcal_ms, gaintable, try_nondisk_flag = do_selfcal(
         msname=msname,
         workdir=workdir,
         selfcaldir=f"{selfcaldir}_int",
@@ -1267,6 +1279,7 @@ def do_full_selfcal(
             weight=weight,
             robust=robust,
             solar_selfcal=solar_selfcal,
+            try_nondisk_flag=try_nondisk_flag,
             ncpu=ncpu,
             mem=mem,
             logfile=f"{logfile}.pol",

@@ -258,7 +258,7 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                 )
             if os.path.exists(bpass_caltable) == False:
                 logger.info(f"No gain solutions are found.\n")
-                msg = 1
+                msg = 2
                 bpass_caltable = ""
             else:
                 ########################
@@ -279,7 +279,7 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                 msg = 0
     except Exception as e:
         traceback.print_exc()
-        msg = 1
+        msg = 2
         bpass_caltable = ""
     finally:
         with suppress_output():
