@@ -399,8 +399,9 @@ def submit_slurm_master_flow(args, jobid):
             prefect_env_list.append(f"export {env}={envlist.get(env)}")
 
     log_file = f"{args.workdir}/main_paircars_{jobid}.log"
-    #cli_cmd += f" --masterlog {log_file}"
-
+    slurm_log_file = f"{args.workdir}/main_slurm_paircars_{jobid}.log"
+    cli_cmd += f" --masterlog {log_file}"
+    
     try:
         #################################
         # Determining wall time
@@ -437,8 +438,8 @@ def submit_slurm_master_flow(args, jobid):
             "#!/bin/bash",
             f"#SBATCH --job-name=paircars_{jobid}",
             f"#SBATCH --time={walltime}",
-            f"#SBATCH --output={log_file}",
-            f"#SBATCH --error={log_file}",
+            f"#SBATCH --output={slurm_log_file}",
+            f"#SBATCH --error={slurm_log_file}",
             f"#SBATCH --partition={args.partition}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks=1",
@@ -462,14 +463,34 @@ def submit_slurm_master_flow(args, jobid):
         print(f"P-AIRCARS Job ID: {jobid}")
         print(f"Batch script: {script_path} is ready for submission.")
         print(f"Main logger: {log_file}")
-        print("######################################################")
-        result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
-        exit_code = result.returncode
-        if exit_code == 0:
-            print(f"P-AIRCARS job with Job ID: {jobid} is submitted successfully.")
-        else:
-            print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
-        return 0 if exit_code == 0 else 1
+        print("######################################################")        
+        if log2term:
+            print("Logging in terminal....")
+        try:
+            seen = set()
+            with open(log_file, "a", buffering=1) as log:
+                process = subprocess.Popen(
+                    ["sbatch", script_path],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )
+                for line in process.stdout:
+                    if "task run" in line.lower() or "flow run" in line.lower():
+                        if line not in seen:
+                            seen.add(line)
+                            if log2term:
+                                sys.stdout.write(line)
+                                sys.stdout.flush()
+                            log.write(line)
+                            log.flush()
+                process.stdout.close()
+            exit_code = 0
+        except:
+            exit_code = 1
+            print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
+        return exit_code
     except Exception as e:
         traceback.print_exc()
         return 1
