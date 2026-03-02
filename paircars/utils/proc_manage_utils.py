@@ -414,7 +414,12 @@ def submit_local_master_flow(args, jobid):
     if "--log2term" in args_list:
         args_list.remove("--log2term")
 
-    cli_cmd = "run-mwa-masterflow " + " ".join(args_list)
+    cli_cmd = (
+        "run-mwa-masterflow "
+        + " ".join(args_list)
+        + f" --jobid {jobid}"
+    )
+    
     if hasattr(args, "workdir") and args.workdir is not None:
         os.makedirs(args.workdir, exist_ok=True)
     else:
@@ -475,12 +480,10 @@ def submit_local_master_flow(args, jobid):
                             if log2term:
                                 sys.stdout.write(line)
                                 sys.stdout.flush()
-
                             log.write(line)
                             log.flush()
                 process.stdout.close()
             exit_code=0
-            print(f"P-AIRCARS job with Job ID: {jobid} started successfully.")
         except:
             exit_code=1
             print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")

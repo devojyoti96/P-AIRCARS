@@ -346,11 +346,20 @@ def submit_slurm_master_flow(args, jobid):
     if scheduler_name != "slurm":
         print("SLURM job scheduler is not available.")
         return 1
+    args_list = [shlex.quote(arg) for arg in sys.argv[1:]]
+    if "--log2term" in args_list:
+        args_list.remove("--log2term")
     cli_cmd = (
         "run-mwa-masterflow "
-        + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+        + " ".join(args_list)
         + f" --jobid {jobid}"
     )
+    
+    if hasattr(args, "log2term"):
+        log2term = args.log2term
+    else:
+        log2term = False
+    
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_second = get_max_walltime(args.partition)
     else:
@@ -444,6 +453,20 @@ def submit_slurm_master_flow(args, jobid):
         print("######################################################")
         result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
         exit_code = result.returncode
+        if exit_code==0:
+            print(f"P-AIRCARS job with Job ID: {jobid} is submitted successfully.")
+        else:
+            print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
+        if log2term:
+            with subprocess.Popen(
+                ["tail", "-f", log_file],
+                stdout=subprocess.PIPE,
+                text=True,
+            ) as tail_proc:
+                for line in tail_proc.stdout:
+                    if log2term:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
