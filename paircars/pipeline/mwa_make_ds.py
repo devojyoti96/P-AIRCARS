@@ -165,11 +165,6 @@ def make_solar_DS(
     except Exception as e:
         traceback.print_exc()
         return 1, "", succeed, failed
-    finally:
-        time.sleep(5)
-        for msname in mslist:
-            drop_cache(msname)
-        drop_cache(outdir)
 
 
 def main(
@@ -311,14 +306,14 @@ def main(
         msg = 1
     finally:
         time.sleep(5)
-        for msname in mslist:
-            drop_cache(msname)
-        drop_cache(workdir)
         clean_shutdown(observer)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
+            for msname in mslist:
+                drop_cache(msname)
+            drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, succeed, failed
 

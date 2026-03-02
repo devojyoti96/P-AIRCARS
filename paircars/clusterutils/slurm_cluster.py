@@ -350,17 +350,13 @@ def submit_slurm_master_flow(args, jobid):
     args_list = [shlex.quote(arg) for arg in sys.argv[1:]]
     if "--log2term" in args_list:
         args_list.remove("--log2term")
-    cli_cmd = (
-        "run-mwa-masterflow "
-        + " ".join(args_list)
-        + f" --jobid {jobid}"
-    )
-    
+    cli_cmd = "run-mwa-masterflow " + " ".join(args_list) + f" --jobid {jobid}"
+
     if hasattr(args, "log2term"):
         log2term = args.log2term
     else:
         log2term = False
-    
+
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_second = get_max_walltime(args.partition)
     else:
@@ -456,7 +452,7 @@ def submit_slurm_master_flow(args, jobid):
         print("######################################################")
         result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
         exit_code = result.returncode
-        if exit_code==0:
+        if exit_code == 0:
             print(f"P-AIRCARS job with Job ID: {jobid} is submitted successfully.")
         else:
             print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
@@ -466,10 +462,16 @@ def submit_slurm_master_flow(args, jobid):
             with subprocess.Popen(
                 ["tail", "-F", log_file],
                 stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
                 text=True,
+                bufsize=1,
             ) as tail_proc:
                 for line in tail_proc.stdout:
-                    if line not in seen:
+                    if (
+                        line not in seen
+                        and "flow run" in line.lower()
+                        and "task run" in line.lower()
+                    ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
                         seen.add(line)

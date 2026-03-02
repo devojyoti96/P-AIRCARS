@@ -238,14 +238,14 @@ def main(
         msg = 1
     finally:
         time.sleep(5)
-        for ms in mslist:
-            drop_cache(ms)
-        drop_cache(workdir)
         clean_shutdown(observer)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
+            for ms in mslist:
+                drop_cache(ms)
+            drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, succeed, failed
 

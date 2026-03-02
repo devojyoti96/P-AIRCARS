@@ -358,9 +358,6 @@ def single_ms_cal_and_flag(
     except Exception as e:
         traceback.print_exc()
         return []
-    finally:
-        time.sleep(1)
-        drop_cache(msname)
 
 
 def single_round_cal_and_flag(
@@ -830,16 +827,16 @@ def main(
         traceback.print_exc()
         msg = 1
     finally:
-        time.sleep(1)
-        for msname in mslist:
-            drop_cache(msname)
-        drop_cache(workdir)
-        drop_cache(caldir)
+        time.sleep(5)
         clean_shutdown(observer)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
+            for msname in mslist:
+                drop_cache(msname)
+            drop_cache(workdir)
+            drop_cache(caldir)
             os.system(f"rm -rf {dask_dir}")
     return msg, succeed, failed
 

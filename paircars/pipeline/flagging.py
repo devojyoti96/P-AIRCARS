@@ -659,15 +659,15 @@ def main(
         traceback.print_exc()
         msg = 1
     finally:
-        time.sleep(1)
-        for msname in mslist:
-            drop_cache(msname)
-        drop_cache(workdir)
+        time.sleep(5)
         clean_shutdown(observer)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
+            for msname in mslist:
+                drop_cache(msname)
+            drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, succeed, failed
 

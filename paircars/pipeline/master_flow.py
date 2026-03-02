@@ -3708,6 +3708,7 @@ def master_control(
         traceback.print_exc()
         return 1
     finally:
+        time.sleep(5)
         datalist = sorted(glob.glob(f"{target_datadir}/*"))
         for data in datalist:
             drop_cache(data)

@@ -1,8 +1,6 @@
-paircars.utils package
+P-AIRCARS Utils Module
 ======================
-
-Submodules
-----------
+This module contains all basic functionalities required for the pipeline.
 
 paircars.utils.basic\_utils module
 ----------------------------------
@@ -172,10 +170,3 @@ paircars.utils.udocker\_utils module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: paircars.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:

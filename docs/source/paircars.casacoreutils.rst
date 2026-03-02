@@ -1,8 +1,5 @@
-P-AIRCARS
-==============================
-
-Submodules
-----------
+P-AIRCARS Casacore Module
+=========================
 
 paircars.casacoreutils.fill\_caltable module
 --------------------------------------------
@@ -12,10 +9,3 @@ paircars.casacoreutils.fill\_caltable module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: paircars.casacoreutils
-   :members:
-   :undoc-members:
-   :show-inheritance:

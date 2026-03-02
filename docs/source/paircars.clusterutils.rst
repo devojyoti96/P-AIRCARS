@@ -1,8 +1,5 @@
-paircars.clusterutils package
-=============================
-
-Submodules
-----------
+P-AIRCARS HPC Cluster Module
+============================
 
 paircars.clusterutils.slurm\_cluster module
 -------------------------------------------
@@ -12,10 +9,4 @@ paircars.clusterutils.slurm\_cluster module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: paircars.clusterutils
-   :members:
-   :undoc-members:
-   :show-inheritance:

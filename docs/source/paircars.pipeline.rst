@@ -1,8 +1,6 @@
-paircars.pipeline package
+P-AIRCARS Pipeline Module
 =========================
-
-Submodules
-----------
+This module does all pipeline handling all calibration and imaging jobs and provides command-line interface.
 
 paircars.pipeline.basic\_cal module
 -----------------------------------
@@ -196,10 +194,3 @@ paircars.pipeline.viewer module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: paircars.pipeline
-   :members:
-   :undoc-members:
-   :show-inheritance:

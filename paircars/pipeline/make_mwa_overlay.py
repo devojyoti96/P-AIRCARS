@@ -144,7 +144,7 @@ def main(
     finally:
         os.system(f"rm -rf {imagedir}/*aia*.fits")
         os.system(f"rm -rf {imagedir}/*suvi*.fits")
-        time.sleep(1)
+        time.sleep(5)
         drop_cache(imagedir)
         drop_cache(workdir)
         drop_cache(outdir)
