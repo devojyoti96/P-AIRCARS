@@ -1821,7 +1821,7 @@ def master_control(
     workdir = f"{workdir}/{target_obsid}"
     try:
         os.makedirs(workdir, exist_ok=True)
-    except:
+    except Exception:
         print(
             f"Work directory: {workdir} can not be created. Please check the path carefully."
         )
@@ -1886,7 +1886,7 @@ def master_control(
     caldir = caldir.rstrip("/")
     try:
         os.makedirs(outdir, exist_ok=True)
-    except:
+    except Exception:
         print(
             f"Output directory: {outdir} can not created. Please check the path carefully."
         )
@@ -1910,7 +1910,8 @@ def master_control(
             while trial <= 5:
                 try:
                     remote_link = get_remote_logger_link()
-                except:
+                except Exception:
+                    traceback.print_exc()
                     pass
                 if remote_link != "":
                     break
@@ -2266,7 +2267,7 @@ def master_control(
                         min(len(target_mslist) + 1, max_worker),
                     )
                 target_mslist = filtered_ms  # Filtered target mslist
-            except Exception as e:
+            except Exception:
                 print(
                     "Error in moving phasecenter to solar center. P-AIRCARS has stopped."
                 )
@@ -2312,7 +2313,7 @@ def master_control(
                 print("###########################")
                 print(f"Finished task: Making solar dynamic spectra are done.")
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print("!!! WARNING : Error in making dynamic spectra. !!!")
                 traceback.print_exc()
                 if emails != "":
@@ -2370,7 +2371,7 @@ def master_control(
                     f"Finished task: Spliting of calibrator measurement sets are done."
                 )
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Error in spliting calibrator measurement sets. !!!!"
                 )
@@ -2452,7 +2453,7 @@ def master_control(
                 print("###########################")
                 print(f"Finished task: Flagging of calibrator is done.")
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print("!!!! WARNING: Flagging error. P-AIRCARS has stopped. !!!!")
                 traceback.print_exc()
                 if emails != "":
@@ -2511,7 +2512,7 @@ def master_control(
                         min(len(split_cal_mslist) + 1, max_worker),
                     )
                 split_cal_mslist = filtered_ms  # Filtered target mslist
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Error in importing calibrator models. Not continuing calibration. !!!!"
                 )
@@ -2564,7 +2565,7 @@ def master_control(
                 print("###########################")
                 print(f"Finished task: Basic calibration is done.")
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Error in basic calibration. Starting without basic calibration. !!!!"
                 )
@@ -2709,7 +2710,7 @@ def master_control(
                     f"Finished task: Spliting of measurement sets for self-calibration is done."
                 )
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
                 )
@@ -2817,7 +2818,7 @@ def master_control(
                     f"Finished task: Flagging for self-calibration measurment sets are done."
                 )
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
                 )
@@ -2874,7 +2875,7 @@ def master_control(
                         f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
                     )
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print(
                         "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
                     )
@@ -2938,7 +2939,7 @@ def master_control(
                         f"Finished task: Correction for solar sidereal motion is done."
                     )
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print("Sidereal correction is not successful.")
                     traceback.print_exc()
                     if emails != "":
@@ -2994,7 +2995,7 @@ def master_control(
                 print("###########################")
                 print(f"Finished task: Self-calibration is done.")
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
                 )
@@ -3091,7 +3092,7 @@ def master_control(
                 print("###########################")
                 print(f"Finished task: Spliting target for final processing is done.")
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print("!!!! WARNING: Error in spliting targets. !!!!")
                 traceback.print_exc()
                 if emails != "":
@@ -3191,7 +3192,7 @@ def master_control(
                     f"Finished task: Flagging of final target measurement sets are done."
                 )
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print(
                     "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
                 )
@@ -3247,7 +3248,7 @@ def master_control(
                         f"Finished task: Applying basic calibration solutions on final target measurement sets are done."
                     )
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print(
                         "!!!! WARNING: Error in applying basic calibration solutions on target scans. Not continuing further.!!!!"
                     )
@@ -3296,7 +3297,7 @@ def master_control(
                         f"Finished task: Sidereal motion correction of the Sun on final target measurement sets are done."
                     )
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print("!!!! WARNING: Error in applying sidereal correction.!!!!")
                     traceback.print_exc()
                     if emails != "":
@@ -3345,7 +3346,7 @@ def master_control(
                         f"Finished task: Applying self-calibration on final target measurement sets are done."
                     )
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print(
                         "!!!! WARNING: Error in applying self-calibration solutions on targets. !!!!"
                     )
@@ -3420,7 +3421,7 @@ def master_control(
                     print("###########################")
                     print(f"Finished task: Final imaging is done.")
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print(
                         "!!!! WARNING: Final imaging on all measurement sets is not successful. Check the image directory. !!!!"
                     )
@@ -3509,7 +3510,7 @@ def master_control(
                     print(f"Finished task: Primary beam correction is done.")
                     print(f"Final image directory: {imagedir}/images")
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print(
                         "!!!! WARNING: Primary beam corrections of the final images are not successful. !!!!"
                     )
@@ -3577,7 +3578,7 @@ def master_control(
                             f"Finished task: Making diagnostic plots for calibrator measurment sets are done."
                         )
                         print("###########################")
-                    except Exception as e:
+                    except Exception:
                         print(
                             "!!!! WARNING: Diagnostic plot of calibrator measurment sets are not successful. !!!!"
                         )
@@ -3631,7 +3632,7 @@ def master_control(
                         f"Finished task: Making diagnostic plots for target measurment sets are done."
                     )
                     print("###########################")
-                except Exception as e:
+                except Exception:
                     print(
                         "!!!! WARNING: Diagnostic plot of target measurment sets are not successful. !!!!"
                     )
@@ -3698,7 +3699,7 @@ def master_control(
                 print(f"Finished task: Making overlays are done.")
                 print(f"Final image directory: {imagedir}/overlay_pngs")
                 print("###########################")
-            except Exception as e:
+            except Exception:
                 print("!!!! WARNING: Overlay of the images are not successful. !!!!")
                 traceback.print_exc()
                 if emails != "":
@@ -3717,7 +3718,7 @@ def master_control(
             email_msg = "P-AIRCARS processing is done successfully."
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
         return 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
     finally:
@@ -4415,7 +4416,7 @@ def cli():
         else:
             print("Issued occured in P-AIRCARS execution.")
         print("##########################################")
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
     finally:
         print("Clearning caches...")

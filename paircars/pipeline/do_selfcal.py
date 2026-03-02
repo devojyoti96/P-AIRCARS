@@ -44,7 +44,7 @@ from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache, limit_threads
-from paircars.utils.selfcal_utils import quiet_sun_selfcal, selfcal_round
+from paircars.utils.selfcal_utils import quiet_sun_selfcal, selfcal_round, flag_non_disk
 from paircars.utils.udocker_utils import (
     check_udocker_container,
     initialize_wsclean_container,
@@ -778,6 +778,20 @@ def do_polselfcal(
             os.system(f"rm -rf {selfcalms}")
         if os.path.exists(f"{selfcalms}.flagversions"):
             os.system(f"rm -rf {selfcalms}.flagversions")
+
+        ################################
+        # Trying to flag non-disk chunks
+        ################################
+        do_flag_backup(msname, flagtype="nondisk")
+        result = flag_non_disk(msname)
+        if result == 0:
+            print("Flagged non-disk data chunks.")
+        else:
+            print("Could not flag non-disk data chunks.")
+        with suppress_output():
+            if result != 0:
+                flagmanager(vis=msname, mode="restore", versionname="nondisk_1")
+            flagmanager(vis=msname, mode="delete", versionname="nondisk_1")
 
         ##############################
         # Spliting corrected data
