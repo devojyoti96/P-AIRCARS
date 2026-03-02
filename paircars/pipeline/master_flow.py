@@ -1827,12 +1827,17 @@ def master_control(
         traceback.print_exc()
         return 1
 
+    scheduler_name = get_scheduler_name()
     #################################
     # Setup logger
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    if masterlog is None or os.path.exists(masterlog) is False:
+    if (
+        scheduler_name != "local"
+        or masterlog is None
+        or os.path.exists(masterlog) is False
+    ):
         master_logfile = f"{logdir}/main.log"
         ctx = get_run_context()
         flow_id = str(ctx.flow_run.id)
@@ -1846,7 +1851,6 @@ def master_control(
         master_log_created = False
         master_logfile = f"{logdir}/main.log"
         os.symlink(masterlog, master_logfile)
-
 
     dask_dir = None
     try:
