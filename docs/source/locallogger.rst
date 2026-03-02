@@ -1,5 +1,6 @@
 Local GUI Logger
 ================
+If P-AIRCARS is running in local environment, its logs can be seen using a local GUI logger.
 
 1. To start and view local GUI logger, run:
 
@@ -11,11 +12,12 @@ Local GUI Logger
 
    .. code-block :: bash
     
-       run-mwa-mwalogger --logdir <logdir> 
+       run-mwa-mwalogger --logdir </full/path/to/logdir> 
     
 .. note ::
 
-    Log directory is generally at `<workdir>/logs`. If ``prefect`` server is running, but still user wants to use local GUI logger, add ``--no-prefect`` with the above commands.
+    Log directory is generally at `<workdir>/<target_obsid>/logs`. 
+    
 
 This will open the local GUI logger as shown below:
 

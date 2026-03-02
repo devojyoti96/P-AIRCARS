@@ -105,7 +105,7 @@ def main(
 
     try:
         ###############################################################################
-        # Filtering only images with bandwidth of 1.28 MHz or more and at 10s intervals
+        # Filtering only images with bandwidth of 1.28 MHz or more and at 30s intervals
         ###############################################################################
         if all_overlay is False:
             imagelist = filter_images(imagelist)

@@ -1,13 +1,13 @@
 Remote P-AIRCARS Logger
 =======================
 
-If you have setup remote logger with remote logger link, ``https://<remote-logger-name>.onrender.com``, open this in your browser from any machine. It does not need to be opened from the machine jobs are running. Remote logger looks like the following.
+If you have setup remote logger with remote logger link, ``https://<remote-logger-name>.onrender.com``, open this in your browser from any machine. It does not need to be opened from the machine jobs are running. Remote logger looks something like the following.
 
 .. image :: _static/rl1.png
 
 Getting access keys
 --------------------
-To access remote logger, user needs two information; Remote logger job name: ``<jobname>`` and remote logger password: ``<remote_access_password>``.
+To access remote logger, user needs two information; Remote logger job name: ``<jobname>`` and remote logger password: ``<remote_access_password>``. Job password can be set by user using ``--job_password`` keyword.
 
 1. On start-up of the P-AIRCARS job and if remote logger is not disable by `--no_remote_logger` option, you will see:
 
@@ -19,7 +19,7 @@ To access remote logger, user needs two information; Remote logger job name: ``<
    Remote access password: <remote_access_password>
    #############################################################################
  
-Remote ``<jobname>`` is of the format: ``<hostname> :: <YYYY-MM-DDThh:mm:ss> :: <ms_prefix>`` for easy identification.
+Remote ``<jobname>`` is of the format: ``<username>-<hostname>:<YYYY-MM-DDThh:mm:ss>:<target_obsid>`` for easy identification.
      
 3. If you setup you e-mail id, you should receive an e-mail on startup of P-AIRCARS job from ``P-AIRCARS Notification``. The subject of the e-mail should be : ``P-AIRCARS Logger Details: <start_time>``, where ``<start_time>`` will be in ``YYYY-MM-DDThh:mm:ss`` format. The e-mail will contain two information; ``Remote logger Job ID : <jobname>`` and ``Remote access password: <remote_access_password>``. Both of these are required to access logs in remote logger. A demo e-mail is shown below:
 

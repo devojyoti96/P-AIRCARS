@@ -148,7 +148,6 @@ def get_logid(logfile):
         return name
 
 
-
 class TailWatcher(FileSystemEventHandler, QObject):
     new_line = pyqtSignal(str)
 
@@ -184,7 +183,7 @@ class TailWatcher(FileSystemEventHandler, QObject):
                             line for line in new_data.splitlines() if line.strip()
                         )
                         if filtered_lines:
-                            self.new_line.emit(filtered_lines + "\n")
+                            self.new_line.emit(f"{filtered_lines}\n")
             except Exception as e:
                 self.new_line.emit(f"\n[watcher error] {e}\n")
 
@@ -357,9 +356,7 @@ def cli():
     if args.jobid is not None:
         jobfile_name = f"{cachedir}/main_pids_{args.jobid}.txt"
         if not os.path.exists(jobfile_name):
-            print(
-                f"Job ID: {args.jobid} is not available. Provide log directory name."
-            )
+            print(f"Job ID: {args.jobid} is not available. Provide log directory name.")
             sys.exit(1)
         else:
             results = np.loadtxt(jobfile_name, dtype="str", unpack=True)

@@ -117,7 +117,7 @@ def cli():
         "--pol",
         type=str,
         default="IQUV",
-        help="Stokes parameter(s) to image (e.g. 'I', 'XX', 'RR', 'IQUV')",
+        help="Stokes parameter(s) to image ('I' or 'IQUV')",
     )
     advanced_image.add_argument(
         "--minuv",

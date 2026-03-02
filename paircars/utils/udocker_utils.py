@@ -358,8 +358,9 @@ def run_wsclean(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
+            print(f"Initializing {container_name}...")
             container_name = initialize_wsclean_container(
-                name=container_name, verbose=verbose
+                name=container_name, verbose=True
             )
             if container_name is None:
                 print(
@@ -467,8 +468,9 @@ def run_solar_sidereal_cor(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
+            print(f"Initializing {container_name}...")
             container_name = initialize_wsclean_container(
-                name=container_name, verbose=verbose
+                name=container_name, verbose=True
             )
             if container_name is None:
                 print(
@@ -562,9 +564,10 @@ def run_chgcenter(
     set_udocker_env()
     if check_container:
         container_present = check_udocker_container(container_name)
-        if not container_present:
+        if not container_present:   
+            print(f"Initializing {container_name}...")
             container_name = initialize_wsclean_container(
-                name=container_name, verbose=verbose
+                name=container_name, verbose=True
             )
             if container_name is None:
                 print(
@@ -656,8 +659,9 @@ def run_shadems(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
+            print(f"Initializing {container_name}...")
             container_name = initialize_shadems_container(
-                name=container_name, verbose=verbose
+                name=container_name, verbose=True
             )
             if container_name is None:
                 print(
@@ -732,8 +736,9 @@ def run_quartical(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
+            print(f"Initializing {container_name}...")
             container_name = initialize_quartical_container(
-                name=container_name, verbose=verbose
+                name=container_name, verbose=True
             )
             if container_name is None:
                 print(
@@ -856,8 +861,9 @@ def run_hyperdrive(
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
+            print(f"Initializing {container_name}...")
             container_name = initialize_hyperdrive_container(
-                name=container_name, verbose=verbose
+                name=container_name, verbose=True
             )
             if container_name is None:
                 print(

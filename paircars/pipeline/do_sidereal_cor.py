@@ -71,7 +71,8 @@ def cor_sidereal_motion(
         container_name = "paircarswsclean"
         container_present = check_udocker_container(container_name)
         if not container_present:
-            container_name = initialize_wsclean_container(name=container_name)
+            print(f"Initializing {container_name}...")
+            container_name = initialize_wsclean_container(name=container_name, verbose=True)
             if container_name is None:
                 print(
                     "Container {container_name} is not initiated. First initiate container and then run."

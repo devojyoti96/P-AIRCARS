@@ -1,7 +1,7 @@
 Initial Setup
 =============
 
-After installation of **P-AIRCARS**, before running the pipeline, some initial setup is needed. These include downloading some required metadata for the pipeline.
+After installation of **P-AIRCARS**, before running the pipeline, some initial setup is needed. These include downloading some required metadata for the pipeline. **P-AIRCARS** also provides multiple ways to monitor its progress -- local GUI logger (for local machine only), over email, web-based remote logger, and prefect dashboard.  
 
 
 Download P-AIRCARS metadata
@@ -23,37 +23,29 @@ Download P-AIRCARS metadata
 .. code-block :: bash
 
     init-paircars-setup --init --update
-    
-    
-Setup ``prefect`` server
--------------------------
-By default, P-AIRCARS runs using ``prefect`` ephemeral mode, which creates temporary in-memory server for workflow orchestration and removed once the pipeline is finished. However, if user wants, user can setup a persistent ``prefect`` server such that all pipeline runs can be seen. 
-    
-To start ``prefect`` serve, run:
+   
+.. note::
 
-.. code-block :: bash
-    
-    init-paircars-setup --init --prefect_server
+   ``prefect`` server will be automatically setup during this process. In local environment, if there is any issue in starting ``prefect`` server, ``prefect`` will automatically fall back to its ephemeral mode. For cluster environment, P-AIRCARS can not be run without ``prefect`` server. By default, ``prefect`` server uses the **port 4260** and its associated PostgreSQL database used **port 5260**. If these port are pre-occupied, the closest free port will be used. The instructions to access ``prefect`` dashboard will be displayed in the terminal with the steps to access it. 
+   
 
-If ``prefect`` server is initialized, P-AIRCARS will automatically use that.
-    
 Custom data directory
 ----------------------
-By default, data directory will be at "~/.solarpipe/solarpipe_data". It requires 18GB space. Sometimes home directory may not have sufficient space. In that case, one can setup data directory in a custom location as follows:
+By default, data directory will be at "~/.paircarspipe/paircarspipe_data". It requires 20 GB space. Sometimes home directory may not have sufficient space. In that case, one can setup data directory in a custom location as follows:
 
 .. code-block :: bash
 
-    init-paircars-setup --init --datadir </path/to/custom/datadir>
+    init-paircars-setup --init --datadir </full/path/to/custom/datadir>
     
 Setup e-mail ids
 ----------------
-To receive remote logger Job ID and password, use can setup their e-mail id(s) in P-AIRCARS. 
+To receive remote logger Job ID and password, and e-mail notifications for pipeline progress, use can setup their e-mail id(s) in P-AIRCARS. 
 
 .. code-block :: bash
 
     init-paircars-setup --init --emails <youremail1@email1.id1>,<youremail2@email2.id2> 
     
-If you setup a remote logger as described below, you will receive a Job ID and auto-generated six-character password to access logs of a particular pipeline run from the remote logger. Without this password, one can not access logs of that particular pipeline run. This added security as well as privacy when multiple user uses the same remote logger link, for example, an institute based remote logger link.   
+If you setup a remote logger as described below, you will receive a unique Job ID and password (user provided or auto-generated six-character) to access logs of a particular pipeline run from the remote logger. Without this password, one can not access logs of that particular pipeline run. This added security as well as privacy when multiple user uses the same remote logger link, for example, an institute based remote logger link.   
     
 Setup remote logger link
 -------------------------

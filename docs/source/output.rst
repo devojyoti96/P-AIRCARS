@@ -20,16 +20,17 @@ The following output will appear in terminal:
 Directory structure
 -------------------
 
-All data intermediate data products will be saved in ``<workdir>``.
+All intermediate data products will be saved in ``<workdir>/<target_obsid>``.
 
-All final data products will be saved in ``<outputdir>``.
+All final data products will be saved in ``<outputdir>/<target_obsid>``.
 
 .. note :: 
 
-   In local workstations, it is okay to choose ``<workdir>`` and ``<outputdir>``. In HPC environment, generally, high-speed disks are used during data-processing, which may have limited storage life-time, and has seperate long-term storage disks. It is recommended to choose ``<workdir>`` path inside the high-speed disk and ``<outputdir>`` inside the long-term storage disk. Otherwise, there may be possiblity that final data-products will be removed after certain time. 
+   In local workstations, it is okay to choose the same ``<workdir>`` and ``<outputdir>``. In HPC environment, generally, high-speed disks are used during data-processing, which may have limited storage life-time, and has seperate long-term storage disks. It is recommended to choose ``<workdir>`` path inside the high-speed disk and ``<outputdir>`` inside the long-term storage disk. Otherwise, there may be possiblity that final data-products will be removed after certain time. 
 
 .. note::
-    Inside ``<workdir>`` and ``<outputdir>``, another directory with target observation ID, ``<targrt_obsid>`` will be created. These will be the ``<workdir>`` and ``<outputdir>`` for that OBSID. This ensures if different OBSID targets are provided same ``<workdir>`` and ``<outputdir>``, there will be no mixup. Some of these follwing directories will be only present when back are kept.
+   
+   Inside ``<workdir>`` and ``<outputdir>``, another directory with target observation ID, ``<targrt_obsid>`` will be created. These will be the ``<workdir>`` and ``<outputdir>`` for that OBSID. This ensures if different OBSID targets are provided same ``<workdir>`` and ``<outputdir>``, there will be no mixup. Some of these follwing directories will be only present when back are kept.
 
 .. admonition:: Click here to see directory structure in work directory
    :class: dropdown
@@ -56,6 +57,8 @@ All final data products will be saved in ``<outputdir>``.
            WD --> DP["`Diagnostic plots:<br>diagnostic_plots`"]
            DP --> DPPDF["`Diagnostic plots of ms and caltables in PDF:<br>*.pdf`"]
            WD --> DS["`Dynamic spectra:<br>dynamic_spectra`"]
+           WD --> FS["`Flag summary:<br>flag_summary`"]
+           WD --> FV["`Flag backup:<br>ms_flags`"]
            WD --> IMG["`Image directory:<br>imagedir_f_*_t_*_w_briggs_*`"]
            IMG --> IMAGE["Fits image:<br>images"]
            IMG --> MODEL["Fits models:<br>models"]
@@ -71,19 +74,27 @@ Pipeline produces calibrated visibilities as well as several imaging products.
 
 Dynamic spectrum
 ~~~~~~~~~~~~~~~~
-Dynamic spectra for all (or the ones selected) target scans are available in ``dynamic_spectra`` directory inside the output directory ``<outputdir>``.
+Dynamic spectra for all (or the ones selected) target scans are available in ``dynamic_spectra`` directory inside the output directory ``<outputdir>/<target_obsid>``.
 
 Diagnostic plots
 ~~~~~~~~~~~~~~~~
-Diagnostic plots for all measurement sets and calibration tables in pdf format in ``diagnostic_plots`` directory inside the output directory ``<outputdir>``.
+Diagnostic plots for all measurement sets and calibration tables in pdf format in ``diagnostic_plots`` directory inside the output directory ``<outputdir>/<target_obsid>``.
+
+Flag summary
+~~~~~~~~~~~~
+Flag summary files for each measurement sets
+
+Measurement set flags
+~~~~~~~~~~~~~~~~~~~~~
+Flags of the final calibrated measurement sets are saved in ``ms_flags`` directory inside the ``<outputdir>/<target_obsid>``. These flags can be used later to restore and re-image calibrated measurement sets. s
 
 Calibrated visibilities
 ~~~~~~~~~~~~~~~~~~~~~~~
-By default calibrated measurement sets will be removed after final imaging. If ``keep_calibrated_ms`` parameter is turned on during processing, they will be kept in work directory ``<workdir>`` with naming format, ``target_<target_obsid>_ch<coarse_chan>_spw_<chanrange>.ms``. Calibrated measurement sets will not be saved in output directory ``<outputdir>`` (unless same as ``<workdir>``) to save space as well as to keep them high-speed disk.
+By default calibrated measurement sets will be removed after final imaging. If ``keep_calibrated_ms`` parameter is turned on during processing, they will be kept in work directory ``<workdir>/<target_obsid>`` with naming format, ``target_<target_obsid>_ch<coarse_chan>_spw_<chanrange>.ms``. Calibrated measurement sets will not be saved in output directory ``<outputdir>`` (unless same as ``<workdir>``) to save space as well as to keep them high-speed disk.
 
 Imaging products 
 ~~~~~~~~~~~~~~~~
-Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>`` directory inside output directory ``<outputdir>``. If imaging is performed with different time and frequency resolutions or different weighting schemes, seperate image directories with corresponding parameters will have the corresponding images. 
+Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>`` directory inside output directory ``<outputdir>/<target_obsid>``. If imaging is performed with different time and frequency resolutions or different weighting schemes, seperate image directories with corresponding parameters will have the corresponding images. 
 
 1. **Image fits in RA/DEC** - Fits images in RA/DEC coordinate are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/images`` directory inside work directory. These are not primary beam corrected.
 
@@ -91,40 +102,42 @@ Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_
     
    All fits images have some P-AIRCARS specific metadata in the header and some image statistics.
    
-   .. admonition:: Click here to see details of these metadata
-       :class: dropdown
-                           
-        PIPELINE= 'P-AIRCARS' # Pipeline name
-        
-        AUTHOR  = 'DevojyotiKansabanik' # Pipeline developer         
-                                                               
-        MAX     =  ``<maxval>`` # Maximum value on the solar disc       
-                                                   
-        MIN     =  ``<minval>`` # Minimum value on the solar disc      
-                                                   
-        RMS     =  ``<rms>`` # RMS value outside solar disc       
-                                                
-        SUM     =  ``<sum>`` # Total sum on the solar disc  
-                                                
-        MEAN    =  ``<mean>`` # Mean value on the solar disc   
-                                                      
-        MEDIAN  =  ``<median>`` # Median value on the solar disc  
-                                                     
-        RMSDYN  =  ``<rmsdyn>`` # RMS based dynamic range, ``<maxval/rms>``
-                                                        
-        MIMADYN =  ``<minmaxdyn>`` # Min-max based dynamic range, ``<maxval/abs(minval)>``  
-        
-        CALAPP  =   ``TRUE/FALSE`` # Whether calibrator solutions were applied or not
-        
-        POLSELF =   ``TRUE/FALSE`` # Whether polarisation selfcal is performed or not
-        
-        LEAKUNIT =   ``PERCENT`` # Residual leakage unit
-        
-        QLEAK    =    ``<qleak>`` # Residual Stokes I to Stokes Q leakage  
-        
-        ULEAK    =    ``<uleak>`` # Residual Stokes I to Stokes U leakage  
-        
-        VLEAK    =    ``<vleak>`` # Residual Stokes I to Stokes V leakage  
+.. admonition:: Click here to see details of these metadata
+   :class: dropdown
+                       
+    PIPELINE= 'P-AIRCARS' # Pipeline name
+    
+    AUTHOR  = 'DevojyotiKansabanik' # Pipeline developer         
+                                                           
+    MAX     =  ``<maxval>`` # Maximum value on the solar disc       
+                                               
+    MIN     =  ``<minval>`` # Minimum value on the solar disc      
+                                               
+    RMS     =  ``<rms>`` # RMS value outside solar disc       
+                                            
+    SUM     =  ``<sum>`` # Total sum on the solar disc  
+                                            
+    MEAN    =  ``<mean>`` # Mean value on the solar disc   
+                                                  
+    MEDIAN  =  ``<median>`` # Median value on the solar disc  
+                                                 
+    RMSDYN  =  ``<rmsdyn>`` # RMS based dynamic range, ``<maxval/rms>``
+                                                    
+    MIMADYN =  ``<minmaxdyn>`` # Min-max based dynamic range, ``<maxval/abs(minval)>``  
+    
+    CALAPP  =   ``TRUE/FALSE`` # Whether calibrator solutions were applied or not
+    
+    POLSELF =   ``TRUE/FALSE`` # Whether polarisation selfcal is performed or not
+    
+    LEAKCOR =   ``TRUE/FALSE`` # Whether polarisation leakage correction is made or not
+    
+    LEAKUNIT =   ``PERCENT`` # Residual leakage unit if LEAKCOR is TRUE
+    
+    QLEAK    =    ``<qleak>`` # Residual Stokes I to Stokes Q leakage if LEAKCOR is TRUE
+    
+    ULEAK    =    ``<uleak>`` # Residual Stokes I to Stokes U leakage if LEAKCOR is TRUE 
+    
+    VLEAK    =    ``<vleak>`` # Residual Stokes I to Stokes V leakage if LEAKCOR is TRUE 
         
 .. note::
 
@@ -144,9 +157,7 @@ Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_
   
    Header of helioprojective maps have wavelength information in unit of ``centimeter`` or ``meter``.  
 
-6. **Overlays on EUV images** - If EUV overlays are requested, overlays on EUV images are saved in PNG formats in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/overlays_pngs``.
+6. **Overlays on EUV images** - Overlays on EUV images are saved in PNG formats in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/overlays_pngs``. By default, images at 30s time interval per corase channel will be overlayed, unless requested to make overlays for all images. 
 
-Measurement set flags
-~~~~~~~~~~~~~~~~~~~~~
-Flags of the final calibrated measurement sets are saved in ``ms_flags`` directory inside the ``<outputdir>``. These flags can be used later to restore and re-image calibrated measurement sets. 
+
 

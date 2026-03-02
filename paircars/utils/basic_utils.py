@@ -195,17 +195,17 @@ def interpolate_nans(data):
 
 def average_timestamp(timestamps):
     """
-        Compute the average timestamp using astropy from a list of ISO 8601 strings.
+    Compute the average timestamp using astropy from a list of ISO 8601 strings.
 
-        Parameters
-        ----------
-        timestamps : list
-            timestamps (list of str): List of timestamp strings in 'YYYY-MM-DDTHH:MM:SS' format.
-    retries
-        Returns
-        --------
-        str
-            Average timestamp in 'YYYY-MM-DDTHH:MM:SS' format.
+    Parameters
+    ----------
+    timestamps : list
+        timestamps (list of str): List of timestamp strings in 'YYYY-MM-DDTHH:MM:SS' format.
+
+    Returns
+    --------
+    str
+        Average timestamp in 'YYYY-MM-DDTHH:MM:SS' format.
     """
     if len(timestamps) == 0:
         return ""

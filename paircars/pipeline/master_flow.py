@@ -10,6 +10,7 @@ import sys
 import os
 import socket
 import requests
+import getpass
 from collections import Counter
 from casatools import msmetadata
 from astropy.io import fits
@@ -1681,7 +1682,7 @@ def master_control(
     cutout_rsun : float, optional
         Cutout image size from center in solar radii (default : 10.0 solar radii)
     make_overlay : bool, optional
-        Make EUV MWA overlay for all images or not (default : per coarse channel images will be overlaid at 10s intervals)
+        Make EUV MWA overlay for all images or not (default : per coarse channel images will be overlaid at 30s intervals)
     make_msplot : bool, optional
         Make diagnostic plots of measurement sets
 
@@ -1939,7 +1940,8 @@ def master_control(
             ####################################
             hostname = socket.gethostname()
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-            job_name = f"{hostname} :: {timestamp} :: {target_obsid}"
+            username = getpass.getuser()
+            job_name = f"{username}-{hostname}:{timestamp}:{target_obsid}"
             timestamp1 = dt.utcnow().strftime("%Y%m%dT%H%M%S")
             remote_job_id = f"{hostname}_{timestamp1}_{target_obsid}"
             if job_password is None:
@@ -1947,17 +1949,17 @@ def master_control(
             else:
                 password = job_password
             np.save(
-                f"{workdir}/jobname_password.npy",
+                f"{workdir}/.jobname_password.npy",
                 np.array([job_name, password], dtype="object"),
             )
             ############
             # Logger
             ############
             observer = None
-            if os.path.exists(f"{workdir}/jobname_password.npy"):
+            if os.path.exists(f"{workdir}/.jobname_password.npy"):
                 time.sleep(5)
                 jobname, password = np.load(
-                    f"{workdir}/jobname_password.npy", allow_pickle=True
+                    f"{workdir}/.jobname_password.npy", allow_pickle=True
                 )
                 if master_logfile is not None and os.path.exists(master_logfile):
                     observer = init_logger(
@@ -3366,11 +3368,15 @@ def master_control(
                     print(f"Image time resolution: {image_timeres} s.")
                 else:
                     print("Imaging entire scan.")
+                pol = pol.upper()
+                if pol not in ["I","IQUV"]:
+                    pol = "IQUV"
+                    
                 if (
                     do_polcal == False
                 ):  # Only if do_polcal is False, overwrite to make only Stokes I
                     pol = "I"
-                pol = pol.upper()
+                
                 if emails != "":
                     email_msg = "Started final imaging."
                     send_task_notification(
@@ -3889,7 +3895,7 @@ def cli():
         "--pol",
         type=str,
         default="IQUV",
-        help="Stokes parameter(s) to image (e.g. 'I', 'XX', 'RR', 'IQUV')",
+        help="Stokes parameter(s) to image ('I' or 'IQUV')",
     )
     advanced_image.add_argument(
         "--minuv",
