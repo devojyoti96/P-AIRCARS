@@ -1,8 +1,9 @@
 Acknowledging
 ---------------
 
-P-AIRCARS is developed by Devojyoti Kansabanik (NCRA-TIFR, Pune, India and CPAESS-UCAR, Boulder, USA) 
-and Surajt Mondal (NCRA-TIFR, Pune, India) and an incarnation of `AIRCARS <https://github.com/devojyoti96/AIRCARS>`_.
+P-AIRCARS is developed by Devojyoti Kansabanik (NCRA-TIFR, Pune, India and CPAESS-UCAR, Boulder, USA) and an incarnation of `AIRCARS <https://github.com/devojyoti96/AIRCARS>`_.
+
+Other contributors: Surajt Mondal (NCRA-TIFR, Pune, India), Puja Majee (NCRA-TIFR, Pune, India)
 
 If you use **P-AIRCARS** for analysing your MWA solar observations, include the following statement 
 in your paper, and cite the following papers:
@@ -13,7 +14,7 @@ in your paper, and cite the following papers:
 
 
 1. Cite P-AIRCARS software in Zenodo:
-   https://doi.org/10.5281/zenodo.18625477
+   `https://doi.org/10.5281/zenodo.18625477 <https://doi.org/10.5281/zenodo.18625477>`_
 
 2. `Kansabanik et al., 2025, ApJS, v278:26 <https://doi.org/10.3847/1538-4365/adc443>`_
 

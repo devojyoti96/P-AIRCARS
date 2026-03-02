@@ -1850,6 +1850,8 @@ def master_control(
     else:
         master_log_created = False
         master_logfile = f"{logdir}/main.log"
+        if os.path.exists(master_logfile):
+            os.system(f"rm -rf {master_logfile}")
         os.symlink(masterlog, master_logfile)
 
     dask_dir = None
