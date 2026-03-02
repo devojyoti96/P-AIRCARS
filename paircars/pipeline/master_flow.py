@@ -1832,7 +1832,7 @@ def master_control(
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
     scheduler_name = get_scheduler_name()
-    master_logfile = f"{logdir}/main.log"
+    master_logfile = f"{logdir}/main_paircars.log"
 
     if scheduler_name == "slurm":
         master_log_created = False
