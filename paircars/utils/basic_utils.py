@@ -119,7 +119,6 @@ def get_free_port(start_port=4200, end_port=4300):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.bind(("127.0.0.1", port))
-                print(f"Free port: {port}")
                 return port
             except OSError:
                 continue
@@ -142,10 +141,8 @@ def check_port_status(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.bind(("127.0.0.1", port))
-            print(f"Port: {port} is free.")
             return True
         except OSError:
-            print(f"Port: {port} is occupied.")
             return False
 
 
