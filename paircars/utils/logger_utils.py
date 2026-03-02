@@ -219,7 +219,6 @@ def get_logid(logfile):
         "imaging_target.log": "All imaging",
         "ds_target.log": "Making dynamic spectra",
         "do_overlay.log": "Making overlays",
-        "main.log": "All master log",
         "do_msplot.log": "Diagnistic plot of ms",
     }
 
@@ -240,6 +239,8 @@ def get_logid(logfile):
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
         return f"Imaging for: OBSID: {obsid}, coarse channel: {coarse_chan}"
+    elif name.startswith("main_paircars"):
+        return "All master log"
     else:
         return name
 

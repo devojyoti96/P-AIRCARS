@@ -1831,20 +1831,32 @@ def master_control(
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    if masterlog is None or os.path.exists(masterlog) is False:
-        master_logfile = f"{logdir}/main.log"
-        ctx = get_run_context()
-        flow_id = str(ctx.flow_run.id)
-        flow_name = ctx.flow_run.name
-        stop_event = Event()
-        log_thread_flow = start_flow_log_saver(
-            flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
-        )
-        master_log_created = True
-    else:
+    scheduler_name = get_scheduler_name()
+    master_logfile = f"{logdir}/main.log"
+
+    if scheduler_name == "slurm":
         master_log_created = False
-        master_logfile = f"{logdir}/main.log"
-        os.symlink(masterlog, master_logfile)
+        master_logfile = masterlog
+    else:
+        if masterlog is None:
+            ctx = get_run_context()
+            flow_id = str(ctx.flow_run.id)
+            flow_name = ctx.flow_run.name
+
+            stop_event = Event()
+            log_thread_flow = start_flow_log_saver(
+                flow_id,
+                flow_name,
+                master_logfile,
+                poll_interval=3,
+                stop_event=stop_event,
+            )
+
+            master_log_created = True
+        else:
+            master_logfile = masterlog
+            master_log_created = False
+
 
     dask_dir = None
     try:
@@ -1885,7 +1897,6 @@ def master_control(
         return 1
     os.makedirs(caldir, exist_ok=True)
 
-    scheduler_name = get_scheduler_name()
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -1952,7 +1963,7 @@ def master_control(
                 jobname, password = np.load(
                     f"{workdir}/jobname_password.npy", allow_pickle=True
                 )
-                if os.path.exists(master_logfile):
+                if master_logfile is not None and os.path.exists(master_logfile):
                     observer = init_logger(
                         "master_log", master_logfile, jobname=jobname, password=password
                     )
