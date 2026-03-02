@@ -65,6 +65,7 @@ from paircars.data.sendmail import (
 from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
     get_slurm_node_resources,
+    slurm_job,
 )
 from paircars.utils.prefect_logger_utils import (
     start_log_task_saver,
@@ -4253,7 +4254,8 @@ def cli():
         max_worker = max(int(args.max_worker), total_ncoarse + 1)
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
 
-    if args.cluster is not True or scheduler_name == "local" or "SLURM_JOB_ID" not in os.environ:
+    slurm_job = is_slurm_job()
+    if args.cluster is not True or scheduler_name == "local" or slurm_job is False:
         #######################################
         # Set up local cluster
         #######################################

@@ -21,7 +21,20 @@ from paircars.utils.proc_manage_utils import (
     get_total_nodes,
 )
 
-
+def is_slurm_job():
+    """
+    Check whether a job is submitted as slurm job or not
+    """
+    return any(
+        var in os.environ
+        for var in [
+            "SLURM_JOB_ID",
+            "SLURM_JOBID",          # older systems
+            "SLURM_STEP_ID",
+        ]
+    )
+    
+    
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     """
     Get node resources for SLURM cluster
