@@ -458,6 +458,7 @@ def submit_local_master_flow(args, jobid):
         print("######################################################")
         if log2term:
             print("Logging in terminal....")
+        try:
             with open(log_file, "a", buffering=1) as log:
                 process = subprocess.Popen(
                     ["bash", script_path],
@@ -468,25 +469,17 @@ def submit_local_master_flow(args, jobid):
                 )
 
                 for line in process.stdout:
-                    sys.stdout.write(line)  # show in terminal
-                    log.write(line)  # write to file
-                    log.flush()
+                    if "task run" in line.lower() or "flow run" in line.lower():
+                        if log2term:
+                            sys.stdout.write(line)  # show in terminal
+                        log.write(line)  # write to file
+                        log.flush()
 
                 process.stdout.close()
-                exit_code = process.wait()
-        else:
-            log = open(log_file, "w")
-            try:
-                process = subprocess.Popen(
-                    ["bash", script_path],
-                    stdout=log,
-                    stderr=log,
-                    text=True,
-                )
-                exit_code=0
-            except:
-                exit_code=1
-        return 0 if exit_code == 0 else 1
+            exit_code=0
+        except:
+            exit_code=1
+        return exit_code
     except Exception as e:
         traceback.print_exc()
         return 1

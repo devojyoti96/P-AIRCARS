@@ -2978,7 +2978,7 @@ def master_control(
                 if emails != "":
                     email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}."
                     if do_polcal:
-                        email_msg += f"\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {polfailed}."
+                        email_msg += f"\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
