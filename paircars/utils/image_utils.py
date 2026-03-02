@@ -489,7 +489,7 @@ def make_stokes_wsclean_imagecube(
     return outfile_name
 
 
-def filter_images(imagelist, min_time_sep=10.0):
+def filter_images(imagelist, min_time_sep=30.0):
     """
     Select images with maximum bandwidth, then for each frequency
     keep images separated by at least `min_time_sep` seconds.
@@ -507,32 +507,39 @@ def filter_images(imagelist, min_time_sep=10.0):
         Filtered image list
     """
     image_info = []
-    for image in imagelist:
-        header = fits.getheader(image)
-        bw = -1
-        freq = -1
-        if header.get("CTYPE3") == "FREQ":
-            bw = abs(float(header.get("CDELT3", -1))) / 1e6
-            freq = float(header.get("CRVAL3", -1))
-        elif header.get("CTYPE4") == "FREQ":
-            bw = abs(float(header.get("CDELT4", -1))) / 1e6
-            freq = float(header.get("CRVAL4", -1))
-        bw = round(bw, 2)
-        timeobs = header["DATE-OBS"].split(".")[0]
-        mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
-        image_info.append({"image": image, "bw": bw, "freq": freq, "mjdsec": mjdsec})
-    bws = np.array([info["bw"] for info in image_info])
-    max_bw = np.max(bws)
-    image_info = [info for info in image_info if info["bw"] == max_bw]
-    freq_groups = defaultdict(list)
-    for info in image_info:
-        freq_groups[info["freq"]].append(info)
-    final_images = []
-    for freq, group in freq_groups.items():
-        group = sorted(group, key=lambda x: x["mjdsec"])
-        last_time = -np.inf
-        for info in group:
-            if info["mjdsec"] - last_time >= min_time_sep:
-                final_images.append(info["image"])
-                last_time = info["mjdsec"]
-    return final_images
+    try:
+        for image in imagelist:
+            header = fits.getheader(image)
+            bw = -1
+            freq = -1
+            if header.get("CTYPE3") == "FREQ":
+                bw = abs(float(header.get("CDELT3", -1))) / 1e6
+                freq = float(header.get("CRVAL3", -1))
+            elif header.get("CTYPE4") == "FREQ":
+                bw = abs(float(header.get("CDELT4", -1))) / 1e6
+                freq = float(header.get("CRVAL4", -1))
+            bw = round(bw, 2)
+            timeobs = header["DATE-OBS"].split(".")[0]
+            mjdsec = timestamp_to_mjdsec(timeobs, date_format=1)
+            image_info.append(
+                {"image": image, "bw": bw, "freq": freq, "mjdsec": mjdsec}
+            )
+        bws = np.array([info["bw"] for info in image_info])
+        max_bw = np.max(bws)
+        image_info = [info for info in image_info if info["bw"] == max_bw]
+        freq_groups = defaultdict(list)
+        for info in image_info:
+            freq_groups[info["freq"]].append(info)
+        final_images = []
+        for freq, group in freq_groups.items():
+            group = sorted(group, key=lambda x: x["mjdsec"])
+            last_time = -np.inf
+            for info in group:
+                if info["mjdsec"] - last_time >= min_time_sep:
+                    final_images.append(info["image"])
+                    last_time = info["mjdsec"]
+        return final_images
+    except Exception:
+        print("Error in filtering out images.")
+        traceback.print_exc()
+        return []

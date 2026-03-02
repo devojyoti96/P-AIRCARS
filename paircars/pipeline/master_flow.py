@@ -1400,7 +1400,7 @@ def run_make_overlay(
     try:
         ###################
         print("###########################")
-        print("Making overlays of all images .....")
+        print("Making overlays of images .....")
         print("###########################")
         #####################
         # Making overlays
