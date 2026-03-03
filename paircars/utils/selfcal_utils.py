@@ -915,6 +915,8 @@ def selfcal_round(
         Selfcal iteration number
     uvrange : float, optional
        UV range for calibration
+    minuv : float, optional
+        Minimum uv in lambda
     calmode : str, optional
         Calibration mode ('p' or 'ap')
     solint : str, optional

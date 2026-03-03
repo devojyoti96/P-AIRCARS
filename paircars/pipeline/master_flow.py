@@ -2998,6 +2998,10 @@ def master_control(
             print("###########################")
             print("Starting task: Self-calibrations.....")
             print("###########################")
+            if cal_applied:
+                print("Calibrator solutions are applied.")
+            else:
+                print("Calibration soplutions are not applied")
             future_selfcal = run_selfcal_jobs.with_options(
                 task_run_name=f"selfcal_{jobid}"
             ).submit(

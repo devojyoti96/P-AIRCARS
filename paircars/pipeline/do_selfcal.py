@@ -71,7 +71,7 @@ def do_selfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="10s",
+    solint="30s",
     weight="briggs",
     robust=0.0,
     do_apcal=True,
@@ -685,7 +685,7 @@ def do_polselfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="10s",
+    solint="30s",
     weight="briggs",
     robust=0.0,
     solar_selfcal=True,
@@ -975,7 +975,7 @@ def do_polselfcal(
                 round_number=num_iter,
                 uvrange=uvrange,
                 minuv=minuv,
-                solint="60s",
+                solint=solint,
                 calc_chunks=calc_chunks,
                 refant=str(refant),
                 threshold=threshold,
@@ -1190,7 +1190,7 @@ def do_full_selfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="10s",
+    solint="30s",
     weight="briggs",
     robust=0.0,
     do_apcal=True,
@@ -1306,7 +1306,7 @@ def main(
     max_DR=100000,
     min_iter=5,
     conv_frac=0.1,
-    solint="10s",
+    solint="30s",
     uvrange="",
     minuv=0,
     weight="briggs",
@@ -1352,7 +1352,7 @@ def main(
     conv_frac : float, optional
         Convergence criterion: fractional change in dynamic range below which iteration stops. Default is 0.1.
     solint : str, optional
-        Solution interval for gain calibration (e.g., "inf", "10s", "int"). Default is "60s".
+        Solution interval for gain calibration (e.g., "inf", "10s", "int"). Default is "30s".
     uvrange : str, optional
         UV range to be used for imaging and calibration, in CASA format. Default is "" (all baselines).
     minuv : float, optional
@@ -1850,7 +1850,7 @@ def cli():
         help="Fractional change in DR to determine convergence",
         metavar="Float",
     )
-    adv_args.add_argument("--solint", type=str, default="10s", help="Solution interval")
+    adv_args.add_argument("--solint", type=str, default="30s", help="Solution interval")
     adv_args.add_argument(
         "--uvrange",
         type=str,

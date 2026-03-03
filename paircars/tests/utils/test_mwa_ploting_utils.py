@@ -216,7 +216,6 @@ def test_plot_goes_full_timeseries(mock_get_validscans, dummy_msname):
 @patch("paircars.utils.mwa_ploting_utils.os.system")
 @patch("paircars.utils.mwa_ploting_utils.fits.open")
 @patch("paircars.utils.mwa_ploting_utils.fits.getheader")
-@patch("paircars.utils.mwa_ploting_utils.Horizons")
 @patch("paircars.utils.mwa_ploting_utils.SkyCoord")
 @patch("paircars.utils.mwa_ploting_utils.Time")
 @patch("paircars.utils.mwa_ploting_utils.cutout_image")
@@ -226,7 +225,6 @@ def test_rename_mwasolar_image(
     mock_cutout,
     mock_Time,
     mock_SkyCoord,
-    mock_Horizons,
     mock_getheader,
     mock_fits_open,
     mock_os_system,
@@ -249,9 +247,8 @@ def test_rename_mwasolar_image(
     mock_fits_open.return_value.__enter__.return_value = mock_hdul
     mock_hdul.__getitem__.return_value.header = {}
 
-    # Setup astropy Time and Horizons mocks
+    # Setup astropy Time 
     mock_Time.return_value.jd = 2459215.0
-    mock_Horizons.return_value.ephemerides.return_value = {"RA": [100.0], "DEC": [45.0]}
     mock_coords = MagicMock()
     mock_coords.ra.deg = 100.0
     mock_coords.dec.deg = 45.0
@@ -268,6 +265,9 @@ def test_rename_mwasolar_image(
 
 
 @pytest.mark.parametrize("plot_quantity", ["TB", "flux"])
+@patch("paircars.utils.mwa_ploting_utils.interpolate_nans", side_effect=lambda x: x)
+@patch("paircars.utils.mwa_ploting_utils.ImageNormalize")
+@patch("paircars.utils.mwa_ploting_utils.LogStretch")
 @patch("paircars.utils.mwa_ploting_utils.plt")
 @patch("paircars.utils.mwa_ploting_utils.matplotlib")
 @patch("paircars.utils.mwa_ploting_utils.os.system")
@@ -281,6 +281,9 @@ def test_make_ds_plot(
     m_os_system,
     m_matplotlib,
     m_plt,
+    m_LogStretch,
+    m_ImageNormalize,
+    m_interp,
     plot_quantity,
 ):
     freqs = np.linspace(100, 110, 5)
@@ -289,15 +292,10 @@ def test_make_ds_plot(
     T_data = np.random.rand(5, 10) * 1e7
     S_data = np.random.rand(5, 10)
     flags = np.zeros((5, 10), dtype=bool)
-
-    m_npload.return_value = (
-        freqs,
-        times,
-        timestamps,
-        T_data,
-        S_data,
-        flags,
-    )
+    m_npload.side_effect = [
+        (freqs, times, timestamps, T_data, S_data, flags),
+        (freqs, times, timestamps, T_data, S_data, flags),
+    ]
     m_Fido.search.return_value = "search_results"
     m_Fido.fetch.return_value = ["goes_file.fits"]
     fake_goes = MagicMock()
@@ -305,12 +303,10 @@ def test_make_ds_plot(
     fake_goes.time.to_datetime.return_value = np.array(
         ["2025-01-01T00:00:00", "2025-01-01T00:09:00"]
     )
-
     m_TimeSeries.return_value = fake_goes
     fake_fig = MagicMock()
     fake_ax = MagicMock()
     fake_cax = MagicMock()
-
     m_plt.figure.return_value = fake_fig
     fake_fig.add_subplot.side_effect = [
         fake_ax,  # ax_spec
@@ -318,25 +314,20 @@ def test_make_ds_plot(
         fake_ax,  # ax_goes
         fake_cax,  # cax
     ]
-
     fake_ax.get_yticks.return_value = np.arange(5)
+    fake_fig.colorbar.return_value = MagicMock()
     output = make_ds_plot(
         dsfiles="fake_ds.npy",
         plot_file="output.png",
         plot_quantity=plot_quantity,
         showgui=False,
     )
-
     assert output == "output.png"
-
-    m_npload.assert_called_once()
+    assert m_npload.call_count == 2
     m_Fido.search.assert_called_once()
     m_Fido.fetch.assert_called_once()
     m_TimeSeries.assert_called_once()
-
     m_plt.savefig.assert_called_once_with("output.png", bbox_inches="tight")
-
     m_plt.show.assert_not_called()
-
-    # Ensure cleanup happened
-    m_plt.close.assert_called()
+    assert m_plt.close.call_count >= 1
+    m_os_system.assert_called_once()

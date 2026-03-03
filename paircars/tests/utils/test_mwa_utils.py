@@ -38,7 +38,7 @@ def test_get_MWA_coarse_chan(dummy_msname):
 
 def test_get_MWA_coarse_bands(dummy_msname):
     coarse_bands = get_MWA_coarse_bands(dummy_msname)
-    assert coarse_bands == [[0]]
+    assert coarse_bands == [(0, 0, [0])]
 
 
 def test_get_bad_chans(dummy_msname):

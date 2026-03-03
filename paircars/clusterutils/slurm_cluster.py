@@ -36,6 +36,37 @@ def is_slurm_job():
     )
 
 
+def get_available_nodes(partition=None):
+    """
+    Get available nodes of the partition
+    
+    Parameters
+    ----------
+    partition : str, optional
+        Partition name
+        
+    Returns
+    -------
+    list
+        Available node names
+    """
+    cmd = ["sinfo", "-h", "-N", "-o", "%N %t"]
+    if partition:
+        cmd.extend(["-p", partition])
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    available = []
+    for line in result.stdout.splitlines():
+        name, state = line.split()
+        if state.startswith("idl") or state.startswith("mix"):
+            available.append(name)
+    return available
+    
+
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     """
     Get node resources for SLURM cluster
@@ -168,6 +199,7 @@ def get_slurm_dask_cluster(
             partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
         total_nodes = get_total_nodes(partition=partition)
+        
         workers_per_node_mem = int(per_node_mem / min_mem)
         if workers_per_node_mem < 1:
             print(
@@ -182,7 +214,7 @@ def get_slurm_dask_cluster(
             max_workers_cluster = max(2, max_workers_cluster)
         mem_limit = round(per_node_mem / workers_per_node, 2)
         ncpu = max(1, int(per_node_cpu / workers_per_node))
-
+        
         env_extra = [
             "export PYTHONUNBUFFERED=1",
             f"export OMP_NUM_THREADS={ncpu}",
