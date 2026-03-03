@@ -1786,7 +1786,7 @@ def cli():
         type=str,
         help="Comma-separated list of measurement sets (required positional argument)",
     )
-    adv_args.add_argument(
+    basic_args.add_argument(
         "metafits",
         type=str,
         help="Metafits file",
