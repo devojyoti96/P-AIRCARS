@@ -219,7 +219,7 @@ def get_good_chans(msname):
     msmd.done()
     bad_spw = get_bad_chans(msname)
     if bad_spw == "":
-        if nchan>1:
+        if nchan > 1:
             good_spw = f"0:0~{nchan-1}"
         else:
             good_spw = "0:0"
@@ -229,12 +229,12 @@ def get_good_chans(msname):
         start_chan = 0
         for bad_chans in bad_chan_list:
             end_chan = int(bad_chans.split("~")[0])
-            if end_chan-1 > start_chan+1:
+            if end_chan - 1 > start_chan + 1:
                 good_chan_list.append(f"{start_chan+1}~{end_chan-1}")
-            elif end_chan-1==start_chan+1:
+            elif end_chan - 1 == start_chan + 1:
                 good_chan_list.append(f"{start_chan+1}")
             start_chan = int(bad_chans.split("~")[-1])
-        if len(good_chan_list)==0:
+        if len(good_chan_list) == 0:
             good_chan_list.append(f"{start_chan+1}~{nchan-1}")
         good_spw = f"0:{';'.join(good_chan_list)}"
     return good_spw

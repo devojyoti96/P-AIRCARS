@@ -65,7 +65,7 @@ def do_selfcal(
     refant="",
     start_threshold=5,
     end_threshold=3,
-    max_iter=100,
+    max_iter=30,
     max_DR=100000,
     min_iter=5,
     DR_convergence_frac=0.1,
@@ -104,7 +104,7 @@ def do_selfcal(
     end_threshold : int, optional
         End CLEAN threshold
     max_iter : int, optional
-        Maximum numbers of selfcal iterations
+        Maximum numbers of selfcal iterations (In each selfcal mode)
     max_DR : float, optional
         Maximum dynamic range
     min_iter : int, optional
@@ -203,7 +203,7 @@ def do_selfcal(
                     pass
         if os.path.exists(msname + ".flagversions"):
             os.system("rm -rf " + msname + ".flagversions")
-            
+
         #########################################
         # Determining calibration applied or not
         #########################################
@@ -347,7 +347,6 @@ def do_selfcal(
         use_previous_model = False
         nondisk_flag = True
         os.system("rm -rf *_selfcal_present*")
-        
 
         ###########################################
         # Starting using Gaussian model
@@ -652,10 +651,9 @@ def do_selfcal(
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
-                elif (
-                    (do_apcal == False or (do_apcal and calmode == "ap"))
-                    and num_iter > min_iter
-                    and num_iter == max_iter
+                elif num_iter > min_iter and (
+                    (do_aplcal == False and num_iter == max_iter)
+                    or (do_apcal and calmode == "ap" and num_iter_after_ap == max_iter)
                 ):
                     logger.info(
                         f"Self-calibration is finished. Maximum iteration is reached.\n"
@@ -683,7 +681,7 @@ def do_polselfcal(
     selfcaldir="",
     metafits="",
     refant="",
-    max_iter=100,
+    max_iter=10,
     max_DR=100000,
     min_iter=2,
     threshold=3.0,
@@ -1189,7 +1187,7 @@ def do_full_selfcal(
     cal_applied=True,
     start_threshold=5,
     end_threshold=3,
-    max_iter=100,
+    max_iter=30,
     max_DR=100000,
     min_iter=5,
     DR_convergence_frac=0.1,
@@ -1273,7 +1271,7 @@ def do_full_selfcal(
             workdir=workdir,
             selfcaldir=f"{selfcaldir}_pol",
             metafits=metafits,
-            max_iter=max_iter,
+            max_iter=max(10,int(max_iter/3)),
             max_DR=max_DR,
             min_iter=2,
             threshold=end_threshold,
@@ -1307,7 +1305,7 @@ def main(
     cal_applied=True,
     start_thresh=5,
     stop_thresh=3,
-    max_iter=100,
+    max_iter=30,
     max_DR=100000,
     min_iter=5,
     conv_frac=0.1,
@@ -1349,7 +1347,7 @@ def main(
     stop_thresh : float, optional
         Target dynamic range at which to stop iterative self-calibration. Default is 3.
     max_iter : int, optional
-        Maximum number of self-calibration iterations. Default is 100.
+        Maximum number of self-calibration iterations. Default is 30.
     max_DR : float, optional
         Maximum dynamic range allowed before halting iterations. Default is 100000.
     min_iter : int, optional
@@ -1830,8 +1828,8 @@ def cli():
     adv_args.add_argument(
         "--max_iter",
         type=int,
-        default=100,
-        help="Maximum number of selfcal iterations",
+        default=30,
+        help="Maximum number of selfcal iterations (in each mode, phaseonly, amplitude-phase, polselfcal)",
         metavar="Integer",
     )
     adv_args.add_argument(

@@ -247,7 +247,7 @@ def test_rename_mwasolar_image(
     mock_fits_open.return_value.__enter__.return_value = mock_hdul
     mock_hdul.__getitem__.return_value.header = {}
 
-    # Setup astropy Time 
+    # Setup astropy Time
     mock_Time.return_value.jd = 2459215.0
     mock_coords = MagicMock()
     mock_coords.ra.deg = 100.0
