@@ -749,6 +749,7 @@ def run_quartical(
     if len(splited_cmd) == 1 and "goquartical" in cmd:
         verbose = True
         datapath = None
+        gain_path = None
         temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
         temp_docker_path = os.path.join(datapath, temp_name)
     elif len(splited_cmd) > 1:
@@ -775,15 +776,9 @@ def run_quartical(
             if "load_from" in cmd_arg:
                 gaintable = cmd_arg.split("load_from=")[-1]
                 gain_path = os.path.dirname(os.path.dirname(gaintable))
-                if gain_path != datapath:
-                    temp_gain_path = (
-                        f"{datapath}/{os.path.basename(os.path.dirname(gaintable))}"
-                    )
-                    os.system(f"rm -rf {temp_gain_path}")
-                    os.system(f"cp -r {os.path.dirname(gaintable)} {temp_gain_path}")
-                gaintable = gaintable.split("/")[-2:]
-                gaintable = "/".join(gaintable)
-                temp_gaintable = f"{temp_docker_path}/{gaintable}"
+                temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
+                temp_gain_path = os.path.join(gain_path, temp_name)
+                temp_gaintable = f"{temp_gain_path}/{gaintable}"
                 cmd_arg = f"{cmd_arg.split('=')[0]}={temp_gaintable}"
                 splited_cmd[i] = cmd_arg
         cmd = " ".join(splited_cmd)
@@ -795,6 +790,8 @@ def run_quartical(
         full_command = ["udocker", "--quiet", "run", "--nobanner"]
         if datapath is not None:
             full_command.append(f"--volume={datapath}:{temp_docker_path}")
+        if gain_path is not None:
+            full_command.append(f"--volume={gain_path}:{temp_gain_path}")
         full_command += [
             "--workdir",
             f"{temp_docker_path}",
@@ -812,8 +809,6 @@ def run_quartical(
                 stderr=subprocess.DEVNULL,
             )
         exit_code = result.returncode
-        if "load_from" in cmd_arg and datapath is not None and gain_path != datapath:
-            os.system(f"rm -rf {temp_gain_path}")
         return 0 if exit_code == 0 else 1
     except Exception as e:
         traceback.print_exc()
