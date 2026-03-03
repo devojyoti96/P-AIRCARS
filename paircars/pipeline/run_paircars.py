@@ -426,9 +426,13 @@ def cli():
         ############################################
         if scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
+            if msg!=0:
+                print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
             return msg
         elif scheduler_name == "slurm":
             msg = submit_slurm_master_flow(args, jobid)
+            if msg!=0:
+                print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
             return msg
         else:
             print(
