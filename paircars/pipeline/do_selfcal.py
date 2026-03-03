@@ -471,7 +471,7 @@ def do_selfcal(
             if num_iter == 0:
                 DR1 = DR3 = DR2 = dyn
                 RMS1 = RMS2 = RMS3 = rms
-                min_DR = DR1
+                min_DR = dyn
             elif num_iter == 1:
                 DR3 = dyn
                 RMS2 = RMS1
@@ -556,7 +556,7 @@ def do_selfcal(
             ##########################
             # If DR suddenly decreased
             ##########################
-            if DR3 < 0.7 * DR2 and do_apcal == True and num_iter_after_ap > 1:
+            if DR3 < 0.7 * DR2 and calmode == "ap" and num_iter_after_ap > 1:
                 intlogger.info(
                     f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                 )
@@ -668,7 +668,7 @@ def do_selfcal(
                 # In apcal and maximum iteration has reached
                 #########################################
                 elif num_iter > min_iter and (
-                    (do_aplcal == False and num_iter == max_iter)
+                    (do_apcal == False and num_iter == max_iter)
                     or (do_apcal and calmode == "ap" and num_iter_after_ap == max_iter)
                 ):
                     intlogger.info(
