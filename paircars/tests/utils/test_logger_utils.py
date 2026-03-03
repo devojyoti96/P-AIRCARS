@@ -206,11 +206,11 @@ def test_create_logger():
         ("selfcal_target.log", "All self-calibrations"),
         (
             "selfcal_1111474560_ch103-104_spw_0~7_selfcal.log.int",
-            "Intensity self-calibration for: OBSID: 1111474560, coarse channel: 103-104",
+            "Intensity self-calibration, OBSID: 1111474560, coarse channel: 103-104, spectral window: 0~7",
         ),
         (
             "imaging_target_1111474560_ch103-104_spw_0~7.log",
-            "Imaging for: OBSID: 1111474560, coarse channel: 103-104",
+            "Imaging, OBSID: 1111474560, coarse channel: 103-104, spectral window: 0~7",
         ),
         ("random_unknown.log", "random_unknown.log"),
         ("another_file.txt", "another_file.txt"),

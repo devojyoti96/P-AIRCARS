@@ -608,7 +608,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     ######################################
     if freqres > 160:
         print(
-            "Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging."
+            f"Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging."
         )
     else:
         header = fits.getheader(metafits)

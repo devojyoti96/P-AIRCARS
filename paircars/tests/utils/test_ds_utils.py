@@ -75,6 +75,7 @@ def test_calc_dynamic_spectrum(
     msmd.chanfreqs.return_value = np.linspace(100, 110, 5)
     msmd.ncorrforpol.return_value = [4]
     msmd.meanfreq.return_value = 105
+    msmd.chanres.return_value = [320, 320, 320]
     msmd.timesforspws.return_value = np.linspace(0, 10, 10)
     msmd.open.return_value = None
     msmd.close.return_value = None

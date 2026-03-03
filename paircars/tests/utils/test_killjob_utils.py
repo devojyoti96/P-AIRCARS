@@ -2,12 +2,48 @@ import pytest
 from unittest.mock import patch, MagicMock, Mock, call
 import psutil
 import numpy as np
+from paircars.utils.killjob_utils import *
 
-from paircars.utils.killjob_utils import (
-    terminate_process_and_children,
+@pytest.mark.parametrize(
+    "port, port_status, lsof_output, expected_kill_calls",
+    [
+        # Case 1: Port closed → kill PIDs
+        (8000, False, "1234\n5678\n", [1234, 5678]),
+
+        # Case 2: Port open → do nothing
+        (8000, True, "1234\n5678\n", []),
+
+        # Case 3: No processes found
+        (8000, False, "", []),
+    ],
 )
+@patch("paircars.utils.killjob_utils.os.kill")
+@patch("paircars.utils.killjob_utils.subprocess.run")
+@patch("paircars.utils.killjob_utils.check_port_status")
+def test_kill_port(
+    mock_check_port,
+    mock_subprocess,
+    mock_kill,
+    port,
+    port_status,
+    lsof_output,
+    expected_kill_calls,
+):
+    mock_check_port.return_value = port_status
 
+    mock_result = MagicMock()
+    mock_result.stdout = lsof_output
+    mock_subprocess.return_value = mock_result
 
+    kill_port(port)
+
+    if expected_kill_calls:
+        actual_calls = [call.args[0] for call in mock_kill.call_args_list]
+        assert actual_calls == expected_kill_calls
+    else:
+        mock_kill.assert_not_called()
+        
+        
 @pytest.mark.parametrize("has_process", [True, False])
 @patch("paircars.utils.killjob_utils.psutil.wait_procs")
 @patch("paircars.utils.killjob_utils.psutil.Process")
@@ -188,5 +224,5 @@ def test_kill_slurmscheduler(
     if not file_exists or outer_error or load_error:
         mock_run.assert_not_called()
     else:
-        mock_run.assert_called_once_with(["scancel", 7777])
+        mock_run.assert_called_once_with(["scancel", "7777"])
         assert mock_drop.call_count == 4
