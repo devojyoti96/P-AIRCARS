@@ -111,7 +111,7 @@ def flag_non_disk(msname):
 
     try:
         chans, timestamps, detected_timestamps = determine_disk_visibility(msname)
-        if len(detected_timestamps)==0:
+        if len(detected_timestamps) == 0:
             return 1
         else:
             msmd = msmetadata()

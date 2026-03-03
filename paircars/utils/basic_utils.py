@@ -4,6 +4,8 @@ import copy
 import time
 import socket
 import subprocess
+import stat
+import tempfile
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import Angle
@@ -13,6 +15,63 @@ from contextlib import contextmanager
 ##########################
 # Basic utility funactions
 ##########################
+def test_permission(path):
+    """
+    Test read, write, execute permission of a file or directory
+
+    Parameters
+    ----------
+    path : str
+        File or directory path
+
+    Returns
+    -------
+    bool
+        Whether hand permission or not
+    """
+    if not os.path.exists(path):
+        return False
+    ###########################
+    # READ TEST
+    ###########################
+    try:
+        if os.path.isfile(path):
+            with open(path, "rb") as f:
+                f.read(1)
+        elif os.path.isdir(path):
+            os.listdir(path)
+        else:
+            return False
+    except Exception:
+        return False
+    ###########################
+    # WRITE TEST
+    ###########################
+    try:
+        if os.path.isfile(path):
+            with open(path, "a"):
+                pass
+        elif os.path.isdir(path):
+            with tempfile.NamedTemporaryFile(dir=path, delete=True):
+                pass
+    except Exception:
+        return False
+    ###########################
+    # EXECUTE TEST
+    ###########################
+    try:
+        if os.path.isdir(path):
+            if not os.access(path, os.X_OK):
+                return False
+        elif os.path.isfile(path):
+            mode = os.stat(path).st_mode
+            if not (mode & stat.S_IXUSR):
+                return False
+    except Exception:
+        return False
+    return True
+
+
 @contextmanager
 def suppress_output():
     """

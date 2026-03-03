@@ -24,7 +24,11 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from prefect.settings import get_current_settings
-from paircars.utils.basic_utils import get_cachedir, timestamp_to_mjdsec
+from paircars.utils.basic_utils import (
+    get_cachedir,
+    timestamp_to_mjdsec,
+    test_permission,
+)
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
     calc_time_smearing_timewidth,
@@ -2242,18 +2246,20 @@ def master_control(
         # Reset any previous weights
         ############################
         print("Resetting previous flags and weights....")
-        cpu_usage = psutil.cpu_percent(interval=1)  # Average over 1 second
-        total_cpus = psutil.cpu_count(logical=True)
-        available_cpus = int(total_cpus * (1 - cpu_usage / 100.0))
-        available_cpus = max(1, available_cpus)  # Avoid zero workers
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is None:
+            n_threads = 1
+        else:
+            n_threads = max(1, int(n_threads))
         for msname in target_mslist:
             reset_weights_and_flags(
-                msname, n_threads=available_cpus, force_reset=do_forcereset_weightflag
+                msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
             )
         for msname in calibrator_mslist:
             reset_weights_and_flags(
-                msname, n_threads=available_cpus, force_reset=do_forcereset_weightflag
+                msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
             )
+        print("Reset is done.")
 
         if (move_solarcenter or make_ds) and adaptive:
             scale_worker_and_wait(
@@ -4229,7 +4235,6 @@ def cli():
 
     f = Figlet(font="big")
     print(f.renderText("P-AIRCARS"))
-    os.system(f"rm -rf {args.workdir}/dask_*")
 
     if args.jobid is None:
         jobid = get_jobid()
@@ -4249,8 +4254,26 @@ def cli():
         )
         return
 
+    workdir_permission = test_permission(args.workdir)
+    if workdir_permission is False:
+        print(f"Do not have permission for work directory: {args.workdir}")
+        return s
+    else:
+        os.system(f"rm -rf {args.workdir}/dask_*")
+
+    target_datadir_permission = test_permission(args.target_datadir)
+    if target_datadir_permission is False:
+        print(
+            f"Do not have permission for target data directory: {args.target_datadir}"
+        )
+        return
+
     total_ncoarse = 0
     for msname in target_mslist:
+        ms_permission = test_permission(msname)
+        if ms_permission is False:
+            print(f"Do not have permission for measurement set: {msname}")
+            return
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
@@ -4262,17 +4285,34 @@ def cli():
 
     if args.cal_datadir:
         if os.path.exists(args.cal_datadir):
-            cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
-            if len(cal_mslist) == 0:
+            cal_datadir_permission = test_permission(args.cal_datadir)
+            if cal_datadir_permission is False:
                 print(
-                    f"No calibrator measurement set is present in: {args.cal_datadir}"
+                    f"Do not have permission for calibrator data directory: {args.cal_datadir}"
                 )
+                cal_datadir = ""
+                cal_metafits = ""
             else:
-                cal_ms_sizes = [get_ms_size(cal_msname) for cal_msname in cal_mslist]
-                total_ms_size_cal = sum(cal_ms_sizes)
-                min_mem_cal = round(10 * total_ms_size_cal / total_ncoarse, 2)
+                cal_datadir = arg.cal_datadir
+                cal_metafits = args.cal_metafits
+                cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
+                if len(cal_mslist) == 0:
+                    print(
+                        f"No calibrator measurement set is present in: {args.cal_datadir}"
+                    )
+                else:
+                    cal_ms_sizes = [
+                        get_ms_size(cal_msname) for cal_msname in cal_mslist
+                    ]
+                    total_ms_size_cal = sum(cal_ms_sizes)
+                    min_mem_cal = round(10 * total_ms_size_cal / total_ncoarse, 2)
         else:
             print(f"Calibrator data direcotry does not exist.")
+            cal_datadir = ""
+            cal_metafits = ""
+    else:
+        cal_datadir = ""
+        cal_metafits = ""
 
     min_mem = max(min_mem_target, min_mem_cal)
 
@@ -4406,8 +4446,8 @@ def cli():
             args.target_metafits,
             args.workdir,
             args.outdir,
-            calibrator_datadir=args.cal_datadir,
-            calibrator_metafits=args.cal_metafits,
+            calibrator_datadir=cal_datadir,
+            calibrator_metafits=cal_metafits,
             solar_data=args.solar_data,
             # Pre-calibration
             do_forcereset_weightflag=args.do_forcereset_weightflag,
