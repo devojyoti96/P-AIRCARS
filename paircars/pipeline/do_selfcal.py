@@ -154,7 +154,7 @@ def do_selfcal(
     from casatasks import split, flagdata, flagmanager
 
     sub_observer = None
-    logger, logfile = create_logger(
+    intlogger, logfile = create_logger(
         os.path.basename(logfile).split(".log")[0], logfile, verbose=False
     )
     if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
@@ -214,7 +214,7 @@ def do_selfcal(
         if cal_applied is False:
             fluxscale_mwa = True
             if os.path.exists(metafits) is False:
-                logger.error(
+                intlogger.error(
                     "Calibration solutions were not applied and target metafits is also not supplied. Provide any one of them."
                 )
                 return 1, msname, [], False
@@ -232,7 +232,7 @@ def do_selfcal(
         freqMHz = msmd.meanfreq(0, unit="MHz")
         msmd.close()
         if hascor:
-            logger.info(f"Spliting corrected data to ms : {selfcalms}")
+            intlogger.info(f"Spliting corrected data to ms : {selfcalms}")
             with suppress_output():
                 split(
                     vis=msname,
@@ -242,7 +242,7 @@ def do_selfcal(
                     datacolumn="corrected",
                 )
         else:
-            logger.info(f"Spliting data to ms : {selfcalms}")
+            intlogger.info(f"Spliting data to ms : {selfcalms}")
             with suppress_output():
                 split(
                     vis=msname,
@@ -256,7 +256,7 @@ def do_selfcal(
         ################################################################
         # Initial flagging -- zeros, extreme bad data, and non-disk data
         ################################################################
-        logger.info("Initial flagging -- zeros, extreme bad data, and non-disk data")
+        intlogger.info("Initial flagging -- zeros, extreme bad data, and non-disk data")
         with suppress_output():
             flagdata(
                 vis=msname,
@@ -276,10 +276,10 @@ def do_selfcal(
             )
             unflag_chans, flag_chans = get_chans_flag(msname)
             if result != 0:
-                logger.info(f"UV-bin flagging is not successful.")
+                intlogger.info(f"UV-bin flagging is not successful.")
                 restore_initial_flag = True
             elif len(unflag_chans) == 0:
-                logger.info(
+                intlogger.info(
                     "All channels are getting flagged in uvbin flagging. Restoring the flags."
                 )
                 restore_initial_flag = True
@@ -302,7 +302,7 @@ def do_selfcal(
         ############################################
         # Imaging and calibration parameters
         ############################################
-        logger.info(f"Estimating imaging Parameters ...")
+        intlogger.info(f"Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
         sun_size = calc_sun_dia(freqMHz)
@@ -329,7 +329,7 @@ def do_selfcal(
         ############################################
         # Initiating selfcal Parameters
         ############################################
-        logger.info(f"Estimating self-calibration parameters...")
+        intlogger.info(f"Estimating self-calibration parameters...")
         DR1 = 0.0
         DR2 = 0.0
         DR3 = 0.0
@@ -351,16 +351,16 @@ def do_selfcal(
         ###########################################
         # Starting using Gaussian model
         ###########################################
-        logger.info(f"Starting self-calibration using Gaussian source model.")
+        intlogger.info(f"Starting self-calibration using Gaussian source model.")
         msg, _ = quiet_sun_selfcal(
-            msname, logger, selfcaldir, refant=str(refant), solint=solint
+            msname, intlogger, selfcaldir, refant=str(refant), solint=solint
         )
         if msg == 0:
-            logger.info("Starting self-calibration using Gaussian model is successful.")
+            intlogger.info("Starting self-calibration using Gaussian model is successful.")
         else:
             if msg == 2:
                 nondisk_flag = False
-            logger.info(
+            intlogger.info(
                 "Starting self-calibration using Gaussian model is not successful."
             )
 
@@ -371,8 +371,8 @@ def do_selfcal(
             ##################################
             # Selfcal round parameters
             ##################################
-            logger.info("######################################")
-            logger.info(
+            intlogger.info("######################################")
+            intlogger.info(
                 f"Selfcal iteration : "
                 + str(num_iter)
                 + ", Threshold: "
@@ -384,7 +384,7 @@ def do_selfcal(
                 selfcal_round(
                     msname,
                     metafits,
-                    logger,
+                    intlogger,
                     selfcaldir,
                     cellsize,
                     imsize,
@@ -411,7 +411,7 @@ def do_selfcal(
             )
             if msg == 1:
                 if num_iter == 0:
-                    logger.info(
+                    intlogger.info(
                         f"No model flux is picked up in first round. Trying with lowest threshold.\n"
                     )
                     (
@@ -426,7 +426,7 @@ def do_selfcal(
                     ) = selfcal_round(
                         msname,
                         metafits,
-                        logger,
+                        intlogger,
                         selfcaldir,
                         cellsize,
                         imsize,
@@ -461,7 +461,7 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     return msg, msname, [], nondisk_flag
             elif msg > 1:
-                logger.error("Self-calibration failed.")
+                intlogger.error("Self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -480,7 +480,7 @@ def do_selfcal(
                 RMS3 = RMS2
                 RMS2 = RMS1
                 RMS1 = rms
-            logger.info(
+            intlogger.info(
                 f"RMS based dynamic ranges: "
                 + str(DR1)
                 + ","
@@ -488,7 +488,7 @@ def do_selfcal(
                 + ","
                 + str(DR3)
             )
-            logger.info(
+            intlogger.info(
                 f"RMS of the images: " + str(RMS1) + "," + str(RMS2) + "," + str(RMS3)
             )
             if DR3 > 1.1 * DR2 and (
@@ -506,9 +506,9 @@ def do_selfcal(
                 and calmode == "p"
                 and num_iter > min_iter
             ):
-                logger.info(f"Dynamic range decreasing in phase-only self-cal.")
+                intlogger.info(f"Dynamic range decreasing in phase-only self-cal.")
                 if do_apcal:
-                    logger.info(f"Changed calmode to 'ap'.")
+                    intlogger.info(f"Changed calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
                     if threshold > end_threshold and num_iter_fixed_sigma > min_iter:
@@ -529,7 +529,7 @@ def do_selfcal(
                 and calmode == "ap"
                 and num_iter_after_ap > min_iter
             ):
-                logger.info(
+                intlogger.info(
                     f"Dynamic range is decreasing after minimum numbers of 'ap' rounds.\n"
                 )
                 os.system("rm -rf *_selfcal_present*")
@@ -541,7 +541,7 @@ def do_selfcal(
             # If maximum DR has reached
             ###########################
             if DR3 >= max_DR and num_iter_after_ap > min_iter:
-                logger.info(f"Maximum dynamic range is reached.\n")
+                intlogger.info(f"Maximum dynamic range is reached.\n")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -551,7 +551,7 @@ def do_selfcal(
             # If DR suddenly decreased
             ##########################
             if DR3 < 0.7 * DR2 and do_apcal == True and sigma_reduced_count > 1:
-                logger.info(
+                intlogger.info(
                     f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                 )
                 os.system("rm -rf *_selfcal_present*")
@@ -577,10 +577,10 @@ def do_selfcal(
                 and sigma_reduced_count > 1
             ):
                 if threshold > end_threshold:
-                    logger.info(
+                    intlogger.info(
                         f"DR does not increase over last two changes in threshold, but minimum threshold has not reached yet.\n"
                     )
-                    logger.info(
+                    intlogger.info(
                         f"Starting final self-calibration rounds with threshold = "
                         + str(end_threshold)
                         + "sigma...\n"
@@ -590,7 +590,7 @@ def do_selfcal(
                     num_iter_fixed_sigma = 0
                     continue
                 else:
-                    logger.info(
+                    intlogger.info(
                         f"Selfcal converged. DR does not increase over last two changes in threshold.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
@@ -611,7 +611,7 @@ def do_selfcal(
                     # Change from phase only selfcal to amplitude-phase selfcal
                     #####################################
                     if do_apcal and calmode == "p":
-                        logger.info(
+                        intlogger.info(
                             f"Dynamic range converged. Changing calmode to 'ap'.\n"
                         )
                         calmode = "ap"
@@ -626,7 +626,7 @@ def do_selfcal(
                     elif (
                         do_apcal and num_iter_after_ap > min_iter
                     ) or do_apcal == False:
-                        logger.info(f"Self-calibration has converged.\n")
+                        intlogger.info(f"Self-calibration has converged.\n")
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
@@ -641,7 +641,7 @@ def do_selfcal(
                     and num_iter_fixed_sigma > min_iter
                 ):
                     threshold -= 1
-                    logger.info(f"Reducing threshold to : " + str(threshold))
+                    intlogger.info(f"Reducing threshold to : " + str(threshold))
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
                     if last_sigma_DR1 > 0:
@@ -655,7 +655,7 @@ def do_selfcal(
                     (do_aplcal == False and num_iter == max_iter)
                     or (do_apcal and calmode == "ap" and num_iter_after_ap == max_iter)
                 ):
-                    logger.info(
+                    intlogger.info(
                         f"Self-calibration is finished. Maximum iteration is reached.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
@@ -761,7 +761,7 @@ def do_polselfcal(
     from casatasks import split, flagdata, flagmanager
 
     sub_observer = None
-    logger, logfile = create_logger(
+    pollogger, logfile = create_logger(
         os.path.basename(logfile).split(".log")[0], logfile, verbose=False
     )
     if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
@@ -831,7 +831,7 @@ def do_polselfcal(
         )
         timerange = ",".join(timerange_list)
         if hascor:
-            logger.info(f"Spliting corrected data to ms : {selfcalms}")
+            pollogger.info(f"Spliting corrected data to ms : {selfcalms}")
             with suppress_output():
                 split(
                     vis=msname,
@@ -842,8 +842,8 @@ def do_polselfcal(
                     datacolumn="corrected",
                 )
         else:
-            logger.warning("Corrected data column is not present.")
-            logger.info(f"Spliting data to ms : {selfcalms}")
+            pollogger.warning("Corrected data column is not present.")
+            pollogger.info(f"Spliting data to ms : {selfcalms}")
             with suppress_output():
                 split(
                     vis=msname,
@@ -858,7 +858,7 @@ def do_polselfcal(
         ################################################################
         # Initial flagging -- zeros, extreme bad data
         ################################################################
-        logger.info("Initial flagging -- zeros and extreme bad data.")
+        pollogger.info("Initial flagging -- zeros and extreme bad data.")
         with suppress_output():
             flagdata(
                 vis=msname,
@@ -878,10 +878,10 @@ def do_polselfcal(
             )
             unflag_chans, flag_chans = get_chans_flag(msname)
             if result != 0:
-                logger.info(f"UV-bin flagging is not successful.")
+                pollogger.info(f"UV-bin flagging is not successful.")
                 restore_initial_flag = True
             elif len(unflag_chans) == 0:
-                logger.info(
+                pollogger.info(
                     "All channels are getting flagged in uvbin flagging. Restoring the flags."
                 )
                 restore_initial_flag = True
@@ -904,7 +904,7 @@ def do_polselfcal(
         ############################################
         # Imaging and calibration parameters
         ############################################
-        logger.info(f"Estimating imaging Parameters ...")
+        pollogger.info(f"Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
         sun_size = calc_sun_dia(freqMHz)
@@ -931,7 +931,7 @@ def do_polselfcal(
         ############################################
         # Initiating selfcal Parameters
         ############################################
-        logger.info(f"Estimating self-calibration parameters...")
+        pollogger.info(f"Estimating self-calibration parameters...")
         DR1 = 0.0
         DR2 = 0.0
         DR3 = 0.0
@@ -954,8 +954,8 @@ def do_polselfcal(
             ##################################
             # Selfcal round parameters
             ##################################
-            logger.info("######################################")
-            logger.info(f"Selfcal iteration : " + str(num_iter))
+            pollogger.info("######################################")
+            pollogger.info(f"Selfcal iteration : " + str(num_iter))
             pbcor = True
             leakagecor = True
             pbuncor = True
@@ -971,7 +971,7 @@ def do_polselfcal(
             ) = selfcal_round(
                 msname,
                 metafits,
-                logger,
+                pollogger,
                 selfcaldir,
                 cellsize,
                 imsize,
@@ -994,11 +994,11 @@ def do_polselfcal(
                 mem=round(mem, 2),
             )
             if msg == 1:
-                logger.info(f"No model flux is picked up.")
+                pollogger.info(f"No model flux is picked up.")
                 os.system("rm -rf *_selfcal_present*")
                 return msg, msname, [], ""
             elif msg > 2:
-                logger.error("Polarisation self-calibration failed.")
+                pollogger.error("Polarisation self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -1006,7 +1006,7 @@ def do_polselfcal(
             elif msg == 2:
                 if calc_chunks is False:
                     if num_iter >= min_iter:
-                        logger.warning(
+                        pollogger.warning(
                             "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
                         )
                         os.system("rm -rf *_selfcal_present*")
@@ -1014,7 +1014,7 @@ def do_polselfcal(
                         clean_shutdown(sub_observer)
                         return 0, msname, last_round_gaintable, last_leakage_file
                     else:
-                        logger.error(
+                        pollogger.error(
                             "Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered."
                         )
                         os.system("rm -rf *_selfcal_present*")
@@ -1022,7 +1022,7 @@ def do_polselfcal(
                         clean_shutdown(sub_observer)
                         return msg, msname, [], ""
                 else:
-                    logger.warning(
+                    pollogger.warning(
                         "Minor issues in polarisation self-calibration model prediction. Retrying with entire spectro-temporal chunks."
                     )
                     calc_chunks = False
@@ -1070,7 +1070,7 @@ def do_polselfcal(
                     QL3 = q_leakage
                     UL3 = u_leakage
                     VL3 = v_leakage
-                logger.info(
+                pollogger.info(
                     f"RMS based dynamic ranges: "
                     + str(DR1)
                     + ","
@@ -1078,7 +1078,7 @@ def do_polselfcal(
                     + ","
                     + str(DR3)
                 )
-                logger.info(
+                pollogger.info(
                     f"RMS of the images: "
                     + str(RMS1)
                     + ","
@@ -1086,13 +1086,13 @@ def do_polselfcal(
                     + ","
                     + str(RMS3)
                 )
-                logger.info(
+                pollogger.info(
                     f"Stokes I to Q leakage: {round(QL1*100.0,3)}, {round(QL2*100.0,3)}, {round(QL3*100.0,3)}%."
                 )
-                logger.info(
+                pollogger.info(
                     f"Stokes I to U leakage: {round(UL1*100.0,3)}, {round(UL2*100.0,3)}, {round(UL3*100.0,3)}%."
                 )
-                logger.info(
+                pollogger.info(
                     f"Stokes I to V leakage: {round(VL1*100.0,3)}, {round(VL2*100.0,3)}, {round(VL3*100.0,3)}%.\n"
                 )
                 leakage_coverged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (
@@ -1107,7 +1107,7 @@ def do_polselfcal(
                     and num_iter > min_iter
                     and leakage_coverged
                 ):
-                    logger.info(
+                    pollogger.info(
                         f"Dynamic range is decreasing after minimum numbers of rounds.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
@@ -1119,7 +1119,7 @@ def do_polselfcal(
                 # If maximum DR has reached
                 ###########################
                 if DR3 >= max_DR and num_iter > min_iter and leakage_coverged:
-                    logger.info(f"Maximum dynamic range is reached.\n")
+                    pollogger.info(f"Maximum dynamic range is reached.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -1129,7 +1129,7 @@ def do_polselfcal(
                 # If DR suddenly decreased
                 ##########################
                 if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_coverged:
-                    logger.info(
+                    pollogger.info(
                         f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
@@ -1150,7 +1150,7 @@ def do_polselfcal(
                     and num_iter > min_iter
                     and leakage_coverged
                 ):
-                    logger.info(f"Self-calibration has converged.\n")
+                    pollogger.info(f"Self-calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -1159,11 +1159,11 @@ def do_polselfcal(
                 # If maximum iteration has reached
                 #########################################
                 elif num_iter > min_iter and num_iter == max_iter:
-                    logger.info(
+                    pollogger.info(
                         f"Self-calibration is finished. Maximum iteration is reached.\n"
                     )
                     if leakage_coverged is False:
-                        logger.warning("Leakage did not converge.\n")
+                        pollogger.warning("Leakage did not converge.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
