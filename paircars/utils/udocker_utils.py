@@ -746,10 +746,9 @@ def run_quartical(
                 )
                 return 1
     splited_cmd = cmd.split(" ")
+    datapath = None
+    gain_path = None
     if len(splited_cmd) == 1 and "goquartical" in cmd:
-        verbose = True
-        datapath = None
-        gain_path = None
         temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
         temp_docker_path = os.path.join(datapath, temp_name)
     elif len(splited_cmd) > 1:
