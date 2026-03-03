@@ -1625,7 +1625,7 @@ def master_control(
     mem_frac=0.8,
     max_worker=2,
     keep_backup=False,
-    keep_calibrated_ms=False,
+    keep_calibrated_ms=True,
     # Remote logging
     masterlog=None,
     remote_logger=False,
@@ -1936,8 +1936,6 @@ def master_control(
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
-    if keep_backup:
-        keep_calibrated_ms = True
 
     try:
         #####################################
@@ -3790,7 +3788,7 @@ def master_control(
                         f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
                     )
                 os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
-                if keep_calibrated_ms is False:
+                if keep_backup is False:
                     os.system(f"rm -rf {cal_ms}")
         ######################################
         # Flag backups of selfcal measurement sets
@@ -3808,7 +3806,7 @@ def master_control(
                         f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
                     )
                 os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
-                if keep_calibrated_ms is False:
+                if keep_backup is False:
                     os.system(f"rm -rf {selfcal_ms}")
         ######################################
         # Flag backups of target measurement sets
@@ -3826,7 +3824,11 @@ def master_control(
                         f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
                     )
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
-                if keep_calibrated_ms is False:
+                if keep_calibrated_ms:
+                    calibrated_msdir = f"{outdir}/calibrated_ms"
+                    os.makedirs(calibrated_msdir,exist_ok=True)
+                    os.system(f"mv {target_ms} {calibrated_msdir}")
+                elif keep_backup is False:
                     os.system(f"rm -rf {target_ms}")
         time.sleep(5)
         drop_cache(workdir)
@@ -4118,8 +4120,9 @@ def cli():
         help="Keep backup of intermediate steps",
     )
     advanced_resource.add_argument(
-        "--keep_calibrated_ms",
-        action="store_true",
+        "--no_calibrated_ms",
+        action="store_false",
+        dest="keep_calibrated_ms",
         help="Keep calibrated measurement sets or not",
     )
     advanced_resource.add_argument(
