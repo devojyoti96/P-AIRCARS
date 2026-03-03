@@ -110,26 +110,29 @@ def flag_non_disk(msname):
     from casatasks import flagdata
 
     try:
-        chans, timestamps = determine_disk_visibility(msname)
-        msmd = msmetadata()
-        msmd.open(msname)
-        times = msmd.timesforspws(0)
-        msmd.close()
-        for i in range(len(chans)):
-            spw = f"0:{chans[i]}"
-            timerange = f"{mjdsec_to_timestamp(times[timestamps[i]], str_format=1)}"
-            flagdata(
-                vis=msname,
-                mode="manual",
-                spw=spw,
-                timerange=timerange,
-                flagbackup=False,
-            )
-        unflag_chans, flag_chans = get_chans_flag(msname)
-        if len(unflag_chans) == 0:
+        chans, timestamps, detected_timestamps = determine_disk_visibility(msname)
+        if len(detected_timestamps)==0:
             return 1
         else:
-            return 0
+            msmd = msmetadata()
+            msmd.open(msname)
+            times = msmd.timesforspws(0)
+            msmd.close()
+            for i in range(len(chans)):
+                spw = f"0:{chans[i]}"
+                timerange = f"{mjdsec_to_timestamp(times[timestamps[i]], str_format=1)}"
+                flagdata(
+                    vis=msname,
+                    mode="manual",
+                    spw=spw,
+                    timerange=timerange,
+                    flagbackup=False,
+                )
+            unflag_chans, flag_chans = get_chans_flag(msname)
+            if len(unflag_chans) == 0:
+                return 1
+            else:
+                return 0
     except Exception as e:
         traceback.print_exc()
         return 1
