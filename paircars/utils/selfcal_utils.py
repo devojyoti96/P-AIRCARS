@@ -55,6 +55,7 @@ def determine_disk_visibility(msname):
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
+    times = msmd.timesforspws(0)
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
@@ -75,15 +76,20 @@ def determine_disk_visibility(msname):
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
     pos = np.where(r_I >= 0.05)
-    print(r.shape, pos)
     if len(pos)==0:
-        return [],[]
+        return [], []
+    elif len(pos)==1:   
+        chans = pos[0]
+        if len(chans)==0:
+            timestamps = np.array([],dtype="int")
+        else:
+            timestamps = np.array([0],dtype="int")
+        return chans, timestamps
     else:
         chans = pos[0]
         timestamps = pos[1]
-        r_I[pos] = np.nan
         return chans, timestamps
-
+    
 
 def flag_non_disk(msname):
     """
