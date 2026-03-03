@@ -203,6 +203,23 @@ def do_selfcal(
                     pass
         if os.path.exists(msname + ".flagversions"):
             os.system("rm -rf " + msname + ".flagversions")
+            
+        #########################################
+        # Determining calibration applied or not
+        #########################################
+        fluxscale_mwa = False
+        solar_attn = 1
+        if cal_applied and os.path.exists(f"{msname}/.applied_sol") is False:
+            cal_applied = False
+        if cal_applied is False:
+            fluxscale_mwa = True
+            if os.path.exists(metafits) is False:
+                logger.error(
+                    "Calibration solutions were not applied and target metafits is also not supplied. Provide any one of them."
+                )
+                return 1, msname, [], False
+            solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
+            applymode = "calflag"
 
         ##############################
         # Spliting corrected data
@@ -328,21 +345,9 @@ def do_selfcal(
         threshold = start_threshold
         last_round_gaintable = []
         use_previous_model = False
-        os.system("rm -rf *_selfcal_present*")
-        fluxscale_mwa = False
         nondisk_flag = True
-        solar_attn = 1
-        if cal_applied and os.path.exists(f"{msname}/.applied_sol") is False:
-            cal_applied = False
-        if cal_applied is False:
-            fluxscale_mwa = True
-            if os.path.exists(metafits) is False:
-                logger.error(
-                    "Calibration solutions were not applied and target metafits is also not supplied. Provide any one of them."
-                )
-                return 1, msname, [], False
-            solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
-            applymode = "calflag"
+        os.system("rm -rf *_selfcal_present*")
+        
 
         ###########################################
         # Starting using Gaussian model
