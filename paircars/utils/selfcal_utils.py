@@ -75,7 +75,7 @@ def determine_disk_visibility(msname):
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
     pos = np.where(r_I >= 0.05)
-    print(pos)
+    print(pos, pos.size)
     if len(pos)==0:
         return [],[]
     else:
