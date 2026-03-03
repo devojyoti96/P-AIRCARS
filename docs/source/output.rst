@@ -57,6 +57,7 @@ All final data products will be saved in ``<outputdir>/<target_obsid>``.
            WD --> DP["`Diagnostic plots:<br>diagnostic_plots`"]
            DP --> DPPDF["`Diagnostic plots of ms and caltables in PDF:<br>*.pdf`"]
            WD --> DS["`Dynamic spectra:<br>dynamic_spectra`"]
+           WD --> DS["`Calibrated visibilities:<br>calibrated_ms`"]
            WD --> FS["`Flag summary:<br>flag_summary`"]
            WD --> FV["`Flag backup:<br>ms_flags`"]
            WD --> IMG["`Image directory:<br>imagedir_f_*_t_*_w_briggs_*`"]
@@ -90,7 +91,7 @@ Flags of the final calibrated measurement sets are saved in ``ms_flags`` directo
 
 Calibrated visibilities
 ~~~~~~~~~~~~~~~~~~~~~~~
-By default calibrated measurement sets will be removed after final imaging. If ``keep_calibrated_ms`` parameter is turned on during processing, they will be kept in work directory ``<workdir>/<target_obsid>`` with naming format, ``target_<target_obsid>_ch<coarse_chan>_spw_<chanrange>.ms``. Calibrated measurement sets will not be saved in output directory ``<outputdir>`` (unless same as ``<workdir>``) to save space as well as to keep them high-speed disk.
+By default calibrated measurement sets will kept in ``<outdir>/<target_obsid>/calibrated_ms`` directory after final imaging with the naming format ``target_<target_obsid>_ch<coarse_chan>_spw_<chanrange>.ms`. If ``no_calibrated_ms`` parameter is turned on during processing, they will not be kept.
 
 Imaging products 
 ~~~~~~~~~~~~~~~~
