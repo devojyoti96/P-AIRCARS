@@ -777,7 +777,7 @@ def run_quartical(
                 gain_path = os.path.dirname(os.path.dirname(gaintable))
                 temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
                 temp_gain_path = os.path.join(gain_path, temp_name)
-                temp_gaintable = f"{temp_gain_path}/{gaintable}"
+                temp_gaintable = f"{temp_gain_path}/{os.path.basename(os.path.dirname(gaintable))}"
                 cmd_arg = f"{cmd_arg.split('=')[0]}={temp_gaintable}"
                 splited_cmd[i] = cmd_arg
         cmd = " ".join(splited_cmd)
