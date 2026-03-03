@@ -175,8 +175,8 @@ def do_selfcal(
             print(f"Removing pre-existing intensity selfcal directory: {selfcaldir}")
         os.system(f"rm -rf {selfcaldir}")
         os.makedirs(selfcaldir, exist_ok=True)
-
         os.chdir(selfcaldir)
+        
         selfcalms = selfcaldir + "/intselfcal_" + os.path.basename(msname)
         if os.path.exists(selfcalms):
             os.system("rm -rf " + selfcalms)

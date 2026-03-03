@@ -1515,7 +1515,7 @@ def selfcal_round(
             quartical_cmd = " ".join(quartical_args)
             logger.info(f"Quartical cmd: {quartical_cmd}\n")
             quartical_msg = run_quartical(
-                quartical_cmd, "paircarsquartical", verbose=False
+                quartical_cmd, "paircarsquartical", verbose=True
             )
             os.system(f"rm -rf {quartical_log}")
             if quartical_msg != 0 or os.path.exists(pol_caltable) is False:
@@ -1566,7 +1566,7 @@ def selfcal_round(
             quartical_cmd = " ".join(quartical_args)
             logger.info(f"Quartical cmd: {quartical_cmd}\n")
             quartical_msg = run_quartical(
-                quartical_cmd, "paircarsquartical", verbose=False
+                quartical_cmd, "paircarsquartical", verbose=True
             )
             os.system(f"rm -rf {quartical_log} {temp_pol_caltable}")
             if quartical_msg != 0:
