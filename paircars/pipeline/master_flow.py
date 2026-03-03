@@ -4293,7 +4293,7 @@ def cli():
                 cal_datadir = ""
                 cal_metafits = ""
             else:
-                cal_datadir = arg.cal_datadir
+                cal_datadir = args.cal_datadir
                 cal_metafits = args.cal_metafits
                 cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
                 if len(cal_mslist) == 0:
