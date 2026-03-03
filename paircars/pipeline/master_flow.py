@@ -904,7 +904,7 @@ def run_selfcal_jobs(
     max_DR=100000,
     min_iter=5,
     conv_frac=0.3,
-    solint="30s",
+    solint="60s",
     do_apcal=True,
     do_polcal=True,
     solar_selfcal=True,
@@ -1600,7 +1600,7 @@ def master_control(
     do_ap_selfcal=True,
     solar_selfcal=True,
     use_solar_mask=True,
-    solint="30s",
+    solint="60s",
     # Sidereal correction
     do_sidereal_cor=False,
     do_move_solarcenter=True,
@@ -1720,7 +1720,7 @@ def master_control(
     cutout_rsun : float, optional
         Cutout image size from center in solar radii (default : 10.0 solar radii)
     make_overlay : bool, optional
-        Make EUV MWA overlay for all images or not (default : per coarse channel images will be overlaid at 30s intervals)
+        Make EUV MWA overlay for all images or not (default : per coarse channel images will be overlaid at 60s intervals)
     make_msplot : bool, optional
         Make diagnostic plots of measurement sets
 
@@ -3887,7 +3887,7 @@ def cli():
     advanced_cal.add_argument(
         "--solint",
         type=str,
-        default="30s",
+        default="60s",
         help="Solution interval for calibration (e.g. 'int', '10s', '5min', 'inf')",
     )
     advanced_cal.add_argument(

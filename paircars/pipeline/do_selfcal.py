@@ -71,7 +71,7 @@ def do_selfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="30s",
+    solint="60s",
     weight="briggs",
     robust=0.0,
     do_apcal=True,
@@ -688,7 +688,7 @@ def do_polselfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="30s",
+    solint="60s",
     weight="briggs",
     robust=0.0,
     solar_selfcal=True,
@@ -1193,7 +1193,7 @@ def do_full_selfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="30s",
+    solint="60s",
     weight="briggs",
     robust=0.0,
     do_apcal=True,
@@ -1271,7 +1271,7 @@ def do_full_selfcal(
             workdir=workdir,
             selfcaldir=f"{selfcaldir}_pol",
             metafits=metafits,
-            max_iter=max(10,int(max_iter/3)),
+            max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
             min_iter=2,
             threshold=end_threshold,
@@ -1309,7 +1309,7 @@ def main(
     max_DR=100000,
     min_iter=5,
     conv_frac=0.1,
-    solint="30s",
+    solint="60s",
     uvrange="",
     minuv=0,
     weight="briggs",
@@ -1355,7 +1355,7 @@ def main(
     conv_frac : float, optional
         Convergence criterion: fractional change in dynamic range below which iteration stops. Default is 0.1.
     solint : str, optional
-        Solution interval for gain calibration (e.g., "inf", "10s", "int"). Default is "30s".
+        Solution interval for gain calibration (e.g., "inf", "10s", "int"). Default is "60s".
     uvrange : str, optional
         UV range to be used for imaging and calibration, in CASA format. Default is "" (all baselines).
     minuv : float, optional
@@ -1853,7 +1853,7 @@ def cli():
         help="Fractional change in DR to determine convergence",
         metavar="Float",
     )
-    adv_args.add_argument("--solint", type=str, default="30s", help="Solution interval")
+    adv_args.add_argument("--solint", type=str, default="60s", help="Solution interval")
     adv_args.add_argument(
         "--uvrange",
         type=str,
