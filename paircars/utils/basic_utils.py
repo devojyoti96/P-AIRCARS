@@ -29,6 +29,7 @@ def test_permission(path):
     bool
         Whether hand permission or not
     """
+    print(f"Checking permission for: {path}")
     if not os.path.exists(path):
         return False
     ###########################

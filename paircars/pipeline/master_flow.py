@@ -4257,7 +4257,7 @@ def cli():
     workdir_permission = test_permission(args.workdir)
     if workdir_permission is False:
         print(f"Do not have permission for work directory: {args.workdir}")
-        return s
+        return 
     else:
         os.system(f"rm -rf {args.workdir}/dask_*")
 
