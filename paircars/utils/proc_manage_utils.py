@@ -124,77 +124,6 @@ def save_main_process_info(
     return main_job_file
 
 
-def generate_activate_env(outfile="activate_env.sh"):
-    """
-    Generate a shell script that activates the current Python environment.
-
-    This works for both Conda and virtualenv environments and is safe for use in
-    non-interactive shells (e.g., Slurm batch jobs) by explicitly sourcing `conda.sh`.
-
-    If conda is not found in $PATH, it will try loading either `anaconda` or `anaconda3` module.
-
-    Parameters
-    ----------
-    outfile : str
-        Path to the shell script to write (default: ./activate_env.sh).
-
-    Returns
-    -------
-    str
-        Output file name
-    """
-    outfile = Path(outfile).expanduser().resolve()
-    putfile = os.path.abspath(outfile)
-    lines = ["#!/bin/bash", ""]
-
-    def module_exists(name):
-        """Check if a module exists using 'module avail'."""
-        try:
-            subprocess.run(
-                ["module", "avail", name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-            return True
-        except Exception:
-            return False
-
-    # Conda-based environment
-    if "CONDA_DEFAULT_ENV" in os.environ:
-        conda_env = os.environ["CONDA_DEFAULT_ENV"]
-        lines.append("# === Activate Conda Environment Safely ===")
-        lines.append("if ! command -v conda >/dev/null 2>&1; then")
-        if module_exists("anaconda"):
-            lines.append("    module load anaconda")
-        elif module_exists("anaconda3"):
-            lines.append("    module load anaconda3")
-        else:
-            lines.append("    echo 'No Conda module found (anaconda or anaconda3)'")
-            lines.append("    exit 1")
-        lines.append("fi")
-        lines.append("source $(conda info --base)/etc/profile.d/conda.sh")
-        lines.append(f"conda activate {conda_env}")
-    # Virtualenv-based environment
-    elif "VIRTUAL_ENV" in os.environ:
-        venv_path = os.environ["VIRTUAL_ENV"]
-        lines.append("# === Activate Virtualenv ===")
-        lines.append(f"source {venv_path}/bin/activate")
-    else:
-        python_path = sys.executable
-        lines.append(
-            "# === No Conda/Virtualenv Detected — Using current Python directly ==="
-        )
-        lines.append(f"echo 'No Conda or virtualenv detected; using: {python_path}'")
-        lines.append(f"export PATH={os.path.dirname(python_path)}:$PATH")
-    # Write file
-    with open(outfile, "w") as f:
-        f.write("\n".join(lines) + "\n")
-    os.chmod(outfile, 0o755)
-    print(f"Created activation script at: {outfile}")
-    return outfile
-
-
 def get_total_worker(client):
     """
     Get total workers in the cluster
@@ -234,7 +163,6 @@ def scale_worker_and_wait(
     print(f"Start scaling to {nworker} workers")
     dask_cluster.scale(nworker)
     time.sleep(1)
-    timeout = 60
     c = 0
     while c < timeout:
         running_worker = get_total_worker(dask_client)

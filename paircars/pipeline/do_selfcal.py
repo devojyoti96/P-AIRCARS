@@ -346,6 +346,7 @@ def do_selfcal(
         last_round_gaintable = []
         use_previous_model = False
         nondisk_flag = True
+        min_DR=0
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -469,6 +470,7 @@ def do_selfcal(
             if num_iter == 0:
                 DR1 = DR3 = DR2 = dyn
                 RMS1 = RMS2 = RMS3 = rms
+                min_DR=DR1
             elif num_iter == 1:
                 DR3 = dyn
                 RMS2 = RMS1
@@ -499,6 +501,16 @@ def do_selfcal(
                 use_previous_model = False
 
             #########################################################
+            # If DR decreased below starting DR
+            #########################################################
+            if DR3<min_DR and ((calmode=="p" and num_iter>1) or (calmode=="ap" and num_iter_after_ap>1)):
+                intlogger.info(f"Dynamic range decreased below start dynamic range.")
+                os.system("rm -rf *_selfcal_present*")
+                time.sleep(5)
+                clean_shutdown(sub_observer)
+                return 0, msname, last_round_gaintable, nondisk_flag    
+            
+            #########################################################
             # If DR is decreasing (DR decrease in phase-only selfcal)
             #########################################################
             if (
@@ -525,12 +537,24 @@ def do_selfcal(
             # If DR is decreasing (DR decrease in amplitude-phase selfcal)
             ##############################################################
             if (
-                (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
+                (DR3 < 0.9 * DR2 and DR2 > 1.1 * DR1)
                 and calmode == "ap"
                 and num_iter_after_ap > min_iter
             ):
                 intlogger.info(
-                    f"Dynamic range is decreasing after minimum numbers of 'ap' rounds.\n"
+                    f"Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
+                )
+                os.system("rm -rf *_selfcal_present*")
+                time.sleep(5)
+                clean_shutdown(sub_observer)
+                return 0, msname, last_round_gaintable, nondisk_flag
+                
+            ##########################
+            # If DR suddenly decreased
+            ##########################
+            if DR3 < 0.7 * DR2 and do_apcal == True and num_iter_after_ap > 1:
+                intlogger.info(
+                    f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                 )
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
@@ -546,18 +570,6 @@ def do_selfcal(
                 time.sleep(5)
                 clean_shutdown(sub_observer)
                 return 0, msname, gaintable, nondisk_flag
-
-            ##########################
-            # If DR suddenly decreased
-            ##########################
-            if DR3 < 0.7 * DR2 and do_apcal == True and sigma_reduced_count > 1:
-                intlogger.info(
-                    f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                )
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable, nondisk_flag
 
             ###########################
             # Checking DR convergence

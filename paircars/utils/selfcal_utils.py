@@ -75,10 +75,14 @@ def determine_disk_visibility(msname):
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
     pos = np.where(r_I >= 0.05)
-    chans = pos[0]
-    timestamps = pos[1]
-    r_I[pos] = np.nan
-    return chans, timestamps
+    print(pos)
+    if len(pos)==0:
+        return [],[]
+    else:
+        chans = pos[0]
+        timestamps = pos[1]
+        r_I[pos] = np.nan
+        return chans, timestamps
 
 
 def flag_non_disk(msname):
