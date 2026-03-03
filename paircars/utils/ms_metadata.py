@@ -43,7 +43,7 @@ def get_phasecenter(msname, fieldID=0):
 
 
 def get_timeranges(
-    msname, time_interval, time_window, quack_timestamps=-1, only_disk=True
+    msname, time_interval, time_window, quack_timestamps=-1, only_disk=False,
 ):
     """
     Get time ranges for a scan with certain time intervals
@@ -109,7 +109,7 @@ def get_timeranges(
             return time_ranges
     total_time = end_time - start_time
     timeres = times[1] - times[0]
-    ntime_chunk = int(time_interval / timeres)
+    ntime_chunk = max(1,int(time_interval / timeres))
     ntime = int(time_window / timeres)
     for i in range(0, len(times), ntime_chunk):
         start_time = times[i]

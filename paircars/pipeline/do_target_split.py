@@ -62,6 +62,7 @@ def split_target_scans(
     time_window=-1,
     quack_timestamps=-1,
     force_split=False,
+    only_disk=False,
     n_threads=-1,
 ):
     """
@@ -95,6 +96,8 @@ def split_target_scans(
         Number of timestamps ignored at the start and end of each scan
     force_split : bool, optional
         Force split
+    only_disk : bool, optional
+        Split only disk
     n_threads : int, optional
         Number of threads to use
 
@@ -168,7 +171,7 @@ def split_target_scans(
                 msname,
                 time_interval,
                 time_window,
-                only_disk=True,
+                only_disk=only_disk,
                 quack_timestamps=quack_timestamps,
             )
             timerange = ",".join(timerange_list)
@@ -230,6 +233,7 @@ def main(
     timeres=-1,
     prefix="targets",
     force_split=False,
+    only_disk=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
@@ -266,6 +270,8 @@ def main(
         Prefix for the output split MS files. Default is "targets".
     force_split : bool, optional
         Force to split
+    only_disk : bool, optional
+        Split only disk visible times
     cpu_frac : float, optional
         Fraction of available CPUs to allocate per task. Default is 0.8.
     mem_frac : float, optional
@@ -394,6 +400,7 @@ def main(
             force_split=force_split,
             scan=scan,
             prefix=prefix,
+            only_disk=only_disk,
             n_threads=n_threads,
         )
         succeed = len(splited_mslist)

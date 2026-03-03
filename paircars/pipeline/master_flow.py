@@ -288,6 +288,7 @@ def run_target_split_jobs(
     time_interval=-1,
     quack_timestamps=-1,
     force_split=False,
+    only_disk=False,
     jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -320,6 +321,8 @@ def run_target_split_jobs(
         Number of timestamps to flag at the beginning and end of each scan ("quack").
     force_split : bool, optional
         Force to split
+    only_disk : bool, optional
+        Split only disk times
     cpu_frac : float, optional
         CPU fraction to use
     mem_frac : float, optional
@@ -371,6 +374,7 @@ def run_target_split_jobs(
                 timeres=timeres,
                 quack_timestamps=quack_timestamps,
                 force_split=force_split,
+                only_disk=only_disk,
                 prefix=prefix,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
@@ -2726,6 +2730,7 @@ def master_control(
                 freqres=freqavg,
                 prefix=prefix,
                 force_split=True,
+                only_disk=True,
                 time_window=min(1.0, time_interval),
                 time_interval=time_interval,
                 quack_timestamps=quack_timestamps,
