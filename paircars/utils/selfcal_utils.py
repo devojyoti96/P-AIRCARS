@@ -49,6 +49,8 @@ def determine_disk_visibility(msname):
         Channel list where disk may not be detected
     numpy.array
         Timestamp list where disk may not be detected
+    numpy.array
+        Timestamps where disk is detected at least in one channel
     """
     from casatools import ms as casamstool
 
@@ -56,6 +58,8 @@ def determine_disk_visibility(msname):
     msmd.open(msname)
     freq = msmd.meanfreq(0)
     times = msmd.timesforspws(0)
+    ntime = len(times)
+    nchan = msmd.nchan(0)
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
@@ -75,20 +79,23 @@ def determine_disk_visibility(msname):
     mstool.close()
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
+    detected = (r_I <0.05)
+    n_detected_per_time = np.sum(detected, axis=0)
+    detected_timestamps = np.where(n_detected_per_time>0)
     pos = np.where(r_I >= 0.05)
     if len(pos)==0:
-        return [], []
+        return [], [], detected_timestamps
     elif len(pos)==1:   
         chans = pos[0]
         if len(chans)==0:
             timestamps = np.array([],dtype="int")
         else:
             timestamps = np.array([0],dtype="int")
-        return chans, timestamps
+        return chans, timestamps, detected_timestamps
     else:
         chans = pos[0]
         timestamps = pos[1]
-        return chans, timestamps
+        return chans, timestamps, detected_timestamps
     
 
 def flag_non_disk(msname):

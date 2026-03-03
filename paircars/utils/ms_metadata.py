@@ -4,6 +4,7 @@ import glob
 import os
 from casatools import msmetadata, ms as casamstool, table, measures
 from .basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
+from .selfcal_utils import determine_disk_visibility
 from .resource_utils import limit_threads
 
 ##########################
@@ -41,7 +42,7 @@ def get_phasecenter(msname, fieldID=0):
     return round(radeg, 5), round(decdeg, 5)
 
 
-def get_timeranges(msname, time_interval, time_window, quack_timestamps=-1):
+def get_timeranges(msname, time_interval, time_window, quack_timestamps=-1, only_disk=True):
     """
     Get time ranges for a scan with certain time intervals
 
@@ -55,6 +56,8 @@ def get_timeranges(msname, time_interval, time_window, quack_timestamps=-1):
         Time window in seconds of a single time chunk
     quack_timestamps : int, optional
         Number of timestamps ignored at the start and end of each scan
+    only_disk : bool, optional
+        Whether select timestamps with disk visibilties
 
     Returns
     -------
@@ -75,16 +78,31 @@ def get_timeranges(msname, time_interval, time_window, quack_timestamps=-1):
         times = times[quack_timestamps:-quack_timestamps]
     elif len(times) > 2:
         times = times[1:-1]
+    if only_disk:
+        _, _, disk_timestamps = determine_disk_visibility(msname)
+        if len(disk_timestamps)==0:
+            print(f"No timestamp with disk visibility for ms: {msname}.")
+        elif len(disk_timestamps)>=len(times):
+            print(f"All timestamps have disk visibilties for ms: {msname}.")
+        else:
+            filtered_timestamps=[]
+            for t in range(len(times)):
+                if t in disk_timestamps:
+                    filtered_timestamps.append(times[t])    
+            print(f"{len(filtered_timestamps)} number of timestamps among {len(times)} have disk visibiltiies for ms: {msname}.")
+            times = filtered_timestamps            
+           
     start_time = min(times)
     end_time = max(times)
-    if time_interval < 0 or time_window < 0 or time_interval <= time_window:
-        t = (
-            mjdsec_to_timestamp(start_time, str_format=1)
-            + "~"
-            + mjdsec_to_timestamp(end_time, str_format=1)
-        )
-        time_ranges.append(t)
-        return time_ranges
+    if only_disk is False:
+        if time_interval < 0 or time_window < 0 or time_interval <= time_window:
+            t = (
+                mjdsec_to_timestamp(start_time, str_format=1)
+                + "~"
+                + mjdsec_to_timestamp(end_time, str_format=1)
+            )
+            time_ranges.append(t)
+            return time_ranges
     total_time = end_time - start_time
     timeres = times[1] - times[0]
     ntime_chunk = int(time_interval / timeres)

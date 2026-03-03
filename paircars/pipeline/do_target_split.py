@@ -168,6 +168,7 @@ def split_target_scans(
                 msname,
                 time_interval,
                 time_window,
+                only_disk=True,
                 quack_timestamps=quack_timestamps,
             )
             timerange = ",".join(timerange_list)

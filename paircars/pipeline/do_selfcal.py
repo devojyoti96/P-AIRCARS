@@ -33,7 +33,6 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import (
-    get_timeranges,
     check_datacolumn_valid,
     get_ms_size,
 )
@@ -807,7 +806,7 @@ def do_polselfcal(
         ################################
         if try_nondisk_flag:
             print(
-                "Non-disk data chunk flagging was successful dueing intensity self-calibration. Trying before polarisation self-calibration."
+                "Non-disk data chunk flagging was successful during intensity self-calibration. Trying before polarisation self-calibration."
             )
             do_flag_backup(msname, flagtype="nondisk")
             result = flag_non_disk(msname)
@@ -835,13 +834,6 @@ def do_polselfcal(
         else:
             timeres = msmd.exposuretime(scan)["value"]
         msmd.close()
-        timerange_list = get_timeranges(
-            msname,
-            60.0,
-            timeres,
-            quack_timestamps=-1,
-        )
-        timerange = ",".join(timerange_list)
         if hascor:
             pollogger.info(f"Spliting corrected data to ms : {selfcalms}")
             with suppress_output():
@@ -850,7 +842,6 @@ def do_polselfcal(
                     field=str(field),
                     scan=str(scan),
                     outputvis=selfcalms,
-                    timerange=timerange,
                     datacolumn="corrected",
                 )
         else:
@@ -862,7 +853,6 @@ def do_polselfcal(
                     field=str(field),
                     scan=str(scan),
                     outputvis=selfcalms,
-                    timerange=timerange,
                     datacolumn="data",
                 )
         msname = selfcalms
