@@ -81,7 +81,7 @@ def determine_disk_visibility(msname):
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
     detected = r_I < 0.05
     n_detected_per_time = np.sum(detected, axis=0)
-    detected_timestamps = np.where(n_detected_per_time > 0)
+    detected_timestamps = np.where(n_detected_per_time > 0)[0]
     pos = np.where(r_I >= 0.05)
     if len(pos) == 0:
         return [], [], detected_timestamps
