@@ -1786,6 +1786,11 @@ def cli():
         type=str,
         help="Comma-separated list of measurement sets (required positional argument)",
     )
+    adv_args.add_argument(
+        "metafits",
+        type=str,
+        help="Metafits file",
+    )
     basic_args.add_argument(
         "--workdir",
         type=str,
@@ -1804,13 +1809,6 @@ def cli():
     # Advanced parameters
     adv_args = parser.add_argument_group(
         "###################\nAdvanced calibration and imaging parameters\n###################"
-    )
-    adv_args.add_argument(
-        "--metafits",
-        type=str,
-        default="",
-        help="Metafits file",
-        metavar="String",
     )
     adv_args.add_argument(
         "--no_cal_applied",
