@@ -345,7 +345,7 @@ def do_selfcal(
         last_round_gaintable = []
         use_previous_model = False
         nondisk_flag = True
-        min_DR=0
+        min_DR = 0
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -356,7 +356,9 @@ def do_selfcal(
             msname, intlogger, selfcaldir, refant=str(refant), solint=solint
         )
         if msg == 0:
-            intlogger.info("Starting self-calibration using Gaussian model is successful.")
+            intlogger.info(
+                "Starting self-calibration using Gaussian model is successful."
+            )
         else:
             if msg == 2:
                 nondisk_flag = False
@@ -469,7 +471,7 @@ def do_selfcal(
             if num_iter == 0:
                 DR1 = DR3 = DR2 = dyn
                 RMS1 = RMS2 = RMS3 = rms
-                min_DR=DR1
+                min_DR = DR1
             elif num_iter == 1:
                 DR3 = dyn
                 RMS2 = RMS1
@@ -502,13 +504,16 @@ def do_selfcal(
             #########################################################
             # If DR decreased below starting DR
             #########################################################
-            if DR3<min_DR and ((calmode=="p" and num_iter>1) or (calmode=="ap" and num_iter_after_ap>1)):
+            if DR3 < min_DR and (
+                (calmode == "p" and num_iter > 1)
+                or (calmode == "ap" and num_iter_after_ap > 1)
+            ):
                 intlogger.info(f"Dynamic range decreased below start dynamic range.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable, nondisk_flag    
-            
+                return 0, msname, last_round_gaintable, nondisk_flag
+
             #########################################################
             # If DR is decreasing (DR decrease in phase-only selfcal)
             #########################################################
@@ -547,7 +552,7 @@ def do_selfcal(
                 time.sleep(5)
                 clean_shutdown(sub_observer)
                 return 0, msname, last_round_gaintable, nondisk_flag
-                
+
             ##########################
             # If DR suddenly decreased
             ##########################

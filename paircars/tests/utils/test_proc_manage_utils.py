@@ -89,7 +89,7 @@ def test_get_total_worker(scheduler_info_return, expected):
 @pytest.mark.parametrize(
     "worker_sequence, expected_return",
     [
-        ([0, 1, 2, 3], 0),  
+        ([0, 1, 2, 3], 0),
     ],
 )
 @patch("paircars.utils.proc_manage_utils.time.sleep", return_value=None)
@@ -110,7 +110,7 @@ def test_scale_worker_and_wait(
         mock_cluster,
         mock_client,
         target_workers,
-        timeout=10,        
+        timeout=10,
         poll_interval=1,
     )
     # Check return code
@@ -126,13 +126,10 @@ def test_scale_worker_and_wait(
     [
         # Normal case
         (16, 64, 4, -1, False, False),
-
         # Low memory → early return (n_worker_mem < 2)
         (4, 4, 4, -1, False, True),
-
         # max_worker restriction
         (16, 64, 4, 2, False, False),
-
         # Exception branch
         (None, None, 4, -1, True, True),
     ],
@@ -171,9 +168,7 @@ def test_get_local_dask_cluster(
         mock_cpu_count.side_effect = Exception("CPU fail")
     else:
         mock_cpu_count.return_value = total_cpu
-        mock_virtual_memory.return_value = MagicMock(
-            total=total_mem * 1024**3
-        )
+        mock_virtual_memory.return_value = MagicMock(total=total_mem * 1024**3)
     mock_getrlimit.return_value = (1024, 4096)
     fake_cluster = MagicMock()
     fake_client = MagicMock()

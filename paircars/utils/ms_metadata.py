@@ -42,7 +42,9 @@ def get_phasecenter(msname, fieldID=0):
     return round(radeg, 5), round(decdeg, 5)
 
 
-def get_timeranges(msname, time_interval, time_window, quack_timestamps=-1, only_disk=True):
+def get_timeranges(
+    msname, time_interval, time_window, quack_timestamps=-1, only_disk=True
+):
     """
     Get time ranges for a scan with certain time intervals
 
@@ -80,18 +82,20 @@ def get_timeranges(msname, time_interval, time_window, quack_timestamps=-1, only
         times = times[1:-1]
     if only_disk:
         _, _, disk_timestamps = determine_disk_visibility(msname)
-        if len(disk_timestamps)==0:
+        if len(disk_timestamps) == 0:
             print(f"No timestamp with disk visibility for ms: {msname}.")
-        elif len(disk_timestamps)>=len(times):
+        elif len(disk_timestamps) >= len(times):
             print(f"All timestamps have disk visibilties for ms: {msname}.")
         else:
-            filtered_timestamps=[]
+            filtered_timestamps = []
             for t in range(len(times)):
                 if t in disk_timestamps:
-                    filtered_timestamps.append(times[t])    
-            print(f"{len(filtered_timestamps)} number of timestamps among {len(times)} have disk visibiltiies for ms: {msname}.")
-            times = filtered_timestamps            
-           
+                    filtered_timestamps.append(times[t])
+            print(
+                f"{len(filtered_timestamps)} number of timestamps among {len(times)} have disk visibiltiies for ms: {msname}."
+            )
+            times = filtered_timestamps
+
     start_time = min(times)
     end_time = max(times)
     if only_disk is False:

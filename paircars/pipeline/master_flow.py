@@ -3826,7 +3826,7 @@ def master_control(
                 os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
                 if keep_calibrated_ms:
                     calibrated_msdir = f"{outdir}/calibrated_ms"
-                    os.makedirs(calibrated_msdir,exist_ok=True)
+                    os.makedirs(calibrated_msdir, exist_ok=True)
                     os.system(f"mv {target_ms} {calibrated_msdir}")
                 elif keep_backup is False:
                     os.system(f"rm -rf {target_ms}")
