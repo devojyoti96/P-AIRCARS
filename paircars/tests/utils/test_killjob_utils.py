@@ -4,15 +4,14 @@ import psutil
 import numpy as np
 from paircars.utils.killjob_utils import *
 
+
 @pytest.mark.parametrize(
     "port, port_status, lsof_output, expected_kill_calls",
     [
         # Case 1: Port closed → kill PIDs
         (8000, False, "1234\n5678\n", [1234, 5678]),
-
         # Case 2: Port open → do nothing
         (8000, True, "1234\n5678\n", []),
-
         # Case 3: No processes found
         (8000, False, "", []),
     ],
@@ -42,8 +41,8 @@ def test_kill_port(
         assert actual_calls == expected_kill_calls
     else:
         mock_kill.assert_not_called()
-        
-        
+
+
 @pytest.mark.parametrize("has_process", [True, False])
 @patch("paircars.utils.killjob_utils.psutil.wait_procs")
 @patch("paircars.utils.killjob_utils.psutil.Process")

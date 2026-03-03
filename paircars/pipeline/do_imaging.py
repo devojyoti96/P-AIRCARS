@@ -156,10 +156,10 @@ def perform_imaging(
         get_print=True,
     )
     sub_observer = None
-    if os.path.exists(f"{workdir}/jobname_password.npy") and logfile is not None:
+    if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
         time.sleep(5)
         jobname, password = np.load(
-            f"{workdir}/jobname_password.npy", allow_pickle=True
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
         if os.path.exists(logfile):
             sub_observer = init_logger(
@@ -957,12 +957,12 @@ def main(
     observer = None
     if (
         start_remote_log
-        and os.path.exists(f"{workdir}/jobname_password.npy")
+        and os.path.exists(f"{workdir}/.jobname_password.npy")
         and logfile is not None
     ):
         time.sleep(5)
         jobname, password = np.load(
-            f"{workdir}/jobname_password.npy", allow_pickle=True
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
         if os.path.exists(logfile):
             observer = init_logger(

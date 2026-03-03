@@ -133,6 +133,8 @@ def run_solar_phasecenter_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     phasecor_basename = f"cor_phasecenter_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -222,6 +224,8 @@ def run_ds_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     ds_basename = "ds_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -332,6 +336,8 @@ def run_target_split_jobs(
     int
         Succeeded splited ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     split_basename = f"split_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -441,6 +447,8 @@ def run_flag(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     if flag_calibrators:
         flagdimension = "freqtime"
         flagfield_type = "cal"
@@ -544,6 +552,8 @@ def run_import_model(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     model_basename = "modeling"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -637,6 +647,8 @@ def run_basic_cal_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     cal_basename = "basic_cal"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -742,6 +754,8 @@ def run_apply_basiccal_sol(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     applycal_basename = f"apply_basiccal_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -831,6 +845,8 @@ def run_solar_siderealcor_jobs(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     sidereal_basename = f"cor_sidereal_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -971,6 +987,8 @@ def run_selfcal_jobs(
     int
         Polarisation self-calibration failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     selfcal_basename = "selfcal_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1083,6 +1101,8 @@ def run_apply_selfcal_sol(
     int
         Failed ms number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     applycal_basename = "apply_selfcal"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1212,6 +1232,8 @@ def run_imaging_jobs(
     int
         Total images
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     imaging_basename = "imaging_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1311,6 +1333,8 @@ def run_apply_pbcor(
     int
         Failed image number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     applypbcor_basename = "apply_pbcor"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1394,6 +1418,8 @@ def run_make_overlay(
     int
         Failed image number
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     overlay_basename = "do_overlay"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1473,6 +1499,8 @@ def run_make_msplot(
     int
         Success message for measurement set ploting
     """
+    os.makedirs(workdir, exist_ok=True)
+    os.chdir(workdir)
     msplot_basename = "do_msplot"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
@@ -1838,6 +1866,7 @@ def master_control(
         traceback.print_exc()
         return 1
 
+    os.chdir(workdir)
     scheduler_name = get_scheduler_name()
     #################################
     # Setup logger
@@ -1910,7 +1939,6 @@ def master_control(
     if keep_backup:
         keep_calibrated_ms = True
 
-    os.chdir(workdir)
     try:
         #####################################
         # Reading remotelink and emails
