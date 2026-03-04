@@ -198,6 +198,8 @@ def interpolate_bpass(caltables, overwrite=False):
         cal = cal.rstrip("/")
         if overwrite is False:
             outcal = f"{cal}.interp"
+            if os.path.exists(outcal):
+                os.system(f"rm -rf {outcal}")
             os.system(f"cp -r {cal} {outcal}")
         else:
             outcal = cal
