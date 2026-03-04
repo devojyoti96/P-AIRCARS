@@ -458,7 +458,7 @@ def quartical_matrix_normalize(caltable, overwrite=False):
             filtered.append(caldir)
     caltable_dirs = filtered
     if len(caltable_dirs) == 0:
-        print("Could not determine solution type. Returning ithout normalisation.")
+        print("Could not determine solution type. Returning without normalisation.")
         return caltable
     soltype = caltable_dirs[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")

@@ -175,38 +175,49 @@ def applysol(
                         else:
                             calflag = True
                         temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
-                        quartical_log = f"{workdir}/{os.path.basename(qc)}.log"
+                        quartical_log = f"{workdir}/{os.path.basename(qc)}.log"  
                         qc = qc.rstrip("/")
-                        qc_dirs = os.listdir(qc)
-                        soltype = qc_dirs[0]
-                        quartical_args = [
-                            "goquartical",
-                            f"input_ms.path={msname}",
-                            f"input_ms.data_column=CORRECTED_DATA",
-                            "output.log_to_terminal=True",
-                            f"output.log_directory={quartical_log}",
-                            f"output.gain_directory={temp_pol_caltable}",
-                            "output.overwrite=True",
-                            "output.products=[corrected_data]",
-                            "output.columns=[CORRECTED_DATA]",
-                            f"output.flags={calflag}",
-                            f"solver.terms=[{soltype}]",
-                            "solver.iter_recipe=[0]",
-                            "solver.propagate_flags=False",
-                            f"solver.threads={n_threads}",
-                            "dask.threads=1",
-                            f"{soltype}.type=complex",
-                            f"{soltype}.load_from={qc}/{soltype}",
-                        ]
-                        quartical_cmd = " ".join(quartical_args)
-                        quartical_msg = run_quartical(
-                            quartical_cmd, "paircarsquartical", verbose=True
-                        )
-                        if quartical_msg != 0:
-                            print("Quartical solutions did not apply.")
+                        qc_dirs = [os.path.basename(i) for i in glob.glob(f"{qc}/*")]
+                        filtered = []
+                        for caldir in qc_dirs:
+                            if caldir.startswith(".") is False:
+                                filtered.append(caldir)
+                        qc_dirs = filtered
+                        if len(qc_dirs) == 0:
+                            print("Could not determine solution type. Not applying solution.")
                             os.system(f"touch {msname}/.nopolselfcal")
-                        os.system(f"rm -rf {quartical_log}")
-                        os.system(f"rm -rf {temp_pol_caltable}")
+                            os.system(f"rm -rf {quartical_log}")
+                            os.system(f"rm -rf {temp_pol_caltable}")
+                        else:
+                            soltype = qc_dirs[0]
+                            quartical_args = [
+                                "goquartical",
+                                f"input_ms.path={msname}",
+                                f"input_ms.data_column=CORRECTED_DATA",
+                                "output.log_to_terminal=True",
+                                f"output.log_directory={quartical_log}",
+                                f"output.gain_directory={temp_pol_caltable}",
+                                "output.overwrite=True",
+                                "output.products=[corrected_data]",
+                                "output.columns=[CORRECTED_DATA]",
+                                f"output.flags={calflag}",
+                                f"solver.terms=[{soltype}]",
+                                "solver.iter_recipe=[0]",
+                                "solver.propagate_flags=False",
+                                f"solver.threads={n_threads}",
+                                "dask.threads=1",
+                                f"{soltype}.type=complex",
+                                f"{soltype}.load_from={qc}/{soltype}",
+                            ]
+                            quartical_cmd = " ".join(quartical_args)
+                            quartical_msg = run_quartical(
+                                quartical_cmd, "paircarsquartical", verbose=True
+                            )
+                            if quartical_msg != 0:
+                                print("Quartical solutions did not apply.")
+                                os.system(f"touch {msname}/.nopolselfcal")
+                            os.system(f"rm -rf {quartical_log}")
+                            os.system(f"rm -rf {temp_pol_caltable}")
         if overwrite_datacolumn:
             print(f"Over writing data column with corrected data for ms: {msname}.")
             outputvis = msname.split(".ms")[0] + "_cor.ms"
