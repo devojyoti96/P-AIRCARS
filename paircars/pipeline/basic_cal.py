@@ -857,6 +857,11 @@ def cli():
         help="Name of measurement sets (comma separated)",
     )
     basic_args.add_argument(
+        "metafits",
+        type=str,
+        help="Metafits file",
+    )
+    basic_args.add_argument(
         "--workdir",
         type=str,
         default="",
@@ -919,8 +924,9 @@ def cli():
 
     args = parser.parse_args()
 
-    msg, _, _ = main(
+    msg, _, _, = main(
         args.mslist,
+        args.metafits,
         args.workdir,
         args.outdir,
         refant=args.refant,
