@@ -57,8 +57,8 @@ def fill_nan_gains(x, data):
         fill_value="extrapolate",
     )
     interpolated_data = interp_func(x)
-    data[nans]=interpolated_data[nans]
-    return data
+    interpolated_data[~nans] = data[~nans]
+    return interpolated_data
 
 
 def fluxcal_caltable(caltable, attn=10):
