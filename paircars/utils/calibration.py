@@ -99,6 +99,9 @@ def merge_caltables(caltables, merged_caltable, append=False, keepcopy=False):
                 tb.open(caltable)
                 tb.copyrows(merged_caltable)
                 tb.close()
+                tb.open(f"{caltable}/SPECTRAL_WINDOW")
+                tb.copyrows(f"{merged_caltable}/SPECTRAL_WINDOW")
+                tb.close()
                 if not keepcopy:
                     os.system("rm -rf " + caltable)
     return merged_caltable
