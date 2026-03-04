@@ -240,9 +240,10 @@ def split_into_chunks(lst, target_chunk_size):
 def interpolate_nans(data):
     """Linearly interpolate NaNs in 1D array."""
     from scipy.interpolate import interp1d
-    
-        
     nans = np.isnan(data)
+    # If fewer than 5 valid points, return input unchanged
+    if np.sum(~nans) < 5:
+        return data
     x = np.arange(len(data))
     interp_func = interp1d(
         x[~nans],
