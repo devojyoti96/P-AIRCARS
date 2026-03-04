@@ -215,6 +215,7 @@ def interpolate_bpass(caltables, overwrite=False):
         gains[flags] = interp_gain_out[flags]
         tb.putcol("CPARAM", gains)
         flags*=False
+        flags = (np.abs(gains)==1.0)
         tb.putcol("FLAG", flags)
         tb.flush()
         tb.close()
