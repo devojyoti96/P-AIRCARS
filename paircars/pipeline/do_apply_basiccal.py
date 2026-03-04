@@ -14,7 +14,7 @@ from casatools import table, msmetadata
 from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
-from paircars.utils.calibration import get_nearest_bandpass_table
+from paircars.utils.calibration import get_nearest_bandpass_table, get_quartical_soltype
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -177,19 +177,14 @@ def applysol(
                         temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
                         quartical_log = f"{workdir}/{os.path.basename(qc)}.log"  
                         qc = qc.rstrip("/")
-                        qc_dirs = [os.path.basename(i) for i in glob.glob(f"{qc}/*")]
-                        filtered = []
-                        for caldir in qc_dirs:
-                            if caldir.startswith(".") is False:
-                                filtered.append(caldir)
-                        qc_dirs = filtered
-                        if len(qc_dirs) == 0:
-                            print("Could not determine solution type. Not applying solution.")
+                        soltypes = get_quartical_soltype(caltable)
+                        if len(soltypes)==0:
+                            print("No solution is present.")
                             os.system(f"touch {msname}/.nopolselfcal")
                             os.system(f"rm -rf {quartical_log}")
-                            os.system(f"rm -rf {temp_pol_caltable}")
+                            os.system(f"rm -rf {temp_pol_caltable}")          
                         else:
-                            soltype = qc_dirs[0]
+                            soltype = soltypes[0]
                             quartical_args = [
                                 "goquartical",
                                 f"input_ms.path={msname}",

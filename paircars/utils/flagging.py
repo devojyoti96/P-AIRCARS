@@ -7,6 +7,7 @@ import dask
 from datetime import datetime as dt, timezone
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
 from .basic_utils import suppress_output
+from .calibration import get_quartical_soltype
 from .resource_utils import limit_threads
 from .imaging import calc_maxuv
 
@@ -365,16 +366,11 @@ def flag_quartical_table(caltable, threshold=10.0):
         Flagged caltable name
     """
     caltable = caltable.rstrip("/")
-    caltable_dirs = [os.path.basename(i) for i in glob.glob(f"{caltable}/*")]
-    filtered = []
-    for caldir in caltable_dirs:
-        if caldir.startswith(".") is False:
-            filtered.append(caldir)
-    caltable_dirs = filtered
-    if len(caltable_dirs) == 0:
-        print("Could not determine solution type. Returning without flagging.")
+    soltypes = get_quartical_soltype(caltable)
+    if len(soltypes)==0:
+        print("No solution is present. Not performing any flagging.")
         return caltable
-    soltype = caltable_dirs[0]
+    soltype = soltypes[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
     gain_flag = gains[0].gain_flags.to_numpy()

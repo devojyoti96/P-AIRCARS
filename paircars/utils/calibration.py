@@ -4,6 +4,7 @@ import traceback
 import warnings
 import glob
 import os
+import zarr
 import dask
 from casatools import msmetadata, table
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
@@ -433,6 +434,31 @@ def solint_in_float(solint):
     return solint
 
 
+def get_quartical_soltype(quartical_table):
+    """
+    Get quartical solution types
+    
+    Parameters
+    ----------
+    quartical_table : str
+        Quartical table
+        
+    Returns
+    -------
+    list    
+        Solutions types
+    """ 
+    try:
+        z = zarr.open_group(quartical_table, mode="r")
+        soltypes = [k for k in z.group_keys() if not k.startswith(".")]
+        if len(soltypes) == 0:
+            return []
+        return soltypes
+    except Exception:
+        print("Could not read QuartiCal caltable.")
+        return []
+        
+        
 def quartical_matrix_normalize(caltable, overwrite=False):
     """
     Function to make matrix normalization (Normalization of full Jones solutions)
@@ -451,16 +477,11 @@ def quartical_matrix_normalize(caltable, overwrite=False):
         New caltable name
     """
     caltable = caltable.rstrip("/")
-    caltable_dirs = [os.path.basename(i) for i in glob.glob(f"{caltable}/*")]
-    filtered = []
-    for caldir in caltable_dirs:
-        if caldir.startswith(".") is False:
-            filtered.append(caldir)
-    caltable_dirs = filtered
-    if len(caltable_dirs) == 0:
-        print("Could not determine solution type. Returning without normalisation.")
+    soltypes = get_quartical_soltype(caltable)
+    if len(soltypes)==0:
+        print("No solution is present. Not performing any normalisation.")
         return caltable
-    soltype = caltable_dirs[0]
+    soltype = soltypes[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
     gain_flag = gains[0].gain_flags.to_numpy()
@@ -517,16 +538,11 @@ def get_quartical_table_metadata(caltable):
         A python dictionary with keywords JonesType, Channel 0 frequency (MHz), Central channel frequency (MHz), Channel width (kHz), Bandwidth (MHz), Start time, End time
     """
     caltable = caltable.rstrip("/")
-    caltable_dirs = [os.path.basename(i) for i in glob.glob(f"{caltable}/*")]
-    filtered = []
-    for caldir in caltable_dirs:
-        if caldir.startswith(".") is False:
-            filtered.append(caldir)
-    caltable_dirs = filtered
-    if len(caltable_dirs) == 0:
-        print("Could not determine solution type.")
-        return
-    soltype = caltable_dirs[0]
+    soltypes = get_quartical_soltype(caltable)
+    if len(soltypes)==0:
+        print("No solution is present.")
+        return {}
+    soltype = soltypes[0]
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     jonestype = gains[0].TYPE
     freqs = gains[0].gain_freq.to_numpy()
