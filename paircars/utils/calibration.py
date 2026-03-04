@@ -57,7 +57,6 @@ def fill_nan_gains(x, data):
         fill_value="extrapolate",
     )
     interpolated_data = interp_func(x)
-    interpolated_data[~nans] = data[~nans]
     return interpolated_data
 
 
@@ -191,6 +190,8 @@ def interpolate_bpass(caltables, overwrite=False):
                 all_freqs_sorted, np.imag(all_gains_sorted[p, :, a])
             )
             interp_gain = interp_re + 1j * interp_im
+            nans = np.isnan(interp_gain)
+            interp_gain[nans] = 1.0
             interpolated_gains[p, :, a] = interp_gain
             del interp_gain
     outlist = []
@@ -208,9 +209,12 @@ def interpolate_bpass(caltables, overwrite=False):
         tb.close()
         pos = np.where(freqs == all_freqs_sorted)[0]
         interp_gain_out = interpolated_gains[:, pos, :]
-        flags = np.abs(interp_gain_out) == 1.0
         tb.open(outcal, nomodify=False)
-        tb.putcol("CPARAM", interp_gain_out)
+        flags = tb.getcol("FLAG")
+        gains = tb.getcol("CPARAM")
+        gains[flags] = interp_gain_out[flags]
+        tb.putcol("CPARAM", gains)
+        flags*=False
         tb.putcol("FLAG", flags)
         tb.flush()
         tb.close()
