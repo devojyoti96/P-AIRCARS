@@ -75,7 +75,7 @@ def run_all_applysol(
         Succeeded gain solution ms number
     int
         Failed gain solution ms number
-    int 
+    int
         Succeeded polarisation solution ms number
     int
         Failed polarisation solution ms number
@@ -236,7 +236,7 @@ def run_all_applysol(
                 print(
                     "Applying gain and polarisation self-calibration solutions for targets are done successfully."
                 )
-            elif pol_failed == 0:   
+            elif pol_failed == 0:
                 print(
                     "Applying gain self-calibration solutions for targets are done successfully, but failed for polarisation solutions."
                 )
@@ -315,7 +315,7 @@ def main(
         Succeeded gain solution ms number
     int
         Failed gain solution ms number
-    int 
+    int
         Succeeded polarisation solution ms number
     int
         Failed polarisation solution ms number
@@ -425,7 +425,7 @@ def main(
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
     return gain_succeed, gain_failed, pol_succeed, pol_failed
-    
+
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -524,8 +524,7 @@ def cli():
         jobid=args.jobid,
     )
     if gain_failed == 0 and pol_failed == 0:
-        msg=0
+        msg = 0
     else:
-        msg=1
+        msg = 1
     return msg
-    

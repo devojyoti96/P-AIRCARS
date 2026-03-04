@@ -1107,7 +1107,7 @@ def run_apply_selfcal_sol(
         Succeeded gain solution ms number
     int
         Failed gain solution ms number
-    int 
+    int
         Succeeded polarisation solution ms number
     int
         Failed polarisation solution ms number
@@ -1150,10 +1150,10 @@ def run_apply_selfcal_sol(
                 jobid=jobid,
                 dask_client=dask_client,
             )
-        if gain_failed==0:
-            msg=0
+        if gain_failed == 0:
+            msg = 0
         else:
-            msg=1
+            msg = 1
     finally:
         stop_event.set()
         log_thread_applyselfcal.join(timeout=5)
@@ -3394,11 +3394,13 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg, gain_succeed, gain_failed, pol_succeed, pol_failed = future_apply_selfcal.result()
+                    msg, gain_succeed, gain_failed, pol_succeed, pol_failed = (
+                        future_apply_selfcal.result()
+                    )
                     if emails != "":
                         email_msg = f"Applying self-calibration on final target measurement sets are done.\nGain solutions applied: Succeeded: {gain_succeed}, failed: {gain_failed}."
                         if do_polcal:
-                            email_msg+=f"\nPolarisation solution applied: Succeeded: {pol_succeed}, failed: {pol_failed}."
+                            email_msg += f"\nPolarisation solution applied: Succeeded: {pol_succeed}, failed: {pol_failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )

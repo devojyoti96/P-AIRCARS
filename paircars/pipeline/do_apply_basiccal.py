@@ -143,10 +143,10 @@ def applysol(
         if os.path.exists(msname + check_file) and force_apply == False:
             print("Solutions are already applied.")
             gain_msg = 0
-            if os.path.exists(f"{msname}/.nopolselfcal")
-                pol_msg=1
+            if os.path.exists(f"{msname}/.nopolselfcal"):
+                pol_msg = 1
             else:
-                pol_msg=0
+                pol_msg = 0
             return gain_msg, pol_msg
         else:
             if os.path.exists(msname + check_file) and force_apply:
@@ -169,10 +169,10 @@ def applysol(
                         calwt=[False] * len(gaintable),
                         flagbackup=False,
                     )
-                gain_msg=0
+                gain_msg = 0
             except:
-                gain_msg=1
-            if gain_msg==0 and soltype!="basic":
+                gain_msg = 1
+            if gain_msg == 0 and soltype != "basic":
                 os.system(f"rm -rf {msname}/.nopolselfcal")
                 if len(quartical_table) > 0:
                     for qc in quartical_table:
@@ -187,15 +187,17 @@ def applysol(
                                 calflag = False
                             else:
                                 calflag = True
-                            temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
-                            quartical_log = f"{workdir}/{os.path.basename(qc)}.log"  
+                            temp_pol_caltable = (
+                                f"{workdir}/{os.path.basename(qc)}.tempcal"
+                            )
+                            quartical_log = f"{workdir}/{os.path.basename(qc)}.log"
                             qc = qc.rstrip("/")
                             soltypes = get_quartical_soltype(qc)
-                            if len(soltypes)==0:
+                            if len(soltypes) == 0:
                                 print("No solution is present.")
                                 os.system(f"touch {msname}/.nopolselfcal")
                                 os.system(f"rm -rf {quartical_log}")
-                                os.system(f"rm -rf {temp_pol_caltable}")          
+                                os.system(f"rm -rf {temp_pol_caltable}")
                             else:
                                 soltype = soltypes[0]
                                 quartical_args = [
@@ -227,14 +229,14 @@ def applysol(
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
                 if os.path.exists(f"{msname}/.nopolselfcal"):
-                    pol_msg=1
+                    pol_msg = 1
                 else:
-                    pol_msg=0   
-            elif gain_msg==0 and soltype=="basic":
+                    pol_msg = 0
+            elif gain_msg == 0 and soltype == "basic":
                 pol_msg = 0
             else:
                 os.system(f"touch {msname}/.nopolselfcal")
-                pol_msg=1 
+                pol_msg = 1
         if overwrite_datacolumn:
             print(f"Over writing data column with corrected data for ms: {msname}.")
             outputvis = msname.split(".ms")[0] + "_cor.ms"
@@ -250,7 +252,7 @@ def applysol(
                 os.system(f"mv {outputvis} {msname}")
             for t in touch_file_names:
                 os.system(f"touch {msname}/{t}")
-        if gain_msg==0:
+        if gain_msg == 0:
             os.system("touch " + msname + check_file)
         return gain_msg, pol_msg
     except Exception as e:
@@ -428,7 +430,7 @@ def run_all_applysol(
             else:
                 failed += 1
         results = list(dask_client.gather(dask_client.compute(tasks)))
-        gain_msg =[]
+        gain_msg = []
         for r in results:
             gain_msg.append(r[0])
         apply_failed = sum(gain_msg)

@@ -55,8 +55,7 @@ def run_bandpass(
     """
     n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
-    from casatasks import bandpass, flagdata
-    
+    from casatasks import bandpass
 
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
     with suppress_output():
@@ -70,12 +69,6 @@ def run_bandpass(
             gaintable=gaintable,
             gainfield=gainfield,
             interp=interp,
-        )
-        flagdata(
-            vis=f"{caltable_prefix}.bcal",
-            mode="rflag",
-            datacolumn="CPARAM",
-            flagbackup=False,
         )
     if os.path.exists(caltable_prefix + ".bcal"):
         return caltable_prefix + ".bcal"
@@ -220,11 +213,15 @@ def single_ms_cal_and_flag(
     -------
     str
         Caltables
+    bool
+        Whether postcal flagging is successful or not
     """
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
     limit_threads(n_threads=n_threads)
     from casatasks import flagmanager
+
+    succeed_postcal_flag = True
 
     try:
         caltable_prefix = (
@@ -273,7 +270,7 @@ def single_ms_cal_and_flag(
             applycal_interp.append("nearest,nearestflag")
         else:
             print(f"Bandpass calibration is not successful for ms: {msname}.")
-            return []
+            return [], False
 
         ##############################
         # Crossphase calibration
@@ -336,6 +333,7 @@ def single_ms_cal_and_flag(
                     )
                     with suppress_output():
                         flagmanager(vis=msname, mode="restore", versionname="postcal_1")
+                    succeed_postcal_flag = False
                 with suppress_output():
                     flagmanager(vis=msname, mode="delete", versionname="postcal_1")
 
@@ -355,10 +353,10 @@ def single_ms_cal_and_flag(
         return [
             bpass_caltable,
             crossphase_caltable,
-        ]
+        ], succeed_postcal_flag
     except Exception as e:
         traceback.print_exc()
-        return []
+        return [], False
 
 
 def single_round_cal_and_flag(
@@ -396,8 +394,8 @@ def single_round_cal_and_flag(
         Perform polarisation calibration
     applysol : bool, optional
         Apply solutions
-    do_postcal_flag : bool, optional
-        Perform post-calibration flagging
+    do_postcal_flag : bool or list, optional
+        Perform post-calibration flagging for each measurement set
     flag_threashold : float, optional
         Flagging threshold
     cpu_frac : float, optional
@@ -413,13 +411,15 @@ def single_round_cal_and_flag(
         Succeeded ms number
     int
         Failed ms number
+    list
+        List whether postcal flag is successful or not
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return {}, 0, 0
+        return {}, 0, 0, []
     else:
         succeed = 0
         failed = len(mslist)
@@ -442,29 +442,39 @@ def single_round_cal_and_flag(
     print(f"Memory per worker: {mem_limit} GB")
     print("#################################")
 
-    tasks = [
-        delayed(single_ms_cal_and_flag)(
-            msname,
-            workdir,
-            cal_round,
-            refant,
-            uvrange,
-            do_polcal=do_polcal,
-            applysol=applysol,
-            do_postcal_flag=do_postcal_flag,
-            flag_threshold=flag_threshold,
-            n_threads=n_threads,
-            mem_limit=mem_limit,
+    if isinstance(do_postcal_flag, bool):
+        do_postcal_flag = [do_postcal_flag] * len(mslist)
+    elif len(do_postcal_flag) < len(mslist):
+        do_postcal_flag = [do_postcal_flag[0]] * len(mslist)
+
+    tasks = []
+    for i in range(len(mslist)):
+        msname = mslist[i]
+        postcal_flag = do_postcal_flag[i]
+        tasks.append(
+            delayed(single_ms_cal_and_flag)(
+                msname,
+                workdir,
+                cal_round,
+                refant,
+                uvrange,
+                do_polcal=do_polcal,
+                applysol=applysol,
+                do_postcal_flag=postcal_flag,
+                flag_threshold=flag_threshold,
+                n_threads=n_threads,
+                mem_limit=mem_limit,
+            )
         )
-        for msname in mslist
-    ]
     results = list(dask_client.gather(dask_client.compute(tasks)))
     caltable_dic = {}
+    postcal_flags = []
     succeed = 0
     failed = 0
     for i in range(len(mslist)):
         msname = mslist[i]
-        caltables = results[i]
+        caltables = results[i][0]
+        postcal_flag = results[i][1]
         caltables_clean = [x for x in caltables if x is not None]
         if len(caltables_clean) == 0:
             print(f"Basic calibration is not succssful for ms : {msname}")
@@ -472,7 +482,8 @@ def single_round_cal_and_flag(
         else:
             succeed += 1
         caltable_dic[msname] = caltables_clean
-    return caltable_dic, succeed, failed
+        postcal_flags.append(postcal_flag)
+    return caltable_dic, succeed, failed, postcal_flags
 
 
 def run_basic_cal_rounds(
@@ -554,7 +565,7 @@ def run_basic_cal_rounds(
         # Initial values
         #################
         do_polcal = False
-        do_postcal_flag = True
+        do_postcal_flag = [True] * len(mslist)
         applysol = True
         flag_threshold = 6.0
         if refant == "":
@@ -567,12 +578,15 @@ def run_basic_cal_rounds(
         for msname in mslist:
             if uvrange == "":
                 uvrange = get_gleam_uvrange(msname)
-            if uvrange!="":
+            if uvrange != "":
                 flag_uvranges = get_uvrange_exclude(uvrange)
                 for flag_uvrange in flag_uvranges:
                     try:
                         flagdata(
-                            vis=msname, mode="manual", uvrange=flag_uvrange, flagbackup=False
+                            vis=msname,
+                            mode="manual",
+                            uvrange=flag_uvrange,
+                            flagbackup=False,
                         )
                     except:
                         pass
@@ -585,7 +599,9 @@ def run_basic_cal_rounds(
                 if perform_polcal:
                     do_polcal = True
                 flag_threshold = 5.0
-            caltable_dic, succeed, failed = single_round_cal_and_flag(
+            if cal_round == n_rounds + 1:
+                do_postcal_flag = [False] * len(mslist)
+            caltable_dic, succeed, failed, postcal_flags = single_round_cal_and_flag(
                 mslist,
                 dask_client,
                 workdir,
@@ -599,6 +615,7 @@ def run_basic_cal_rounds(
                 cpu_frac=cpu_frac,
                 mem_frac=mem_frac,
             )
+            do_postcal_flag = postcal_flags
             caltables = list(caltable_dic.values())
             caltables = [x for sub in caltables for x in sub]
             if keep_backup:
@@ -929,7 +946,11 @@ def cli():
 
     args = parser.parse_args()
 
-    msg, _, _, = main(
+    (
+        msg,
+        _,
+        _,
+    ) = main(
         args.mslist,
         args.metafits,
         args.workdir,

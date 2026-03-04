@@ -367,7 +367,7 @@ def flag_quartical_table(caltable, threshold=10.0):
     """
     caltable = caltable.rstrip("/")
     soltypes = get_quartical_soltype(caltable)
-    if len(soltypes)==0:
+    if len(soltypes) == 0:
         print("No solution is present. Not performing any flagging.")
         return caltable
     soltype = soltypes[0]

@@ -437,17 +437,17 @@ def solint_in_float(solint):
 def get_quartical_soltype(quartical_table):
     """
     Get quartical solution types
-    
+
     Parameters
     ----------
     quartical_table : str
         Quartical table
-        
+
     Returns
     -------
-    list    
+    list
         Solutions types
-    """ 
+    """
     try:
         z = zarr.open_group(quartical_table, mode="r")
         soltypes = [k for k in z.group_keys() if not k.startswith(".")]
@@ -457,8 +457,8 @@ def get_quartical_soltype(quartical_table):
     except Exception:
         print("Could not read QuartiCal caltable.")
         return []
-        
-        
+
+
 def quartical_matrix_normalize(caltable, overwrite=False):
     """
     Function to make matrix normalization (Normalization of full Jones solutions)
@@ -478,7 +478,7 @@ def quartical_matrix_normalize(caltable, overwrite=False):
     """
     caltable = caltable.rstrip("/")
     soltypes = get_quartical_soltype(caltable)
-    if len(soltypes)==0:
+    if len(soltypes) == 0:
         print("No solution is present. Not performing any normalisation.")
         return caltable
     soltype = soltypes[0]
@@ -539,7 +539,7 @@ def get_quartical_table_metadata(caltable):
     """
     caltable = caltable.rstrip("/")
     soltypes = get_quartical_soltype(caltable)
-    if len(soltypes)==0:
+    if len(soltypes) == 0:
         print("No solution is present.")
         return {}
     soltype = soltypes[0]
