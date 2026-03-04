@@ -125,7 +125,9 @@ def applysol(
     Returns
     -------
     int
-        Success message
+        Success message of gain solution
+    int
+        Success message of polarisation solution
     """
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
@@ -140,79 +142,99 @@ def applysol(
     try:
         if os.path.exists(msname + check_file) and force_apply == False:
             print("Solutions are already applied.")
-            return 0
+            gain_msg = 0
+            if os.path.exists(f"{msname}/.nopolselfcal")
+                pol_msg=1
+            else:
+                pol_msg=0
+            return gain_msg, pol_msg
         else:
             if os.path.exists(msname + check_file) and force_apply:
                 with suppress_output():
                     clearcal(vis=msname)
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
                 if os.path.exists(msname + ".flagversions"):
-                    os.system("rm -rf " + msname + ".flagversions")
+                    os.system(f"rm -rf {msname}.flagversions")
             print(
                 f"Applying solution on ms: {msname} from gaintables: {','.join(gaintable)}."
             )
-            with suppress_output():
-                applycal(
-                    vis=msname,
-                    gaintable=gaintable,
-                    gainfield=gainfield,
-                    applymode=applymode,
-                    interp=interp,
-                    calwt=[False] * len(gaintable),
-                    flagbackup=False,
-                )
-            if len(quartical_table) > 0:
-                for qc in quartical_table:
-                    if os.path.exists(qc) is False:
-                        print(f"Quartical table: {qc} is not present.")
-                        os.system(f"touch {msname}/.nopolselfcal")
-                    else:
-                        print(
-                            f"Applying solution on ms: {msname} from quartical table: {qc}."
-                        )
-                        if applymode == "calonly":
-                            calflag = False
-                        else:
-                            calflag = True
-                        temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
-                        quartical_log = f"{workdir}/{os.path.basename(qc)}.log"  
-                        qc = qc.rstrip("/")
-                        soltypes = get_quartical_soltype(qc)
-                        if len(soltypes)==0:
-                            print("No solution is present.")
+            try:
+                with suppress_output():
+                    applycal(
+                        vis=msname,
+                        gaintable=gaintable,
+                        gainfield=gainfield,
+                        applymode=applymode,
+                        interp=interp,
+                        calwt=[False] * len(gaintable),
+                        flagbackup=False,
+                    )
+                gain_msg=0
+            except:
+                gain_msg=1
+            if gain_msg==0 and soltype!="basic":
+                os.system(f"rm -rf {msname}/.nopolselfcal")
+                if len(quartical_table) > 0:
+                    for qc in quartical_table:
+                        if os.path.exists(qc) is False:
+                            print(f"Quartical table: {qc} is not present.")
                             os.system(f"touch {msname}/.nopolselfcal")
-                            os.system(f"rm -rf {quartical_log}")
-                            os.system(f"rm -rf {temp_pol_caltable}")          
                         else:
-                            soltype = soltypes[0]
-                            quartical_args = [
-                                "goquartical",
-                                f"input_ms.path={msname}",
-                                f"input_ms.data_column=CORRECTED_DATA",
-                                "output.log_to_terminal=True",
-                                f"output.log_directory={quartical_log}",
-                                f"output.gain_directory={temp_pol_caltable}",
-                                "output.overwrite=True",
-                                "output.products=[corrected_data]",
-                                "output.columns=[CORRECTED_DATA]",
-                                f"output.flags={calflag}",
-                                f"solver.terms=[{soltype}]",
-                                "solver.iter_recipe=[0]",
-                                "solver.propagate_flags=False",
-                                f"solver.threads={n_threads}",
-                                "dask.threads=1",
-                                f"{soltype}.type=complex",
-                                f"{soltype}.load_from={qc}/{soltype}",
-                            ]
-                            quartical_cmd = " ".join(quartical_args)
-                            quartical_msg = run_quartical(
-                                quartical_cmd, "paircarsquartical", verbose=True
+                            print(
+                                f"Applying solution on ms: {msname} from quartical table: {qc}."
                             )
-                            if quartical_msg != 0:
-                                print("Quartical solutions did not apply.")
+                            if applymode == "calonly":
+                                calflag = False
+                            else:
+                                calflag = True
+                            temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
+                            quartical_log = f"{workdir}/{os.path.basename(qc)}.log"  
+                            qc = qc.rstrip("/")
+                            soltypes = get_quartical_soltype(qc)
+                            if len(soltypes)==0:
+                                print("No solution is present.")
                                 os.system(f"touch {msname}/.nopolselfcal")
-                            os.system(f"rm -rf {quartical_log}")
-                            os.system(f"rm -rf {temp_pol_caltable}")
+                                os.system(f"rm -rf {quartical_log}")
+                                os.system(f"rm -rf {temp_pol_caltable}")          
+                            else:
+                                soltype = soltypes[0]
+                                quartical_args = [
+                                    "goquartical",
+                                    f"input_ms.path={msname}",
+                                    f"input_ms.data_column=CORRECTED_DATA",
+                                    "output.log_to_terminal=True",
+                                    f"output.log_directory={quartical_log}",
+                                    f"output.gain_directory={temp_pol_caltable}",
+                                    "output.overwrite=True",
+                                    "output.products=[corrected_data]",
+                                    "output.columns=[CORRECTED_DATA]",
+                                    f"output.flags={calflag}",
+                                    f"solver.terms=[{soltype}]",
+                                    "solver.iter_recipe=[0]",
+                                    "solver.propagate_flags=False",
+                                    f"solver.threads={n_threads}",
+                                    "dask.threads=1",
+                                    f"{soltype}.type=complex",
+                                    f"{soltype}.load_from={qc}/{soltype}",
+                                ]
+                                quartical_cmd = " ".join(quartical_args)
+                                quartical_msg = run_quartical(
+                                    quartical_cmd, "paircarsquartical", verbose=False
+                                )
+                                if quartical_msg != 0:
+                                    print("Quartical solutions did not apply.")
+                                    os.system(f"touch {msname}/.nopolselfcal")
+                                os.system(f"rm -rf {quartical_log}")
+                                os.system(f"rm -rf {temp_pol_caltable}")
+                if os.path.exists(f"{msname}/.nopolselfcal"):
+                    pol_msg=1
+                else:
+                    pol_msg=0   
+            elif gain_msg==0 and soltype=="basic":
+                pol_msg = 0
+            else:
+                os.system(f"touch {msname}/.nopolselfcal")
+                pol_msg=1 
         if overwrite_datacolumn:
             print(f"Over writing data column with corrected data for ms: {msname}.")
             outputvis = msname.split(".ms")[0] + "_cor.ms"
@@ -228,11 +250,12 @@ def applysol(
                 os.system(f"mv {outputvis} {msname}")
             for t in touch_file_names:
                 os.system(f"touch {msname}/{t}")
-        os.system("touch " + msname + check_file)
-        return 0
+        if gain_msg==0:
+            os.system("touch " + msname + check_file)
+        return gain_msg, pol_msg
     except Exception as e:
         traceback.print_exc()
-        return 1
+        return 1, 1
 
 
 def run_all_applysol(
@@ -405,7 +428,10 @@ def run_all_applysol(
             else:
                 failed += 1
         results = list(dask_client.gather(dask_client.compute(tasks)))
-        apply_failed = sum(results)
+        gain_msg =[]
+        for r in results:
+            gain_msg.append(r[0])
+        apply_failed = sum(gain_msg)
         succeed = len(mslist) - apply_failed - failed
         print(f"Total measurement sets: {len(mslist)}")
         print(f"Total success: {succeed}")

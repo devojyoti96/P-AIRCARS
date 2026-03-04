@@ -85,8 +85,10 @@ def run_all_applysol(
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
-        succeed = 0
-        failed = len(mslist)
+        gain_succeed = 0
+        gain_failed = len(mslist)
+        pol_succeed = 0
+        pol_failed = len(mslist)
 
     try:
         os.chdir(workdir)
@@ -101,9 +103,6 @@ def run_all_applysol(
         selfcal_quartical_tables = sorted(
             glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.dcal")
         )
-        #print(f"Selfcal caltables: {selfcal_tables}")
-        #print(f"Bandpass selfcal caltables: {selfcal_bpass_tables}")
-        #print(f"Polarisation selfcal caltables: {selfcal_quartical_tables}")
         if len(selfcal_tables) == 0:
             print(f"No self-cal caltable is present in {caldir}.")
             return 1, succeed, failed
@@ -216,22 +215,33 @@ def run_all_applysol(
         if len(tasks) > 0:
             print("Applying solutions...")
             results = list(dask_client.gather(dask_client.compute(tasks)))
-            failed = sum(results)
-            succeed = len(mslist) - failed
+            gain_msg = []
+            pol_msg = []
+            for r in results:
+                gain_msg.append(r[0])
+                pol_msg.append(r[1])
+            gain_failed = sum(gain_msg)
+            pol_failed = sum(pol_msg)
+            gain_succeed = len(mslist) - gain_failed
+            pol_succeed = len(mslist) - pol_failed
             print("##################")
             print(f"Total measurement sets: {len(mslist)}")
-            print(f"Succeeded: {succeed}")
-            print(f"Failed: {failed}")
-            if failed == 0:
+            print(f"Gain solution applied, Succeeded: {gain_succeed}")
+            print(f"Gain solution applied, Failed: {gain_failed}")
+            print(f"Polarisation solution applied, Succeeded: {pol_succeed}")
+            print(f"Polarisation solution applied, Failed: {pol_failed}")
+            if gain_failed == 0 and pol_failed == 0:
                 print(
-                    "Applying self-calibration solutions for targets are done successfully."
+                    "Applying gain and polarisation self-calibration solutions for targets are done successfully."
                 )
-                msg = 0
+            elif pol_failed == 0:   
+                print(
+                    "Applying gain self-calibration solutions for targets are done successfully, but failed for polarisation solutions."
+                )
             else:
                 print(
                     "Applying self-calibration solutions for targets are not done successfully."
                 )
-                msg = 1
             print("##################")
         else:
             print("##################")
@@ -239,7 +249,6 @@ def run_all_applysol(
                 "Applying self-calibration solutions for targets are not done successfully. No suitable calibration solutions are found."
             )
             print("##################")
-            msg = 1
     except Exception as e:
         traceback.print_exc()
         print("##################")
@@ -247,9 +256,8 @@ def run_all_applysol(
             "Applying self-calibration solutions for targets are not done successfully."
         )
         print("##################")
-        msg = 1
     finally:
-        return msg, succeed, failed
+        return gain_succeed, gain_failed, pol_succeed, pol_failed
 
 
 def main(
