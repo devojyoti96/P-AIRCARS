@@ -876,7 +876,7 @@ def correct_spectrosnap_pbleak(
                     ncpu=ncpu,
                 )
                 leakage_info.append(freq)
-                leakage_info.appen(time)
+                leakage_info.append(time)
                 if leakage_info is not None:
                     leakage_info_list.append(leakage_info)
     os.system(f"rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
