@@ -388,11 +388,6 @@ def cli():
         print("Please provide full path of output directory.")
         return 1
 
-    workdir_permission = test_permission(args.workdir)
-    if workdir_permission is False:
-        print(f"Do not have permission for work directory: {args.workdir}")
-        return
-
     target_datadir_permission = test_permission(args.target_datadir)
     if target_datadir_permission is False:
         print(
