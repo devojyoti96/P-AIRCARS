@@ -3,7 +3,12 @@ import sys
 import traceback
 import argparse
 import numpy as np
-from paircars.utils.basic_utils import get_cachedir, check_port_status, get_free_port
+from paircars.utils.basic_utils import (
+    get_cachedir,
+    check_port_status,
+    get_free_port,
+    test_permissions,
+)
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
@@ -383,6 +388,26 @@ def cli():
         print("Please provide full path of output directory.")
         return 1
 
+    workdir_permission = test_permission(args.workdir)
+    if workdir_permission is False:
+        print(f"Do not have permission for work directory: {args.workdir}")
+        return
+
+    target_datadir_permission = test_permission(args.target_datadir)
+    if target_datadir_permission is False:
+        print(
+            f"Do not have permission for target data directory: {args.target_datadir}"
+        )
+        return
+
+    cal_datadir_permission = test_permission(args.cal_datadir)
+    if cal_datadir_permission is False:
+        print(
+            f"Do not have permission for calibrator data directory: {args.cal_datadir}"
+        )
+        args.cal_datadir = ""
+        args.cal_metafits = ""
+
     jobid = get_jobid()
     scheduler_name = get_scheduler_name()
 
@@ -426,12 +451,12 @@ def cli():
         ############################################
         if scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
-            if msg!=0:
+            if msg != 0:
                 print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
             return msg
         elif scheduler_name == "slurm":
             msg = submit_slurm_master_flow(args, jobid)
-            if msg!=0:
+            if msg != 0:
                 print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
             return msg
         else:

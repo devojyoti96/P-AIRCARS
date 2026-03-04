@@ -27,7 +27,6 @@ from prefect.settings import get_current_settings
 from paircars.utils.basic_utils import (
     get_cachedir,
     timestamp_to_mjdsec,
-    test_permission,
 )
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -4241,6 +4240,8 @@ def cli():
     else:
         jobid = args.jobid
 
+    os.system(f"rm -rf {args.workdir}/dask_*")
+
     ###########################################################
     # Estimating jobs memory size (5 times each measurment set)
     ###########################################################
@@ -4254,26 +4255,8 @@ def cli():
         )
         return
 
-    workdir_permission = test_permission(args.workdir)
-    if workdir_permission is False:
-        print(f"Do not have permission for work directory: {args.workdir}")
-        return 
-    else:
-        os.system(f"rm -rf {args.workdir}/dask_*")
-
-    target_datadir_permission = test_permission(args.target_datadir)
-    if target_datadir_permission is False:
-        print(
-            f"Do not have permission for target data directory: {args.target_datadir}"
-        )
-        return
-
     total_ncoarse = 0
     for msname in target_mslist:
-        ms_permission = test_permission(msname)
-        if ms_permission is False:
-            print(f"Do not have permission for measurement set: {msname}")
-            return
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
@@ -4285,34 +4268,17 @@ def cli():
 
     if args.cal_datadir:
         if os.path.exists(args.cal_datadir):
-            cal_datadir_permission = test_permission(args.cal_datadir)
-            if cal_datadir_permission is False:
+            cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
+            if len(cal_mslist) == 0:
                 print(
-                    f"Do not have permission for calibrator data directory: {args.cal_datadir}"
+                    f"No calibrator measurement set is present in: {args.cal_datadir}"
                 )
-                cal_datadir = ""
-                cal_metafits = ""
             else:
-                cal_datadir = args.cal_datadir
-                cal_metafits = args.cal_metafits
-                cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
-                if len(cal_mslist) == 0:
-                    print(
-                        f"No calibrator measurement set is present in: {args.cal_datadir}"
-                    )
-                else:
-                    cal_ms_sizes = [
-                        get_ms_size(cal_msname) for cal_msname in cal_mslist
-                    ]
-                    total_ms_size_cal = sum(cal_ms_sizes)
-                    min_mem_cal = round(10 * total_ms_size_cal / total_ncoarse, 2)
+                cal_ms_sizes = [get_ms_size(cal_msname) for cal_msname in cal_mslist]
+                total_ms_size_cal = sum(cal_ms_sizes)
+                min_mem_cal = round(10 * total_ms_size_cal / total_ncoarse, 2)
         else:
             print(f"Calibrator data direcotry does not exist.")
-            cal_datadir = ""
-            cal_metafits = ""
-    else:
-        cal_datadir = ""
-        cal_metafits = ""
 
     min_mem = max(min_mem_target, min_mem_cal)
 
