@@ -177,7 +177,7 @@ def applysol(
                         temp_pol_caltable = f"{workdir}/{os.path.basename(qc)}.tempcal"
                         quartical_log = f"{workdir}/{os.path.basename(qc)}.log"  
                         qc = qc.rstrip("/")
-                        soltypes = get_quartical_soltype(caltable)
+                        soltypes = get_quartical_soltype(qc)
                         if len(soltypes)==0:
                             print("No solution is present.")
                             os.system(f"touch {msname}/.nopolselfcal")
