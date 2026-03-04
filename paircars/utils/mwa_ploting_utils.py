@@ -1622,7 +1622,9 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         im = ax_spec.imshow(
             data, aspect="auto", origin="lower", norm=norm, cmap="magma"
         )
-        
+        ax_spec.set_ylabel("Frequency (MHz)")
+        ax_spec.set_xticklabels([])  # Remove x-axis labels from top plot
+        # Y-ticks
         # --------------------------------------------
         # Label first valid frequency of each DS block
         # --------------------------------------------
@@ -1643,10 +1645,6 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         # Set ticks at those positions
         ax_spec.set_yticks(block_starts)
         ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])
-        
-        
-        ax_spec.set_yticks(yticks)
-        ax_spec.set_yticklabels([f"{freqs[int(i)]:.1f}" for i in yticks])
         # Plot time series
         ax_ts.plot(timeseries)
         ax_ts.set_xlim(0, len(timeseries) - 1)
