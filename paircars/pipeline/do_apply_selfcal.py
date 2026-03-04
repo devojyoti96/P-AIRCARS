@@ -101,9 +101,9 @@ def run_all_applysol(
         selfcal_quartical_tables = sorted(
             glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.dcal")
         )
-        print(f"Selfcal caltables: {selfcal_tables}")
-        print(f"Bandpass selfcal caltables: {selfcal_bpass_tables}")
-        print(f"Polarisation selfcal caltables: {selfcal_quartical_tables}")
+        #print(f"Selfcal caltables: {selfcal_tables}")
+        #print(f"Bandpass selfcal caltables: {selfcal_bpass_tables}")
+        #print(f"Polarisation selfcal caltables: {selfcal_quartical_tables}")
         if len(selfcal_tables) == 0:
             print(f"No self-cal caltable is present in {caldir}.")
             return 1, succeed, failed

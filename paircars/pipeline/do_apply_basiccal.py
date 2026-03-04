@@ -200,7 +200,7 @@ def applysol(
                         ]
                         quartical_cmd = " ".join(quartical_args)
                         quartical_msg = run_quartical(
-                            quartical_cmd, "paircarsquartical", verbose=False
+                            quartical_cmd, "paircarsquartical", verbose=True
                         )
                         if quartical_msg != 0:
                             print("Quartical solutions did not apply.")

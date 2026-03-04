@@ -504,9 +504,9 @@ def do_selfcal(
             #########################################################
             # If DR decreased below starting DR
             #########################################################
-            if DR3 < min_DR and (
-                (calmode == "p" and num_iter > 1)
-                or (calmode == "ap" and num_iter_after_ap > 1)
+            if DR3 < 0.9 * min_DR and (
+                (calmode == "p" and num_iter > min_iter)
+                or (calmode == "ap" and num_iter_after_ap > min_iter)
             ):
                 intlogger.info(f"Dynamic range decreased below start dynamic range.")
                 os.system("rm -rf *_selfcal_present*")
