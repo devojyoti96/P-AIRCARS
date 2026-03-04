@@ -504,8 +504,13 @@ def do_selfcal(
             #########################################################
             # If DR decreased below starting DR
             #########################################################
-            if DR3 < 0.9 * min_DR and ((calmode == "p" and num_iter > min_iter) or (calmode == "ap" and num_iter_after_ap > min_iter)):
-                intlogger.info(f"Dynamic range decreased below start dynamic range: {min_DR}.")
+            if DR3 < 0.9 * min_DR and (
+                (calmode == "p" and num_iter > min_iter)
+                or (calmode == "ap" and num_iter_after_ap > min_iter)
+            ):
+                intlogger.info(
+                    f"Dynamic range decreased below start dynamic range: {min_DR}."
+                )
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -960,9 +965,22 @@ def do_polselfcal(
             ##################################
             pollogger.info("######################################")
             pollogger.info(f"Selfcal iteration : " + str(num_iter))
-            pbcor = True
-            leakagecor = True
-            pbuncor = True
+            if num_iter==0:
+                pbcor = True
+                leakagecor = True
+                pbuncor = False
+            elif num_iter<=min_iter:
+                pbcor = False
+                leakagecor = True
+                pbuncor = False
+            elif num_iter==min_iter:
+                pbcor = False
+                leakagecor = True
+                pbuncor = True
+            else:
+                pbcor = True
+                leakagecor = True
+                pbuncor = True
             (
                 msg,
                 gaintable,
@@ -1009,7 +1027,7 @@ def do_polselfcal(
                 return msg, msname, [], ""
             elif msg == 2:
                 if calc_chunks is False:
-                    if num_iter >= min_iter:
+                    if num_iter > min_iter:
                         pollogger.warning(
                             "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
                         )
@@ -1043,7 +1061,7 @@ def do_polselfcal(
                 v_leakage, v_err = weighted_mean(V, Ve)
                 leakage_file = f"{gaintable[0].split('.dcal')[0]}.leakage.npy"
                 np.save(
-                    leakage_file, [q_leakage, u_leakage, v_leakage, q_err, u_err, v_err]
+                    leakage_file, leakage_info
                 )
                 if num_iter == 0:
                     DR1 = DR3 = DR2 = dyn

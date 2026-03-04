@@ -2948,11 +2948,15 @@ def master_control(
                 selfcal_applymode = "calonly"
                 filtered_selfcalms_list = []
                 for selfcalms in selfcal_mslist:
-                    unflag_chans, flag_chans = get_chans_flag(msname=selfcalms,n_threads=n_threads)    
-                    if len(flag_chans) / (len(flag_chans)+len(unflag_chans))<=0.8:
+                    unflag_chans, flag_chans = get_chans_flag(
+                        msname=selfcalms, n_threads=n_threads
+                    )
+                    if len(flag_chans) / (len(flag_chans) + len(unflag_chans)) <= 0.8:
                         filtered_selfcalms_list.append(selfcalms)
                     else:
-                        print(f"More than 80% channels are flagged for ms: {selfcalms}. Not using for self-calibration.")    
+                        print(
+                            f"More than 80% channels are flagged for ms: {selfcalms}. Not using for self-calibration."
+                        )
                 selfcal_mslist = filtered_selfcalms_list
             else:
                 selfcal_applymode = "calflag"

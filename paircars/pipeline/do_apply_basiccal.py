@@ -406,13 +406,13 @@ def run_all_applysol(
             msmd.close()
             final_bpasstable = get_nearest_bandpass_table(att_caltables, ms_freq)
             final_gaintable = [final_bpasstable]
-            interp = ["nearest,nearestflag"]
+            interp = ["linear,linear"]
             if len(crossphase_table) > 0:
                 final_crossphasetable = get_nearest_bandpass_table(
                     crossphase_table, ms_freq
                 )
                 final_gaintable.append(final_crossphasetable)
-                interp.append("nearest, nearestflag")
+                interp.append("linear, linear")
             if len(final_gaintable) > 0:
                 tasks.append(
                     delayed(applysol)(

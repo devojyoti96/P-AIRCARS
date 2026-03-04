@@ -207,7 +207,7 @@ def run_all_applysol(
                         quartical_table=quartical_table,
                         overwrite_datacolumn=overwrite_datacolumn,
                         applymode=applymode,
-                        interp=["linear,linearflag"],
+                        interp=["linear,linear"],
                         n_threads=n_threads,
                         mem_limit=mem_limit,
                         force_apply=force_apply,

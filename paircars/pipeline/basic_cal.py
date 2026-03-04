@@ -267,7 +267,7 @@ def single_ms_cal_and_flag(
         if bpass_caltable is not None and os.path.exists(bpass_caltable):
             applycal_gaintable.append(bpass_caltable)
             applycal_gainfield.append("")
-            applycal_interp.append("nearest,nearestflag")
+            applycal_interp.append("linear,linear")
         else:
             print(f"Bandpass calibration is not successful for ms: {msname}.")
             return [], False
@@ -294,7 +294,7 @@ def single_ms_cal_and_flag(
                 ):
                     applycal_gaintable.append(crossphase_caltable)
                     applycal_gainfield.append("")
-                    applycal_interp.append("nearest,nearestflag")
+                    applycal_interp.append("linear,linear")
 
         ##############################
         # Apply calibration
