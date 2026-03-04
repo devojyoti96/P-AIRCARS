@@ -34,7 +34,7 @@ from paircars.utils.calibration import (
     max_time_solar_smearing,
 )
 from paircars.utils.casatasks import reset_weights_and_flags
-from paircars.utils.flagging import do_flag_backup
+from paircars.utils.flagging import do_flag_backup, get_chans_flag
 from paircars.utils.image_utils import filter_images
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -1952,6 +1952,12 @@ def master_control(
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
+    n_threads = os.environ.get("OMP_NUM_THREADS")
+    if n_threads is None:
+        n_threads = 1
+    else:
+        n_threads = max(1, int(n_threads))
+
     try:
         #####################################
         # Reading remotelink and emails
@@ -2253,11 +2259,6 @@ def master_control(
         # Reset any previous weights
         ############################
         print("Resetting previous flags and weights....")
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is None:
-            n_threads = 1
-        else:
-            n_threads = max(1, int(n_threads))
         for msname in target_mslist:
             reset_weights_and_flags(
                 msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
@@ -2945,6 +2946,14 @@ def master_control(
 
             if cal_applied:
                 selfcal_applymode = "calonly"
+                filtered_selfcalms_list = []
+                for selfcalms in selfcal_mslist:
+                    unflag_chans, flag_chans = get_chans_flag(msname=selfcalms,n_threads=n_threads)    
+                    if len(flag_chans) / (len(flag_chans)+len(unflag_chans))<=0.8:
+                        filtered_selfcalms_list.append(selfcalms)
+                    else:
+                        print(f"More than 80% channels are flagged for ms: {selfcalms}. Not using for self-calibration.")    
+                selfcal_mslist = filtered_selfcalms_list
             else:
                 selfcal_applymode = "calflag"
 

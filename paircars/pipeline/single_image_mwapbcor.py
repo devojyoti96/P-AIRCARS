@@ -277,7 +277,7 @@ def get_pbcor_image(
                     ########################################################################################
                     # Image based leakage correction if polarisation selfcal solutions could not be applied, but leakage information available
                     ########################################################################################
-                    header = fits.getheader(pbcor_image)
+                    header = fits.getheader(outfile)
                     if "POLSELF" in header.keys():
                         if header["POLSELF"] == "FALSE":
                             leakagecor_image, _ = correct_image_leakage(
