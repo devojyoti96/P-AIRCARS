@@ -965,15 +965,15 @@ def do_polselfcal(
             ##################################
             pollogger.info("######################################")
             pollogger.info(f"Selfcal iteration : " + str(num_iter))
-            if num_iter==0:
+            if num_iter == 0:
                 pbcor = True
                 leakagecor = True
                 pbuncor = False
-            elif num_iter<=min_iter:
+            elif num_iter <= min_iter:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter==min_iter:
+            elif num_iter == min_iter:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
@@ -1060,9 +1060,7 @@ def do_polselfcal(
                 u_leakage, u_err = weighted_mean(U, Ue)
                 v_leakage, v_err = weighted_mean(V, Ve)
                 leakage_file = f"{gaintable[0].split('.dcal')[0]}.leakage.npy"
-                np.save(
-                    leakage_file, leakage_info
-                )
+                np.save(leakage_file, leakage_info)
                 if num_iter == 0:
                     DR1 = DR3 = DR2 = dyn
                     RMS1 = RMS2 = RMS3 = rms

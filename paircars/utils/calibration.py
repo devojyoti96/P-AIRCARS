@@ -22,6 +22,44 @@ from .imaging import calc_sun_dia, calc_maxuv, calc_field_of_view
 #####################################
 
 
+def fill_nan_gains(x, data):
+    """
+    Interpolate nan gains across frequency
+
+    Parameters
+    ----------
+    x : numpy.array
+        1D array of freqs
+    data : numpy.array
+        1D array of complex gains
+
+    Returns
+    -------
+    numpy.array
+        1D array of nan filled interpolated gains
+    """
+    from scipy.interpolate import interp1d
+
+    x = np.asarray(x)
+    data = np.asarray(data, dtype=float)  # ensure NaNs work
+    nans = np.isnan(data)
+    if np.sum(~nans) < 3:
+        return data
+    sort_idx = np.argsort(x)
+    x = x[sort_idx]
+    data = data[sort_idx]
+    nans = np.isnan(data)
+    interp_func = interp1d(
+        x[~nans],
+        data[~nans],
+        kind="cubic",
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
+    interpolated_data = interp_func(x)
+    return interpolated_data
+
+
 def fluxcal_caltable(caltable, attn=10):
     """
     Function to scale scale MWA bandpass table for attenuation (Digital gain corrections should already been applied)
@@ -102,6 +140,78 @@ def merge_caltables(caltables, merged_caltable, append=False, keepcopy=False):
                 if not keepcopy:
                     os.system("rm -rf " + caltable)
     return merged_caltable
+
+
+def interpolate_bpass(caltables):
+    """
+    Interpolate bandpass tables for missing frequency solutions
+
+    Parameters
+    ----------
+    caltables : list
+        List of bandpass tables
+    overwrite : bool
+        Overwrite the input tables or not
+
+    Returns
+    -------
+    list
+        Output bandpass tables
+    """
+    tb = table()
+    all_freqs = []
+    all_gains = []
+    for cal in caltables:
+        tb.open(cal + "/SPECTRAL_WINDOW")
+        freq = tb.getcol("CHAN_FREQ")
+        tb.close()
+        tb.open(cal)
+        gain = tb.getcol("CPARAM")
+        flag = tb.getcol("FLAG")
+        gain[flag] = np.nan + 1j * np.nan
+        tb.close()
+        all_freqs.append(freq)
+        all_gains.append(gain)
+    all_freqs = np.concatenate(all_freqs, axis=0).flatten()
+    all_gains = np.concatenate(all_gains, axis=1)
+    pos = np.argsort(all_freqs)
+    all_freqs_sorted = all_freqs[pos]
+    all_gains_sorted = all_gains[pos]
+    interpolated_gains = np.ones(all_gains_sorted.shape, dtype="complex")
+    npol = all_gains_sorted.shape[0]
+    nant = all_gains_sorted.shape[2]
+    for p in range(npol):
+        for a in range(nant):
+            interp_re = fill_nan_gains(
+                all_freqs_sorted, np.real(all_gains_sorted[p, :, a])
+            )
+            interp_im = fill_nan_gains(
+                all_freqs_sorted, np.imag(all_gains_sorted[p, :, a])
+            )
+            interp_gain = inter_re + 1j * interp_im
+            interpolated_gains[p, :, a] = interp_gain
+            del interp_gain
+    outlist = []
+    for cal in caltables:
+        cal = cal.rstrip("/")
+        if overwrite is False:
+            outcal = f"{cal}.interp"
+            os.system(f"cp -r {cal} {outcal}")
+        else:
+            outcal = cal
+        tb.open(f"{outcal}/SPECTRAL_WINDOW")
+        freqs = tb.getcol("CHAN_FREQ")
+        tb.close()
+        pos = np.where(freqs == all_freqs_sorted)[0]
+        interp_gain_out = interpolated_gains[:, pos, :]
+        flags = np.abs(interp_gain_out) == 1.0
+        tb.open(outcal, nomodify=False)
+        tb.putcol("CPARAM", interp_gain_out)
+        tb.putcol("FLAG", flags)
+        tb.flush()
+        tb.close()
+        outlist.append(outcal)
+    return outlist
 
 
 def get_psf_size(msname, chan_number=-1):
