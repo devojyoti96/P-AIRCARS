@@ -1450,7 +1450,7 @@ def selfcal_round(
                     return 3, applycal_gaintable, 0, 0, "", "", "", []
 
                 applycal_gaintable.append(bpass_caltable)
-                interp.append("linear,linearflag")
+                interp.append("linear,linear")
 
             #########################################
             # Flagging bad gains
