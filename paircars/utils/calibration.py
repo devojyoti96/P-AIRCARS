@@ -172,9 +172,11 @@ def interpolate_bpass(caltables, overwrite=False):
         tb.close()
         all_freqs.append(freq)
         all_gains.append(gain)
-    all_freqs = np.concatenate(all_freqs, axis=0).flatten()
+    all_freqs = np.concatenate(all_freqs, axis=0)
     all_gains = np.concatenate(all_gains, axis=1)
-    pos = np.argsort(all_freqs)
+    all_freqs = all_freqs.flatten()
+    pos = np.argsort(all_freqs)[0]
+    print (pos)
     all_freqs_sorted = all_freqs[pos]
     all_gains_sorted = all_gains[pos]
     interpolated_gains = np.ones(all_gains_sorted.shape, dtype="complex")
