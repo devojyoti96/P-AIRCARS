@@ -71,19 +71,21 @@ def run_all_applysol(
 
     Returns
     --------
-    list
-        Calibrated target scans
     int
-        Succeeded ms number
+        Succeeded gain solution ms number
     int
-        Failed ms number
+        Failed gain solution ms number
+    int 
+        Succeeded polarisation solution ms number
+    int
+        Failed polarisation solution ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return 1, 0, 0
+        return 0, 0, 0, 0
     else:
         gain_succeed = 0
         gain_failed = len(mslist)
@@ -105,7 +107,7 @@ def run_all_applysol(
         )
         if len(selfcal_tables) == 0:
             print(f"No self-cal caltable is present in {caldir}.")
-            return 1, succeed, failed
+            return gain_succeed, gain_failed, pol_succeed, pol_failed
         selfcal_tables_start_chans = np.array(
             [
                 int(
@@ -142,7 +144,7 @@ def run_all_applysol(
         mslist = filtered_mslist
         if len(mslist) == 0:
             print("No valid measurement set.")
-            return 1, succeed, failed
+            return gain_succeed, gain_failed, pol_succeed, pol_failed
 
         ####################################
         # Applycal jobs
@@ -308,13 +310,15 @@ def main(
         Dask client address
 
     Returns
-    -------
+    --------
     int
-        Success message
+        Succeeded gain solution ms number
     int
-        Succeeded ms number
+        Failed gain solution ms number
+    int 
+        Succeeded polarisation solution ms number
     int
-        Failed ms number
+        Failed polarisation solution ms number
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -349,10 +353,12 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return 1, 0, 0
+        return 0, 0, 0, 0
     else:
-        succeed = 0
-        failed = len(mslist)
+        gain_succeed = 0
+        gain_failed = len(mslist)
+        pol_succeed = 0
+        pol_failed = len(mslist)
 
     total_ncoarse = 0
     for msname in mslist:
@@ -380,7 +386,7 @@ def main(
         )
         if result is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 0, 0, 0, 0
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
@@ -392,9 +398,8 @@ def main(
 
         if caldir == "" or not os.path.exists(caldir):
             print("Provide existing caltable directory.")
-            msg = 1
         else:
-            msg, succeed, failed = run_all_applysol(
+            gain_succeed, gain_failed, pol_succeed, pol_failed = run_all_applysol(
                 mslist,
                 metafits,
                 dask_client,
@@ -408,7 +413,6 @@ def main(
             )
     except Exception:
         traceback.print_exc()
-        msg = 1
     finally:
         time.sleep(5)
         clean_shutdown(observer)
@@ -420,8 +424,8 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-    return msg, succeed, failed
-
+    return gain_succeed, gain_failed, pol_succeed, pol_failed
+    
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -505,7 +509,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg, _, _ = main(
+    gain_succeed, gain_failed, pol_succeed, pol_failed = main(
         args.mslist,
         args.metafits,
         args.workdir,
@@ -519,4 +523,9 @@ def cli():
         logfile=args.logfile,
         jobid=args.jobid,
     )
+    if gain_failed == 0 and pol_failed == 0:
+        msg=0
+    else:
+        msg=1
     return msg
+    

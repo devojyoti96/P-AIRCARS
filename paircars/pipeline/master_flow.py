@@ -1104,9 +1104,13 @@ def run_apply_selfcal_sol(
     int
         Success message for applying calibration solutions and spliting target scans
     int
-        Succeeded ms number
+        Succeeded gain solution ms number
     int
-        Failed ms number
+        Failed gain solution ms number
+    int 
+        Succeeded polarisation solution ms number
+    int
+        Failed polarisation solution ms number
     """
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
@@ -1132,7 +1136,7 @@ def run_apply_selfcal_sol(
         # Applying self-calibration
         ########################
         with get_dask_client() as dask_client:
-            msg, succeed, failed = do_apply_selfcal.main(
+            gain_succeed, gain_failed, pol_succeed, pol_failed = do_apply_selfcal.main(
                 mslist,
                 metafits,
                 workdir,
@@ -1146,13 +1150,17 @@ def run_apply_selfcal_sol(
                 jobid=jobid,
                 dask_client=dask_client,
             )
+        if gain_failed==0:
+            msg=0
+        else:
+            msg=1
     finally:
         stop_event.set()
         log_thread_applyselfcal.join(timeout=5)
     if msg != 0:
         raise RuntimeError("Applying self-calibration solutions is failed.")
     else:
-        return msg, succeed, failed
+        return msg, gain_succeed, gain_failed, pol_succeed, pol_failed
 
 
 @task(
@@ -3386,9 +3394,11 @@ def master_control(
                     remote_log=remote_logger,
                 )
                 try:
-                    msg, succeed, failed = future_apply_selfcal.result()
+                    msg, gain_succeed, gain_failed, pol_succeed, pol_failed = future_apply_selfcal.result()
                     if emails != "":
-                        email_msg = f"Applying self-calibration on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
+                        email_msg = f"Applying self-calibration on final target measurement sets are done.\nGain solutions applied: Succeeded: {gain_succeed}, failed: {gain_failed}."
+                        if do_polcal:
+                            email_msg+=f"\nPolarisation solution applied: Succeeded: {pol_succeed}, failed: {pol_failed}."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
