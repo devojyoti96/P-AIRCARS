@@ -189,7 +189,7 @@ def interpolate_bpass(caltables, overwrite=False):
             interp_im = fill_nan_gains(
                 all_freqs_sorted, np.imag(all_gains_sorted[p, :, a])
             )
-            interp_gain = inter_re + 1j * interp_im
+            interp_gain = interp_re + 1j * interp_im
             interpolated_gains[p, :, a] = interp_gain
             del interp_gain
     outlist = []
