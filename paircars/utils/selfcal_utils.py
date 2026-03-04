@@ -853,8 +853,8 @@ def correct_spectrosnap_pbleak(
         imagename = images[i]
         modelname = models[i]
         header = fits.getheader(imagename)
-        freq = header["CRVAL3"]
-        time = header["DATE-OBS"]
+        #freq = header["CRVAL3"]
+        #time = header["DATE-OBS"]
         if "MFS" not in imagename:
             wsclean_images = image_dic[imagename]
             wsclean_models = model_dic[modelname]
@@ -875,8 +875,8 @@ def correct_spectrosnap_pbleak(
                     pbuncor=pbuncor,
                     ncpu=ncpu,
                 )
-                leakage_info.append(freq)
-                leakage_info.append(time)
+                #leakage_info.append(freq)
+                #leakage_info.append(time)
                 if leakage_info is not None:
                     leakage_info_list.append(leakage_info)
     os.system(f"rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
