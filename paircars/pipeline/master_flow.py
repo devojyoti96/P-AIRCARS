@@ -4412,8 +4412,8 @@ def cli():
             args.target_metafits,
             args.workdir,
             args.outdir,
-            calibrator_datadir=cal_datadir,
-            calibrator_metafits=cal_metafits,
+            calibrator_datadir=args.cal_datadir,
+            calibrator_metafits=args.cal_metafits,
             solar_data=args.solar_data,
             # Pre-calibration
             do_forcereset_weightflag=args.do_forcereset_weightflag,
