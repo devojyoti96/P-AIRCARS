@@ -566,11 +566,15 @@ def run_basic_cal_rounds(
         for msname in mslist:
             if uvrange == "":
                 uvrange = get_gleam_uvrange(msname)
-            flag_uvranges = get_uvrange_exclude(uvrange)
-            for flag_uvrange in flag_uvranges:
-                flagdata(
-                    vis=msname, mode="manual", uvrange=flag_uvrange, flagbackup=False
-                )
+            if uvrange!="":
+                flag_uvranges = get_uvrange_exclude(uvrange)
+                for flag_uvrange in flag_uvranges:
+                    try:
+                        flagdata(
+                            vis=msname, mode="manual", uvrange=flag_uvrange, flagbackup=False
+                        )
+                    except:
+                        pass
 
         for cal_round in range(1, n_rounds + 1):
             print("#################################")
