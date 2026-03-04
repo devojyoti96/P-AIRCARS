@@ -7,7 +7,7 @@ from paircars.utils.basic_utils import (
     get_cachedir,
     check_port_status,
     get_free_port,
-    test_permissions,
+    test_permission,
 )
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
