@@ -1622,11 +1622,29 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         im = ax_spec.imshow(
             data, aspect="auto", origin="lower", norm=norm, cmap="magma"
         )
-        ax_spec.set_ylabel("Frequency (MHz)")
-        ax_spec.set_xticklabels([])  # Remove x-axis labels from top plot
-        # Y-ticks
-        yticks = ax_spec.get_yticks()
-        yticks = yticks[(yticks >= 0) & (yticks < len(freqs))]
+        
+        # --------------------------------------------
+        # Label first valid frequency of each DS block
+        # --------------------------------------------
+
+        freqs_arr = np.array(freqs)
+
+        # Identify valid frequency rows
+        valid = ~np.isnan(freqs_arr)
+
+        # Find start index of each contiguous valid block
+        block_starts = []
+        for i in range(len(freqs_arr)):
+            if valid[i] and (i == 0 or not valid[i - 1]):
+                block_starts.append(i)
+
+        block_starts = np.array(block_starts)
+
+        # Set ticks at those positions
+        ax_spec.set_yticks(block_starts)
+        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])
+        
+        
         ax_spec.set_yticks(yticks)
         ax_spec.set_yticklabels([f"{freqs[int(i)]:.1f}" for i in yticks])
         # Plot time series
