@@ -217,14 +217,14 @@ def interpolate_bpass(caltables, overwrite=False):
         gains[flags] = interp_gain_out[flags]
         tb.putcol("CPARAM", gains)
         flags *= False
-        flags = np.abs(gains) == 1.0
+        pos = np.where(np.isnan(np.abs(gains)))
+        flags[pos]=True
         tb.putcol("FLAG", flags)
         tb.flush()
         tb.close()
         outlist.append(outcal)
     return outlist
-
-
+    
 def get_cal_flag_info(caltable):
     """
     Get flag information of the caltable
