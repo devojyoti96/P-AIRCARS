@@ -14,7 +14,7 @@ from casatasks import flagmanager
 from dask import delayed
 from functools import partial
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output, get_datadir, weighted_mean
+from paircars.utils.basic_utils import suppress_output, get_datadir, weighted_mean, mjdsec_to_timestamp
 from paircars.utils.calibration import (
     get_caltable_metadata,
     get_quartical_table_metadata,
@@ -24,6 +24,7 @@ from paircars.utils.flagging import (
     get_unflagged_antennas,
     get_chans_flag,
     do_flag_backup,
+    get_chans_flag_per_time,
 )
 from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize
 from paircars.utils.logger_utils import (
@@ -343,6 +344,7 @@ def do_selfcal(
         calmode = "p"
         threshold = start_threshold
         last_round_gaintable = []
+        last_round_ms = ""
         use_previous_model = False
         nondisk_flag = True
         min_DR = 0
@@ -515,6 +517,9 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 return 0, msname, last_round_gaintable, nondisk_flag
 
             #########################################################
@@ -538,6 +543,9 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
                     return 0, msname, last_round_gaintable, nondisk_flag
 
             ##############################################################
@@ -554,6 +562,9 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 return 0, msname, last_round_gaintable, nondisk_flag
 
             ##########################
@@ -566,6 +577,9 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 return 0, msname, last_round_gaintable, nondisk_flag
 
             ###########################
@@ -683,6 +697,10 @@ def do_selfcal(
                     return 0, msname, gaintable, nondisk_flag
             num_iter += 1
             last_round_gaintable = gaintable
+            last_round_ms = f"{msname}.lastround"
+            if os.path.exists(last_round_ms):
+                os.system(f"rm -rf {last_round_ms}")
+            os.system(f"cp -r {msname} {last_round_ms}")
             if calmode == "ap":
                 num_iter_after_ap += 1
             num_iter_fixed_sigma += 1
@@ -707,7 +725,6 @@ def do_polselfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="60s",
     weight="briggs",
     robust=0.0,
     solar_selfcal=True,
@@ -745,8 +762,6 @@ def do_polselfcal(
         UV-range for calibration
     minuv : float, optionial
         Minimum UV-lambda to use in imaging
-    solint : str, optional
-        Solutions interval
     weight : str, optional
         Imaging weighting
     robust : float, optional
@@ -831,6 +846,14 @@ def do_polselfcal(
                     flagmanager(vis=msname, mode="restore", versionname="nondisk_1")
                 flagmanager(vis=msname, mode="delete", versionname="nondisk_1")
 
+        ######################################
+        # Choosing the best time (least flags)
+        ######################################
+        times, flag_frac = get_chans_flag_per_time(msname)
+        pos = np.argmin(flag_frac)
+        best_time_mjdsec = times[pos]
+        best_time = mjdsec_to_timestamp(base_time_mjdsec, str_format=1)
+        
         ##############################
         # Spliting corrected data
         ##############################
@@ -854,6 +877,7 @@ def do_polselfcal(
                     spw=split_spw,
                     field=str(field),
                     scan=str(scan),
+                    timerange=best_time,
                     outputvis=selfcalms,
                     datacolumn="corrected",
                 )
@@ -866,6 +890,7 @@ def do_polselfcal(
                     spw=split_spw,
                     field=str(field),
                     scan=str(scan),
+                    timerange=best_time,
                     outputvis=selfcalms,
                     datacolumn="data",
                 )
@@ -961,6 +986,7 @@ def do_polselfcal(
         calc_chunks = True
         last_round_gaintable = []
         last_leakage_file = ""
+        last_round_ms = ""
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
 
@@ -978,11 +1004,11 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = True
-            elif num_iter < min_iter:
+            elif num_iter<3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter == min_iter:
+            elif num_iter==3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
@@ -1009,7 +1035,6 @@ def do_polselfcal(
                 round_number=num_iter,
                 uvrange=uvrange,
                 minuv=minuv,
-                solint=solint,
                 calc_chunks=calc_chunks,
                 refant=str(refant),
                 threshold=threshold,
@@ -1036,13 +1061,16 @@ def do_polselfcal(
                 return msg, msname, [], ""
             elif msg == 2:
                 if calc_chunks is False:
-                    if num_iter > 2 * min_iter:
+                    if num_iter > min_iter:
                         pollogger.warning(
                             "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
                         )
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
+                        if os.path.exists(last_round_ms):
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"mv {last_round_ms} {msname}")
                         return 0, msname, last_round_gaintable, last_leakage_file
                     else:
                         pollogger.error(
@@ -1133,7 +1161,7 @@ def do_polselfcal(
                 ##############################################################
                 if (
                     (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
-                    and num_iter > 2 * min_iter
+                    and num_iter > min_iter
                     and leakage_coverged
                 ):
                     pollogger.info(
@@ -1142,12 +1170,15 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
                     return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # If maximum DR has reached
                 ###########################
-                if DR3 >= max_DR and num_iter > 2 * min_iter and leakage_coverged:
+                if DR3 >= max_DR and num_iter > min_iter and leakage_coverged:
                     pollogger.info(f"Maximum dynamic range is reached.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -1157,13 +1188,16 @@ def do_polselfcal(
                 ##########################
                 # If DR suddenly decreased
                 ##########################
-                if DR3 < 0.7 * DR2 and num_iter > 2 * min_iter and leakage_coverged:
+                if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_coverged:
                     pollogger.info(
                         f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
                     return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
@@ -1176,7 +1210,7 @@ def do_polselfcal(
                 ########################################
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
-                    and num_iter > 2 * min_iter
+                    and num_iter > min_iter
                     and leakage_coverged
                 ):
                     pollogger.info(f"Self-calibration has converged.\n")
@@ -1187,7 +1221,7 @@ def do_polselfcal(
                 #########################################
                 # If maximum iteration has reached
                 #########################################
-                elif num_iter > 2 * min_iter and num_iter == max_iter:
+                elif num_iter > min_iter and num_iter == max_iter:
                     pollogger.info(
                         f"Self-calibration is finished. Maximum iteration is reached.\n"
                     )
@@ -1200,6 +1234,10 @@ def do_polselfcal(
                 num_iter += 1
                 last_round_gaintable = gaintable
                 last_leakage_file = leakage_file
+                last_round_ms = f"{msname}.lastround"
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {last_round_ms}")
+                os.system(f"cp -r {msname} {last_round_ms}")
     except Exception as e:
         traceback.print_exc()
         os.system("rm -rf *_selfcal_present*")
@@ -1218,7 +1256,7 @@ def do_full_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -1273,7 +1311,7 @@ def do_full_selfcal(
         end_threshold=end_threshold,
         max_iter=max_iter,
         max_DR=max_DR,
-        min_iter=min_iter,
+        min_iter=max(3, min_iter),
         DR_convergence_frac=DR_convergence_frac,
         uvrange=uvrange,
         minuv=minuv,
@@ -1302,12 +1340,11 @@ def do_full_selfcal(
             metafits=metafits,
             max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
-            min_iter=2,
+            min_iter=max(3,int(min_iter/2)),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,
             minuv=minuv,
-            solint=solint,
             weight=weight,
             robust=robust,
             solar_selfcal=solar_selfcal,
@@ -1336,7 +1373,7 @@ def main(
     stop_thresh=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     conv_frac=0.1,
     solint="60s",
     uvrange="",
@@ -1869,7 +1906,7 @@ def cli():
     adv_args.add_argument(
         "--min_iter",
         type=int,
-        default=5,
+        default=3,
         help="Minimum number of selfcal iterations",
         metavar="Integer",
     )

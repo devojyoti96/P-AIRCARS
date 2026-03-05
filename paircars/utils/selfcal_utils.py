@@ -857,8 +857,6 @@ def correct_spectrosnap_pbleak(
         imagename = images[i]
         modelname = models[i]
         header = fits.getheader(imagename)
-        # freq = header["CRVAL3"]
-        # time = header["DATE-OBS"]
         if "MFS" not in imagename:
             wsclean_images = image_dic[imagename]
             wsclean_models = model_dic[modelname]
@@ -879,8 +877,6 @@ def correct_spectrosnap_pbleak(
                     pbuncor=pbuncor,
                     ncpu=ncpu,
                 )
-                # leakage_info.append(freq)
-                # leakage_info.append(time)
                 if leakage_info is not None:
                     leakage_info_list.append(leakage_info)
     os.system(f"rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
@@ -1081,12 +1077,15 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
-            nintervals, _ = get_optimal_image_interval(
-                msname,
-                temporal_tol_factor=float(min_tol_factor / 100.0),
-                spectral_tol_factor=0.1,
-                flag_central_chan=flag_central_chan,
-            )
+            if do_polcal:
+                nintervals, _ = get_optimal_image_interval(
+                    msname,
+                    temporal_tol_factor=float(min_tol_factor / 100.0),
+                    spectral_tol_factor=0.1,
+                    flag_central_chan=flag_central_chan,
+                )
+            else:
+                nintervals = 1
         else:
             nchans = 1
             nintervals = 1
@@ -1516,7 +1515,6 @@ def selfcal_round(
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
                 "D.type=complex",
-                f"D.time_interval={solint}",
                 f"D.freq_interval={int(freqres*1000.0)}kHz",
             ]
             if solve_array_leakage:

@@ -397,8 +397,8 @@ def weighted_mean(x, xerr):
         Weighted error
     """
     w = 1.0 / xerr**2
-    mean = np.sum(w * x) / np.sum(w)
-    err = np.sqrt(1.0 / np.sum(w))
+    mean = np.nansum(w * x) / np.nansum(w)
+    err = np.sqrt(1.0 / np.nansum(w))
     return mean, err
 
 
