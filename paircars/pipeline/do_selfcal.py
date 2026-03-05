@@ -1156,9 +1156,19 @@ def do_polselfcal(
                 pollogger.info(
                     f"Stokes I to V leakage: {round(VL1*100.0,3)}, {round(VL2*100.0,3)}, {round(VL3*100.0,3)}%.\n"
                 )
-                leakage_coverged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (
+                leakage_converged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (
                     (QL2 - QL3) <= 0.01 and (UL2 - UL3) <= 0.01 and (VL2 - VL3) <= 0.01
                 )
+
+                #############################################################
+                # If leakage increased
+                #############################################################
+                if (num_iter>0 and num_iter<3) or num_iter>3:
+                    if abs(QL3)>1.1*abs(QL2) or abs(UL3)>1.1*abs(UL2) or abs(VL3)>1.1*abs(VL2):
+                        print(f"Leakage increased by more than 10%. Replacing with previous round.")
+                        if os.path.exists(last_round_ms):
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"mv {last_round_ms} {msname}")
 
                 ##############################################################
                 # If DR is decreasing (DR decrease in pol selfcal)
@@ -1166,7 +1176,7 @@ def do_polselfcal(
                 if (
                     (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
                     and num_iter > min_iter
-                    and leakage_coverged
+                    and leakage_converged
                 ):
                     pollogger.info(
                         f"Dynamic range is decreasing after minimum numbers of rounds.\n"
@@ -1182,7 +1192,7 @@ def do_polselfcal(
                 ###########################
                 # If maximum DR has reached
                 ###########################
-                if DR3 >= max_DR and num_iter > min_iter and leakage_coverged:
+                if DR3 >= max_DR and num_iter > min_iter and leakage_converged:
                     pollogger.info(f"Maximum dynamic range is reached.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -1192,7 +1202,7 @@ def do_polselfcal(
                 ##########################
                 # If DR suddenly decreased
                 ##########################
-                if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_coverged:
+                if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_converged:
                     pollogger.info(
                         f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                     )
@@ -1215,7 +1225,7 @@ def do_polselfcal(
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and leakage_coverged
+                    and leakage_converged
                 ):
                     pollogger.info(f"Self-calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
@@ -1229,7 +1239,7 @@ def do_polselfcal(
                     pollogger.info(
                         f"Self-calibration is finished. Maximum iteration is reached.\n"
                     )
-                    if leakage_coverged is False:
+                    if leakage_converged is False:
                         pollogger.warning("Leakage did not converge.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
