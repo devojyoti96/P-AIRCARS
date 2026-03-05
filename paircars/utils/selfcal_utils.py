@@ -64,10 +64,10 @@ def determine_disk_visibility(msname):
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
-    if check_datacolumn_valid(msname,"CORRECTED_DATA"):
-        datacolumn="CORRECTED_DATA"
+    if check_datacolumn_valid(msname, "CORRECTED_DATA"):
+        datacolumn = "CORRECTED_DATA"
     else:
-        datacolumn="DATA"
+        datacolumn = "DATA"
     mstool = casamstool()
     mstool.open(msname)
     mstool.select({"uvdist": [0.0, uvdist]})

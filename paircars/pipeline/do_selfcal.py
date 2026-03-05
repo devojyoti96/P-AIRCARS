@@ -14,7 +14,12 @@ from casatasks import flagmanager
 from dask import delayed
 from functools import partial
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output, get_datadir, weighted_mean, mjdsec_to_timestamp
+from paircars.utils.basic_utils import (
+    suppress_output,
+    get_datadir,
+    weighted_mean,
+    mjdsec_to_timestamp,
+)
 from paircars.utils.calibration import (
     get_caltable_metadata,
     get_quartical_table_metadata,
@@ -853,7 +858,7 @@ def do_polselfcal(
         pos = np.argmin(flag_frac)
         best_time_mjdsec = times[pos]
         best_time = mjdsec_to_timestamp(base_time_mjdsec, str_format=1)
-        
+
         ##############################
         # Spliting corrected data
         ##############################
@@ -1004,11 +1009,11 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = True
-            elif num_iter<3:
+            elif num_iter < 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter==3:
+            elif num_iter == 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
@@ -1340,7 +1345,7 @@ def do_full_selfcal(
             metafits=metafits,
             max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
-            min_iter=max(3,int(min_iter/2)),
+            min_iter=max(3, int(min_iter / 2)),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,

@@ -163,12 +163,12 @@ def uvbin_flag(
 def get_chans_flag_per_time(msname):
     """
     Get flagged channel fraction per time
-    
+
     Parameters
     ----------
     msname : str
         Measurement set
-    
+
     Returns
     -------
     list
@@ -177,6 +177,7 @@ def get_chans_flag_per_time(msname):
         Channel flag fractions
     """
     from casatools import ms as casamstool, msmetadata
+
     msmd = msmetadata()
     msmd.open(msname)
     times = msmd.timesforspws(0)
@@ -184,20 +185,20 @@ def get_chans_flag_per_time(msname):
     ntime = len(times)
     mstool = casamstool()
     mstool.open(msname)
-    flag = mstool.getdata("FLAG",ifraxis=True)["flag"]
+    flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
     ms.close()
     shape = flag.shape
     npol = shape[0]
     nchan = shape[1]
-    nbaseline = shape[2] 
-    if len(times)>1:
-        flag_frac = np.nansum(flag, axis=(0,1,2))/ (npol*nchan*nbaseline)
+    nbaseline = shape[2]
+    if len(times) > 1:
+        flag_frac = np.nansum(flag, axis=(0, 1, 2)) / (npol * nchan * nbaseline)
     else:
-        flag_frac = np.array([np.nansum(flag)/np.size(flag)])
+        flag_frac = np.array([np.nansum(flag) / np.size(flag)])
     flag_frac = flag_frac.tolist()
     return times, flag_frac
-        
-    
+
+
 def get_unflagged_antennas(
     msname="",
     scan="",

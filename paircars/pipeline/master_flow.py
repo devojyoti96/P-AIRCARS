@@ -3746,7 +3746,7 @@ def master_control(
         # Filtering only coarse channel images for default overlay mode
         #################################################################
         if make_overlay is False:
-            images = filter_images(images, min_time_sep =60.0)
+            images = filter_images(images, min_time_sep=60.0)
         if len(images) > 0:
             #################################
             # Start overlays
