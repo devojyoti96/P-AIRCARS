@@ -305,7 +305,7 @@ def get_local_dask_cluster(
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
             print(f"Total usable cpu: {usable_cpu}")
-            print(f"Total usable memory: {usable_mem} GB")
+            print(f"Total usable memory: {usable_mem}GB")
             print(f"CPU per worker: {ncpu}")
             print(f"Memory per worker: {mem_limit}GB")
             print(f"Maximum number of workers: {n_worker}")

@@ -1833,19 +1833,19 @@ def main(
             if succeed_intselfcal == 0:
                 msg = 1
     except Exception:
-        # traceback.print_exc()
+        traceback.print_exc()
         msg = 1
     finally:
         time.sleep(5)
         clean_shutdown(observer)
-        for ms in mslist:
-            if os.path.exists(ms):
-                drop_cache(ms)
+        with suppress_output():
+            for ms in mslist:
+                if os.path.exists(ms):
+                    drop_cache(ms)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
-            time.sleep(10)
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, int_succeed, int_failed, pol_succeed, pol_failed
@@ -2054,5 +2054,4 @@ def cli():
         jobid=args.jobid,
         start_remote_log=args.start_remote_log,
     )
-    print("Final msg:", msg)
     return msg
