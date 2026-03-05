@@ -9,7 +9,6 @@ import time
 import sys
 import os
 import copy
-import gc
 from casatools import msmetadata, table
 from casatasks import flagmanager
 from dask import delayed
@@ -1837,7 +1836,6 @@ def main(
         traceback.print_exc()
         msg = 1
     finally:
-        gc.collect()
         time.sleep(5)
         clean_shutdown(observer)
         for ms in mslist:
