@@ -659,16 +659,32 @@ def do_selfcal(
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
                     ######################################
-                    # Converged if already in apcal
+                    # If already in apcal
                     ######################################
                     elif (
                         do_apcal and num_iter_after_ap > min_iter
-                    ) or do_apcal == False:
-                        intlogger.info(f"Self-calibration has converged.\n")
-                        os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
-                        clean_shutdown(sub_observer)
-                        return 0, msname, gaintable, nondisk_flag
+                    ) or do_apcal == False: 
+                        if threshold > end_threshold:
+                            ##########################################
+                            # If threshold is not reached, reducing it
+                            ##########################################
+                            threshold -= 1
+                            intlogger.info(f"Reducing threshold to : " + str(threshold))
+                            sigma_reduced_count += 1
+                            num_iter_fixed_sigma = 0
+                            if last_sigma_DR1 > 0:
+                                last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                            else:
+                                last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                        else:
+                            #####################################
+                            # Threshold reached
+                            #####################################
+                            intlogger.info(f"Self-calibration has converged.\n")
+                            os.system("rm -rf *_selfcal_present*")
+                            time.sleep(5)
+                            clean_shutdown(sub_observer)
+                            return 0, msname, gaintable, nondisk_flag
                 ######################################
                 # Condition 3
                 # Reducing threshold if not converged
