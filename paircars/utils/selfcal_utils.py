@@ -317,7 +317,6 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
         msg = 2
         bpass_caltable = ""
     finally:
-        print("Restoring QS flags...")
         with suppress_output():
             flagmanager(vis=msname, mode="restore", versionname="qs_selfcal_1")
             flagmanager(vis=msname, mode="delete", versionname="qs_selfcal_1")

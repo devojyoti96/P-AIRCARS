@@ -857,7 +857,7 @@ def do_polselfcal(
         times, flag_frac = get_chans_flag_per_time(msname)
         pos = np.argmin(flag_frac)
         best_time_mjdsec = times[pos]
-        best_time = mjdsec_to_timestamp(base_time_mjdsec, str_format=1)
+        best_time = mjdsec_to_timestamp(best_time_mjdsec, str_format=1)
 
         ##############################
         # Spliting corrected data
