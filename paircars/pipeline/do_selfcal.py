@@ -636,14 +636,15 @@ def do_selfcal(
                     clean_shutdown(sub_observer)
                     return 0, msname, gaintable, nondisk_flag
             else:
-                ########################################
+                ################################################################
                 # Condition 2
                 # If DR does not increase a certain percentage
-                ########################################
+                # If threshold not reached to end threshold, reducing threshold
+                ################################################################
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and threshold == end_threshold + 1
+                    and threshold > end_threshold
                 ):
                     #####################################
                     # Change from phase only selfcal to amplitude-phase selfcal
@@ -659,49 +660,33 @@ def do_selfcal(
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
                     ######################################
-                    # If already in apcal
+                    # Converged if already in apcal
                     ######################################
                     elif (
                         do_apcal and num_iter_after_ap > min_iter
-                    ) or do_apcal == False: 
-                        if threshold > end_threshold:
-                            ##########################################
-                            # If threshold is not reached, reducing it
-                            ##########################################
-                            threshold -= 1
-                            intlogger.info(f"Reducing threshold to : " + str(threshold))
-                            sigma_reduced_count += 1
-                            num_iter_fixed_sigma = 0
-                            if last_sigma_DR1 > 0:
-                                last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                            else:
-                                last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                    ) or do_apcal == False:
+                        threshold -= 1
+                        intlogger.info(f"Reducing threshold to : " + str(threshold))
+                        sigma_reduced_count += 1
+                        num_iter_fixed_sigma = 0
+                        if last_sigma_DR1 > 0:
+                            last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                         else:
-                            #####################################
-                            # Threshold reached
-                            #####################################
-                            intlogger.info(f"Self-calibration has converged.\n")
-                            os.system("rm -rf *_selfcal_present*")
-                            time.sleep(5)
-                            clean_shutdown(sub_observer)
-                            return 0, msname, gaintable, nondisk_flag
+                            last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                 ######################################
                 # Condition 3
                 # Reducing threshold if not converged
                 ######################################
                 elif (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
-                    and threshold > end_threshold
-                    and num_iter_fixed_sigma > min_iter
+                    and num_iter > min_iter
+                    and threshold == end_threshold
                 ):
-                    threshold -= 1
-                    intlogger.info(f"Reducing threshold to : " + str(threshold))
-                    sigma_reduced_count += 1
-                    num_iter_fixed_sigma = 0
-                    if last_sigma_DR1 > 0:
-                        last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                    else:
-                        last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                    intlogger.info(f"Self-calibration has converged.\n")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, gaintable, nondisk_flag
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
@@ -1846,7 +1831,7 @@ def main(
             if succeed_intselfcal == 0:
                 msg = 1
     except Exception:
-        #traceback.print_exc()
+        # traceback.print_exc()
         msg = 1
     finally:
         time.sleep(5)
@@ -2067,5 +2052,5 @@ def cli():
         jobid=args.jobid,
         start_remote_log=args.start_remote_log,
     )
-    print ("Final msg:",msg)
+    print("Final msg:", msg)
     return msg
