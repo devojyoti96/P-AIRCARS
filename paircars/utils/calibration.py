@@ -52,7 +52,7 @@ def fill_nan_gains(x, data):
     interp_func = interp1d(
         x[~nans],
         data[~nans],
-        kind="cubic",
+        kind="linear",
         bounds_error=False,
         fill_value="extrapolate",
     )
@@ -158,6 +158,8 @@ def interpolate_bpass(caltables, overwrite=False):
     list
         Output bandpass tables
     """
+    if len(caltables) < 2:
+        return caltables
     tb = table()
     all_freqs = []
     all_gains = []
@@ -214,13 +216,59 @@ def interpolate_bpass(caltables, overwrite=False):
         gains = tb.getcol("CPARAM")
         gains[flags] = interp_gain_out[flags]
         tb.putcol("CPARAM", gains)
-        flags*=False
-        flags = (np.abs(gains)==1.0)
+        flags *= False
+        flags = np.abs(gains) == 1.0
         tb.putcol("FLAG", flags)
         tb.flush()
         tb.close()
         outlist.append(outcal)
     return outlist
+
+
+def get_cal_flag_info(caltable):
+    """
+    Get flag information of the caltable
+
+    Parameters
+    ----------
+    caltable : str
+        Caltable
+
+    Returns
+    -------
+    list
+        Flagged channel list
+    list
+        Flagged antenna list
+    float
+        Total flag fraction
+    float
+        Channel flag fraction
+    float
+        Antenna flag fraction
+    """
+    tb = table()
+    tb.open(caltable)
+    flags = tb.getcol("FLAG")
+    tb.close()
+    shape = flags.shape
+    npol = shape[0]
+    nchan = shape[1]
+    nant = shape[2]
+    chans_flags = np.nansum(np.nansum(flags, axis=0), axis=1)
+    ant_flags = np.nansum(np.nansum(flags, axis=0), axis=0)
+    flag_chans = np.where(chans_flags == npol * nant)[0]
+    flag_ants = np.where(ant_flags == npol * nchan)[0]
+    flag_frac = np.nansum(flags) / np.size(flags)
+    chan_flag_frac = len(flag_chans) / nchan
+    ant_flag_frac = len(flag_ants) / nant
+    return (
+        flag_chans.tolist(),
+        flag_ants.tolist(),
+        flag_frac,
+        chan_flag_frac,
+        ant_flag_frac,
+    )
 
 
 def get_psf_size(msname, chan_number=-1):

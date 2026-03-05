@@ -66,7 +66,7 @@ def do_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -346,6 +346,7 @@ def do_selfcal(
         use_previous_model = False
         nondisk_flag = True
         min_DR = 0
+        min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -701,7 +702,7 @@ def do_polselfcal(
     refant="",
     max_iter=10,
     max_DR=100000,
-    min_iter=2,
+    min_iter=3,
     threshold=3.0,
     DR_convergence_frac=0.1,
     uvrange="",
@@ -811,6 +812,7 @@ def do_polselfcal(
         ################################
         # Trying to flag non-disk chunks
         ################################
+        split_spw = ""
         if try_nondisk_flag:
             print(
                 "Non-disk data chunk flagging was successful during intensity self-calibration. Trying before polarisation self-calibration."
@@ -819,8 +821,11 @@ def do_polselfcal(
             result = flag_non_disk(msname)
             if result == 0:
                 print("Flagged non-disk data chunks.")
+                unflag_chans, flag_chans = get_chans_flag(msname)
+                split_spw = "0:" + ";".join([str(i) for i in unflag_chans])
             else:
                 print("Could not flag non-disk data chunks.")
+                split_spw = ""
             with suppress_output():
                 if result != 0:
                     flagmanager(vis=msname, mode="restore", versionname="nondisk_1")
@@ -846,6 +851,7 @@ def do_polselfcal(
             with suppress_output():
                 split(
                     vis=msname,
+                    spw=split_spw,
                     field=str(field),
                     scan=str(scan),
                     outputvis=selfcalms,
@@ -857,6 +863,7 @@ def do_polselfcal(
             with suppress_output():
                 split(
                     vis=msname,
+                    spw=split_spw,
                     field=str(field),
                     scan=str(scan),
                     outputvis=selfcalms,
@@ -954,6 +961,7 @@ def do_polselfcal(
         calc_chunks = True
         last_round_gaintable = []
         last_leakage_file = ""
+        min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ##########################################
@@ -965,11 +973,12 @@ def do_polselfcal(
             ##################################
             pollogger.info("######################################")
             pollogger.info(f"Selfcal iteration : " + str(num_iter))
+            print(f"Selfcal iteration : " + str(num_iter))
             if num_iter == 0:
                 pbcor = True
                 leakagecor = True
-                pbuncor = False
-            elif num_iter <= min_iter:
+                pbuncor = True
+            elif num_iter < min_iter:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
@@ -1027,7 +1036,7 @@ def do_polselfcal(
                 return msg, msname, [], ""
             elif msg == 2:
                 if calc_chunks is False:
-                    if num_iter > min_iter:
+                    if num_iter > 2 * min_iter:
                         pollogger.warning(
                             "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
                         )
@@ -1124,7 +1133,7 @@ def do_polselfcal(
                 ##############################################################
                 if (
                     (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
-                    and num_iter > min_iter
+                    and num_iter > 2 * min_iter
                     and leakage_coverged
                 ):
                     pollogger.info(
@@ -1138,7 +1147,7 @@ def do_polselfcal(
                 ###########################
                 # If maximum DR has reached
                 ###########################
-                if DR3 >= max_DR and num_iter > min_iter and leakage_coverged:
+                if DR3 >= max_DR and num_iter > 2 * min_iter and leakage_coverged:
                     pollogger.info(f"Maximum dynamic range is reached.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -1148,7 +1157,7 @@ def do_polselfcal(
                 ##########################
                 # If DR suddenly decreased
                 ##########################
-                if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_coverged:
+                if DR3 < 0.7 * DR2 and num_iter > 2 * min_iter and leakage_coverged:
                     pollogger.info(
                         f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                     )
@@ -1167,7 +1176,7 @@ def do_polselfcal(
                 ########################################
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
-                    and num_iter > min_iter
+                    and num_iter > 2 * min_iter
                     and leakage_coverged
                 ):
                     pollogger.info(f"Self-calibration has converged.\n")
@@ -1178,7 +1187,7 @@ def do_polselfcal(
                 #########################################
                 # If maximum iteration has reached
                 #########################################
-                elif num_iter > min_iter and num_iter == max_iter:
+                elif num_iter > 2 * min_iter and num_iter == max_iter:
                     pollogger.info(
                         f"Self-calibration is finished. Maximum iteration is reached.\n"
                     )

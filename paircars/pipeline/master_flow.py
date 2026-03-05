@@ -32,6 +32,7 @@ from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
     calc_time_smearing_timewidth,
     max_time_solar_smearing,
+    interpolate_bpass,
 )
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup, get_chans_flag
@@ -2645,12 +2646,14 @@ def master_control(
             bandpass_tables = sorted(
                 glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")
             )
+            bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
             print(
                 f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
             )
             crossphase_tables = sorted(
                 glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
+            crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
             if len(bandpass_tables) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."

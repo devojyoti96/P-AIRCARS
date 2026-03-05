@@ -302,6 +302,7 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
         msg = 2
         bpass_caltable = ""
     finally:
+        print("Restoring QS flags...")
         with suppress_output():
             flagmanager(vis=msname, mode="restore", versionname="qs_selfcal_1")
             flagmanager(vis=msname, mode="delete", versionname="qs_selfcal_1")
@@ -591,6 +592,7 @@ def correct_pbcor_leakage(
         ####################################
         # Correcting image
         ####################################
+        print("PBcor is doing...")
         pbcor_image = imagename.split(".fits")[0] + "_pbcor.fits"
         pbcor_cmds = [
             "run-mwa-singlepbcor",
@@ -643,6 +645,7 @@ def correct_pbcor_leakage(
         ########################################
         # Estimating and correcting leakage
         ########################################
+        print("Leakage cor is doing...")
         (
             q_leakage,
             u_leakage,
@@ -676,6 +679,7 @@ def correct_pbcor_leakage(
         ###########################################
         # For image
         ###############
+        print("Undo pbcor is doing....")
         final_image = imagename.split(".fits")[0] + "_pbuncor.fits"
         pbcor_cmds = [
             "run-mwa-singlepbcor",
@@ -853,8 +857,8 @@ def correct_spectrosnap_pbleak(
         imagename = images[i]
         modelname = models[i]
         header = fits.getheader(imagename)
-        #freq = header["CRVAL3"]
-        #time = header["DATE-OBS"]
+        # freq = header["CRVAL3"]
+        # time = header["DATE-OBS"]
         if "MFS" not in imagename:
             wsclean_images = image_dic[imagename]
             wsclean_models = model_dic[modelname]
@@ -875,8 +879,8 @@ def correct_spectrosnap_pbleak(
                     pbuncor=pbuncor,
                     ncpu=ncpu,
                 )
-                #leakage_info.append(freq)
-                #leakage_info.append(time)
+                # leakage_info.append(freq)
+                # leakage_info.append(time)
                 if leakage_info is not None:
                     leakage_info_list.append(leakage_info)
     os.system(f"rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
