@@ -72,7 +72,7 @@ def do_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -353,7 +353,7 @@ def do_selfcal(
         use_previous_model = False
         nondisk_flag = True
         min_DR = 0
-        min_iter = max(3, min_iter)  # Minimum 3 iterations
+        min_iter = max(5, min_iter)  # Minimum 5 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -728,7 +728,7 @@ def do_polselfcal(
     refant="",
     max_iter=10,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     threshold=3.0,
     DR_convergence_frac=0.1,
     uvrange="",
@@ -995,7 +995,7 @@ def do_polselfcal(
         last_round_gaintable = []
         last_leakage_file = ""
         last_round_ms = ""
-        min_iter = max(3, min_iter)  # Minimum 3 iterations
+        min_iter = max(5, min_iter)  # Minimum 5 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ##########################################
@@ -1166,7 +1166,7 @@ def do_polselfcal(
                 ##########################################
                 # If leakage increased
                 ##########################################
-                if num_iter > 3 and (
+                if num_iter > 4 and (
                     (abs(QL3) - abs(QL2)) > 0.1
                     or (abs(UL3) - abs(UL2)) > 0.1
                     or (abs(VL3) - abs(VL2)) > 0.1
@@ -1278,7 +1278,7 @@ def do_full_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -1333,7 +1333,7 @@ def do_full_selfcal(
         end_threshold=end_threshold,
         max_iter=max_iter,
         max_DR=max_DR,
-        min_iter=max(3, min_iter),
+        min_iter=max(5,min_iter),
         DR_convergence_frac=DR_convergence_frac,
         uvrange=uvrange,
         minuv=minuv,
@@ -1359,9 +1359,9 @@ def do_full_selfcal(
             workdir=workdir,
             selfcaldir=f"{selfcaldir}_pol",
             metafits=metafits,
-            max_iter=max(10, int(max_iter / 3)),
+            max_iter=max(10,int(max_iter/3)),
             max_DR=max_DR,
-            min_iter=max(3, int(min_iter / 2)),
+            min_iter=max(5,min_iter),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,
@@ -1393,7 +1393,7 @@ def main(
     stop_thresh=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     conv_frac=0.1,
     solint="60s",
     uvrange="",
@@ -1925,7 +1925,7 @@ def cli():
     adv_args.add_argument(
         "--min_iter",
         type=int,
-        default=3,
+        default=5,
         help="Minimum number of selfcal iterations",
         metavar="Integer",
     )
