@@ -601,7 +601,7 @@ def run_basic_cal_rounds(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return 1, [], 0, 0
+        return 1, [], [], 0, 0
     else:
         succeed = 0
         failed = len(mslist)
@@ -859,7 +859,7 @@ def main(
         print("###################################")
         print("Starting initial calibration.")
         print("###################################")
-        msg, bcals, kcrosscals, failed = run_basic_cal_rounds(
+        msg, bcals, kcrosscals, succeed, failed = run_basic_cal_rounds(
             mslist,
             dask_client,
             workdir,
