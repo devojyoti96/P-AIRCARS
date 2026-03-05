@@ -7,6 +7,7 @@ import traceback
 import time
 import sys
 import os
+import glob
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
@@ -41,6 +42,60 @@ from paircars.pipeline.flagging import single_ms_flag
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
+
+def filtered_final_caltables(caltables, workdir):
+    """
+    Filter last round bandpass and crossphase caltables
+    
+    Parameters
+    ----------
+    caltables : list
+        Caltable list
+    workdir : str
+        Work directory
+    
+    Returns
+    -------
+    list
+        Bandpass list
+    list
+        Crossphase list
+    """
+    groups = {}
+    for f in caltables:
+        name = os.path.basename(f)
+        if name.endswith(".bcal"):
+            ext = "bcal"
+        elif name.endswith(".kcrosscal"):
+            ext = "kcrosscal"
+        else:
+            continue
+        prefix = name.split("_round_")[0]
+        round_part = name.split("_round_")[1]
+        round_num = int(round_part.split(".")[0])
+        key = (prefix, ext)
+        if key not in groups or round_num > groups[key][0]:
+            groups[key] = (round_num, f)
+    bcals = []
+    kcrosscals = []
+    for (prefix, ext), (_, fname) in groups.items():
+        if ext == "bcal":
+            bcals.append(fname)
+        else:
+            kcrosscals.append(fname)
+    final_bcals=[]
+    final_kcrosscals=[]
+    if len(bcals)>0:
+        for bcal in bcals:
+            out_bcal = f"{workdir}/{os.path.basename(bcal).split('_round')[0]}.bcal"
+            os.system(f"cp -r {bcal} {out_bcal}")
+            final_bcals.append(out_bcal)
+    if len(kcrosscals)>0:
+        for kcrosscal in kcrosscals:
+            out_kcrosscal = f"{workdir}/{os.path.basename(kcrosscal).split('_round')[0]}.kcrosscal"
+            os.system(f"cp -r {kcrosscal} {out_kcrosscal}")
+            final_kcrosscals.append(out_kcrosscal)
+    return final_bcals, final_kcrosscals
 
 def run_bandpass(
     msname,
@@ -533,7 +588,9 @@ def run_basic_cal_rounds(
     int
         Success message
     list
-        Caltables
+        Bandpass caltables
+    list
+        Crossphase caltables
     int
         Succeeded ms number
     int
@@ -624,52 +681,23 @@ def run_basic_cal_rounds(
             caltables = [x for sub in caltables for x in sub]
 
             ###################################
-            # Temporary backup
+            # Backup
             ###################################
+            print(f"Backup directory: {workdir}/backup")
             os.makedirs(workdir + "/backup", exist_ok=True)
-            caltables = [c for c in caltables if c.endswith(".bcal")]
             for caltable in caltables:
-                if os.path.exists(caltable):
-                    prefix = os.path.basename(caltable).split(f".bcal")[0]
-                    present_bcal = caltable
-                    present_kcrosscal = caltable.replace(".bcal", ".kcrosscal")
-                    output_bcal = f"{workdir}/backup/{prefix}_round_{cal_round}.bcal"
-                    output_kcrosscal = (
-                        f"{workdir}/backup/{prefix}_round_{cal_round}.kcrosscal"
+                if caltable is not None and os.path.exists(caltable):
+                    cal_ext = os.path.basename(caltable).split(".")[-1]
+                    outputname = (
+                        workdir
+                        + "/backup/"
+                        + os.path.basename(caltable).split(f".{cal_ext}")[0]
+                        + "_round_"
+                        + str(cal_round)
+                        + f".{cal_ext}"
                     )
-                    prev_bcal = f"{workdir}/backup/{prefix}_round_{cal_round-1}.bcal"
-                    prev_kcrosscal = (
-                        f"{workdir}/backup/{prefix}_round_{cal_round-1}.kcrosscal"
-                    )
-                    if (
-                        cal_round > 1
-                        and os.path.exists(prev_bcal)
-                        and os.path.exists(prev_kcrosscal)
-                    ):
-                        _, _, flag_frac, chan_flag_frac, ant_flag_frac = (
-                            get_cal_flag_info(present_bcal)
-                        )
-                        if (
-                            flag_frac >= 0.5
-                            or chan_flag_frac >= 0.5
-                            or ant_flag_frac >= 0.5
-                        ):
-                            print(
-                                f"Flag fraction is more than 50% for caltable: {present_bcal}. Replacing with previous round caltable."
-                            )
-                            os.system(f"rm -rf {present_bcal}")
-                            os.system(f"cp -r {prev_bcal} {present_bcal}")
-                            os.system(f"rm -rf {present_kcrosscal}")
-                            os.system(f"cp -r {prev_kcrosscal} {present_kcrosscal}")
-                        elif not os.path.exists(present_kcrosscal) and os.path.exists(
-                            prev_kcrosscal
-                        ):
-                            os.system(f"cp -r {prev_kcrosscal} {present_kcrosscal}")
-                    if os.path.exists(present_bcal):
-                        os.system(f"cp -r {present_bcal} {output_bcal}")
-                    if os.path.exists(present_kcrosscal):
-                        os.system(f"cp -r {present_kcrosscal} {output_kcrosscal}")
-
+                    os.system("mv " + caltable + " " + outputname)
+            
             ###############
             # Flag summary
             ###############
@@ -679,6 +707,10 @@ def run_basic_cal_rounds(
                 summary_file = f"{outdir}/flag_summary/{os.path.basename(msname).split('.ms')[0]}_calflag_{cal_round}.summary"
                 tasks.append(delayed(flagsummary)(msname, summary_file))
             results = list(dask_client.gather(dask_client.compute(tasks)))
+        
+        all_caltables = glob.glob(f"{workdir}/backup/calibrator*cal")
+        final_bcals, final_kcrosscals = filtered_final_caltables(all_caltables, workdir)
+            
         if keep_backup:
             print(f"Backup directory: {workdir}/backup")
         else:
@@ -686,10 +718,10 @@ def run_basic_cal_rounds(
         print("##################")
         print("Basic calibration is done successfully.")
         print("##################")
-        return 0, caltables, succeed, failed
+        return 0, final_bcals, final_kcrosscals, succeed, failed
     except Exception as e:
         traceback.print_exc()
-        return 1, [], succeed, failed
+        return 1, [], [], succeed, failed
 
 
 def main(
@@ -827,7 +859,7 @@ def main(
         print("###################################")
         print("Starting initial calibration.")
         print("###################################")
-        msg, caltables, succeed, failed = run_basic_cal_rounds(
+        msg, bcals, kcrosscals, failed = run_basic_cal_rounds(
             mslist,
             dask_client,
             workdir,
@@ -839,25 +871,18 @@ def main(
             cpu_frac=float(cpu_frac),
             mem_frac=float(mem_frac),
         )
-        if len(caltables) == 0:
-            print("No caltable is made.")
+        if len(bcals) == 0:
+            print("No bandpass caltable is made.")
             msg = 1
         else:
-            bcals = []
-            kcrosscals = []
-            for caltable in caltables:
-                if caltable.endswith(".bcal"):
-                    bcals.append(caltable)
-                elif caltable.endswith("kcrosscal"):
-                    kcrosscals.append(caltable)
-            if len(bcals) > 0:
-                print(
-                    f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}."
-                )
+            print(
+                f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}."
+            )
             if len(kcrosscals) > 0:
                 print(
                     f"All cross-phase caltables: {[os.path.basename(i) for i in kcrosscals]}."
                 )
+            caltables = bcals + kcrosscals
             for caltable in caltables:
                 if caltable is not None and os.path.exists(caltable):
                     cal_metadata = get_caltable_metadata(caltable)
