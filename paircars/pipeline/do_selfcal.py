@@ -1826,25 +1826,22 @@ def main(
                 pol_succeed, pol_failed = succeed_polselfcal, failed_polselfcal
             if succeed_intselfcal == 0:
                 msg = 1
-        print("Final cwd:", os.getcwd())
-        print("Exists:", os.path.exists(os.getcwd()))
     except Exception as e:
         traceback.print_exc()
         msg = 1
     finally:
-        print("Final cwd1:", os.getcwd())
-        print("Exists1:", os.path.exists(os.getcwd()))
         time.sleep(5)
         clean_shutdown(observer)
         for ms in org_mslist:
             if os.path.exists(ms):
                 drop_cache(ms)
-        if dask_cluster is not None:
+        if dask_cluster is not None:    
+            dask_client.run(worker_chdir)
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
+            time.sleep(10)
             drop_cache(workdir)
-            os.chdir(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, int_succeed, int_failed, pol_succeed, pol_failed
 
