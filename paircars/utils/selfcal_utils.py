@@ -313,8 +313,8 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                         calwt=[False],
                     )
                 msg = 0
-    except Exception as e:
-        logger.exception()
+    except Exception:
+        logger.exception(traceback.print_exc())
         msg = 2
         bpass_caltable = ""
     finally:
