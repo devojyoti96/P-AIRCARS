@@ -1004,7 +1004,6 @@ def do_polselfcal(
             ##################################
             pollogger.info("######################################")
             pollogger.info(f"Selfcal iteration : " + str(num_iter))
-            print(f"Selfcal iteration : " + str(num_iter))
             if num_iter == 0:
                 pbcor = True
                 leakagecor = True
@@ -1331,7 +1330,6 @@ def do_full_selfcal(
         mem=mem,
         logfile=f"{logfile}.int",
     )
-    print(f"Polcal msg: {msname},{intensity_selfcal_msg}")
     if intensity_selfcal_msg != 0:
         return intensity_selfcal_msg, 1, [], [], ""
     elif do_polcal is False:
@@ -1358,7 +1356,6 @@ def do_full_selfcal(
             mem=mem,
             logfile=f"{logfile}.pol",
         )
-        print(f"Polcal msg: {selfcal_ms},{pol_selfcal_msg}")
         return (
             intensity_selfcal_msg,
             pol_selfcal_msg,
@@ -1832,6 +1829,7 @@ def main(
             dask_client.close()
             dask_cluster.close()
             drop_cache(workdir)
+            os.chdir(workdir)
             os.system(f"rm -rf {dask_dir}")
     return msg, int_succeed, int_failed, pol_succeed, pol_failed
 

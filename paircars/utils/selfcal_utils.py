@@ -606,7 +606,6 @@ def correct_pbcor_leakage(
         ####################################
         # Correcting image
         ####################################
-        print("PBcor is doing...")
         pbcor_image = imagename.split(".fits")[0] + "_pbcor.fits"
         pbcor_cmds = [
             "run-mwa-singlepbcor",
@@ -659,7 +658,6 @@ def correct_pbcor_leakage(
         ########################################
         # Estimating and correcting leakage
         ########################################
-        print("Leakage cor is doing...")
         (
             q_leakage,
             u_leakage,
@@ -693,7 +691,6 @@ def correct_pbcor_leakage(
         ###########################################
         # For image
         ###############
-        print("Undo pbcor is doing....")
         final_image = imagename.split(".fits")[0] + "_pbuncor.fits"
         pbcor_cmds = [
             "run-mwa-singlepbcor",
