@@ -401,15 +401,27 @@ def submit_local_master_flow(args, jobid):
                     text=True,
                     bufsize=1,
                 )
+                printing_traceback = False
                 for line in process.stdout:
-                    if "task run" in line.lower() or "flow run" in line.lower():
-                        if line not in seen:
-                            seen.add(line)
-                            if log2term:
-                                sys.stdout.write(line)
-                                sys.stdout.flush()
-                            log.write(line)
-                            log.flush()
+                    lower = line.lower()
+
+                    if "traceback" in lower:
+                        printing_traceback = True
+
+                    if (
+                        printing_traceback
+                        or "task run" in lower
+                        or "flow run" in lower
+                        or "error" in lower
+                        or "exception" in lower
+                        or "warning" in lower
+                    ):
+                        if log2term:
+                            sys.stdout.write(line)
+                            sys.stdout.flush()
+
+                        log.write(line)
+                        log.flush()
                 process.stdout.close()
             exit_code = 0
         except:
