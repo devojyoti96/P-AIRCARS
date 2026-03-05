@@ -46,14 +46,14 @@ logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 def filtered_final_caltables(caltables, workdir):
     """
     Filter last round bandpass and crossphase caltables
-    
+
     Parameters
     ----------
     caltables : list
         Caltable list
     workdir : str
         Work directory
-    
+
     Returns
     -------
     list
@@ -83,19 +83,22 @@ def filtered_final_caltables(caltables, workdir):
             bcals.append(fname)
         else:
             kcrosscals.append(fname)
-    final_bcals=[]
-    final_kcrosscals=[]
-    if len(bcals)>0:
+    final_bcals = []
+    final_kcrosscals = []
+    if len(bcals) > 0:
         for bcal in bcals:
             out_bcal = f"{workdir}/{os.path.basename(bcal).split('_round')[0]}.bcal"
             os.system(f"cp -r {bcal} {out_bcal}")
             final_bcals.append(out_bcal)
-    if len(kcrosscals)>0:
+    if len(kcrosscals) > 0:
         for kcrosscal in kcrosscals:
-            out_kcrosscal = f"{workdir}/{os.path.basename(kcrosscal).split('_round')[0]}.kcrosscal"
+            out_kcrosscal = (
+                f"{workdir}/{os.path.basename(kcrosscal).split('_round')[0]}.kcrosscal"
+            )
             os.system(f"cp -r {kcrosscal} {out_kcrosscal}")
             final_kcrosscals.append(out_kcrosscal)
     return final_bcals, final_kcrosscals
+
 
 def run_bandpass(
     msname,
@@ -697,7 +700,7 @@ def run_basic_cal_rounds(
                         + f".{cal_ext}"
                     )
                     os.system("mv " + caltable + " " + outputname)
-            
+
             ###############
             # Flag summary
             ###############
@@ -707,10 +710,10 @@ def run_basic_cal_rounds(
                 summary_file = f"{outdir}/flag_summary/{os.path.basename(msname).split('.ms')[0]}_calflag_{cal_round}.summary"
                 tasks.append(delayed(flagsummary)(msname, summary_file))
             results = list(dask_client.gather(dask_client.compute(tasks)))
-        
+
         all_caltables = glob.glob(f"{workdir}/backup/calibrator*cal")
         final_bcals, final_kcrosscals = filtered_final_caltables(all_caltables, workdir)
-            
+
         if keep_backup:
             print(f"Backup directory: {workdir}/backup")
         else:
@@ -875,9 +878,7 @@ def main(
             print("No bandpass caltable is made.")
             msg = 1
         else:
-            print(
-                f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}."
-            )
+            print(f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}.")
             if len(kcrosscals) > 0:
                 print(
                     f"All cross-phase caltables: {[os.path.basename(i) for i in kcrosscals]}."

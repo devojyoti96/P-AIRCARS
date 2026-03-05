@@ -324,22 +324,24 @@ def check_datacolumn_valid(msname, datacolumn="DATA"):
         tb.open(msname)
         colnames = tb.colnames()
         if datacolumn not in colnames:
-            tb.close()
             return False
         try:
             model_data = tb.getcol(datacolumn, startrow=0, nrow=1)
-            tb.close()
             if model_data is None or model_data.size == 0:
                 return False
             elif (model_data == 0).all():
                 return False
             else:
                 return True
-        except BaseException:
-            tb.close()
+        except:
             return False
-    except BaseException:
+    except:
         return False
+    finally:
+        try:
+            tb.close()
+        except:
+            pass
 
 
 def get_bad_ants(msname="", fieldnames=[], n_threads=-1):

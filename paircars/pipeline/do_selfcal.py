@@ -519,12 +519,12 @@ def do_selfcal(
                 intlogger.info(
                     f"Dynamic range decreased below start dynamic range: {min_DR}."
                 )
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
                     os.system(f"mv {last_round_ms} {msname}")
+                os.system("rm -rf *_selfcal_present*")
+                time.sleep(5)
+                clean_shutdown(sub_observer)
                 return 0, msname, last_round_gaintable, nondisk_flag
 
             #########################################################
@@ -545,12 +545,12 @@ def do_selfcal(
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
                 else:
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
                     return 0, msname, last_round_gaintable, nondisk_flag
 
             ##############################################################
@@ -564,12 +564,12 @@ def do_selfcal(
                 intlogger.info(
                     f"Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
                 )
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
                     os.system(f"mv {last_round_ms} {msname}")
+                os.system("rm -rf *_selfcal_present*")
+                time.sleep(5)
+                clean_shutdown(sub_observer)
                 return 0, msname, last_round_gaintable, nondisk_flag
 
             ##########################
@@ -579,12 +579,12 @@ def do_selfcal(
                 intlogger.info(
                     f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                 )
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
                     os.system(f"mv {last_round_ms} {msname}")
+                os.system("rm -rf *_selfcal_present*")
+                time.sleep(5)
+                clean_shutdown(sub_observer)
                 return 0, msname, last_round_gaintable, nondisk_flag
 
             ###########################
@@ -1069,12 +1069,12 @@ def do_polselfcal(
                         pollogger.warning(
                             "Minor issues in polarisation self-calibration model prediction. Stopped at previous round."
                         )
-                        os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
-                        clean_shutdown(sub_observer)
                         if os.path.exists(last_round_ms):
                             os.system(f"rm -rf {msname}")
                             os.system(f"mv {last_round_ms} {msname}")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
                         return 0, msname, last_round_gaintable, last_leakage_file
                     else:
                         pollogger.error(
@@ -1163,8 +1163,15 @@ def do_polselfcal(
                 #############################################################
                 # If leakage increased
                 #############################################################
-                if num_iter>1 and abs(QL3-QL2)>0.1 or abs(UL3-UL2)>0.1 or abs(VL3-VL2)>0.1:
-                    pollogger.info(f"Leakage increased by more than 10%. Replacing with previous round.")
+                if (
+                    num_iter > 3
+                    and abs(QL3 - QL2) > 0.1
+                    or abs(UL3 - UL2) > 0.1
+                    or abs(VL3 - VL2) > 0.1
+                ):
+                    pollogger.info(
+                        f"Leakage increased by more than 10%. Replacing with previous round."
+                    )
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
@@ -1180,12 +1187,12 @@ def do_polselfcal(
                     pollogger.info(
                         f"Dynamic range is decreasing after minimum numbers of rounds.\n"
                     )
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
                     return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
@@ -1205,12 +1212,12 @@ def do_polselfcal(
                     pollogger.info(
                         f"Dynamic range dropped suddenly. Using last round caltable as final.\n"
                     )
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
                     return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
@@ -1830,7 +1837,7 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
-        '''for ms in org_mslist:
+        for ms in org_mslist:
             if os.path.exists(ms):
                 drop_cache(ms)
         if dask_cluster is not None:
@@ -1839,7 +1846,7 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.chdir(workdir)
-            os.system(f"rm -rf {dask_dir}")'''
+            os.system(f"rm -rf {dask_dir}")
     return msg, int_succeed, int_failed, pol_succeed, pol_failed
 
 

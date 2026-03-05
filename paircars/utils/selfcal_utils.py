@@ -63,20 +63,21 @@ def determine_disk_visibility(msname):
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
-    tb=table()
+    tb = table()
     tb.open(msname)
     colnames = tb.colnames()
     tb.close()
     if "CORRECTED_DATA" in colnames:
-        datacolumn="corrected"
+        datacolumn = "corrected"
     else:
-        datacolumn="data"
+        datacolumn = "data"
     mstool = casamstool()
     mstool.open(msname)
     mstool.select({"uvdist": [0.0, uvdist]})
-    if datacolumn=="corrected":
+    if datacolumn == "corrected":
         data_short = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]), axis=2
+            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]),
+            axis=2,
         )
     else:
         data_short = np.nanmedian(
@@ -86,9 +87,10 @@ def determine_disk_visibility(msname):
     uvdist = 150.0 * wavelength
     mstool.open(msname)
     mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
-    if datacolumn=="corrected":
+    if datacolumn == "corrected":
         data_first_lobe = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]), axis=2
+            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]),
+            axis=2,
         )
     else:
         data_first_lobe = np.nanmedian(
