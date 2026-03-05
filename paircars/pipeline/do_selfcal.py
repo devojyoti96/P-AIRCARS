@@ -644,6 +644,7 @@ def do_selfcal(
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
+                    and num_iter_fixed_sigma > min_iter
                     and threshold > end_threshold
                 ):
                     #####################################
@@ -680,6 +681,7 @@ def do_selfcal(
                 elif (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
+                    and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
                 ):
                     intlogger.info(f"Self-calibration has converged.\n")
