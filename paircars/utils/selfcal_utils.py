@@ -12,7 +12,6 @@ from astropy.io import fits
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
 from .resource_utils import limit_threads
 from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table, get_chans_flag
-from .ms_metadata import check_datacolumn_valid
 from .calibration import (
     fluxcal_caltable,
     uvrange_casa_to_quartical,
@@ -53,9 +52,10 @@ def determine_disk_visibility(msname):
     numpy.array
         Timestamps where disk is detected at least in one channel
     """
-    from casatools import ms as casamstool
+    from casatools import ms as casamstool, table
 
     msmd = msmetadata()
+    tb = table()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
     times = msmd.timesforspws(0)
@@ -64,7 +64,10 @@ def determine_disk_visibility(msname):
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
-    if check_datacolumn_valid(msname, "CORRECTED_DATA"):
+    tb.open(msname)
+    colnames = tb.colnames()
+    tb.close()
+    if "CORRECTED_DATA" in colnames:
         datacolumn = "CORRECTED_DATA"
     else:
         datacolumn = "DATA"
