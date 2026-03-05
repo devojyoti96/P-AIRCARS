@@ -52,10 +52,9 @@ def determine_disk_visibility(msname):
     numpy.array
         Timestamps where disk is detected at least in one channel
     """
-    from casatools import ms as casamstool, table
+    from casatools import ms as casamstool
 
     msmd = msmetadata()
-    tb = table()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
     times = msmd.timesforspws(0)
@@ -64,36 +63,23 @@ def determine_disk_visibility(msname):
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
-    tb.open(msname)
-    colnames = tb.colnames()
-    tb.close()
-    if "CORRECTED_DATA" in colnames:
-        datacolumn = "CORRECTED_DATA"
-    else:
-        datacolumn = "DATA"
+    #if check_datacolumn_valid(msname, "CORRECTED_DATA"):
+    #    datacolumn = "CORRECTED_DATA"
+    #else:
+    datacolumn = "DATA"
     mstool = casamstool()
     mstool.open(msname)
     mstool.select({"uvdist": [0.0, uvdist]})
-    if datacolumn=="CORRECTED_DATA":
-        data_short = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]), axis=2
-        )
-    else:
-        data_short = np.nanmedian(
-            np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
-        )
+    data_short = np.nanmedian(
+        np.abs(mstool.getdata(datacolumn, ifraxis=True)["data"]), axis=2
+    )
     mstool.close()
     uvdist = 150.0 * wavelength
     mstool.open(msname)
     mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
-    if datacolumn=="CORRECTED_DATA":
-        data_first_lobe = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]), axis=2
-        )
-    else:
-        data_first_lobe = np.nanmedian(
-            np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
-        )
+    data_first_lobe = np.nanmedian(
+        np.abs(mstool.getdata(datacolumn, ifraxis=True)["data"]), axis=2
+    )
     mstool.close()
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
@@ -105,7 +91,10 @@ def determine_disk_visibility(msname):
         return [], [], detected_timestamps
     elif len(pos) == 1:
         chans = pos[0]
-        timestamps = np.zeros_like(chans)
+        if len(chans) == 0:
+            timestamps = np.array([], dtype="int")
+        else:
+            timestamps = np.array([0], dtype="int")
         return chans, timestamps, detected_timestamps
     else:
         chans = pos[0]
@@ -133,10 +122,9 @@ def flag_non_disk(msname):
             msmd.open(msname)
             times = msmd.timesforspws(0)
             msmd.close()
-            for c, t in zip(chans, timestamps):
-                spw = f"0:{c}"
-                timerange = f"{mjdsec_to_timestamp(times[t], str_format=1)}"
-                print (spw,timerange)
+            for i in range(len(chans)):
+                spw = f"0:{chans[i]}"
+                timerange = f"{mjdsec_to_timestamp(times[timestamps[i]], str_format=1)}"
                 flagdata(
                     vis=msname,
                     mode="manual",
@@ -313,9 +301,9 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                         calwt=[False],
                     )
                 msg = 0
-    except Exception:
-        logger.exception(traceback.print_exc())
-        msg = 3
+    except Exception as e:
+        traceback.print_exc()
+        msg = 2
         bpass_caltable = ""
     finally:
         print("Restoring QS flags...")
