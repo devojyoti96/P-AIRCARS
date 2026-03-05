@@ -1831,10 +1831,14 @@ def main(
                 pol_succeed, pol_failed = succeed_polselfcal, failed_polselfcal
             if succeed_intselfcal == 0:
                 msg = 1
+        print("Final cwd:", os.getcwd())
+        print("Exists:", os.path.exists(os.getcwd()))
     except Exception as e:
         traceback.print_exc()
         msg = 1
     finally:
+        print("Final cwd1:", os.getcwd())
+        print("Exists1:", os.path.exists(os.getcwd()))
         time.sleep(5)
         clean_shutdown(observer)
         for ms in org_mslist:
