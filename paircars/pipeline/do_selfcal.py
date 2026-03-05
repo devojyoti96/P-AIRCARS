@@ -9,6 +9,7 @@ import time
 import sys
 import os
 import copy
+import gc
 from casatools import msmetadata, table
 from casatasks import flagmanager
 from dask import delayed
@@ -1838,10 +1839,10 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
-        with suppress_output():
-            for ms in mslist:
-                if os.path.exists(ms):
-                    drop_cache(ms)
+        gc.collect()
+        for ms in mslist:
+            if os.path.exists(ms):
+                drop_cache(ms)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
