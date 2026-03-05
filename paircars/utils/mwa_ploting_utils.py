@@ -235,7 +235,7 @@ def plot_caltable_diagnostics(caltable, outdir):
     try:
         tb = table()
         tb.open(f"{caltable}/SPECTRAL_WINDOW")
-        freqs = np.round(tb.getcol("CHAN_FREQ") / 10**9, 3)  # In GHz
+        freqs = tb.getcol("CHAN_FREQ") / 10**6  # In MHz
         tb.close()
         tb.open(caltable)
         cal_type = tb.getkeywords()["VisCal"]
@@ -379,7 +379,7 @@ def plot_caltable_diagnostics(caltable, outdir):
                                     )
                                     ax.set_ylabel("Gain Phase (degree)", fontsize=14)
                             ax.set_title(f"Antenna {ant+1}", fontsize=14)
-                            ax.set_xlabel("Frequency (GHz)", fontsize=14)
+                            ax.set_xlabel("Frequency (MHz)", fontsize=14)
                             ax.legend(fontsize=10)
                         for j in range(i + 1, plots_per_fig):
                             fig.delaxes(axes[j])
