@@ -1837,9 +1837,9 @@ def main(
         traceback.print_exc()
         msg = 1
     finally:
+        gc.collect()
         time.sleep(5)
         clean_shutdown(observer)
-        gc.collect()
         for ms in mslist:
             if os.path.exists(ms):
                 drop_cache(ms)
