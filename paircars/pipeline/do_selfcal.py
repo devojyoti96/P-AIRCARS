@@ -1163,12 +1163,7 @@ def do_polselfcal(
                 #############################################################
                 # If leakage increased
                 #############################################################
-                if (
-                    num_iter > 3
-                    and abs(QL3 - QL2) > 0.1
-                    or abs(UL3 - UL2) > 0.1
-                    or abs(VL3 - VL2) > 0.1
-                ):
+                if (num_iter > 3 and (abs(QL3)-abs(QL2) > 0.1 or abs(UL3)-abs(UL2) > 0.1 or abs(VL3)-abs(VL2) > 0.1)):
                     pollogger.info(
                         f"Leakage increased by more than 10%. Replacing with previous round."
                     )
