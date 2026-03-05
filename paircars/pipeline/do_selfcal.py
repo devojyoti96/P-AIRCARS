@@ -1007,7 +1007,7 @@ def do_polselfcal(
             if num_iter == 0:
                 pbcor = True
                 leakagecor = True
-                pbuncor = True
+                pbuncor = False
             elif num_iter < 3:
                 pbcor = False
                 leakagecor = True
@@ -1159,17 +1159,6 @@ def do_polselfcal(
                 leakage_converged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (
                     (QL2 - QL3) <= 0.01 and (UL2 - UL3) <= 0.01 and (VL2 - VL3) <= 0.01
                 )
-
-                #############################################################
-                # If leakage increased
-                #############################################################
-                if (num_iter > 3 and (abs(QL3)-abs(QL2) > 0.1 or abs(UL3)-abs(UL2) > 0.1 or abs(VL3)-abs(VL2) > 0.1)):
-                    pollogger.info(
-                        f"Leakage increased by more than 10%. Replacing with previous round."
-                    )
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
 
                 ##############################################################
                 # If DR is decreasing (DR decrease in pol selfcal)
@@ -1581,7 +1570,6 @@ def main(
                 )
                 return 1, int_succeed, int_failed, pol_succeed, pol_failed
 
-    org_mslist = copy.deepcopy(mslist)
     try:
         if len(mslist) == 0:
             print("Please provide at-least one measurement set.")
@@ -1832,11 +1820,10 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
-        for ms in org_mslist:
+        for ms in mslist:
             if os.path.exists(ms):
                 drop_cache(ms)
         if dask_cluster is not None:    
-            dask_client.run(worker_chdir)
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
