@@ -3087,9 +3087,12 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        selfcal_tables = sorted(
-            glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal")
-        ) + sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
+        selfcal_gaincal = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal"))
+        selfcal_bandpass = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
+        selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
+        selfcal_tables = selfcal_gaincal + selfcal_bandpass
+        # TODO; POLCAL INTERPOLATION
+
         if len(selfcal_tables) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
