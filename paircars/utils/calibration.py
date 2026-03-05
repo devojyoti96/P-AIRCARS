@@ -144,19 +144,19 @@ def merge_caltables(caltables, merged_caltable, append=False, keepcopy=False):
 
 def interpolate_bpass(caltables, overwrite=False):
     """
-    Interpolate bandpass tables for missing frequency solutions
+    Interpolate bandpass/crossphase tables for missing frequency solutions
 
     Parameters
     ----------
     caltables : list
-        List of bandpass tables
+        List of bandpass/crossphase tables
     overwrite : bool, optional
         Overwrite the input tables or not
 
     Returns
     -------
     list
-        Output bandpass tables
+        Output bandpass/crossphase tables
     """
     if len(caltables) < 2:
         return caltables
