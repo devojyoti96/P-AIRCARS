@@ -12,6 +12,7 @@ from astropy.io import fits
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
 from .resource_utils import limit_threads
 from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table, get_chans_flag
+from .ms_metadata import check_datacolumn_valid
 from .calibration import (
     fluxcal_caltable,
     uvrange_casa_to_quartical,
@@ -63,24 +64,28 @@ def determine_disk_visibility(msname):
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
+    if check_datacolumn_valid(msname,"CORRECTED_DATA"):
+        datacolumn="CORRECTED_DATA"
+    else:
+        datacolumn="DATA"
     mstool = casamstool()
     mstool.open(msname)
     mstool.select({"uvdist": [0.0, uvdist]})
-    data_short = np.nanmean(
-        np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
+    data_short = np.nanmedian(
+        np.abs(mstool.getdata(datacolumn, ifraxis=True)["data"]), axis=2
     )
     mstool.close()
     uvdist = 150.0 * wavelength
     mstool.open(msname)
     mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
-    data_first_lobe = np.nanmean(
-        np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
+    data_first_lobe = np.nanmedian(
+        np.abs(mstool.getdata(datacolumn, ifraxis=True)["data"]), axis=2
     )
     mstool.close()
     r = data_first_lobe / data_short
     r_I = (r[0, ...] + r[-1, ...]) / 2.0
     detected = r_I < 0.05
-    n_detected_per_time = np.sum(detected, axis=0)
+    n_detected_per_time = np.nansum(detected, axis=0)
     detected_timestamps = np.where(n_detected_per_time > 0)[0]
     pos = np.where(r_I >= 0.05)
     if len(pos) == 0:

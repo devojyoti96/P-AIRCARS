@@ -489,7 +489,7 @@ def make_stokes_wsclean_imagecube(
     return outfile_name
 
 
-def filter_images(imagelist, min_time_sep=30.0):
+def filter_images(imagelist, min_time_sep=60.0):
     """
     Select images with maximum bandwidth, then for each frequency
     keep images separated by at least `min_time_sep` seconds.

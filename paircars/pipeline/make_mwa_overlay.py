@@ -106,10 +106,10 @@ def main(
 
     try:
         ###############################################################################
-        # Filtering only images with bandwidth of 1.28 MHz or more and at 30s intervals
+        # Filtering only images with bandwidth of 1.28 MHz or more and at 60s intervals
         ###############################################################################
         if all_overlay is False:
-            imagelist = filter_images(imagelist)
+            imagelist = filter_images(imagelist, min_time_sep=60.0)
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
             ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
