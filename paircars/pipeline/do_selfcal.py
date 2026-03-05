@@ -1829,8 +1829,8 @@ def main(
                 pol_succeed, pol_failed = succeed_polselfcal, failed_polselfcal
             if succeed_intselfcal == 0:
                 msg = 1
-    except Exception as e:
-        traceback.print_exc()
+    except Exception:
+        #traceback.print_exc()
         msg = 1
     finally:
         time.sleep(5)
@@ -2051,4 +2051,5 @@ def cli():
         jobid=args.jobid,
         start_remote_log=args.start_remote_log,
     )
+    print ("Final msg:",msg)
     return msg
