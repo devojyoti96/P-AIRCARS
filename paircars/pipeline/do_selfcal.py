@@ -1164,7 +1164,7 @@ def do_polselfcal(
                 # If leakage increased
                 #############################################################
                 if (num_iter>0 and num_iter<3) or num_iter>3:
-                    if abs(QL3)>1.1*abs(QL2) or abs(UL3)>1.1*abs(UL2) or abs(VL3)>1.1*abs(VL2):
+                    if abs(QL3-QL2)>0.1 or abs(UL3-UL2)>0.1 or abs(VL3-VL2)>0.1:
                         print(f"Leakage increased by more than 10%. Replacing with previous round.")
                         if os.path.exists(last_round_ms):
                             os.system(f"rm -rf {msname}")
