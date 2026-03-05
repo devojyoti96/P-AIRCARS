@@ -186,7 +186,7 @@ def get_chans_flag_per_time(msname):
     mstool = casamstool()
     mstool.open(msname)
     flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
-    ms.close()
+    mstool.close()
     shape = flag.shape
     npol = shape[0]
     nchan = shape[1]
