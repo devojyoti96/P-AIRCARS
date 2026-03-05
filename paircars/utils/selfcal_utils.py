@@ -312,8 +312,8 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                         calwt=[False],
                     )
                 msg = 0
-    except Exception as e:
-        traceback.print_exc()
+    except Exception:
+        logger.exception(traceback.print_exc())
         msg = 2
         bpass_caltable = ""
     finally:
@@ -1633,7 +1633,7 @@ def selfcal_round(
             leakage_info_list,
         )
     except Exception as e:
-        traceback.print_exc()
+        logger.exception(traceback.print_exc())
         return 4, applycal_gaintable, 0, 0, "", "", "", []
     finally:
         os.chdir(cwd)

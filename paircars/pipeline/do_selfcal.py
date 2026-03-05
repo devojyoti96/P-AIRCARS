@@ -710,7 +710,7 @@ def do_selfcal(
                 num_iter_after_ap += 1
             num_iter_fixed_sigma += 1
     except Exception as e:
-        traceback.print_exc()
+        intlogger.exception(traceback.print_exc())
         os.system("rm -rf *_selfcal_present*")
         time.sleep(5)
         clean_shutdown(sub_observer)
@@ -1244,7 +1244,7 @@ def do_polselfcal(
                     os.system(f"rm -rf {last_round_ms}")
                 os.system(f"cp -r {msname} {last_round_ms}")
     except Exception as e:
-        traceback.print_exc()
+        pollogger.exception(traceback.print_exc())
         os.system("rm -rf *_selfcal_present*")
         time.sleep(5)
         clean_shutdown(sub_observer)

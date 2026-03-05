@@ -541,10 +541,10 @@ def perform_imaging(
             clean_shutdown(sub_observer)
             return 1, {}
     except Exception as e:
-        traceback.print_exc()
         logger.info(
             f"{os.path.basename(msname)} -- Error in imaging.\n",
         )
+        logger.exception(traceback.print_exc())
         time.sleep(5)
         clean_shutdown(sub_observer)
         return 1, {}
