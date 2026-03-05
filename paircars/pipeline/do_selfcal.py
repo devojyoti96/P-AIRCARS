@@ -1163,12 +1163,11 @@ def do_polselfcal(
                 #############################################################
                 # If leakage increased
                 #############################################################
-                if (num_iter>0 and num_iter<3) or num_iter>3:
-                    if abs(QL3-QL2)>0.1 or abs(UL3-UL2)>0.1 or abs(VL3-VL2)>0.1:
-                        print(f"Leakage increased by more than 10%. Replacing with previous round.")
-                        if os.path.exists(last_round_ms):
-                            os.system(f"rm -rf {msname}")
-                            os.system(f"mv {last_round_ms} {msname}")
+                if num_iter>1 and abs(QL3-QL2)>0.1 or abs(UL3-UL2)>0.1 or abs(VL3-VL2)>0.1:
+                    pollogger.info(f"Leakage increased by more than 10%. Replacing with previous round.")
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
 
                 ##############################################################
                 # If DR is decreasing (DR decrease in pol selfcal)
@@ -1831,7 +1830,7 @@ def main(
     finally:
         time.sleep(5)
         clean_shutdown(observer)
-        for ms in org_mslist:
+        '''for ms in org_mslist:
             if os.path.exists(ms):
                 drop_cache(ms)
         if dask_cluster is not None:
@@ -1840,7 +1839,7 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.chdir(workdir)
-            os.system(f"rm -rf {dask_dir}")
+            os.system(f"rm -rf {dask_dir}")'''
     return msg, int_succeed, int_failed, pol_succeed, pol_failed
 
 
