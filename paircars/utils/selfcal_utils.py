@@ -76,7 +76,7 @@ def determine_disk_visibility(msname):
     mstool.select({"uvdist": [0.0, uvdist]})
     if datacolumn=="CORRECTED_DATA":
         data_short = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrceted"]), axis=2
+            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]), axis=2
         )
     else:
         data_short = np.nanmedian(
@@ -88,7 +88,7 @@ def determine_disk_visibility(msname):
     mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
     if datacolumn=="CORRECTED_DATA":
         data_first_lobe = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrceted"]), axis=2
+            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]), axis=2
         )
     else:
         data_first_lobe = np.nanmedian(
