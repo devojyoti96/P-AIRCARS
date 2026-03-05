@@ -315,7 +315,7 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                 msg = 0
     except Exception:
         logger.exception(traceback.print_exc())
-        msg = 2
+        msg = 3
         bpass_caltable = ""
     finally:
         print("Restoring QS flags...")
