@@ -514,4 +514,5 @@ def flagger(msname, datacolumn, threshold=3.0, num_processes=4, num_bins=30, bin
     # plt.xscale('log')
     # plt.yscale('log')
     # plt.show()
+    return 0
 
