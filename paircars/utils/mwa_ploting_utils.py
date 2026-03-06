@@ -481,7 +481,7 @@ def get_mwamap(fits_image, do_sharpen=False):
     return mwa_map_rotate
 
 
-def save_in_hpc(fits_image, outdir="", xlim=[-1600, 1600], ylim=[-1600, 1600]):
+def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
     """
     Save solar image in helioprojective coordinates
 
