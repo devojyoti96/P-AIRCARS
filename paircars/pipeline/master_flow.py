@@ -1931,7 +1931,8 @@ def master_control(
     # Initiating paircars data
     #####################################
     init_paircars_data()
-
+    observer=None 
+    
     ###################################################
     # Measurement set check and other working directory
     ###################################################
