@@ -1,13 +1,12 @@
-Install Conda: Anaconda or Miniconda
-====================================
+Install Conda: Miniconda
+========================
 
-This guide provides instructions for installing either **Anaconda** or **Miniconda** into a **custom directory**, creating a Python environment, and activating it.
+This guide provides instructions for installing **Miniconda** into a **custom directory**, without conflicting with local site packages, creating a Python environment, and activating it.
 
 Overview
 --------
 
 - **Miniconda**: A minimal Conda installer (recommended for lightweight setups).
-- **Anaconda**: A full-featured Conda distribution with over 150 pre-installed packages.
 
 .. note::
 
@@ -27,8 +26,18 @@ Install Miniconda in a Custom Directory
    .. code-block:: bash
 
       wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      
+2. **Setup environment variables**
+    
+   Setup these environment variables to avoid conflict with local site packages.
+   
+   .. code-block:: bash
+   
+      export PYTHONNOUSERSITE=1
+      unset PYTHONPATH 
+    
 
-2. **Install into a Custom Directory**
+3. **Install into a Custom Directory**
 
    Replace `/path/to/miniconda3_custom` with your desired location:
 
@@ -40,7 +49,7 @@ Install Miniconda in a Custom Directory
       
       In HPC cluster, it is recommended to set **/path/to/miniconda3_custom** to a location which is accessible by all nodes and with fast disk speed. Read you HPC documentation carefully and check whether **conda** is already installed and available as **module** or not. 
       
-3. **Enable the 'conda' Command**
+4. **Enable the 'conda' Command**
    
    .. important::
       To avoid using the full path (`/path/to/miniconda3_custom/bin/conda`) every time, do the follwing:
@@ -52,39 +61,4 @@ Install Miniconda in a Custom Directory
 
    After this, `conda` will be available as a global command.
    
-  
-Install Anaconda in a Custom Directory
---------------------------------------
-
-1. **Download the Installer**
-
-   Visit https://www.anaconda.com/products/distribution and download the installer.
-
-   For Linux:
-
-   .. code-block:: bash
-
-      wget https://repo.anaconda.com/archive/Anaconda3-latest-Linux-x86_64.sh
-
-2. **Install into a Custom Directory**
-
-   Replace `/path/to/anaconda3_custom` with your desired location:
-
-   .. code-block:: bash
-
-      bash Anaconda3-latest-Linux-x86_64.sh -b -p /path/to/anaconda3_custom
-      
-   .. note::
-      
-      In HPC cluster, it is recommended to set **/path/to/anaconda3_custom** to a location which is accessible by all nodes and fast disk speed.
-
-3. **Enable the 'conda' Command**
-
-   .. important::
-      To avoid using the full path (`/path/to/anaconda3_custom/bin/conda`) every time, do the follwing:
-
-   .. code-block:: bash
-
-      /path/to/anaconda3_custom/bin/conda init
-      source ~/.bashrc    # or ~/.zshrc
-
+ 
