@@ -183,10 +183,6 @@ def applysol(
                             print(
                                 f"Applying solution on ms: {msname} from quartical table: {qc}."
                             )
-                            if applymode == "calonly":
-                                calflag = False
-                            else:
-                                calflag = True
                             temp_pol_caltable = (
                                 f"{workdir}/{os.path.basename(qc)}.tempcal"
                             )
@@ -210,7 +206,7 @@ def applysol(
                                     "output.overwrite=True",
                                     "output.products=[corrected_data]",
                                     "output.columns=[CORRECTED_DATA]",
-                                    f"output.flags={calflag}",
+                                    f"output.flags=False",
                                     f"solver.terms=[{soltype}]",
                                     "solver.iter_recipe=[0]",
                                     "solver.propagate_flags=False",

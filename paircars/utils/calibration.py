@@ -241,34 +241,49 @@ def get_cal_flag_info(caltable):
         Flagged channel list
     list
         Flagged antenna list
+    list
+        Flagged timestamp list
     float
         Total flag fraction
     float
         Channel flag fraction
     float
         Antenna flag fraction
+    float
+        Time flag fraction
     """
     tb = table()
     tb.open(caltable)
     flags = tb.getcol("FLAG")
+    times = tb.getcol("TIME")
+    unique_times = np.unique(times)
+    ntime = len(unique_times)
     tb.close()
+    shape = flags.shape
+    flags = flags.reshape(shape[0],shape[1],ntime,shape[2]//ntime)
     shape = flags.shape
     npol = shape[0]
     nchan = shape[1]
-    nant = shape[2]
-    chans_flags = np.nansum(np.nansum(flags, axis=0), axis=1)
-    ant_flags = np.nansum(np.nansum(flags, axis=0), axis=0)
-    flag_chans = np.where(chans_flags == npol * nant)[0]
-    flag_ants = np.where(ant_flags == npol * nchan)[0]
+    ntime = shape[2]
+    nant = shape[3]
+    chans_flags = np.nansum(flags, axis=(0, 2, 3))
+    ant_flags = np.nansum(flags, axis=(0, 1, 2))
+    time_flags = np.nansum(flags, axis=(0, 1, 3))
+    flag_chans = np.where(chans_flags == npol * nant * ntime)[0]
+    flag_ants = np.where(ant_flags == npol * nchan * ntime)[0]
+    flag_times = np.where(time_flags == npol * nchan * nant)[0]
     flag_frac = np.nansum(flags) / np.size(flags)
     chan_flag_frac = len(flag_chans) / nchan
     ant_flag_frac = len(flag_ants) / nant
+    time_flag_frac = len(flag_times)/ ntime
     return (
         flag_chans.tolist(),
         flag_ants.tolist(),
+        flag_times.tolist(),
         flag_frac,
         chan_flag_frac,
         ant_flag_frac,
+        time_flag_frac, 
     )
 
 

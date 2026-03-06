@@ -16,6 +16,7 @@ from .calibration import (
     fluxcal_caltable,
     uvrange_casa_to_quartical,
     quartical_matrix_normalize,
+    get_cal_flag_info,
 )
 from .imaging import (
     calc_sun_dia,
@@ -1056,9 +1057,9 @@ def selfcal_round(
         msmd.open(msname)
 
         freq = msmd.meanfreq(0, unit="MHz")
-        nchan = msmd.nchan(0)
+        num_chan = msmd.nchan(0)
         freqres = msmd.chanres(0, unit="MHz")[0]
-        bw = nchan * freqres
+        bw = num_chan * freqres
 
         times = msmd.timesforspws(0)
         ntime = len(times)
@@ -1477,12 +1478,17 @@ def selfcal_round(
                         vis=gain_caltable,
                         mode="rflag",
                         datacolumn="CPARAM",
+                        timedevscale=10.0,
+                        freqdevscale=10.0,
                         flagbackup=False,
                     )
+                    _, _, _, flag_frac, chan_flag_frac, ant_flag_frac, time_flag_frac = get_cal_flag_info(gain_caltable)
                     flagdata(
                         vis=bpass_caltable,
                         mode="rflag",
                         datacolumn="CPARAM",
+                        timedevscale=10.0,
+                        freqdevscale=10.0,
                         flagbackup=False,
                     )
                 if fluxscale_mwa:

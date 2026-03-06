@@ -310,6 +310,7 @@ def get_pbcor_image(
                         else:
                             hdr["VLEAK"] = abs(round(res_v_leakage * 100.0, 4))
                 except:
+                    traceback.print_exc()
                     with fits.open(outfile, mode="update") as hdul:
                         hdr = hdul[0].header
                         hdr["LEAKCOR"] = "FALSE"

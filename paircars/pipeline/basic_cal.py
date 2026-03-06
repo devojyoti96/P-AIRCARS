@@ -15,7 +15,6 @@ from paircars.utils.basic_utils import suppress_output
 from paircars.utils.calibration import (
     get_gleam_uvrange,
     get_caltable_metadata,
-    get_cal_flag_info,
 )
 from paircars.utils.crossphasecal import crossphasecal
 from paircars.utils.flagging import (

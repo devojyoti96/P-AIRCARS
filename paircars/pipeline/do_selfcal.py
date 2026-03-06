@@ -629,7 +629,7 @@ def do_selfcal(
                     continue
                 else:
                     intlogger.info(
-                        f"Selfcal converged. DR does not increase over last two changes in threshold.\n"
+                        f"Selfcal calibration has converged.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
