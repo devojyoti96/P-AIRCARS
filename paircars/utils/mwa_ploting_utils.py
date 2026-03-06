@@ -471,7 +471,7 @@ def get_mwamap(fits_image, do_sharpen=False):
         scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
         rotation_angle=-P1,
         wavelength=frequency.to(u.MHz).round(2),
-        observatory="mwaKAT",
+        observatory="MWA",
     )
     if do_sharpen:
         blurred = gaussian_filter(mwa_data, sigma=10)
@@ -536,9 +536,13 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
         "CRVAL4",
         "CDELT4",
         "CUNIT4",
+        "DATE-OBS",
         "AUTHOR",
         "PIPELINE",
         "BAND",
+        "BMAJ",
+        "BMIN",
+        "BPA",
         "MAX",
         "MIN",
         "RMS",
@@ -547,6 +551,12 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
         "MEDIAN",
         "RMSDYN",
         "MIMADYN",
+        "CALAPP",                                                          
+        "POLSELF",                                                            
+        "LEAKUNIT",                                                            
+        "QLEAK",                                                     
+        "ULEAK",                                                    
+        "VLEAK",   
     ]:
         if key in fits_header:
             hpc_header[key] = fits_header[key]
@@ -612,7 +622,7 @@ def plot_in_hpc(
         matplotlib.use("TkAgg")
     matplotlib.rcParams.update({"font.size": 12})
     fits_image = fits_image.rstrip("/")
-    mwa_header = fits.getheader(fits_image)  # Opening mwaKAT fits file
+    mwa_header = fits.getheader(fits_image)  # Opening MWA fits file
     if mwa_header["CTYPE3"] == "FREQ":
         frequency = mwa_header["CRVAL3"] * u.Hz
     elif mwa_header["CTYPE4"] == "FREQ":
