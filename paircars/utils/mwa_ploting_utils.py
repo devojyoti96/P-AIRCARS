@@ -551,12 +551,12 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
         "MEDIAN",
         "RMSDYN",
         "MIMADYN",
-        "CALAPP",                                                          
-        "POLSELF",                                                            
-        "LEAKUNIT",                                                            
-        "QLEAK",                                                     
-        "ULEAK",                                                    
-        "VLEAK",   
+        "CALAPP",
+        "POLSELF",
+        "LEAKUNIT",
+        "QLEAK",
+        "ULEAK",
+        "VLEAK",
     ]:
         if key in fits_header:
             hpc_header[key] = fits_header[key]
