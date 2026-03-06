@@ -1474,23 +1474,77 @@ def selfcal_round(
             #########################################
             if calmode == "ap":
                 with suppress_output():
-                    flagdata(
-                        vis=gain_caltable,
-                        mode="rflag",
-                        datacolumn="CPARAM",
-                        timedevscale=10.0,
-                        freqdevscale=10.0,
-                        flagbackup=False,
-                    )
-                    _, _, _, flag_frac, chan_flag_frac, ant_flag_frac, time_flag_frac = get_cal_flag_info(gain_caltable)
-                    flagdata(
-                        vis=bpass_caltable,
-                        mode="rflag",
-                        datacolumn="CPARAM",
-                        timedevscale=10.0,
-                        freqdevscale=10.0,
-                        flagbackup=False,
-                    )
+                    #################################
+                    # Gaincal flagging
+                    #################################
+                    (
+                        _,
+                        _,
+                        _,
+                        flag_frac,
+                        chan_flag_frac,
+                        ant_flag_frac,
+                        time_flag_frac,
+                    ) = get_cal_flag_info(gain_caltable)
+                    if flag_frac < 0.5 and ant_flag_frac < 0.5 and time_flag_frac < 0.5:
+                        do_flag_backup(gain_caltable, flagtype="gainflag")
+                        flagdata(
+                            vis=gain_caltable,
+                            mode="rflag",
+                            datacolumn="CPARAM",
+                            timedevscale=10.0,
+                            freqdevscale=10.0,
+                            flagbackup=False,
+                        )
+                        if (
+                            flag_frac > 0.5
+                            or ant_flag_frac > 0.5
+                            or time_flag_frac > 0.5
+                        ):
+                            flagmanager(
+                                vis=gain_caltable,
+                                mode="restore",
+                                versionname="gainflag_1",
+                            )
+                        flagmanager(
+                            vis=gain_caltable, mode="delete", versionname="gainflag_1"
+                        )
+                    #############################
+                    # Bandpass flagging
+                    #############################
+                    (
+                        _,
+                        _,
+                        _,
+                        flag_frac,
+                        chan_flag_frac,
+                        ant_flag_frac,
+                        time_flag_frac,
+                    ) = get_cal_flag_info(bpass_caltable)
+                    if flag_frac < 0.5 and ant_flag_frac < 0.5 and chan_flag_frac < 0.5:
+                        do_flag_backup(bpass_caltable, flagtype="bpassflag")
+                        flagdata(
+                            vis=bpass_caltable,
+                            mode="rflag",
+                            datacolumn="CPARAM",
+                            timedevscale=10.0,
+                            freqdevscale=10.0,
+                            flagbackup=False,
+                        )
+                        if (
+                            flag_frac > 0.5
+                            or ant_flag_frac > 0.5
+                            or chan_flag_frac > 0.5
+                        ):
+                            flagmanager(
+                                vis=bpass_caltable,
+                                mode="restore",
+                                versionname="bpassflag_1",
+                            )
+                        flagmanager(
+                            vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
+                        )
+
                 if fluxscale_mwa:
                     logger.info("Flux scaled caltable using MWA reference bandpass.")
                     fluxcal_caltable(bpass_caltable, attn=solar_attn)

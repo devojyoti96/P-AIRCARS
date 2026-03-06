@@ -290,12 +290,14 @@ def get_pbcor_image(
                             if os.path.exists(leakagecor_image):
                                 os.system(f"rm -rf {outfile}")
                                 os.system(f"mv {leakagecor_image} {outfile}")
+                                with fits.open(outfile, mode="update") as hdul:
+                                    hdr = hdul[0].header
+                                    hdr["IMGLEAKCOR"] = "TRUE"
                     #####################################################
                     # Writing leakage information
                     ######################################################
                     with fits.open(outfile, mode="update") as hdul:
                         hdr = hdul[0].header
-                        hdr["LEAKCOR"] = "TRUE"
                         hdr["LEAKUNIT"] = "PERCENT"
                         if np.isnan(res_q_leakage):
                             hdr["QLEAK"] = "NAN"
@@ -311,13 +313,6 @@ def get_pbcor_image(
                             hdr["VLEAK"] = abs(round(res_v_leakage * 100.0, 4))
                 except:
                     traceback.print_exc()
-                    with fits.open(outfile, mode="update") as hdul:
-                        hdr = hdul[0].header
-                        hdr["LEAKCOR"] = "FALSE"
-            else:
-                with fits.open(outfile, mode="update") as hdul:
-                    hdr = hdul[0].header
-                    hdr["LEAKCOR"] = "FALSE"
         print(f"Output image written to : {outfile}\n")
         return outfile
     except Exception as e:

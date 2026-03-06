@@ -260,7 +260,7 @@ def get_cal_flag_info(caltable):
     ntime = len(unique_times)
     tb.close()
     shape = flags.shape
-    flags = flags.reshape(shape[0],shape[1],ntime,shape[2]//ntime)
+    flags = flags.reshape(shape[0], shape[1], ntime, shape[2] // ntime)
     shape = flags.shape
     npol = shape[0]
     nchan = shape[1]
@@ -275,7 +275,7 @@ def get_cal_flag_info(caltable):
     flag_frac = np.nansum(flags) / np.size(flags)
     chan_flag_frac = len(flag_chans) / nchan
     ant_flag_frac = len(flag_ants) / nant
-    time_flag_frac = len(flag_times)/ ntime
+    time_flag_frac = len(flag_times) / ntime
     return (
         flag_chans.tolist(),
         flag_ants.tolist(),
@@ -283,7 +283,7 @@ def get_cal_flag_info(caltable):
         flag_frac,
         chan_flag_frac,
         ant_flag_frac,
-        time_flag_frac, 
+        time_flag_frac,
     )
 
 

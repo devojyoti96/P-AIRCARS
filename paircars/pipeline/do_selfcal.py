@@ -270,39 +270,6 @@ def do_selfcal(
                 datacolumn="data",
                 flagbackup=False,
             )
-            do_flag_backup(msname, flagtype="int_selfcal")
-            result = uvbin_flag(
-                msname,
-                uvbin_size=10,
-                datacolumn="data",
-                mode="rflag",
-                threshold=10.0,
-                flagbackup=False,
-            )
-            unflag_chans, flag_chans = get_chans_flag(msname)
-            if result != 0:
-                intlogger.info(f"UV-bin flagging is not successful.")
-                restore_initial_flag = True
-            elif len(unflag_chans) == 0:
-                intlogger.info(
-                    "All channels are getting flagged in uvbin flagging. Restoring the flags."
-                )
-                restore_initial_flag = True
-            else:
-                restore_initial_flag = False
-            if restore_initial_flag:
-                flagmanager(vis=msname, mode="restore", versionname="int_selfcal_1")
-                flagmanager(vis=msname, mode="delete", versionname="int_selfcal_1")
-                if len(unflag_chans) > 0:
-                    temp_ms = f"{msname}/.tempsplit"
-                    unflag_chans = [f"{i}" for i in unflag_chans]
-                    unflag_spw = f"0:{';'.join(unflag_chans)}"
-                    print(f"Spliting only unflagged spectral window: {unflag_spw}")
-                    split(
-                        vis=msname, outputvis=temp_ms, datacolumn="all", spw=unflag_spw
-                    )
-                    os.system(f"rm -rf {msname} {msname}.flagversions")
-                    os.system(f"mv {temp_ms} {msname}")
 
         ############################################
         # Imaging and calibration parameters
@@ -628,9 +595,7 @@ def do_selfcal(
                     num_iter_fixed_sigma = 0
                     continue
                 else:
-                    intlogger.info(
-                        f"Selfcal calibration has converged.\n"
-                    )
+                    intlogger.info(f"Selfcal calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -1104,7 +1069,9 @@ def do_polselfcal(
                 u_leakage, u_err = weighted_mean(U, Ue)
                 v_leakage, v_err = weighted_mean(V, Ve)
                 leakage_file = f"{gaintable[0].split('.dcal')[0]}.leakage.npy"
-                np.save(leakage_file, leakage_info)
+                np.save(
+                    leakage_file, [q_leakage, u_leakage, v_leakage, q_err, u_err, v_err]
+                )
                 if num_iter == 0:
                     DR1 = DR3 = DR2 = dyn
                     RMS1 = RMS2 = RMS3 = rms
@@ -1333,7 +1300,7 @@ def do_full_selfcal(
         end_threshold=end_threshold,
         max_iter=max_iter,
         max_DR=max_DR,
-        min_iter=max(5,min_iter),
+        min_iter=max(5, min_iter),
         DR_convergence_frac=DR_convergence_frac,
         uvrange=uvrange,
         minuv=minuv,
@@ -1359,9 +1326,9 @@ def do_full_selfcal(
             workdir=workdir,
             selfcaldir=f"{selfcaldir}_pol",
             metafits=metafits,
-            max_iter=max(10,int(max_iter/3)),
+            max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
-            min_iter=max(5,min_iter),
+            min_iter=max(5, min_iter),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,
