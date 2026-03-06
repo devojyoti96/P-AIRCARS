@@ -128,6 +128,7 @@ def init_paircars_data(update=False, remote_link=None, emails=None):
 
 def main(
     init=False,
+    port=4260,
     datadir="",
     update=False,
     link=None,
@@ -140,6 +141,8 @@ def main(
     ----------
     init : bool, optional
         Initiate setup
+    port : int, optional
+        Prefect port
     datadir : str, optional
         User provided custom data directory
     update : bool, optional
@@ -150,8 +153,6 @@ def main(
         E-mails for notifications
     """
     required_gb = 20
-
-    port = 4260
     postgres_port = 5260
 
     try:
@@ -168,7 +169,7 @@ def main(
 
     if check_port_status(port) is False:
         if scheduler_name != "local":
-            port = get_free_port(start_port=4260, end_port=5250)
+            port = get_free_port(start_port=port, end_port=5250)
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":
@@ -280,6 +281,9 @@ def cli():
     )
     parser.add_argument("--init", action="store_true", help="Initiate data")
     parser.add_argument(
+        "--port", type=int, default=4260, help="Prefect port"
+    )
+    parser.add_argument(
         "--datadir", type=str, default="", help="User provided data directory"
     )
     parser.add_argument("--update", action="store_true", help="Update existing data")
@@ -302,6 +306,7 @@ def cli():
     msg = main(
         init=args.init,
         datadir=args.datadir,
+        port=args.port,
         update=args.update,
         link=args.link,
         emails=args.emails,

@@ -2683,19 +2683,30 @@ def master_control(
         ###############################################
         # Making diagnostic plots
         ###############################################
-        if len(caltables) > 0 and do_basic_cal and has_cal:
-            for caltable in caltables:
-                msg, caltable_diag_plot = plot_caltable_diagnostics(
-                    caltable, f"{outdir}/diagnostic_plots"
+        if has_cal and len(bandpass_tables) > 0 and do_basic_cal:
+            msg, bpass_plots = plot_caltable_diagnostics(
+                bandpass_tables, f"{outdir}/diagnostic_plots/{calibrator_obsid}_bcal"
+            )
+            if msg == 0:
+                print(
+                    f"Diagnostic plots for bandpass tables are saved in : {bpass_plots}."
                 )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
-                    )
-                else:
-                    print(
-                        f"Error in creating diagnostic plots for caltable {caltable}."
-                    )
+            else:
+                print(
+                    f"Error in creating diagnostic plots for bandpass tables."
+                )
+        if has_cal and len(crossphase_tables) > 0 and do_basic_cal:
+            msg, kcross_plots = plot_caltable_diagnostics(
+                crossphase_tables, f"{outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal", plot_all_ants=False,
+            )
+            if msg == 0:
+                print(
+                    f"Diagnostic plots for crosshand phase tables are saved in : {kcross_plots}."
+                )
+            else:
+                print(
+                    f"Error in creating diagnostic plots for crosshand phase tables."
+                )
 
         ###################################################
         # Start spliting selfcal ms
@@ -3108,19 +3119,30 @@ def master_control(
         ###########################################
         # Plotting self-caltables
         ###########################################
-        if len(selfcal_tables) > 0 and do_selfcal:
-            for caltable in selfcal_tables:
-                msg, caltable_diag_plot = plot_caltable_diagnostics(
-                    caltable, f"{outdir}/diagnostic_plots"
+        if do_selfcal and len(selfcal_gaincal) > 0:
+            msg, gcal_plots = plot_caltable_diagnostics(
+                selfcal_gaincal, f"{outdir}/diagnostic_plots/{target_obsid}_gcal"
+            )
+            if msg == 0:
+                print(
+                    f"Diagnostic plots for self-calibration gaincal tables are saved in : {gcal_plots}."
                 )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for caltable {caltable} are saved in : {caltable_diag_plot}."
-                    )
-                else:
-                    print(
-                        f"Error in creating diagnostic plots for caltable {caltable}."
-                    )
+            else:
+                print(
+                    f"Error in creating diagnostic plots for self-calibration gaincal tables."
+                )
+        if do_selfcal and len(selfcal_bandpass) > 0:
+            msg, bcal_plots = plot_caltable_diagnostics(
+                selfcal_bandpass, f"{outdir}/diagnostic_plots/{target_obsid}_bcal"
+            )
+            if msg == 0:
+                print(
+                    f"Diagnostic plots for self-calibration bandpass tables are saved in : {bcal_plots}."
+                )
+            else:
+                print(
+                    f"Error in creating diagnostic plots for self-calibration bandpass tables."
+                )
 
         #############################################
         # Spliting targets if not started already

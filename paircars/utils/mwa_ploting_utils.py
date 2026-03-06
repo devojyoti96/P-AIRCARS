@@ -202,16 +202,212 @@ def plot_ms_diagnostics(
         os.system(f"rm -rf log-shadems.txt")
 
 
-def plot_caltable_diagnostics(caltable, outdir):
+def plot_G_jones_time_vs_gain(all_times, all_gains, all_ants, all_ant_names, ncols, nrows, pols, prefix, output_prefix):
     """
-    Plot diagonistic plot of a caltable
+    Plot time vs. gain
+    """
+    matplotlib.use("Agg")   
+    plots_per_fig = ncols * nrows
+    max_ant = np.nanmax(np.array(all_ants))
+    plots_per_fig = min(max_ant, ncols * nrows)
+    if plots_per_fig<ncols*nrows:
+        ncols=nrows=int(np.sqrt(plots_per_fig)) 
+    min_time = np.nanmin(np.array(all_times))
+    start_timestamp = mjdsec_to_timestamp(min_time)
+    output_pdfs = []
+    for quantity in ["amp", "phase"]:
+        out_files=[]
+        for idx in range(0, max_ant, plots_per_fig):
+            fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
+            if quantity == "amp":
+                fig.suptitle(f"Time vs Gain Amplitude, Start time: {start_timestamp}", fontsize=14)
+                x = np.abs(np.array(all_gains))
+                miny = 0.8*np.nanmin(x)
+                maxy = 1.2*np.nanmax(x)
+            else:
+                fig.suptitle(f"Time vs Gain Phase, Start time: {start_timestamp}", fontsize=14)
+                miny = max(-200,0.8*np.nanmin(x))
+                maxy = min(200, 1.2*np.nanmax(x))
+            axes = axes.flatten()
+            for n in range(len(all_ants)):
+                ants = all_ants[n]
+                ant_names = all_ant_names[n]
+                times = all_times[n]
+                gains = all_gains[n]
+                for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
+                    ax = axes[i]
+                    for j in range(2):  # loop over polarizations
+                        if j == 0:
+                            c = "r"
+                        else:
+                            c = "k"
+                        if n == 0:
+                            label = f"Pol: {pols[j]}"
+                        else:
+                            label = None
+                        if quantity == "amp":
+                            ax.scatter(
+                                times-min_time,
+                                np.abs(gains[j, 0, :, ant]),
+                                label=label,
+                                color=c,
+                                s=14,
+                            )
+                            if n == 0:
+                                ax.set_ylabel("Gain Amplitude", fontsize=14)
+                        else:
+                            ax.scatter(
+                                times-min_time,
+                                np.angle(gains[j, 0, :, ant], deg=True),
+                                label=label,
+                                color=c,
+                                s=14,
+                            )
+                            if n == 0:
+                                ax.set_ylabel("Gain Phase (degree)", fontsize=14)
+                    if n == 0:
+                        ax.set_title(f"Antenna {ant+1}, ant_names[ant]", fontsize=14)
+                        ax.set_xlabel("Time (s)", fontsize=14)
+                        ax.legend(fontsize=10, ncol=2, loc ="upper right")
+                    ax.set_ylim(miny,maxy)
+            for j in range(i + 1, plots_per_fig):
+                fig.delaxes(axes[j])
+            plt.tight_layout(rect=[0, 0, 1, 0.99])
+            savefile = f"{prefix}_gain_{quantity}_batch_{idx // plots_per_fig + 1}.png"
+            plt.savefig(savefile)
+            plt.close(fig)
+            out_files.append(savefile)
+        images = []
+        output_pdf = f"{output_prefix}_times_vs_{quantity}.pdf"
+        if os.path.exists(output_pdf):
+            os.system(f"rm -rf {output_pdf}")
+        for image in out_files:
+            images.append(Image.open(image).convert("RGB"))
+        images[0].save(output_pdf, save_all=True, append_images=images[1:])
+        for outpng in out_files:
+            os.system(f"rm -rf {outpng}")
+        output_pdfs.append(output_pdf)
+    return output_pdfs
+    
+    
+def plot_B_jones_freq_vs_gain(all_freqs, all_gains, all_ants, all_ant_names, ncols, nrows, pols, prefix, output_prefix, plot_all_ants=True):
+    """
+    Plot freq vs. gain
+    """
+    matplotlib.use("Agg")   
+    plots_per_fig = ncols * nrows
+    if plot_all_ants:
+        max_ant = np.nanmax(np.array(all_ants))    
+    else:
+        max_ant = 1
+    plots_per_fig = min(max_ant, ncols * nrows)
+    if plots_per_fig<ncols*nrows:
+        ncols=nrows=int(np.sqrt(plots_per_fig)) 
+    output_pdfs = []
+    for quantity in ["amp", "phase"]:
+        out_files=[]
+        for idx in range(0, max_ant, plots_per_fig):
+            if plot_all_ants:
+                fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
+            else:
+                 fig, axes = plt.subplots(1, 1, figsize=(8, 6))
+            if quantity == "amp":
+                fig.suptitle(f"Frequency vs Gain Amplitude", fontsize=14)
+                x = np.abs(np.array(all_gains))
+                miny = np.nanmin(x)
+                maxy = np.nanmax(x)
+                pad = 0.1 * (maxy - miny)
+            else:
+                fig.suptitle(f"Frequency vs Gain Phase", fontsize=14)
+                x = np.angle(np.array(all_gains),deg=True)
+                miny = np.nanmin(x)
+                maxy = np.nanmax(x)
+                pad = 0.1 * (maxy - miny)
+            if plot_all_ants:
+                axes = axes.flatten()
+            else:
+                pass
+            for n in range(len(all_ants)):
+                if plot_all_ants:
+                    ants = all_ants[n]
+                    ant_names = all_ant_names[n]
+                else:
+                    ants = [all_ants[n][0]]
+                    ant_names = [all_ant_names[n][0]]
+                freqs = all_freqs[n]
+                gains = all_gains[n]
+                for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
+                    if plot_all_ants:
+                        ax = axes[i]
+                    else:
+                        ax = axes
+                    for j in range(2):  # loop over polarizations
+                        if j == 0:
+                            c = "r"
+                        else:
+                            c = "k"
+                        if n == 0:
+                            label = f"Pol: {pols[j]}"
+                        else:
+                            label = None
+                        if quantity == "amp":
+                            ax.scatter(
+                                freqs,
+                                np.abs(np.nanmean(gains[j, :, :, ant],axis=1)),
+                                label=label,
+                                color=c,
+                                s=14,
+                            )
+                            if n == 0:
+                                ax.set_ylabel("Gain Amplitude", fontsize=14)
+                        else:
+                            ax.scatter(
+                                freqs,
+                                np.angle(np.nanmean(gains[j, :, :, ant],axis=1), deg=True),
+                                label=label,
+                                color=c,
+                                s=14,
+                            )
+                            if n == 0:
+                                ax.set_ylabel("Gain Phase (degree)", fontsize=14)
+                    if n == 0:
+                        if plot_all_ants:
+                            ax.set_title(f"Antenna {ant+1}, {ant_names[ant]}", fontsize=14)
+                        ax.set_xlabel("Frequency (MHz)", fontsize=14)
+                        ax.legend(fontsize=10, ncol=2, loc ="upper right")
+                    ax.set_ylim(miny-pad,maxy+pad)
+            for j in range(i + 1, plots_per_fig):
+                fig.delaxes(axes[j])
+            plt.tight_layout(rect=[0, 0, 1, 0.99])
+            savefile = f"{prefix}_gain_{quantity}_batch_{idx // plots_per_fig + 1}.png"
+            plt.savefig(savefile)
+            plt.close(fig)
+            out_files.append(savefile)
+        images = []
+        output_pdf = f"{output_prefix}_freqs_vs_{quantity}.pdf"
+        if os.path.exists(output_pdf):
+            os.system(f"rm -rf {output_pdf}")
+        for image in out_files:
+            images.append(Image.open(image).convert("RGB"))
+        images[0].save(output_pdf, save_all=True, append_images=images[1:])
+        for outpng in out_files:
+            os.system(f"rm -rf {outpng}")
+        output_pdfs.append(output_pdf)
+    return output_pdfs
+
+
+def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
+    """
+    Plot diagonistic plot of casa caltables
 
     Parameters
     ----------
-    caltable : str
-        Caltable name
-    outdir : str, optional
-        Output directory
+    caltables : list
+        Caltable names
+    outfile_prefix : str
+        Output plot file name prefix
+    plot_all_ants : bool, optional
+        Plot all antennas or only the single one
 
     Returns
     -------
@@ -221,186 +417,69 @@ def plot_caltable_diagnostics(caltable, outdir):
         Output file
     """
     from casatools import table
-
-    caltable = caltable.rstrip("/")
-    os.makedirs(outdir, exist_ok=True)
-    output_pdf = f"{outdir}/{os.path.basename(caltable)}_plots.pdf"
-    if os.path.exists(output_pdf):
-        return 0, output_pdf
     pols = ["X", "Y"]
     ncols = 3
     nrows = 3
-    plots_per_fig = ncols * nrows
     out_files = []
+    tb = table()
     try:
-        tb = table()
-        tb.open(f"{caltable}/SPECTRAL_WINDOW")
-        freqs = tb.getcol("CHAN_FREQ") / 10**6  # In MHz
-        tb.close()
-        tb.open(caltable)
-        cal_type = tb.getkeywords()["VisCal"]
-        if cal_type == "K Jones":
-            gain = tb.getcol("FPARAM")
-            flag = tb.getcol("FLAG")
+        all_freqs = []
+        all_times = []
+        all_ants = []
+        all_gains = []
+        all_ant_names = []
+        final_caltables = []
+        last_caltype = ""
+        for caltable in caltables:
+            tb.open(caltable)
+            cal_type = tb.getkeywords()["VisCal"]
+            tb.close()
+            if cal_type == last_caltype or last_caltype == "":
+                tb.open(f"{caltable}/SPECTRAL_WINDOW")
+                freqs = tb.getcol("CHAN_FREQ") / 10**6  # In MHz
+                tb.close()
+                tb.open(f"{caltable}/ANTENNA")
+                ant_names = tb.getcol("NAME") 
+                tb.close()
+                tb.open(caltable)
+                gains = tb.getcol("CPARAM")
+                flags = tb.getcol("FLAG")
+                gains[flags] = np.nan + 1j * np.nan
+                ants = np.unique(tb.getcol("ANTENNA1"))
+                times = np.unique(tb.getcol("TIME"))
+                nant = np.nanmax(ants) + 1
+                tb.close()
+                ntime = len(times)
+                shape = gains.shape
+                gains = gains.reshape(shape[0], shape[1], ntime, shape[2] // ntime)
+                all_freqs.append(freqs)
+                all_times.append(times)
+                all_gains.append(gains)
+                all_ants.append(ants)
+                all_ant_names.append(ant_names)
+                last_caltype = cal_type
+                final_caltables.append(caltable)
+        final_cal_type = last_caltype
+        if final_cal_type == "G Jones":
+            output_pdfs = plot_G_jones_time_vs_gain(
+                all_times, all_gains, all_ants, all_ant_names, ncols, nrows, pols, "GJones", outfile_prefix
+            )
+        elif final_cal_type == "B Jones":
+            output_pdfs = plot_B_jones_freq_vs_gain(
+                all_freqs, all_gains, all_ants, all_ant_names, ncols, nrows, pols, "BJones", outfile_prefix, plot_all_ants=plot_all_ants
+            )
         else:
-            gain = tb.getcol("CPARAM")
-            flag = tb.getcol("FLAG")
-        gain[flag] = np.nan
-        ants = np.unique(tb.getcol("ANTENNA1"))
-        times = np.unique(tb.getcol("TIME"))
-        nant = np.nanmax(ants) + 1
-        tb.close()
-        print(f"Ploting {cal_type}")
-        if cal_type == "K Jones":
-            plt.figure(figsize=(15, 10))
-            gain = np.nanmean(gain, axis=1)
-            for i in range(2):
-                plt.scatter(
-                    range(gain.shape[-1]), gain[i, ...], label=f"Pol: {pols[i]}"
-                )
-            plt.xlabel("Antenna index", fontsize=14)
-            plt.ylabel("Delay (ns)", fontsize=14)
-            plt.title("Antenna vs Delay", fontsize=14)
-            plt.legend()
-            plt.tight_layout()
-            savefile = f"{caltable}.png"
-            plt.savefig(savefile)
-            plt.clf()
-            out_files.append(savefile)
-        else:
-            if cal_type == "G Jones":
-                ntime = int(gain.shape[-1] / nant)
-                gain = gain.reshape(gain.shape[0], gain.shape[1], nant, ntime)
-                gain = gain[:, 0, ...]
-            elif cal_type == "T Jones":
-                ntime = int(gain.shape[-1] / nant)
-                gain = gain.reshape(gain.shape[0], gain.shape[1], nant, ntime)
-                gain = gain[0, 0, ...]
-            elif cal_type == "B Jones" or cal_type == "Df Jones":
-                ntime = int(gain.shape[-1] / nant)
-                gain = gain.reshape(gain.shape[0], gain.shape[1], nant, ntime)
-                gain = np.nanmean(gain, axis=-1)
-            else:
-                print(f"{cal_type} is not implemented yet.")
-                return
-            for quantity in ["amp", "phase"]:
-                if cal_type == "G Jones":
-                    for idx in range(0, len(ants), plots_per_fig):
-                        fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
-                        if quantity == "amp":
-                            fig.suptitle("Time vs Gain Amplitude", fontsize=14)
-                        else:
-                            fig.suptitle("Time vs Gain Phase", fontsize=14)
-                        axes = axes.flatten()
-                        for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
-                            ax = axes[i]
-                            for j in range(2):  # loop over polarizations
-                                if quantity == "amp":
-                                    ax.scatter(
-                                        times - np.nanmin(times),
-                                        np.abs(gain[j, ant, :]),
-                                        label=f"Pol: {pols[j]}",
-                                        s=14,
-                                    )
-                                    ax.set_ylabel("Gain Amplitude", fontsize=14)
-                                else:
-                                    ax.scatter(
-                                        times - np.nanmin(times),
-                                        np.angle(gain[j, ant, :], deg=True),
-                                        label=f"Pol: {pols[j]}",
-                                        s=14,
-                                    )
-                                    ax.set_ylabel("Gain Phase (degree)", fontsize=14)
-                            ax.set_title(f"Antenna {ant+1}", fontsize=14)
-                            ax.set_xlabel("Time (s)", fontsize=14)
-                            ax.legend(fontsize=10)
-                        for j in range(i + 1, plots_per_fig):
-                            fig.delaxes(axes[j])
-                        plt.tight_layout(rect=[0, 0, 1, 0.99])
-                        savefile = f"{caltable}_gain_{quantity}_batch_{idx // plots_per_fig + 1}.png"
-                        plt.savefig(savefile)
-                        plt.close()
-                        out_files.append(savefile)
-                elif cal_type == "T Jones":
-                    for idx in range(0, len(ants), plots_per_fig):
-                        fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
-                        if quantity == "amp":
-                            fig.suptitle("Time vs Gain Amplitude", fontsize=14)
-                        else:
-                            fig.suptitle("Time vs Gain Phase", fontsize=14)
-                        axes = axes.flatten()
-                        for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
-                            ax = axes[i]
-                            if quantity == "amp":
-                                ax.scatter(
-                                    times - np.nanmin(times), np.abs(gain[ant, :])
-                                )
-                                ax.set_ylabel("Gain Amplitude", fontsize=14)
-                            else:
-                                ax.scatter(
-                                    times - np.nanmin(times),
-                                    np.angle(gain[ant, :], deg=True),
-                                )
-                                ax.set_ylabel("Gain Phase", fontsize=14)
-                            ax.set_title(f"Antenna {ant+1}", fontsize=14)
-                            ax.set_xlabel("Time (s)", fontsize=14)
-                        for j in range(i + 1, plots_per_fig):
-                            fig.delaxes(axes[j])
-                        plt.tight_layout(rect=[0, 0, 1, 0.99])
-                        savefile = f"{caltable}_gain_{quantity}_batch_{idx // plots_per_fig + 1}.png"
-                        plt.savefig(savefile)
-                        plt.close()
-                        out_files.append(savefile)
-                elif cal_type == "B Jones" or cal_type == "Df Jones":
-                    for idx in range(0, len(ants), plots_per_fig):
-                        fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
-                        if quantity == "amp":
-                            fig.suptitle("Frequency vs Gain Amplitude", fontsize=14)
-                        else:
-                            fig.suptitle("Frequency vs Gain Phase", fontsize=14)
-                        axes = axes.flatten()
-                        for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
-                            ax = axes[i]
-                            for j in range(2):
-                                if quantity == "amp":
-                                    ax.scatter(
-                                        freqs,
-                                        np.abs(gain[j, :, ant]),
-                                        label=f"Pol: {pols[j]}",
-                                        s=14,
-                                    )
-                                    ax.set_ylabel("Gain Amplitude", fontsize=14)
-                                else:
-                                    ax.scatter(
-                                        freqs,
-                                        np.angle(gain[j, :, ant], deg=True),
-                                        label=f"Pol: {pols[j]}",
-                                        s=14,
-                                    )
-                                    ax.set_ylabel("Gain Phase (degree)", fontsize=14)
-                            ax.set_title(f"Antenna {ant+1}", fontsize=14)
-                            ax.set_xlabel("Frequency (MHz)", fontsize=14)
-                            ax.legend(fontsize=10)
-                        for j in range(i + 1, plots_per_fig):
-                            fig.delaxes(axes[j])
-                        plt.tight_layout(rect=[0, 0, 1, 0.99])
-                        savefile = f"{caltable}_gain_{quantity}_batch_{idx // plots_per_fig + 1}.png"
-                        plt.savefig(savefile)
-                        plt.close()
-                        out_files.append(savefile)
-        images = []
-        for image in out_files:
-            images.append(Image.open(image).convert("RGB"))
-        images[0].save(output_pdf, save_all=True, append_images=images[1:])
-        return 0, output_pdf
+            print(f"{final_cal_type} is not implemented.")
+            output_pdfs = []
+        return 0, output_pdfs
     except Exception:
         traceback.print_exc()
-        return 1, ""
+        return 1, []
     finally:
-        drop_cache(caltable)
-        for png in out_files:
-            os.system(f"rm -rf {png}")
-
+        if len(caltables)>0:
+            for caltable in caltables:
+                drop_cache(caltable)
+        
 
 def get_mwamap(fits_image, do_sharpen=False):
     """

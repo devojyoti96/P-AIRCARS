@@ -41,6 +41,10 @@ def cli():
 
     # Config
     subparsers.add_parser("config", help="Print the current Prefect config")
+    
+    parser.add_argument(
+        "--port", type=int, default=4260, help="Prefect port"
+    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -49,12 +53,12 @@ def cli():
 
     scheduler_name = get_scheduler_name()
 
-    port = 4260
+    port = int(args.port)
     postgres_port = 5260
 
     if check_port_status(port) is False:
         if scheduler_name != "local":
-            port = get_free_port(start_port=4260, end_port=5250)
+            port = get_free_port(start_port=port, end_port=5250)
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":

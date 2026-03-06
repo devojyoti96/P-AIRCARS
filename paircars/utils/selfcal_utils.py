@@ -1191,7 +1191,7 @@ def selfcal_round(
                 os.system(f"rm -rf {prefix}*")
 
         wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " " + msname
-        logger.info(f"WSClean command: {wsclean_cmd}\n")
+        logger.info(f"\nWSClean command: {wsclean_cmd}\n")
         msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         if msg != 0:
             logger.error(f"Imaging is not successful.\n")
@@ -1256,7 +1256,7 @@ def selfcal_round(
             prediction_failed = False
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
-            logger.info(f"WSClean command: {wsclean_cmd}\n")
+            logger.info(f"\nWSClean command: {wsclean_cmd}\n")
             prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
             if prediction_msg != 0:
                 prediction_failed = True
@@ -1593,7 +1593,7 @@ def selfcal_round(
             if solve_array_leakage:
                 quartical_args.append("D.solve_per=array")
             quartical_cmd = " ".join(quartical_args)
-            logger.info(f"Quartical cmd: {quartical_cmd}\n")
+            logger.info(f"\nQuartical cmd: {quartical_cmd}\n")
             quartical_msg = run_quartical(
                 quartical_cmd, "paircarsquartical", verbose=False
             )
@@ -1644,7 +1644,7 @@ def selfcal_round(
                 f"D.load_from={pol_caltable}/D",
             ]
             quartical_cmd = " ".join(quartical_args)
-            logger.info(f"Quartical cmd: {quartical_cmd}\n")
+            logger.info(f"\nQuartical cmd: {quartical_cmd}\n")
             quartical_msg = run_quartical(
                 quartical_cmd, "paircarsquartical", verbose=False
             )
