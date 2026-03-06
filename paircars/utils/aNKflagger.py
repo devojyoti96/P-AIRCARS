@@ -233,6 +233,7 @@ def flagger(msname, datacolumn, threshold=3.0, num_processes=4, num_bins=30, bin
         num_processes: Number of processes for parallel processing.
         num_bins     : Number of UV bins for uvsub_flagger (default: 30)
     """
+    print(f"Flagging : {msname}")
     import time
     start_time = time.time()
     ms = table()
