@@ -224,10 +224,9 @@ def cal_solar_phaseshift(imagename, sigma=10):
     cellsize = float(header["CDELT1"]) * 3600.0  # In arcsec
     pix_radius = int((4 * 16 * 60) / cellsize)  # 4 solar radii
     circular_mask = create_circular_mask_array(data[0, 0, ...], pix_radius)
-    I = data[0, 0, ...].copy()
-    I[circular_mask] = np.nan
-    rms = np.nanstd(I)
-    del I
+    I_rms = data[0, 0, ...].copy()
+    I_rms[circular_mask] = np.nan
+    rms = np.nanstd(I_rms)
     I = data[0, 0, ...].copy()
     I[I >= (sigma * rms)] = 1
     I[I < (sigma * rms)] = 0
