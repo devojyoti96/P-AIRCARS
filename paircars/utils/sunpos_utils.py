@@ -109,13 +109,13 @@ def radec_sun(msname):
     )
 
 
-def radec_sun_at_time(time):
+def radec_sun_at_time(timestamp):
     """
     RA DEC of the Sun a given time
 
     Parameters
     ----------
-    time : str
+    timestamp : str
         Time in format dd-mm-yyyyThh:mm:ss
 
     Returns
@@ -131,8 +131,7 @@ def radec_sun_at_time(time):
     float
         DEC in degree
     """
-    mid_timestamp = mjdsec_to_timestamp(time, date_format=1)
-    astro_time = Time(mid_timestamp, scale="utc")
+    astro_time = Time(timestamp, scale="utc")
     sun_coord = get_sun(astro_time)  # In GCRS (geocentric frame)
     sun_ra = (
         f"{int(sun_coord.ra.hms.h)}h"
