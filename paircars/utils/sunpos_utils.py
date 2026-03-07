@@ -196,21 +196,22 @@ def cal_solar_phaseshift(imagename, sigma=10):
     Parameters
     ----------
     imagename : str
-            Name of the image
+        Name of the image
     sigma : float
-            If Gaussian fitting is not used, threshold for estimating center of mass as solar center (default =10)
+        If Gaussian fitting is not used, threshold for estimating center of mass as solar center (default =10)
 
     Returns
     -------
     float
-            RA of the solar center in degree
+        RA of the solar center in degree
     float
-            DEC of the solarcenter in degree
+        DEC of the solarcenter in degree
     bool
-            Whther phase shift required or not. Not required if less than image pixel size
+        Whther phase shift required or not. Not required if less than image pixel size
     """
     from scipy.ndimage import center_of_mass
     import matplotlib.pyplot as plt
+
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
     obstime = header["DATE-OBS"]
@@ -237,8 +238,8 @@ def cal_solar_phaseshift(imagename, sigma=10):
     y_cen = result.dec.deg
     ra = float(x_cen)
     dec = float(y_cen)
-    print (f"Aparent RA DEC: {ra} {dec}")
-    print (f"True RA, DEC: {sun_radeg}, {sun_decdeg}")
+    print(f"Aparent RA DEC: {ra} {dec}")
+    print(f"True RA, DEC: {sun_radeg}, {sun_decdeg}")
     if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
         msg = False
     else:
@@ -269,19 +270,23 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
         if shiftsun:
             w = WCS(imagename).celestial
             pix = w.all_world2pix(np.array([[sunra, sundec]]), 0)
-            ra_pix =int(np.round(pix[0][0]))
+            ra_pix = int(np.round(pix[0][0]))
             dec_pix = int(np.round(pix[0][1]))
             data = fits.getdata(imagename)
             header = fits.getheader(imagename)
-            header["CRPIX1"] = float(ra_pix+1)
-            header["CRPIX2"] = float(dec_pix+1)
+            header["CRPIX1"] = float(ra_pix + 1)
+            header["CRPIX2"] = float(dec_pix + 1)
             header["CRVAL1"] = float(sunra)
             header["CRVAL2"] = float(sundec)
-            print (header["CRPIX1"],ra_pix+1)
             if overwrite:
                 fits.writeto(imagename, data=data, header=header, overwrite=True)
             else:
-                fits.writeto(imagename.split(".fits")[0]+"_centered.fits", data=data, header=header, overwrite=True)
+                fits.writeto(
+                    imagename.split(".fits")[0] + "_centered.fits",
+                    data=data,
+                    header=header,
+                    overwrite=True,
+                )
             msg = 0
         else:
             msg = 1
