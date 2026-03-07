@@ -1433,14 +1433,12 @@ def make_mwa_overlay(
         wavelength=euv_map.wavelength,
     )
 
-    reprojected = [
-        reproject_map(mwamap, projected_header),
-        reproject_map(euv_map, projected_header),
-    ]
+    with SphericalScreen(mwamap.observer_coordinate):
+    mwa_reprojected = mwamap.reproject_to(projected_header)
 
-    pool = ThreadPool(processes=ncpu)
-    with dask.config.set(pool=pool):
-        mwa_reprojected, euv_reprojected = compute(*reprojected, scheduler="threads")
+    with SphericalScreen(euv_map.observer_coordinate):
+        euv_reprojected = euv_map.reproject_to(projected_header)
+        
     mwatime = mwamap.meta["date-obs"].split(".")[0]
     euvtime = euv_map.meta["date-obs"].split(".")[0]
     try:
