@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 from dask.distributed import Client, LocalCluster
 from datetime import datetime as dt, timedelta
 from pyfiglet import Figlet
+from collections import deque
 from .basic_utils import get_cachedir
 
 
@@ -393,7 +394,7 @@ def submit_local_master_flow(args, jobid):
         if log2term:
             print("Logging in terminal....")
         try:
-            all_output = []
+            last_lines = deque(maxlen=2)
             seen = set()
             with open(log_file, "a", buffering=1) as log:
                 process = subprocess.Popen(
@@ -404,7 +405,7 @@ def submit_local_master_flow(args, jobid):
                     bufsize=1,
                 )
                 for line in process.stdout:
-                    all_output.append(line)
+                    last_lines.append(line)
                     if "task run" in line.lower() or "flow run" in line.lower():
                         if line not in seen:
                             seen.add(line)
@@ -417,8 +418,7 @@ def submit_local_master_flow(args, jobid):
             process.wait()
             exit_code = process.returncode
             if exit_code==1:
-                all_output = all_output[:-50]
-                for line in all_output:
+                for line in last_lines:
                     print (line)
         except Exception:
             traceback.print_exc()
