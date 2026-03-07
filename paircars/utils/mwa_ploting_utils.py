@@ -1079,7 +1079,6 @@ def get_suvi_map(
                     else:
                         closest_time = min(times_dt, key=lambda t: abs(t - start_time))
                         pos = [times_dt.index(closest_time)] 
-                print (pos)
                 download_urls = [all_files[p] for p in pos]
                 out_files = [out_files[p] for p in pos]
                 dl = Downloader(max_conn=ncpu, overwrite=False)
@@ -1096,7 +1095,7 @@ def get_suvi_map(
                              
                 if len(filtered_outfiles) > 0:
                     for image in filtered_outfiles:
-                        suvi_map = Map(final_image)
+                        suvi_map = Map(image)
                         final_maps.append(suvi_map)
                         if keep_suvi_fits is False:
                             for image in out_files:
