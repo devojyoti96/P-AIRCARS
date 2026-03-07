@@ -8,6 +8,8 @@ from astropy.coordinates import (
     get_sun,
     solar_system_ephemeris,
 )
+from astropy.io import fits
+from astropy.wcs import WCS
 from casatools import msmetadata
 from .basic_utils import get_datadir, mjdsec_to_timestamp
 from .udocker_utils import run_solar_sidereal_cor, run_chgcenter
