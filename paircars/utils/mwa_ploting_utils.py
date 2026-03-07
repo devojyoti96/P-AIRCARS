@@ -1150,13 +1150,13 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
         start_obs_time = ":".join(start_time.split("T")[-1].split(":")[:2])
         start_year = int(start_obs_date.split("-")[0])
         end_time = mjdsec_to_timestamp(max(mjdsecs), str_format=0)[:-5]
-        end_obs_date = end_time.split("T")[0]
-        end_year = int(end_obs_date.split("-")[0])
-        end_obs_time = ":".join(end_time.split("T")[-1].split(":")[:2])
+        obs_end_date = end_time.split("T")[0]
+        end_year = int(obs_end_date.split("-")[0])
+        obs_end_time = ":".join(end_time.split("T")[-1].split(":")[:2])
         if start_year>=2019 and end_year>=2019:
             pass
         else:
-            euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, end_date=end_obs_date, end_time=end_obs_time, aia_wavelength=wavelength, ncpu=8, keep_aia_fits=False)
+            euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, aia_wavelength=wavelength, ncpu=8, keep_aia_fits=False)
         return euv_maps 
         
         '''filtered_obstimes = []
