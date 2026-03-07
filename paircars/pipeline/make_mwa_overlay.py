@@ -163,22 +163,24 @@ def main(
             print(f"Total images to overlay: {len(imagelist)}")
             euv_maps = get_all_euv_maps(imagelist, workdir, wavelength=195, ncpu=nthreads)
             images_f = dask_client.scatter(imagelist)
-            maps_f = dask_client.scatter(euv_maps)
-            futures = []
-            for i in range(len(images_f)):
-                futures.append(
-                    dask_client.submit(
-                        make_mwa_overlay,
+            maps_f = dask_client.scatter(maps)
+            tasks = []
+            for i in range(len(imagelist)):
+                tasks.append(
+                    delayed(make_mwa_overlay)(
                         images_f[i],
                         maps_f[i],
-                        ncpu=ncpu,
+                        ncpu=2,
                         plot_file_prefix=imagelist[i].split(".fits")[0],
                     )
                 )
+
+            futures = dask_client.compute(tasks)
             results = dask_client.gather(futures)
             outimage_list = []
             for r in results:
                 outimage_list.append(r[0])
+                print(r[0])
                 os.system(f"mv {r[0]} {outdir}")
             if len(outimage_list) == 0:
                 print("No overlay is made.")
@@ -202,6 +204,12 @@ def main(
         time.sleep(5)
         drop_cache(imagedir)
         clean_shutdown(observer)
+        if dask_cluster is not None:
+            dask_client.shutdown()
+            dask_client.close()
+            dask_cluster.close()
+            drop_cache(workdir)
+            os.system(f"rm -rf {dask_dir}")
     return msg, succeed, failed
 
 
