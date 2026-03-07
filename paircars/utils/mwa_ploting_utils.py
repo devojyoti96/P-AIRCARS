@@ -1079,28 +1079,28 @@ def get_suvi_map(
                     else:
                         closest_time = min(times_dt, key=lambda t: abs(t - start_time))
                         pos = [times_dt.index(closest_time)] 
-                download_urls = [all_files[p] for p in pos]
-                out_files = [out_files[p] for p in pos]
-                dl = Downloader(max_conn=ncpu, overwrite=False)
-                for i in range(len(out_files)):
-                    out_file = out_files[i]
-                    download_url = download_urls[i] 
-                    if os.path.exists(out_file) is False:
-                        dl.enqueue_file(download_url, path=workdir)
-                downloaded_files = dl.download()
-                filtered_outfiles = []
-                for outfile in out_files:
-                    if os.path.exists(outfile):
-                        filtered_outfiles.append(outfile)
-                print (filtered_outfiles)
-                
-                if len(filtered_outfiles) > 0:
-                    for image in filtered_outfiles:
-                        suvi_map = Map(image)
-                        final_maps.append(suvi_map)
-                        if keep_suvi_fits is False:
-                            print(image)
-                            os.system(f"rm -rf {image}")
+                if len(pos)>0:
+                    download_urls = [all_files[p] for p in pos]
+                    out_files = [out_files[p] for p in pos]
+                    dl = Downloader(max_conn=ncpu, overwrite=False)
+                    for i in range(len(out_files)):
+                        out_file = out_files[i]
+                        download_url = download_urls[i] 
+                        if os.path.exists(out_file) is False:
+                            dl.enqueue_file(download_url, path=workdir)
+                    downloaded_files = dl.download()
+                    filtered_outfiles = []
+                    for outfile in out_files:
+                        if os.path.exists(outfile):
+                            filtered_outfiles.append(outfile)                
+                    if len(filtered_outfiles) > 0:
+                        for image in filtered_outfiles:
+                            suvi_map = Map(image)
+                            final_maps.append(suvi_map)
+                            if keep_suvi_fits is False:
+                                print(image)
+                                os.system(f"rm -rf {image}")
+                    break
         return final_maps
     except Exception:
         os.system("rm -rf *suvi*fits")
