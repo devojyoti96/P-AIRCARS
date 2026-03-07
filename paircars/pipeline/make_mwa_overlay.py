@@ -34,6 +34,7 @@ def main(
     workdir="",
     all_overlay=False,
     cpu_frac=0.8,
+    mem_frac=0.8,
     logfile=None,
     jobid=0,
     start_remote_log=False,
@@ -54,6 +55,8 @@ def main(
         Whether make overlays of all images or not
     cpu_frac : float, optional
         Fraction of total CPU resources to use. Default is 0.8.
+    mem_frac : float, optional
+        Memory fraction to use.
     logfile : str or None, optional
         Path to the log file for saving logs. If None, logging to file is skipped.
     jobid : int, optional
@@ -236,6 +239,9 @@ def cli():
     hard_args.add_argument(
         "--cpu_frac", type=float, default=0.8, help="CPU fraction to use"
     )
+    hard_args.add_argument(
+        "--mem_frac", type=float, default=0.8, help="Memory fraction to use"
+    )
     hard_args.add_argument("--logfile", type=str, default=None, help="Log file")
     hard_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
@@ -251,6 +257,7 @@ def cli():
         workdir=args.workdir,
         all_overlay=args.all_overlay,
         cpu_frac=args.cpu_frac,
+        mem_frac=args.mem_frac,
         logfile=args.logfile,
         jobid=args.jobid,
         start_remote_log=args.start_remote_log,
