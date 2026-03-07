@@ -263,7 +263,7 @@ def get_local_dask_cluster(
         )
         usable_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
         total_mem = psutil.virtual_memory().total / 1024**3  # In GB
-        usable_mem = round(total_mem * mem_frac * spill_frac, 2)
+        usable_mem = round((total_mem * mem_frac)/spill_frac, 2)
         n_worker_mem = int(usable_mem / min_mem)
         if n_worker_mem < 2:
             print("Minimum available memory is not sufficient for at-least 2 workers.")
