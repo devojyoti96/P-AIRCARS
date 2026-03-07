@@ -230,8 +230,8 @@ def cal_solar_phaseshift(imagename, sigma=10):
     plt.show()
     rms = np.nanstd(I_rms)
     I = data[0, 0, ...].copy()
-    I[I >= (sigma * rms)] = 1.0
     I[I < (sigma * rms)] = 0.0
+    I[I >= (sigma * rms)] = 1.0
     plt.imshow(I)
     plt.show()
     cx, cy = center_of_mass(I)
