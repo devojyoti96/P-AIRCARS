@@ -1301,6 +1301,8 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
         map_obstimes = [m.date.value.split(".")[0] for m in euv_maps]
         map_mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in map_obstimes]
         final_maps = []
+        map_mjdsecs = np.array(map_mjdsecs)
+        all_obstimes_mjdsecs = np.array(all_obstimes_mjdsecs)
         for fits_time in all_obstimes_mjdsecs:
             pos = np.argmin(np.abs(map_mjdsecs-fits_time))
             final_maps.append(euv_maps[pos])   
