@@ -4299,7 +4299,6 @@ def cli():
     cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
     config_file = f"{cachedir}/prefect.config.npy"
 
-    jeel
     ######################################
     # Check connection to prefect server
     ######################################
