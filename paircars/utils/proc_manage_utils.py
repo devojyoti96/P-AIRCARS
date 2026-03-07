@@ -412,12 +412,14 @@ def submit_local_master_flow(args, jobid):
                             log.write(line)
                             log.flush()
                 process.stdout.close()
-            exit_code = 0
-            print (exit_code)
+            process.wait()
+            exit_code = process.returncode
+            if exit_code==1:
+                print (process.stdout)
+                print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
         except Exception:
             traceback.print_exc()
             exit_code = 1
-            print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
         return exit_code
     except Exception as e:
         print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
