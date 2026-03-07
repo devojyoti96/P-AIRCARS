@@ -266,25 +266,25 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
     """
     sunra, sundec, shiftsun = cal_solar_phaseshift(imagename, sigma=sigma)
     try:
-        #if shiftsun:
-        w = WCS(imagename).celestial
-        pix = w.all_world2pix(np.array([[sunra, sundec]]), 0)
-        ra_pix =int(np.round(pix[0][0]))
-        dec_pix = int(np.round(pix[0][1]))
-        data = fits.getdata(imagename)
-        header = fits.getheader(imagename)
-        header["CRPIX1"] = float(ra_pix+1)
-        header["CRPIX2"] = float(dec_pix+1)
-        header["CRVAL1"] = float(sunra)
-        header["CRVAL2"] = float(sundec)
-        print (header["CRPIX1"],ra_pix+_1)
-        if overwrite:
-            fits.writeto(imagename, data=data, header=header, overwrite=True)
+        if shiftsun:
+            w = WCS(imagename).celestial
+            pix = w.all_world2pix(np.array([[sunra, sundec]]), 0)
+            ra_pix =int(np.round(pix[0][0]))
+            dec_pix = int(np.round(pix[0][1]))
+            data = fits.getdata(imagename)
+            header = fits.getheader(imagename)
+            header["CRPIX1"] = float(ra_pix+1)
+            header["CRPIX2"] = float(dec_pix+1)
+            header["CRVAL1"] = float(sunra)
+            header["CRVAL2"] = float(sundec)
+            print (header["CRPIX1"],ra_pix+_1)
+            if overwrite:
+                fits.writeto(imagename, data=data, header=header, overwrite=True)
+            else:
+                fits.writeto(imagename.split(".fits")[0]+"_centered.fits", data=data, header=header, overwrite=True)
+            msg = 0
         else:
-            fits.writeto(imagename.split(".fits")[0]+"_centered.fits", data=data, header=header, overwrite=True)
-        msg = 0
-        '''else:
-            msg = 1'''
+            msg = 1
     except Exception:
         msg = 2
         traceback.print_exc()
