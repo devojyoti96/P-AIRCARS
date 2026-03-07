@@ -226,19 +226,15 @@ def cal_solar_phaseshift(imagename, sigma=10):
     circular_mask = create_circular_mask_array(data[0, 0, ...], pix_radius)
     I_rms = data[0, 0, ...].copy()
     I_rms[circular_mask] = np.nan
-    plt.imshow(I_rms)
-    plt.show()
     rms = np.nanstd(I_rms)
     I = data[0, 0, ...].copy()
     I[I < (sigma * rms)] = 0.0
     I[I >= (sigma * rms)] = 1.0
-    plt.imshow(I)
-    plt.show()
     cx, cy = center_of_mass(I)
     w = WCS(imagename).celestial
     result = w.array_index_to_world(int(cy), int(cx))
-    x_cen = result[0].ra.deg
-    y_cen = result[0].dec.deg
+    x_cen = result.ra.deg
+    y_cen = result.dec.deg
     ra = float(x_cen)
     dec = float(y_cen)
     if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
