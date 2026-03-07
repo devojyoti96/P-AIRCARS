@@ -170,6 +170,7 @@ def main(
             map_futures = dask_client.scatter(unique_maps, broadcast=True)
             map_lookup = dict(zip(unique_maps, map_futures))
             futures = []
+            print("Start making overlays....")
             for img, euv_map in zip(imagelist, euv_maps):
                 futures.append(
                     dask_client.submit(
