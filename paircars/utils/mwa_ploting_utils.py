@@ -1083,7 +1083,7 @@ def enhance_offlimb(sunpy_map, do_sharpen=True):
     return scaled_map
 
 
-def get_all_euv_maps(mwa_fits_images,wavelength=195):
+def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
     """
     Get all EUV maps for all MWA fits images
     
@@ -1099,57 +1099,65 @@ def get_all_euv_maps(mwa_fits_images,wavelength=195):
     list
         List of sunpy EUV maps in same order of input images 
     """
+    cwd = os.getcwd()
+    os.chdir(workdir)
     if isinstance(mwa_fits_images, str):
         mwa_fits_images = [mwa_fits_images]
-    obstimes = []
-    all_obstimes = []
-    for mwa_image in mwa_fits_images:
-        obs_datetime = fits.getheader(mwa_image)["DATE-OBS"]
-        if obs_datetime not in obstimes:
-            obstimes.append(obs_datetime)
-        all_obstimes.append(obs_datetime)
-    
-    filtered_obstimes = []
-    euv_maps = []
-    for obs_datetime in obstimes:   
-        print(f"Downloading EUV map for: {obs_datetime}")
-        obs_date = obs_datetime.split("T")[0]
-        year = int(obs_date.split("-")[0])
-        obs_time = ":".join(obs_datetime.split("T")[-1].split(":")[:2])
-        if year >= 2019:
-            euv_map = get_suvi_map(
-                obs_date,
-                obs_time,
-                workdir,
-                suvi_wavelength=wavelength,
-                keep_suvi_fits=True,
-            )
-            filtered_obstimes.append(obs_datetime)
-            euv_maps.append(euv_map)
-        else:
-            euv_map = None
-        if euv_map is None:
-            euv_map = get_aia_map(
-                obs_date,
-                obs_time,
-                workdir,
-                aia_wavelength=wavelength,
-                keep_aia_fits=True,
-            )
-            if euv_map is None:
-                print("Could not get either SUVI or AIA images.")
-            else:
+    try:
+        obstimes = []
+        all_obstimes = []
+        for mwa_image in mwa_fits_images:
+            obs_datetime = fits.getheader(mwa_image)["DATE-OBS"]
+            if obs_datetime not in obstimes:
+                obstimes.append(obs_datetime)
+            all_obstimes.append(obs_datetime)
+        
+        filtered_obstimes = []
+        euv_maps = []
+        for obs_datetime in obstimes:   
+            print(f"Downloading EUV map for: {obs_datetime}")
+            obs_date = obs_datetime.split("T")[0]
+            year = int(obs_date.split("-")[0])
+            obs_time = ":".join(obs_datetime.split("T")[-1].split(":")[:2])
+            if year >= 2019:
+                euv_map = get_suvi_map(
+                    obs_date,
+                    obs_time,
+                    workdir,
+                    suvi_wavelength=wavelength,
+                    keep_suvi_fits=True,
+                )
                 filtered_obstimes.append(obs_datetime)
                 euv_maps.append(euv_map)
-                
-    os.system(f"rm -rf *aia*.fits")
-    os.system(f"rm -rf *suvi*.fits")
-    final_euv_maps = []
-    for final_t in all_obstimes:
-        index = obstimes.index(final_t)
-        euv_map = euv_maps[index]
-        final_euv_maps.append(euv_map)
-    return final_euv_maps    
+            else:
+                euv_map = None
+            if euv_map is None:
+                euv_map = get_aia_map(
+                    obs_date,
+                    obs_time,
+                    workdir,
+                    aia_wavelength=wavelength,
+                    keep_aia_fits=True,
+                )
+                if euv_map is None:
+                    print("Could not get either SUVI or AIA images.")
+                else:
+                    filtered_obstimes.append(obs_datetime)
+                    euv_maps.append(euv_map)
+                    
+        os.system(f"rm -rf *aia*.fits")
+        os.system(f"rm -rf *suvi*.fits")
+        final_euv_maps = []
+        for final_t in all_obstimes:
+            index = obstimes.index(final_t)
+            euv_map = euv_maps[index]
+            final_euv_maps.append(euv_map)
+        return final_euv_maps    
+    except Exception:
+        traceback.print_exc()
+        return []
+    finally:
+        os.chdir(cwd)
         
 
 def make_mwa_overlay(
