@@ -41,10 +41,8 @@ def cli():
 
     # Config
     subparsers.add_parser("config", help="Print the current Prefect config")
-    
-    parser.add_argument(
-        "--port", type=int, default=4260, help="Prefect port"
-    )
+
+    parser.add_argument("--port", type=int, default=4260, help="Prefect port")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)

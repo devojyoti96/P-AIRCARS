@@ -2684,7 +2684,7 @@ def master_control(
         # Making diagnostic plots
         ###############################################
         if has_cal and len(bandpass_tables) > 0 and do_basic_cal:
-            os.makedirs(f"{outdir}/diagnostic_plots",exist_ok=True)
+            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
             msg, bpass_plots = plot_caltable_diagnostics(
                 bandpass_tables, f"{outdir}/diagnostic_plots/{calibrator_obsid}_bcal"
             )
@@ -2693,22 +2693,20 @@ def master_control(
                     f"Diagnostic plots for bandpass tables are saved in : {bpass_plots}."
                 )
             else:
-                print(
-                    f"Error in creating diagnostic plots for bandpass tables."
-                )
+                print(f"Error in creating diagnostic plots for bandpass tables.")
         if has_cal and len(crossphase_tables) > 0 and do_basic_cal:
-            os.makedirs(f"{outdir}/diagnostic_plots",exist_ok=True)
+            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
             msg, kcross_plots = plot_caltable_diagnostics(
-                crossphase_tables, f"{outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal", plot_all_ants=False,
+                crossphase_tables,
+                f"{outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal",
+                plot_all_ants=False,
             )
             if msg == 0:
                 print(
                     f"Diagnostic plots for crosshand phase tables are saved in : {kcross_plots}."
                 )
             else:
-                print(
-                    f"Error in creating diagnostic plots for crosshand phase tables."
-                )
+                print(f"Error in creating diagnostic plots for crosshand phase tables.")
 
         ###################################################
         # Start spliting selfcal ms
@@ -3122,7 +3120,7 @@ def master_control(
         # Plotting self-caltables
         ###########################################
         if do_selfcal and len(selfcal_gaincal) > 0:
-            os.makedirs(f"{outdir}/diagnostic_plots",exist_ok=True)
+            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
             msg, gcal_plots = plot_caltable_diagnostics(
                 selfcal_gaincal, f"{outdir}/diagnostic_plots/{target_obsid}_gcal"
             )
@@ -3135,7 +3133,7 @@ def master_control(
                     f"Error in creating diagnostic plots for self-calibration gaincal tables."
                 )
         if do_selfcal and len(selfcal_bandpass) > 0:
-            os.makedirs(f"{outdir}/diagnostic_plots",exist_ok=True)
+            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
             msg, bcal_plots = plot_caltable_diagnostics(
                 selfcal_bandpass, f"{outdir}/diagnostic_plots/{target_obsid}_bcal"
             )

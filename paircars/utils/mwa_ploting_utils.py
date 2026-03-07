@@ -22,7 +22,12 @@ from astropy.wcs import FITSFixedWarning
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
-from .basic_utils import mjdsec_to_timestamp, timestamp_to_mjdsec, get_datadir, interpolate_nans
+from .basic_utils import (
+    mjdsec_to_timestamp,
+    timestamp_to_mjdsec,
+    get_datadir,
+    interpolate_nans,
+)
 from .image_utils import calc_solar_image_stat, cutout_image
 from .ms_metadata import (
     get_column_size,
@@ -202,32 +207,47 @@ def plot_ms_diagnostics(
         os.system(f"rm -rf log-shadems.txt")
 
 
-def plot_G_jones_time_vs_gain(all_times, all_gains, all_ants, all_ant_names, ncols, nrows, pols, prefix, output_prefix):
+def plot_G_jones_time_vs_gain(
+    all_times,
+    all_gains,
+    all_ants,
+    all_ant_names,
+    ncols,
+    nrows,
+    pols,
+    prefix,
+    output_prefix,
+):
     """
     Plot time vs. gain
     """
-    matplotlib.use("Agg")   
+    matplotlib.use("Agg")
     plots_per_fig = ncols * nrows
     max_ant = np.nanmax(np.array(all_ants))
     plots_per_fig = min(max_ant, ncols * nrows)
-    if plots_per_fig<ncols*nrows:
-        ncols=nrows=int(np.sqrt(plots_per_fig)) 
+    if plots_per_fig < ncols * nrows:
+        ncols = nrows = int(np.sqrt(plots_per_fig))
     min_time = np.nanmin(np.array(all_times))
     start_timestamp = mjdsec_to_timestamp(min_time)
     output_pdfs = []
     for quantity in ["amp", "phase"]:
-        out_files=[]
+        out_files = []
         for idx in range(0, max_ant, plots_per_fig):
             fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
             if quantity == "amp":
-                fig.suptitle(f"Time vs Gain Amplitude, Start time: {start_timestamp}", fontsize=14)
+                fig.suptitle(
+                    f"Time vs Gain Amplitude, Start time: {start_timestamp}",
+                    fontsize=14,
+                )
                 x = np.abs(np.array(all_gains))
-                miny = 0.8*np.nanmin(x)
-                maxy = 1.2*np.nanmax(x)
+                miny = 0.8 * np.nanmin(x)
+                maxy = 1.2 * np.nanmax(x)
             else:
-                fig.suptitle(f"Time vs Gain Phase, Start time: {start_timestamp}", fontsize=14)
-                miny = max(-200,0.8*np.nanmin(x))
-                maxy = min(200, 1.2*np.nanmax(x))
+                fig.suptitle(
+                    f"Time vs Gain Phase, Start time: {start_timestamp}", fontsize=14
+                )
+                miny = max(-200, 0.8 * np.nanmin(x))
+                maxy = min(200, 1.2 * np.nanmax(x))
             axes = axes.flatten()
             for n in range(len(all_ants)):
                 ants = all_ants[n]
@@ -247,7 +267,7 @@ def plot_G_jones_time_vs_gain(all_times, all_gains, all_ants, all_ant_names, nco
                             label = None
                         if quantity == "amp":
                             ax.scatter(
-                                times-min_time,
+                                times - min_time,
                                 np.abs(gains[j, 0, :, ant]),
                                 label=label,
                                 color=c,
@@ -257,7 +277,7 @@ def plot_G_jones_time_vs_gain(all_times, all_gains, all_ants, all_ant_names, nco
                                 ax.set_ylabel("Gain Amplitude", fontsize=14)
                         else:
                             ax.scatter(
-                                times-min_time,
+                                times - min_time,
                                 np.angle(gains[j, 0, :, ant], deg=True),
                                 label=label,
                                 color=c,
@@ -268,8 +288,8 @@ def plot_G_jones_time_vs_gain(all_times, all_gains, all_ants, all_ant_names, nco
                     if n == 0:
                         ax.set_title(f"Antenna {ant+1}, ant_names[ant]", fontsize=14)
                         ax.set_xlabel("Time (s)", fontsize=14)
-                        ax.legend(fontsize=10, ncol=2, loc ="upper right")
-                    ax.set_ylim(miny,maxy)
+                        ax.legend(fontsize=10, ncol=2, loc="upper right")
+                    ax.set_ylim(miny, maxy)
             for j in range(i + 1, plots_per_fig):
                 fig.delaxes(axes[j])
             plt.tight_layout(rect=[0, 0, 1, 0.99])
@@ -288,29 +308,40 @@ def plot_G_jones_time_vs_gain(all_times, all_gains, all_ants, all_ant_names, nco
             os.system(f"rm -rf {outpng}")
         output_pdfs.append(output_pdf)
     return output_pdfs
-    
-    
-def plot_B_jones_freq_vs_gain(all_freqs, all_gains, all_ants, all_ant_names, ncols, nrows, pols, prefix, output_prefix, plot_all_ants=True):
+
+
+def plot_B_jones_freq_vs_gain(
+    all_freqs,
+    all_gains,
+    all_ants,
+    all_ant_names,
+    ncols,
+    nrows,
+    pols,
+    prefix,
+    output_prefix,
+    plot_all_ants=True,
+):
     """
     Plot freq vs. gain
     """
-    matplotlib.use("Agg")   
+    matplotlib.use("Agg")
     plots_per_fig = ncols * nrows
     if plot_all_ants:
-        max_ant = np.nanmax(np.array(all_ants))    
+        max_ant = np.nanmax(np.array(all_ants))
     else:
         max_ant = 1
     plots_per_fig = min(max_ant, ncols * nrows)
-    if plots_per_fig<ncols*nrows:
-        ncols=nrows=int(np.sqrt(plots_per_fig)) 
+    if plots_per_fig < ncols * nrows:
+        ncols = nrows = int(np.sqrt(plots_per_fig))
     output_pdfs = []
     for quantity in ["amp", "phase"]:
-        out_files=[]
+        out_files = []
         for idx in range(0, max_ant, plots_per_fig):
             if plot_all_ants:
                 fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
             else:
-                 fig, axes = plt.subplots(1, 1, figsize=(8, 6))
+                fig, axes = plt.subplots(1, 1, figsize=(8, 6))
             if quantity == "amp":
                 fig.suptitle(f"Frequency vs Gain Amplitude", fontsize=14)
                 x = np.abs(np.array(all_gains))
@@ -319,7 +350,7 @@ def plot_B_jones_freq_vs_gain(all_freqs, all_gains, all_ants, all_ant_names, nco
                 pad = 0.1 * (maxy - miny)
             else:
                 fig.suptitle(f"Frequency vs Gain Phase", fontsize=14)
-                x = np.angle(np.array(all_gains),deg=True)
+                x = np.angle(np.array(all_gains), deg=True)
                 miny = np.nanmin(x)
                 maxy = np.nanmax(x)
                 pad = 0.1 * (maxy - miny)
@@ -353,7 +384,7 @@ def plot_B_jones_freq_vs_gain(all_freqs, all_gains, all_ants, all_ant_names, nco
                         if quantity == "amp":
                             ax.scatter(
                                 freqs,
-                                np.abs(np.nanmean(gains[j, :, :, ant],axis=1)),
+                                np.abs(np.nanmean(gains[j, :, :, ant], axis=1)),
                                 label=label,
                                 color=c,
                                 s=14,
@@ -363,7 +394,9 @@ def plot_B_jones_freq_vs_gain(all_freqs, all_gains, all_ants, all_ant_names, nco
                         else:
                             ax.scatter(
                                 freqs,
-                                np.angle(np.nanmean(gains[j, :, :, ant],axis=1), deg=True),
+                                np.angle(
+                                    np.nanmean(gains[j, :, :, ant], axis=1), deg=True
+                                ),
                                 label=label,
                                 color=c,
                                 s=14,
@@ -372,10 +405,12 @@ def plot_B_jones_freq_vs_gain(all_freqs, all_gains, all_ants, all_ant_names, nco
                                 ax.set_ylabel("Gain Phase (degree)", fontsize=14)
                     if n == 0:
                         if plot_all_ants:
-                            ax.set_title(f"Antenna {ant+1}, {ant_names[ant]}", fontsize=14)
+                            ax.set_title(
+                                f"Antenna {ant+1}, {ant_names[ant]}", fontsize=14
+                            )
                         ax.set_xlabel("Frequency (MHz)", fontsize=14)
-                        ax.legend(fontsize=10, ncol=2, loc ="upper right")
-                    ax.set_ylim(miny-pad,maxy+pad)
+                        ax.legend(fontsize=10, ncol=2, loc="upper right")
+                    ax.set_ylim(miny - pad, maxy + pad)
             for j in range(i + 1, plots_per_fig):
                 fig.delaxes(axes[j])
             plt.tight_layout(rect=[0, 0, 1, 0.99])
@@ -417,13 +452,14 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
         Output file
     """
     from casatools import table
+
     pols = ["X", "Y"]
     ncols = 3
     nrows = 3
     out_files = []
     tb = table()
     outdir = os.path.dirname(outfile_prefix)
-    os.makedirs(outdir,exist_ok=True)
+    os.makedirs(outdir, exist_ok=True)
     try:
         all_freqs = []
         all_times = []
@@ -441,7 +477,7 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
                 freqs = tb.getcol("CHAN_FREQ") / 10**6  # In MHz
                 tb.close()
                 tb.open(f"{caltable}/ANTENNA")
-                ant_names = tb.getcol("NAME") 
+                ant_names = tb.getcol("NAME")
                 tb.close()
                 tb.open(caltable)
                 gains = tb.getcol("CPARAM")
@@ -464,11 +500,28 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
         final_cal_type = last_caltype
         if final_cal_type == "G Jones":
             output_pdfs = plot_G_jones_time_vs_gain(
-                all_times, all_gains, all_ants, all_ant_names, ncols, nrows, pols, "GJones", outfile_prefix
+                all_times,
+                all_gains,
+                all_ants,
+                all_ant_names,
+                ncols,
+                nrows,
+                pols,
+                "GJones",
+                outfile_prefix,
             )
         elif final_cal_type == "B Jones":
             output_pdfs = plot_B_jones_freq_vs_gain(
-                all_freqs, all_gains, all_ants, all_ant_names, ncols, nrows, pols, "BJones", outfile_prefix, plot_all_ants=plot_all_ants
+                all_freqs,
+                all_gains,
+                all_ants,
+                all_ant_names,
+                ncols,
+                nrows,
+                pols,
+                "BJones",
+                outfile_prefix,
+                plot_all_ants=plot_all_ants,
             )
         else:
             print(f"{final_cal_type} is not implemented.")
@@ -478,10 +531,10 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
         traceback.print_exc()
         return 1, []
     finally:
-        if len(caltables)>0:
+        if len(caltables) > 0:
             for caltable in caltables:
                 drop_cache(caltable)
-        
+
 
 def get_mwamap(fits_image, do_sharpen=False):
     """
@@ -856,7 +909,16 @@ def plot_in_hpc(
     return output_image_list, cropped_map
 
 
-def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", aia_wavelength=193, ncpu=1, keep_aia_fits=False):
+def get_aia_map(
+    obs_date,
+    obs_time,
+    workdir,
+    obs_end_date="",
+    obs_end_time="",
+    aia_wavelength=193,
+    ncpu=1,
+    keep_aia_fits=False,
+):
     """
     Get SDO AIA map
 
@@ -901,7 +963,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
     try:
         print("Downloading AIA images....")
         final_time_range = []
-        if obs_end_date=="" or obs_end_time=="":
+        if obs_end_date == "" or obs_end_time == "":
             start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
             t_start = start_time.strftime("%Y-%m-%dT%H:%M")
             time = a.Time(t_start, t_start)
@@ -913,13 +975,13 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
             t_end = end_time.strftime("%Y-%m-%dT%H:%M")
             start_mjdsec = timestamp_to_mjdsec(f"{start_time}", date_format=2)
             end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
-            if end_mjdsec>start_mjdsec:
+            if end_mjdsec > start_mjdsec:
                 time = a.Time(t_start, t_end)
                 final_time_range.append(t_start, t_end)
             else:
                 time = a.Time(t_start, t_start)
                 final_time_range.append(t_start)
-                
+
         instrument = a.Instrument("aia")
         jsoc_wavelength = a.Wavelength(aia_wavelength * u.angstrom)
         results = Fido.search(
@@ -933,13 +995,17 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
             return []
         else:
             downloaded_files = Fido.fetch(
-                results, path=workdir, progress=False, overwrite=False, max_conn = ncpu,
+                results,
+                path=workdir,
+                progress=False,
+                overwrite=False,
+                max_conn=ncpu,
             )
-            final_maps =[]
+            final_maps = []
             if len(downloaded_files) > 0:
-                if  len(final_time_range)==1:
+                if len(final_time_range) == 1:
                     downloaded_files = downloaded_files[:1]
-                for final_image in downloaded_files:      
+                for final_image in downloaded_files:
                     aia_map = Map(final_image)
                     # Step 1: Pointing correction
                     try:
@@ -963,7 +1029,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
                             basename = image.split(".image")[0]
                             os.system(f"rm -rf {basename}*")
                     final_maps.append(normalized_map)
-                            
+
                 return final_maps
             else:
                 return []
@@ -976,7 +1042,14 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
 
 
 def get_suvi_map(
-    obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", suvi_wavelength=195, ncpu=1, keep_suvi_fits=False
+    obs_date,
+    obs_time,
+    workdir,
+    obs_end_date="",
+    obs_end_time="",
+    suvi_wavelength=195,
+    ncpu=1,
+    keep_suvi_fits=False,
 ):
     """
     Get GOES SUVI map
@@ -1063,34 +1136,42 @@ def get_suvi_map(
                     start_times.append(file_base.split("_")[-3])
                     out_files.append(f"{workdir}/{file_base}")
                 times_dt = [dt.strptime(t, "s%Y%m%dT%H%M%Sz") for t in start_times]
-                if obs_end_date=="" or obs_end_time=="":
+                if obs_end_date == "" or obs_end_time == "":
                     start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
                     closest_time = min(times_dt, key=lambda t: abs(t - start_time))
                     pos = [times_dt.index(closest_time)]
                 else:
                     start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
                     end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
-                    start_mjdsec = timestamp_to_mjdsec(f"{obs_date}T{obs_time}:00.0", date_format=1)
-                    end_mjdsec = timestamp_to_mjdsec(f"{obs_end_date}T{obs_end_time}:00.0", date_format=1)
-                    if end_mjdsec>start_mjdsec:
-                        pos = [i for i, t in enumerate(times_dt) if start_time <= t <= end_time]
+                    start_mjdsec = timestamp_to_mjdsec(
+                        f"{obs_date}T{obs_time}:00.0", date_format=1
+                    )
+                    end_mjdsec = timestamp_to_mjdsec(
+                        f"{obs_end_date}T{obs_end_time}:00.0", date_format=1
+                    )
+                    if end_mjdsec > start_mjdsec:
+                        pos = [
+                            i
+                            for i, t in enumerate(times_dt)
+                            if start_time <= t <= end_time
+                        ]
                     else:
                         closest_time = min(times_dt, key=lambda t: abs(t - start_time))
-                        pos = [times_dt.index(closest_time)] 
-                if len(pos)>0:
+                        pos = [times_dt.index(closest_time)]
+                if len(pos) > 0:
                     download_urls = [all_files[p] for p in pos]
                     out_files = [out_files[p] for p in pos]
                     dl = Downloader(max_conn=ncpu, progress=False, overwrite=False)
                     for i in range(len(out_files)):
                         out_file = out_files[i]
-                        download_url = download_urls[i] 
+                        download_url = download_urls[i]
                         if os.path.exists(out_file) is False:
                             dl.enqueue_file(download_url, path=workdir)
                     downloaded_files = dl.download()
                     filtered_outfiles = []
                     for outfile in out_files:
                         if os.path.exists(outfile):
-                            filtered_outfiles.append(outfile)                
+                            filtered_outfiles.append(outfile)
                     if len(filtered_outfiles) > 0:
                         for image in filtered_outfiles:
                             suvi_map = Map(image)
@@ -1154,10 +1235,10 @@ def enhance_offlimb(sunpy_map, do_sharpen=True):
     return scaled_map
 
 
-def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
+def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
     """
     Get all EUV maps for all MWA fits images
-    
+
     Parameters
     ----------
     mwa_fits_images : list, str
@@ -1168,11 +1249,11 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
         GOES SUVI/ SDO AIA wavelength, options: 94, 131, 171, 195(193), 284, 304 Å
     ncpu : int, optional
         Number of CPU threads to use
-        
+
     Returns
     -------
     list
-        List of sunpy EUV maps in same order of input images 
+        List of sunpy EUV maps in same order of input images
     """
     cwd = os.getcwd()
     os.chdir(workdir)
@@ -1186,8 +1267,6 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
             if obs_datetime not in obstimes:
                 obstimes.append(obs_datetime)
             all_obstimes.append(obs_datetime)
-        obstimes = ["2024-06-10T09:00:00","2024-06-10T09:10:00"]
-        all_obstimes = obstimes
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
         start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
@@ -1197,17 +1276,35 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
         obs_end_date = end_time.split("T")[0]
         end_year = int(obs_end_date.split("-")[0])
         obs_end_time = ":".join(end_time.split("T")[-1].split(":")[:2])
-        if start_year>=2019 and end_year>=2019:
-            euv_maps = get_suvi_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, suvi_wavelength=wavelength, ncpu=ncpu, keep_suvi_fits=False)
+        if start_year >= 2019 and end_year >= 2019:
+            euv_maps = get_suvi_map(
+                start_obs_date,
+                start_obs_time,
+                workdir,
+                obs_end_date=obs_end_date,
+                obs_end_time=obs_end_time,
+                suvi_wavelength=wavelength,
+                ncpu=ncpu,
+                keep_suvi_fits=False,
+            )
         else:
-            euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, aia_wavelength=wavelength, ncpu=ncpu, keep_aia_fits=False)
-        return euv_maps   
+            euv_maps = get_aia_map(
+                start_obs_date,
+                start_obs_time,
+                workdir,
+                obs_end_date=obs_end_date,
+                obs_end_time=obs_end_time,
+                aia_wavelength=wavelength,
+                ncpu=ncpu,
+                keep_aia_fits=False,
+            )
+        return euv_maps
     except Exception:
         traceback.print_exc()
         return []
     finally:
         os.chdir(cwd)
-        
+
 
 def make_mwa_overlay(
     mwa_image,

@@ -280,9 +280,7 @@ def cli():
         description=usage, formatter_class=SmartDefaultsHelpFormatter
     )
     parser.add_argument("--init", action="store_true", help="Initiate data")
-    parser.add_argument(
-        "--port", type=int, default=4260, help="Prefect port"
-    )
+    parser.add_argument("--port", type=int, default=4260, help="Prefect port")
     parser.add_argument(
         "--datadir", type=str, default="", help="User provided data directory"
     )
