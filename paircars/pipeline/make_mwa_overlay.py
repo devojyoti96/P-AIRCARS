@@ -129,7 +129,7 @@ def main(
         total_image_sizes = sum(image_sizes)
         min_mem = round(50 * total_image_sizes, 2)  
         min_mem /= len(imagelist)
-        #min_mem = max(4,min_mem)
+        min_mem = max(4,min_mem)
 
         result = get_local_dask_cluster(
             workdir,
