@@ -839,8 +839,8 @@ def main(
         if cpu_frac <= 0:
             cpu_frac = 0.8
         target_ms_sizes = [get_ms_size(msname) for msname in mslist]
-        max_ms_size = max(target_ms_sizes)
-        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
+        total_ms_size = sum(target_ms_sizes)
+        min_mem = round(10 * total_ms_size, 2)  # 10 times the size of the ms
         min_mem /= total_ncoarse
 
         result = get_local_dask_cluster(

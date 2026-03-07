@@ -126,7 +126,10 @@ def main(
         if cpu_frac <= 0:
             cpu_frac = 0.8
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
-        min_mem = max(image_sizes) * 50
+        total_image_sizes = sum(image_sizes)
+        min_mem = round(50 * total_image_sizes, 2)  
+        min_mem /= len(imagelist)
+        #min_mem = max(4,min_mem)
 
         result = get_local_dask_cluster(
             workdir,

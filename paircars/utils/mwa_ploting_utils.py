@@ -1567,7 +1567,6 @@ def make_mwa_overlay(
     except Exception:
         traceback.print_exc()
     finally:
-        plt.close("all")
         del euv_reprojected, mwa_reprojected, projected_header, mwamap, projected_coord
     return plot_file_list
 
