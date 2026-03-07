@@ -267,8 +267,8 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
         if shiftsun:
             w = WCS(imagename).celestial
             pix = w.all_world2pix(np.array([[ra, dec]]), 0)
-            ra_pix = int(pix[0][0])
-            dec_pix = int(pix[0][1])
+            ra_pix =int(np.round(pix[0][0]))
+            dec_pix = int(np.round(pix[0][1]))
             data = fits.getdata(imagename)
             header = fits.getheader(imagename)
             header["CRPIX1"] = float(ra_pix+1)
