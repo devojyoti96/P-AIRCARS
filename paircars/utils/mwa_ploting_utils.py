@@ -1068,7 +1068,7 @@ def get_suvi_map(
                 if obs_end_date=="" or obs_end_time=="":
                     start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
                     closest_time = min(times_dt, key=lambda t: abs(t - start_time))
-                    pos = times_dt.index(closest_time)
+                    pos = [times_dt.index(closest_time)]
                 else:
                     start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
                     end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
@@ -1078,9 +1078,10 @@ def get_suvi_map(
                         pos = [i for i, t in enumerate(times_dt) if start_time <= t <= end_time]
                     else:
                         closest_time = min(times_dt, key=lambda t: abs(t - start_time))
-                        pos = times_dt.index(closest_time) 
-                download_urls = all_files[pos]
-                out_files = out_files[pos]
+                        pos = [times_dt.index(closest_time)] 
+                print (pos)
+                download_urls = [all_files[p] for p in pos]
+                out_files = [out_files[p] for p in pos]
                 dl = Downloader(max_conn=ncpu, overwrite=False)
                 for i in range(len(out_files)):
                     out_file = out_files[i]
