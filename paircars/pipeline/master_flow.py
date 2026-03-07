@@ -3332,7 +3332,7 @@ def master_control(
             ####################################
             # Applying basic calibration
             #####################################
-            if do_applycal and has_cal:
+            if (do_applycal or do_apply_selfcal) and has_cal:
                 if emails != "":
                     email_msg = "Started applying basic calibration solutions on final target measurement sets."
                     send_task_notification(
