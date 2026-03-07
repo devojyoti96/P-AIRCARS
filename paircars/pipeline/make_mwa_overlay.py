@@ -38,7 +38,7 @@ def main(
     logfile=None,
     jobid=0,
     start_remote_log=False,
-    dask_client = None,
+    dask_client=None,
 ):
     """
     Run the EUV overlays
@@ -114,20 +114,20 @@ def main(
     else:
         succeed = 0
         failed = len(imagelist)
-        
+
     ###############################
     # Creating dask client
     ###############################
     dask_cluster = None
-    nworker=None
+    nworker = None
     if dask_client is None:
         if mem_frac <= 0:
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-        image_sizes = [os.stat(image).st_size/1024**3 for image in imagelist]
-        min_mem = max(image_sizes)*50
-            
+        image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
+        min_mem = max(image_sizes) * 50
+
         result = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -141,8 +141,8 @@ def main(
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
-        nthreads = int(psutil.cpu_count()*cpu_frac)
-        ncpu = max(1, int(nthreads/nworker))
+        nthreads = int(psutil.cpu_count() * cpu_frac)
+        ncpu = max(1, int(nthreads / nworker))
     else:
         ncpu = os.environ["OMP_NUM_THREADS"]
         if ncpu is None:
@@ -152,7 +152,7 @@ def main(
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         nthreads = ncpu * njobs
-        
+
     try:
         ###############################################################################
         # Filtering only images with bandwidth of 1.28 MHz or more and at 60s intervals
@@ -161,7 +161,9 @@ def main(
             imagelist = filter_images(imagelist, min_time_sep=60.0)
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
-            euv_maps = get_all_euv_maps(imagelist, workdir, wavelength=195, ncpu=nthreads)
+            euv_maps = get_all_euv_maps(
+                imagelist, workdir, wavelength=195, ncpu=nthreads
+            )
             unique_maps = list(set(euv_maps))
             # Scatter once
             map_futures = dask_client.scatter(unique_maps)

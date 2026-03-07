@@ -27,7 +27,7 @@ from sunpy.coordinates import SphericalScreen
 from matplotlib.colors import ListedColormap
 from matplotlib import cm
 from sunpy.map import make_fitswcs_header
-from collections import namedtuple    
+from collections import namedtuple
 from .basic_utils import (
     mjdsec_to_timestamp,
     timestamp_to_mjdsec,
@@ -51,8 +51,8 @@ from .udocker_utils import (
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 logging.getLogger("sunpy").setLevel(logging.ERROR)
-logging.getLogger("reproject.common").setLevel(logging.WARNING) 
-    
+logging.getLogger("reproject.common").setLevel(logging.WARNING)
+
 #####################################
 # Sun position related
 #####################################
@@ -1274,7 +1274,9 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
             obs_datetime = fits.getheader(mwa_image)["DATE-OBS"]
             if obs_datetime not in obstimes:
                 obstimes.append(obs_datetime)
-            all_obstimes_mjdsecs.append(timestamp_to_mjdsec(obs_datetime, date_format=1))
+            all_obstimes_mjdsecs.append(
+                timestamp_to_mjdsec(obs_datetime, date_format=1)
+            )
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
         start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
@@ -1312,8 +1314,8 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
         map_mjdsecs = np.array(map_mjdsecs)
         all_obstimes_mjdsecs = np.array(all_obstimes_mjdsecs)
         for fits_time in all_obstimes_mjdsecs:
-            pos = np.argmin(np.abs(map_mjdsecs-fits_time))
-            final_maps.append(euv_maps[pos])   
+            pos = np.argmin(np.abs(map_mjdsecs - fits_time))
+            final_maps.append(euv_maps[pos])
         return final_maps
     except Exception:
         traceback.print_exc()
@@ -1423,11 +1425,11 @@ def make_mwa_overlay(
     )
 
     with SphericalScreen(mwamap.observer_coordinate):
-    mwa_reprojected = mwamap.reproject_to(projected_header)
+        mwa_reprojected = mwamap.reproject_to(projected_header)
 
     with SphericalScreen(euv_map.observer_coordinate):
         euv_reprojected = euv_map.reproject_to(projected_header)
-        
+
     mwatime = mwamap.meta["date-obs"].split(".")[0]
     euvtime = euv_map.meta["date-obs"].split(".")[0]
     try:
