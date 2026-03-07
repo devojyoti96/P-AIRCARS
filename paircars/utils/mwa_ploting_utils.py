@@ -22,7 +22,7 @@ from astropy.wcs import FITSFixedWarning
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
-from .basic_utils import mjdsec_to_timestamp, get_datadir, interpolate_nans
+from .basic_utils import mjdsec_to_timestamp, timestamp_to_mjdsec, get_datadir, interpolate_nans
 from .image_utils import calc_solar_image_stat, cutout_image
 from .ms_metadata import (
     get_column_size,
@@ -422,6 +422,8 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
     nrows = 3
     out_files = []
     tb = table()
+    outdir = os.path.dirname(outfile_prefix)
+    os.makedirs(outdir,exist_ok=True)
     try:
         all_freqs = []
         all_times = []
@@ -1081,9 +1083,78 @@ def enhance_offlimb(sunpy_map, do_sharpen=True):
     return scaled_map
 
 
+def get_all_euv_maps(mwa_fits_images,wavelength=195):
+    """
+    Get all EUV maps for all MWA fits images
+    
+    Parameters
+    ----------
+    mwa_fits_images : list, str
+        MWA FITS images list
+    wavelength : float, optional
+        GOES SUVI/ SDO AIA wavelength, options: 94, 131, 171, 195(193), 284, 304 Å
+        
+    Returns
+    -------
+    list
+        List of sunpy EUV maps in same order of input images 
+    """
+    if isinstance(mwa_fits_images, str):
+        mwa_fits_images = [mwa_fits_images]
+    obstimes = []
+    all_obstimes = []
+    for mwa_image in mwa_fits_images:
+        obs_datetime = fits.getheader(mwa_image)["DATE-OBS"]
+        if obs_datetime not in obstimes:
+            obstimes.append(obs_datetime)
+        all_obstimes.append(obs_datetime)
+    
+    filtered_obstimes = []
+    euv_maps = []
+    for obs_datetime in obstimes:   
+        print(f"Downloading EUV map for: {obs_datetime}")
+        obs_date = obs_datetime.split("T")[0]
+        year = int(obs_date.split("-")[0])
+        obs_time = ":".join(obs_datetime.split("T")[-1].split(":")[:2])
+        if year >= 2019:
+            euv_map = get_suvi_map(
+                obs_date,
+                obs_time,
+                workdir,
+                suvi_wavelength=wavelength,
+                keep_suvi_fits=True,
+            )
+            filtered_obstimes.append(obs_datetime)
+            euv_maps.append(euv_map)
+        else:
+            euv_map = None
+        if euv_map is None:
+            euv_map = get_aia_map(
+                obs_date,
+                obs_time,
+                workdir,
+                aia_wavelength=wavelength,
+                keep_aia_fits=True,
+            )
+            if euv_map is None:
+                print("Could not get either SUVI or AIA images.")
+            else:
+                filtered_obstimes.append(obs_datetime)
+                euv_maps.append(euv_map)
+                
+    os.system(f"rm -rf *aia*.fits")
+    os.system(f"rm -rf *suvi*.fits")
+    final_euv_maps = []
+    for final_t in all_obstimes:
+        index = obstimes.index(final_t)
+        euv_map = euv_maps[index]
+        final_euv_maps.append(euv_map)
+    return final_euv_maps    
+        
+
 def make_mwa_overlay(
     mwa_image,
-    wavelength=195,
+    euv_map,
     plot_file_prefix=None,
     plot_mwa_colormap=True,
     enhance_offdisk=False,
@@ -1106,8 +1177,8 @@ def make_mwa_overlay(
     ----------
     mwa_image : str
         MWA image
-    wavelength : float, optional
-        GOES SUVI/ SDO AIA wavelength, options: 94, 131, 171, 195(193), 284, 304 Å
+    euv_map : sunpy.map.Map
+        GOES SUVI/ SDO AIA EUV map
     plot_file_prefix : str, optional
         Plot file prefix name
     plot_mwa_colormap : bool, optional
@@ -1172,31 +1243,6 @@ def make_mwa_overlay(
         matplotlib.use("Agg")
     workdir = os.path.dirname(os.path.abspath(mwa_image))
     mwamap = get_mwamap(mwa_image)
-    obs_datetime = fits.getheader(mwa_image)["DATE-OBS"]
-    obs_date = obs_datetime.split("T")[0]
-    year = int(obs_date.split("-")[0])
-    obs_time = ":".join(obs_datetime.split("T")[-1].split(":")[:2])
-    if year >= 2019:
-        euv_map = get_suvi_map(
-            obs_date,
-            obs_time,
-            workdir,
-            suvi_wavelength=wavelength,
-            keep_suvi_fits=keep_euv_fits,
-        )
-    else:
-        euv_map = None
-    if euv_map is None:
-        euv_map = get_aia_map(
-            obs_date,
-            obs_time,
-            workdir,
-            aia_wavelength=wavelength,
-            keep_aia_fits=keep_euv_fits,
-        )
-        if euv_map is None:
-            print("Could not get either SUVI or AIA images.")
-            return
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)
 
@@ -1454,8 +1500,7 @@ def rename_mwasolar_image(
     imagetype="image",
     imagedir="",
     pol="",
-    cutout_rsun=4.0,
-    make_overlay=True,
+    cutout_rsun=10.0,
     make_plots=True,
     keep_euv_fits=False,
     pol_selfcal=True,
@@ -1475,9 +1520,7 @@ def rename_mwasolar_image(
     pol : str, optional
         Stokes parameters
     cutout_rsun : float, optional
-        Cutout in solar radii from center (default: 4.0 solar radii)
-    make_overlay : bool, optional
-        Make overlay on SUVI/AIA
+        Cutout in solar radii from center (default: 10.0 solar radii)
     make_plots : bool, optional
         Make radio map plot in helioprojective coordinates
     keep_euv_fits : bool, optional
@@ -1561,21 +1604,6 @@ def rename_mwasolar_image(
                     draw_limb=True,
                     extensions=["png"],
                     outdirs=[pngdir],
-                )
-            except Exception:
-                pass
-        if make_overlay:
-            try:
-                overlay_pngdir = f"{os.path.dirname(imagedir)}/overlays_pngs"
-                os.makedirs(overlay_pngdir, exist_ok=True)
-                outimages = make_mwa_overlay(
-                    new_name,
-                    plot_file_prefix=os.path.basename(new_name).split(".fits")[0]
-                    + "_euv_mwa_overlay",
-                    extensions=["png"],
-                    outdirs=[overlay_pngdir],
-                    keep_euv_fits=keep_euv_fits,
-                    verbose=False,
                 )
             except Exception:
                 pass
