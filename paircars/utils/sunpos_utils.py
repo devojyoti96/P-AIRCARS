@@ -11,6 +11,7 @@ from astropy.coordinates import (
 from casatools import msmetadata
 from .basic_utils import get_datadir, mjdsec_to_timestamp
 from .udocker_utils import run_solar_sidereal_cor, run_chgcenter
+from .image_utils import create_circular_mask_array
 
 #####################################
 # Sun position related
@@ -183,6 +184,102 @@ def move_to_sun(msname, only_uvw=False):
     else:
         os.system(f"touch {msname}/.solarcenter_move_succeed")
     return msg
+
+
+def cal_solar_phaseshift(imagename, sigma=10):
+    """
+    Calculate the difference between solar center and phase center of the image
+
+    Parameters
+    ----------
+    imagename : str
+            Name of the image
+    sigma : float
+            If Gaussian fitting is not used, threshold for estimating center of mass as solar center (default =10)
+
+    Returns
+    -------
+    float
+            RA of the solar center in degree
+    float
+            DEC of the solarcenter in degree
+    bool
+            Whther phase shift required or not. Not required if less than image pixel size
+    """
+    from scipy.ndimage import center_of_mass
+
+    data = fits.getdata(imagename)
+    header = fits.getheader(imagename)
+    obstime = header["DATE-OBS"]
+    (
+        _,
+        _,
+        _,
+        sun_radeg,
+        sun_decdeg,
+    ) = radec_sun_at_time(obstime)
+    cellsize = float(header["CDELT1"]) * 3600.0  # In arcsec
+    pix_radius = int((4 * 16 * 60) / cellsize)  # 4 solar radii
+    circular_mask = create_circular_mask_array(data[0, 0, ...], pix_radius)
+    I = data[0, 0, ...].copy()
+    I[circular_mask] = np.nan
+    rms = np.nanstd(I)
+    del I
+    I = data[0, 0, ...].copy()
+    I[I >= (sigma * rms)] = 1
+    I[I < (sigma * rms)] = 0
+    cx, cy = center_of_mass(I)
+    w = WCS(imagename).celestial
+    result = w.array_index_to_world(int(cy), int(cx))
+    x_cen = result[0].ra.deg
+    y_cen = result[0].dec.deg
+    ra = float(x_cen)
+    dec = float(y_cen)
+    if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
+        msg = False
+    else:
+        msg = True
+    return ra, dec, msg
+
+
+def shift_solarcenter(imagename, sigma=10, overwrite=True):
+    """
+    Function to shift solar center to image phase center
+
+    Parameters
+    ----------
+    imagename : str
+        Name of the image
+    sigma : float, optional
+        Sigma threshold for masking solar disk
+    overwrite : bool, optional
+        Overwrite existing image or not
+
+    Returns
+    -------
+    int
+        Success code 0: Successfully shifted, 1: Shifting is not required, 2: Error in shifting
+    """
+    ra, dec, shiftsun = cal_solar_phaseshift(imagename, sigma=sigma)
+    try:
+        if shiftsun:
+            w = WCS(imagename).celestial
+            pix = w.all_world2pix(np.array([[ra, dec]]), 0)
+            ra_pix = int(pix[0][0])
+            dec_pix = int(pix[0][1])
+            data = fits.getdata(imagename)
+            header = fits.getheader(imagename)
+            header["CRPIX1"] = float(ra_pix)
+            header["CRPIX2"] = float(dec_pix)
+            fits.writeto(imagename, data=data, header=header, overwrite=True)
+            msg = 0
+        else:
+            msg = 1
+    except Exception:
+        msg = 2
+        traceback.print_exc()
+    finally:
+        return msg
 
 
 def correct_solar_sidereal_motion(msname="", verbose=False):
