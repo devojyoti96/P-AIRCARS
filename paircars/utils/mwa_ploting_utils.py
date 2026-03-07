@@ -897,7 +897,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
         aia_wavelength = aia_wavelengths[pos]
     os.makedirs(workdir, exist_ok=True)
     final_time_range = []
-    if obs_end_date=="" and obs_end_time=="":
+    if obs_end_date=="" or obs_end_time=="":
         start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
         t_start = start_time.strftime("%Y-%m-%dT%H:%M")
         time = a.Time(t_start, t_start)
@@ -907,8 +907,8 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
         t_start = start_time.strftime("%Y-%m-%dT%H:%M")
         end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
         t_end = end_time.strftime("%Y-%m-%dT%H:%M")
-        end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
         start_mjdsec = timestamp_to_mjdsec(f"{start_time}", date_format=2)
+        end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
         if end_mjdsec>start_mjdsec:
             time = a.Time(t_start, t_end)
             final_time_range.append(t_start, t_end)
@@ -928,7 +928,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
     if num_files == 0:
         return []
     else:
-        if obs_end_date=="" and obs_end_time=="":
+        if obs_end_date=="" or obs_end_time=="":
             print(f"Downloading AIA images for: {start_time}.")
         else:
             print(f"Downloading AIA images for timerange: {start_time}~{end_time}.")
@@ -960,7 +960,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
                 normalized_map = Map(normalized_data, corrected_map.meta)
                 if keep_aia_fits is False:
                     for image in downloaded_files:
-                        basename = imagename.split(".image")[0]
+                        basename = image.split(".image")[0]
                         os.system(f"rm -rf {basename}*")
                 final_maps.append(normalized_map)
                         
@@ -970,7 +970,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
 
 
 def get_suvi_map(
-    obs_date, obs_time, workdir, suvi_wavelength=195, keep_suvi_fits=False
+    obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", suvi_wavelength=195, ncpu=1, keep_suvi_fits=False
 ):
     """
     Get GOES SUVI map
@@ -983,15 +983,21 @@ def get_suvi_map(
         Observation time in hh:mm format
     workdir : str
         Work directory
+    obs_end_date : str
+        Observation end date in yyyy-mm-dd format
+    obs_end_time : str
+        Observation end time in hh:mm format
     suvi_wavelength : float, optional
         Wavelength, options: 94, 131, 171, 195, 284, 304 Å
+    ncpu : int, optional
+        Number of CPU threads to use for parallel download
     keep_suvi_fits : bool, optional
         Keep SUVI fits file or not
 
     Returns
     -------
-    sunpy.map
-        Sunpy SUVIMap
+    list
+        List of Sunpy SUVIMap
     """
     from parfive import Downloader
     from bs4 import BeautifulSoup
@@ -1035,7 +1041,7 @@ def get_suvi_map(
     all_files = []
     start_times = []
     out_files = []
-
+    final_maps = []
     for spacecraft in spacecraft_numbers:
         url = f"{baseurl1}{spacecraft}/{baseurl2}/{wvln_path[suvi_wavelength]}/{date_str}/"
         request = requests.get(url)
@@ -1048,25 +1054,43 @@ def get_suvi_map(
                 out_files.append(file_base)
                 start_times.append(file_base.split("_")[-3])
             times_dt = [dt.strptime(t, "s%Y%m%dT%H%M%Sz") for t in start_times]
-            start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
-            closest_time = min(times_dt, key=lambda t: abs(t - start_time))
-            pos = times_dt.index(closest_time)
-            download_url = all_files[pos]
-            out_file = out_files[pos]
-            if os.path.exists(out_file) is False:
-                dl = Downloader()
-                dl.enqueue_file(download_url, path=out_file)
-                downloaded_files = dl.download()
-                if len(downloaded_files) > 0:
-                    final_image = downloaded_files[0]
+            if obs_start_date=="" or obs_end_time=="":
+                start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+                closest_time = min(times_dt, key=lambda t: abs(t - start_time))
+                pos = times_dt.index(closest_time)
             else:
-                final_image = out_file
-            suvi_map = Map(final_image)
-            if keep_suvi_fits is False:
-                for image in out_files:
-                    os.system(f"rm -rf {image}")
-            return suvi_map
-    return
+                start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+                end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
+                start_mjdsec = timestamp_to_mjdsec(f"{start_time.split('.')[0]}", date_format=1)
+                end_mjdsec = timestamp_to_mjdsec(f"{end_time.split('.')[0]}", date_format=1)
+                if end_mjdsec>start_mjdsec:
+                    pos = [i for i, t in enumerate(times_dt) if start_time <= t <= end_time]
+                else:
+                    closest_time = min(times_dt, key=lambda t: abs(t - start_time))
+                    pos = times_dt.index(closest_time) 
+            download_urls = all_files[pos]
+            out_files = out_files[pos]
+            dl = Downloader(max_conn=ncpu, overwrite=False)
+            for i in range(len(out_files)):
+                out_file = out_files[i[
+                download_url = download_urls[i] 
+                if os.path.exists(out_file) is False:
+                    dl.enqueue_file(download_url, path=out_file)
+            downloaded_files = dl.download()
+            filtered_outfiles = []
+            for outfile in out_files:
+                if os.path.exists(outfile):
+                    filtered_outfiles.append(outfile)
+                         
+            if len(filtered_outfiles) > 0:
+                for image in filtered_outfiles:
+                    suvi_map = Map(final_image)
+                    final_maps.append(suvi_map)
+                    if keep_suvi_fits is False:
+                        for image in out_files:
+                            print(image)
+                            os.system(f"rm -rf {image}")
+    return final_maps
 
 
 def enhance_offlimb(sunpy_map, do_sharpen=True):
@@ -1116,7 +1140,7 @@ def enhance_offlimb(sunpy_map, do_sharpen=True):
     return scaled_map
 
 
-def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
+def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
     """
     Get all EUV maps for all MWA fits images
     
@@ -1124,8 +1148,12 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
     ----------
     mwa_fits_images : list, str
         MWA FITS images list
+    workdir : str
+        Work directory
     wavelength : float, optional
         GOES SUVI/ SDO AIA wavelength, options: 94, 131, 171, 195(193), 284, 304 Å
+    ncpu : int, optional
+        Number of CPU threads to use
         
     Returns
     -------
@@ -1156,50 +1184,8 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
         if start_year>=2019 and end_year>=2019:
             pass
         else:
-            euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, aia_wavelength=wavelength, ncpu=8, keep_aia_fits=False)
-        return euv_maps 
-        
-        '''filtered_obstimes = []
-        euv_maps = []
-        for obs_datetime in obstimes:   
-            print(f"Downloading EUV map for: {obs_datetime}")
-            obs_date = obs_datetime.split("T")[0]
-            year = int(obs_date.split("-")[0])
-            obs_time = ":".join(obs_datetime.split("T")[-1].split(":")[:2])
-            if year >= 2019:
-                euv_map = get_suvi_map(
-                    obs_date,
-                    obs_time,
-                    workdir,
-                    suvi_wavelength=wavelength,
-                    keep_suvi_fits=True,
-                )
-                filtered_obstimes.append(obs_datetime)
-                euv_maps.append(euv_map)
-            else:
-                euv_map = None
-            if euv_map is None:
-                euv_map = get_aia_map(
-                    obs_date,
-                    obs_time,
-                    workdir,
-                    aia_wavelength=wavelength,
-                    keep_aia_fits=True,
-                )
-                if euv_map is None:
-                    print("Could not get either SUVI or AIA images.")
-                else:
-                    filtered_obstimes.append(obs_datetime)
-                    euv_maps.append(euv_map)
-                    
-        os.system(f"rm -rf *aia*.fits")
-        os.system(f"rm -rf *suvi*.fits")
-        final_euv_maps = []
-        for final_t in all_obstimes:
-            index = obstimes.index(final_t)
-            euv_map = euv_maps[index]
-            final_euv_maps.append(euv_map)
-        return final_euv_maps  '''  
+            euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, aia_wavelength=wavelength, ncpu=ncpu, keep_aia_fits=False)
+        return euv_maps   
     except Exception:
         traceback.print_exc()
         return []
