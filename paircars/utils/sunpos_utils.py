@@ -109,6 +109,51 @@ def radec_sun(msname):
     )
 
 
+def radec_sun_at_time(time):
+    """
+    RA DEC of the Sun a given time
+
+    Parameters
+    ----------
+    time : str
+        Time in format dd-mm-yyyyThh:mm:ss
+
+    Returns
+    -------
+    str
+        RA DEC of the Sun in J2000
+    str
+        RA string
+    str
+        DEC string
+    float
+        RA in degree
+    float
+        DEC in degree
+    """
+    mid_timestamp = mjdsec_to_timestamp(time, date_format=1)
+    astro_time = Time(mid_timestamp, scale="utc")
+    sun_coord = get_sun(astro_time)  # In GCRS (geocentric frame)
+    sun_ra = (
+        f"{int(sun_coord.ra.hms.h)}h"
+        f"{int(sun_coord.ra.hms.m)}m"
+        f"{round(sun_coord.ra.hms.s, 2)}s"
+    )
+    sun_dec = (
+        f"{int(sun_coord.dec.dms.d)}d"
+        f"{abs(int(sun_coord.dec.dms.m))}m"
+        f"{abs(round(sun_coord.dec.dms.s, 2))}s"
+    )
+    sun_radec_string = f"J2000 {sun_ra} {sun_dec}"
+    return (
+        sun_radec_string,
+        sun_ra,
+        sun_dec,
+        sun_coord.ra.deg,
+        sun_coord.dec.deg,
+    )
+
+
 def move_to_sun(msname, only_uvw=False):
     """
     Move the phasecenter of the measurement set at the center of the Sun (Assuming ms has one scan)
