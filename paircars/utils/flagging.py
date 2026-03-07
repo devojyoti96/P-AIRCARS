@@ -420,27 +420,27 @@ def flag_quartical_table(caltable, threshold=10.0):
     g2 = gain_data[..., 3]
     d1 = gain_data[..., 1]
     d2 = gain_data[..., 2]
-    
+
     g1_real = np.real(g1) - np.nanmedian(np.real(g1))
     g1_imag = np.imag(g1) - np.nanmedian(np.imag(g1))
     g2_real = np.real(g2) - np.nanmedian(np.real(g2))
     g2_imag = np.imag(g2) - np.nanmedian(np.imag(g2))
-    
+
     d1_real = np.real(d1) - np.nanmedian(np.real(d1))
     d1_imag = np.imag(d1) - np.nanmedian(np.imag(d1))
     d2_real = np.real(d2) - np.nanmedian(np.real(d2))
     d2_imag = np.imag(d2) - np.nanmedian(np.imag(d2))
-    
+
     g1_real_std = np.nanstd(g1_real)
     g1_imag_std = np.nanstd(g1_imag)
     g2_real_std = np.nanstd(g2_real)
     g2_imag_std = np.nanstd(g2_imag)
-    
+
     d1_real_std = np.nanstd(d1_real)
     d1_imag_std = np.nanstd(d1_imag)
     d2_real_std = np.nanstd(d2_real)
     d2_imag_std = np.nanstd(d2_imag)
-    
+
     pos = np.where(
         (d1_real > threshold * d1_real_std)
         | (d1_imag > threshold * d1_imag_std)
@@ -452,26 +452,26 @@ def flag_quartical_table(caltable, threshold=10.0):
         | (g2_imag > threshold * g2_imag_std)
     )
 
-    gain_data[np.isnan(gain_data)][...,0] = 1.0
-    gain_data[np.isnan(gain_data)][...,1] = 0.0
-    gain_data[np.isnan(gain_data)][...,2] = 0.0
-    gain_data[np.isnan(gain_data)][...,3] = 1.0
+    gain_data[np.isnan(gain_data)][..., 0] = 1.0
+    gain_data[np.isnan(gain_data)][..., 1] = 0.0
+    gain_data[np.isnan(gain_data)][..., 2] = 0.0
+    gain_data[np.isnan(gain_data)][..., 3] = 1.0
     gain_flag[pos] = True
-    gain_data[gain_flag][...,0] = 1.0
-    gain_data[gain_flag][...,1] = 0.0
-    gain_data[gain_flag][...,2] = 0.0
-    gain_data[gain_flag][...,3] = 1.0
-    
+    gain_data[gain_flag][..., 0] = 1.0
+    gain_data[gain_flag][..., 1] = 0.0
+    gain_data[gain_flag][..., 2] = 0.0
+    gain_data[gain_flag][..., 3] = 1.0
+
     shape = gain_flag.shape
     ntime = shape[0]
     nchan = shape[1]
     nant = shape[2]
     ndir = shape[3]
-        
-    ant_frac = np.nansum(gain_flag,axis=(0,1,3))/(ntime*nchan*ndir)    
-    pos = np.where(ant_frac>0.5)[0]
-    gain_flag[:,:,pos,:]=True
-    
+
+    ant_frac = np.nansum(gain_flag, axis=(0, 1, 3)) / (ntime * nchan * ndir)
+    pos = np.where(ant_frac > 0.5)[0]
+    gain_flag[:, :, pos, :] = True
+
     gain_flag = gain_flag.astype("int")
 
     gains[0].update(

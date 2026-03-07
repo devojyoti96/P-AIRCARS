@@ -3104,10 +3104,13 @@ def master_control(
         selfcal_gaincal = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal"))
         selfcal_bandpass = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
         selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
-        selfcal_tables = selfcal_gaincal + selfcal_bandpass
-        # TODO; POLCAL INTERPOLATION
+        if do_polcal:
+            selfcal_leakages = sorted(
+                glob.glob(f"{caldir}/selfcal_{target_obsid}*.dcal")
+            )
+            selfcal_leakages = interpolate_quartical(selfcal_leakages, overwrite=True)
 
-        if len(selfcal_tables) == 0:
+        if len(selfcal_gaincal) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
             )
@@ -3134,6 +3137,7 @@ def master_control(
                 print(
                     f"Error in creating diagnostic plots for self-calibration gaincal tables."
                 )
+
         if do_selfcal and len(selfcal_bandpass) > 0:
             os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
             msg, bcal_plots = plot_caltable_diagnostics(
@@ -3146,6 +3150,20 @@ def master_control(
             else:
                 print(
                     f"Error in creating diagnostic plots for self-calibration bandpass tables."
+                )
+
+        if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
+            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
+            msg, dcal_plots = plot_quartical_tables(
+                selfcal_leakages, f"{outdir}/diagnostic_plots/{target_obsid}_dcal"
+            )
+            if msg == 0:
+                print(
+                    f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
+                )
+            else:
+                print(
+                    f"Error in creating diagnostic plots for self-calibration leakage tables."
                 )
 
         #############################################

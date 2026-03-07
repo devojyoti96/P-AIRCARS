@@ -193,7 +193,7 @@ def interpolate_bpass(caltables, overwrite=False):
             )
             interp_gain = interp_re + 1j * interp_im
             nans = np.isnan(interp_gain)
-            interp_gain[nans] = 1.0+1j*0.0
+            interp_gain[nans] = 1.0 + 1j * 0.0
             interpolated_gains[p, :, a] = interp_gain
             del interp_gain
     outlist = []
@@ -254,13 +254,15 @@ def interpolate_quartical(caltables, overwrite=False):
             soltype = soltypes[0]
             gains = xds_from_zarr(f"{caltable}::{soltype}")
             freqs = gains[0].gain_freq.to_numpy()
-            gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
+            gain_data = gains[
+                0
+            ].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
             gain_flag = gains[0].gain_flags.to_numpy()
             gain_flag = gains[0].gain_flags.values.astype(bool)
             gain_data[gain_flag, :] = np.nan
             all_freqs.append(freqs)
             all_gains.append(gain_data)
-            
+
     all_freqs = np.concatenate(all_freqs, axis=0)
     all_gains = np.concatenate(all_gains, axis=1)
     all_freqs = all_freqs.flatten()
@@ -268,8 +270,8 @@ def interpolate_quartical(caltables, overwrite=False):
     all_freqs_sorted = all_freqs[pos]
     all_gains_sorted = all_gains[:, pos, ...]
     interpolated_gains = np.ones(all_gains_sorted.shape, dtype="complex")
-    interpolated_gains[...,1]*=0.0
-    interpolated_gains[...,2]*=0.0
+    interpolated_gains[..., 1] *= 0.0
+    interpolated_gains[..., 2] *= 0.0
     ntime = all_gains_sorted.shape[0]
     npol = all_gains_sorted.shape[-1]
     nant = all_gains_sorted.shape[2]
@@ -284,10 +286,10 @@ def interpolate_quartical(caltables, overwrite=False):
                 )
                 interp_gain = interp_re + 1j * interp_im
                 nans = np.isnan(interp_gain)
-                if p==0 or p==3:
-                    interp_gain[nans] = 1.0+1j*0.0
+                if p == 0 or p == 3:
+                    interp_gain[nans] = 1.0 + 1j * 0.0
                 else:
-                    interp_gain[nans] = 0.0+1j*0.0
+                    interp_gain[nans] = 0.0 + 1j * 0.0
                 interpolated_gains[t, :, a, 0, p] = interp_gain
                 del interp_gain
     outlist = []
@@ -300,12 +302,14 @@ def interpolate_quartical(caltables, overwrite=False):
         else:
             soltype = soltypes[0]
             gains = xds_from_zarr(f"{caltable}::{soltype}")
-            gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
+            gain_data = gains[
+                0
+            ].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
             gain_flag = gains[0].gain_flags.to_numpy()
             bool_gain_flag = gains[0].gain_flags.values.astype(bool)
             freqs = gains[0].gain_freq.to_numpy()
             pos = np.where(freqs[:, None] == all_freqs_sorted)[0]
-            interp_gain_out =  interpolated_gains[:,pos,...]
+            interp_gain_out = interpolated_gains[:, pos, ...]
             gain_data[bool_gain_flag, :] = interp_gain_out[bool_gain_flag, :]
             gains[0].update(
                 {
@@ -318,22 +322,28 @@ def interpolate_quartical(caltables, overwrite=False):
             gains[0].update(
                 {
                     "gains": (
-                        ["gain_time", "gain_freq", "antenna", "direction", "correlation"],
+                        [
+                            "gain_time",
+                            "gain_freq",
+                            "antenna",
+                            "direction",
+                            "correlation",
+                        ],
                         gain_data,
                     )
                 }
             )
             if overwrite:
-                output_name = caltable 
+                output_name = caltable
             else:
                 output_name = f"{caltable}.interp"
             if overwrite:
                 os.system(f"rm -rf {caltable}*")
             write_xds_list = xds_to_zarr(gains, f"{output_name}::{soltype}")
             dask.compute(write_xds_list)
-            outlist.append(output_name) 
+            outlist.append(output_name)
     return outlist
-    
+
 
 def get_cal_flag_info(caltable):
     """

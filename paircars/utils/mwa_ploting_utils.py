@@ -9,6 +9,7 @@ import requests
 import os
 import traceback
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -221,7 +222,7 @@ def plot_ms_diagnostics(
 def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
     """
     Plot quartical gaintables
-    
+
     Parameters
     ----------
     caltables : list
@@ -232,12 +233,12 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
         Number of columns in the plot
     nrows : int, optional
         Number of rows in the plot
-    
+
     Returns
     -------
     list
         Plot file names
-    """ 
+    """
     all_freqs = []
     all_gains = []
     for caltable in caltables:
@@ -250,13 +251,15 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
             soltype = soltypes[0]
             gains = xds_from_zarr(f"{caltable}::{soltype}")
             freqs = gains[0].gain_freq.to_numpy()
-            gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
+            gain_data = gains[
+                0
+            ].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
             gain_flag = gains[0].gain_flags.to_numpy()
             gain_flag = gains[0].gain_flags.values.astype(bool)
             gain_data[gain_flag, :] = np.nan
             all_freqs.append(freqs)
             all_gains.append(gain_data)
-            
+
     all_freqs = np.concatenate(all_freqs, axis=0)
     all_gains = np.concatenate(all_gains, axis=1)
     all_freqs = all_freqs.flatten()
@@ -265,24 +268,24 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
     all_gains_sorted = all_gains[:, pos, ...]
     plots_per_fig = ncols * nrows
     max_ant = all_gains.shape[2]
-    all_ants = np.arange(0,max_ant)
+    all_ants = np.arange(0, max_ant)
     plots_per_fig = min(max_ant, ncols * nrows)
     if plots_per_fig < ncols * nrows:
         ncols = nrows = int(np.sqrt(plots_per_fig))
-    all_gains_sorted = np.nanmean(all_gains_sorted,axis=0)[...,0,:]
+    all_gains_sorted = np.nanmean(all_gains_sorted, axis=0)[..., 0, :]
     output_pdfs = []
     copolar_gains = np.take(all_gains_sorted, [0, 3], axis=-1)
     crosspolar_gains = np.take(all_gains_sorted, [1, 2], axis=-1)
-    
+
     for p in range(2):
-        if p==0:
+        if p == 0:
             all_gains_sub = copolar_gains
             polar = "Copolar"
-            pols = [r"$G_\mathrm{X}$",r"$G_\mathrm{Y}$"]
+            pols = [r"$G_\mathrm{X}$", r"$G_\mathrm{Y}$"]
         else:
             all_gains_sub = crosspolar_gains
             polar = "Crosspolar"
-            pols = [r"$D_\mathrm{X}$",r"$D_\mathrm{Y}$"]
+            pols = [r"$D_\mathrm{X}$", r"$D_\mathrm{Y}$"]
         for quantity in ["amp", "phase"]:
             out_files = []
             for idx in range(0, max_ant, plots_per_fig):
@@ -326,9 +329,7 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
                                 s=14,
                             )
                             ax.set_ylabel("Gain Phase (degree)", fontsize=14)
-                    ax.set_title(
-                        f"Antenna {ant+1}", fontsize=14
-                    )
+                    ax.set_title(f"Antenna {ant+1}", fontsize=14)
                     ax.set_xlabel("Frequency (MHz)", fontsize=14)
                     ax.legend(fontsize=10, ncol=2, loc="upper right")
                     ax.set_ylim(miny - pad, maxy + pad)
@@ -350,8 +351,8 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
                 os.system(f"rm -rf {outpng}")
             output_pdfs.append(output_pdf)
     return output_pdfs
-    
-    
+
+
 def plot_G_jones_time_vs_gain(
     all_times,
     all_gains,
