@@ -126,14 +126,14 @@ def main(
         if cpu_frac <= 0:
             cpu_frac = 0.8
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
-        min_mem = max(image_sizes) * 100
+        min_mem = max(image_sizes) * 50
 
         result = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             min_mem=min_mem,
-            max_worker=6,#len(imagelist) + 1,
+            max_worker=len(imagelist) + 1,
         )
         if result is None:
             print("Error occured in creating local cluster.")
