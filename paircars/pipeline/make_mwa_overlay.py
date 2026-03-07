@@ -15,7 +15,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.basic_utils import timestamp_to_mjdsec
-from paircars.utils.mwa_ploting_utils import make_mwa_overlay
+from paircars.utils.mwa_ploting_utils import make_mwa_overlay, get_all_euv_maps
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.image_utils import filter_images
 from paircars.utils.proc_manage_utils import (
@@ -111,7 +111,45 @@ def main(
     else:
         succeed = 0
         failed = len(imagelist)
-
+        
+    ###############################
+    # Creating dask client
+    ###############################
+    dask_cluster = None
+    nworker=None
+    if dask_client is None:
+        if mem_frac <= 0:
+            mem_frac = 0.8
+        if cpu_frac <= 0:
+            cpu_frac = 0.8
+        image_sizes = [os.stat(image).st_size/1024**3 for image in imagelist]
+        min_mem = max(image_sizes)*10
+            
+        result = get_local_dask_cluster(
+            workdir,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
+            min_mem=min_mem,
+            max_worker=len(imagelist) + 1,
+        )
+        if result is None:
+            print("Error occured in creating local cluster.")
+            return 1, succeed, failed
+        else:
+            dask_client, dask_cluster, dask_dir, nworker = result
+        scale_worker_and_wait(dask_cluster, dask_client, nworker)
+        nthreads = int(psutil.cpu_count()*cpu_frac)
+        ncpu = max(1, int(nthreads/nworker))
+    else:
+        ncpu = os.environ["OMP_NUM_THREADS"]
+        if ncpu is None:
+            ncpu = 1
+        else:
+            ncpu = max(1, int(ncpu))
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        nthreads = ncpu * njobs
+        
     try:
         ###############################################################################
         # Filtering only images with bandwidth of 1.28 MHz or more and at 60s intervals
@@ -120,20 +158,24 @@ def main(
             imagelist = filter_images(imagelist, min_time_sep=60.0)
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
-            ncpu = max(1, int(psutil.cpu_count() * cpu_frac))
-            outimage_list = []
-            for image in imagelist:
-                outimage = make_mwa_overlay(
-                    image,
-                    plot_file_prefix=os.path.basename(image).split(".fits")[0]
-                    + "_euv_mwa_overlay",
-                    extensions=["png"],
-                    outdirs=[outdir],
-                    keep_euv_fits=True,
-                    ncpu=ncpu,
-                    verbose=False,
+            euv_maps = get_all_euv_maps(imagelist, workdir, wavelength=195, ncpu=nthreads)
+            images_f = client.scatter(imagelist)
+            maps_f = client.scatter(euv_maps)
+            futures = []
+            for i in range(len(images_f)):
+                futures.append(
+                    client.submit(
+                        make_mwa_overlay,
+                        images_f[i],
+                        maps_f[i],
+                        ncpu=ncpu,
+                        plot_file_prefix=imagelist[i].split(".fits")[0],
+                    )
                 )
-                outimage_list.append(outimage)
+            results = client.gather(futures)
+            outimage_list = []
+            for r in results:
+                outimage_list.append(r[0])
             if len(outimage_list) == 0:
                 print("No overlay is made.")
                 msg = 1
