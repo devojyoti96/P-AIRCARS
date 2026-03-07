@@ -1104,7 +1104,7 @@ def get_suvi_map(
                                 os.system(f"rm -rf {image}")
         return final_maps
     except Exception:
-        os.system("rm -rf *suvi*fits")
+        #os.system("rm -rf *suvi*fits")
         traceback.print_exc()
         return []
     finally:
