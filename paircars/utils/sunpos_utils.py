@@ -1,6 +1,7 @@
 import astropy.units as u
 import glob
 import os
+import numpy as np
 from astropy.time import Time
 from astropy.coordinates import (
     EarthLocation,
