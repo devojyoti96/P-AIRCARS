@@ -176,6 +176,7 @@ def main(
             outimage_list = []
             for r in results:
                 outimage_list.append(r[0])
+                os.system(f"mv {r[0]} {outdir}")
             if len(outimage_list) == 0:
                 print("No overlay is made.")
                 msg = 1
