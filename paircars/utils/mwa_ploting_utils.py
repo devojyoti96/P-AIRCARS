@@ -1062,8 +1062,8 @@ def get_suvi_map(
                 for file_name in list_url_directory(url, ext):
                     all_files.append(file_name)
                     file_base = os.path.basename(file_name)
-                    out_files.append(file_base)
                     start_times.append(file_base.split("_")[-3])
+                    out_files.append(f"{workdir}/{file_base}")
                 times_dt = [dt.strptime(t, "s%Y%m%dT%H%M%Sz") for t in start_times]
                 if obs_end_date=="" or obs_end_time=="":
                     start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
@@ -1092,7 +1092,8 @@ def get_suvi_map(
                 for outfile in out_files:
                     if os.path.exists(outfile):
                         filtered_outfiles.append(outfile)
-                             
+                print (filtered_outfiles)
+                
                 if len(filtered_outfiles) > 0:
                     for image in filtered_outfiles:
                         suvi_map = Map(image)
