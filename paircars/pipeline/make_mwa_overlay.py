@@ -162,12 +162,12 @@ def main(
         if len(imagelist) > 0:
             print(f"Total images to overlay: {len(imagelist)}")
             euv_maps = get_all_euv_maps(imagelist, workdir, wavelength=195, ncpu=nthreads)
-            images_f = client.scatter(imagelist)
-            maps_f = client.scatter(euv_maps)
+            images_f = dask_client.scatter(imagelist)
+            maps_f = dask_client.scatter(euv_maps)
             futures = []
             for i in range(len(images_f)):
                 futures.append(
-                    client.submit(
+                    dask_client.submit(
                         make_mwa_overlay,
                         images_f[i],
                         maps_f[i],
@@ -175,7 +175,7 @@ def main(
                         plot_file_prefix=imagelist[i].split(".fits")[0],
                     )
                 )
-            results = client.gather(futures)
+            results = dask_client.gather(futures)
             outimage_list = []
             for r in results:
                 outimage_list.append(r[0])
