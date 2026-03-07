@@ -393,6 +393,7 @@ def submit_local_master_flow(args, jobid):
         if log2term:
             print("Logging in terminal....")
         try:
+            all_output = []
             seen = set()
             with open(log_file, "a", buffering=1) as log:
                 process = subprocess.Popen(
@@ -403,6 +404,7 @@ def submit_local_master_flow(args, jobid):
                     bufsize=1,
                 )
                 for line in process.stdout:
+                    all_output.append(line)
                     if "task run" in line.lower() or "flow run" in line.lower():
                         if line not in seen:
                             seen.add(line)
@@ -415,7 +417,7 @@ def submit_local_master_flow(args, jobid):
             process.wait()
             exit_code = process.returncode
             if exit_code==1:
-                for line in process.stdout:
+                for line in all_output:
                     print (line)
         except Exception:
             traceback.print_exc()
