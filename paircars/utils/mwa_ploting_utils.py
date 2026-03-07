@@ -1151,7 +1151,7 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
             pass
         else:
             euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, end_date=end_obs_date, end_time=end_obs_time, aia_wavelength=wavelength, ncpu=8, keep_aia_fits=False)
-       return euv_maps 
+        return euv_maps 
         
         '''filtered_obstimes = []
         euv_maps = []
