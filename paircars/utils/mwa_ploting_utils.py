@@ -856,7 +856,7 @@ def plot_in_hpc(
     return output_image_list, cropped_map
 
 
-def get_aia_map(obs_date, obs_time, workdir, aia_wavelength=193, keep_aia_fits=False):
+def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavelength=193, ncpu=1, keep_aia_fits=False):
     """
     Get SDO AIA map
 
@@ -868,15 +868,21 @@ def get_aia_map(obs_date, obs_time, workdir, aia_wavelength=193, keep_aia_fits=F
         Observation time in hh:mm format
     workdir : str
         Work directory
+    end_date : str, optional
+        Observation end date in yyyy-mm-dd format
+    end_time : str, optional
+        Observation end time in hh:mm format
     aia_wavelength : float, optional
         Wavelength, options: 94, 131, 171, 193, 211, 304, 335 Å
+    ncpu : int, optional
+        Number of CPU to use for parallel download
     keep_aia_fits : bool, optional
         Keep AIA fits file or not
 
     Returns
     -------
-    sunpy.map
-        Sunpy AIAMap
+    list
+        List Sunpy AIAMap
     """
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     logging.getLogger("drms").setLevel(logging.ERROR)
@@ -890,9 +896,26 @@ def get_aia_map(obs_date, obs_time, workdir, aia_wavelength=193, keep_aia_fits=F
         pos = np.argmin(np.abs(aia_wavelength - aia_wavelengths))
         aia_wavelength = aia_wavelengths[pos]
     os.makedirs(workdir, exist_ok=True)
-    start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
-    t_start = start_time.strftime("%Y-%m-%dT%H:%M")
-    time = a.Time(t_start, t_start)
+    final_time_range = []
+    if end_date=="" and end_time=="":
+        start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+        t_start = start_time.strftime("%Y-%m-%dT%H:%M")
+        time = a.Time(t_start, t_start)
+        final_time_range.append(t_start)
+    else:
+        start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+        t_start = start_time.strftime("%Y-%m-%dT%H:%M")
+        end_time = dt.fromisoformat(f"{end_date}T{end_time}")
+        t_end = end_time.strftime("%Y-%m-%dT%H:%M")
+        end_mjdsec = timestamp_to_mjdsec(f"{end_time}:00", date_format=1)
+        start_mjdsec = timestamp_to_mjdsec(f"{start_time}:00", date_format=1)
+        if end_mjdsec>start_mjdsec:
+            time = a.Time(t_start, t_end)
+            final_time_range.append(t_start, t_end)
+        else:
+            time = a.Time(t_start, t_start)
+            final_time_range.append(t_start)
+            
     instrument = a.Instrument("aia")
     jsoc_wavelength = a.Wavelength(aia_wavelength * u.angstrom)
     results = Fido.search(
@@ -903,37 +926,41 @@ def get_aia_map(obs_date, obs_time, workdir, aia_wavelength=193, keep_aia_fits=F
     )
     num_files = results.file_num
     if num_files == 0:
-        return
+        return []
     else:
         downloaded_files = Fido.fetch(
-            results, path=workdir, progress=False, overwrite=False
+            results, path=workdir, progress=True, overwrite=False, max_conn = ncpu,
         )
+        final_maps =[]
         if len(downloaded_files) > 0:
-            final_image = downloaded_files[0]
-            aia_map = Map(final_image)
-            # Step 1: Pointing correction
-            try:
-                pointing_corrected_map = update_pointing(aia_map)
-            except:
-                pointing_corrected_map = aia_map
-            # Step 2: register (we are skipping PSF deconvolution)
-            registered_map = register(pointing_corrected_map)
-            # Step 3: instrument degradation correction
-            try:
-                corrected_map = correct_degradation(registered_map)
-            except:
-                corrected_map = registered_map
-            # Step 4: Normalize by exposure time
-            normalized_data = (
-                corrected_map.data / corrected_map.exposure_time.to(u.s).value
-            )
-            normalized_map = Map(normalized_data, corrected_map.meta)
-            if keep_aia_fits is False:
-                for image in downloaded_files:
-                    os.system(f"rm -rf {image}")
-            return normalized_map
+            if  len(final_time_range)==1:
+                downloaded_files = downloaded_files[:1]
+            for final_image in downloaded_files:      
+                aia_map = Map(final_image)
+                # Step 1: Pointing correction
+                try:
+                    pointing_corrected_map = update_pointing(aia_map)
+                except:
+                    pointing_corrected_map = aia_map
+                # Step 2: register (we are skipping PSF deconvolution)
+                registered_map = register(pointing_corrected_map)
+                # Step 3: instrument degradation correction
+                try:
+                    corrected_map = correct_degradation(registered_map)
+                except:
+                    corrected_map = registered_map
+                # Step 4: Normalize by exposure time
+                normalized_data = (
+                    corrected_map.data / corrected_map.exposure_time.to(u.s).value
+                )
+                normalized_map = Map(normalized_data, corrected_map.meta)
+                if keep_aia_fits is False:
+                    for image in downloaded_files:
+                        os.system(f"rm -rf {image}")
+                final_maps.append(normalized_map)
+            return final_maps
         else:
-            return
+            return []
 
 
 def get_suvi_map(
@@ -1111,8 +1138,22 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
             if obs_datetime not in obstimes:
                 obstimes.append(obs_datetime)
             all_obstimes.append(obs_datetime)
+        mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
+        start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
+        start_obs_date = start_time.split("T")[0]
+        start_obs_time = ":".join(start_time.split("T")[-1].split(":")[:2])
+        start_year = int(start_obs_date.split("-")[0])
+        end_time = mjdsec_to_timestamp(max(mjdsecs), str_format=0)[:-5]
+        end_obs_date = end_time.split("T")[0]
+        end_year = int(end_obs_date.split("-")[0])
+        end_obs_time = ":".join(end_time.split("T")[-1].split(":")[:2])
+        if start_year>=2019 and end_year>=2019:
+            pass
+        else:
+            euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, end_date=end_obs_date, end_time=end_obs_time, aia_wavelength=wavelength, ncpu=8, keep_aia_fits=False)
+       return euv_maps 
         
-        filtered_obstimes = []
+        '''filtered_obstimes = []
         euv_maps = []
         for obs_datetime in obstimes:   
             print(f"Downloading EUV map for: {obs_datetime}")
@@ -1152,7 +1193,7 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195):
             index = obstimes.index(final_t)
             euv_map = euv_maps[index]
             final_euv_maps.append(euv_map)
-        return final_euv_maps    
+        return final_euv_maps  '''  
     except Exception:
         traceback.print_exc()
         return []
