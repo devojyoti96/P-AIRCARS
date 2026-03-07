@@ -960,8 +960,10 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
                 normalized_map = Map(normalized_data, corrected_map.meta)
                 if keep_aia_fits is False:
                     for image in downloaded_files:
+                        print (image)
                         os.system(f"rm -rf {image}")
                 final_maps.append(normalized_map)
+                        
             return final_maps
         else:
             return []
