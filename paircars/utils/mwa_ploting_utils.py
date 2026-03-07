@@ -9,6 +9,7 @@ import requests
 import os
 import traceback
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -1378,7 +1379,8 @@ def make_mwa_overlay(
         Plot file names
     """
     mwa_image = mwa_image.rstrip("/")
-    print(f"Making overlay for image: {os.path.basename(mwa_image)}")
+    if verbose:
+        print(f"Making overlay for image: {os.path.basename(mwa_image)}")
     mwamap = get_mwamap(mwa_image)
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)

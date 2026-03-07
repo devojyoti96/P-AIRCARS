@@ -274,8 +274,8 @@ def get_local_dask_cluster(
             n_worker = min(n_worker, max_worker)
             n_worker = max(2, n_worker)
 
-        mem_limit = round((usable_mem / n_worker)/spill_frac, 2)
-        n_worker = max(1,int(usable_mem/mem_limit))
+        mem_limit = round((usable_mem / n_worker) / spill_frac, 2)
+        n_worker = max(1, int(usable_mem / mem_limit))
         ncpu = max(1, int(usable_cpu / n_worker))
 
         cluster = LocalCluster(
