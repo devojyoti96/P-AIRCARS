@@ -907,8 +907,8 @@ def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavel
         t_start = start_time.strftime("%Y-%m-%dT%H:%M")
         end_time = dt.fromisoformat(f"{end_date}T{end_time}")
         t_end = end_time.strftime("%Y-%m-%dT%H:%M")
-        end_mjdsec = timestamp_to_mjdsec(f"{end_time}:00", date_format=1)
-        start_mjdsec = timestamp_to_mjdsec(f"{start_time}:00", date_format=1)
+        end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=1)
+        start_mjdsec = timestamp_to_mjdsec(f"{start_time}", date_format=1)
         if end_mjdsec>start_mjdsec:
             time = a.Time(t_start, t_end)
             final_time_range.append(t_start, t_end)
