@@ -237,11 +237,13 @@ def cal_solar_phaseshift(imagename, sigma=10):
     y_cen = result.dec.deg
     ra = float(x_cen)
     dec = float(y_cen)
+    print (f"Aparent RA DEC: {ra} {dec}")
+    print (f"True RA, DEC: {sun_radeg}, {sun_decdeg}")
     if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
         msg = False
     else:
         msg = True
-    return ra, dec, msg
+    return sun_radeg, sun_decdeg, msg
 
 
 def shift_solarcenter(imagename, sigma=10, overwrite=True):
@@ -262,19 +264,19 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
     int
         Success code 0: Successfully shifted, 1: Shifting is not required, 2: Error in shifting
     """
-    ra, dec, shiftsun = cal_solar_phaseshift(imagename, sigma=sigma)
+    sunra, sundec, shiftsun = cal_solar_phaseshift(imagename, sigma=sigma)
     try:
         if shiftsun:
             w = WCS(imagename).celestial
-            pix = w.all_world2pix(np.array([[ra, dec]]), 0)
+            pix = w.all_world2pix(np.array([[sunra, sundec]]), 0)
             ra_pix =int(np.round(pix[0][0]))
             dec_pix = int(np.round(pix[0][1]))
             data = fits.getdata(imagename)
             header = fits.getheader(imagename)
             header["CRPIX1"] = float(ra_pix+1)
             header["CRPIX2"] = float(dec_pix+1)
-            header["CRVAL1"] = float(ra)
-            header["CRVAL2"] = float(dec)
+            header["CRVAL1"] = float(sunra)
+            header["CRVAL2"] = float(sundec)
             if overwrite:
                 fits.writeto(imagename, data=data, header=header, overwrite=True)
             else:
