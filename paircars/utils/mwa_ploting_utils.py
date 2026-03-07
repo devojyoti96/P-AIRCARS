@@ -856,7 +856,7 @@ def plot_in_hpc(
     return output_image_list, cropped_map
 
 
-def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavelength=193, ncpu=1, keep_aia_fits=False):
+def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", aia_wavelength=193, ncpu=1, keep_aia_fits=False):
     """
     Get SDO AIA map
 
@@ -868,9 +868,9 @@ def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavel
         Observation time in hh:mm format
     workdir : str
         Work directory
-    end_date : str, optional
+    obs_end_date : str, optional
         Observation end date in yyyy-mm-dd format
-    end_time : str, optional
+    obs_end_time : str, optional
         Observation end time in hh:mm format
     aia_wavelength : float, optional
         Wavelength, options: 94, 131, 171, 193, 211, 304, 335 Å
@@ -897,7 +897,7 @@ def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavel
         aia_wavelength = aia_wavelengths[pos]
     os.makedirs(workdir, exist_ok=True)
     final_time_range = []
-    if end_date=="" and end_time=="":
+    if obs_end_date=="" and obs_end_time=="":
         start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
         t_start = start_time.strftime("%Y-%m-%dT%H:%M")
         time = a.Time(t_start, t_start)
@@ -905,7 +905,7 @@ def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavel
     else:
         start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
         t_start = start_time.strftime("%Y-%m-%dT%H:%M")
-        end_time = dt.fromisoformat(f"{end_date}T{end_time}")
+        end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
         t_end = end_time.strftime("%Y-%m-%dT%H:%M")
         end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
         start_mjdsec = timestamp_to_mjdsec(f"{start_time}", date_format=2)
@@ -928,8 +928,12 @@ def get_aia_map(obs_date, obs_time, workdir, end_date="", end_time="", aia_wavel
     if num_files == 0:
         return []
     else:
+        if obs_end_date=="" and obs_end_time=="":
+            print(f"Downloading AIA images for: {start_time}.")
+        else:
+            print(f"Downloading AIA images for timerange: {start_time}~{end_time}.")
         downloaded_files = Fido.fetch(
-            results, path=workdir, progress=True, overwrite=False, max_conn = ncpu,
+            results, path=workdir, progress=False, overwrite=False, max_conn = ncpu,
         )
         final_maps =[]
         if len(downloaded_files) > 0:
