@@ -1186,7 +1186,7 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
             if obs_datetime not in obstimes:
                 obstimes.append(obs_datetime)
             all_obstimes.append(obs_datetime)
-        obstimes = ["2024-06:10T09:00:00","2024-06-10T09:10:00"]
+        obstimes = ["2024-06-10T09:00:00","2024-06-10T09:10:00"]
         all_obstimes = obstimes
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
         start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
