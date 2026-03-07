@@ -230,6 +230,8 @@ def cal_solar_phaseshift(imagename, sigma=10):
     I = data[0, 0, ...].copy()
     I[I >= (sigma * rms)] = 1
     I[I < (sigma * rms)] = 0
+    plt.imshow(I)
+    plt.show()
     cx, cy = center_of_mass(I)
     w = WCS(imagename).celestial
     result = w.array_index_to_world(int(cy), int(cx))
