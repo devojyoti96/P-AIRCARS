@@ -18,6 +18,11 @@ from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.image_utils import filter_images
+from paircars.utils.proc_manage_utils import (
+    scale_worker_and_wait,
+    get_local_dask_cluster,
+    get_scheduler_name,
+)
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -32,6 +37,7 @@ def main(
     logfile=None,
     jobid=0,
     start_remote_log=False,
+    dask_client = None,
 ):
     """
     Run the EUV overlays
@@ -54,6 +60,8 @@ def main(
         Numeric job ID used for PID tracking. Default is 0.
     start_remote_log : bool, optional
         Whether to enable remote logging using credentials in the workdir. Default is False.
+    dask_client : dask. client
+        Dask client
 
     Returns
     -------
