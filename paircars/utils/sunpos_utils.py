@@ -243,7 +243,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         msg = False
     else:
         msg = True
-    return sun_radeg, sun_decdeg, msg
+    return ras, dec, msg
 
 
 def shift_solarcenter(imagename, sigma=10, overwrite=True):
@@ -277,7 +277,7 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
         header["CRPIX2"] = float(dec_pix+1)
         header["CRVAL1"] = float(sunra)
         header["CRVAL2"] = float(sundec)
-        print (header)
+        print (header["CRPIX1"],ra_pix+_1)
         if overwrite:
             fits.writeto(imagename, data=data, header=header, overwrite=True)
         else:
