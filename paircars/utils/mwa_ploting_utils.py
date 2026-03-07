@@ -1086,7 +1086,7 @@ def get_suvi_map(
                     out_file = out_files[i]
                     download_url = download_urls[i] 
                     if os.path.exists(out_file) is False:
-                        dl.enqueue_file(download_url, path=out_file)
+                        dl.enqueue_file(download_url, path=workdir)
                 downloaded_files = dl.download()
                 filtered_outfiles = []
                 for outfile in out_files:
