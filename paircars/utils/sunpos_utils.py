@@ -210,7 +210,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
             Whther phase shift required or not. Not required if less than image pixel size
     """
     from scipy.ndimage import center_of_mass
-
+    import matplotlib.pyplot as plt
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
     obstime = header["DATE-OBS"]
