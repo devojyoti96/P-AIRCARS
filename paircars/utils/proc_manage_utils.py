@@ -394,7 +394,7 @@ def submit_local_master_flow(args, jobid):
         if log2term:
             print("Logging in terminal....")
         try:
-            last_lines = deque(maxlen=2)
+            last_lines = deque(maxlen=50)
             seen = set()
             with open(log_file, "a", buffering=1) as log:
                 process = subprocess.Popen(
