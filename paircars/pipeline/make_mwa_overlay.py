@@ -171,7 +171,6 @@ def main(
             map_lookup = dict(zip(unique_maps, map_futures))
             futures = []
             for img, euv_map in zip(imagelist, euv_maps):
-                print(img,map_lookup[euv_map].date)
                 futures.append(
                     dask_client.submit(
                         make_mwa_overlay,
