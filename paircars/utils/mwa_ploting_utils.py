@@ -896,77 +896,86 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
         pos = np.argmin(np.abs(aia_wavelength - aia_wavelengths))
         aia_wavelength = aia_wavelengths[pos]
     os.makedirs(workdir, exist_ok=True)
-    final_time_range = []
-    if obs_end_date=="" or obs_end_time=="":
-        start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
-        t_start = start_time.strftime("%Y-%m-%dT%H:%M")
-        time = a.Time(t_start, t_start)
-        final_time_range.append(t_start)
-    else:
-        start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
-        t_start = start_time.strftime("%Y-%m-%dT%H:%M")
-        end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
-        t_end = end_time.strftime("%Y-%m-%dT%H:%M")
-        start_mjdsec = timestamp_to_mjdsec(f"{start_time}", date_format=2)
-        end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
-        if end_mjdsec>start_mjdsec:
-            time = a.Time(t_start, t_end)
-            final_time_range.append(t_start, t_end)
-        else:
+    cwd = os.getcwd()
+    os.chdir(workdir)
+    try:
+        final_time_range = []
+        if obs_end_date=="" or obs_end_time=="":
+            start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+            t_start = start_time.strftime("%Y-%m-%dT%H:%M")
             time = a.Time(t_start, t_start)
             final_time_range.append(t_start)
-            
-    instrument = a.Instrument("aia")
-    jsoc_wavelength = a.Wavelength(aia_wavelength * u.angstrom)
-    results = Fido.search(
-        time,
-        a.jsoc.Series("aia.lev1_euv_12s"),
-        a.jsoc.Notify("paircarsnotification@gmail.com"),
-        jsoc_wavelength,
-    )
-    num_files = results.file_num
-    if num_files == 0:
-        return []
-    else:
-        if obs_end_date=="" or obs_end_time=="":
-            print(f"Downloading AIA images for: {start_time}.")
         else:
-            print(f"Downloading AIA images for timerange: {start_time}~{end_time}.")
-        downloaded_files = Fido.fetch(
-            results, path=workdir, progress=False, overwrite=False, max_conn = ncpu,
+            start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+            t_start = start_time.strftime("%Y-%m-%dT%H:%M")
+            end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
+            t_end = end_time.strftime("%Y-%m-%dT%H:%M")
+            start_mjdsec = timestamp_to_mjdsec(f"{start_time}", date_format=2)
+            end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
+            if end_mjdsec>start_mjdsec:
+                time = a.Time(t_start, t_end)
+                final_time_range.append(t_start, t_end)
+            else:
+                time = a.Time(t_start, t_start)
+                final_time_range.append(t_start)
+                
+        instrument = a.Instrument("aia")
+        jsoc_wavelength = a.Wavelength(aia_wavelength * u.angstrom)
+        results = Fido.search(
+            time,
+            a.jsoc.Series("aia.lev1_euv_12s"),
+            a.jsoc.Notify("paircarsnotification@gmail.com"),
+            jsoc_wavelength,
         )
-        final_maps =[]
-        if len(downloaded_files) > 0:
-            if  len(final_time_range)==1:
-                downloaded_files = downloaded_files[:1]
-            for final_image in downloaded_files:      
-                aia_map = Map(final_image)
-                # Step 1: Pointing correction
-                try:
-                    pointing_corrected_map = update_pointing(aia_map)
-                except:
-                    pointing_corrected_map = aia_map
-                # Step 2: register (we are skipping PSF deconvolution)
-                registered_map = register(pointing_corrected_map)
-                # Step 3: instrument degradation correction
-                try:
-                    corrected_map = correct_degradation(registered_map)
-                except:
-                    corrected_map = registered_map
-                # Step 4: Normalize by exposure time
-                normalized_data = (
-                    corrected_map.data / corrected_map.exposure_time.to(u.s).value
-                )
-                normalized_map = Map(normalized_data, corrected_map.meta)
-                if keep_aia_fits is False:
-                    for image in downloaded_files:
-                        basename = image.split(".image")[0]
-                        os.system(f"rm -rf {basename}*")
-                final_maps.append(normalized_map)
-                        
-            return final_maps
-        else:
+        num_files = results.file_num
+        if num_files == 0:
             return []
+        else:
+            if obs_end_date=="" or obs_end_time=="":
+                print(f"Downloading AIA images for: {start_time}.")
+            else:
+                print(f"Downloading AIA images for timerange: {start_time}~{end_time}.")
+            downloaded_files = Fido.fetch(
+                results, path=workdir, progress=False, overwrite=False, max_conn = ncpu,
+            )
+            final_maps =[]
+            if len(downloaded_files) > 0:
+                if  len(final_time_range)==1:
+                    downloaded_files = downloaded_files[:1]
+                for final_image in downloaded_files:      
+                    aia_map = Map(final_image)
+                    # Step 1: Pointing correction
+                    try:
+                        pointing_corrected_map = update_pointing(aia_map)
+                    except:
+                        pointing_corrected_map = aia_map
+                    # Step 2: register (we are skipping PSF deconvolution)
+                    registered_map = register(pointing_corrected_map)
+                    # Step 3: instrument degradation correction
+                    try:
+                        corrected_map = correct_degradation(registered_map)
+                    except:
+                        corrected_map = registered_map
+                    # Step 4: Normalize by exposure time
+                    normalized_data = (
+                        corrected_map.data / corrected_map.exposure_time.to(u.s).value
+                    )
+                    normalized_map = Map(normalized_data, corrected_map.meta)
+                    if keep_aia_fits is False:
+                        for image in downloaded_files:
+                            basename = image.split(".image")[0]
+                            os.system(f"rm -rf {basename}*")
+                    final_maps.append(normalized_map)
+                            
+                return final_maps
+            else:
+                return []
+    except Exception:
+        os.system(f"rm -rf *aia*fits")
+        traceback.print_exc()
+        return []
+    finally:
+        os.chdir(cwd)
 
 
 def get_suvi_map(
@@ -1021,76 +1030,84 @@ def get_suvi_map(
         pos = np.argmin(np.abs(suvi_wavelength - suvi_wavelengths))
         suvi_wavelength = suvi_wavelengths[pos]
     os.makedirs(workdir, exist_ok=True)
+    cwd = os.getcwd()
+    os.chdir(workdir)
+    try:
+        baseurl1 = "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes"
+        baseurl2 = "l2/data"
+        ext = ".fits"
 
-    baseurl1 = "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes"
-    baseurl2 = "l2/data"
-    ext = ".fits"
-
-    spacecraft_numbers = [16, 18]
-    wvln_path = dict(
-        {
-            94: "suvi-l2-ci094",
-            131: "suvi-l2-ci131",
-            171: "suvi-l2-ci171",
-            195: "suvi-l2-ci195",
-            284: "suvi-l2-ci284",
-            304: "suvi-l2-ci304",
-        }
-    )
-    date_str = "/".join(obs_date.split("-"))
-    all_files = []
-    start_times = []
-    out_files = []
-    final_maps = []
-    for spacecraft in spacecraft_numbers:
-        url = f"{baseurl1}{spacecraft}/{baseurl2}/{wvln_path[suvi_wavelength]}/{date_str}/"
-        request = requests.get(url)
-        if not request.status_code == 200:
-            pass
-        else:
-            for file_name in list_url_directory(url, ext):
-                all_files.append(file_name)
-                file_base = os.path.basename(file_name)
-                out_files.append(file_base)
-                start_times.append(file_base.split("_")[-3])
-            times_dt = [dt.strptime(t, "s%Y%m%dT%H%M%Sz") for t in start_times]
-            if obs_start_date=="" or obs_end_time=="":
-                start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
-                closest_time = min(times_dt, key=lambda t: abs(t - start_time))
-                pos = times_dt.index(closest_time)
+        spacecraft_numbers = [16, 18]
+        wvln_path = dict(
+            {
+                94: "suvi-l2-ci094",
+                131: "suvi-l2-ci131",
+                171: "suvi-l2-ci171",
+                195: "suvi-l2-ci195",
+                284: "suvi-l2-ci284",
+                304: "suvi-l2-ci304",
+            }
+        )
+        date_str = "/".join(obs_date.split("-"))
+        all_files = []
+        start_times = []
+        out_files = []
+        final_maps = []
+        for spacecraft in spacecraft_numbers:
+            url = f"{baseurl1}{spacecraft}/{baseurl2}/{wvln_path[suvi_wavelength]}/{date_str}/"
+            request = requests.get(url)
+            if not request.status_code == 200:
+                pass
             else:
-                start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
-                end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
-                start_mjdsec = timestamp_to_mjdsec(f"{start_time.split('.')[0]}", date_format=1)
-                end_mjdsec = timestamp_to_mjdsec(f"{end_time.split('.')[0]}", date_format=1)
-                if end_mjdsec>start_mjdsec:
-                    pos = [i for i, t in enumerate(times_dt) if start_time <= t <= end_time]
-                else:
+                for file_name in list_url_directory(url, ext):
+                    all_files.append(file_name)
+                    file_base = os.path.basename(file_name)
+                    out_files.append(file_base)
+                    start_times.append(file_base.split("_")[-3])
+                times_dt = [dt.strptime(t, "s%Y%m%dT%H%M%Sz") for t in start_times]
+                if obs_end_date=="" or obs_end_time=="":
+                    start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
                     closest_time = min(times_dt, key=lambda t: abs(t - start_time))
-                    pos = times_dt.index(closest_time) 
-            download_urls = all_files[pos]
-            out_files = out_files[pos]
-            dl = Downloader(max_conn=ncpu, overwrite=False)
-            for i in range(len(out_files)):
-                out_file = out_files[i]
-                download_url = download_urls[i] 
-                if os.path.exists(out_file) is False:
-                    dl.enqueue_file(download_url, path=out_file)
-            downloaded_files = dl.download()
-            filtered_outfiles = []
-            for outfile in out_files:
-                if os.path.exists(outfile):
-                    filtered_outfiles.append(outfile)
-                         
-            if len(filtered_outfiles) > 0:
-                for image in filtered_outfiles:
-                    suvi_map = Map(final_image)
-                    final_maps.append(suvi_map)
-                    if keep_suvi_fits is False:
-                        for image in out_files:
-                            print(image)
-                            os.system(f"rm -rf {image}")
-    return final_maps
+                    pos = times_dt.index(closest_time)
+                else:
+                    start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
+                    end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
+                    start_mjdsec = timestamp_to_mjdsec(f"{start_time.split('.')[0]}", date_format=1)
+                    end_mjdsec = timestamp_to_mjdsec(f"{end_time.split('.')[0]}", date_format=1)
+                    if end_mjdsec>start_mjdsec:
+                        pos = [i for i, t in enumerate(times_dt) if start_time <= t <= end_time]
+                    else:
+                        closest_time = min(times_dt, key=lambda t: abs(t - start_time))
+                        pos = times_dt.index(closest_time) 
+                download_urls = all_files[pos]
+                out_files = out_files[pos]
+                dl = Downloader(max_conn=ncpu, overwrite=False)
+                for i in range(len(out_files)):
+                    out_file = out_files[i]
+                    download_url = download_urls[i] 
+                    if os.path.exists(out_file) is False:
+                        dl.enqueue_file(download_url, path=out_file)
+                downloaded_files = dl.download()
+                filtered_outfiles = []
+                for outfile in out_files:
+                    if os.path.exists(outfile):
+                        filtered_outfiles.append(outfile)
+                             
+                if len(filtered_outfiles) > 0:
+                    for image in filtered_outfiles:
+                        suvi_map = Map(final_image)
+                        final_maps.append(suvi_map)
+                        if keep_suvi_fits is False:
+                            for image in out_files:
+                                print(image)
+                                os.system(f"rm -rf {image}")
+        return final_maps
+    except Exception:
+        os.system("rm -rf *suvi*fits")
+        traceback.print_exc()
+        return []
+    finally:
+        os.chdir(cwd)
 
 
 def enhance_offlimb(sunpy_map, do_sharpen=True):
