@@ -173,8 +173,8 @@ def main(
                     dask_client.submit(
                         make_mwa_overlay,
                         img,
-                        workdir,
                         map_lookup[euv_map],
+                        workdir,
                         plot_file_prefix=os.path.basename(img).split(".fits")[0],
                     )
                 )
