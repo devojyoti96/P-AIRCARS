@@ -9,7 +9,6 @@ import requests
 import os
 import traceback
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -30,6 +29,7 @@ from matplotlib.colors import ListedColormap
 from matplotlib import cm
 from sunpy.map import make_fitswcs_header
 from collections import namedtuple
+from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
 from .basic_utils import (
     mjdsec_to_timestamp,
     timestamp_to_mjdsec,
@@ -50,6 +50,7 @@ from .udocker_utils import (
     check_udocker_container,
     initialize_wsclean_container,
 )
+from .calibration import get_quartical_soltype
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 logging.getLogger("sunpy").setLevel(logging.ERROR)
@@ -217,6 +218,140 @@ def plot_ms_diagnostics(
         os.system(f"rm -rf log-shadems.txt")
 
 
+def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
+    """
+    Plot quartical gaintables
+    
+    Parameters
+    ----------
+    caltables : list
+        Quartical caltable list
+    output_prefix : str
+        Output files names prefix
+    ncols : int, optional
+        Number of columns in the plot
+    nrows : int, optional
+        Number of rows in the plot
+    
+    Returns
+    -------
+    list
+        Plot file names
+    """ 
+    all_freqs = []
+    all_gains = []
+    for caltable in caltables:
+        caltable = caltable.rstrip("/")
+        soltypes = get_quartical_soltype(caltable)
+        if len(soltypes) == 0:
+            print("No solution is present. Not performing interpolation.")
+            pass
+        else:
+            soltype = soltypes[0]
+            gains = xds_from_zarr(f"{caltable}::{soltype}")
+            freqs = gains[0].gain_freq.to_numpy()
+            gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
+            gain_flag = gains[0].gain_flags.to_numpy()
+            gain_flag = gains[0].gain_flags.values.astype(bool)
+            gain_data[gain_flag, :] = np.nan
+            all_freqs.append(freqs)
+            all_gains.append(gain_data)
+            
+    all_freqs = np.concatenate(all_freqs, axis=0)
+    all_gains = np.concatenate(all_gains, axis=1)
+    all_freqs = all_freqs.flatten()
+    pos = np.argsort(all_freqs)
+    all_freqs_sorted = all_freqs[pos]
+    all_gains_sorted = all_gains[:, pos, ...]
+    plots_per_fig = ncols * nrows
+    max_ant = all_gains.shape[2]
+    all_ants = np.arange(0,max_ant)
+    plots_per_fig = min(max_ant, ncols * nrows)
+    if plots_per_fig < ncols * nrows:
+        ncols = nrows = int(np.sqrt(plots_per_fig))
+    all_gains_sorted = np.nanmean(all_gains_sorted,axis=0)[...,0,:]
+    output_pdfs = []
+    copolar_gains = np.take(all_gains_sorted, [0, 3], axis=-1)
+    crosspolar_gains = np.take(all_gains_sorted, [1, 2], axis=-1)
+    
+    for p in range(2):
+        if p==0:
+            all_gains_sub = copolar_gains
+            polar = "Copolar"
+            pols = [r"$G_\mathrm{X}$",r"$G_\mathrm{Y}$"]
+        else:
+            all_gains_sub = crosspolar_gains
+            polar = "Crosspolar"
+            pols = [r"$D_\mathrm{X}$",r"$D_\mathrm{Y}$"]
+        for quantity in ["amp", "phase"]:
+            out_files = []
+            for idx in range(0, max_ant, plots_per_fig):
+                fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
+                if quantity == "amp":
+                    fig.suptitle(f"Frequency vs Gain Amplitude, {polar}", fontsize=14)
+                    x = np.abs(np.array(all_gains_sub))
+                    miny = np.nanmin(x)
+                    maxy = np.nanmax(x)
+                    pad = 0.1 * (maxy - miny)
+                else:
+                    fig.suptitle(f"Frequency vs Gain Phase, {polar}", fontsize=14)
+                    x = np.angle(np.array(all_gains_sub), deg=True)
+                    miny = np.nanmin(x)
+                    maxy = np.nanmax(x)
+                    pad = 0.1 * (maxy - miny)
+                axes = axes.flatten()
+                for i, ant in enumerate(all_ants[idx : idx + plots_per_fig]):
+                    ax = axes[i]
+                    for j in range(2):  # loop over polarizations
+                        if j == 0:
+                            c = "r"
+                        else:
+                            c = "k"
+                        label = f"{pols[j]}"
+                        if quantity == "amp":
+                            ax.scatter(
+                                all_freqs_sorted,
+                                np.abs(all_gains_sub[:, ant, j]),
+                                label=label,
+                                color=c,
+                                s=14,
+                            )
+                            ax.set_ylabel("Gain Amplitude", fontsize=14)
+                        else:
+                            ax.scatter(
+                                all_freqs_sorted,
+                                np.angle(all_gains_sub[:, ant, j], deg=True),
+                                label=label,
+                                color=c,
+                                s=14,
+                            )
+                            ax.set_ylabel("Gain Phase (degree)", fontsize=14)
+                    ax.set_title(
+                        f"Antenna {ant+1}", fontsize=14
+                    )
+                    ax.set_xlabel("Frequency (MHz)", fontsize=14)
+                    ax.legend(fontsize=10, ncol=2, loc="upper right")
+                    ax.set_ylim(miny - pad, maxy + pad)
+                for j in range(i + 1, plots_per_fig):
+                    fig.delaxes(axes[j])
+                plt.tight_layout(rect=[0, 0, 1, 0.99])
+                savefile = f"{output_prefix}_gain_{quantity}_batch_{idx // plots_per_fig + 1}.png"
+                plt.savefig(savefile)
+                plt.close(fig)
+                out_files.append(savefile)
+            images = []
+            output_pdf = f"{output_prefix}_freqs_vs_{quantity}_{polar.lower()}.pdf"
+            if os.path.exists(output_pdf):
+                os.system(f"rm -rf {output_pdf}")
+            for image in out_files:
+                images.append(Image.open(image).convert("RGB"))
+            images[0].save(output_pdf, save_all=True, append_images=images[1:])
+            for outpng in out_files:
+                os.system(f"rm -rf {outpng}")
+            output_pdfs.append(output_pdf)
+    return output_pdfs
+    
+    
 def plot_G_jones_time_vs_gain(
     all_times,
     all_gains,
