@@ -69,7 +69,7 @@ def cli():
     advanced_cal.add_argument(
         "--solint",
         type=str,
-        default="30s",
+        default="60s",
         help="Solution interval for calibration (e.g. 'int', '10s', '5min', 'inf')",
     )
     advanced_cal.add_argument(
@@ -236,12 +236,6 @@ def cli():
         help="Disable moving phaseceneter to solar center",
     )
     advanced.add_argument(
-        "--no_selfcal_split",
-        action="store_false",
-        dest="do_selfcal_split",
-        help="Disable split for self-calibration",
-    )
-    advanced.add_argument(
         "--no_selfcal",
         action="store_false",
         dest="do_selfcal",
@@ -258,12 +252,6 @@ def cli():
         action="store_false",
         dest="solar_selfcal",
         help="Disable solar-specific self-calibration parameters",
-    )
-    advanced.add_argument(
-        "--no_target_split",
-        action="store_false",
-        dest="do_target_split",
-        help="Disable target data split",
     )
     advanced.add_argument(
         "--no_applycal",
@@ -312,8 +300,9 @@ def cli():
         help="Keep backup of intermediate steps",
     )
     advanced_resource.add_argument(
-        "--keep_calibrated_ms",
-        action="store_true",
+        "--no_calibrated_ms",
+        action="store_false",
+        dest="keep_calibrated_ms",
         help="Keep calibrated measurement sets or not",
     )
     advanced_resource.add_argument(
