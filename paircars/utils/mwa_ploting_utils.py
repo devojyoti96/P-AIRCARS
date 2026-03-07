@@ -1072,8 +1072,8 @@ def get_suvi_map(
                 else:
                     start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
                     end_time = dt.fromisoformat(f"{obs_end_date}T{obs_end_time}")
-                    start_mjdsec = timestamp_to_mjdsec(f"{obs_date}T{obs_time}:00", date_format=1)
-                    end_mjdsec = timestamp_to_mjdsec(f"{obs_end_date}T{obs_end_time}:00", date_format=1)
+                    start_mjdsec = timestamp_to_mjdsec(f"{obs_date}T{obs_time}:00.0", date_format=1)
+                    end_mjdsec = timestamp_to_mjdsec(f"{obs_end_date}T{obs_end_time}:00.0", date_format=1)
                     if end_mjdsec>start_mjdsec:
                         pos = [i for i, t in enumerate(times_dt) if start_time <= t <= end_time]
                     else:
