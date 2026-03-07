@@ -33,6 +33,7 @@ from paircars.utils.calibration import (
     calc_time_smearing_timewidth,
     max_time_solar_smearing,
     interpolate_bpass,
+    interpolate_quartical,
 )
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup, get_chans_flag
@@ -46,7 +47,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_ms_size, check_datacolumn_valid
-from paircars.utils.mwa_ploting_utils import plot_caltable_diagnostics
+from paircars.utils.mwa_ploting_utils import plot_caltable_diagnostics, plot_quartical_tables
 from paircars.utils.mwa_utils import (
     get_ncoarse,
     get_MWA_coarse_chan,
