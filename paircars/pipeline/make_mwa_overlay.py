@@ -142,7 +142,6 @@ def main(
             dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
         nthreads = int(psutil.cpu_count() * cpu_frac)
-        ncpu = max(1, int(nthreads / nworker))
     else:
         ncpu = os.environ["OMP_NUM_THREADS"]
         if ncpu is None:
@@ -176,7 +175,6 @@ def main(
                         img,
                         workdir,
                         map_lookup[euv_map],
-                        ncpu=2,
                         plot_file_prefix=os.path.basename(img).split(".fits")[0],
                     )
                 )

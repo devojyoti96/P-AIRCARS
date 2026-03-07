@@ -1338,7 +1338,6 @@ def make_mwa_overlay(
     ylim=[-2500, 2500],
     extensions=["png"],
     outdirs=[],
-    ncpu=1,
     showgui=False,
     verbose=False,
 ):
@@ -1373,8 +1372,6 @@ def make_mwa_overlay(
         Image file extensions
     outdirs : list, optional
         Output directories for each extensions
-    ncpu : int, optional
-        Number of CPUs to use
     showgui : bool, optional
         Show GUI
     verbose: bool, optinal
@@ -1385,8 +1382,6 @@ def make_mwa_overlay(
     list
         Plot file names
     """
-    ncpu = max(1, ncpu)
-
     mwa_image = mwa_image.rstrip("/")
 
     print(f"Making overlay for image: {os.path.basename(mwa_image)}")
