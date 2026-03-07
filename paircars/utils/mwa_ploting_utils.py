@@ -1261,12 +1261,12 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
         mwa_fits_images = [mwa_fits_images]
     try:
         obstimes = []
-        all_obstimes = []
+        all_obstimes_mjdsecs = []
         for mwa_image in mwa_fits_images:
             obs_datetime = fits.getheader(mwa_image)["DATE-OBS"]
             if obs_datetime not in obstimes:
                 obstimes.append(obs_datetime)
-            all_obstimes.append(obs_datetime)
+            all_obstimes_mjdsecs.append(timestamp_to_mjdsec(obs_datetime, date_format=1))
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
         start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
@@ -1298,7 +1298,13 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 ncpu=ncpu,
                 keep_aia_fits=False,
             )
-        return euv_maps
+        map_obstimes = [m.date.value.split(".")[0] for m in euv_maps]
+        map_mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in map_obstimes]
+        final_maps = []
+        for fits_time in all_obstimes_mjdsecs:
+            pos = np.argmin(np.abs(map_mjdsecs-fits_time))
+            final_maps.append(euv_maps[pos])   
+        return final_maps
     except Exception:
         traceback.print_exc()
         return []
@@ -1320,7 +1326,6 @@ def make_mwa_overlay(
     extensions=["png"],
     outdirs=[],
     ncpu=1,
-    keep_euv_fits=False,
     showgui=False,
     verbose=False,
 ):
@@ -1355,8 +1360,6 @@ def make_mwa_overlay(
         Output directories for each extensions
     ncpu : int, optional
         Number of CPUs to use
-    keep_euv_fits : bool, optional
-        Keep EUV fits file
     showgui : bool, optional
         Show GUI
     verbose: bool, optinal
