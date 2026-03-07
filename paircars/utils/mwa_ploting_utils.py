@@ -899,6 +899,7 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
     cwd = os.getcwd()
     os.chdir(workdir)
     try:
+        print("Downloading AIA images....")
         final_time_range = []
         if obs_end_date=="" or obs_end_time=="":
             start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
@@ -931,10 +932,6 @@ def get_aia_map(obs_date, obs_time, workdir, obs_end_date="", obs_end_time="", a
         if num_files == 0:
             return []
         else:
-            if obs_end_date=="" or obs_end_time=="":
-                print(f"Downloading AIA images for: {start_time}.")
-            else:
-                print(f"Downloading AIA images for timerange: {start_time}~{end_time}.")
             downloaded_files = Fido.fetch(
                 results, path=workdir, progress=False, overwrite=False, max_conn = ncpu,
             )
@@ -1033,6 +1030,7 @@ def get_suvi_map(
     cwd = os.getcwd()
     os.chdir(workdir)
     try:
+        print("Downloading SUVI images...")
         baseurl1 = "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes"
         baseurl2 = "l2/data"
         ext = ".fits"
@@ -1082,7 +1080,7 @@ def get_suvi_map(
                 if len(pos)>0:
                     download_urls = [all_files[p] for p in pos]
                     out_files = [out_files[p] for p in pos]
-                    dl = Downloader(max_conn=ncpu, overwrite=False)
+                    dl = Downloader(max_conn=ncpu, progress=False, overwrite=False)
                     for i in range(len(out_files)):
                         out_file = out_files[i]
                         download_url = download_urls[i] 
@@ -1188,6 +1186,8 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
             if obs_datetime not in obstimes:
                 obstimes.append(obs_datetime)
             all_obstimes.append(obs_datetime)
+        obstimes = ["2024-06:10T09:00:00","2024-06-10T09:10:00"]
+        all_obstimes = obstimes
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
         start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
@@ -1198,7 +1198,7 @@ def get_all_euv_maps(mwa_fits_images,workdir,wavelength=195, ncpu=1):
         end_year = int(obs_end_date.split("-")[0])
         obs_end_time = ":".join(end_time.split("T")[-1].split(":")[:2])
         if start_year>=2019 and end_year>=2019:
-            pass
+            euv_maps = get_suvi_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, suvi_wavelength=wavelength, ncpu=ncpu, keep_suvi_fits=False)
         else:
             euv_maps = get_aia_map(start_obs_date, start_obs_time, workdir, obs_end_date=obs_end_date, obs_end_time=obs_end_time, aia_wavelength=wavelength, ncpu=ncpu, keep_aia_fits=False)
         return euv_maps   
