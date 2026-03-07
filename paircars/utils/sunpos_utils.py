@@ -243,7 +243,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         msg = False
     else:
         msg = True
-    return ras, dec, msg
+    return ra, dec, msg
 
 
 def shift_solarcenter(imagename, sigma=10, overwrite=True):
