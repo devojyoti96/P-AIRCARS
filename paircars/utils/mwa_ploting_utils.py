@@ -1098,9 +1098,8 @@ def get_suvi_map(
                             suvi_map = Map(image)
                             final_maps.append(suvi_map)
                             if keep_suvi_fits is False:
-                                print(image)
                                 os.system(f"rm -rf {image}")
-                    break
+                        break
         return final_maps
     except Exception:
         os.system("rm -rf *suvi*fits")
