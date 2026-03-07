@@ -47,7 +47,10 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_ms_size, check_datacolumn_valid
-from paircars.utils.mwa_ploting_utils import plot_caltable_diagnostics, plot_quartical_tables
+from paircars.utils.mwa_ploting_utils import (
+    plot_caltable_diagnostics,
+    plot_quartical_tables,
+)
 from paircars.utils.mwa_utils import (
     get_ncoarse,
     get_MWA_coarse_chan,
@@ -3436,9 +3439,9 @@ def master_control(
             if do_apply_selfcal:
                 selfcal_applymode = "calonly"
                 for msname in split_target_mslist:
-                    if not os.pathe.exists(f"{msname}/.applied_sol"):
-                        selfcal_applymode="calflag"
-            
+                    if not os.path.exists(f"{msname}/.applied_sol"):
+                        selfcal_applymode = "calflag"
+
                 if emails != "":
                     email_msg = "Started applying self-calibration on final target measurement sets."
                     send_task_notification(
