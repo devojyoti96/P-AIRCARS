@@ -3434,6 +3434,11 @@ def master_control(
             # Apply self-calibration
             ########################################
             if do_apply_selfcal:
+                selfcal_applymode = "calonly"
+                for msname in split_target_mslist:
+                    if not os.pathe.exists(f"{msname}/.applied_sol"):
+                        selfcal_applymode="calflag"
+            
                 if emails != "":
                     email_msg = "Started applying self-calibration on final target measurement sets."
                     send_task_notification(
