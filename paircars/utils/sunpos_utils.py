@@ -222,19 +222,16 @@ def cal_solar_phaseshift(imagename, sigma=10):
         sun_decdeg,
     ) = radec_sun_at_time(obstime)
     cellsize = float(abs(header["CDELT1"])) * 3600.0  # In arcsec
-    print (cellsize)
     pix_radius = int((4 * 16 * 60) / cellsize)  # 4 solar radii
-    print (pix_radius)
     circular_mask = create_circular_mask_array(data[0, 0, ...], pix_radius)
     I_rms = data[0, 0, ...].copy()
     I_rms[circular_mask] = np.nan
     plt.imshow(I_rms)
     plt.show()
     rms = np.nanstd(I_rms)
-    print (rms)
     I = data[0, 0, ...].copy()
-    I[I >= (sigma * rms)] = 1
-    I[I < (sigma * rms)] = 0
+    I[I >= (sigma * rms)] = 1.0
+    I[I < (sigma * rms)] = 0.0
     plt.imshow(I)
     plt.show()
     cx, cy = center_of_mass(I)
