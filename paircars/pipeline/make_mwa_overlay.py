@@ -129,7 +129,6 @@ def main(
         total_image_sizes = sum(image_sizes)
         min_mem = round(50 * total_image_sizes, 2)  
         min_mem /= len(imagelist)
-        #min_mem = max(4,min_mem)
 
         result = get_local_dask_cluster(
             workdir,
@@ -168,7 +167,7 @@ def main(
             )
             unique_maps = list(set(euv_maps))
             # Scatter once
-            map_futures = dask_client.scatter(unique_maps)
+            map_futures = dask_client.scatter(unique_maps, broadcast=True)
             map_lookup = dict(zip(unique_maps, map_futures))
             futures = []
             for img, euv_map in zip(imagelist, euv_maps):
