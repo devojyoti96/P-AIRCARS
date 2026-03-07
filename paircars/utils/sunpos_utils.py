@@ -277,7 +277,7 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
             header["CRPIX2"] = float(dec_pix+1)
             header["CRVAL1"] = float(sunra)
             header["CRVAL2"] = float(sundec)
-            print (header["CRPIX1"],ra_pix+_1)
+            print (header["CRPIX1"],ra_pix+1)
             if overwrite:
                 fits.writeto(imagename, data=data, header=header, overwrite=True)
             else:
