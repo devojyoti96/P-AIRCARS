@@ -1327,6 +1327,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
 def make_mwa_overlay(
     mwa_image,
     euv_map,
+    workdir,
     plot_file_prefix=None,
     plot_mwa_colormap=True,
     enhance_offdisk=False,
@@ -1350,6 +1351,8 @@ def make_mwa_overlay(
         MWA image
     euv_map : sunpy.map.Map
         GOES SUVI/ SDO AIA EUV map
+    workdir : str
+        Work directory
     plot_file_prefix : str, optional
         Plot file prefix name
     plot_mwa_colormap : bool, optional
@@ -1391,7 +1394,6 @@ def make_mwa_overlay(
         matplotlib.use("TkAgg")
     else:
         matplotlib.use("Agg")
-    workdir = os.path.dirname(os.path.abspath(mwa_image))
     mwamap = get_mwamap(mwa_image)
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)
