@@ -403,6 +403,7 @@ def submit_local_master_flow(args, jobid):
                     bufsize=1,
                 )
                 for line in process.stdout:
+                    print (line)
                     if "task run" in line.lower() or "flow run" in line.lower():
                         if line not in seen:
                             seen.add(line)
