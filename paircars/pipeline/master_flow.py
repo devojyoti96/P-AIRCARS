@@ -1458,16 +1458,18 @@ def run_make_overlay(
         #####################
         # Making overlays
         #####################
-        msg, succeed, failed = make_mwa_overlay.main(
-            imagedir,
-            outdir,
-            workdir=workdir,
-            all_overlay=all_overlay,
-            cpu_frac=float(cpu_frac),
-            logfile=logfile,
-            jobid=jobid,
-            start_remote_log=remote_log,
-        )
+        with get_dask_client() as dask_client:
+            msg, succeed, failed = make_mwa_overlay.main(
+                imagedir,
+                outdir,
+                workdir=workdir,
+                all_overlay=all_overlay,
+                cpu_frac=float(cpu_frac),
+                logfile=logfile,
+                jobid=jobid,
+                start_remote_log=remote_log,
+                dask_client=dask_client,
+            )
     finally:
         stop_event.set()
         log_thread_overlay.join(timeout=5)
@@ -3773,6 +3775,10 @@ def master_control(
         if make_overlay is False:
             images = filter_images(images, min_time_sep=60.0)
         if len(images) > 0:
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, min(len(images) + 1, max_worker)
+                )
             #################################
             # Start overlays
             #################################

@@ -182,6 +182,7 @@ def main(
                 )
 
             results = dask_client.gather(futures)
+            dask_client.cancel(map_futures)
             outimage_list = []
             for r in results:
                 outimage_list.append(r[0])
