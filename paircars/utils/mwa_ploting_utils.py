@@ -1072,7 +1072,7 @@ def get_suvi_map(
             out_files = out_files[pos]
             dl = Downloader(max_conn=ncpu, overwrite=False)
             for i in range(len(out_files)):
-                out_file = out_files[i[
+                out_file = out_files[i]
                 download_url = download_urls[i] 
                 if os.path.exists(out_file) is False:
                     dl.enqueue_file(download_url, path=out_file)
