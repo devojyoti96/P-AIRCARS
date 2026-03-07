@@ -10,6 +10,7 @@ import os
 import traceback
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from sunpy.net import Fido, attrs as a
 from sunpy.map import Map
 from sunpy.timeseries import TimeSeries
@@ -22,6 +23,11 @@ from astropy.wcs import FITSFixedWarning
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
+from sunpy.coordinates import SphericalScreen
+from matplotlib.colors import ListedColormap
+from matplotlib import cm
+from sunpy.map import make_fitswcs_header
+from collections import namedtuple    
 from .basic_utils import (
     mjdsec_to_timestamp,
     timestamp_to_mjdsec,
@@ -44,7 +50,9 @@ from .udocker_utils import (
 )
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
-
+logging.getLogger("sunpy").setLevel(logging.ERROR)
+logging.getLogger("reproject.common").setLevel(logging.WARNING) 
+    
 #####################################
 # Sun position related
 #####################################
@@ -1372,26 +1380,7 @@ def make_mwa_overlay(
     list
         Plot file names
     """
-    import matplotlib
-    import matplotlib.ticker as ticker
-    import matplotlib.pyplot as plt
-    from sunpy.coordinates import SphericalScreen
-    from matplotlib.colors import ListedColormap
-    from matplotlib import cm
-    from sunpy.map import make_fitswcs_header
-    from dask import delayed, compute
-    from multiprocessing.pool import ThreadPool
-    from collections import namedtuple
-
-    logging.getLogger("sunpy").setLevel(logging.ERROR)
-    logging.getLogger("reproject.common").setLevel(logging.WARNING)
-
     ncpu = max(1, ncpu)
-
-    @delayed
-    def reproject_map(smap, target_header):
-        with SphericalScreen(smap.observer_coordinate):
-            return smap.reproject_to(target_header)
 
     mwa_image = mwa_image.rstrip("/")
 
