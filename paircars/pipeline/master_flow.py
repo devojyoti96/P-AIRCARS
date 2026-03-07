@@ -1966,6 +1966,7 @@ def master_control(
     else:
         n_threads = max(1, int(n_threads))
 
+    observer = None
     try:
         #####################################
         # Reading remotelink and emails
@@ -1987,9 +1988,15 @@ def master_control(
             if remote_link == "":
                 print("Please provide a valid remote link.")
                 remote_logger = False
+    except Exception:
+        traceback.print_exc()
+        remote_logger = False
 
+    ###############################
+    # Setting up email notification
+    ###############################
+    try:
         emails = get_emails()
-
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             if emails != "":
@@ -2022,7 +2029,6 @@ def master_control(
             ############
             # Logger
             ############
-            observer = None
             if os.path.exists(f"{workdir}/.jobname_password.npy"):
                 time.sleep(5)
                 jobname, password = np.load(
@@ -2036,24 +2042,25 @@ def master_control(
                 print(
                     "Remote link or jobname is blank. Not transmiting to remote logger."
                 )
+    except Exception:
+        traceback.print_exc()
+        emails = ""
 
-            #####################
-            # Notify over email
-            #####################
-            if emails != "":
-                email_subject = (
-                    f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
-                )
+    try:
+        #####################
+        # Notify over email
+        #####################
+        if emails != "":
+            email_subject = (
+                f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
+            )
 
-                email_msg = (
-                    f"P-AIRCARS Job ID: {jobid}\n"
-                    f"Remote logger Job ID: {jobname}\n"
-                    f"Remote access password: {password}"
-                )
-                success_msg, error_msg = send_notification(
-                    emails, email_subject, email_msg
-                )
-
+            email_msg = (
+                f"P-AIRCARS Job ID: {jobid}\n"
+                f"Remote logger Job ID: {jobname}\n"
+                f"Remote access password: {password}"
+            )
+            success_msg, error_msg = send_notification(emails, email_subject, email_msg)
         #####################################
         # Printing basic info of the pipeline
         #####################################
@@ -3851,15 +3858,19 @@ def master_control(
         ###########################################
         # Successful exit
         ###########################################
-        print(
-            f"Calibration and imaging pipeline is successfully run on measurement set : {msname}"
-        )
+        print(f"P-AIRCARS calibration and imaging pipeline is successfully executed.")
         if emails != "":
             email_msg = "P-AIRCARS processing is done successfully."
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
         return 0
-    except Exception:
+    except Exception as e:
         traceback.print_exc()
+        if emails != "":
+            email_msg = f"Error in running P-AIRCARS.\n{e}"
+            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
+        print("###########################")
+        print(f"Error occured in running P-AIRCARS.")
+        print("###########################")
         return 1
     finally:
         time.sleep(5)

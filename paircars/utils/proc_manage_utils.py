@@ -417,9 +417,9 @@ def submit_local_master_flow(args, jobid):
                 process.stdout.close()
             process.wait()
             exit_code = process.returncode
-            if exit_code==1:
+            if exit_code == 1:
                 for line in last_lines:
-                    print (line)
+                    print(line)
         except Exception:
             traceback.print_exc()
             exit_code = 1

@@ -294,7 +294,9 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
                 for idx in range(0, max_ant, plots_per_fig):
                     fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
                     if quantity == "amp":
-                        fig.suptitle(f"Frequency vs Gain Amplitude, {polar}", fontsize=14)
+                        fig.suptitle(
+                            f"Frequency vs Gain Amplitude, {polar}", fontsize=14
+                        )
                         x = np.abs(np.array(all_gains_sub))
                         miny = np.nanmin(x)
                         maxy = np.nanmax(x)
@@ -357,6 +359,7 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
     except Exception:
         traceback.print_exc()
         return 1, []
+
 
 def plot_G_jones_time_vs_gain(
     all_times,
