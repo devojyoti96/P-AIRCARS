@@ -997,7 +997,7 @@ def get_aia_map(
             downloaded_files = Fido.fetch(
                 results,
                 path=workdir,
-                progress=False,
+                progress=True,
                 overwrite=False,
                 max_conn=ncpu,
             )
@@ -1161,7 +1161,7 @@ def get_suvi_map(
                 if len(pos) > 0:
                     download_urls = [all_files[p] for p in pos]
                     out_files = [out_files[p] for p in pos]
-                    dl = Downloader(max_conn=ncpu, progress=False, overwrite=False)
+                    dl = Downloader(max_conn=ncpu, progress=True, overwrite=False)
                     for i in range(len(out_files)):
                         out_file = out_files[i]
                         download_url = download_urls[i]
