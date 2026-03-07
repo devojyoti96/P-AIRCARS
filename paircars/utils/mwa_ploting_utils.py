@@ -9,6 +9,7 @@ import requests
 import os
 import traceback
 import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from sunpy.net import Fido, attrs as a
@@ -229,7 +230,6 @@ def plot_G_jones_time_vs_gain(
     """
     Plot time vs. gain
     """
-    matplotlib.use("Agg")
     plots_per_fig = ncols * nrows
     max_ant = np.nanmax(np.array(all_ants))
     plots_per_fig = min(max_ant, ncols * nrows)
@@ -333,7 +333,6 @@ def plot_B_jones_freq_vs_gain(
     """
     Plot freq vs. gain
     """
-    matplotlib.use("Agg")
     plots_per_fig = ncols * nrows
     if plot_all_ants:
         max_ant = np.nanmax(np.array(all_ants))
@@ -758,9 +757,7 @@ def plot_in_hpc(
     from sunpy.coordinates import sun
 
     logging.getLogger("sunpy").setLevel(logging.ERROR)
-    if not showgui:
-        matplotlib.use("Agg")
-    else:
+    if showgui:
         matplotlib.use("TkAgg")
     matplotlib.rcParams.update({"font.size": 12})
     fits_image = fits_image.rstrip("/")
@@ -1328,7 +1325,7 @@ def make_mwa_overlay(
     mwa_image,
     euv_map,
     workdir,
-    plot_file_prefix=None,
+    plot_file_prefix,
     plot_mwa_colormap=True,
     enhance_offdisk=False,
     contour_levels=[0.05, 0.1, 0.2, 0.4, 0.6, 0.8],
@@ -1352,7 +1349,7 @@ def make_mwa_overlay(
         GOES SUVI/ SDO AIA EUV map
     workdir : str
         Work directory
-    plot_file_prefix : str, optional
+    plot_file_prefix : str
         Plot file prefix name
     plot_mwa_colormap : bool, optional
         Plot MWA map colormap
@@ -1372,8 +1369,6 @@ def make_mwa_overlay(
         Image file extensions
     outdirs : list, optional
         Output directories for each extensions
-    showgui : bool, optional
-        Show GUI
     verbose: bool, optinal
         Verbose output
 
@@ -1383,12 +1378,7 @@ def make_mwa_overlay(
         Plot file names
     """
     mwa_image = mwa_image.rstrip("/")
-
     print(f"Making overlay for image: {os.path.basename(mwa_image)}")
-    if showgui:
-        matplotlib.use("TkAgg")
-    else:
-        matplotlib.use("Agg")
     mwamap = get_mwamap(mwa_image)
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)
@@ -1541,29 +1531,18 @@ def make_mwa_overlay(
             hspace=0.05,  # vertical space between panels
         )
         plot_file_list = []
-        if verbose:
-            print("#######################")
-        if plot_file_prefix:
-            for i in range(len(extensions)):
-                ext = extensions[i]
-                try:
-                    savedir = outdirs[i]
-                except BaseException:
-                    savedir = workdir
-                plot_file = f"{savedir}/{plot_file_prefix}.{ext}"
-                plt.savefig(plot_file, bbox_inches="tight")
-                if verbose:
-                    print(f"Plot saved: {plot_file}")
-                plot_file_list.append(plot_file)
+        for i in range(len(extensions)):
+            ext = extensions[i]
+            try:
+                savedir = outdirs[i]
+            except BaseException:
+                savedir = workdir
+            plot_file = f"{savedir}/{plot_file_prefix}.{ext}"
+            plt.savefig(plot_file, bbox_inches="tight")
             if verbose:
-                print("#######################\n")
-        else:
-            plot_file = None
-        if showgui:
-            plt.show()
-            plt.close(fig)
-        else:
-            plt.close(fig)
+                print(f"Plot saved: {plot_file}")
+            plot_file_list.append(plot_file)
+        plt.close(fig)
     except Exception:
         traceback.print_exc()
     finally:
@@ -1598,8 +1577,6 @@ def plot_goes_full_timeseries(
     os.makedirs(workdir, exist_ok=True)
     if showgui:
         matplotlib.use("TkAgg")
-    else:
-        matplotlib.use("Agg")
     matplotlib.rcParams.update({"font.size": 14})
     scans = get_ms_scans(msname)
     msmd = msmetadata()
@@ -1779,8 +1756,6 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
 
     if showgui:
         matplotlib.use("TkAgg")
-    else:
-        matplotlib.use("Agg")
     matplotlib.rcParams.update({"font.size": 18})
     if type(dsfiles) == str:
         dsfiles = [dsfiles]
