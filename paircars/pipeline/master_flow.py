@@ -2080,6 +2080,33 @@ def master_control(
                 "#############################################################################"
             )
             
+        ###########################################
+        # Setting up mutual conditions
+        ###########################################
+        # Move solar center, if any of these conditions are met
+        if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
+            if not do_solarcenter_move:
+                do_solarcenter_move = True
+                
+        # Switch on cal flag and import model, if basic cal is needed
+        if do_basic_cal:
+            if not do_cal_flag:
+                do_cal_flag = True
+            if not do_import_model:
+                do_import_model = True
+        
+        # Switch on applycal if selfcal is requested
+        if do_selfcal:
+            if not do_applycal:
+                do_applycal = True    
+                
+        # Switch on applycal and apply selfcal if imaging is requested
+        if do_imaging:
+            if not do_applycal:
+                do_applycal = True
+            if not do_apply_selfcal:
+                do_apply_selfcal = True             
+            
         ############################################
         # Determining where to use calibrator or not
         #############################################
@@ -3181,6 +3208,7 @@ def master_control(
         # Spliting targets if not started already
         #############################################
         # If corrected data is requested or imaging is requested
+            
         if do_applycal or do_apply_selfcal or do_imaging:
             if adaptive:
                 scale_worker_and_wait(
