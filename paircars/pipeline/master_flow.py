@@ -2026,6 +2026,20 @@ def master_control(
                 f"{workdir}/.jobname_password.npy",
                 np.array([jobname, password], dtype="object"),
             )
+            #####################
+            # Notify over email
+            #####################
+            if emails != "":
+                email_subject = (
+                    f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
+                )
+
+                email_msg = (
+                    f"P-AIRCARS Job ID: {jobid}\n"
+                    f"Remote logger Job ID: {jobname}\n"
+                    f"Remote access password: {password}"
+                )
+                success_msg, error_msg = send_notification(emails, email_subject, email_msg)    
             ############
             # Logger
             ############
@@ -2047,20 +2061,6 @@ def master_control(
         emails = ""
 
     try:
-        #####################
-        # Notify over email
-        #####################
-        if emails != "":
-            email_subject = (
-                f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
-            )
-
-            email_msg = (
-                f"P-AIRCARS Job ID: {jobid}\n"
-                f"Remote logger Job ID: {jobname}\n"
-                f"Remote access password: {password}"
-            )
-            success_msg, error_msg = send_notification(emails, email_subject, email_msg)
         #####################################
         # Printing basic info of the pipeline
         #####################################
@@ -2079,7 +2079,7 @@ def master_control(
             print(
                 "#############################################################################"
             )
-
+            
         ############################################
         # Determining where to use calibrator or not
         #############################################
