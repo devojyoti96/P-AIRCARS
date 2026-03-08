@@ -1,6 +1,5 @@
 import astropy.units as u
 import logging
-import psutil
 import numpy as np
 import warnings
 import glob
@@ -9,7 +8,6 @@ import requests
 import os
 import traceback
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -39,7 +37,6 @@ from .basic_utils import (
 )
 from .image_utils import calc_solar_image_stat, cutout_image
 from .ms_metadata import (
-    get_column_size,
     get_column_size,
     get_ms_scan_size,
     check_datacolumn_valid,
@@ -1770,7 +1767,6 @@ def rename_mwasolar_image(
     pol="",
     cutout_rsun=10.0,
     make_plots=True,
-    keep_euv_fits=False,
     pol_selfcal=True,
     cal_sol=True,
 ):
@@ -1791,8 +1787,6 @@ def rename_mwasolar_image(
         Cutout in solar radii from center (default: 10.0 solar radii)
     make_plots : bool, optional
         Make radio map plot in helioprojective coordinates
-    keep_euv_fits : bool, optional
-        Keep EUV images or not
     pol_selfcal : bool, optional
         Whether polarisation self-calibration solutions are applied
     cal_sol : bool, optional

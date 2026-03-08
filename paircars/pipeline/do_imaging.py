@@ -465,7 +465,6 @@ def perform_imaging(
                                 pol=pol,
                                 cutout_rsun=cutout_rsun,
                                 make_plots=make_plots,
-                                keep_euv_fits=True,
                                 pol_selfcal=pol_selfcal,
                                 cal_sol=cal_sol,
                             )
