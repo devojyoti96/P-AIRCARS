@@ -1950,11 +1950,11 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     # Time and frequency range
     ########################################
     median_bandshape = np.nanmedian(data, axis=-1)
-    pos = np.where(not np.isnan(median_bandshape))[0]
+    pos = np.where(~np.isnan(median_bandshape))[0]
     if len(pos) > 0:
         data = data[min(pos) : max(pos), :]
         freqs = freqs[min(pos) : max(pos)]
-    temp_times = times[not np.isnan(times)]
+    temp_times = times[~np.isnan(times)]
     maxtimepos = np.argmax(temp_times)
     mintimepos = np.argmin(temp_times)
     f"{timestamps[mintimepos].split('T')[0]}"
@@ -1968,8 +1968,6 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     goes_tseries = goes_tseries.truncate(tstart, tend)
     timeseries = np.nanmean(data, axis=0)
     # Normalization
-    np.nanstd(data)
-    np.nanmedian(data)
     norm = ImageNormalize(
         data,
         stretch=LogStretch(1),
