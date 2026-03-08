@@ -281,7 +281,7 @@ def start_prefect_server(
         scheduler_name=scheduler_name
     )
     if server_started is False:
-        for _ in range(1800):  # wait up to 1800s for the server to respond
+        for _ in range(180):  # wait up to 180s for the server to respond
             if prefect_server_status(scheduler_name=scheduler_name):
                 server_started = True
                 break
