@@ -1439,6 +1439,46 @@ def selfcal_round(
                 return 3, applycal_gaintable, 0, 0, "", "", "", []
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
+            
+            ##################################
+            # Flagging bad gains
+            ##################################
+            with suppress_output():
+                #################################
+                # Gaincal flagging
+                #################################
+                (
+                    _,
+                    _,
+                    _,
+                    flag_frac,
+                    chan_flag_frac,
+                    ant_flag_frac,
+                    time_flag_frac,
+                ) = get_cal_flag_info(gain_caltable)
+                if flag_frac < 0.5 and ant_flag_frac < 0.5 and time_flag_frac < 0.5:
+                    do_flag_backup(gain_caltable, flagtype="gainflag")
+                    flagdata(
+                        vis=gain_caltable,
+                        mode="rflag",
+                        datacolumn="CPARAM",
+                        timedevscale=10.0,
+                        freqdevscale=10.0,
+                        flagbackup=False,
+                    )
+                    if (
+                        flag_frac > 0.5
+                        or ant_flag_frac > 0.5
+                        or time_flag_frac > 0.5
+                    ):
+                        flagmanager(
+                            vis=gain_caltable,
+                            mode="restore",
+                            versionname="gainflag_1",
+                        )
+                    flagmanager(
+                        vis=gain_caltable, mode="delete", versionname="gainflag_1"
+                    )
 
             ##################################
             # Perform bandpass calibration
@@ -1474,41 +1514,6 @@ def selfcal_round(
             #########################################
             if calmode == "ap":
                 with suppress_output():
-                    #################################
-                    # Gaincal flagging
-                    #################################
-                    (
-                        _,
-                        _,
-                        _,
-                        flag_frac,
-                        chan_flag_frac,
-                        ant_flag_frac,
-                        time_flag_frac,
-                    ) = get_cal_flag_info(gain_caltable)
-                    if flag_frac < 0.5 and ant_flag_frac < 0.5 and time_flag_frac < 0.5:
-                        do_flag_backup(gain_caltable, flagtype="gainflag")
-                        flagdata(
-                            vis=gain_caltable,
-                            mode="rflag",
-                            datacolumn="CPARAM",
-                            timedevscale=10.0,
-                            freqdevscale=10.0,
-                            flagbackup=False,
-                        )
-                        if (
-                            flag_frac > 0.5
-                            or ant_flag_frac > 0.5
-                            or time_flag_frac > 0.5
-                        ):
-                            flagmanager(
-                                vis=gain_caltable,
-                                mode="restore",
-                                versionname="gainflag_1",
-                            )
-                        flagmanager(
-                            vis=gain_caltable, mode="delete", versionname="gainflag_1"
-                        )
                     #############################
                     # Bandpass flagging
                     #############################
