@@ -14,8 +14,8 @@ from paircars.utils.basic_utils import (
     check_port_status,
     get_free_port,
 )
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, clean_shutdown
-from paircars.utils.prefect_setup_utils import start_prefect_server
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
+from paircars.utils.prefect_setup_utils import start_prefect_server, stop_prefect_server
 from paircars.utils.resource_utils import has_space
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.udocker_utils import (
@@ -68,7 +68,7 @@ def download_with_parfive(record_id, update=False, output_dir="zenodo_download")
     dl = Downloader(max_conn=min(total_cpu, len(all_filenames) + 1))
     for file_url, filename in urls:
         if filename in all_filenames:
-            if os.path.exists(f"{output_dir}/{filename}") == False or update:
+            if not os.path.exists(f"{output_dir}/{filename}") or update:
                 if os.path.exists(f"{output_dir}/{filename}"):
                     os.system(f"rm -rf {output_dir}/{filename}")
                 dl.enqueue_file(file_url, path=output_dir, filename=filename)
@@ -173,7 +173,7 @@ def main(
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":
-            postgres_portport = get_free_port(start_port=5260, end_port=6250)
+            get_free_port(start_port=5260, end_port=6250)
 
     if init:
         ######################################
@@ -188,7 +188,7 @@ def main(
             )
             return 1
         init_paircars_data(update=update, remote_link=link, emails=emails)
-        print(f"P-AIRCARS data are initiated.")
+        print("P-AIRCARS data are initiated.")
 
         #########################################
         # Docker containers initiation
@@ -253,7 +253,7 @@ def main(
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
-        config = np.load(config_file, allow_pickle=True).all()
+        np.load(config_file, allow_pickle=True).all()
         if msg != 0:
             if scheduler_name != "local":
                 print(
@@ -262,7 +262,7 @@ def main(
                 return 1
             else:
                 print(
-                    f"Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
+                    "Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
                 )
                 try:
                     stop_prefect_server(scheduler_name=scheduler_name)

@@ -1,6 +1,4 @@
 import logging
-import psutil
-import dask
 import numpy as np
 import argparse
 import traceback
@@ -33,7 +31,6 @@ from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache, limit_threads
 from paircars.pipeline.flagging import single_ms_flag
@@ -415,7 +412,7 @@ def single_ms_cal_and_flag(
             bpass_caltable,
             crossphase_caltable,
         ], succeed_postcal_flag
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return [], False
 
@@ -651,7 +648,7 @@ def run_basic_cal_rounds(
                             uvrange=flag_uvrange,
                             flagbackup=False,
                         )
-                    except:
+                    except Exception:
                         pass
 
         for cal_round in range(1, n_rounds + 1):
@@ -708,7 +705,7 @@ def run_basic_cal_rounds(
             for msname in mslist:
                 summary_file = f"{outdir}/flag_summary/{os.path.basename(msname).split('.ms')[0]}_calflag_{cal_round}.summary"
                 tasks.append(delayed(flagsummary)(msname, summary_file))
-            results = list(dask_client.gather(dask_client.compute(tasks)))
+            list(dask_client.gather(dask_client.compute(tasks)))
 
         all_caltables = glob.glob(f"{workdir}/backup/calibrator*cal")
         final_bcals, final_kcrosscals = filtered_final_caltables(all_caltables, workdir)
@@ -721,7 +718,7 @@ def run_basic_cal_rounds(
         print("Basic calibration is done successfully.")
         print("##################")
         return 0, final_bcals, final_kcrosscals, succeed, failed
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1, [], [], succeed, failed
 
@@ -816,7 +813,7 @@ def main(
             observer = init_logger(
                 "basic_cal", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
@@ -911,7 +908,7 @@ def main(
                     os.system(f"rm -rf {final_caltable}")
                     os.system(f"cp -r {caltable} {final_caltable}")
                     os.system("rm -rf " + caltable)
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

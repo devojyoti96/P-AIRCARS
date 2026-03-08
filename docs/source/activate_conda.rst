@@ -23,6 +23,10 @@ Activate and deactivate conda environment
 .. code-block:: bash
 
    conda activate paircars_env
+   
+.. note ::
+
+   For the first time, after activating conda environment, type ``python -c "import sys; print('\n'.join(sys.path))"``. This should not show any local paths. If it shows local paths, conda environment is leaking into local python environements, which may cause version conflicts.  
 
 2. **To deactivate:**
 

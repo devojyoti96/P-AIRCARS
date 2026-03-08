@@ -247,8 +247,6 @@ def get_slurm_dask_cluster(
                     f"Walltime : {walltime} is larger than maximum allowed time: {max_time}."
                 )
                 walltime = max_time
-            else:
-                walltime = args.walltime
 
         try:
             cluster = SLURMCluster(
@@ -270,8 +268,8 @@ def get_slurm_dask_cluster(
             )
             client = Client(cluster, heartbeat_interval="5s")
             client.run_on_scheduler(gc.collect)
-            print(f"Using interface: auto-detected")
-        except:
+            print("Using interface: auto-detected")
+        except Exception:
             cluster = SLURMCluster(
                 queue=partition,
                 account=account,
@@ -304,7 +302,7 @@ def get_slurm_dask_cluster(
             print(f"Maximum number of workers: {max_workers_cluster}")
             print("####################################################")
         return client, cluster, dask_dir, max_workers_cluster
-    except Exception as e:
+    except Exception:
         print("Error occured in creating SLURM cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {log_dir} {dask_dir}")
@@ -505,6 +503,6 @@ def submit_slurm_master_flow(args, jobid):
         else:
             print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
