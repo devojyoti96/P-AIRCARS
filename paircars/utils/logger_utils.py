@@ -4,7 +4,6 @@ import logging
 import argparse
 import requests
 import time
-import glob
 import sys
 import os
 import getpass
@@ -12,7 +11,6 @@ import urllib.request
 import urllib.error
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-from datetime import datetime as dt
 from .basic_utils import get_cachedir
 
 
@@ -54,7 +52,7 @@ def get_remote_logger_link():
             remote_link = lines[0]
         else:
             return ""
-    except:
+    except Exception:
         return ""
     try:
         req = urllib.request.Request(remote_link, method="GET")
@@ -125,7 +123,7 @@ class RemoteLogger(logging.Handler):
                 },
                 timeout=2,
             )
-        except Exception as e:
+        except Exception:
             pass  # Fail silently to avoid interrupting the main app
 
 
@@ -270,7 +268,7 @@ def init_logger(logname, logfile, jobname="", password=""):
     timeout = 30
     waited = 0
     while True:
-        if os.path.exists(logfile) == False:
+        if not os.path.exists(logfile):
             time.sleep(1)
             waited += 1
         elif waited >= timeout:

@@ -1,8 +1,6 @@
 import psutil
 import numpy as np
-import argparse
 import time
-import sys
 import os
 import signal
 import traceback
@@ -10,8 +8,6 @@ import subprocess
 from distributed import Client
 from .basic_utils import get_cachedir, check_port_status
 from .resource_utils import drop_cache
-from .proc_manage_utils import get_scheduler_name
-from .logger_utils import SmartDefaultsHelpFormatter
 
 
 def kill_port(port):
@@ -79,8 +75,8 @@ def kill_localscheduler(jobid):
             msdir = str(results[3])
             workdir = str(results[4])
             outdir = str(results[5])
-        except Exception as e:
-            print(f"Could not read job file.")
+        except Exception:
+            print("Could not read job file.")
             traceback.print_exc()
             return
 
@@ -89,7 +85,7 @@ def kill_localscheduler(jobid):
             client = Client(address=scheduler_address, timeout=30)
             client.shutdown()
             client.close()
-        except:
+        except Exception:
             print(f"Dask cluster at: {scheduler_address} is already closed.")
 
         time.sleep(1)
@@ -103,7 +99,7 @@ def kill_localscheduler(jobid):
         drop_cache(cachedir)
         print("Cleanup complete.")
         return
-    except Exception as e:
+    except Exception:
         print(f"Error in killing P-AIRCARS job: {jobid}")
         traceback.print_exc()
         return
@@ -131,8 +127,8 @@ def kill_slurmscheduler(jobid):
             msdir = str(results[3])
             workdir = str(results[4])
             outdir = str(results[5])
-        except Exception as e:
-            print(f"Could not read job file.")
+        except Exception:
+            print("Could not read job file.")
             traceback.print_exc()
             return
 
@@ -141,7 +137,7 @@ def kill_slurmscheduler(jobid):
             client = Client(address=scheduler_address, timeout=30)
             client.shutdown()
             client.close()
-        except:
+        except Exception:
             print(f"Dask cluster at: {scheduler_address} is already closed.")
         time.sleep(1)
 
@@ -155,7 +151,7 @@ def kill_slurmscheduler(jobid):
         drop_cache(cachedir)
         print("Cleanup complete.")
         return
-    except Exception as e:
+    except Exception:
         print(f"Error in killing P-AIRCARS job: {jobid}")
         traceback.print_exc()
         return

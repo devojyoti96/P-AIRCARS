@@ -1,6 +1,6 @@
 import astropy.units as u
-import glob
 import os
+import traceback
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import (
@@ -22,7 +22,7 @@ from .image_utils import create_circular_mask_array
 datadir = get_datadir()
 try:
     solar_system_ephemeris.set(f"{datadir}/de440s")
-except:
+except Exception:
     solar_system_ephemeris.set("builtin")
 
 
@@ -210,7 +210,6 @@ def cal_solar_phaseshift(imagename, sigma=10):
         Whther phase shift required or not. Not required if less than image pixel size
     """
     from scipy.ndimage import center_of_mass
-    import matplotlib.pyplot as plt
 
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
@@ -228,10 +227,10 @@ def cal_solar_phaseshift(imagename, sigma=10):
     I_rms = data[0, 0, ...].copy()
     I_rms[circular_mask] = np.nan
     rms = np.nanstd(I_rms)
-    I = data[0, 0, ...].copy()
-    I[I < (sigma * rms)] = 0.0
-    I[I >= (sigma * rms)] = 1.0
-    cx, cy = center_of_mass(I)
+    dataI = data[0, 0, ...].copy()
+    dataI[dataI < (sigma * rms)] = 0.0
+    dataI[dataI >= (sigma * rms)] = 1.0
+    cx, cy = center_of_mass(dataI)
     w = WCS(imagename).celestial
     result = w.array_index_to_world(int(cy), int(cx))
     x_cen = result.ra.deg
@@ -312,7 +311,7 @@ def correct_solar_sidereal_motion(msname="", verbose=False):
         Success message
     """
     print(f"Correcting sidereal motion for ms: {msname}\n")
-    if os.path.exists(msname + "/.sidereal_cor") == False:
+    if not os.path.exists(msname + "/.sidereal_cor"):
         msg = run_solar_sidereal_cor(
             msname=msname, container_name="paircarswsclean", verbose=verbose
         )

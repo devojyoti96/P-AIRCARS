@@ -2,7 +2,6 @@ import resource
 import psutil
 import dask
 import numpy as np
-import warnings
 import gc
 import logging
 import time
@@ -10,12 +9,10 @@ import glob
 import os
 import subprocess
 import sys
-import tempfile
 import shutil
 import socket
 import shlex
 import traceback
-from pathlib import Path
 from dotenv import load_dotenv
 from dask.distributed import Client, LocalCluster
 from datetime import datetime as dt, timedelta
@@ -314,7 +311,7 @@ def get_local_dask_cluster(
             print(f"Maximum number of workers: {n_worker}")
             print("####################################################")
         return client, cluster, dask_dir, n_worker
-    except Exception as e:
+    except Exception:
         print("Error occured in creating local cluster.")
         traceback.print_exc()
         os.system(f"rm -rf {dask_dir_tmp}")
@@ -429,7 +426,7 @@ def submit_local_master_flow(args, jobid):
             traceback.print_exc()
             exit_code = 1
         return exit_code
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -539,7 +536,7 @@ def get_total_nodes(partition=None):
     scheduler_name = get_scheduler_name()
     if scheduler_name == "slurm":
         if partition is None:
-            cmd = f"sinfo -h -o '%D'"
+            cmd = "sinfo -h -o '%D'"
         else:
             cmd = f"sinfo -p {partition} -h -o '%D'"
         output = subprocess.check_output(cmd, shell=True).decode().strip().split()

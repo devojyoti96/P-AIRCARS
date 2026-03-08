@@ -1,12 +1,8 @@
-import psutil
 import numpy as np
 import traceback
-import copy
 import glob
 import os
 import subprocess
-import copy
-import time
 from casatools import msmetadata
 from astropy.io import fits
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
@@ -59,8 +55,8 @@ def determine_disk_visibility(msname):
     msmd.open(msname)
     freq = msmd.meanfreq(0)
     times = msmd.timesforspws(0)
-    ntime = len(times)
-    nchan = msmd.nchan(0)
+    len(times)
+    msmd.nchan(0)
     msmd.close()
     wavelength = (3 * 10**8) / freq
     uvdist = 10.0 * wavelength
@@ -134,7 +130,7 @@ def flag_non_disk(msname):
         else:
             msmd = msmetadata()
             msmd.open(msname)
-            times = msmd.timesforspws(0)
+            msmd.timesforspws(0)
             msmd.close()
             for c, t in zip(chans, timestamps):
                 spw = f"0:{c}"
@@ -151,7 +147,7 @@ def flag_non_disk(msname):
                 return 1
             else:
                 return 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -264,7 +260,7 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
     try:
         result = flag_non_disk(msname)
         if result != 0:
-            logger.info(f"Could not flag non-disk time properly.")
+            logger.info("Could not flag non-disk time properly.")
             msg = 1
         else:
             ###################################
@@ -294,8 +290,8 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
                     solnorm=True,
                     calmode="p",
                 )
-            if os.path.exists(bpass_caltable) == False:
-                logger.info(f"No gain solutions are found.\n")
+            if not os.path.exists(bpass_caltable):
+                logger.info("No gain solutions are found.\n")
                 msg = 2
                 bpass_caltable = ""
             else:
@@ -623,7 +619,7 @@ def correct_pbcor_leakage(
         ]
         if os.path.exists(pbfile) is False:
             pbcor_cmds.append("--save_pb")
-        result = subprocess.run(
+        subprocess.run(
             pbcor_cmds,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -646,7 +642,7 @@ def correct_pbcor_leakage(
             "--pb_jones_file",
             f"{pbfile}",
         ]
-        result = subprocess.run(
+        subprocess.run(
             pbcor_cmds,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -709,7 +705,7 @@ def correct_pbcor_leakage(
         ]
         if os.path.exists(pbfile) is False:
             pbcor_cmds.append("--save_pb")
-        result = subprocess.run(
+        subprocess.run(
             pbcor_cmds,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -734,7 +730,7 @@ def correct_pbcor_leakage(
         ]
         if os.path.exists(pbfile) is False:
             pbcor_cmds.append("--save_pb")
-        result = subprocess.run(
+        subprocess.run(
             pbcor_cmds,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -870,7 +866,7 @@ def correct_spectrosnap_pbleak(
     for i in range(len(images)):
         imagename = images[i]
         modelname = models[i]
-        header = fits.getheader(imagename)
+        fits.getheader(imagename)
         if "MFS" not in imagename:
             wsclean_images = image_dic[imagename]
             wsclean_models = model_dic[modelname]
@@ -893,7 +889,7 @@ def correct_spectrosnap_pbleak(
                 )
                 if leakage_info is not None:
                     leakage_info_list.append(leakage_info)
-    os.system(f"rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
+    os.system("rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
     return leakage_info_list
 
 
@@ -1062,8 +1058,8 @@ def selfcal_round(
         bw = num_chan * freqres
 
         times = msmd.timesforspws(0)
-        ntime = len(times)
-        total_time = max(times) - min(times)
+        len(times)
+        max(times) - min(times)
 
         msmd.close()
 
@@ -1072,7 +1068,7 @@ def selfcal_round(
         #####################################
         tb = table()
         tb.open(msname)
-        colnames = tb.colnames()
+        tb.colnames()
         tb.close()
 
         ######################################
@@ -1143,7 +1139,7 @@ def selfcal_round(
         # Creating and using solar mask
         ################################################
         fits_mask = msname.split(".ms")[0] + "_solar-mask.fits"
-        if os.path.exists(fits_mask) == False:
+        if not os.path.exists(fits_mask):
             logger.info(f"Creating solar mask of size: {mask_radius} arcmin.\n")
             fits_mask = create_circular_mask(
                 msname, cellsize, imsize, mask_radius=mask_radius
@@ -1194,15 +1190,13 @@ def selfcal_round(
         logger.info(f"\nWSClean command: {wsclean_cmd}\n")
         msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         if msg != 0:
-            logger.error(f"Imaging is not successful.\n")
+            logger.error("Imaging is not successful.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", []
 
         if do_polcal:
             #######################################
             # Making stokes cube
             #######################################
-            imagelist = []
-            modellist = []
             pollist = ["I", "Q", "U", "V"]
             wsclean_images_dic = {}
             wsclean_models_dic = {}
@@ -1366,7 +1360,7 @@ def selfcal_round(
             fits_mask=fits_mask,
         )
         if model_flux == 0:
-            logger.error(f"No model flux.\n")
+            logger.error("No model flux.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", []
 
         ############################
@@ -1434,8 +1428,8 @@ def selfcal_round(
                     solnorm=solnorm,
                 )
 
-            if os.path.exists(gain_caltable) == False:
-                logger.error(f"No gain solutions are found.\n")
+            if not os.path.exists(gain_caltable):
+                logger.error("No gain solutions are found.\n")
                 return 3, applycal_gaintable, 0, 0, "", "", "", []
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
@@ -1499,8 +1493,8 @@ def selfcal_round(
                         gaintable=[gain_caltable],
                         solnorm=True,
                     )
-                if os.path.exists(bpass_caltable) == False:
-                    logger.error(f"No bandpass solutions are found.\n")
+                if not os.path.exists(bpass_caltable):
+                    logger.error("No bandpass solutions are found.\n")
                     return 3, applycal_gaintable, 0, 0, "", "", "", []
 
                 applycal_gaintable.append(bpass_caltable)
@@ -1573,7 +1567,7 @@ def selfcal_round(
             quartical_args = [
                 "goquartical",
                 f"input_ms.path={msname}",
-                f"input_ms.data_column=DATA",
+                "input_ms.data_column=DATA",
                 f"input_ms.select_uv_range=[{minuv},{maxuv}]",
                 "input_model.recipe=MODEL_DATA",
                 f"output.gain_directory={pol_caltable}",
@@ -1598,7 +1592,7 @@ def selfcal_round(
             )
             os.system(f"rm -rf {quartical_log}")
             if quartical_msg != 0 or os.path.exists(pol_caltable) is False:
-                logger.error(f"Quartical calibration is not successful.\n")
+                logger.error("Quartical calibration is not successful.\n")
                 return 3, [], 0, 0, "", "", "", []
             applycal_gaintable.append(pol_caltable)
 
@@ -1626,7 +1620,7 @@ def selfcal_round(
             quartical_args = [
                 "goquartical",
                 f"input_ms.path={msname}",
-                f"input_ms.data_column=DATA",
+                "input_ms.data_column=DATA",
                 "output.log_to_terminal=True",
                 f"output.log_directory={quartical_log}",
                 f"output.gain_directory={temp_pol_caltable}",
@@ -1650,7 +1644,7 @@ def selfcal_round(
             os.system(f"rm -rf {quartical_log} {temp_pol_caltable}")
             if quartical_msg != 0:
                 logger.error(
-                    f"Quartical calibration applying solutions is not successful.\n"
+                    "Quartical calibration applying solutions is not successful.\n"
                 )
                 return 3, [], 0, 0, "", "", "", []
 
@@ -1690,7 +1684,7 @@ def selfcal_round(
             final_residual,
             leakage_info_list,
         )
-    except Exception as e:
+    except Exception:
         logger.exception(traceback.print_exc())
         return 4, applycal_gaintable, 0, 0, "", "", "", []
     finally:

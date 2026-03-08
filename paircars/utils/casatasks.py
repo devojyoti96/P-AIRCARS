@@ -1,6 +1,4 @@
-import psutil
 import numpy as np
-import glob
 import os
 import traceback
 import time
@@ -61,7 +59,7 @@ def reset_weights_and_flags(
     from casatasks import flagdata
 
     msname = msname.rstrip("/")
-    if os.path.exists(f"{msname}/.reset") == False or force_reset:
+    if not os.path.exists(f"{msname}/.reset") or force_reset:
         mspath = os.path.dirname(os.path.abspath(msname))
         os.chdir(mspath)
         if restore_flag:
@@ -187,7 +185,7 @@ def single_mstransform(
                 )
         os.system(f"touch {outputms}/.splited")
         return outputms
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         if os.path.exists(outputms):
             os.system("rm -rf " + outputms)

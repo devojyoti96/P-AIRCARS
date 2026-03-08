@@ -1,13 +1,8 @@
 import os
-import time
-import psutil
 import warnings
-import argparse
 import numexpr as ne
 import numpy as np
 import subprocess
-import traceback
-from datetime import datetime
 from casatools import table as casatable
 from .basic_utils import suppress_output, average_with_padding, filter_outliers
 from .flagging import get_chans_flag
@@ -109,7 +104,7 @@ def create_crossphase_table(msname, caltable, freqs, crossphase, flags):
         )
         gain[0, ...] = cross_phase_gain_X
         gain[1, ...] = cross_phase_gain_X * 0 + 1
-        gain[np.isnan(gain) == True] = 1.0
+        gain[np.isnan(gain)] = 1.0
         tb.putcol("CPARAM", gain)
         times = np.array([mean_time] * len(ant))
         flags = flags[np.newaxis, :, np.newaxis]
@@ -234,7 +229,7 @@ def crossphasecal(
         with suppress_output():
             tb = casatable()
             tb.open(gaintable)
-            if type(gaintable) == list:
+            if isinstance(gaintable, list):
                 gaintable = gaintable[0]
             gain = tb.getcol("CPARAM")
             tb.close()

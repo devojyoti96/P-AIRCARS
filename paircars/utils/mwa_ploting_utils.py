@@ -3,7 +3,6 @@ import logging
 import numpy as np
 import warnings
 import glob
-import dask
 import requests
 import os
 import traceback
@@ -14,7 +13,7 @@ import matplotlib.ticker as ticker
 from sunpy.net import Fido, attrs as a
 from sunpy.map import Map
 from sunpy.timeseries import TimeSeries
-from aiapy.calibrate import *
+from aiapy.calibrate import update_pointing, register, correct_degradation
 from astropy.visualization import ImageNormalize, PowerStretch, LogStretch
 from astropy.io import fits
 from astropy.time import Time
@@ -28,7 +27,7 @@ from matplotlib.colors import ListedColormap
 from matplotlib import cm
 from sunpy.map import make_fitswcs_header
 from collections import namedtuple
-from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
+from daskms.experimental.zarr import xds_from_zarr
 from .basic_utils import (
     mjdsec_to_timestamp,
     timestamp_to_mjdsec,
@@ -37,7 +36,6 @@ from .basic_utils import (
 )
 from .image_utils import calc_solar_image_stat, cutout_image
 from .ms_metadata import (
-    get_column_size,
     get_ms_scan_size,
     check_datacolumn_valid,
     get_ms_scans,
@@ -60,7 +58,7 @@ logging.getLogger("reproject.common").setLevel(logging.WARNING)
 datadir = get_datadir()
 try:
     solar_system_ephemeris.set(f"{datadir}/de440s")
-except:
+except Exception:
     solar_system_ephemeris.set("builtin")
 
 
@@ -213,7 +211,7 @@ def plot_ms_diagnostics(
         traceback.print_exc()
     finally:
         drop_cache(msname)
-        os.system(f"rm -rf log-shadems.txt")
+        os.system("rm -rf log-shadems.txt")
 
 
 def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
@@ -401,7 +399,7 @@ def plot_G_jones_time_vs_gain(
             axes = axes.flatten()
             for n in range(len(all_ants)):
                 ants = all_ants[n]
-                ant_names = all_ant_names[n]
+                all_ant_names[n]
                 times = all_times[n]
                 gains = all_gains[n]
                 for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
@@ -492,13 +490,13 @@ def plot_B_jones_freq_vs_gain(
             else:
                 fig, axes = plt.subplots(1, 1, figsize=(8, 6))
             if quantity == "amp":
-                fig.suptitle(f"Frequency vs Gain Amplitude", fontsize=14)
+                fig.suptitle("Frequency vs Gain Amplitude", fontsize=14)
                 x = np.abs(np.array(all_gains))
                 miny = np.nanmin(x)
                 maxy = np.nanmax(x)
                 pad = 0.1 * (maxy - miny)
             else:
-                fig.suptitle(f"Frequency vs Gain Phase", fontsize=14)
+                fig.suptitle("Frequency vs Gain Phase", fontsize=14)
                 x = np.angle(np.array(all_gains), deg=True)
                 miny = np.nanmin(x)
                 maxy = np.nanmax(x)
@@ -605,7 +603,6 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
     pols = ["X", "Y"]
     ncols = 3
     nrows = 3
-    out_files = []
     tb = table()
     outdir = os.path.dirname(outfile_prefix)
     os.makedirs(outdir, exist_ok=True)
@@ -634,7 +631,7 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
                 gains[flags] = np.nan + 1j * np.nan
                 ants = np.unique(tb.getcol("ANTENNA1"))
                 times = np.unique(tb.getcol("TIME"))
-                nant = np.nanmax(ants) + 1
+                np.nanmax(ants) + 1
                 tb.close()
                 ntime = len(times)
                 shape = gains.shape
@@ -723,9 +720,9 @@ def get_mwamap(fits_image, do_sharpen=False):
     else:
         frequency = ""
     try:
-        pixel_unit = mwa_header["BUNIT"]
+        mwa_header["BUNIT"]
     except BaseException:
-        pixel_nuit = ""
+        pass
     obstime = Time(mwa_header["date-obs"])
     mwapos = EarthLocation(lat=MWALAT * u.deg, lon=MWALON * u.deg, height=MWAALT * u.m)
     # Converting into GCRS coordinate
@@ -892,10 +889,7 @@ def plot_in_hpc(
     sunpy.Map
         MWA image in helioprojective co-ordinate
     """
-    import matplotlib.ticker as ticker
     from matplotlib.patches import Ellipse, Rectangle
-    from matplotlib.colors import ListedColormap
-    from matplotlib import cm
     from sunpy.coordinates import sun
 
     logging.getLogger("sunpy").setLevel(logging.ERROR)
@@ -905,15 +899,15 @@ def plot_in_hpc(
     fits_image = fits_image.rstrip("/")
     mwa_header = fits.getheader(fits_image)  # Opening MWA fits file
     if mwa_header["CTYPE3"] == "FREQ":
-        frequency = mwa_header["CRVAL3"] * u.Hz
+        mwa_header["CRVAL3"] * u.Hz
     elif mwa_header["CTYPE4"] == "FREQ":
-        frequency = mwa_header["CRVAL4"] * u.Hz
+        mwa_header["CRVAL4"] * u.Hz
     else:
-        frequency = ""
+        pass
     try:
         pixel_unit = mwa_header["BUNIT"]
     except BaseException:
-        pixel_nuit = ""
+        pass
     pixel_scale = abs(mwa_header["CDELT1"]) * 3600.0  # In arcsec
     obstime = Time(mwa_header["date-obs"])
     mwa_map_rotate = get_mwamap(fits_image)
@@ -1129,7 +1123,7 @@ def get_aia_map(
                 time = a.Time(t_start, t_start)
                 final_time_range.append(t_start)
 
-        instrument = a.Instrument("aia")
+        a.Instrument("aia")
         jsoc_wavelength = a.Wavelength(aia_wavelength * u.angstrom)
         results = Fido.search(
             time,
@@ -1157,14 +1151,14 @@ def get_aia_map(
                     # Step 1: Pointing correction
                     try:
                         pointing_corrected_map = update_pointing(aia_map)
-                    except:
+                    except Exception:
                         pointing_corrected_map = aia_map
                     # Step 2: register (we are skipping PSF deconvolution)
                     registered_map = register(pointing_corrected_map)
                     # Step 3: instrument degradation correction
                     try:
                         corrected_map = correct_degradation(registered_map)
-                    except:
+                    except Exception:
                         corrected_map = registered_map
                     # Step 4: Normalize by exposure time
                     normalized_data = (
@@ -1181,7 +1175,7 @@ def get_aia_map(
             else:
                 return []
     except Exception:
-        os.system(f"rm -rf *aia*fits")
+        os.system("rm -rf *aia*fits")
         traceback.print_exc()
         return []
     finally:
@@ -1314,7 +1308,7 @@ def get_suvi_map(
                         download_url = download_urls[i]
                         if os.path.exists(out_file) is False:
                             dl.enqueue_file(download_url, path=workdir)
-                    downloaded_files = dl.download()
+                    dl.download()
                     filtered_outfiles = []
                     for outfile in out_files:
                         if os.path.exists(outfile):
@@ -1538,7 +1532,7 @@ def make_mwa_overlay(
     euv_header = euv_map.meta
 
     euv_pix = max(1024, int(euv_header["naxis1"] * euv_image_scaling))
-    euv_current_fov = euv_header["naxis1"] * euv_header["cdelt1"]
+    euv_header["naxis1"] * euv_header["cdelt1"]
     mwa_image_fov = mwa_header["naxis1"] * mwa_header["cdelt1"]
 
     new_scale = float(mwa_image_fov / euv_pix) * u.arcsec / u.pix
@@ -1837,7 +1831,7 @@ def rename_mwasolar_image(
             sun_coords = get_sun(astro_time)
             hdr["CRVAL1"] = sun_coords.ra.deg
             hdr["CRVAL2"] = sun_coords.dec.deg
-        except:
+        except Exception:
             pass
     freq = round(header["CRVAL3"] / 10**6, 2)
     t_str = "".join(time.split("T")[0].split("-")) + (
@@ -1897,7 +1891,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     if showgui:
         matplotlib.use("TkAgg")
     matplotlib.rcParams.update({"font.size": 18})
-    if type(dsfiles) == str:
+    if isinstance(dsfiles, str):
         dsfiles = [dsfiles]
     start_freqs = []
     dsfiles = np.array(dsfiles)
@@ -1956,14 +1950,14 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     # Time and frequency range
     ########################################
     median_bandshape = np.nanmedian(data, axis=-1)
-    pos = np.where(np.isnan(median_bandshape) == False)[0]
+    pos = np.where(not np.isnan(median_bandshape))[0]
     if len(pos) > 0:
         data = data[min(pos) : max(pos), :]
         freqs = freqs[min(pos) : max(pos)]
-    temp_times = times[np.isnan(times) == False]
+    temp_times = times[not np.isnan(times)]
     maxtimepos = np.argmax(temp_times)
     mintimepos = np.argmin(temp_times)
-    datestamp = f"{timestamps[mintimepos].split('T')[0]}"
+    f"{timestamps[mintimepos].split('T')[0]}"
     tstart = f"{timestamps[mintimepos].split('T')[0]} {':'.join(timestamps[mintimepos].split('T')[-1].split(':')[:2])}"
     tend = f"{timestamps[maxtimepos].split('T')[0]} {':'.join(timestamps[maxtimepos].split('T')[-1].split(':')[:2])}"
     results = Fido.search(
@@ -1974,8 +1968,8 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     goes_tseries = goes_tseries.truncate(tstart, tend)
     timeseries = np.nanmean(data, axis=0)
     # Normalization
-    data_std = np.nanstd(data)
-    data_median = np.nanmedian(data)
+    np.nanstd(data)
+    np.nanmedian(data)
     norm = ImageNormalize(
         data,
         stretch=LogStretch(1),

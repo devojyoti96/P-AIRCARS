@@ -1,8 +1,5 @@
-import psutil
 import traceback
 import tempfile
-import time
-import glob
 import os
 import subprocess
 import numpy as np
@@ -376,7 +373,7 @@ def run_wsclean(
     if "-fits-mask" in wsclean_cmd_args:
         index = wsclean_cmd_args.index("-fits-mask")
         name = wsclean_cmd_args[index + 1]
-        namedir = os.path.dirname(os.path.abspath(name))
+        os.path.dirname(os.path.abspath(name))
         basename = os.path.basename(os.path.abspath(name))
         wsclean_cmd_args.remove(name)
         wsclean_cmd_args.insert(index + 1, temp_docker_path + "/" + basename)
@@ -387,7 +384,7 @@ def run_wsclean(
     else:
         index = wsclean_cmd_args.index("-name")
         name = wsclean_cmd_args[index + 1]
-        namedir = os.path.dirname(os.path.abspath(name))
+        os.path.dirname(os.path.abspath(name))
         basename = os.path.basename(os.path.abspath(name))
         wsclean_cmd_args.remove(name)
         wsclean_cmd_args.insert(index + 1, temp_docker_path + "/" + basename)
@@ -429,7 +426,7 @@ def run_wsclean(
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -520,7 +517,7 @@ def run_solar_sidereal_cor(
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -625,7 +622,7 @@ def run_chgcenter(
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -702,7 +699,7 @@ def run_shadems(
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -811,7 +808,7 @@ def run_quartical(
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -927,7 +924,7 @@ def run_hyperdrive(
             )
         exit_code = result.returncode
         return 0 if exit_code == 0 else 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 

@@ -1,8 +1,5 @@
-import psutil
 import numpy as np
 import traceback
-import warnings
-import glob
 import os
 import zarr
 import dask
@@ -585,7 +582,7 @@ def get_nearest_bandpass_table(caltable_list, freq):
     if len(caltable_list) == 0:
         print("No caltable is provided.")
         return
-    if freq == None:
+    if freq is None:
         print("No frequency information is given.")
         return
     caltable_list = np.array(caltable_list)
@@ -618,7 +615,7 @@ def get_nearest_gaincal_table(caltable_list, timestamp):
     if len(caltable_list) == 0:
         print("No caltable is provided.\n")
         return None
-    if timestamp == None:
+    if timestamp is None:
         print("No time information is given.\n")
         return None
     try:
@@ -636,7 +633,7 @@ def get_nearest_gaincal_table(caltable_list, timestamp):
         pos = np.argmin(np.abs(time_mjd - time_list))
         nearest_caltable = caltable_list[pos]
         return nearest_caltable
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         print("Nearest caltable could not be found.\n")
         return None
@@ -731,7 +728,7 @@ def solint_in_float(solint):
     else:
         try:
             solint = float(solint)
-        except:
+        except Exception:
             solint = None
     return solint
 
@@ -852,11 +849,11 @@ def get_quartical_table_metadata(caltable):
     chm = np.nanmean(freqs) / 10**6
     try:
         chanwidth = abs(np.diff(freqs)[0]) / 10**3
-    except:
+    except Exception:
         chanwidth = 160.0  # Assumed default value
     try:
         bw = (max(freqs) - min(freqs)) / 10**6
-    except:
+    except Exception:
         bw = 1.28  # Assume a single coarse channel
     times = gains[0].gain_time.to_numpy()
     start_time = mjdsec_to_timestamp(min(times))

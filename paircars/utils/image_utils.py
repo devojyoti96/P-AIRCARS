@@ -2,7 +2,6 @@ import numpy as np
 import traceback
 import warnings
 import copy
-import glob
 import os
 from collections import defaultdict
 from astropy.io import fits
@@ -91,7 +90,7 @@ def create_circular_mask(msname, cellsize, imsize, mask_radius=20):
         else:
             print("Circular mask could not be created.")
             return
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return
 
@@ -316,7 +315,7 @@ def cutout_image(fits_file, output_file, x_deg=2):
     hdu = fits.open(fits_file)[0]
     data = hdu.data  # shape: (nfreq, nstokes, ny, nx)
     header = hdu.header
-    wcs = WCS(header)
+    WCS(header)
     _, _, ny, nx = data.shape
     center_x, center_y = nx // 2, ny // 2
     # Get pixel scale (deg/pixel)
@@ -474,14 +473,14 @@ def make_stokes_wsclean_imagecube(
         print("Invalid Stokes combination.")
         return
     imagename_prefix = "temp_" + os.path.basename(wsclean_images[0]).split(" - I")[0]
-    imagename = imagename_prefix + ".image"
+    imagename_prefix + ".image"
     data, header = fits.getdata(wsclean_images[0]), fits.getheader(wsclean_images[0])
     for img in wsclean_images[1:]:
         data = np.append(data, fits.getdata(img), axis=0)
     header.update(
         {"NAXIS4": len(stokes), "CRVAL4": 1 if "I" in stokes else -5, "CDELT4": 1}
     )
-    temp_fits = imagename_prefix + ".fits"
+    imagename_prefix + ".fits"
     fits.writeto(outfile_name, data=data, header=header, overwrite=True)
     if not keep_wsclean_images:
         for img in wsclean_images:

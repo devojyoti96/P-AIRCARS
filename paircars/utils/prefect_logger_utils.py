@@ -1,7 +1,6 @@
 import os
 import asyncio
 import threading
-from pathlib import Path
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.sorting import LogSort
 from prefect.client.schemas.filters import LogFilter

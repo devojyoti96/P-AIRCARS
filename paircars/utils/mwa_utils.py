@@ -1,8 +1,5 @@
-import psutil
 import numpy as np
-import glob
 import os
-import traceback
 import warnings
 import astropy.units as u
 import requests
@@ -11,7 +8,6 @@ from astropy.wcs import FITSFixedWarning
 from astropy.io import fits
 from astropy.time import Time
 from casatools import msmetadata
-from .udocker_utils import run_wsclean
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 
@@ -268,7 +264,7 @@ def get_mwa_bad_ants(metafits):
     return bad_antennas
 
 
-def download_MWA_metafits(OBSID, outdir="."):
+def download_MWA_metafits(OBSID, outdir=".", max_tries=5):
     """
     Download MWA metafits file for a given OBSID.
 
@@ -278,18 +274,21 @@ def download_MWA_metafits(OBSID, outdir="."):
         MWA observation ID
     outdir : str
         Output directory
+    max_tries : int, optional
+        Maximum trials
 
     Returns
     -------
     str or None
         Path to metafits file or None if failed
     """
+    max_tries = max(1, max_tries)
     os.makedirs(outdir, exist_ok=True)
     metafits = os.path.join(outdir, f"{OBSID}.metafits")
     if os.path.isfile(metafits):
         return metafits
     url = f"https://ws.mwatelescope.org/metadata/fits?obs_id={OBSID}"
-    for attempt in range(5):
+    for attempt in range(max_tries):
         try:
             r = requests.get(url, timeout=30)
             if r.status_code == 200:

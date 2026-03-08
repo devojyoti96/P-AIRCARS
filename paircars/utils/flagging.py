@@ -1,7 +1,5 @@
-import psutil
 import numpy as np
 import traceback
-import glob
 import os
 import dask
 from datetime import datetime as dt, timezone
@@ -47,9 +45,9 @@ def flagsummary(msname, summary_file):
                         )
                         logstring = f"{x} {y} {flagged_percent}\n"
                         f.write(logstring)
-                    except:
+                    except Exception:
                         pass
-            except:
+            except Exception:
                 pass
     return summary_file
 
@@ -148,10 +146,10 @@ def uvbin_flag(
                             freqcutoff=threshold,
                             flagbackup=False,
                         )
-            except:
+            except Exception:
                 pass
         return 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         if flagbackup:
             with suppress_output():
@@ -182,7 +180,7 @@ def get_chans_flag_per_time(msname):
     msmd.open(msname)
     times = msmd.timesforspws(0)
     msmd.close()
-    ntime = len(times)
+    len(times)
     mstool = casamstool()
     mstool.open(msname)
     flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
@@ -383,7 +381,7 @@ def flag_outside_uvrange(
                 print(f"Flagging command: {cmd}")
                 flagdata(vis=vis, **cmd)
         return 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -413,7 +411,7 @@ def flag_quartical_table(caltable, threshold=10.0):
     gains = xds_from_zarr(f"{caltable}::{soltype}")
     gain_data = gains[0].gains.to_numpy()  # Shape: ntime, nchan, nant, ndir, npol
     gain_flag = gains[0].gain_flags.to_numpy()
-    pre_flags = np.nansum(gain_flag)
+    np.nansum(gain_flag)
     gain_flag = gain_flag.astype("bool")
     gain_data[gain_flag] = np.nan
     g1 = gain_data[..., 0]
@@ -465,7 +463,7 @@ def flag_quartical_table(caltable, threshold=10.0):
     shape = gain_flag.shape
     ntime = shape[0]
     nchan = shape[1]
-    nant = shape[2]
+    shape[2]
     ndir = shape[3]
 
     ant_frac = np.nansum(gain_flag, axis=(0, 1, 3)) / (ntime * nchan * ndir)

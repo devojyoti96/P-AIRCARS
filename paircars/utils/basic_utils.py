@@ -3,7 +3,6 @@ import os
 import copy
 import time
 import socket
-import subprocess
 import stat
 import tempfile
 import astropy.units as u
@@ -130,7 +129,7 @@ def get_datadir():
         Data directory
     """
     cachedir = get_cachedir()
-    if os.path.exists(f"{cachedir}/paircarspipe_data_dir.txt") == False:
+    if not os.path.exists(f"{cachedir}/paircarspipe_data_dir.txt"):
         return None
     with open(f"{cachedir}/paircarspipe_data_dir.txt", "r") as f:
         datadir = f.read().strip()

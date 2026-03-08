@@ -1,7 +1,4 @@
 import numpy as np
-import glob
-import os
-import traceback
 from casatools import msmetadata, table
 from .mwa_utils import get_bad_chans
 
@@ -199,9 +196,9 @@ def get_optimal_image_interval(
     mstool = casamstool()
     msmd = msmetadata()
     msmd.open(msname)
-    nchan = msmd.nchan(0)
+    msmd.nchan(0)
     times = msmd.timesforspws(0)
-    ntime = len(times)
+    len(times)
     del times
     msmd.close()
     tb.open(msname)

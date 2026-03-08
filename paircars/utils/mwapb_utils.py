@@ -3,16 +3,15 @@ import glob
 import os
 import time
 import warnings
-import argparse
 import numpy as np
 import astropy.units as u
 import mwa_hyperbeam
 from scipy.interpolate import RegularGridInterpolator
 from astropy.io import fits
 from astropy.time import Time
-from astropy.wcs import FITSFixedWarning
 from astropy.coordinates import EarthLocation, SkyCoord, AltAz
 from .basic_utils import get_datadir
+from .udocker_utils import run_wsclean
 
 warnings.filterwarnings("ignore")
 
@@ -91,7 +90,7 @@ def get_azza_from_fits(filename, metafits):
     source = SkyCoord(ra=RA, dec=Dec, frame="icrs", unit=(u.deg, u.deg))
     source.location = MWAPOS
     source.obstime = mwatime
-    s = time.time()
+    time.time()
     source_altaz = source.transform_to("altaz")
     Alt, Az = (
         source_altaz.alt.deg,
@@ -466,10 +465,10 @@ def get_pb_radec(
         ra = float(ra)
         dec = float(dec)
         coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
-    except:
+    except Exception:
         try:
             coord = SkyCoord(ra, dec)
-        except:
+        except Exception:
             coord = SkyCoord(ra, dec, unit=(u.hourangle, u.deg))
     altaz_object = coord.transform_to(aa)
     alt = altaz_object.alt.degree
@@ -782,6 +781,7 @@ def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, baseline=[]):
         All-sky fringe array in sky coornidinate
     """
     n_threads = max(1, n_threads)
+    from casatasks import split
     try:
         msname = msname.rstrip("/")
         baseline_str = str(baseline[0]) + "&&" + str(baseline[1])
@@ -819,7 +819,7 @@ def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, baseline=[]):
             "-quiet",
         ]
         wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " " + bs_ms
-        msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+        run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         wsclean_image_list = glob.glob(f"{imagename_prefix}*psf*.fits")
         wsclean_psf = wsclean_image_list[0]
         obstime = fits.getheader(metafits)["DATE-OBS"]
@@ -839,7 +839,7 @@ def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, baseline=[]):
         os.system(f"rm -rf {imagename_prefix}*")
         os.system("rm -rf {bs_ms}")
         return sky_grid
-    except:
+    except Exception:
         return []
 
 
@@ -981,7 +981,6 @@ def make_primarybeammap(
     beam_dOMEGA_sum_YY = 0
     pols = ["XX", "YY"]
     fringe_list = []
-    param_list = []
     if calc_fringe_temp and len(baselines) > 0:
         for bs in baselines:
             fringe = get_fringe(

@@ -3,11 +3,9 @@ import subprocess
 import time
 import socket
 import signal
-import argparse
 import toml
 import traceback
 import numpy as np
-from pathlib import Path
 from dotenv import load_dotenv
 from .basic_utils import get_cachedir, get_datadir
 from .killjob_utils import kill_port
@@ -71,7 +69,6 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     SERVER_PORT = f"{port}"
 
     hostname = socket.gethostname()
-    REMOTE_URL = f"http://{hostname}:{SERVER_PORT}"
 
     SERVER_URL = f"http://0.0.0.0:{SERVER_PORT}/api"
     NODE_URL = f"http://{hostname}:{SERVER_PORT}/api"
@@ -251,7 +248,7 @@ def start_prefect_server(
     config_file, config = prefect_config(
         port, postgres_port, scheduler_name=scheduler_name
     )
-    cachedir = config["CACHEDIR"]
+    config["CACHEDIR"]
     pid_file = config["PID_FILE"]
     env = get_prefect_env(scheduler_name=scheduler_name)
     print("Starting Prefect server...")
@@ -357,7 +354,7 @@ def stop_prefect_server(scheduler_name="local"):
             try:
                 kill_port(config["SERVER_PORT"])
                 msg = 0
-            except:
+            except Exception:
                 msg = 1
         else:
             with open(pid_file, "r") as f:
@@ -370,15 +367,15 @@ def stop_prefect_server(scheduler_name="local"):
             )
             if not killed:
                 kill_port(postgres_port)
-        except:
+        except Exception:
             kill_port(postgres_port)
         print(f"Server stopped and {cachedir} removed.")
         msg = 0
     except ProcessLookupError:
         print(f"No such process with PID {pid}. Removing stale {cachedir} directory.")
         msg = 0
-    except Exception as e:
-        print(f"Error stopping server")
+    except Exception:
+        print("Error stopping server")
         traceback.print_exc()
         msg = 1
     finally:

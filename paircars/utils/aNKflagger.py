@@ -2,7 +2,6 @@ import numpy as np
 from casatools import table, msmetadata
 from joblib import Parallel, delayed
 import time
-from .imaging import calc_sun_dia
 
 
 def uvsub_flagger(
@@ -267,9 +266,8 @@ def flagger(
         num_bins     : Number of UV bins for uvsub_flagger (default: 30)
     """
     print(f"Flagging : {msname}")
-    import time
 
-    start_time = time.time()
+    time.time()
     ms = table()
     msmd = msmetadata()
     msmd.open(msname)
@@ -349,7 +347,7 @@ def flagger(
 
         # Faster method using argsort:
         # print("Building timestamp-to-index map (using argsort)...")
-        sort_start_time = time.time()
+        time.time()
         # Get indices that would sort the time column
         sorted_indices = np.argsort(
             time_col, kind="stable"
@@ -362,7 +360,7 @@ def flagger(
         indices_split_by_time = np.split(sorted_indices, split_points[1:])
         # Create the map from unique time to its corresponding array of indices
         time_indices_map = dict(zip(unique_times_sorted, indices_split_by_time))
-        sort_end_time = time.time()
+        time.time()
         # print(f"Timestamp map built in {sort_end_time - sort_start_time:.2f} seconds.")
 
         # Verify unique_times consistency (optional check)
@@ -404,16 +402,16 @@ def flagger(
 
         # print('Done with job_args check')
 
-        parallel_start_time = time.time()
+        time.time()
         if job_args:  # Only run if there are jobs
             results = Parallel(n_jobs=num_processes, backend="loky")(
                 delayed(_process_timestamp)(*args) for args in job_args
             )
-        parallel_end_time = time.time()
+        time.time()
         # print(f"Parallel processing part took: {parallel_end_time - parallel_start_time:.2f} seconds")
 
         # --- Combine Results ---
-        combine_start_time = time.time()
+        time.time()
         # print("Combining results from parallel workers...")
         # Create a copy of flags to update, or update in place if acceptable
         new_flags = flags.copy()
@@ -432,7 +430,7 @@ def flagger(
                     f"Expected shape: {new_flags[time_indices, :, :].shape}, Got shape: {timestamp_flags.shape}"
                 )
 
-        combine_end_time = time.time()
+        time.time()
         # print(f"Combining results took: {combine_end_time - combine_start_time:.2f} seconds")
 
         # Number of additional flagged data points
@@ -441,11 +439,11 @@ def flagger(
         # print(f"Number of additional flagged data points: {n_additional_flagged}")
 
         # Fraction of initially unflagged data points that are now flagged
-        flag_fraction = n_additional_flagged / n_unflagged if n_unflagged > 0 else 0
+        n_additional_flagged / n_unflagged if n_unflagged > 0 else 0
         # print(f"Fraction of initially unflagged data flagged: {flag_fraction:.4f}")
         # print(f"Total flagged fraction: {n_final_flagged / n_total:.4f}")
 
-        end_time = time.time()
+        time.time()
         # print(f"Flagging logic completed in: {end_time - start_time:.2f} seconds")
 
         # --- Visualization (Optional) ---
@@ -467,9 +465,9 @@ def flagger(
             # ax4 = fig.add_subplot(2, 2, 4)
 
             original_data_abs = np.abs(data[:, debug_chan, debug_pol])
-            original_data_phase = np.angle(data[:, debug_chan, debug_pol]) * 180 / np.pi
+            np.angle(data[:, debug_chan, debug_pol]) * 180 / np.pi
 
-            initially_unflagged_mask = ~flags[:, debug_chan, debug_pol]
+            ~flags[:, debug_chan, debug_pol]
 
             finally_unflagged_mask = ~new_flags[:, debug_chan, debug_pol]
 
@@ -523,7 +521,7 @@ def flagger(
                 new_flags[:, debug_chan, debug_pol] & ~flags[:, debug_chan, debug_pol]
             )
             if np.any(newly_flagged_mask):
-                fig_new = plt.figure(figsize=(10, 6))
+                plt.figure(figsize=(10, 6))
                 plt.title(f"Newly Flagged Points (Ch {debug_chan}, Pol {debug_pol})")
                 # plot the unflagged points in blue
                 plt.scatter(
@@ -551,19 +549,16 @@ def flagger(
                 plt.yscale("linear")
                 plt.grid(True, which="both", linestyle="--", alpha=0.5)
                 plt.legend()
-                plot_filename_new = (
-                    f"{msname}_flagger_newly_flagged_ch{debug_chan}_pol{debug_pol}.png"
-                )
                 # plt.savefig(plot_filename_new)
                 # print(f"Newly flagged points plot saved to {plot_filename_new}")
                 # plt.close(fig_new)
                 plt.show()
 
         # Update the FLAG column in the MS
-        flagput_start_time = time.time()
+        time.time()
         # print("Updating FLAG column in MS...")
         ms.putcol("FLAG", new_flags.T)
-        flagput_end_time = time.time()
+        time.time()
         # print(f"FLAG column updated in {flagput_end_time - flagput_start_time:.2f} seconds")
 
     finally:

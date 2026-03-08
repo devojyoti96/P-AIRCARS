@@ -1,6 +1,5 @@
 import psutil
 import numpy as np
-import glob
 import os
 from casatools import msmetadata, ms as casamstool, table, measures
 from .basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
@@ -111,7 +110,7 @@ def get_timeranges(
             )
             time_ranges.append(t)
             return time_ranges
-    total_time = end_time - start_time
+    end_time - start_time
     timeres = times[1] - times[0]
     ntime_chunk = max(1, int(time_interval / timeres))
     ntime = int(time_window / timeres)
@@ -333,14 +332,14 @@ def check_datacolumn_valid(msname, datacolumn="DATA"):
                 return False
             else:
                 return True
-        except:
+        except Exception:
             return False
-    except:
+    except Exception:
         return False
     finally:
         try:
             tb.close()
-        except:
+        except Exception:
             pass
 
 
@@ -582,7 +581,7 @@ def get_refant(
     antamp = np.array(antamp)
     antrms = np.array(antrms)
     medamp = np.median(antamp)
-    medrms = np.median(antrms)
+    np.median(antrms)
     goodrms = []
     goodamp = []
     goodant = []
@@ -705,7 +704,7 @@ def get_observatory_coord(msname):
     """
     msmd = msmetadata()
     msmd.open(msname)
-    position = msmd.observatoryposition()
+    msmd.observatoryposition()
     me = measures()
     obs_pos = me.observatory(msmd.observatorynames()[0])
     lon = obs_pos["m0"]["value"] * (180.0 / 3.141592653589793)

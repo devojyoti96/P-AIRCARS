@@ -1,8 +1,5 @@
-import os
 import numpy as np
 import warnings
-import types
-import psutil
 from scipy.interpolate import interp1d
 from casatools import msmetadata
 from astropy.io import fits
@@ -10,7 +7,6 @@ from astropy.wcs import FITSFixedWarning
 from .basic_utils import mjdsec_to_timestamp
 from .mwapb_utils import get_pb_radec, make_primarybeammap
 from .mwa_utils import get_bad_chans
-from .ms_metadata import get_column_size
 from .imaging import calc_sun_dia
 from .sunpos_utils import radec_sun
 
@@ -168,11 +164,11 @@ def calc_T_rec(freq):
         67.3640,
         68.1138,
     ]
-    l = len(x)
+    length = len(x)
     if freq < 50:
         return y[0]
     if freq > 326:
-        return y[l - 1]
+        return y[length - 1]
     tlna_cubic = interp1d(x, y, kind="cubic")
     trcv = tlna_cubic(freq)
     return trcv
@@ -242,11 +238,11 @@ def calc_T_pickup(freq):
         8.952705,
         8.952705,
     ]
-    l = len(x)
+    length = len(x)
     if freq < 75.0:
         return y[0]
     if freq > 300.2:
-        return y[l - 1]
+        return y[length - 1]
     tpick_cubic = interp1d(x, y, kind="cubic", fill_value="extrapolate")
     tpick = tpick_cubic(freq)
     return tpick
@@ -305,7 +301,7 @@ def cal_norm_crosscorr(msname, ant1, ant2):
     mstool.open(msname)
     mstool.select({"antenna1": ant1, "antenna2": ant2})
     dataij = mstool.getdata("DATA")["data"]
-    flag = mstool.getdata("FLAG")["flag"]
+    mstool.getdata("FLAG")["flag"]
     mstool.close()
     mstool.open(msname)
     mstool.select({"antenna1": ant1, "antenna2": ant1})
