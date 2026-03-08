@@ -1440,9 +1440,6 @@ def selfcal_round(
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
             
-            ##################################
-            # Flagging bad gains
-            ##################################
             with suppress_output():
                 #################################
                 # Gaincal flagging
@@ -1509,9 +1506,6 @@ def selfcal_round(
                 applycal_gaintable.append(bpass_caltable)
                 interp.append("linear,linear")
 
-            #########################################
-            # Flagging bad gains
-            #########################################
             if calmode == "ap":
                 with suppress_output():
                     #############################
