@@ -162,6 +162,7 @@ def scale_worker_and_wait(
         Check interval in seconds
     """
     print(f"Start scaling to {nworker} workers")
+    nworker = max(1, nworker) # Safety, never scale to 0 worker
     dask_cluster.scale(nworker)
     time.sleep(1)
     c = 0
@@ -396,6 +397,7 @@ def submit_local_master_flow(args, jobid):
         try:
             last_lines = deque(maxlen=50)
             seen = set()
+            only_run_print = False
             with open(log_file, "a", buffering=1) as log:
                 process = subprocess.Popen(
                     ["bash", script_path],
@@ -406,7 +408,10 @@ def submit_local_master_flow(args, jobid):
                 )
                 for line in process.stdout:
                     last_lines.append(line)
-                    if "task run" in line.lower() or "flow run" in line.lower():
+                    last_line = last_lines[-1]
+                    if "task run" in last_line.lower() or "flow_run" in last_line.lower() and not only_run_print:
+                        only_run_print=True
+                    if not only_run_print or (only_run_print and ("task run" in line.lower() or "flow run" in line.lower())):
                         if line not in seen:
                             seen.add(line)
                             if log2term:

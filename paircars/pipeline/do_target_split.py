@@ -201,6 +201,7 @@ def split_target_scans(
                         )
                     )
 
+        print("Start spliting jobs...")
         future = dask_client.compute(tasks)
         result = dask_client.gather(future)
 
