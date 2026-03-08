@@ -73,7 +73,6 @@ def perform_imaging(
     savemodel=True,
     saveres=True,
     cutout_rsun=10.0,
-    make_overlay=False,
     make_plots=True,
     logfile="imaging.log",
     ncpu=1,
@@ -126,8 +125,6 @@ def perform_imaging(
         Save residual images or not
     cutout_rsun : float, optional
         Cutout image size in solar radii from center (default: 10.0 solar radii)
-    make_overlay : bool, optional
-        Make SUVI MWA overlay
     make_plots : bool, optional
         Make radio map helioprojective plots
     logfile : str, optional
@@ -467,7 +464,6 @@ def perform_imaging(
                                 imagedir=imagedir + "/images",
                                 pol=pol,
                                 cutout_rsun=cutout_rsun,
-                                make_overlay=make_overlay,
                                 make_plots=make_plots,
                                 keep_euv_fits=True,
                                 pol_selfcal=pol_selfcal,
@@ -486,7 +482,6 @@ def perform_imaging(
                                     imagedir=imagedir + "/models",
                                     pol=pol,
                                     cutout_rsun=cutout_rsun,
-                                    make_overlay=False,
                                     make_plots=False,
                                     pol_selfcal=pol_selfcal,
                                     cal_sol=cal_sol,
@@ -504,7 +499,6 @@ def perform_imaging(
                                     imagedir=imagedir + "/residuals",
                                     pol=pol,
                                     cutout_rsun=cutout_rsun,
-                                    make_overlay=False,
                                     make_plots=False,
                                     pol_selfcal=pol_selfcal,
                                 )
@@ -572,7 +566,6 @@ def run_all_imaging(
     savemodel=False,
     saveres=False,
     cutout_rsun=10.0,
-    make_overlay=False,
     make_plots=True,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -623,8 +616,6 @@ def run_all_imaging(
         Cutout image size (width and height is : 2 times cutout_rsun)
         Default value: 10 solar radii
         Note: default FoV is 20 solar solar radii. If cutout_rsun is chosen larger than 20 solar radii, FoV will be increased accordingly.
-    make_overlay : bool, optional
-        Make SUVI MWA overlay
     make_plots : bool, optional
         Make radio image helioprojective plots
     cpu_frac : float, optional
@@ -766,7 +757,6 @@ def run_all_imaging(
                     savemodel=savemodel,
                     saveres=saveres,
                     cutout_rsun=cutout_rsun,
-                    make_overlay=make_overlay,
                     make_plots=make_plots,
                     ncpu=n_threads,
                     mem=mem_limit,
@@ -834,7 +824,6 @@ def main(
     use_solar_mask=True,
     savemodel=True,
     saveres=True,
-    make_overlay=False,
     make_plots=True,
     start_remote_log=False,
     cpu_frac=0.8,
@@ -884,8 +873,6 @@ def main(
         If True, saves the CLEAN model images. Default is True.
     saveres : bool, optional
         If True, saves the residual images. Default is True.
-    make_overlay : bool, optional
-        If True, generates image overlays on solar maps. Default is False.
     make_plots : bool, optional
         If True, generates diagnostic plots for each image. Default is True.
     start_remote_log : bool, optional
@@ -1020,7 +1007,6 @@ def main(
             pol=pol,
             make_plots=make_plots,
             cutout_rsun=cutout_rsun,
-            make_overlay=make_overlay,
             savemodel=savemodel,
             saveres=saveres,
             cpu_frac=cpu_frac,
@@ -1169,12 +1155,6 @@ def cli():
         help="Do not save residual images",
     )
     adv_args.add_argument(
-        "--make_overlay",
-        action="store_true",
-        dest="make_overlay",
-        help="Generate overlay with SUVI images",
-    )
-    adv_args.add_argument(
         "--no_make_plots",
         action="store_false",
         dest="make_plots",
@@ -1232,7 +1212,6 @@ def cli():
         use_solar_mask=args.use_solar_mask,
         savemodel=args.savemodel,
         saveres=args.saveres,
-        make_overlay=args.make_overlay,
         make_plots=args.make_plots,
         start_remote_log=args.start_remote_log,
         cpu_frac=float(args.cpu_frac),
