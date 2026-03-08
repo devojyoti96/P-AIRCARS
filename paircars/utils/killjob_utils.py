@@ -8,10 +8,10 @@ import signal
 import traceback
 import subprocess
 from distributed import Client
-from paircars.utils.basic_utils import get_cachedir, check_port_status
-from paircars.utils.resource_utils import drop_cache
-from paircars.utils.proc_manage_utils import get_scheduler_name
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
+from .basic_utils import get_cachedir, check_port_status
+from .resource_utils import drop_cache
+from .proc_manage_utils import get_scheduler_name
+from .logger_utils import SmartDefaultsHelpFormatter
 
 
 def kill_port(port):
