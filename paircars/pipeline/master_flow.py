@@ -13,7 +13,6 @@ from astropy.io import fits
 from datetime import datetime as dt
 from multiprocessing import Event
 from dask.distributed import get_client
-from pyfiglet import Figlet
 from prefect import flow, task
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
@@ -4342,9 +4341,6 @@ def cli():
                 f"First start prefect server to run P-AIRCARS in {scheduler_name} cluster."
             )
             return 1
-
-    f = Figlet(font="big")
-    print(f.renderText("P-AIRCARS"))
 
     if args.jobid is None:
         jobid = get_jobid()
