@@ -2085,8 +2085,8 @@ def master_control(
         ###########################################
         # Move solar center, if any of these conditions are met
         if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
-            if not do_solarcenter_move:
-                do_solarcenter_move = True
+            if not do_move_solarcenter:
+                do_move_solarcenter = True
                 
         # Switch on cal flag and import model, if basic cal is needed
         if do_basic_cal:
