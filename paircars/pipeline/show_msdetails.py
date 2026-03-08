@@ -3,7 +3,6 @@ import sys
 import os
 from casatasks import listobs
 from paircars.utils.resource_utils import drop_cache
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 
 
 def show_listobs(msname):

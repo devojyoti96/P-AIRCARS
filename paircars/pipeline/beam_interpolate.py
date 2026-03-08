@@ -29,7 +29,7 @@ def do_beam_interpolate(original_pb_file, new_freq_res=160):
     """
     starttime = time.time()
     try:
-        start_time = time.time()
+        time.time()
         new_freq_res = int(new_freq_res)
         new_pb_file = original_pb_file.split(".h5")[0] + f"_{new_freq_res}.h5"
         if os.path.exists(new_pb_file):
@@ -118,7 +118,7 @@ def do_beam_interpolate(original_pb_file, new_freq_res=160):
         print(f"Time taken: {t_taken}s")
         os.system("rm -rf new_array.dat")
         return new_pb_file
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return
 

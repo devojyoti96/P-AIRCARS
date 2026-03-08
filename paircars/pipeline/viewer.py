@@ -5,9 +5,6 @@ import sys
 import numpy as np
 import traceback
 import argparse
-import webbrowser
-from collections import deque
-from threading import Thread
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -402,7 +399,7 @@ def cli():
         viewer = LogViewer()
         viewer.show()
         sys.exit(app.exec_())
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
     finally:
         if LOG_DIR is not None and os.path.exists(LOG_DIR):

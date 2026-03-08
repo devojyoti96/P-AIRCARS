@@ -7,21 +7,17 @@ import time
 import glob
 import sys
 import os
-import dask
-from astropy.io import fits
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.basic_utils import timestamp_to_mjdsec
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay, get_all_euv_maps
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.image_utils import filter_images
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -103,7 +99,7 @@ def main(
             observer = init_logger(
                 "do_overlay", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     imagelist = glob.glob(f"{imagedir}/*.fits")
@@ -201,7 +197,7 @@ def main(
                 failed = len(imagelist) - succeed
         else:
             msg = 1
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

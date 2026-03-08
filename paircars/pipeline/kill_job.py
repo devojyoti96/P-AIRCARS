@@ -3,7 +3,6 @@ import sys
 from paircars.utils.proc_manage_utils import get_scheduler_name
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.killjob_utils import (
-    terminate_process_and_children,
     kill_localscheduler,
     kill_slurmscheduler,
 )

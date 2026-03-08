@@ -10,7 +10,6 @@ from numpy.linalg import inv
 from astropy.io import fits
 from astropy.coordinates import EarthLocation
 from paircars.utils.basic_utils import get_datadir
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.mwapb_utils import (
     get_azza_from_fits,
     get_IQUV,
@@ -18,6 +17,7 @@ from paircars.utils.mwapb_utils import (
     B2IQUV,
     get_jones_array,
 )
+from paircars.utils.selfcal_utils import correct_image_leakage
 
 warnings.filterwarnings("ignore")
 
@@ -112,7 +112,7 @@ def get_pbcor_image(
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
     try:
-        if restore == False:
+        if not restore:
             print(
                 f"Correcting image : {os.path.basename(imagename)} for MWA primary beam response.\n"
             )
@@ -130,12 +130,12 @@ def get_pbcor_image(
                 return
             else:
                 sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
-                delay = sweet_spots[int(gridpoint)][-1]
+                sweet_spots[int(gridpoint)][-1]
         else:
             metadata = fits.getheader(metafits)
             gridpoint = metadata["GRIDNUM"]
             sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
-            delay = sweet_spots[int(gridpoint)][-1]
+            sweet_spots[int(gridpoint)][-1]
 
         ###############################
         # Reading image data and header
@@ -311,11 +311,11 @@ def get_pbcor_image(
                             hdr["VLEAK"] = "NAN"
                         else:
                             hdr["VLEAK"] = abs(round(res_v_leakage * 100.0, 4))
-                except:
+                except Exception:
                     traceback.print_exc()
         print(f"Output image written to : {outfile}\n")
         return outfile
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return
 
@@ -415,10 +415,10 @@ def cli():
 
     args = parser.parse_args()
 
-    start_time = time.time()
+    time.time()
 
     try:
-        pbcor_image = get_pbcor_image(
+        get_pbcor_image(
             args.imagename,
             args.outfile,
             args.metafits,
@@ -438,7 +438,3 @@ def cli():
         traceback.print_exc()
         return 1
 
-
-if __name__ == "__main__":
-    result = main()
-    os._exit(result)

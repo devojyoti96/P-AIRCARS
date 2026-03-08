@@ -1,14 +1,10 @@
 import logging
-import psutil
-import dask
 import numpy as np
 import argparse
 import traceback
 import time
-import glob
 import sys
 import os
-from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
@@ -23,7 +19,6 @@ from paircars.utils.mwa_utils import get_bad_chans, get_mwa_bad_ants, get_ncoars
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache, limit_threads
 
@@ -190,14 +185,14 @@ def single_ms_flag(
             corcolumn_present = check_datacolumn_valid(
                 msname, datacolumn="CORRECTED_DATA"
             )
-            if modelcolumn_present == False or corcolumn_present == False:
+            if not modelcolumn_present or not corcolumn_present:
                 datacolumn = "corrected"
         elif datacolumn == "RESIDUAL_DATA":
             modelcolumn_present = check_datacolumn_valid(
                 msname, datacolumn="MODEL_DATA"
             )
             datacolumn_present = check_datacolumn_valid(msname, datacolumn="DATA")
-            if modelcolumn_present == False or datacolumn_present == False:
+            if not modelcolumn_present or not datacolumn_present:
                 datacolumn = "corrected"
 
         #################################################
@@ -302,7 +297,7 @@ def single_ms_flag(
                 pass
         os.system(f"touch {msname}/.flag_succeed")
         return 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         os.system(f"touch {msname}/.flag_failed")
         return 1
@@ -479,7 +474,7 @@ def do_flagging(
             return 1, succeed, failed
         else:
             return 0, succeed, failed
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1, 0, len(mslist)
 
@@ -595,7 +590,7 @@ def main(
             observer = init_logger(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
@@ -656,7 +651,7 @@ def main(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
         )
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

@@ -1,11 +1,8 @@
 import logging
-import psutil
-import dask
 import numpy as np
 import argparse
 import traceback
 import warnings
-import copy
 import time
 import glob
 import sys
@@ -25,7 +22,6 @@ from paircars.utils.ms_metadata import check_datacolumn_valid, get_ms_size
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache, limit_threads
 from paircars.utils.udocker_utils import run_quartical
@@ -64,7 +60,7 @@ def scale_bandpass(bandpass_table, cal_attn, target_attn, only_amplitude=False):
     tb = table()
     tb.open(output_table, nomodify=False)
     gain = tb.getcol("CPARAM")
-    flag = tb.getcol("FLAG")
+    tb.getcol("FLAG")
     if cal_attn == target_attn:
         scaling = 1.0
     else:
@@ -140,7 +136,7 @@ def applysol(
     else:
         check_file = "/.applied_selfcalsol"
     try:
-        if os.path.exists(msname + check_file) and force_apply == False:
+        if os.path.exists(msname + check_file) and not force_apply:
             print("Solutions are already applied.")
             gain_msg = 0
             if os.path.exists(f"{msname}/.nopolselfcal"):
@@ -170,7 +166,7 @@ def applysol(
                         flagbackup=False,
                     )
                 gain_msg = 0
-            except:
+            except Exception:
                 gain_msg = 1
             if gain_msg == 0 and soltype != "basic":
                 os.system(f"rm -rf {msname}/.nopolselfcal")
@@ -199,14 +195,14 @@ def applysol(
                                 quartical_args = [
                                     "goquartical",
                                     f"input_ms.path={msname}",
-                                    f"input_ms.data_column=CORRECTED_DATA",
+                                    "input_ms.data_column=CORRECTED_DATA",
                                     "output.log_to_terminal=True",
                                     f"output.log_directory={quartical_log}",
                                     f"output.gain_directory={temp_pol_caltable}",
                                     "output.overwrite=True",
                                     "output.products=[corrected_data]",
                                     "output.columns=[CORRECTED_DATA]",
-                                    f"output.flags=False",
+                                    "output.flags=False",
                                     f"solver.terms=[{soltype}]",
                                     "solver.iter_recipe=[0]",
                                     "solver.propagate_flags=False",
@@ -251,7 +247,7 @@ def applysol(
         if gain_msg == 0:
             os.system("touch " + msname + check_file)
         return gain_msg, pol_msg
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1, 1
 
@@ -450,7 +446,7 @@ def run_all_applysol(
             )
             print("##################")
             return 0, succeed, failed + apply_failed
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         print("##################")
         print(
@@ -550,7 +546,7 @@ def main(
             observer = init_logger(
                 "apply_basiccal", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:

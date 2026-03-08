@@ -1,12 +1,10 @@
 import logging
-import dask
 import numpy as np
 import argparse
 import traceback
 import time
 import sys
 import os
-import psutil
 from dask import delayed
 from paircars.utils.basic_utils import get_datadir
 from paircars.utils.ms_metadata import get_ms_size
@@ -18,7 +16,6 @@ from paircars.utils.logger_utils import (
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.resource_utils import drop_cache
@@ -112,7 +109,7 @@ def cor_sidereal_motion(
             print("Sidereal motion corrections are done successfully.")
             print("##################")
             return 0, splited_ms_list_phaserotated, succeed, failed
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         print("##################")
         print("Sidereal motion correction is not successful for any measurement set.")
@@ -190,7 +187,7 @@ def main(
             observer = init_logger(
                 "do_sidereal_cor", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
@@ -237,7 +234,7 @@ def main(
             dask_client,
             workdir,
         )
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

@@ -1,5 +1,4 @@
 import logging
-import dask
 import numpy as np
 import argparse
 import warnings
@@ -9,13 +8,11 @@ import glob
 import sys
 import os
 import subprocess
-import psutil
 from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
 from dask import delayed
-from paircars.pipeline.single_image_mwapbcor import get_pbcor_image
 from paircars.utils.basic_utils import get_datadir
-from paircars.utils.image_utils import create_circular_mask_array, generate_tb_map
+from paircars.utils.image_utils import generate_tb_map
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -26,7 +23,6 @@ from paircars.utils.mwa_ploting_utils import save_in_hpc, plot_in_hpc
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 
@@ -342,7 +338,7 @@ def pbcor_all_images(
                 os.makedirs(pngdir, exist_ok=True)
                 for image in pbcor_images:
                     try:
-                        outimages = plot_in_hpc(
+                        plot_in_hpc(
                             image,
                             draw_limb=True,
                             extensions=["png"],
@@ -380,7 +376,7 @@ def pbcor_all_images(
                 pngdir = f"{tb_dir}/pngs"
                 os.makedirs(pngdir, exist_ok=True)
                 for image in tb_images:
-                    outimages = plot_in_hpc(
+                    plot_in_hpc(
                         image,
                         draw_limb=True,
                         extensions=["png"],
@@ -398,9 +394,9 @@ def pbcor_all_images(
             if make_TB:
                 print(f"Total brightness temperatures maps: {len(tb_images)}")
         else:
-            print(f"Total primary beam corrected images: 0")
+            print("Total primary beam corrected images: 0")
         msg = 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

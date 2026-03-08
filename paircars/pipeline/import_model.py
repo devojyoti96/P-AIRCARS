@@ -3,18 +3,14 @@ import glob
 import numpy as np
 import time
 import sys
-import dask
-import psutil
 import traceback
 import logging
 import argparse
-import subprocess
 from dask import delayed
 from casatasks import setjy
 from casatools import table as casatable, msmetadata
 from paircars.utils.basic_utils import suppress_output, get_datadir
 from paircars.utils.logger_utils import (
-    SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
 )
@@ -102,15 +98,15 @@ def import_hyperdrive_model(
             mid_freq = msmd.meanfreq(0, unit="MHz")
             freqres = msmd.chanres(0, unit="kHz")[0]
             npol = msmd.ncorrforpol()[0]
-            nant = msmd.nantennas()
+            msmd.nantennas()
             times = msmd.timesforfield(0)
             ntime = len(times)
             timeres = msmd.exposuretime(scan=1)["value"]
-            nrow = msmd.nrows()
+            msmd.nrows()
             msmd.close()
 
         hyperdrive_cmd_args = [
-            f"hyperdrive",
+            "hyperdrive",
             "vis-simulate",
             "-m",
             metafits,
@@ -179,7 +175,7 @@ def import_hyperdrive_model(
         print(f"Model import done in: {round(time.time()-starttime,2)}s")
         os.system(f"touch {msname}/.modeling_succeed")
         return 0
-    except Exception as e:
+    except Exception:
         print(f"Model simulation and import failed for: {msname}.")
         traceback.print_exc()
         os.system(f"touch {msname}/.modeling_failed")
@@ -249,7 +245,7 @@ def run_all_modeling(
             msg = 1
         else:
             msg = 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     return msg, succeed, failed
@@ -351,13 +347,13 @@ def main(
             observer = init_logger(
                 "ds_plot", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if dask_client is None:
-        scheduler_name = "local"
+        pass
     else:
-        scheduler_name = get_scheduler_name()
+        get_scheduler_name()
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
@@ -419,7 +415,7 @@ def main(
         msg, succeed, failed = run_all_modeling(
             mslist, dask_client, metafits, beamfile, sourcelist, n_threads, verbose
         )
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

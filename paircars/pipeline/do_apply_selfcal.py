@@ -1,5 +1,4 @@
 import logging
-import dask
 import numpy as np
 import argparse
 import traceback
@@ -7,7 +6,6 @@ import time
 import glob
 import sys
 import os
-import psutil
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
@@ -21,7 +19,6 @@ from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 from paircars.pipeline.do_apply_basiccal import applysol
@@ -95,14 +92,13 @@ def run_all_applysol(
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
-        parang = False
         header = fits.getheader(metafits)
         obsid = header["GPSTIME"]
         selfcal_tables = sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.gcal"))
-        selfcal_bpass_tables = sorted(
+        sorted(
             glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.bcal")
         )
-        selfcal_quartical_tables = sorted(
+        sorted(
             glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.dcal")
         )
         if len(selfcal_tables) == 0:
@@ -348,7 +344,7 @@ def main(
             observer = init_logger(
                 "apply_selfcal", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:

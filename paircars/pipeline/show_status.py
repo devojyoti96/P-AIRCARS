@@ -6,7 +6,6 @@ import sys
 import os
 import subprocess
 from paircars.utils.basic_utils import get_cachedir
-from paircars.utils.resource_utils import drop_cache
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
 
@@ -81,7 +80,7 @@ def show_local_job_status(clean_old_jobs=False):
                 )
                 if clean_old_jobs and running == "Done/Stopped":
                     os.system(f"rm -rf {pid_file}")
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
     finally:
         return msg
@@ -141,7 +140,7 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None, print_status=Tru
                     )
                 if clean_old_jobs and running == "Done/Stopped":
                     os.system(f"rm -rf {pid_file}")
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
     finally:
         return msg
@@ -188,7 +187,7 @@ def cli():
                 )
             else:
                 print(f"P-AIRCARS is not ready for job scheduler: {scheduler_name}")
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
 
 

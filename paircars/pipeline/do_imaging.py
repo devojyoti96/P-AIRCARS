@@ -1,7 +1,4 @@
-import resource
 import logging
-import psutil
-import dask
 import numpy as np
 import argparse
 import traceback
@@ -12,7 +9,6 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
-from astropy.io import fits
 from paircars.utils.basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
 from paircars.utils.image_utils import (
     create_circular_mask,
@@ -38,7 +34,6 @@ from paircars.utils.mwa_ploting_utils import rename_mwasolar_image
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.udocker_utils import (
@@ -175,7 +170,7 @@ def perform_imaging(
         #########
         msmd = msmetadata()
         msmd.open(msname)
-        freq = msmd.meanfreq(0, unit="MHz")
+        msmd.meanfreq(0, unit="MHz")
         freqs = msmd.chanfreqs(0, unit="MHz")
         freqres = msmd.chanres(0, unit="MHz")[0]
         times = msmd.timesforspws(0)
@@ -289,7 +284,7 @@ def perform_imaging(
         ################################################
         if use_solar_mask:
             fits_mask = prefix + "_solar-mask.fits"
-            if os.path.exists(fits_mask) == False:
+            if not os.path.exists(fits_mask):
                 logger.info(
                     f"{os.path.basename(msname)} -- Creating solar mask of radius: {mask_radius} arcmin.\n",
                 )
@@ -531,7 +526,7 @@ def perform_imaging(
             time.sleep(5)
             clean_shutdown(sub_observer)
             return 1, {}
-    except Exception as e:
+    except Exception:
         logger.info(
             f"{os.path.basename(msname)} -- Error in imaging.\n",
         )
@@ -647,11 +642,6 @@ def run_all_imaging(
         total_images = 0
 
     try:
-        if len(mslist) == 0:
-            print("Provide valid measurement set list.")
-            time.sleep(5)
-            clean_shutdown(observer)
-            return 1
         if weight == "briggs":
             weight_str = f"{weight}_{robust}"
         else:
@@ -682,7 +672,7 @@ def run_all_imaging(
         mslist = filtered_mslist
         if len(mslist) == 0:
             print("No valid measurement set is found.")
-            return 1
+            return 1, succeed, failed, total_images
 
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
@@ -799,7 +789,7 @@ def run_all_imaging(
         )
         print(f"Total images made: {total_images}.")
         return 0, succeed, failed, total_images
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1, succeed, failed, total_images
 
@@ -952,7 +942,7 @@ def main(
             observer = init_logger(
                 "all_imaging", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     total_ncoarse = 0

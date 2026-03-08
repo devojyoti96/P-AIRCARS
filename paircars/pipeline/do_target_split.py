@@ -1,6 +1,4 @@
 import logging
-import psutil
-import dask
 import numpy as np
 import argparse
 import traceback
@@ -21,7 +19,6 @@ from paircars.utils.mwa_utils import get_MWA_coarse_bands, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 
@@ -111,8 +108,7 @@ def split_target_scans(
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
-        succeed = 0
-        failed = len(mslist)
+        len(mslist)
 
     try:
         os.chdir(workdir)
@@ -134,8 +130,8 @@ def split_target_scans(
             msmd.open(msname)
             chanres = msmd.chanres(0, unit="MHz")[0]
             freqs = msmd.chanfreqs(0, unit="MHz")
-            bw = max(freqs) - min(freqs)
-            nchan = msmd.nchan(0)
+            max(freqs) - min(freqs)
+            msmd.nchan(0)
             msmd.close()
             if freqres > 0:  # Image resolution is in MHz
                 chanwidth = int(freqres / chanres)
@@ -215,7 +211,7 @@ def split_target_scans(
             for splited_ms in splited_ms_list:
                 drop_cache(splited_ms)
             return 0, splited_ms_list
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         print(f"Spliting of measurement set: {msname} is unsuccessful.")
         return 1, []
@@ -322,7 +318,7 @@ def main(
             observer = init_logger(
                 "do_target_split", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
@@ -364,7 +360,7 @@ def main(
 
     try:
         print("###################################")
-        print(f"Start spliting measurement sets in coarse frequency bands.")
+        print("Start spliting measurement sets in coarse frequency bands.")
         print("###################################")
         ##################################
         # Parallel spliting
@@ -415,7 +411,7 @@ def main(
             msg = 1
         else:
             msg = 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

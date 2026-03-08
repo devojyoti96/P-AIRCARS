@@ -1,10 +1,8 @@
 import logging
-import psutil
 import numpy as np
 import argparse
 import traceback
 import time
-import glob
 import sys
 import os
 from dask import delayed
@@ -18,7 +16,6 @@ from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.sunpos_utils import move_to_sun
@@ -99,7 +96,7 @@ def main(
             observer = init_logger(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
-    if observer == None:
+    if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
@@ -166,7 +163,7 @@ def main(
             msg = 1
         else:
             msg = 0
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:

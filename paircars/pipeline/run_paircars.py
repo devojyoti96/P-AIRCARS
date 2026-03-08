@@ -4,7 +4,6 @@ import traceback
 import argparse
 import numpy as np
 from paircars.utils.basic_utils import (
-    get_cachedir,
     check_port_status,
     get_free_port,
     test_permission,
@@ -18,6 +17,7 @@ from paircars.utils.proc_manage_utils import (
 from paircars.utils.prefect_setup_utils import (
     prefect_server_status,
     start_prefect_server,
+    stop_prefect_server,
 )
 from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow
 
@@ -408,12 +408,12 @@ def cli():
 
         if check_port_status(postgres_port) is False:
             if scheduler_name != "local":
-                postgres_portport = get_free_port(start_port=5260, end_port=6250)
+                get_free_port(start_port=5260, end_port=6250)
 
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
-        config = np.load(config_file, allow_pickle=True).all()
+        np.load(config_file, allow_pickle=True).all()
         if msg != 0:
             if scheduler_name != "local":
                 print(
@@ -422,11 +422,11 @@ def cli():
                 return 1
             else:
                 print(
-                    f"Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
+                    "Error in starting prefect server at port. P-AIRCARS will use ephemeral mode in local cluster."
                 )
                 try:
                     stop_prefect_server(scheduler_name=scheduler_name)
-                except:
+                except Exception:
                     pass
                 os.system(f"rm -rf {config_file} {profile_path} {env_file} {pid_file}")
     try:

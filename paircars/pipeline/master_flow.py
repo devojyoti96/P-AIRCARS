@@ -1,23 +1,18 @@
 import os
-import psutil
 import numpy as np
 import argparse
 import traceback
-import copy
 import time
 import glob
 import sys
-import os
 import socket
 import requests
 import getpass
-from collections import Counter
 from casatools import msmetadata
 from astropy.io import fits
 from datetime import datetime as dt
-from multiprocessing import Process, Event
+from multiprocessing import Event
 from dask.distributed import get_client
-from dotenv import load_dotenv
 from pyfiglet import Figlet
 from prefect import flow, task
 from prefect.context import get_run_context
@@ -26,7 +21,6 @@ from prefect_dask import get_dask_client
 from prefect.settings import get_current_settings
 from paircars.utils.basic_utils import (
     get_cachedir,
-    timestamp_to_mjdsec,
 )
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -60,10 +54,7 @@ from paircars.utils.mwa_utils import (
 from paircars.utils.proc_manage_utils import (
     get_jobid,
     save_main_process_info,
-    get_total_worker,
     scale_worker_and_wait,
-    get_total_nodes,
-    get_total_nodes,
     get_local_dask_cluster,
     get_scheduler_name,
 )
@@ -73,7 +64,6 @@ from paircars.data.sendmail import (
 )
 from paircars.clusterutils.slurm_cluster import (
     get_slurm_dask_cluster,
-    get_slurm_node_resources,
     is_slurm_job,
 )
 from paircars.utils.prefect_logger_utils import (
@@ -1825,9 +1815,8 @@ def master_control(
         print(
             f"No measurement set is present in target data directory: {target_datadir}"
         )
-        if emails != "":
-            email_msg = "No measurement set is present in the target data directory."
-            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
+        return 1
+        
     test_msname = target_mslist[0]
     if os.path.exists(target_metafits) is False:
         target_obsid = get_MWA_OBSID(test_msname)
@@ -1836,15 +1825,12 @@ def master_control(
                 target_obsid, outdir=os.path.dirname(test_msname)
             )
         except Exception:
-            tracebcak.print_exc()
+            traceback.print_exc()
             target_metafits = None
         if target_metafits is None or os.path.exists(target_metafits) is False:
             print(
                 f"Target metafits {target_metafits} does not exist. P-AIRCARS has stopped."
             )
-            if emails != "":
-                email_msg = "Target metafits file does not exist."
-                send_task_notification(emails, email_msg, jobid, "N/A", timestamp)
             return 1
     target_header = fits.getheader(target_metafits)
     target_obsid = target_header["GPSTIME"]
@@ -1920,7 +1906,7 @@ def master_control(
     try:
         dask_client = get_client()
         dask_cluster = dask_client.cluster
-    except:
+    except Exception:
         if mem_frac <= 0:
             mem_frac = 0.8
         result = get_local_dask_cluster(
@@ -1969,7 +1955,7 @@ def master_control(
     observer = None
     try:
         #####################################
-        # Reading remotelink and emails
+        # Reading remotelink 
         #####################################
         remote_link = ""
         if remote_logger:
@@ -2016,8 +2002,7 @@ def master_control(
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             username = getpass.getuser()
             jobname = f"{username}-{hostname}:{timestamp}:{target_obsid}"
-            timestamp1 = dt.utcnow().strftime("%Y%m%dT%H%M%S")
-            remote_job_id = f"{hostname}_{timestamp1}_{target_obsid}"
+            dt.utcnow().strftime("%Y%m%dT%H%M%S")
             if job_password is None:
                 password = generate_password()
             else:
@@ -2052,7 +2037,7 @@ def master_control(
                     observer = init_logger(
                         "master_log", master_logfile, jobname=jobname, password=password
                     )
-            if observer == None:
+            if observer is None:
                 print(
                     "Remote link or jobname is blank. Not transmiting to remote logger."
                 )
@@ -2114,7 +2099,7 @@ def master_control(
         calibrator_obsid = None
         if len(calibrator_mslist) == 0:
             print(
-                f"No calibrator observation is provided. Continuing based on self-calibration."
+                "No calibrator observation is provided. Continuing based on self-calibration."
             )
             has_cal = False
         ######################################################
@@ -2128,7 +2113,7 @@ def master_control(
                     cal_obsid, outdir=os.path.dirname(test_cal_ms)
                 )
             except Exception:
-                tracebcak.print_exc()
+                traceback.print_exc()
                 calibrator_metafits = None
         if calibrator_metafits is not None and os.path.exists(calibrator_metafits):
             calibrator_header = fits.getheader(calibrator_metafits)
@@ -2146,7 +2131,7 @@ def master_control(
                 has_cal = True
         else:
             print(
-                f"Calibrator ms is available, however, calibrator metafits is not available."
+                "Calibrator ms is available, however, calibrator metafits is not available."
             )
             has_cal = False
 
@@ -2346,7 +2331,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Moving phasecenter to solar center is done.")
+                print("Finished task: Moving phasecenter to solar center is done.")
                 print("###########################")
                 filtered_ms = []
                 for t_ms in target_mslist:
@@ -2408,7 +2393,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Making solar dynamic spectra are done.")
+                print("Finished task: Making solar dynamic spectra are done.")
                 print("###########################")
             except Exception:
                 print("!!! WARNING : Error in making dynamic spectra. !!!")
@@ -2465,7 +2450,7 @@ def master_control(
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Spliting of calibrator measurement sets are done."
+                    "Finished task: Spliting of calibrator measurement sets are done."
                 )
                 print("###########################")
             except Exception:
@@ -2548,7 +2533,7 @@ def master_control(
                     )
                 split_cal_mslist = filtered_ms  # Filtered target mslist
                 print("###########################")
-                print(f"Finished task: Flagging of calibrator is done.")
+                print("Finished task: Flagging of calibrator is done.")
                 print("###########################")
             except Exception:
                 print("!!!! WARNING: Flagging error. P-AIRCARS has stopped. !!!!")
@@ -2591,7 +2576,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Model import for calibrator is done.")
+                print("Finished task: Model import for calibrator is done.")
                 print("###########################")
                 filtered_ms = []
                 for c_ms in split_cal_mslist:
@@ -2660,7 +2645,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Basic calibration is done.")
+                print("Finished task: Basic calibration is done.")
                 print("###########################")
             except Exception:
                 print(
@@ -2716,7 +2701,7 @@ def master_control(
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
                 print("####################################################")
-                caltables = bandpass_tables + crossphase_tables
+                bandpass_tables + crossphase_tables
         else:
             has_cal = False
 
@@ -2733,7 +2718,7 @@ def master_control(
                     f"Diagnostic plots for bandpass tables are saved in : {bpass_plots}."
                 )
             else:
-                print(f"Error in creating diagnostic plots for bandpass tables.")
+                print("Error in creating diagnostic plots for bandpass tables.")
         if has_cal and len(crossphase_tables) > 0 and do_basic_cal:
             os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
             msg, kcross_plots = plot_caltable_diagnostics(
@@ -2746,7 +2731,7 @@ def master_control(
                     f"Diagnostic plots for crosshand phase tables are saved in : {kcross_plots}."
                 )
             else:
-                print(f"Error in creating diagnostic plots for crosshand phase tables.")
+                print("Error in creating diagnostic plots for crosshand phase tables.")
 
         ###################################################
         # Start spliting selfcal ms
@@ -2818,7 +2803,7 @@ def master_control(
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Spliting of measurement sets for self-calibration is done."
+                    "Finished task: Spliting of measurement sets for self-calibration is done."
                 )
                 print("###########################")
             except Exception:
@@ -2926,7 +2911,7 @@ def master_control(
                         )
                 print("###########################")
                 print(
-                    f"Finished task: Flagging for self-calibration measurment sets are done."
+                    "Finished task: Flagging for self-calibration measurment sets are done."
                 )
                 print("###########################")
             except Exception:
@@ -2983,7 +2968,7 @@ def master_control(
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
+                        "Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
                     )
                     print("###########################")
                 except Exception:
@@ -3059,7 +3044,7 @@ def master_control(
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Correction for solar sidereal motion is done."
+                        "Finished task: Correction for solar sidereal motion is done."
                     )
                     print("###########################")
                 except Exception:
@@ -3120,7 +3105,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Self-calibration is done.")
+                print("Finished task: Self-calibration is done.")
                 print("###########################")
             except Exception:
                 print(
@@ -3173,7 +3158,7 @@ def master_control(
                 )
             else:
                 print(
-                    f"Error in creating diagnostic plots for self-calibration gaincal tables."
+                    "Error in creating diagnostic plots for self-calibration gaincal tables."
                 )
 
         if do_selfcal and len(selfcal_bandpass) > 0:
@@ -3187,7 +3172,7 @@ def master_control(
                 )
             else:
                 print(
-                    f"Error in creating diagnostic plots for self-calibration bandpass tables."
+                    "Error in creating diagnostic plots for self-calibration bandpass tables."
                 )
 
         if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
@@ -3201,7 +3186,7 @@ def master_control(
                 )
             else:
                 print(
-                    f"Error in creating diagnostic plots for self-calibration leakage tables."
+                    "Error in creating diagnostic plots for self-calibration leakage tables."
                 )
 
         #############################################
@@ -3252,7 +3237,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Spliting target for final processing is done.")
+                print("Finished task: Spliting target for final processing is done.")
                 print("###########################")
             except Exception:
                 print("!!!! WARNING: Error in spliting targets. !!!!")
@@ -3351,7 +3336,7 @@ def master_control(
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Flagging of final target measurement sets are done."
+                    "Finished task: Flagging of final target measurement sets are done."
                 )
                 print("###########################")
             except Exception:
@@ -3407,7 +3392,7 @@ def master_control(
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Applying basic calibration solutions on final target measurement sets are done."
+                        "Finished task: Applying basic calibration solutions on final target measurement sets are done."
                     )
                     print("###########################")
                 except Exception:
@@ -3456,7 +3441,7 @@ def master_control(
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Sidereal motion correction of the Sun on final target measurement sets are done."
+                        "Finished task: Sidereal motion correction of the Sun on final target measurement sets are done."
                     )
                     print("###########################")
                 except Exception:
@@ -3514,7 +3499,7 @@ def master_control(
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Applying self-calibration on final target measurement sets are done."
+                        "Finished task: Applying self-calibration on final target measurement sets are done."
                     )
                     print("###########################")
                 except Exception:
@@ -3535,7 +3520,7 @@ def master_control(
                 if image_freqres > 0:
                     print(f"Image frequency resolution: {image_freqres} MHz.")
                 else:
-                    print(f"Image frequency resolution: entire corase channel.")
+                    print("Image frequency resolution: entire corase channel.")
                 if image_timeres > 0:
                     print(f"Image time resolution: {image_timeres} s.")
                 else:
@@ -3545,7 +3530,7 @@ def master_control(
                     pol = "IQUV"
 
                 if (
-                    do_polcal == False
+                    not do_polcal
                 ):  # Only if do_polcal is False, overwrite to make only Stokes I
                     pol = "I"
 
@@ -3590,7 +3575,7 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
-                    print(f"Finished task: Final imaging is done.")
+                    print("Finished task: Final imaging is done.")
                     print("###########################")
                 except Exception:
                     print(
@@ -3678,7 +3663,7 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
                     print("###########################")
-                    print(f"Finished task: Primary beam correction is done.")
+                    print("Finished task: Primary beam correction is done.")
                     print(f"Final image directory: {imagedir}/images")
                     print("###########################")
                 except Exception:
@@ -3746,7 +3731,7 @@ def master_control(
                             )
                         print("###########################")
                         print(
-                            f"Finished task: Making diagnostic plots for calibrator measurment sets are done."
+                            "Finished task: Making diagnostic plots for calibrator measurment sets are done."
                         )
                         print("###########################")
                     except Exception:
@@ -3800,7 +3785,7 @@ def master_control(
                         )
                     print("###########################")
                     print(
-                        f"Finished task: Making diagnostic plots for target measurment sets are done."
+                        "Finished task: Making diagnostic plots for target measurment sets are done."
                     )
                     print("###########################")
                 except Exception:
@@ -3871,7 +3856,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Making overlays are done.")
+                print("Finished task: Making overlays are done.")
                 print(f"Final image directory: {imagedir}/overlay_pngs")
                 print("###########################")
             except Exception:
@@ -3886,7 +3871,7 @@ def master_control(
         ###########################################
         # Successful exit
         ###########################################
-        print(f"P-AIRCARS calibration and imaging pipeline is successfully executed.")
+        print("P-AIRCARS calibration and imaging pipeline is successfully executed.")
         if emails != "":
             email_msg = "P-AIRCARS processing is done successfully."
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
@@ -3897,7 +3882,7 @@ def master_control(
             email_msg = f"Error in running P-AIRCARS.\n{e}"
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
         print("###########################")
-        print(f"Error occured in running P-AIRCARS.")
+        print("Error occured in running P-AIRCARS.")
         print("###########################")
         return 1
     finally:
@@ -4335,8 +4320,7 @@ def cli():
     prefect_settings = get_current_settings()
     prefect_env = prefect_settings.to_environment_variables()
     api_url = prefect_env.get("PREFECT_API_URL")
-    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-    config_file = f"{cachedir}/prefect.config.npy"
+    f"{get_cachedir()}/prefect_{scheduler_name}"
 
     ######################################
     # Check connection to prefect server
@@ -4344,7 +4328,7 @@ def cli():
     if api_url is not None:
         check_url = f"{api_url}/health"
         try:
-            r = requests.get(check_url, timeout=60)
+            requests.get(check_url, timeout=60)
         except Exception:
             traceback.print_exc()
             print(f"Could not reach prefect server at: {api_url} from compute node.")
@@ -4405,7 +4389,7 @@ def cli():
                 total_ms_size_cal = sum(cal_ms_sizes)
                 min_mem_cal = round(10 * total_ms_size_cal / total_ncoarse, 2)
         else:
-            print(f"Calibrator data direcotry does not exist.")
+            print("Calibrator data direcotry does not exist.")
 
     min_mem = max(min_mem_target, min_mem_cal)
 
@@ -4463,7 +4447,7 @@ def cli():
             dask_client, dask_cluster, dask_dir, nworker = result
 
         scheduler_address = dask_client.scheduler.address
-        main_job_file = save_main_process_info(
+        save_main_process_info(
             pid,
             jobid,
             scheduler_address,
@@ -4502,7 +4486,7 @@ def cli():
             else:
                 dask_client, dask_cluster, dask_dir, nworker = cluster_result
             scheduler_address = dask_client.scheduler.address
-            main_job_file = save_main_process_info(
+            save_main_process_info(
                 pid,
                 jobid,
                 scheduler_address,

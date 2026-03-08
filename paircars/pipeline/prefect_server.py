@@ -9,7 +9,6 @@ from paircars.utils.prefect_setup_utils import (
     start_prefect_server,
     stop_prefect_server,
     prefect_server_status,
-    prefect_config,
     save_prefect_env_to_file,
     show_prefect_config,
 )
@@ -60,7 +59,7 @@ def cli():
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":
-            postgres_portport = get_free_port(start_port=5260, end_port=6250)
+            get_free_port(start_port=5260, end_port=6250)
 
     if args.command == "start":
         msg, config_file, profile_path, env_file, dashboard, pid_file = (

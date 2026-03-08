@@ -5,6 +5,7 @@ import requests
 import sys
 import os
 import getpass
+import numpy as np
 from datetime import datetime as dt
 from parfive import Downloader
 from paircars.utils.basic_utils import (
@@ -27,7 +28,7 @@ from paircars.utils.udocker_utils import (
     initialize_postgres_container,
 )
 from paircars.utils.killjob_utils import kill_port
-from paircars.pipeline.beam_interpolate import *
+from paircars.pipeline.beam_interpolate import do_beam_interpolate
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -157,12 +158,12 @@ def main(
 
     try:
         kill_port(port)
-    except:
+    except Exception:
         pass
 
     try:
         kill_port(postgres_port)
-    except:
+    except Exception:
         pass
 
     scheduler_name = get_scheduler_name()
@@ -266,7 +267,7 @@ def main(
                 )
                 try:
                     stop_prefect_server(scheduler_name=scheduler_name)
-                except:
+                except Exception:
                     pass
                 os.system(f"rm -rf {config_file} {profile_path} {env_file} {pid_file}")
         return 0

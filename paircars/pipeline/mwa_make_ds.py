@@ -1,5 +1,4 @@
 import logging
-import dask
 import numpy as np
 import argparse
 import traceback
@@ -8,7 +7,6 @@ import time
 import glob
 import sys
 import os
-import psutil
 from dask import delayed
 from paircars.utils.basic_utils import get_datadir
 from paircars.utils.ds_utils import calc_dynamic_spectrum
@@ -23,7 +21,6 @@ from paircars.utils.mwa_utils import get_MWA_OBSID, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
-    get_scheduler_name,
 )
 from paircars.utils.resource_utils import drop_cache
 
@@ -162,7 +159,7 @@ def make_solar_DS(
         for f in goes_files:
             os.system(f"rm -rf {f}")
         return 0, plot_file, succeed, failed
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1, "", succeed, failed
 
@@ -302,7 +299,7 @@ def main(
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
         )
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         msg = 1
     finally:
