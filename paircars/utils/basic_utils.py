@@ -137,6 +137,20 @@ def get_datadir():
     return datadir
 
 
+def get_host_ip():
+    """
+    Get host ip
+    """
+    try:
+        return socket.gethostbyname(socket.gethostname())
+    except socket.gaierror:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+        finally:
+            s.close()
+
 def wait_for_port(host, port, timeout=60):
     """
     Waiting for port

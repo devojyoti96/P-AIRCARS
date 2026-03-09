@@ -9,6 +9,7 @@ import numpy as np
 from dotenv import load_dotenv
 from .basic_utils import get_cachedir, get_datadir
 from .killjob_utils import kill_port
+from .proc_manage_utils import get_scheduler_name
 from .udocker_utils import run_postgres, kill_postgres
 
 
@@ -68,7 +69,12 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     SERVER_HOST = "0.0.0.0"
     SERVER_PORT = f"{port}"
 
-    hostname = socket.gethostname()
+    scheduler_name = get_scheduler_name()
+    if scheduler_name=="slurm":
+        hostname = socket.gethostname()
+    else:
+        hostname = socket.gethostname()
+        hostname = socket.gethostbyname(hostname)
 
     SERVER_URL = f"http://0.0.0.0:{SERVER_PORT}/api"
     NODE_URL = f"http://{hostname}:{SERVER_PORT}/api"
