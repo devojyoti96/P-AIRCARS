@@ -7,6 +7,7 @@ import requests
 import os
 import traceback
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker

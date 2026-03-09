@@ -140,7 +140,10 @@ def get_total_worker(client):
 
 
 def scale_worker_and_wait(
-    dask_cluster, dask_client, nworker, timeout=60,
+    dask_cluster,
+    dask_client,
+    nworker,
+    timeout=60,
 ):
     """
     Scale worker and wait until it is done
@@ -157,7 +160,7 @@ def scale_worker_and_wait(
         Timeout, show a warning and move
     """
     print(f"Start scaling to {nworker} workers")
-    nworker = max(2, nworker) # Safety, never scale to 1 worker
+    nworker = max(2, nworker)  # Safety, never scale to 1 worker
     dask_cluster.scale(nworker)
     try:
         dask_client.wait_for_workers(nworker, timeout=timeout)
@@ -379,9 +382,16 @@ def submit_local_master_flow(args, jobid):
                 for line in process.stdout:
                     last_lines.append(line)
                     last_line = last_lines[-1]
-                    if "task run" in last_line.lower() or "flow_run" in last_line.lower() and not only_run_print:
-                        only_run_print=True
-                    if not only_run_print or (only_run_print and ("task run" in line.lower() or "flow run" in line.lower())):
+                    if (
+                        "task run" in last_line.lower()
+                        or "flow_run" in last_line.lower()
+                        and not only_run_print
+                    ):
+                        only_run_print = True
+                    if not only_run_print or (
+                        only_run_print
+                        and ("task run" in line.lower() or "flow run" in line.lower())
+                    ):
                         if line not in seen:
                             seen.add(line)
                             if log2term:

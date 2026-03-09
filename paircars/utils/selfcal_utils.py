@@ -1433,7 +1433,7 @@ def selfcal_round(
                 return 3, applycal_gaintable, 0, 0, "", "", "", []
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
-            
+
             with suppress_output():
                 #################################
                 # Gaincal flagging
@@ -1457,11 +1457,7 @@ def selfcal_round(
                         freqdevscale=10.0,
                         flagbackup=False,
                     )
-                    if (
-                        flag_frac > 0.5
-                        or ant_flag_frac > 0.5
-                        or time_flag_frac > 0.5
-                    ):
+                    if flag_frac > 0.5 or ant_flag_frac > 0.5 or time_flag_frac > 0.5:
                         flagmanager(
                             vis=gain_caltable,
                             mode="restore",

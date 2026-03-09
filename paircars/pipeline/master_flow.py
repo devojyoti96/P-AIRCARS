@@ -2067,27 +2067,26 @@ def master_control(
         if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
             if not do_move_solarcenter:
                 do_move_solarcenter = True
-                
+
         # Switch on cal flag and import model, if basic cal is needed
         if do_basic_cal:
             if not do_cal_flag:
                 do_cal_flag = True
             if not do_import_model:
                 do_import_model = True
-        
+
         # Switch on applycal if selfcal is requested
         if do_selfcal:
             if not do_applycal:
-                do_applycal = True    
-                
+                do_applycal = True
+
         # Switch on applycal and apply selfcal if imaging is requested
         if do_imaging:
             if not do_applycal:
                 do_applycal = True
             if not do_apply_selfcal:
-                do_apply_selfcal = True 
-                
-                
+                do_apply_selfcal = True
+
         ############################################
         # Determining where to use calibrator or not
         #############################################
@@ -2294,7 +2293,9 @@ def master_control(
 
         if (move_solarcenter or make_ds) and adaptive:
             scale_worker_and_wait(
-                dask_cluster, dask_client, max(2, min(len(target_mslist) + 1, max_worker))
+                dask_cluster,
+                dask_client,
+                max(2, min(len(target_mslist) + 1, max_worker)),
             )
 
         ########################################
@@ -2407,7 +2408,9 @@ def master_control(
         if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(2, min(total_ncoarse + 1, max_worker))
+                    dask_cluster,
+                    dask_client,
+                    max(2, min(total_ncoarse + 1, max_worker)),
                 )
             prefix = "calibrator"
             if emails != "":
@@ -2668,7 +2671,7 @@ def master_control(
             bandpass_tables = sorted(
                 glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")
             )
-            if len(bandpass_tables)>0:
+            if len(bandpass_tables) > 0:
                 bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
             print(
                 f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
@@ -2676,7 +2679,7 @@ def master_control(
             crossphase_tables = sorted(
                 glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
-            if len(crossphase_tables)>0:
+            if len(crossphase_tables) > 0:
                 crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
             if len(bandpass_tables) == 0:
                 print(
@@ -2757,7 +2760,9 @@ def master_control(
 
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(2, min(total_ncoarse + 1, max_worker))
+                    dask_cluster,
+                    dask_client,
+                    max(2, min(total_ncoarse + 1, max_worker)),
                 )
 
             ######################
@@ -2867,7 +2872,9 @@ def master_control(
         if do_selfcal:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(2, min(len(selfcal_mslist) + 1, max_worker))
+                    dask_cluster,
+                    dask_client,
+                    max(2, min(len(selfcal_mslist) + 1, max_worker)),
                 )
             ############################
             # Basic flagging for selfcal
@@ -3124,14 +3131,16 @@ def master_control(
         ########################################
         selfcal_gaincal = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal"))
         selfcal_bandpass = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
-        if len(selfcal_bandpass)>0:
+        if len(selfcal_bandpass) > 0:
             selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
         if do_polcal:
             selfcal_leakages = sorted(
                 glob.glob(f"{caldir}/selfcal_{target_obsid}*.dcal")
             )
-            if len(selfcal_leakages)>0:
-                selfcal_leakages = interpolate_quartical(selfcal_leakages, overwrite=True)
+            if len(selfcal_leakages) > 0:
+                selfcal_leakages = interpolate_quartical(
+                    selfcal_leakages, overwrite=True
+                )
 
         if len(selfcal_gaincal) == 0:
             print(
@@ -3193,11 +3202,13 @@ def master_control(
         # Spliting targets if not started already
         #############################################
         # If corrected data is requested or imaging is requested
-            
+
         if do_applycal or do_apply_selfcal or do_imaging:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(2, min(total_ncoarse + 1, max_worker))
+                    dask_cluster,
+                    dask_client,
+                    max(2, min(total_ncoarse + 1, max_worker)),
                 )
             prefix = "target"
             if emails != "":
@@ -3633,7 +3644,9 @@ def master_control(
             else:
                 if adaptive:
                     scale_worker_and_wait(
-                        dask_cluster, dask_client, max(2, min(len(images) + 1, max_worker))
+                        dask_cluster,
+                        dask_client,
+                        max(2, min(len(images) + 1, max_worker)),
                     )
                 if emails != "":
                     email_msg = "Started primary beam correction."

@@ -623,9 +623,7 @@ def do_selfcal(
                     ######################################
                     # Converged if already in apcal
                     ######################################
-                    elif (
-                        do_apcal and num_iter_after_ap > min_iter
-                    ) or not do_apcal:
+                    elif (do_apcal and num_iter_after_ap > min_iter) or not do_apcal:
                         threshold -= 1
                         intlogger.info("Reducing threshold to : " + str(threshold))
                         sigma_reduced_count += 1

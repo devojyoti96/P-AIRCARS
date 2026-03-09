@@ -95,12 +95,8 @@ def run_all_applysol(
         header = fits.getheader(metafits)
         obsid = header["GPSTIME"]
         selfcal_tables = sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.gcal"))
-        sorted(
-            glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.bcal")
-        )
-        sorted(
-            glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.dcal")
-        )
+        sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.bcal"))
+        sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.dcal"))
         if len(selfcal_tables) == 0:
             print(f"No self-cal caltable is present in {caldir}.")
             return gain_succeed, gain_failed, pol_succeed, pol_failed

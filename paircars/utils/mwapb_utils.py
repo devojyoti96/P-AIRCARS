@@ -782,6 +782,7 @@ def get_fringe(msname, freq, metafits, resolution=1, n_threads=1, baseline=[]):
     """
     n_threads = max(1, n_threads)
     from casatasks import split
+
     try:
         msname = msname.rstrip("/")
         baseline_str = str(baseline[0]) + "&&" + str(baseline[1])
