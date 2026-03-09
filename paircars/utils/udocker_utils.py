@@ -5,7 +5,6 @@ import subprocess
 import numpy as np
 import socket
 from .basic_utils import get_datadir, wait_for_port
-from .proc_manage_utils import get_scheduler_name
 from .killjob_utils import terminate_process_and_children, kill_port
 
 ####################
@@ -961,12 +960,8 @@ def run_postgres(
     postgres_user, postgres_pass, postgres_db = np.load(
         pg_credentials, allow_pickle=True
     )
-    scheduler_name = get_scheduler_name()
-    if scheduler_name=="slurm":
-        postgres_addr = socket.gethostname()
-    else:
-        hostname = socket.gethostname()
-        postgres_addr = socket.gethostbyname(hostname)
+    hostname = socket.gethostname()
+    postgrs_addr = socket.gethostbyname(hostname)
 
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
@@ -1057,9 +1052,9 @@ def run_postgres(
     with open(pid_file, "w") as f:
         f.write(f"{pid}\n")
 
-    postgres_url = f"postgresql+asyncpg://{postgres_user}:{postgres_pass}@{postgres_addr}:{postgres_port}/{postgres_db}"
+    postgres_url = f"postgresql+asyncpg://{postgres_user}:{postgres_pass}@{postgrs_addr}:{postgres_port}/{postgres_db}"
     print("Waiting for PostgreSQL...")
-    if not wait_for_port(postgres_addr, postgres_port, timeout=300):
+    if not wait_for_port("127.0.0.1", postgres_port, timeout=300):
         print("PostgreSQL failed to start.")
         return False
     else:

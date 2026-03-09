@@ -290,6 +290,7 @@ def get_slurm_dask_cluster(
             )
             client = Client(cluster, heartbeat_interval="5s")
             client.run_on_scheduler(gc.collect)
+            client.run(lambda: __import__("paircars.data.sendmail"))
             print(f"Using interface: {interface}")
 
         if verbose:

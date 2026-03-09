@@ -301,6 +301,7 @@ def get_local_dask_cluster(
         )
         client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
+        client.run(lambda: __import__("paircars.data.sendmail"))
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
