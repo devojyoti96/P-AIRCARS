@@ -1763,6 +1763,7 @@ def master_control(
         Success message
     """
     print("P-AIRCARS workfkow started...")
+    emails = get_emails()
     if target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
@@ -1977,8 +1978,6 @@ def master_control(
                 print("Please provide a valid remote link.")
                 remote_logger = False
 
-        emails = get_emails()
-
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             if emails != "":
@@ -2062,6 +2061,34 @@ def master_control(
                 "#############################################################################"
             )
 
+        ###########################################
+        # Setting up mutual conditions
+        ###########################################
+        # Move solar center, if any of these conditions are met
+        if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
+            if not do_move_solarcenter:
+                do_move_solarcenter = True
+                
+        # Switch on cal flag and import model, if basic cal is needed
+        if do_basic_cal:
+            if not do_cal_flag:
+                do_cal_flag = True
+            if not do_import_model:
+                do_import_model = True
+        
+        # Switch on applycal if selfcal is requested
+        if do_selfcal:
+            if not do_applycal:
+                do_applycal = True    
+                
+        # Switch on applycal and apply selfcal if imaging is requested
+        if do_imaging:
+            if not do_applycal:
+                do_applycal = True
+            if not do_apply_selfcal:
+                do_apply_selfcal = True 
+                
+                
         ############################################
         # Determining where to use calibrator or not
         #############################################
