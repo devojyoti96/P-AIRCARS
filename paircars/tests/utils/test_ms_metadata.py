@@ -1,6 +1,4 @@
 import pytest
-import os
-from unittest.mock import patch
 from paircars.utils.ms_metadata import *
 
 

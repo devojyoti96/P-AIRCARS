@@ -1,6 +1,3 @@
-import pytest
-import os
-import traceback
 from paircars.utils.imaging import *
 
 

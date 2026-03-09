@@ -1,6 +1,5 @@
 import pytest
 import shutil
-import numpy as np
 import os
 
 

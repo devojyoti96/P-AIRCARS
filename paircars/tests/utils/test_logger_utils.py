@@ -3,10 +3,8 @@ import string
 import tempfile
 import logging
 import argparse
-import requests
 import os
 import urllib.error
-from watchdog.observers import Observer
 from paircars.utils.logger_utils import *
 from unittest.mock import MagicMock, mock_open, patch
 from watchdog.events import FileModifiedEvent

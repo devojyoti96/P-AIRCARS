@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from itertools import cycle
 from paircars.pipeline.do_imaging import *
 
 

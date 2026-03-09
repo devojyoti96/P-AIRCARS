@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock, call, ANY
+from unittest.mock import patch, MagicMock
 from paircars.pipeline.move_solarcenter import *
 
 

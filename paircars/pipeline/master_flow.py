@@ -1817,7 +1817,7 @@ def master_control(
         )
         if emails != "":
             email_msg = "No measurement set is present in the target data directory."
-            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
+            send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
     test_msname = target_mslist[0]
     if os.path.exists(target_metafits) is False:
         target_obsid = get_MWA_OBSID(test_msname)
@@ -1826,7 +1826,7 @@ def master_control(
                 target_obsid, outdir=os.path.dirname(test_msname)
             )
         except Exception:
-            tracebcak.print_exc()
+            traceback.print_exc()
             target_metafits = None
         if target_metafits is None or os.path.exists(target_metafits) is False:
             print(
@@ -1834,7 +1834,7 @@ def master_control(
             )
             if emails != "":
                 email_msg = "Target metafits file does not exist."
-                send_task_notification(emails, email_msg, jobid, "N/A", timestamp)
+                send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
             return 1
     target_header = fits.getheader(target_metafits)
     target_obsid = target_header["GPSTIME"]
@@ -1910,7 +1910,7 @@ def master_control(
     try:
         dask_client = get_client()
         dask_cluster = dask_client.cluster
-    except:
+    except Exception:
         if mem_frac <= 0:
             mem_frac = 0.8
         result = get_local_dask_cluster(
@@ -1997,8 +1997,6 @@ def master_control(
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             username = getpass.getuser()
             jobname = f"{username}-{hostname}:{timestamp}:{target_obsid}"
-            timestamp1 = dt.utcnow().strftime("%Y%m%dT%H%M%S")
-            remote_job_id = f"{hostname}_{timestamp1}_{target_obsid}"
             if job_password is None:
                 password = generate_password()
             else:
@@ -2010,7 +2008,6 @@ def master_control(
             ############
             # Logger
             ############
-            observer = None
             if os.path.exists(f"{workdir}/.jobname_password.npy"):
                 time.sleep(5)
                 jobname, password = np.load(
@@ -2020,7 +2017,7 @@ def master_control(
                     observer = init_logger(
                         "master_log", master_logfile, jobname=jobname, password=password
                     )
-            if observer == None:
+            if observer is None:
                 print(
                     "Remote link or jobname is blank. Not transmiting to remote logger."
                 )
@@ -2096,7 +2093,7 @@ def master_control(
         calibrator_obsid = None
         if len(calibrator_mslist) == 0:
             print(
-                f"No calibrator observation is provided. Continuing based on self-calibration."
+                "No calibrator observation is provided. Continuing based on self-calibration."
             )
             has_cal = False
         ######################################################
@@ -2110,7 +2107,7 @@ def master_control(
                     cal_obsid, outdir=os.path.dirname(test_cal_ms)
                 )
             except Exception:
-                tracebcak.print_exc()
+                traceback.print_exc()
                 calibrator_metafits = None
         if calibrator_metafits is not None and os.path.exists(calibrator_metafits):
             calibrator_header = fits.getheader(calibrator_metafits)
@@ -2128,7 +2125,7 @@ def master_control(
                 has_cal = True
         else:
             print(
-                f"Calibrator ms is available, however, calibrator metafits is not available."
+                "Calibrator ms is available, however, calibrator metafits is not available."
             )
             has_cal = False
 

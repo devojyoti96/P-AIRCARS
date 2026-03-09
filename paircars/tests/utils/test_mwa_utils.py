@@ -1,11 +1,6 @@
-import pytest
-import psutil
-import numpy as np
 import os
 import traceback
 from casatasks import casalog
-from casatools import ms as casamstool, table
-from unittest.mock import patch, MagicMock, mock_open, call
 from paircars.utils.mwa_utils import *
 
 try:

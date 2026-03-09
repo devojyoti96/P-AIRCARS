@@ -1,11 +1,6 @@
 import pytest
-from unittest.mock import patch, MagicMock, Mock, call
-import psutil
-import numpy as np
+from unittest.mock import Mock
 
-from paircars.pipeline.kill_job import (
-    kill_paircarsjob,
-)
 
 
 @pytest.mark.parametrize(

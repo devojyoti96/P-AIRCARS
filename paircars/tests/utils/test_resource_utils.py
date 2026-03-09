@@ -1,6 +1,4 @@
 import pytest
-import shutil
-import tempfile
 import os
 from unittest.mock import patch, MagicMock
 from paircars.utils.resource_utils import *

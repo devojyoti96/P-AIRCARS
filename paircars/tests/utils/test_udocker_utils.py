@@ -1,7 +1,4 @@
 import pytest
-import psutil
-import traceback
-import tempfile
 import os
 from unittest.mock import patch, MagicMock
 from paircars.utils.udocker_utils import *

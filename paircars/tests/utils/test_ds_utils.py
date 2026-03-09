@@ -1,9 +1,7 @@
-import pytest
 import traceback
 import os
 import numpy as np
 from casatasks import casalog
-from casatools import table
 from paircars.utils.ds_utils import *
 from unittest.mock import MagicMock, patch
 

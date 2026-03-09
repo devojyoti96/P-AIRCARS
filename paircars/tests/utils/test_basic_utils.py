@@ -1,6 +1,6 @@
 import pytest
 import os
-from unittest.mock import patch, MagicMock, mock_open, call
+from unittest.mock import patch, MagicMock, mock_open
 from paircars.utils.basic_utils import *
 
 

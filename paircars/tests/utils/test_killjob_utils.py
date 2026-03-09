@@ -1,7 +1,6 @@
 import pytest
-from unittest.mock import patch, MagicMock, Mock, call
+from unittest.mock import patch, MagicMock, Mock
 import psutil
-import numpy as np
 from paircars.utils.killjob_utils import *
 
 

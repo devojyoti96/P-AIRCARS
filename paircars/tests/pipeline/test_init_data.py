@@ -1,5 +1,4 @@
 import pytest
-import builtins
 from unittest.mock import patch, MagicMock, mock_open, Mock
 from paircars.pipeline.init_data import *
 from requests.exceptions import HTTPError

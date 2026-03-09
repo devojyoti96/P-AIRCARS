@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from paircars.pipeline.master_flow import *
-from paircars.pipeline.init_data import init_paircars_data
 
 
 @pytest.mark.parametrize("mock_msg,raises", [(0, False), (1, True)])
@@ -65,7 +64,7 @@ def test_run_solar_phasecenter_jobs(
 
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 @pytest.mark.parametrize("mock_msg,raises", [(0, False), (1, True)])
@@ -475,7 +474,7 @@ def test_run_basic_cal_jobs(
 
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 @pytest.mark.parametrize("mock_msg,raises", [(0, False), (1, True)])

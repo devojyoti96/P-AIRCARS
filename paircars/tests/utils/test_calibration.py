@@ -1,11 +1,9 @@
-import pytest
 import traceback
 import os
 import numpy as np
 from casatasks import casalog
 from casatools import table
 from paircars.utils.calibration import *
-from unittest.mock import MagicMock, patch
 
 try:
     casalogfile = casalog.logfile()

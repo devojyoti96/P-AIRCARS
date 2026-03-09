@@ -1,8 +1,6 @@
-import pytest
 import traceback
 import os
 from casatasks import casalog
-from unittest.mock import patch, MagicMock, call
 from paircars.utils.mwapb_utils import *
 
 try:

@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch
 from paircars.pipeline.make_mwa_overlay import *
 
 

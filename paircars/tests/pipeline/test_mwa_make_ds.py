@@ -1,5 +1,6 @@
-import pytest, shutil
-from unittest.mock import patch, MagicMock, call, ANY
+import pytest
+import shutil
+from unittest.mock import patch, MagicMock
 from paircars.pipeline.mwa_make_ds import *
 
 

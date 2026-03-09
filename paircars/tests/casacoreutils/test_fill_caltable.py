@@ -1,5 +1,3 @@
-import pytest
-import numpy as np
 from unittest.mock import MagicMock, patch
 
 from paircars.casacoreutils.fill_caltable import make_caltable_columns
