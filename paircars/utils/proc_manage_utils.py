@@ -140,7 +140,7 @@ def get_total_worker(client):
 
 
 def scale_worker_and_wait(
-    dask_cluster, dask_client, nworker, timeout=60, poll_interval=1
+    dask_cluster, dask_client, nworker, timeout=60,
 ):
     """
     Scale worker and wait until it is done
@@ -155,45 +155,18 @@ def scale_worker_and_wait(
         Number of worker
     timeout : float, optional
         Timeout, show a warning and move
-    poll_interval : float, optional
-        Check interval in seconds
     """
     print(f"Start scaling to {nworker} workers")
-    nworker = max(1, nworker) # Safety, never scale to 0 worker
+    nworker = max(2, nworker) # Safety, never scale to 1 worker
     dask_cluster.scale(nworker)
-    time.sleep(1)
-    c = 0
-    while c < timeout:
-        running_worker = get_total_worker(dask_client)
-        if running_worker == nworker:
-            print(f"Successfully scaled to {running_worker} workers")
-            return 0
-        else:
-            time.sleep(poll_interval)
-            c += poll_interval
-    print(f"Dask cluster did not scale to {nworker} within {timeout} seconds.")
-    return 1
-
-
-def wait_for_dask_workers(client, min_worker=1, timeout=60):
-    """
-    Wait until the Dask cluster has a minimum number of total and/or new workers.
-
-    Parameters
-    ----------
-    client : dask.distributed.Client
-        Dask client
-    min_worker : int, optional
-        Minimum new connected workers (default: 1)
-    timeout : float, optional
-        Maximum time to wait in seconds (default: 60)
-
-    Raises
-    ------
-    TimeoutError
-        If the required number of workers do not connect in time.
-    """
-    client.wait_for_workers(n_workers=min_worker, timeout=timeout)
+    try:
+        dask_client.wait_for_workers(nworker, timeout=timeout)
+        print(f"Successfully scaled to {nworker} workers")
+        return 0
+    except TimeoutError:
+        workers = len(dask_client.scheduler_info()["workers"])
+        print(f"Scaling timeout. Current workers: {workers}")
+        return 1
 
 
 def get_local_dask_cluster(

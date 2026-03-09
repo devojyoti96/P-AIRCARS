@@ -18,6 +18,7 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect_dask import get_dask_client
 from prefect.settings import get_current_settings
+from prefect.tasks import exponential_backoff
 from paircars.utils.basic_utils import (
     get_cachedir,
 )
@@ -270,7 +271,8 @@ def run_ds_jobs(
 @task(
     name="spliting_ms",
     retries=2,
-    retry_delay_seconds=60,
+    timeout_seconds=1800,
+    retry_delay_seconds=exponential_backoff(backoff_factor=60),
     log_prints=True,
 )
 def run_target_split_jobs(
@@ -2292,7 +2294,7 @@ def master_control(
 
         if (move_solarcenter or make_ds) and adaptive:
             scale_worker_and_wait(
-                dask_cluster, dask_client, max(1, min(len(target_mslist) + 1, max_worker))
+                dask_cluster, dask_client, max(2, min(len(target_mslist) + 1, max_worker))
             )
 
         ########################################
@@ -2340,7 +2342,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(target_mslist) + 1, max_worker)),
+                        max(2, min(len(target_mslist) + 1, max_worker)),
                     )
                 target_mslist = filtered_ms  # Filtered target mslist
             except Exception:
@@ -2405,7 +2407,7 @@ def master_control(
         if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(1, min(total_ncoarse + 1, max_worker))
+                    dask_cluster, dask_client, max(2, min(total_ncoarse + 1, max_worker))
                 )
             prefix = "calibrator"
             if emails != "":
@@ -2468,14 +2470,14 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        1,
+                        2,
                     )
             else:
                 if adaptive:
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_cal_mslist) + 1, max_worker)),
+                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
                     )
 
         ##################################
@@ -2523,7 +2525,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_cal_mslist) + 1, max_worker)),
+                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
                     )
                 split_cal_mslist = filtered_ms  # Filtered target mslist
                 print("###########################")
@@ -2585,7 +2587,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_cal_mslist) + 1, max_worker)),
+                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
                     )
                 split_cal_mslist = filtered_ms  # Filtered target mslist
             except Exception:
@@ -2654,7 +2656,7 @@ def master_control(
                 has_cal = False
 
         if (do_cal_flag or do_import_model or do_basic_cal) and adaptive:
-            scale_worker_and_wait(dask_cluster, dask_client, 1)
+            scale_worker_and_wait(dask_cluster, dask_client, 2)
 
         ##########################################
         # Checking presence of necessary caltables
@@ -2755,7 +2757,7 @@ def master_control(
 
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(1, min(total_ncoarse + 1, max_worker))
+                    dask_cluster, dask_client, max(2, min(total_ncoarse + 1, max_worker))
                 )
 
             ######################
@@ -2815,7 +2817,7 @@ def master_control(
                     )
             finally:
                 if adaptive:
-                    scale_worker_and_wait(dask_cluster, dask_client, 1)
+                    scale_worker_and_wait(dask_cluster, dask_client, 2)
 
         ######################################
         # Checking status of self-cal split
@@ -2865,7 +2867,7 @@ def master_control(
         if do_selfcal:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(1, min(len(selfcal_mslist) + 1, max_worker))
+                    dask_cluster, dask_client, max(2, min(len(selfcal_mslist) + 1, max_worker))
                 )
             ############################
             # Basic flagging for selfcal
@@ -3007,7 +3009,7 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(1, min(len(selfcal_mslist) + 1, max_worker)),
+                    max(2, min(len(selfcal_mslist) + 1, max_worker)),
                 )
             if do_sidereal_cor:
                 if emails != "":
@@ -3115,7 +3117,7 @@ def master_control(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
             if adaptive:
-                scale_worker_and_wait(dask_cluster, dask_client, 1)
+                scale_worker_and_wait(dask_cluster, dask_client, 2)
 
         ########################################
         # Checking self-cal caltables
@@ -3195,7 +3197,7 @@ def master_control(
         if do_applycal or do_apply_selfcal or do_imaging:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(1, min(total_ncoarse + 1, max_worker))
+                    dask_cluster, dask_client, max(2, min(total_ncoarse + 1, max_worker))
                 )
             prefix = "target"
             if emails != "":
@@ -3248,7 +3250,7 @@ def master_control(
                 return 1
             finally:
                 if adaptive:
-                    scale_worker_and_wait(dask_cluster, dask_client, 1)
+                    scale_worker_and_wait(dask_cluster, dask_client, 2)
 
             ################################
             # Checking splited final ms list
@@ -3298,7 +3300,7 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(1, min(len(split_target_mslist) + 1, max_worker)),
+                    max(2, min(len(split_target_mslist) + 1, max_worker)),
                 )
             ############################
             # Basic flagging
@@ -3589,7 +3591,7 @@ def master_control(
                         )
                     return 1
             if adaptive:
-                scale_worker_and_wait(dask_cluster, dask_client, 1)
+                scale_worker_and_wait(dask_cluster, dask_client, 2)
 
         ########################################
         # Naming of image directory
@@ -3631,7 +3633,7 @@ def master_control(
             else:
                 if adaptive:
                     scale_worker_and_wait(
-                        dask_cluster, dask_client, max(1, min(len(images) + 1, max_worker))
+                        dask_cluster, dask_client, max(2, min(len(images) + 1, max_worker))
                     )
                 if emails != "":
                     email_msg = "Started primary beam correction."
@@ -3677,7 +3679,7 @@ def master_control(
                     return 1
                 finally:
                     if adaptive:
-                        scale_worker_and_wait(dask_cluster, dask_client, 1)
+                        scale_worker_and_wait(dask_cluster, dask_client, 2)
 
         ##############################################
         # Making diagnostic plots of measurement sets
@@ -3694,7 +3696,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_cal_mslist) + 1, max_worker)),
+                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
                     )
                 msplot_outdir = f"{outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
@@ -3754,7 +3756,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_target_mslist) + 1, max_worker)),
+                        max(2, min(len(split_target_mslist) + 1, max_worker)),
                     )
                 msplot_outdir = f"{outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
@@ -3797,7 +3799,7 @@ def master_control(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
 
-        scale_worker_and_wait(dask_cluster, dask_client, 1)
+        scale_worker_and_wait(dask_cluster, dask_client, 2)
         #######################################
         # Make overlays
         #######################################
@@ -3822,7 +3824,7 @@ def master_control(
         if len(images) > 0:
             if adaptive:
                 scale_worker_and_wait(
-                    dask_cluster, dask_client, max(1, min(len(images) + 1, max_worker))
+                    dask_cluster, dask_client, max(2, min(len(images) + 1, max_worker))
                 )
             #################################
             # Start overlays
@@ -4494,7 +4496,7 @@ def cli():
             adaptive = args.adaptive
             if not adaptive:
                 nworker = min(total_ncoarse + 1, nworker)
-                scale_worker_and_wait(dask_cluster, dask_client, max(1, nworker))
+                scale_worker_and_wait(dask_cluster, dask_client, max(2, nworker))
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
