@@ -1814,8 +1814,9 @@ def master_control(
         print(
             f"No measurement set is present in target data directory: {target_datadir}"
         )
-        return 1
-        
+        if emails != "":
+            email_msg = "No measurement set is present in the target data directory."
+            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
     test_msname = target_mslist[0]
     if os.path.exists(target_metafits) is False:
         target_obsid = get_MWA_OBSID(test_msname)
@@ -1824,12 +1825,15 @@ def master_control(
                 target_obsid, outdir=os.path.dirname(test_msname)
             )
         except Exception:
-            traceback.print_exc()
+            tracebcak.print_exc()
             target_metafits = None
         if target_metafits is None or os.path.exists(target_metafits) is False:
             print(
                 f"Target metafits {target_metafits} does not exist. P-AIRCARS has stopped."
             )
+            if emails != "":
+                email_msg = "Target metafits file does not exist."
+                send_task_notification(emails, email_msg, jobid, "N/A", timestamp)
             return 1
     target_header = fits.getheader(target_metafits)
     target_obsid = target_header["GPSTIME"]
@@ -1905,7 +1909,7 @@ def master_control(
     try:
         dask_client = get_client()
         dask_cluster = dask_client.cluster
-    except Exception:
+    except:
         if mem_frac <= 0:
             mem_frac = 0.8
         result = get_local_dask_cluster(
@@ -1951,10 +1955,9 @@ def master_control(
     else:
         n_threads = max(1, int(n_threads))
 
-    observer = None
     try:
         #####################################
-        # Reading remotelink 
+        # Reading remotelink and emails
         #####################################
         remote_link = ""
         if remote_logger:
@@ -1973,15 +1976,9 @@ def master_control(
             if remote_link == "":
                 print("Please provide a valid remote link.")
                 remote_logger = False
-    except Exception:
-        traceback.print_exc()
-        remote_logger = False
 
-    ###############################
-    # Setting up email notification
-    ###############################
-    try:
         emails = get_emails()
+
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             if emails != "":
@@ -2001,7 +1998,8 @@ def master_control(
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             username = getpass.getuser()
             jobname = f"{username}-{hostname}:{timestamp}:{target_obsid}"
-            dt.utcnow().strftime("%Y%m%dT%H%M%S")
+            timestamp1 = dt.utcnow().strftime("%Y%m%dT%H%M%S")
+            remote_job_id = f"{hostname}_{timestamp1}_{target_obsid}"
             if job_password is None:
                 password = generate_password()
             else:
@@ -2010,6 +2008,24 @@ def master_control(
                 f"{workdir}/.jobname_password.npy",
                 np.array([jobname, password], dtype="object"),
             )
+            ############
+            # Logger
+            ############
+            observer = None
+            if os.path.exists(f"{workdir}/.jobname_password.npy"):
+                time.sleep(5)
+                jobname, password = np.load(
+                    f"{workdir}/.jobname_password.npy", allow_pickle=True
+                )
+                if master_logfile is not None and os.path.exists(master_logfile):
+                    observer = init_logger(
+                        "master_log", master_logfile, jobname=jobname, password=password
+                    )
+            if observer == None:
+                print(
+                    "Remote link or jobname is blank. Not transmiting to remote logger."
+                )
+
             #####################
             # Notify over email
             #####################
@@ -2023,28 +2039,10 @@ def master_control(
                     f"Remote logger Job ID: {jobname}\n"
                     f"Remote access password: {password}"
                 )
-                success_msg, error_msg = send_notification(emails, email_subject, email_msg)    
-            ############
-            # Logger
-            ############
-            if os.path.exists(f"{workdir}/.jobname_password.npy"):
-                time.sleep(5)
-                jobname, password = np.load(
-                    f"{workdir}/.jobname_password.npy", allow_pickle=True
+                success_msg, error_msg = send_notification(
+                    emails, email_subject, email_msg
                 )
-                if master_logfile is not None and os.path.exists(master_logfile):
-                    observer = init_logger(
-                        "master_log", master_logfile, jobname=jobname, password=password
-                    )
-            if observer is None:
-                print(
-                    "Remote link or jobname is blank. Not transmiting to remote logger."
-                )
-    except Exception:
-        traceback.print_exc()
-        emails = ""
 
-    try:
         #####################################
         # Printing basic info of the pipeline
         #####################################
@@ -2063,34 +2061,7 @@ def master_control(
             print(
                 "#############################################################################"
             )
-            
-        ###########################################
-        # Setting up mutual conditions
-        ###########################################
-        # Move solar center, if any of these conditions are met
-        if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
-            if not do_move_solarcenter:
-                do_move_solarcenter = True
-                
-        # Switch on cal flag and import model, if basic cal is needed
-        if do_basic_cal:
-            if not do_cal_flag:
-                do_cal_flag = True
-            if not do_import_model:
-                do_import_model = True
-        
-        # Switch on applycal if selfcal is requested
-        if do_selfcal:
-            if not do_applycal:
-                do_applycal = True    
-                
-        # Switch on applycal and apply selfcal if imaging is requested
-        if do_imaging:
-            if not do_applycal:
-                do_applycal = True
-            if not do_apply_selfcal:
-                do_apply_selfcal = True             
-            
+
         ############################################
         # Determining where to use calibrator or not
         #############################################
@@ -2098,7 +2069,7 @@ def master_control(
         calibrator_obsid = None
         if len(calibrator_mslist) == 0:
             print(
-                "No calibrator observation is provided. Continuing based on self-calibration."
+                f"No calibrator observation is provided. Continuing based on self-calibration."
             )
             has_cal = False
         ######################################################
@@ -2112,7 +2083,7 @@ def master_control(
                     cal_obsid, outdir=os.path.dirname(test_cal_ms)
                 )
             except Exception:
-                traceback.print_exc()
+                tracebcak.print_exc()
                 calibrator_metafits = None
         if calibrator_metafits is not None and os.path.exists(calibrator_metafits):
             calibrator_header = fits.getheader(calibrator_metafits)
@@ -2130,7 +2101,7 @@ def master_control(
                 has_cal = True
         else:
             print(
-                "Calibrator ms is available, however, calibrator metafits is not available."
+                f"Calibrator ms is available, however, calibrator metafits is not available."
             )
             has_cal = False
 
