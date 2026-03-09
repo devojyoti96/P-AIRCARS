@@ -312,7 +312,7 @@ def start_prefect_server(
         return 0, config_file, profile_path, env_file, dashboard, pid_file
     else:
         print(
-            f"Server did not respond within 30 minutes. Check logs at {config['LOG_FILE']} for more details"
+            f"Server did not respond within 3 minutes. Check logs at {config['LOG_FILE']} for more details"
         )
         return 0, config_file, profile_path, env_file, dashboard, pid_file
 

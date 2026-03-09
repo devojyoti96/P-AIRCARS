@@ -960,7 +960,8 @@ def run_postgres(
     postgres_user, postgres_pass, postgres_db = np.load(
         pg_credentials, allow_pickle=True
     )
-    postgrs_addr = socket.gethostname()
+    hostname = socket.gethostname()
+    postgrs_addr = socket.gethostbyname(hostname)
 
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
