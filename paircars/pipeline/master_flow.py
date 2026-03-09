@@ -2669,14 +2669,16 @@ def master_control(
             bandpass_tables = sorted(
                 glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")
             )
-            bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
+            if len(bandpass_tables)>0:
+                bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
             print(
                 f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
             )
             crossphase_tables = sorted(
                 glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
-            crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
+            if len(crossphase_tables)>0:
+                crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
             if len(bandpass_tables) == 0:
                 print(
                     f"No bandpass table is present in calibration directory : {caldir}."
@@ -3123,12 +3125,14 @@ def master_control(
         ########################################
         selfcal_gaincal = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal"))
         selfcal_bandpass = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
-        selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
+        if len(selfcal_bandpass)>0:
+            selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
         if do_polcal:
             selfcal_leakages = sorted(
                 glob.glob(f"{caldir}/selfcal_{target_obsid}*.dcal")
             )
-            selfcal_leakages = interpolate_quartical(selfcal_leakages, overwrite=True)
+            if len(selfcal_leakages)>0:
+                selfcal_leakages = interpolate_quartical(selfcal_leakages, overwrite=True)
 
         if len(selfcal_gaincal) == 0:
             print(
