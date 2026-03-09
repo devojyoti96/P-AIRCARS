@@ -961,7 +961,7 @@ def run_postgres(
         pg_credentials, allow_pickle=True
     )
     hostname = socket.gethostname()
-    postgrs_addr = socket.gethostbyname(hostname)
+    postgrs_addr = hostname #socket.gethostbyname(hostname)
 
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
