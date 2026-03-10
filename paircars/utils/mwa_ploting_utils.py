@@ -1167,7 +1167,7 @@ def get_aia_map(
                     for image in downloaded_files:
                         basename = image.split(".image")[0]
                         os.system(f"rm -rf {basename}*")
-                    final_fits = f"{aiadir}/{basename}.fits"
+                    final_fits = f"{aiadir}/{os.path.basename(basename)}.fits"
                     normalized_map.save(final_fits, overwrite=True)
                     if os.path.exists(final_fits):  
                         final_maps.append(final_fits)
