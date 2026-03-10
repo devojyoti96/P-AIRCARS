@@ -146,10 +146,10 @@ def main(
         ###########################
         # Overlay tasks
         ###########################
-        print("Start making overlays....")
         results = []
         batch_size = max(1, njobs-1)
         for i in range(0, len(imagelist), batch_size):
+            print(f"Start making overlays. Batch: {i+1}")
             batch_imgs = imagelist[i:i+batch_size]
             batch_euv = euv_fits_images[i:i+batch_size]
             futures = []
