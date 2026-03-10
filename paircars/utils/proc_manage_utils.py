@@ -248,6 +248,8 @@ def get_local_dask_cluster(
                     return
                 else:
                     time.sleep(1)
+                    total_time+=1
+                    
         n_worker_cpu = usable_cpu
         n_worker = min(n_worker_cpu, n_worker_mem)
         if max_worker > 0:
