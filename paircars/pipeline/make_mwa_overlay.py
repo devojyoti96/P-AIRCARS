@@ -158,6 +158,7 @@ def main(
                     plot_file_prefix=os.path.basename(img).replace(".fits", ""),
                     verbose=True,
                     pure=False,
+                    retries=2,
                 )
             )
 
@@ -167,7 +168,7 @@ def main(
         results = []
         for f in as_completed(futures):
             try:
-                r = f.result()
+                r = f.result(timeout=300)
                 results.append(r)
             except Exception as e:
                 print("Overlay failed:", e)
