@@ -8,8 +8,6 @@ import glob
 import sys
 import os
 
-from dask.distributed import as_completed
-
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -87,6 +85,37 @@ def main(
 
     succeed = 0
     failed = len(imagelist)
+    
+    ###############################################
+    # Filter images
+    ###############################################
+    if not all_overlay:
+        imagelist = filter_images(imagelist, min_time_sep=60.0)
+
+    if len(imagelist) == 0:
+        return 1, 0, 0
+
+    print(f"Total images to overlay: {len(imagelist)}")
+
+    
+    try: 
+        ###########################
+        # Download EUV maps
+        ###########################
+        euv_fits_images = get_all_euv_maps(
+            imagelist,
+            workdir,
+            wavelength=195,
+            ncpu=nthreads,
+        )
+        if len(euv_fits_images)==0:
+            print("No EUV images downloaded.")
+            return 1, succeed, failed
+    except Exception:
+        print("Error occured in EUV fits downloading.")
+        traceback.print_exc()
+        return 1, succeed, failed
+        
 
     ###############################
     # Dask cluster
@@ -135,42 +164,13 @@ def main(
         nthreads = ncpu * njobs
 
     try:
-
-        ###############################################
-        # Filter images
-        ###############################################
-
-        if not all_overlay:
-            imagelist = filter_images(imagelist, min_time_sep=60.0)
-
-        if len(imagelist) == 0:
-            return 1, 0, 0
-
-        print(f"Total images to overlay: {len(imagelist)}")
-
-        ###########################
-        # Download EUV maps
-        ###########################
-
-        print("Downloading AIA images....")
-
-        euv_fits_images = get_all_euv_maps(
-            imagelist,
-            workdir,
-            wavelength=195,
-            ncpu=nthreads,
-        )
-
         ###########################
         # Overlay tasks
         ###########################
 
         print("Start making overlays....")
-
         futures = []
-
         for img, euv_fits in zip(imagelist, euv_fits_images):
-
             futures.append(
                 dask_client.submit(
                     make_mwa_overlay,
@@ -185,16 +185,7 @@ def main(
         # Collect results safely
         ###########################
 
-        results = []
-
-        for future in as_completed(futures):
-
-            try:
-                r = future.result()
-                results.append(r)
-
-            except Exception as e:
-                print("Overlay task failed:", e)
+        results = list(dask_client.gather(futures))
 
         ###########################
         # Move outputs

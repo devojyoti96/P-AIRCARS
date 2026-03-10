@@ -173,10 +173,12 @@ def create_logger(logname, logfile, get_print=False, verbose=False):
     str
         Log file name
     """
-    if os.path.exists(logfile):
-        os.system("rm -rf " + logfile)
-    formatter = logging.Formatter("%(message)s")
     logger = logging.getLogger(logname)
+    # If logger already configured, return it
+    if logger.handlers:
+        print(f"Logger: {logname} is already configured.")
+        return logger, logfile
+    formatter = logging.Formatter("%(message)s")
     logger.setLevel(logging.DEBUG)
     if verbose:
         console = logging.StreamHandler(sys.stdout)
