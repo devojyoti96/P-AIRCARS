@@ -1559,12 +1559,16 @@ def make_mwa_overlay(
     )
 
     with SphericalScreen(mwamap.observer_coordinate):
-        mwa_reprojected = mwamap.reproject_to(projected_header)
-    mwa_reprojected.data = mwa_reprojected.data.astype(np.float32)
+        mwa_tmp = mwamap.reproject_to(projected_header)
+    mwa_reprojected = sunpy.map.Map(
+        mwa_tmp.data.astype(np.float32), mwa_tmp.meta
+    )
 
     with SphericalScreen(euv_map.observer_coordinate):
-        euv_reprojected = euv_map.reproject_to(projected_header)
-    euv_reprojected.data = euv_reprojected.data.astype(np.float32)
+        euv_tmp = euv_map.reproject_to(projected_header)
+    euv_reprojected = sunpy.map.Map(
+        euv_tmp.data.astype(np.float32), euv_tmp.meta
+    )
     
     mwatime = mwamap.meta["date-obs"].split(".")[0]
     euvtime = euv_map.meta["date-obs"].split(".")[0]
