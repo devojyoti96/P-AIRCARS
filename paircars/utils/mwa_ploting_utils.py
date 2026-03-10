@@ -1559,7 +1559,7 @@ def make_mwa_overlay(
     )
 
     with SphericalScreen(mwamap.observer_coordinate):
-        mwa_reprojected = mwamap.reproject_to(projected_header)
+        mwa_tmp = mwamap.reproject_to(projected_header)
     mwa_reprojected = Map(
         mwa_tmp.data.astype(np.float32), mwa_tmp.meta
     )
