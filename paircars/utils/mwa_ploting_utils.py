@@ -7,7 +7,6 @@ import requests
 import os
 import traceback
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -1560,13 +1559,13 @@ def make_mwa_overlay(
 
     with SphericalScreen(mwamap.observer_coordinate):
         mwa_tmp = mwamap.reproject_to(projected_header)
-    mwa_reprojected = sunpy.map.Map(
+    mwa_reprojected = Map(
         mwa_tmp.data.astype(np.float32), mwa_tmp.meta
     )
 
     with SphericalScreen(euv_map.observer_coordinate):
         euv_tmp = euv_map.reproject_to(projected_header)
-    euv_reprojected = sunpy.map.Map(
+    euv_reprojected = Map(
         euv_tmp.data.astype(np.float32), euv_tmp.meta
     )
     
