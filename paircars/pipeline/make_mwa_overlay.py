@@ -133,8 +133,8 @@ def main(
             print("Error occured in creating local cluster.")
             return 1, succeed, failed
 
-        dask_client, dask_cluster, dask_dir, nworker = result
-        scale_worker_and_wait(dask_cluster, dask_client, nworker)
+        dask_client, dask_cluster, dask_dir, njobs = result
+        scale_worker_and_wait(dask_cluster, dask_client, njobs)
         nthreads = int(psutil.cpu_count() * cpu_frac)
     else:
         ncpu = int(os.environ.get("OMP_NUM_THREADS", 1))
@@ -147,33 +147,39 @@ def main(
         # Overlay tasks
         ###########################
         print("Start making overlays....")
-        futures = []
-        for img, euv_fits in zip(imagelist, euv_fits_images):
-            futures.append(
-                dask_client.submit(
-                    make_mwa_overlay,
-                    img,
-                    euv_fits,
-                    workdir,
-                    plot_file_prefix=os.path.basename(img).replace(".fits", ""),
-                    outdirs = [outdir],
-                    verbose=True,
-                    pure=False,
-                    retries=2,
-                )
-            )
-
-        ###########################
-        # Collect results safely
-        ###########################
         results = []
-        for f in as_completed(futures):
-            try:
-                r = f.result(timeout=300)
-                results.append(r)
-            except Exception as e:
-                print("Overlay failed:", e)
-                
+        batch_size = max(1, njobs-1)
+        for i in range(0, len(imagelist), batch_size):
+            batch_imgs = imagelist[i:i+batch_size]
+            batch_euv = euv_fits_images[i:i+batch_size]
+            futures = []
+            for img, euv_fits in zip(batch_imgs, batch_euv):
+                futures.append(
+                    dask_client.submit(
+                        make_mwa_overlay,
+                        img,
+                        euv_fits,
+                        workdir,
+                        plot_file_prefix=os.path.basename(img).replace(".fits", ""),
+                        outdirs=[outdir],
+                        verbose=True,
+                        pure=False,
+                        retries=2,
+                    )
+                )
+
+            ###########################
+            # Collect batch results
+            ###########################
+            for f in as_completed(futures):
+                try:
+                    r = f.result(timeout=300)
+                    results.append(r)
+                except Exception as e:
+                    print("Overlay failed:", e)
+
+            # free worker memory
+            dask_client.cancel(futures)
                 
         ###########################
         # Move outputs
