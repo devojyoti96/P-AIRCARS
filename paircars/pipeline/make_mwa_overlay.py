@@ -177,6 +177,7 @@ def main(
                     print("Overlay failed:", e)
             # free worker memory
             dask_client.cancel(futures)
+            time.sleep(2)
                 
         ###########################
         # Move outputs
