@@ -7,6 +7,7 @@ import time
 import glob
 import sys
 import os
+import contextlib
 from dask.distributed import as_completed
 
 from paircars.utils.logger_utils import (
@@ -196,6 +197,8 @@ def main(
                 results.append(r)
             except Exception as e:
                 print("Overlay failed:", e)
+                
+        print(dask_client.get_worker_logs())
         ###########################
         # Move outputs
         ###########################
@@ -245,9 +248,12 @@ def main(
 
         if dask_cluster is not None:
 
-            dask_client.shutdown()
-            dask_client.close()
-            dask_cluster.close()
+            with contextlib.suppress(Exception):
+                dask_client.cancel(dask_client.futures)
+            with contextlib.suppress(Exception):
+                dask_client.close()
+            with contextlib.suppress(Exception):
+                dask_cluster.close()
 
             drop_cache(workdir)
 
