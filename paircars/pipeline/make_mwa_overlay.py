@@ -121,7 +121,7 @@ def main(
     if dask_client is None:
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
         max_image_size = max(image_sizes)
-        min_mem = min(2, round(5 * max_image_size, 2))
+        min_mem = max(2, round(5 * max_image_size, 2))
         result = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
