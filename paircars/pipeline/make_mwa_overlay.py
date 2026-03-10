@@ -179,6 +179,7 @@ def main(
                     euv_fits,
                     workdir,
                     plot_file_prefix=os.path.basename(img).replace(".fits", ""),
+                    verbose=True,
                 )
             )
 
