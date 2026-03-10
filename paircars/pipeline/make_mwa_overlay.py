@@ -7,6 +7,7 @@ import time
 import glob
 import sys
 import os
+from dask.distributed import as_completed
 
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -187,8 +188,14 @@ def main(
         # Collect results safely
         ###########################
 
-        results = list(dask_client.gather(futures))
+        results = []
 
+        for f in as_completed(futures):
+            try:
+                r = f.result()
+                results.append(r)
+            except Exception as e:
+                print("Overlay failed:", e)
         ###########################
         # Move outputs
         ###########################

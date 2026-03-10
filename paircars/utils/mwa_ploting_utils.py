@@ -1520,6 +1520,7 @@ def make_mwa_overlay(
     list
         Plot file names
     """
+    matplotlib.use("Agg")
     mwa_image = mwa_image.rstrip("/")
     if verbose:
         print(f"Making overlay for image: {os.path.basename(mwa_image)}")
