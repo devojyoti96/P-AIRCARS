@@ -99,6 +99,7 @@ def main(
 
     
     try: 
+        nthreads = int(os.environ.get("OMP_NUM_THREADS", 1))
         ###########################
         # Download EUV maps
         ###########################
