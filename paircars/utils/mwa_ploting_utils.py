@@ -20,6 +20,7 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun, solar_system_ephemeris
 from astropy.wcs import FITSFixedWarning
+from astropy.io.fits.verify import VerifyWarning
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
@@ -49,6 +50,7 @@ from .udocker_utils import (
 )
 from .calibration import get_quartical_soltype
 
+warnings.simplefilter("ignore", VerifyWarning)
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 logging.getLogger("sunpy").setLevel(logging.ERROR)
 logging.getLogger("reproject.common").setLevel(logging.WARNING)
