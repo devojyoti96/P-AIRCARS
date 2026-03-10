@@ -62,7 +62,6 @@ try:
 except Exception:
     solar_system_ephemeris.set("builtin")
 
-
 #################################
 # Plotting related functions
 #################################
@@ -1059,7 +1058,6 @@ def get_aia_map(
     obs_end_time="",
     aia_wavelength=193,
     ncpu=1,
-    keep_aia_fits=False,
 ):
     """
     Get SDO AIA map
@@ -1080,13 +1078,11 @@ def get_aia_map(
         Wavelength, options: 94, 131, 171, 193, 211, 304, 335 Å
     ncpu : int, optional
         Number of CPU to use for parallel download
-    keep_aia_fits : bool, optional
-        Keep AIA fits file or not
 
     Returns
     -------
     list
-        List Sunpy AIAMap
+        AIA fits files
     """
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     logging.getLogger("drms").setLevel(logging.ERROR)
@@ -1102,6 +1098,8 @@ def get_aia_map(
     os.makedirs(workdir, exist_ok=True)
     cwd = os.getcwd()
     os.chdir(workdir)
+    aiadir = f"{workdir}/aiamaps"
+    os.makedirs(aiadir, exist_ok=True)
     try:
         print("Downloading AIA images....")
         final_time_range = []
@@ -1166,17 +1164,18 @@ def get_aia_map(
                         corrected_map.data / corrected_map.exposure_time.to(u.s).value
                     )
                     normalized_map = Map(normalized_data, corrected_map.meta)
-                    if keep_aia_fits is False:
-                        for image in downloaded_files:
-                            basename = image.split(".image")[0]
-                            os.system(f"rm -rf {basename}*")
-                    final_maps.append(normalized_map)
-
+                    for image in downloaded_files:
+                        basename = image.split(".image")[0]
+                        os.system(f"rm -rf {basename}*")
+                    final_fits = f"{aiadir}/{basename}.fits"
+                    normalized_map.save(final_fits, overwrite=True)
+                    if os.path.exists(final_fits):  
+                        final_maps.append(final_fits)
                 return final_maps
             else:
                 return []
     except Exception:
-        os.system("rm -rf *aia*fits")
+        os.system(f"rm -rf {workdir}/*aia*.fits")
         traceback.print_exc()
         return []
     finally:
@@ -1376,6 +1375,12 @@ def enhance_offlimb(sunpy_map, do_sharpen=True):
     scaled_map.plot_settings["norm"] = ImageNormalize(stretch=LogStretch(10))
     return scaled_map
 
+_map_cache = {}
+def get_map_cached(mapfile):
+    from sunpy.map import Map
+    if mapfile not in _map_cache:
+        _map_cache[mapfile] = Map(mapfile)
+    return _map_cache[mapfile]
 
 def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
     """
@@ -1395,7 +1400,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
     Returns
     -------
     list
-        List of sunpy EUV maps in same order of input images
+        List of sunpy fits image names in same order of input images
     """
     cwd = os.getcwd()
     os.chdir(workdir)
@@ -1421,7 +1426,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
         end_year = int(obs_end_date.split("-")[0])
         obs_end_time = ":".join(end_time.split("T")[-1].split(":")[:2])
         if start_year >= 2019 and end_year >= 2019:
-            euv_maps = get_suvi_map(
+            euv_images = get_suvi_map(
                 start_obs_date,
                 start_obs_time,
                 workdir,
@@ -1429,10 +1434,9 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 obs_end_time=obs_end_time,
                 suvi_wavelength=wavelength,
                 ncpu=ncpu,
-                keep_suvi_fits=False,
             )
         else:
-            euv_maps = get_aia_map(
+            euv_images = get_aia_map(
                 start_obs_date,
                 start_obs_time,
                 workdir,
@@ -1440,16 +1444,18 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 obs_end_time=obs_end_time,
                 aia_wavelength=wavelength,
                 ncpu=ncpu,
-                keep_aia_fits=False,
             )
-        map_obstimes = [m.date.value.split(".")[0] for m in euv_maps]
+        map_obstimes = []
+        for euv_fits in euv_images:
+            m = Map(euv_fits)
+            map_obstimes.append(m.date.value.split(".")[0])
         map_mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in map_obstimes]
         final_maps = []
         map_mjdsecs = np.array(map_mjdsecs)
         all_obstimes_mjdsecs = np.array(all_obstimes_mjdsecs)
         for fits_time in all_obstimes_mjdsecs:
             pos = np.argmin(np.abs(map_mjdsecs - fits_time))
-            final_maps.append(euv_maps[pos])
+            final_maps.append(euv_images[pos])
         return final_maps
     except Exception:
         traceback.print_exc()
@@ -1460,7 +1466,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
 
 def make_mwa_overlay(
     mwa_image,
-    euv_map,
+    euv_fits,
     workdir,
     plot_file_prefix,
     plot_mwa_colormap=True,
@@ -1482,8 +1488,8 @@ def make_mwa_overlay(
     ----------
     mwa_image : str
         MWA image
-    euv_map : sunpy.map.Map
-        GOES SUVI/ SDO AIA EUV map
+    euv_fits : EUV image fits
+        GOES SUVI/ SDO AIA EUV image fits
     workdir : str
         Work directory
     plot_file_prefix : str
@@ -1517,6 +1523,8 @@ def make_mwa_overlay(
     mwa_image = mwa_image.rstrip("/")
     if verbose:
         print(f"Making overlay for image: {os.path.basename(mwa_image)}")
+    euv_map = get_map_cached(euv_fits)
+    
     mwamap = get_mwamap(mwa_image)
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)

@@ -27,24 +27,6 @@ from paircars.utils.proc_manage_utils import (
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
-# Worker side EUV map cache
-_map_cache = {}
-
-
-def get_map_cached(mapfile):
-    """Load EUV map once per worker."""
-    from sunpy.map import Map
-
-    if mapfile not in _map_cache:
-        _map_cache[mapfile] = Map(mapfile)
-    return _map_cache[mapfile]
-
-
-def make_overlay_cached(img, euv_map_file, workdir, plot_file_prefix):
-    """Wrapper that uses cached map."""
-    euv_map = get_map_cached(euv_map_file)
-    return make_mwa_overlay(img, euv_map, workdir, plot_file_prefix=plot_file_prefix)
-
 
 def main(
     imagedir,
@@ -172,7 +154,7 @@ def main(
 
         print("Downloading AIA images....")
 
-        euv_maps = get_all_euv_maps(
+        euv_fits_images = get_all_euv_maps(
             imagelist,
             workdir,
             wavelength=195,
@@ -187,13 +169,13 @@ def main(
 
         futures = []
 
-        for img, euv_map in zip(imagelist, euv_maps):
+        for img, euv_fits in zip(imagelist, euv_fits_images):
 
             futures.append(
                 dask_client.submit(
-                    make_overlay_cached,
+                    make_mwa_overlay,
                     img,
-                    euv_map,
+                    euv_fits,
                     workdir,
                     plot_file_prefix=os.path.basename(img).replace(".fits", ""),
                 )
