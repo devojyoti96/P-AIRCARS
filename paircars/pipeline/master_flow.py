@@ -8,6 +8,7 @@ import sys
 import socket
 import requests
 import getpass
+import contextlib
 from casatools import msmetadata
 from astropy.io import fits
 from datetime import datetime as dt
@@ -4604,7 +4605,10 @@ def cli():
         drop_cache(args.cal_datadir)
         drop_cache(args.workdir)
         drop_cache(args.outdir)
-        dask_client.shutdown()
-        dask_client.close()
-        dask_cluster.close()
+        with contextlib.suppress(Exception):
+            dask_client.cancel(dask_client.futures)
+        with contextlib.suppress(Exception):
+            dask_client.close()
+        with contextlib.suppress(Exception):
+            dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")

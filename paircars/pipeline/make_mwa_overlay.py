@@ -7,11 +7,15 @@ import time
 import glob
 import sys
 import os
+
+from dask.distributed import as_completed
+
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
 )
+
 from paircars.utils.mwa_ploting_utils import make_mwa_overlay, get_all_euv_maps
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.image_utils import filter_images
@@ -22,6 +26,24 @@ from paircars.utils.proc_manage_utils import (
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+
+# Worker side EUV map cache
+_map_cache = {}
+
+
+def get_map_cached(mapfile):
+    """Load EUV map once per worker."""
+    from sunpy.map import Map
+
+    if mapfile not in _map_cache:
+        _map_cache[mapfile] = Map(mapfile)
+    return _map_cache[mapfile]
+
+
+def make_overlay_cached(img, euv_map_file, workdir, plot_file_prefix):
+    """Wrapper that uses cached map."""
+    euv_map = get_map_cached(euv_map_file)
+    return make_mwa_overlay(img, euv_map, workdir, plot_file_prefix=plot_file_prefix)
 
 
 def main(
@@ -36,69 +58,42 @@ def main(
     start_remote_log=False,
     dask_client=None,
 ):
-    """
-    Run the EUV overlays
 
-    Parameters
-    ----------
-    imagedir : str
-        Image directory
-    outdir : str
-        Output directory
-    workdir : str, optional
-        Working directory
-    all_overlay : bool, optional
-        Whether make overlays of all images or not
-    cpu_frac : float, optional
-        Fraction of total CPU resources to use. Default is 0.8.
-    mem_frac : float, optional
-        Memory fraction to use.
-    logfile : str or None, optional
-        Path to the log file for saving logs. If None, logging to file is skipped.
-    jobid : int, optional
-        Numeric job ID used for PID tracking. Default is 0.
-    start_remote_log : bool, optional
-        Whether to enable remote logging using credentials in the workdir. Default is False.
-    dask_client : dask. client
-        Dask client
-
-    Returns
-    -------
-    int
-        Success message
-    int
-        Succeeded image number
-    int
-        Failed image number
-    """
     cpu_frac = min(0.8, abs(cpu_frac))
 
     if workdir == "":
         workdir = f"{imagedir}/workdir"
+
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
 
     if outdir == "":
         outdir = workdir
+
     os.makedirs(outdir, exist_ok=True)
 
-    ############
+    ####################
     # Logger
-    ############
+    ####################
     observer = None
+
     if (
         start_remote_log
         and os.path.exists(f"{workdir}/.jobname_password.npy")
         and logfile is not None
     ):
+
         time.sleep(1)
+
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
+
         if os.path.exists(logfile):
             observer = init_logger(
                 "do_overlay", logfile, jobname=jobname, password=password
             )
+
     if observer is None:
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
 
@@ -107,22 +102,25 @@ def main(
     if len(imagelist) == 0:
         print("No image in the image directory.")
         return 1, 0, 0
-    else:
-        succeed = 0
-        failed = len(imagelist)
+
+    succeed = 0
+    failed = len(imagelist)
 
     ###############################
-    # Creating dask client
+    # Dask cluster
     ###############################
     dask_cluster = None
     nworker = None
+
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
+
+        mem_frac = max(mem_frac, 0.8)
+        cpu_frac = max(cpu_frac, 0.8)
+
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
+
         total_image_sizes = sum(image_sizes)
+
         min_mem = round(50 * total_image_sizes, 2)
         min_mem /= len(imagelist)
 
@@ -133,127 +131,177 @@ def main(
             min_mem=min_mem,
             max_worker=len(imagelist) + 1,
         )
+
         if result is None:
             print("Error occured in creating local cluster.")
             return 1, succeed, failed
-        else:
-            dask_client, dask_cluster, dask_dir, nworker = result
+
+        dask_client, dask_cluster, dask_dir, nworker = result
+
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
+
         nthreads = int(psutil.cpu_count() * cpu_frac)
+
     else:
-        ncpu = os.environ["OMP_NUM_THREADS"]
-        if ncpu is None:
-            ncpu = 1
-        else:
-            ncpu = max(1, int(ncpu))
+
+        ncpu = int(os.environ.get("OMP_NUM_THREADS", 1))
+
         client_info = dask_client.scheduler_info()["workers"]
+
         njobs = len(client_info)
+
         nthreads = ncpu * njobs
 
     try:
-        ###############################################################################
-        # Filtering only images with bandwidth of 1.28 MHz or more and at 60s intervals
-        ###############################################################################
-        if all_overlay is False:
-            imagelist = filter_images(imagelist, min_time_sep=60.0)
-        if len(imagelist) > 0:
-            print(f"Total images to overlay: {len(imagelist)}")
-            euv_maps = get_all_euv_maps(
-                imagelist, workdir, wavelength=195, ncpu=nthreads
-            )
-            unique_maps = list(set(euv_maps))
-            # Scatter once
-            map_futures = dask_client.scatter(unique_maps, broadcast=True)
-            map_lookup = dict(zip(unique_maps, map_futures))
-            futures = []
-            print("Start making overlays....")
-            for img, euv_map in zip(imagelist, euv_maps):
-                futures.append(
-                    dask_client.submit(
-                        make_mwa_overlay,
-                        img,
-                        map_lookup[euv_map],
-                        workdir,
-                        plot_file_prefix=os.path.basename(img).split(".fits")[0],
-                    )
-                )
 
-            results = dask_client.gather(futures)
-            dask_client.cancel(map_futures)
-            outimage_list = []
-            for r in results:
+        ###############################################
+        # Filter images
+        ###############################################
+
+        if not all_overlay:
+            imagelist = filter_images(imagelist, min_time_sep=60.0)
+
+        if len(imagelist) == 0:
+            return 1, 0, 0
+
+        print(f"Total images to overlay: {len(imagelist)}")
+
+        ###########################
+        # Download EUV maps
+        ###########################
+
+        print("Downloading AIA images....")
+
+        euv_maps = get_all_euv_maps(
+            imagelist,
+            workdir,
+            wavelength=195,
+            ncpu=nthreads,
+        )
+
+        ###########################
+        # Overlay tasks
+        ###########################
+
+        print("Start making overlays....")
+
+        futures = []
+
+        for img, euv_map in zip(imagelist, euv_maps):
+
+            futures.append(
+                dask_client.submit(
+                    make_overlay_cached,
+                    img,
+                    euv_map,
+                    workdir,
+                    plot_file_prefix=os.path.basename(img).replace(".fits", ""),
+                )
+            )
+
+        ###########################
+        # Collect results safely
+        ###########################
+
+        results = []
+
+        for future in as_completed(futures):
+
+            try:
+                r = future.result()
+                results.append(r)
+
+            except Exception as e:
+                print("Overlay task failed:", e)
+
+        ###########################
+        # Move outputs
+        ###########################
+
+        outimage_list = []
+
+        for r in results:
+
+            if r is not None:
+
                 outimage_list.append(r[0])
+
                 os.system(f"mv {r[0]} {outdir}")
-            if len(outimage_list) == 0:
-                print("No overlay is made.")
-                msg = 1
-                succeed = 0
-                failed = len(imagelist)
-            else:
-                print(f"Total images: {len(imagelist)}")
-                print(f"Total overlays: {len(outimage_list)}")
-                msg = 0
-                succeed = len(outimage_list)
-                failed = len(imagelist) - succeed
-        else:
+
+        if len(outimage_list) == 0:
+
+            print("No overlay is made.")
+
             msg = 1
+            succeed = 0
+            failed = len(imagelist)
+
+        else:
+
+            print(f"Total images: {len(imagelist)}")
+            print(f"Total overlays: {len(outimage_list)}")
+
+            msg = 0
+            succeed = len(outimage_list)
+            failed = len(imagelist) - succeed
+
     except Exception:
+
         traceback.print_exc()
         msg = 1
+
     finally:
+
         os.system(f"rm -rf {imagedir}/*aia*.fits")
         os.system(f"rm -rf {imagedir}/*suvi*.fits")
+
         time.sleep(5)
+
         drop_cache(imagedir)
+
         clean_shutdown(observer)
+
         if dask_cluster is not None:
+
             dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
+
             drop_cache(workdir)
+
             os.system(f"rm -rf {dask_dir}")
+
     return msg, succeed, failed
 
 
 def cli():
+
     usage = "Overlay MWA images on EUV images"
+
     parser = argparse.ArgumentParser(
-        description=usage, formatter_class=SmartDefaultsHelpFormatter
+        description=usage,
+        formatter_class=SmartDefaultsHelpFormatter,
     )
 
-    # Essential parameters
-    basic_args = parser.add_argument_group(
-        "###################\nEssential parameters\n###################"
-    )
-    basic_args.add_argument("imagedir", type=str, help="Image directory")
-    basic_args.add_argument("outdir", type=str, help="Output directory")
-    basic_args.add_argument(
-        "--workdir", type=str, default="", help="Name of work directory"
-    )
+    basic_args = parser.add_argument_group("Essential parameters")
 
-    # Advanced switches
-    adv_args = parser.add_argument_group(
-        "###################\nAdvanced parameters\n###################"
-    )
-    adv_args.add_argument(
-        "--all_overlay", action="store_true", help="Make overlays of all images"
-    )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
+    basic_args.add_argument("imagedir", type=str)
+    basic_args.add_argument("outdir", type=str)
 
-    # Resource management parameters
-    hard_args = parser.add_argument_group(
-        "###################\nHardware resource management parameters\n###################"
-    )
-    hard_args.add_argument(
-        "--cpu_frac", type=float, default=0.8, help="CPU fraction to use"
-    )
-    hard_args.add_argument(
-        "--mem_frac", type=float, default=0.8, help="Memory fraction to use"
-    )
-    hard_args.add_argument("--logfile", type=str, default=None, help="Log file")
-    hard_args.add_argument("--jobid", type=int, default=0, help="Job ID")
+    basic_args.add_argument("--workdir", type=str, default="")
+
+    adv_args = parser.add_argument_group("Advanced parameters")
+
+    adv_args.add_argument("--all_overlay", action="store_true")
+    adv_args.add_argument("--start_remote_log", action="store_true")
+
+    hard_args = parser.add_argument_group("Resource parameters")
+
+    hard_args.add_argument("--cpu_frac", type=float, default=0.8)
+    hard_args.add_argument("--mem_frac", type=float, default=0.8)
+
+    hard_args.add_argument("--logfile", type=str, default=None)
+    hard_args.add_argument("--jobid", type=int, default=0)
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -272,4 +320,5 @@ def cli():
         jobid=args.jobid,
         start_remote_log=args.start_remote_log,
     )
+
     return msg
