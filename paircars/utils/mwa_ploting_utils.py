@@ -1689,11 +1689,11 @@ def make_mwa_overlay(
             if verbose:
                 print(f"Plot saved: {plot_file}")
             plot_file_list.append(plot_file)
-        plt.close(fig)
     except Exception:
         traceback.print_exc()
     finally:
-        del euv_reprojected, mwa_reprojected, projected_header, mwamap, projected_coord
+        del mwamap, euv_map, euv_reprojected, mwa_reprojected, projected_header, mwamap, projected_coord
+        plt.close("all")
     return plot_file_list
 
 
