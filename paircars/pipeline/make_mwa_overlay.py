@@ -182,7 +182,8 @@ def main(
         for r in results:
             if r is not None:
                 outimage_list.append(r[0])
-                os.system(f"mv {r[0]} {outdir}")
+                if os.path.dirname(os.path.abspath(r[0]))!=os.path.abspath(outdir):
+                    os.system(f"mv {r[0]} {outdir}")
 
         if len(outimage_list) == 0:
             print("No overlay is made.")
