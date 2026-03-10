@@ -9,7 +9,6 @@ import sys
 import os
 import contextlib
 from dask.distributed import as_completed
-
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -40,18 +39,16 @@ def main(
     start_remote_log=False,
     dask_client=None,
 ):
-
     cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
 
     if workdir == "":
         workdir = f"{imagedir}/workdir"
-
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
 
     if outdir == "":
         outdir = workdir
-
     os.makedirs(outdir, exist_ok=True)
 
     ####################
@@ -64,13 +61,10 @@ def main(
         and os.path.exists(f"{workdir}/.jobname_password.npy")
         and logfile is not None
     ):
-
         time.sleep(1)
-
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
-
         if os.path.exists(logfile):
             observer = init_logger(
                 "do_overlay", logfile, jobname=jobname, password=password
@@ -98,7 +92,6 @@ def main(
         return 1, 0, 0
 
     print(f"Total images to overlay: {len(imagelist)}")
-
     
     try: 
         nthreads = int(os.environ.get("OMP_NUM_THREADS", 1))
@@ -125,19 +118,10 @@ def main(
     ###############################
     dask_cluster = None
     nworker = None
-
     if dask_client is None:
-
-        mem_frac = max(mem_frac, 0.8)
-        cpu_frac = max(cpu_frac, 0.8)
-
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
-
-        total_image_sizes = sum(image_sizes)
-
-        min_mem = round(50 * total_image_sizes, 2)
-        min_mem /= len(imagelist)
-
+        max_image_size = max(image_sizes)
+        min_mem = min(2, round(5 * max_image_size, 2))
         result = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -145,32 +129,23 @@ def main(
             min_mem=min_mem,
             max_worker=len(imagelist) + 1,
         )
-
         if result is None:
             print("Error occured in creating local cluster.")
             return 1, succeed, failed
 
         dask_client, dask_cluster, dask_dir, nworker = result
-
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
-
         nthreads = int(psutil.cpu_count() * cpu_frac)
-
     else:
-
         ncpu = int(os.environ.get("OMP_NUM_THREADS", 1))
-
         client_info = dask_client.scheduler_info()["workers"]
-
         njobs = len(client_info)
-
         nthreads = ncpu * njobs
 
     try:
         ###########################
         # Overlay tasks
         ###########################
-
         print("Start making overlays....")
         futures = []
         for img, euv_fits in zip(imagelist, euv_fits_images):
@@ -188,9 +163,7 @@ def main(
         ###########################
         # Collect results safely
         ###########################
-
         results = []
-
         for f in as_completed(futures):
             try:
                 r = f.result()
@@ -198,96 +171,66 @@ def main(
             except Exception as e:
                 print("Overlay failed:", e)
                 
-        print(dask_client.get_worker_logs())
+                
         ###########################
         # Move outputs
         ###########################
-
         outimage_list = []
-
         for r in results:
-
             if r is not None:
-
                 outimage_list.append(r[0])
-
                 os.system(f"mv {r[0]} {outdir}")
 
         if len(outimage_list) == 0:
-
             print("No overlay is made.")
-
             msg = 1
             succeed = 0
             failed = len(imagelist)
-
         else:
-
             print(f"Total images: {len(imagelist)}")
             print(f"Total overlays: {len(outimage_list)}")
-
             msg = 0
             succeed = len(outimage_list)
             failed = len(imagelist) - succeed
-
     except Exception:
-
         traceback.print_exc()
         msg = 1
-
     finally:
-
         os.system(f"rm -rf {imagedir}/*aia*.fits")
         os.system(f"rm -rf {imagedir}/*suvi*.fits")
-
         time.sleep(5)
-
         drop_cache(imagedir)
-
         clean_shutdown(observer)
-
         if dask_cluster is not None:
-
             with contextlib.suppress(Exception):
                 dask_client.cancel(dask_client.futures)
             with contextlib.suppress(Exception):
                 dask_client.close()
             with contextlib.suppress(Exception):
                 dask_cluster.close()
-
             drop_cache(workdir)
-
             os.system(f"rm -rf {dask_dir}")
-
     return msg, succeed, failed
 
 
 def cli():
-
     usage = "Overlay MWA images on EUV images"
-
     parser = argparse.ArgumentParser(
         description=usage,
         formatter_class=SmartDefaultsHelpFormatter,
     )
-
     basic_args = parser.add_argument_group("Essential parameters")
-
     basic_args.add_argument("imagedir", type=str)
     basic_args.add_argument("outdir", type=str)
-
     basic_args.add_argument("--workdir", type=str, default="")
 
     adv_args = parser.add_argument_group("Advanced parameters")
-
     adv_args.add_argument("--all_overlay", action="store_true")
     adv_args.add_argument("--start_remote_log", action="store_true")
 
     hard_args = parser.add_argument_group("Resource parameters")
-
     hard_args.add_argument("--cpu_frac", type=float, default=0.8)
     hard_args.add_argument("--mem_frac", type=float, default=0.8)
-
     hard_args.add_argument("--logfile", type=str, default=None)
     hard_args.add_argument("--jobid", type=int, default=0)
 
