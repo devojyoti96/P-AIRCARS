@@ -1541,7 +1541,7 @@ def make_mwa_overlay(
     mwa_header = mwamap.meta
     euv_header = euv_map.meta
 
-    euv_pix = min(1024, int(euv_header["naxis1"] * euv_image_scaling))
+    euv_pix = max(1024, int(euv_header["naxis1"] * euv_image_scaling))
     euv_header["naxis1"] * euv_header["cdelt1"]
     mwa_image_fov = mwa_header["naxis1"] * mwa_header["cdelt1"]
 
@@ -1565,10 +1565,10 @@ def make_mwa_overlay(
     )
 
     with SphericalScreen(euv_map.observer_coordinate):
-        euv_tmp = euv_map.reproject_to(projected_header)
-    euv_reprojected = Map(
-        euv_tmp.data.astype(np.float32), euv_tmp.meta
-    )
+        euv_reprojected = euv_map.reproject_to(projected_header)
+    #euv_reprojected = Map(
+    #    euv_tmp.data.astype(np.float32), euv_tmp.meta
+    #)
     
     mwatime = mwamap.meta["date-obs"].split(".")[0]
     euvtime = euv_map.meta["date-obs"].split(".")[0]
