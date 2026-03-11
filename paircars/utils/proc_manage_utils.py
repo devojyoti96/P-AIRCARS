@@ -237,12 +237,12 @@ def get_local_dask_cluster(
             }
         )
         usable_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        print(usuable_cpu)
+        print(usable_cpu)
         total_time=0
         while True:
             total_mem = psutil.virtual_memory().available / 1024**3  # In GB
             usable_mem = round(total_mem * mem_frac, 2)
-            print(usuable_mem, min_mem)
+            print(usable_mem, min_mem)
             n_worker_mem = int(usable_mem / min_mem)
             if n_worker_mem < 2:
                 if total_time>60:
