@@ -206,7 +206,7 @@ def get_logid(logfile):
         "apply_pbcor.log": "Applying primary beam corrections",
         "apply_selfcal.log": "Applying self-calibration solutions",
         "basic_cal.log": "Basic calibration",
-        "cor_phasecenter_target.log": "Moving phasecenter to solar center",
+        "move_solarcenter.log": "Moving phasecenter to solar center",
         "cor_sidereal_selfcal.log": "Correction of sidereal motion before self-calibration",
         "cor_sidereal_target.log": "Correction of sidereal motion for target scans",
         "flagging_cal_calibrator.log": "Basic flagging of calibrators",

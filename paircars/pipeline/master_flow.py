@@ -161,7 +161,7 @@ def run_solar_phasecenter_jobs(
                 workdir=workdir,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
-                logfile=logfile,
+                #logfile=logfile,
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,

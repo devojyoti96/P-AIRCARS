@@ -81,7 +81,8 @@ def main(
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
     if logger is None:
-        logger, _ = create_logger("movesun",f"{workdir}/move_solarcenter.log")
+        os.makedirs(f"{workdir}/logs",exist_ok=True)
+        logger,logfile = create_logger("movesun",f"{workdir}/logs/move_solarcenter.log")
     logger.info("Logger created.")
 
     ############
