@@ -10,6 +10,7 @@ from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    create_logger,
 )
 from paircars.utils.ms_metadata import get_ms_size
 from paircars.utils.mwa_utils import get_ncoarse
@@ -37,6 +38,7 @@ def main(
     jobid=0,
     start_remote_log=False,
     dask_client=None,
+    logger=None,
 ):
     """
     Run the flagging pipeline for a measurement set.
@@ -78,6 +80,8 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    if logger is None:
+        logger = create_logger("movesun",f"{workdir}/move_solarcenter.log")
 
     ############
     # Logger
@@ -97,10 +101,10 @@ def main(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.warning("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.error("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -112,10 +116,10 @@ def main(
     container_name = "paircarswsclean"
     container_present = check_udocker_container(container_name)
     if not container_present:
-        print(f"Initializing {container_name}...")
+        logger.info(f"Initializing {container_name}...")
         container_name = initialize_wsclean_container(name=container_name, verbose=True)
         if container_name is None:
-            print(
+            logger.info(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
             return 1, succeed, failed
@@ -145,7 +149,7 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if result is None:
-            print("Error occured in creating local cluster.")
+            logger.error("Error occured in creating local cluster.")
             return 1, succeed, failed
         else:
             dask_client, dask_cluster, dask_dir, nworker = result
@@ -156,9 +160,9 @@ def main(
         results = list(dask_client.gather(dask_client.compute(tasks)))
         failed = sum(results)
         succeed = len(mslist) - failed
-        print(f"Total measurement sets: {len(mslist)}")
-        print(f"Total success: {succeed}")
-        print(f"Total failure: {failed}")
+        logger.info(f"Total measurement sets: {len(mslist)}")
+        logger.info(f"Total success: {succeed}")
+        logger.info(f"Total failure: {failed}")
         if len(mslist) == failed:
             msg = 1
         else:
