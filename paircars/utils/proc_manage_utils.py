@@ -237,10 +237,12 @@ def get_local_dask_cluster(
             }
         )
         usable_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
+        print(usuable_cpu)
         total_time=0
         while True:
             total_mem = psutil.virtual_memory().available / 1024**3  # In GB
             usable_mem = round(total_mem * mem_frac, 2)
+            print(usuable_mem, min_mem)
             n_worker_mem = int(usable_mem / min_mem)
             if n_worker_mem < 2:
                 if total_time>60:
@@ -251,16 +253,25 @@ def get_local_dask_cluster(
                     total_time+=1
             else:
                 break
+            print(n_worker_mem)
                     
         n_worker_cpu = usable_cpu
+        print (n_worker_cpu, n_worker_mem, max_worker)
         n_worker = min(n_worker_cpu, n_worker_mem)
         if max_worker > 0:
             n_worker = min(n_worker, max_worker)
+            print(n_worker)
             n_worker = max(2, n_worker)
-
-        mem_limit = round((usable_mem / n_worker) / spill_frac, 2)
+            print(n_worker)
+            
+        mem_limit = round(usable_mem / n_worker, 2)
+        print(mem_limit)
+        mem_limit = round(mem_limit/spill_frac,2)
+        print(mem_limit)
         n_worker = max(1, int(usable_mem / mem_limit))
+        print(n_worker)
         ncpu = max(1, int(usable_cpu / n_worker))
+        print(usable_cpu,ncpu)
 
         cluster = LocalCluster(
             n_workers=1,
