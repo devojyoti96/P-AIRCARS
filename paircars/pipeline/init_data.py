@@ -196,56 +196,131 @@ def main(
         #########################################
         init_udocker()
         print("uDOCKER is inititalized")
-        wsclean_container_name = initialize_wsclean_container(
-            update=update, verbose=True
-        )
-        if (
-            wsclean_container_name is not None
-            and wsclean_container_name == "paircarswsclean"
-        ):
-            print("WSClean container is initialized")
-        else:
-            return 1
-        quartical_container_name = initialize_quartical_container(
-            update=update, verbose=True
-        )
-        if (
-            quartical_container_name is not None
-            and quartical_container_name == "paircarsquartical"
-        ):
-            print("Quartical container is initialized")
-        else:
-            return 1
-        shadems_container_name = initialize_shadems_container(
-            update=update, verbose=True
-        )
-        if (
-            shadems_container_name is not None
-            and shadems_container_name == "paircarsshadems"
-        ):
-            print("Shadems container is initialized")
-        else:
-            return 1
-        hyperdrive_container_name = initialize_hyperdrive_container(
-            update=update, verbose=True
-        )
-        if (
-            hyperdrive_container_name is not None
-            and hyperdrive_container_name == "paircarshyperdrive"
-        ):
-            print("Hyperdrive container is initialized")
-        else:
-            return 1
-        postgres_container_name = initialize_postgres_container(
-            update=update, verbose=True
-        )
-        if (
-            postgres_container_name is not None
-            and postgres_container_name == "paircarspostgres"
-        ):
-            print("PostgreSQL container is initialized")
-        else:
-            return 1
+        
+        #####################
+        # Wsclean
+        #####################
+        trial=0
+        while trial<2:
+            wsclean_container_name = initialize_wsclean_container(
+                update=update, verbose=True
+            )
+            if (
+                wsclean_container_name is not None
+                and wsclean_container_name == "paircarswsclean"
+            ):
+                print("WSClean container is initialized")
+                break
+            else:
+                trial+=1
+                if trial==2:
+                    print("WSClean container is not initialized.")
+                    print("Check you internet connectivity.")
+                    return 1
+                
+        ##########################
+        # Quartical
+        ##########################
+        trial=0
+        while trial<2:
+            quartical_container_name = initialize_quartical_container(
+                update=update, verbose=True
+            )
+            if (
+                quartical_container_name is not None
+                and quartical_container_name == "paircarsquartical"
+            ):
+                print("Quartical container is initialized")
+                break
+            else:
+                trial+=1
+                if trial==2:
+                    print("Quartical container is not initialized.")
+                    print("Check you internet connectivity.")
+                    return 1
+                        
+        #############################
+        # Hyperdrive
+        #############################
+        trial=0
+        while trial<2:
+            hyperdrive_container_name = initialize_hyperdrive_container(
+                update=update, verbose=True
+            )
+            if (
+                hyperdrive_container_name is not None
+                and hyperdrive_container_name == "paircarshyperdrive"
+            ):
+                print("Hyperdrive container is initialized")
+                break
+            else:
+                trial+=1
+                if trial==2:
+                    print("Hyperdrive container is not initialized.")
+                    print("Check you internet connectivity.")
+                    return 1
+                    
+        #############################
+        # Hyperbeam
+        #############################
+        trial=0
+        while trial<2:
+            hyperbeam_container_name = initialize_hyperbeam_container(
+                update=update, verbose=True
+            )
+            if (
+                hyperbeam_container_name is not None
+                and hyperbeam_container_name == "paircarshyperbeam"
+            ):
+                print("Hyperbeam container is initialized")
+                break
+            else:
+                trial+=1
+                if trial==2:
+                    print("Hyperbeam container is not initialized.")
+                    print("Check you internet connectivity.")
+                    return 1
+            
+        #############################
+        # PostgreSQL
+        ##############################
+        trial=0
+        while trial<2:
+            postgres_container_name = initialize_postgres_container(
+                update=update, verbose=True
+            )
+            if (
+                postgres_container_name is not None
+                and postgres_container_name == "paircarspostgres"
+            ):
+                print("PostgreSQL container is initialized")
+                break
+            else:
+                trial+=1
+                if trial==2:
+                    print("PostgreSQL container is not initialized.")
+                    print("Check you internet connectivity.")
+                    return 1
+            
+        ##############################
+        # Shadems
+        ##############################
+        trial=0
+        while trial<2:
+            shadems_container_name = initialize_shadems_container(
+                update=update, verbose=True
+            )
+            if (
+                shadems_container_name is not None
+                and shadems_container_name == "paircarsshadems"
+            ):
+                print("Shadems container is initialized")
+                break
+            else:
+                trial+=1
+                if trial==2:
+                    print("Shadems container is not initialized.")
+                    print("Check you internet connectivity.")
 
         #########################################
         # prefect server setup
