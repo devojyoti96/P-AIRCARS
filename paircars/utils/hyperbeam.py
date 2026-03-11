@@ -97,7 +97,77 @@ class FEEBeam:
                 f"{temp_pbdir_path}",
                 f"{self.container_name}",
                 "python",
-                "/app/hyperbeam.py",
+                "/app/hyperbeam_array.py",
+            ],
+            env=self.env,
+            input=pickle.dumps(data),
+            capture_output=True,
+        )
+        return pickle.loads(proc.stdout)
+        
+    def calc_jones(
+        self,
+        az_rad,
+        za_rad,
+        freq,
+        delay,
+        amps,
+        norm,
+        lat,
+        iau_order,
+    ):
+        """
+        Calc primary beam jones array
+        
+        Parameters
+        ----------
+        az_rad : float
+            Azimuth in radian
+        za_rad : float
+            Zenith angle in radian
+        freq : float
+            Frequency in Hz
+        delay : list
+            List of beamformer delays
+        amps : list
+            List of dipole amplitudes
+        norm : bool
+            Zenith normalization or not
+        lat : float
+            Latitude of the array
+        iau_order : bool
+            MWA beam in IAU order or not
+            
+        Returns
+        -------
+        numpy.array 
+            Beam Jones (shape: coodinates, 4 components)
+        """
+        pbdir = os.path.dirname(os.path.abspath(self.pbfile))  
+        temp_name = "mwapb_udocker_" + next(tempfile._get_candidate_names())
+        temp_pbdir_path = os.path.join(pbdir, temp_name)
+        data = dict(
+            az_rad=az_rad,
+            za_rad=za_rad,
+            freq=freq,
+            delay=delay,
+            amps=amps,
+            norm=norm,
+            lat=lat,
+            iau_order=iau_order,
+            pbfile=f"{temp_pbdir_path}/{os.path.basename(self.pbfile)}",
+        )
+        proc = subprocess.run(
+            [
+                "udocker",
+                "run",
+                "--nobanner",
+                 f"--volume={pbdir}:{temp_pbdir_path}",
+                "--workdir",
+                f"{temp_pbdir_path}",
+                f"{self.container_name}",
+                "python",
+                "/app/hyperbeam_single.py",
             ],
             env=self.env,
             input=pickle.dumps(data),

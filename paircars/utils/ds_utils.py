@@ -402,7 +402,6 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     str
         Output normalised cross-correlation file name
     """
-    print("Calculating dynamic spectrum....!!!!!")
     n_threads = max(1, n_threads)
     ##################################
     # Determine baseline list
@@ -603,11 +602,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     ######################################
     # Extracting metadata
     ######################################
-    if freqres > 160:
-        print(
-            f"Frequency resolution: {freqres}kHz is more than 160kHz. Assuming channel flagging is done before averaging."
-        )
-    else:
+    if freqres <= 160:
         header = fits.getheader(metafits)
         mode = header["MODE"]
         finechan = float(header["FINECHAN"])
