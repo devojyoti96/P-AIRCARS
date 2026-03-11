@@ -3812,8 +3812,8 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-
-        scale_worker_and_wait(dask_cluster, dask_client, 2)
+        if adaptive:
+            scale_worker_and_wait(dask_cluster, dask_client, 2)
         #######################################
         # Make overlays
         #######################################
