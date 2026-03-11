@@ -67,7 +67,7 @@ def do_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -315,7 +315,7 @@ def do_selfcal(
         use_previous_model = False
         nondisk_flag = True
         min_DR = 0
-        min_iter = max(5, min_iter)  # Minimum 5 iterations
+        min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -465,7 +465,7 @@ def do_selfcal(
                 "RMS of the images: " + str(RMS1) + "," + str(RMS2) + "," + str(RMS3)
             )
             if DR3 > 1.1 * DR2 and (
-                calmode == "p" or (calmode == "ap" and num_iter_after_ap > min_iter)
+                calmode == "p" or (calmode == "ap" and num_iter_after_ap > 1)
             ):
                 use_previous_model = True
             else:
@@ -476,7 +476,7 @@ def do_selfcal(
             #########################################################
             if DR3 < 0.9 * min_DR and (
                 (calmode == "p" and num_iter > min_iter)
-                or (calmode == "ap" and num_iter_after_ap > min_iter)
+                or (calmode == "ap" and num_iter_after_ap > 1)
             ):
                 intlogger.info(
                     f"Dynamic range decreased below start dynamic range: {min_DR}."
@@ -502,7 +502,7 @@ def do_selfcal(
                     intlogger.info("Changed calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
-                    if threshold > end_threshold and num_iter_fixed_sigma > min_iter:
+                    if threshold > end_threshold and num_iter_fixed_sigma > 1:
                         threshold -= 1
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
@@ -521,7 +521,7 @@ def do_selfcal(
             if (
                 (DR3 < 0.9 * DR2 and DR2 > 1.1 * DR1)
                 and calmode == "ap"
-                and num_iter_after_ap > min_iter
+                and num_iter_after_ap > 1
             ):
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
@@ -552,7 +552,7 @@ def do_selfcal(
             ###########################
             # If maximum DR has reached
             ###########################
-            if DR3 >= max_DR and num_iter_after_ap > min_iter:
+            if DR3 >= max_DR and num_iter_after_ap > 1:
                 intlogger.info("Maximum dynamic range is reached.\n")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
@@ -567,7 +567,7 @@ def do_selfcal(
             ###########################
             elif (
                 ((do_apcal and calmode == "ap") or not do_apcal)
-                and num_iter_fixed_sigma > min_iter
+                and num_iter_fixed_sigma > 1
                 and (
                     last_sigma_DR1 > 0
                     and abs(round(np.nanmedian([DR1, DR2, DR3]), 0) - last_sigma_DR1)
@@ -604,7 +604,7 @@ def do_selfcal(
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and num_iter_fixed_sigma > min_iter
+                    and num_iter_fixed_sigma > 1
                     and threshold > end_threshold
                 ):
                     #####################################
@@ -616,14 +616,14 @@ def do_selfcal(
                         )
                         calmode = "ap"
                         use_previous_model = False
-                        if num_iter_fixed_sigma > min_iter:
+                        if num_iter_fixed_sigma > 1:
                             threshold -= 1
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
                     ######################################
                     # Converged if already in apcal
                     ######################################
-                    elif (do_apcal and num_iter_after_ap > min_iter) or not do_apcal:
+                    elif (do_apcal and num_iter_after_ap > 1) or not do_apcal:
                         threshold -= 1
                         intlogger.info("Reducing threshold to : " + str(threshold))
                         sigma_reduced_count += 1
@@ -639,7 +639,7 @@ def do_selfcal(
                 elif (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and num_iter_fixed_sigma > min_iter
+                    and num_iter_fixed_sigma > 1
                     and threshold == end_threshold
                 ):
                     intlogger.info("Self-calibration has converged.\n")
@@ -686,7 +686,7 @@ def do_polselfcal(
     refant="",
     max_iter=10,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     threshold=3.0,
     DR_convergence_frac=0.1,
     uvrange="",
@@ -817,7 +817,7 @@ def do_polselfcal(
         ######################################
         times, flag_frac = get_chans_flag_per_time(msname)
         pos = np.argmin(flag_frac)
-        best_time_mjdsec = times[pos]
+        best_time_mjdsec = times[pos] #TODO: if ms is more than 4min, add 4min time intervals
         best_time = mjdsec_to_timestamp(best_time_mjdsec, str_format=1)
 
         ##############################
@@ -953,7 +953,7 @@ def do_polselfcal(
         last_round_gaintable = []
         last_leakage_file = ""
         last_round_ms = ""
-        min_iter = max(5, min_iter)  # Minimum 5 iterations
+        min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ##########################################
@@ -969,11 +969,11 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = False
-            elif num_iter < 3:
+            elif num_iter == 1:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter == 3:
+            elif num_iter == 2:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
@@ -1238,7 +1238,7 @@ def do_full_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -1293,7 +1293,7 @@ def do_full_selfcal(
         end_threshold=end_threshold,
         max_iter=max_iter,
         max_DR=max_DR,
-        min_iter=max(5, min_iter),
+        min_iter=max(3, min_iter),
         DR_convergence_frac=DR_convergence_frac,
         uvrange=uvrange,
         minuv=minuv,
@@ -1321,7 +1321,7 @@ def do_full_selfcal(
             metafits=metafits,
             max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
-            min_iter=max(5, min_iter),
+            min_iter=max(3, min_iter),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,
@@ -1353,7 +1353,7 @@ def main(
     stop_thresh=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     conv_frac=0.1,
     solint="60s",
     uvrange="",
@@ -1397,7 +1397,7 @@ def main(
     max_DR : float, optional
         Maximum dynamic range allowed before halting iterations. Default is 100000.
     min_iter : int, optional
-        Minimum number of iterations before checking for convergence. Default is 5.
+        Minimum number of iterations before checking for convergence. Default is 3.
     conv_frac : float, optional
         Convergence criterion: fractional change in dynamic range below which iteration stops. Default is 0.1.
     solint : str, optional
@@ -1885,7 +1885,7 @@ def cli():
     adv_args.add_argument(
         "--min_iter",
         type=int,
-        default=5,
+        default=3,
         help="Minimum number of selfcal iterations",
         metavar="Integer",
     )
