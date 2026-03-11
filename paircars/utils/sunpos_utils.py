@@ -175,7 +175,7 @@ def move_to_sun(msname, only_uvw=False):
     int
         Success message
     """
-    logger = logging.getlogger("movesun")
+    logger = logging.getLogger("movesun")
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.solarcenter_move_*")
     logger.info(f"Moving phasecenter to solar center for measurement set: {msname}")
