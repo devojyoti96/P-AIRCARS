@@ -81,7 +81,8 @@ def main(
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
     if logger is None:
-        logger = create_logger("movesun",f"{workdir}/move_solarcenter.log")
+        logger, _ = create_logger("movesun",f"{workdir}/move_solarcenter.log")
+    logger.info("Logger created.")
 
     ############
     # Logger
@@ -98,7 +99,7 @@ def main(
         )
         if os.path.exists(logfile):
             observer = init_logger(
-                "do_flagging", logfile, jobname=jobname, password=password
+                "movesun", logfile, jobname=jobname, password=password
             )
     if observer is None:
         logger.warning("Remote link or jobname is blank. Not transmiting to remote logger.")
