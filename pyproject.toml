@@ -183,7 +183,6 @@ dependencies = [
     "prefect-dask==0.3.6",
     "python-dotenv==1.1.1",
     "numexpr==2.14.1",
-    "mwa_hyperbeam==0.10.4",
     "skyfield==1.53",
     "pycurl==7.45.7",
     "pyfiglet==1.0.4",

@@ -47,7 +47,7 @@ def check_udocker_container(name):
     bool
         Whether present or not
     """
-    set_udocker_env()
+    init_udocker()
     env = os.environ.copy()
     try:
         result = subprocess.run(
@@ -84,7 +84,7 @@ def initialize_container(image_name, name, update=False, verbose=False):
     bool
         Whether initialized successfully or not
     """
-    set_udocker_env()
+    init_udocker()
     env = os.environ.copy()
     check_cmd = f"udocker images | grep -q {image_name}"
     image_exists = os.system(check_cmd)
@@ -210,7 +210,6 @@ def initialize_wsclean_container(name="paircarswsclean", update=False, verbose=F
     bool
         Whether initialized successfully or not
     """
-    set_udocker_env()
     print("Initializing wsclean container.")
     image_name = "devojyoti96/wsclean-solar:latest"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
@@ -237,7 +236,6 @@ def initialize_quartical_container(
     bool
         Whether initialized successfully or not
     """
-    set_udocker_env()
     print("Initializing quartical container.")
     image_name = "devojyoti96/quartical:0.2.6"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
@@ -262,7 +260,6 @@ def initialize_shadems_container(name="paircarsshadems", update=False, verbose=F
     bool
         Whether initialized successfully or not
     """
-    set_udocker_env()
     print("Initializing shadems container.")
     image_name = "devojyoti96/shadems:v0.5.4"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
@@ -291,6 +288,32 @@ def initialize_hyperdrive_container(
     """
     print("Initializing hyperdrive container.")
     image_name = "devojyoti96/paircarshyperdrive:latest"
+    msg = initialize_container(image_name, name, update=update, verbose=verbose)
+    return msg
+   
+    
+def initialize_hyperbeam_container(
+    name="paircarshyperbeam", update=False, verbose=False
+):
+    """
+    Initialize hyperbeam container
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the container
+    update : bool, optional
+        Update container
+    verbose : bool, optional
+        Verbose output
+
+    Returns
+    -------
+    bool
+        Whether initialized successfully or not
+    """
+    print("Initializing hyperbeam container.")
+    image_name = "devojyoti96/paircarshyperbeam:latest"
     msg = initialize_container(image_name, name, update=update, verbose=verbose)
     return msg
 
@@ -344,14 +367,7 @@ def run_wsclean(
     int
         Success message
     """
-    set_udocker_env()
-
-    def show_file(path):
-        try:
-            print(open(path).read())
-        except Exception as e:
-            print(f"{e}")
-
+    init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -461,7 +477,7 @@ def run_solar_sidereal_cor(
     int
         Success message
     """
-    set_udocker_env()
+    init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -558,7 +574,7 @@ def run_chgcenter(
     int
         Success message
     """
-    set_udocker_env()
+    init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -652,7 +668,7 @@ def run_shadems(
     int
         Success message
     """
-    set_udocker_env()
+    init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -729,7 +745,7 @@ def run_quartical(
     int
         Success message
     """
-    set_udocker_env()
+    init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -847,7 +863,7 @@ def run_hyperdrive(
     int
         Success message
     """
-    set_udocker_env()
+    init_udocker()
     if ncpu > 0:
         os.environ["RAYON_NUM_THREADS"] = str(ncpu)
     env = os.environ.copy()
@@ -951,7 +967,7 @@ def run_postgres(
     int
         Whether postgres server started or not
     """
-    set_udocker_env()
+    init_udocker()
 
     datadir = get_datadir()
     pg_credentials = f"{datadir}/postgres_credentials.npy"
@@ -1085,7 +1101,7 @@ def kill_postgres(
         Whether closed or not
 
     """
-    set_udocker_env()
+    init_udocker()
     datadir = get_datadir()
     pgdata_dir = f"{datadir}/pgdata"
     pid_file = f"{datadir}/postgres.pid"
