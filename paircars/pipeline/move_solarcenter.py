@@ -98,6 +98,9 @@ def main(
             observer, logger = init_logger(
                 "movesun", logfile, jobname=jobname, password=password
             )
+    if logger is None:
+        os.makedirs(f"{workdir}/logs/",exist_ok=True)
+        logger, logfile = create_logger("movesun",f"{workdir}/logs/move_solarcenter.log")
             
    
     if observer is None:
