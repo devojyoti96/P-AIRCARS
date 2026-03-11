@@ -317,8 +317,8 @@ def init_logger(logname, logfile, jobname="", password=""):
                 event_handler, path=os.path.dirname(logfile), recursive=False
             )
             observer.start()
-            return observer, logger
+            return observer
         else:
-            return None, None
+            return
     else:
-        return None, None
+        return

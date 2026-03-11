@@ -2,7 +2,6 @@ import astropy.units as u
 import os
 import traceback
 import numpy as np
-import logging
 from astropy.time import Time
 from astropy.coordinates import (
     EarthLocation,
@@ -175,19 +174,17 @@ def move_to_sun(msname, only_uvw=False):
     int
         Success message
     """
-    logger = logging.getLogger("movesun")
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.solarcenter_move_*")
-    logger.info(f"Moving phasecenter to solar center for measurement set: {msname}")
+    print(f"Moving phasecenter to solar center for measurement set: {msname}")
     sun_radec_string, sunra, sundec, sunra_deg, sundec_deg = radec_sun(msname)
     msg = run_chgcenter(
         msname, sunra, sundec, only_uvw=only_uvw, container_name="paircarswsclean"
     )
     if msg != 0:
-        logger.error("Phasecenter could not be shifted for ms: {msname}.")
+        print("Phasecenter could not be shifted.")
         os.system(f"touch {msname}/.solarcenter_move_failed")
     else:
-        logger.info("Phasecenter has been shifted to the Sun for ms: {msname}")
         os.system(f"touch {msname}/.solarcenter_move_succeed")
     return msg
 

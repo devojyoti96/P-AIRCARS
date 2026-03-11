@@ -161,7 +161,7 @@ def run_solar_phasecenter_jobs(
                 workdir=workdir,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
-                #logfile=logfile,
+                logfile=logfile,
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
@@ -2017,7 +2017,7 @@ def master_control(
                     f"{workdir}/.jobname_password.npy", allow_pickle=True
                 )
                 if master_logfile is not None and os.path.exists(master_logfile):
-                    observer, logger = init_logger(
+                    observer = init_logger(
                         "master_log", master_logfile, jobname=jobname, password=password
                     )
             if observer is None:
