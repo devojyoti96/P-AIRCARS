@@ -402,6 +402,7 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     str
         Output normalised cross-correlation file name
     """
+    print("Calculating dynamic spectrum....!!!!!")
     n_threads = max(1, n_threads)
     ##################################
     # Determine baseline list
