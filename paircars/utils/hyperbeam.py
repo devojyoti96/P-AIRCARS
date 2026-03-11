@@ -1,6 +1,5 @@
 import subprocess
 import pickle
-import base64
 import os
 import tempfile
 from .udocker_utils import initialize_hyperbeam_container, check_udocker_container, init_udocker

@@ -116,7 +116,6 @@ def main(
     # Dask cluster
     ###############################
     dask_cluster = None
-    nworker = None
     if dask_client is None:
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
         max_image_size = max(image_sizes)
