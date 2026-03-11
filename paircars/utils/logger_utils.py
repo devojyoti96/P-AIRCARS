@@ -151,6 +151,50 @@ class LogTailHandler(FileSystemEventHandler):
                 pass
 
 
+def create_logger(logname, logfile, get_print=False, verbose=False):
+    """
+    Create logger.
+
+    Parameters
+    ----------
+    logname : str
+        Name of the log
+    logfile : str, optional
+        Log file name
+    get_print : bool, optional
+        Get print output to log
+    verbose : bool, optional
+        Verbose output or not
+
+    Returns
+    -------
+    logger
+        Python logging object
+    str
+        Log file name
+    """
+    logger = logging.getLogger(logname)
+    # If logger already configured, return it
+    if logger.handlers:
+        print(f"Logger: {logname} is already configured.")
+        return logger, logfile
+    formatter = logging.Formatter("%(message)s")
+    logger.setLevel(logging.DEBUG)
+    if verbose:
+        console = logging.StreamHandler(sys.stdout)
+        console.setFormatter(formatter)
+        logger.addHandler(console)
+    filehandle = logging.FileHandler(logfile)
+    filehandle.setFormatter(formatter)
+    logger.addHandler(filehandle)
+    logger.propagate = False
+    if get_print:
+        sys.stdout = StreamToLogger(logger, logging.INFO)
+        sys.stderr = StreamToLogger(logger, logging.ERROR)
+    logger.info("Log file : " + logfile + "\n")
+    return logger, logfile
+
+
 def get_logid(logfile):
     """
     Get log id for remote logger from logfile name
