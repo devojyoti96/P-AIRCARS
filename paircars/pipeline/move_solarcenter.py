@@ -80,11 +80,7 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
-    if logger is None:
-        os.makedirs(f"{workdir}/logs",exist_ok=True)
-        logger,logfile = create_logger("movesun",f"{workdir}/logs/move_solarcenter.log")
-    logger.info("Logger created.")
-
+    
     ############
     # Logger
     ############
@@ -99,9 +95,11 @@ def main(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
         if os.path.exists(logfile):
-            observer = init_logger(
+            observer, logger = init_logger(
                 "movesun", logfile, jobname=jobname, password=password
             )
+            
+   
     if observer is None:
         logger.warning("Remote link or jobname is blank. Not transmiting to remote logger.")
 

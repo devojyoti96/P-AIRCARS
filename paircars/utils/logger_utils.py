@@ -206,7 +206,7 @@ def get_logid(logfile):
         "apply_pbcor.log": "Applying primary beam corrections",
         "apply_selfcal.log": "Applying self-calibration solutions",
         "basic_cal.log": "Basic calibration",
-        "move_solarcenter.log": "Moving phasecenter to solar center",
+        "cor_phasecenter_target.log": "Moving phasecenter to solar center",
         "cor_sidereal_selfcal.log": "Correction of sidereal motion before self-calibration",
         "cor_sidereal_target.log": "Correction of sidereal motion for target scans",
         "flagging_cal_calibrator.log": "Basic flagging of calibrators",
@@ -317,8 +317,8 @@ def init_logger(logname, logfile, jobname="", password=""):
                 event_handler, path=os.path.dirname(logfile), recursive=False
             )
             observer.start()
-            return observer
+            return observer, logger
         else:
-            return
+            return None, None
     else:
-        return
+        return None, None
