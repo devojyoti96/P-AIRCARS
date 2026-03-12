@@ -392,14 +392,17 @@ def plot_G_jones_time_vs_gain(
                     fontsize=14,
                 )
                 x = np.abs(np.array(all_gains))
-                miny = 0.8 * np.nanmin(x)
-                maxy = 1.2 * np.nanmax(x)
+                miny = np.nanmin(x)
+                maxy = np.nanmax(x)
+                pad = 0.1 * (maxy - miny)
             else:
                 fig.suptitle(
                     f"Time vs Gain Phase, Start time: {start_timestamp}", fontsize=14
                 )
-                miny = max(-200, 0.8 * np.nanmin(x))
-                maxy = min(200, 1.2 * np.nanmax(x))
+                x = np.angle(np.array(all_gains), deg=True)
+                miny = np.nanmin(x)
+                maxy = np.nanmax(x)
+                pad = 0.1 * (maxy - miny)
             axes = axes.flatten()
             for n in range(len(all_ants)):
                 ants = all_ants[n]
@@ -438,7 +441,7 @@ def plot_G_jones_time_vs_gain(
                             if n == 0:
                                 ax.set_ylabel("Gain Phase (degree)", fontsize=14)
                     if n == 0:
-                        ax.set_title(f"Antenna {ant+1}, ant_names{ant}", fontsize=14)
+                        ax.set_title(f"Antenna {ant+1}, {ant_names[ant]}", fontsize=14)
                         ax.set_xlabel("Time (s)", fontsize=14)
                         ax.legend(fontsize=10, ncol=2, loc="upper right")
                     ax.set_ylim(miny, maxy)
