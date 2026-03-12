@@ -1630,7 +1630,7 @@ def selfcal_round(
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
                 "D.type=complex",
-                "D.time_interval={solint}",
+                f"D.time_interval={solint}",
                 f"D.freq_interval={int(freqres*1000.0)}kHz",
             ]
             if solve_array_leakage:

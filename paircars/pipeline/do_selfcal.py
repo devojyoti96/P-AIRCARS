@@ -500,7 +500,7 @@ def do_selfcal(
                     intlogger.info("Changed calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
-                    if threshold > end_threshold and num_iter_fixed_sigma > 1:
+                    if threshold > end_threshold and num_iter_fixed_sigma > min_iter:
                         threshold -= 1
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
@@ -519,7 +519,7 @@ def do_selfcal(
             if (
                 (DR3 < 0.9 * DR2 and DR2 > 1.1 * DR1)
                 and calmode == "ap"
-                and num_iter_after_ap > 1
+                and num_iter_after_ap > min_iter
             ):
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
@@ -550,7 +550,7 @@ def do_selfcal(
             ###########################
             # If maximum DR has reached
             ###########################
-            if DR3 >= max_DR and num_iter_after_ap > 1:
+            if DR3 >= max_DR and num_iter_after_ap > min_iter:
                 intlogger.info("Maximum dynamic range is reached.\n")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
@@ -565,7 +565,7 @@ def do_selfcal(
             ###########################
             elif (
                 ((do_apcal and calmode == "ap") or not do_apcal)
-                and num_iter_fixed_sigma > 1
+                and num_iter_fixed_sigma > min_iter
                 and (
                     last_sigma_DR1 > 0
                     and abs(round(np.nanmedian([DR1, DR2, DR3]), 0) - last_sigma_DR1)
@@ -602,7 +602,7 @@ def do_selfcal(
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and num_iter_fixed_sigma > 1
+                    and num_iter_fixed_sigma > min_iter
                     and threshold > end_threshold
                 ):
                     #####################################
@@ -614,14 +614,14 @@ def do_selfcal(
                         )
                         calmode = "ap"
                         use_previous_model = False
-                        if num_iter_fixed_sigma > 1:
+                        if num_iter_fixed_sigma > min_iter:
                             threshold -= 1
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
                     ######################################
                     # Converged if already in apcal
                     ######################################
-                    elif (do_apcal and num_iter_after_ap > 1) or not do_apcal:
+                    elif (do_apcal and num_iter_after_ap > min_iter) or not do_apcal:
                         threshold -= 1
                         intlogger.info("Reducing threshold to : " + str(threshold))
                         sigma_reduced_count += 1
@@ -637,7 +637,7 @@ def do_selfcal(
                 elif (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and num_iter_fixed_sigma > 1
+                    and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
                 ):
                     intlogger.info("Self-calibration has converged.\n")
