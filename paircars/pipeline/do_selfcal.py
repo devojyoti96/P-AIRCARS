@@ -15,7 +15,6 @@ from paircars.utils.basic_utils import (
     get_datadir,
     weighted_mean,
     mjdsec_to_timestamp,
-    chunk_by_start_gap,
 )
 from paircars.utils.calibration import (
     get_caltable_metadata,
@@ -825,7 +824,7 @@ def do_polselfcal(
             best_time_mjdsec = times[pos] 
             best_time = mjdsec_to_timestamp(best_time_mjdsec, str_format=1)
         else:
-            bins = (times - times.min()) // chunk
+            bins = (times-times.min())//240
             result = []
             for b in np.unique(bins):
                 idx = bins == b

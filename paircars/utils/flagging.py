@@ -180,7 +180,6 @@ def get_chans_flag_per_time(msname):
     msmd.open(msname)
     times = msmd.timesforspws(0)
     msmd.close()
-    len(times)
     mstool = casamstool()
     mstool.open(msname)
     flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
@@ -194,7 +193,7 @@ def get_chans_flag_per_time(msname):
     else:
         flag_frac = np.array([np.nansum(flag) / np.size(flag)])
     flag_frac = flag_frac.tolist()
-    times = time.tolist()
+    times = times.tolist()
     return times, flag_frac
 
 

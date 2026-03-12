@@ -25,6 +25,7 @@ from paircars.utils.udocker_utils import (
     initialize_quartical_container,
     initialize_shadems_container,
     initialize_hyperdrive_container,
+    initialize_hyperbeam_container,
     initialize_postgres_container,
 )
 from paircars.utils.killjob_utils import kill_port
