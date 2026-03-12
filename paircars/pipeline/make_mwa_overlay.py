@@ -80,7 +80,7 @@ def main(
 
     succeed = 0
     failed = len(imagelist)
-    
+
     ###############################################
     # Filter images
     ###############################################
@@ -91,8 +91,8 @@ def main(
         return 1, 0, 0
 
     print(f"Total images to overlay: {len(imagelist)}")
-    
-    try: 
+
+    try:
         nthreads = int(os.environ.get("OMP_NUM_THREADS", 1))
         ###########################
         # Download EUV maps
@@ -103,14 +103,13 @@ def main(
             wavelength=195,
             ncpu=nthreads,
         )
-        if len(euv_fits_images)==0:
+        if len(euv_fits_images) == 0:
             print("No EUV images downloaded.")
             return 1, succeed, failed
     except Exception:
         print("Error occured in EUV fits downloading.")
         traceback.print_exc()
         return 1, succeed, failed
-        
 
     ###############################
     # Dask cluster
@@ -146,10 +145,10 @@ def main(
         ###########################
         print("Start making overlays....")
         results = []
-        batch_size = max(1, njobs-1)
+        batch_size = max(1, njobs - 1)
         for i in range(0, len(imagelist), batch_size):
-            batch_imgs = imagelist[i:i+batch_size]
-            batch_euv = euv_fits_images[i:i+batch_size]
+            batch_imgs = imagelist[i : i + batch_size]
+            batch_euv = euv_fits_images[i : i + batch_size]
             futures = []
             for img, euv_fits in zip(batch_imgs, batch_euv):
                 futures.append(
@@ -177,7 +176,7 @@ def main(
             # free worker memory
             dask_client.cancel(futures)
             time.sleep(2)
-                
+
         ###########################
         # Move outputs
         ###########################
@@ -185,7 +184,7 @@ def main(
         for r in results:
             if r is not None:
                 outimage_list.append(r[0])
-                if os.path.dirname(os.path.abspath(r[0]))!=os.path.abspath(outdir):
+                if os.path.dirname(os.path.abspath(r[0])) != os.path.abspath(outdir):
                     os.system(f"mv {r[0]} {outdir}")
 
         if len(outimage_list) == 0:

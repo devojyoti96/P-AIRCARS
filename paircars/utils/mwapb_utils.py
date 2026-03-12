@@ -217,7 +217,7 @@ def all_sky_beam_interpolator(
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
     os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file,check_container=True)
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file, check_container=True)
     az_scale = np.arange(0, 360, resolution)
     alt_scale = np.arange(0, 90, resolution)
     az, alt = np.meshgrid(az_scale, alt_scale)
@@ -384,7 +384,7 @@ def get_jones_array(
         jones_array = np.array([j00, j01, j10, j11]).T
     else:
         os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-        beam = mwa_hyperbeam.FEEBeam(MWA_PB_file,check_container=True)
+        beam = mwa_hyperbeam.FEEBeam(MWA_PB_file, check_container=True)
         sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
         delay = sweet_spots[int(gridpoint)][-1]
         za_arr = 90 - alt_arr
@@ -453,7 +453,7 @@ def get_pb_radec(
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
     os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file,check_container=True)
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file, check_container=True)
     metadata = fits.getheader(metafits)
     obstime = metadata["DATE-OBS"]
     gridpoint = metadata["GRIDNUM"]
@@ -907,7 +907,7 @@ def make_primarybeammap(
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
     os.environ["RAYON_NUM_THREADS"] = str(n_threads)
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file,check_container=True)
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file, check_container=True)
 
     ############################
     # Creating sky grid

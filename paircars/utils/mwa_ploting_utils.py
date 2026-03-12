@@ -64,6 +64,7 @@ try:
 except Exception:
     solar_system_ephemeris.set("builtin")
 
+
 #################################
 # Plotting related functions
 #################################
@@ -1171,7 +1172,7 @@ def get_aia_map(
                         os.system(f"rm -rf {basename}*")
                     final_fits = f"{aiadir}/{os.path.basename(basename)}.fits"
                     normalized_map.save(final_fits, overwrite=True)
-                    if os.path.exists(final_fits):  
+                    if os.path.exists(final_fits):
                         final_maps.append(final_fits)
                 return final_maps
             else:
@@ -1377,12 +1378,17 @@ def enhance_offlimb(sunpy_map, do_sharpen=True):
     scaled_map.plot_settings["norm"] = ImageNormalize(stretch=LogStretch(10))
     return scaled_map
 
+
 _map_cache = {}
+
+
 def get_map_cached(mapfile):
     from sunpy.map import Map
+
     if mapfile not in _map_cache:
         _map_cache[mapfile] = Map(mapfile)
     return _map_cache[mapfile]
+
 
 def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
     """
@@ -1527,7 +1533,7 @@ def make_mwa_overlay(
     if verbose:
         print(f"Making overlay for image: {os.path.basename(mwa_image)}")
     euv_map = get_map_cached(euv_fits)
-    
+
     mwamap = get_mwamap(mwa_image)
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)
@@ -1562,13 +1568,11 @@ def make_mwa_overlay(
 
     with SphericalScreen(mwamap.observer_coordinate):
         mwa_tmp = mwamap.reproject_to(projected_header)
-    mwa_reprojected = Map(
-        mwa_tmp.data.astype(np.float32), mwa_tmp.meta
-    )
+    mwa_reprojected = Map(mwa_tmp.data.astype(np.float32), mwa_tmp.meta)
 
     with SphericalScreen(euv_map.observer_coordinate):
         euv_reprojected = euv_map.reproject_to(projected_header)
-    
+
     mwatime = mwamap.meta["date-obs"].split(".")[0]
     euvtime = euv_map.meta["date-obs"].split(".")[0]
     try:
@@ -1697,7 +1701,14 @@ def make_mwa_overlay(
     except Exception:
         traceback.print_exc()
     finally:
-        del mwamap, euv_map, euv_reprojected, mwa_reprojected, projected_header, projected_coord
+        del (
+            mwamap,
+            euv_map,
+            euv_reprojected,
+            mwa_reprojected,
+            projected_header,
+            projected_coord,
+        )
         plt.close("all")
     return plot_file_list
 

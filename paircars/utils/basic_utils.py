@@ -23,8 +23,8 @@ def internet_available(timeout=10):
         return True
     except OSError:
         return False
-        
-        
+
+
 def test_permission(path):
     """
     Test read, write, execute permission of a file or directory
@@ -214,6 +214,7 @@ def check_port_status(port):
             return True
         except OSError:
             return False
+
 
 def split_into_chunks(lst, target_chunk_size):
     """

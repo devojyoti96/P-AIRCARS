@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import Mock
 
 
-
 @pytest.mark.parametrize(
     "argv, scheduler_name, expect_exit, expect_local, expect_slurm",
     [

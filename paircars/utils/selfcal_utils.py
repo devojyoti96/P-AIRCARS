@@ -1094,7 +1094,7 @@ def selfcal_round(
                     flag_central_chan=flag_central_chan,
                 )
             else:
-                nintervals = max(1, int(total_time_range/240)) 
+                nintervals = max(1, int(total_time_range / 240))
         else:
             nchans = 1
             nintervals = 1

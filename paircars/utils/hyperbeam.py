@@ -2,14 +2,18 @@ import subprocess
 import pickle
 import os
 import tempfile
-from .udocker_utils import initialize_hyperbeam_container, check_udocker_container, init_udocker
+from .udocker_utils import (
+    initialize_hyperbeam_container,
+    check_udocker_container,
+    init_udocker,
+)
 
 
 class FEEBeam:
     def __init__(self, pbfile, check_container=False):
         """
         MWA FEE beam class
-        
+
         Parameters
         ----------
         pbfile : str
@@ -21,7 +25,7 @@ class FEEBeam:
         self.check_container = check_container
         init_udocker()
         self.env = os.environ.copy()
-        self.container_name="paircarshyperbeam"
+        self.container_name = "paircarshyperbeam"
         if self.check_container:
             container_present = check_udocker_container(self.container_name)
             if not container_present:
@@ -33,8 +37,8 @@ class FEEBeam:
                     print(
                         f"Container {self.container_name} is not initiated. First initiate container and then run."
                     )
-                    return 
-                    
+                    return
+
     def calc_jones_array(
         self,
         az_rad,
@@ -48,7 +52,7 @@ class FEEBeam:
     ):
         """
         Calc primary beam jones array
-        
+
         Parameters
         ----------
         az_rad : numpy.array
@@ -67,13 +71,13 @@ class FEEBeam:
             Latitude of the array
         iau_order : bool
             MWA beam in IAU order or not
-            
+
         Returns
         -------
-        numpy.array 
+        numpy.array
             Beam Jones (shape: coodinates, 4 components)
         """
-        pbdir = os.path.dirname(os.path.abspath(self.pbfile))  
+        pbdir = os.path.dirname(os.path.abspath(self.pbfile))
         temp_name = "mwapb_udocker_" + next(tempfile._get_candidate_names())
         temp_pbdir_path = os.path.join(pbdir, temp_name)
         data = dict(
@@ -92,7 +96,7 @@ class FEEBeam:
                 "udocker",
                 "run",
                 "--nobanner",
-                 f"--volume={pbdir}:{temp_pbdir_path}",
+                f"--volume={pbdir}:{temp_pbdir_path}",
                 "--workdir",
                 f"{temp_pbdir_path}",
                 f"{self.container_name}",
@@ -104,7 +108,7 @@ class FEEBeam:
             capture_output=True,
         )
         return pickle.loads(proc.stdout)
-        
+
     def calc_jones(
         self,
         az_rad,
@@ -118,7 +122,7 @@ class FEEBeam:
     ):
         """
         Calc primary beam jones array
-        
+
         Parameters
         ----------
         az_rad : float
@@ -137,13 +141,13 @@ class FEEBeam:
             Latitude of the array
         iau_order : bool
             MWA beam in IAU order or not
-            
+
         Returns
         -------
-        numpy.array 
+        numpy.array
             Beam Jones (shape: coodinates, 4 components)
         """
-        pbdir = os.path.dirname(os.path.abspath(self.pbfile))  
+        pbdir = os.path.dirname(os.path.abspath(self.pbfile))
         temp_name = "mwapb_udocker_" + next(tempfile._get_candidate_names())
         temp_pbdir_path = os.path.join(pbdir, temp_name)
         data = dict(
@@ -162,7 +166,7 @@ class FEEBeam:
                 "udocker",
                 "run",
                 "--nobanner",
-                 f"--volume={pbdir}:{temp_pbdir_path}",
+                f"--volume={pbdir}:{temp_pbdir_path}",
                 "--workdir",
                 f"{temp_pbdir_path}",
                 f"{self.container_name}",
@@ -174,6 +178,3 @@ class FEEBeam:
             capture_output=True,
         )
         return pickle.loads(proc.stdout)
-        
-        
-        

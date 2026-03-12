@@ -27,7 +27,12 @@ from paircars.utils.flagging import (
     do_flag_backup,
     get_chans_flag_per_time,
 )
-from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize, get_fft_size
+from paircars.utils.imaging import (
+    calc_sun_dia,
+    calc_field_of_view,
+    calc_cellsize,
+    get_fft_size,
+)
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -819,20 +824,22 @@ def do_polselfcal(
         times = np.array(times)
         flag_frac = np.array(flag_frac)
         total_time_range = max(times) - min(times)
-        if total_time_range<=240:
+        if total_time_range <= 240:
             pos = np.argmin(flag_frac)
-            best_time_mjdsec = times[pos] 
+            best_time_mjdsec = times[pos]
             best_time = mjdsec_to_timestamp(best_time_mjdsec, str_format=1)
         else:
-            bins = (times-times.min())//240
+            bins = (times - times.min()) // 240
             result = []
             for b in np.unique(bins):
                 idx = bins == b
                 i = np.argmin(flag_frac[idx])
                 result.append(times[idx][i])
-            best_times = [mjdsec_to_timestamp(mjdsec, str_format=1) for mjdsec in result]
+            best_times = [
+                mjdsec_to_timestamp(mjdsec, str_format=1) for mjdsec in result
+            ]
             best_time = ",".join(best_times)
-           
+
         ##############################
         # Spliting corrected data
         ##############################

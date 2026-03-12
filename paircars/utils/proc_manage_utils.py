@@ -236,29 +236,31 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
             }
         )
-        min_mem/=spill_frac # Accounting for spill fraction
+        min_mem /= spill_frac  # Accounting for spill fraction
         usable_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        total_time=0
+        total_time = 0
         while True:
             total_mem = psutil.virtual_memory().available / 1024**3  # In GB
             usable_mem = round(total_mem * mem_frac, 2)
             n_worker_mem = int(usable_mem / min_mem)
             if n_worker_mem < 2:
-                if total_time>60:
-                    print("Minimum available memory is not sufficient for at-least 2 workers.")
+                if total_time > 60:
+                    print(
+                        "Minimum available memory is not sufficient for at-least 2 workers."
+                    )
                     return
                 else:
                     time.sleep(1)
-                    total_time+=1
+                    total_time += 1
             else:
                 break
-                    
+
         n_worker_cpu = usable_cpu
         n_worker = min(n_worker_cpu, n_worker_mem)
         if max_worker > 0:
             n_worker = min(n_worker, max_worker)
             n_worker = max(2, n_worker)
-            
+
         mem_limit = round(usable_mem / n_worker, 2)
         n_worker = max(1, int(usable_mem / mem_limit))
         ncpu = max(1, int(usable_cpu / n_worker))
@@ -402,9 +404,9 @@ def submit_local_master_flow(args, jobid):
                     last_lines.append(line)
                     last_line = last_lines[-1]
                     if (
-                        ("task run" in last_line.lower() or "flow_run" in last_line.lower())
-                        and not only_run_print
-                    ):
+                        "task run" in last_line.lower()
+                        or "flow_run" in last_line.lower()
+                    ) and not only_run_print:
                         only_run_print = True
 
                     if not only_run_print or (
@@ -416,9 +418,8 @@ def submit_local_master_flow(args, jobid):
                             sys.stdout.write(line)
                             sys.stdout.flush()
                     if (
-                        "flow run finished" in line.lower()
-                        or "flow run failed" in line.lower()
-                        or "flow run cancelled" in line.lower()
+                        "flow run" in line.lower()
+                        and "finished in state completed" in line.lower()
                     ):
                         break
             return 0

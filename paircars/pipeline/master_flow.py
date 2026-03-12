@@ -1579,7 +1579,9 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
     internet_on = internet_available()
     if internet_on:
         try:
-            email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
+            email_subject = (
+                f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
+            )
             email_msg = f"{msg}"
             success_msg, error_msg = send_notification(emails, email_subject, email_msg)
         except Exception:
@@ -1993,7 +1995,7 @@ def master_control(
 
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-            internet_on = internet_available() 
+            internet_on = internet_available()
             if internet_on and emails != "":
                 email_subject = (
                     f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
@@ -2039,7 +2041,7 @@ def master_control(
             #####################
             # Notify over email
             #####################
-            internet_on = internet_available() 
+            internet_on = internet_available()
             if emails != "" and internet_on:
                 email_subject = (
                     f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
@@ -3845,7 +3847,7 @@ def master_control(
         #################################################################
         # Filtering only coarse channel images for default overlay mode
         #################################################################
-        if make_overlay is False and len(images)>0:
+        if make_overlay is False and len(images) > 0:
             images = filter_images(images, min_time_sep=60.0)
         internet_on = internet_available()
         if not internet_on:
@@ -3930,7 +3932,9 @@ def master_control(
         final_cal_mslist = sorted(glob.glob(workdir + "/calibrator*_spw_*.ms"))
         if len(final_cal_mslist) > 0:
             os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup for calibrator measurement sets in: {outdir}/ms_flags")
+            print(
+                f"Doing flag backup for calibrator measurement sets in: {outdir}/ms_flags"
+            )
             for cal_ms in final_cal_mslist:
                 do_flag_backup(cal_ms, flagtype="finalflag")
                 if os.path.exists(
@@ -3948,7 +3952,9 @@ def master_control(
         final_selfcal_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
         if len(final_selfcal_mslist) > 0:
             os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup of self-calibration measurement sets in: {outdir}/ms_flags")
+            print(
+                f"Doing flag backup of self-calibration measurement sets in: {outdir}/ms_flags"
+            )
             for selfcal_ms in final_selfcal_mslist:
                 do_flag_backup(selfcal_ms, flagtype="finalflag")
                 if os.path.exists(

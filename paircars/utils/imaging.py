@@ -10,7 +10,7 @@ def is_fft_good(n):
     """
     Whether this number is good for FFTW or not
     """
-    for p in [2,3,5,7]:
+    for p in [2, 3, 5, 7]:
         while n % p == 0:
             n //= p
     return n == 1
@@ -22,12 +22,12 @@ def get_fft_size(n):
     """
     while True:
         if is_fft_good(n):
-            if n<128:
-                if n<=1:
-                    n=1
+            if n < 128:
+                if n <= 1:
+                    n = 1
                 else:
-                    n = 1<<n.bit_length()
-            return  n + (n % 2)
+                    n = 1 << n.bit_length()
+            return n + (n % 2)
         n += 1
 
 

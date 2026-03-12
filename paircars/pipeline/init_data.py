@@ -197,12 +197,12 @@ def main(
         #########################################
         init_udocker()
         print("uDOCKER is inititalized")
-        
+
         #####################
         # Wsclean
         #####################
-        trial=0
-        while trial<2:
+        trial = 0
+        while trial < 2:
             wsclean_container_name = initialize_wsclean_container(
                 update=update, verbose=True
             )
@@ -213,17 +213,17 @@ def main(
                 print("WSClean container is initialized")
                 break
             else:
-                trial+=1
-                if trial==2:
+                trial += 1
+                if trial == 2:
                     print("WSClean container is not initialized.")
                     print("Check you internet connectivity.")
                     return 1
-                
+
         ##########################
         # Quartical
         ##########################
-        trial=0
-        while trial<2:
+        trial = 0
+        while trial < 2:
             quartical_container_name = initialize_quartical_container(
                 update=update, verbose=True
             )
@@ -234,17 +234,17 @@ def main(
                 print("Quartical container is initialized")
                 break
             else:
-                trial+=1
-                if trial==2:
+                trial += 1
+                if trial == 2:
                     print("Quartical container is not initialized.")
                     print("Check you internet connectivity.")
                     return 1
-                        
+
         #############################
         # Hyperdrive
         #############################
-        trial=0
-        while trial<2:
+        trial = 0
+        while trial < 2:
             hyperdrive_container_name = initialize_hyperdrive_container(
                 update=update, verbose=True
             )
@@ -255,17 +255,17 @@ def main(
                 print("Hyperdrive container is initialized")
                 break
             else:
-                trial+=1
-                if trial==2:
+                trial += 1
+                if trial == 2:
                     print("Hyperdrive container is not initialized.")
                     print("Check you internet connectivity.")
                     return 1
-                    
+
         #############################
         # Hyperbeam
         #############################
-        trial=0
-        while trial<2:
+        trial = 0
+        while trial < 2:
             hyperbeam_container_name = initialize_hyperbeam_container(
                 update=update, verbose=True
             )
@@ -276,17 +276,17 @@ def main(
                 print("Hyperbeam container is initialized")
                 break
             else:
-                trial+=1
-                if trial==2:
+                trial += 1
+                if trial == 2:
                     print("Hyperbeam container is not initialized.")
                     print("Check you internet connectivity.")
                     return 1
-            
+
         #############################
         # PostgreSQL
         ##############################
-        trial=0
-        while trial<2:
+        trial = 0
+        while trial < 2:
             postgres_container_name = initialize_postgres_container(
                 update=update, verbose=True
             )
@@ -297,17 +297,17 @@ def main(
                 print("PostgreSQL container is initialized")
                 break
             else:
-                trial+=1
-                if trial==2:
+                trial += 1
+                if trial == 2:
                     print("PostgreSQL container is not initialized.")
                     print("Check you internet connectivity.")
                     return 1
-            
+
         ##############################
         # Shadems
         ##############################
-        trial=0
-        while trial<2:
+        trial = 0
+        while trial < 2:
             shadems_container_name = initialize_shadems_container(
                 update=update, verbose=True
             )
@@ -318,8 +318,8 @@ def main(
                 print("Shadems container is initialized")
                 break
             else:
-                trial+=1
-                if trial==2:
+                trial += 1
+                if trial == 2:
                     print("Shadems container is not initialized.")
                     print("Check you internet connectivity.")
 

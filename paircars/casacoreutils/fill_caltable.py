@@ -57,9 +57,7 @@ def make_caltable_columns(msname, caltable, nchan):
         "valueType": "double",
     }
     # Define the table description for the calibration table
-    makearrcoldesc(
-        "FLAG", np.zeros((nchan, 2), dtype=bool)
-    )  # Boolean array column
+    makearrcoldesc("FLAG", np.zeros((nchan, 2), dtype=bool))  # Boolean array column
     maketabdesc(
         [
             makecoldesc("ANTENNA1", coldes),  # Integer column for antenna ID

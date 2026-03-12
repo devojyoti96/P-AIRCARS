@@ -400,7 +400,7 @@ def submit_slurm_master_flow(args, jobid):
         log2term = args.log2term
     else:
         log2term = False
-    
+
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_second = get_max_walltime(args.partition)
     else:
@@ -514,23 +514,24 @@ def submit_slurm_master_flow(args, jobid):
                         last_lines.append(line)
                         last_line = last_lines[-1]
                         if (
-                            ("task run" in last_line.lower() or "flow_run" in last_line.lower())
-                            and not only_run_print
-                        ):
+                            "task run" in last_line.lower()
+                            or "flow_run" in last_line.lower()
+                        ) and not only_run_print:
                             only_run_print = True
 
                         if not only_run_print or (
                             only_run_print
-                            and ("task run" in line.lower() or "flow run" in line.lower())
+                            and (
+                                "task run" in line.lower() or "flow run" in line.lower()
+                            )
                         ):
                             if line not in seen:
                                 seen.add(line)
                                 sys.stdout.write(line)
                                 sys.stdout.flush()
                         if (
-                            "flow run finished" in line.lower()
-                            or "flow run failed" in line.lower()
-                            or "flow run cancelled" in line.lower()
+                            "flow run" in line.lower()
+                            and "finished in state completed" in line.lower()
                         ):
                             break
                     return 0

@@ -9,11 +9,11 @@ This will create the conda environment in the default conda directory where cond
 Create conda environment
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. **To create a Python 3.10 environment with latest C/C++ compilers:**
+1. **To create a Python 3.10 environment with compaitable C/C++ compilers:**
 
 .. code-block:: bash
    
-   mamba create -n paircars_env --override-channels -c conda-forge python=3.10 compilers cmake pkg-config pip
+   mamba create -n paircars_env --override-channels -c conda-forge python=3.10 gcc_linux-64=14 gxx_linux-64=14 gfortran_linux-64=14 cmake pkg-config pip
    
    
 Activate and deactivate conda environment
