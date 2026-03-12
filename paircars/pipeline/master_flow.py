@@ -4430,7 +4430,7 @@ def cli():
         print("P-AIRCARS is only ready for local or slurm cluster.")
         return 1
 
-    if args.cluster is True and scheduler_name == "local":
+    if args.cluster and scheduler_name == "local":
         print(
             "User wants to use cluster architechture, but no job scheduler is available. Stopping P-AIRCARS."
         )
@@ -4452,7 +4452,7 @@ def cli():
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
 
     slurm_job = is_slurm_job()
-    if args.cluster is not True or scheduler_name == "local" or slurm_job is False:
+    if not args.cluster or scheduler_name == "local" or slurm_job is False:
         #######################################
         # Set up local cluster
         #######################################

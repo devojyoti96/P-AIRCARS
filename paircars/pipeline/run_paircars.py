@@ -433,7 +433,7 @@ def cli():
         ############################################
         # Submitting batch script
         ############################################
-        if scheduler_name == "local":
+        if not args.cluster or scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
             if msg != 0:
                 print(f"P-AIRCARS job with Job ID: {jobid} could not be started.")
