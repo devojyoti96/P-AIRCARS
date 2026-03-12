@@ -377,6 +377,7 @@ def submit_local_master_flow(args, jobid):
         print(f"Batch script: {script_path} is ready for submission.")
         print(f"Main logger: {log_file}")
         print("######################################################")
+        seen = set()
         try:
             # Always run job in background
             with open(log_file, "a", buffering=1) as log:
@@ -391,8 +392,7 @@ def submit_local_master_flow(args, jobid):
             if not log2term:
                 return 0
             print("Streaming logs to terminal...\n")
-            last_lines = deque(maxlen=50)
-            seen = set()
+            last_lines = deque(maxlen=50) 
             only_run_print = False
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
