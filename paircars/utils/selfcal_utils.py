@@ -1140,15 +1140,15 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
-            if not do_polcal:
-                nintervals, _ = get_optimal_image_interval(
-                    msname,
-                    temporal_tol_factor=float(min_tol_factor / 100.0),
-                    spectral_tol_factor=0.1,
-                    flag_central_chan=flag_central_chan,
-                )
-            else:
-                nintervals = max(1, int(total_time_range / 240))
+            #if not do_polcal:
+            nintervals, _ = get_optimal_image_interval(
+                msname,
+                temporal_tol_factor=float(min_tol_factor / 100.0),
+                spectral_tol_factor=0.1,
+                flag_central_chan=flag_central_chan,
+            )
+            #else:
+                #nintervals = max(1, int(total_time_range / 240))
         else:
             nchans = 1
             nintervals = 1
@@ -1630,7 +1630,7 @@ def selfcal_round(
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
                 "D.type=complex",
-                "D.time_interval=240s",
+                "D.time_interval={solint}",
                 f"D.freq_interval={int(freqres*1000.0)}kHz",
             ]
             if solve_array_leakage:

@@ -813,7 +813,7 @@ def do_polselfcal(
         ######################################
         # Choosing the best time (least flags)
         ######################################
-        times, flag_frac = get_chans_flag_per_time(msname)
+        '''times, flag_frac = get_chans_flag_per_time(msname)
         times = np.array(times)
         flag_frac = np.array(flag_frac)
         total_time_range = max(times) - min(times)
@@ -831,7 +831,7 @@ def do_polselfcal(
             best_times = [
                 mjdsec_to_timestamp(mjdsec, str_format=1) for mjdsec in result
             ]
-            best_time = ",".join(best_times)
+            best_time = ",".join(best_times)'''
 
         ##############################
         # Spliting corrected data
@@ -856,7 +856,7 @@ def do_polselfcal(
                     spw=split_spw,
                     field=str(field),
                     scan=str(scan),
-                    timerange=best_time,
+                    #timerange=best_time,
                     outputvis=selfcalms,
                     datacolumn="corrected",
                 )
@@ -869,7 +869,7 @@ def do_polselfcal(
                     spw=split_spw,
                     field=str(field),
                     scan=str(scan),
-                    timerange=best_time,
+                    #timerange=best_time,
                     outputvis=selfcalms,
                     datacolumn="data",
                 )

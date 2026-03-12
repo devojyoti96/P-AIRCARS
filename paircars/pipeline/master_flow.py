@@ -2475,6 +2475,11 @@ def master_control(
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
                 print("####################################################")
+                if emails != "":
+                    email_msg = f"Gain solutions from calibrator are already present."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
                 ####################################
                 # Stoping further basic calibrations
                 ####################################
