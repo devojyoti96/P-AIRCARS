@@ -151,7 +151,7 @@ class LogTailHandler(FileSystemEventHandler):
                 pass
 
 
-def create_logger(logname, logfile, get_print=False):
+def create_logger(logname, logfile):
     """
     Create logger.
 
@@ -161,8 +161,7 @@ def create_logger(logname, logfile, get_print=False):
         Name of the log
     logfile : str, optional
         Log file name
-    get_print : bool, optional
-        Get print output to log
+        
     Returns
     -------
     logger
@@ -180,9 +179,6 @@ def create_logger(logname, logfile, get_print=False):
     filehandle.setFormatter(formatter)
     logger.addHandler(filehandle)
     logger.propagate = False
-    if get_print:
-        sys.stdout = StreamToLogger(logger, logging.INFO)
-        sys.stderr = StreamToLogger(logger, logging.ERROR)
     logger.info("Log file : " + logfile + "\n")
     return logger, logfile
 
