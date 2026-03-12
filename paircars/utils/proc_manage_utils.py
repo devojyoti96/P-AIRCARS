@@ -375,8 +375,6 @@ def submit_local_master_flow(args, jobid):
         print(f"Batch script: {script_path} is ready for submission.")
         print(f"Main logger: {log_file}")
         print("######################################################")
-        if log2term:
-            print("Logging in terminal....")
         try:
             # Always run job in background
             with open(log_file, "a", buffering=1) as log:
@@ -386,34 +384,23 @@ def submit_local_master_flow(args, jobid):
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
                 )
-
-            print(f"Master flow started in background (PID: {process.pid})")
-            print(f"Logs: {log_file}")
-
+            print(f"Master flow started in background")
+            print(f"Main log: {log_file}")
             if not log2term:
                 return 0
-
-            # If log2term → tail logfile
             print("Streaming logs to terminal...\n")
-
             last_lines = deque(maxlen=50)
             seen = set()
             only_run_print = False
-
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
-
                 while True:
                     line = log.readline()
                     if not line:
-                        if process.poll() is not None:
-                            break
                         time.sleep(0.5)
                         continue
-
                     last_lines.append(line)
                     last_line = last_lines[-1]
-
                     if (
                         ("task run" in last_line.lower() or "flow_run" in last_line.lower())
                         and not only_run_print
@@ -428,15 +415,13 @@ def submit_local_master_flow(args, jobid):
                             seen.add(line)
                             sys.stdout.write(line)
                             sys.stdout.flush()
-
-            exit_code = process.poll()
-
-            if exit_code == 1:
-                for line in last_lines:
-                    print(line)
-
-            return exit_code
-
+                    if (
+                        "flow run finished" in line.lower()
+                        or "flow run failed" in line.lower()
+                        or "flow run cancelled" in line.lower()
+                    ):
+                        break
+            return 0
         except Exception:
             traceback.print_exc()
             return 1

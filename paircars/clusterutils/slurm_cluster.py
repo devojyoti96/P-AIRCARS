@@ -400,10 +400,7 @@ def submit_slurm_master_flow(args, jobid):
         log2term = args.log2term
     else:
         log2term = False
-    if log2term:
-        print("Terminal logging is not supported in cluster environment.")
-        log2term = False
-
+    
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_second = get_max_walltime(args.partition)
     else:
@@ -500,6 +497,43 @@ def submit_slurm_master_flow(args, jobid):
         exit_code = result.returncode
         if exit_code == 0:
             print(f"P-AIRCARS job with Job ID: {jobid} is submitted successfully.")
+            if not log2term:
+                return exit_code
+            else:
+                print("Streaming logs to terminal...\n")
+                last_lines = deque(maxlen=50)
+                seen = set()
+                only_run_print = False
+                with open(log_file, "r") as log:
+                    log.seek(0, os.SEEK_END)
+                    while True:
+                        line = log.readline()
+                        if not line:
+                            time.sleep(0.5)
+                            continue
+                        last_lines.append(line)
+                        last_line = last_lines[-1]
+                        if (
+                            ("task run" in last_line.lower() or "flow_run" in last_line.lower())
+                            and not only_run_print
+                        ):
+                            only_run_print = True
+
+                        if not only_run_print or (
+                            only_run_print
+                            and ("task run" in line.lower() or "flow run" in line.lower())
+                        ):
+                            if line not in seen:
+                                seen.add(line)
+                                sys.stdout.write(line)
+                                sys.stdout.flush()
+                        if (
+                            "flow run finished" in line.lower()
+                            or "flow run failed" in line.lower()
+                            or "flow run cancelled" in line.lower()
+                        ):
+                            break
+                    return 0
         else:
             print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
         return 0 if exit_code == 0 else 1
