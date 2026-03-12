@@ -1143,15 +1143,12 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
-            # if not do_polcal:
             nintervals, _ = get_optimal_image_interval(
                 msname,
                 temporal_tol_factor=float(min_tol_factor / 100.0),
                 spectral_tol_factor=0.1,
                 flag_central_chan=flag_central_chan,
             )
-            # else:
-            # nintervals = max(1, int(total_time_range / 240))
         else:
             nchans = 1
             nintervals = 1
