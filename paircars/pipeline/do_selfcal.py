@@ -157,7 +157,7 @@ def do_selfcal(
 
     sub_observer = None
     intlogger, logfile = create_logger(
-        os.path.basename(logfile).split(".log")[0], logfile, verbose=False
+        os.path.basename(logfile).split(".log")[0], logfile, get_print=True
     )
     if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
         time.sleep(5)
@@ -757,7 +757,7 @@ def do_polselfcal(
 
     sub_observer = None
     pollogger, logfile = create_logger(
-        os.path.basename(logfile).split(".log")[0], logfile, verbose=False
+        os.path.basename(logfile).split(".log")[0], logfile, get_print=True
     )
     if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
         time.sleep(5)

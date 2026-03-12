@@ -145,7 +145,6 @@ def perform_imaging(
     logger, logfile = create_logger(
         os.path.basename(logfile).split(".log")[0],
         logfile,
-        verbose=False,
         get_print=True,
     )
     sub_observer = None

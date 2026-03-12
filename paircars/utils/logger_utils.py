@@ -151,7 +151,7 @@ class LogTailHandler(FileSystemEventHandler):
                 pass
 
 
-def create_logger(logname, logfile, get_print=False, verbose=False):
+def create_logger(logname, logfile, get_print=False):
     """
     Create logger.
 
@@ -163,9 +163,6 @@ def create_logger(logname, logfile, get_print=False, verbose=False):
         Log file name
     get_print : bool, optional
         Get print output to log
-    verbose : bool, optional
-        Verbose output or not
-
     Returns
     -------
     logger
@@ -176,14 +173,9 @@ def create_logger(logname, logfile, get_print=False, verbose=False):
     logger = logging.getLogger(logname)
     # If logger already configured, return it
     if logger.handlers:
-        print(f"Logger: {logname} is already configured.")
         return logger, logfile
     formatter = logging.Formatter("%(message)s")
     logger.setLevel(logging.DEBUG)
-    if verbose:
-        console = logging.StreamHandler(sys.stdout)
-        console.setFormatter(formatter)
-        logger.addHandler(console)
     filehandle = logging.FileHandler(logfile)
     filehandle.setFormatter(formatter)
     logger.addHandler(filehandle)
