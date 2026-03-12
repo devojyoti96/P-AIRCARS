@@ -189,7 +189,7 @@ def flag_non_disk(msname):
             for c, t in zip(chans, timestamps):
                 spw = f"0:{c}"
                 timerange = f"{mjdsec_to_timestamp(t, str_format=1)}"
-                print(spw,timerange)
+                print(c, t, spw,timerange)
                 flagdata(
                     vis=msname,
                     mode="manual",
