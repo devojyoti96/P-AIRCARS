@@ -184,12 +184,12 @@ def flag_non_disk(msname):
         else:
             msmd = msmetadata()
             msmd.open(msname)
-            msmd.timesforspws(0)
+            times = msmd.timesforspws(0)
             msmd.close()
             for c, t in zip(chans, timestamps):
                 spw = f"0:{c}"
-                timerange = f"{mjdsec_to_timestamp(t, str_format=1)}"
-                print(c, t, spw,timerange)
+                timerange = f"{mjdsec_to_timestamp(times[t], str_format=1)}"
+                print(spw,timerange)
                 flagdata(
                     vis=msname,
                     mode="manual",
