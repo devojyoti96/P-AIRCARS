@@ -3930,7 +3930,7 @@ def master_control(
         final_cal_mslist = sorted(glob.glob(workdir + "/calibrator*_spw_*.ms"))
         if len(final_cal_mslist) > 0:
             os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup in: {outdir}/ms_flags")
+            print(f"Doing flag backup for calibrator measurement sets in: {outdir}/ms_flags")
             for cal_ms in final_cal_mslist:
                 do_flag_backup(cal_ms, flagtype="finalflag")
                 if os.path.exists(
@@ -3948,7 +3948,7 @@ def master_control(
         final_selfcal_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
         if len(final_selfcal_mslist) > 0:
             os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup in: {outdir}/ms_flags")
+            print(f"Doing flag backup of self-calibration measurement sets in: {outdir}/ms_flags")
             for selfcal_ms in final_selfcal_mslist:
                 do_flag_backup(selfcal_ms, flagtype="finalflag")
                 if os.path.exists(
@@ -3966,7 +3966,7 @@ def master_control(
         final_split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
         if len(final_split_target_mslist) > 0:
             os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup in: {outdir}/ms_flags")
+            print(f"Doing flag backup target measurement sets in: {outdir}/ms_flags")
             for target_ms in final_split_target_mslist:
                 do_flag_backup(target_ms, flagtype="finalflag")
                 if os.path.exists(
