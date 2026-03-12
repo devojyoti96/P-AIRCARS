@@ -46,6 +46,7 @@ def cal_crossphase(imagename):
     float
         Cross hand phase
     """
+    import matplotlib.pyplot as plt
     data = fits.getdata(imagename)
     u_data = data[2, 0, ...].astype(np.float64)
     v_data = data[3, 0, ...].astype(np.float64)
@@ -67,6 +68,8 @@ def cal_crossphase(imagename):
             cc = abs(np.corrcoef(new_u[i].ravel(), new_v[i].ravel())[1, 0])
             cc_list.append(cc)
         cc_list = np.array(cc_list)
+    plt.plot(crossphase_list,cc_list)
+    plt.show()
     pos = np.argsort(cc_list)
     cross_phases = crossphase_list[pos[0:4]]
     psi = np.deg2rad(cross_phases)
