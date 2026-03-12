@@ -1877,7 +1877,7 @@ def master_control(
     workdir = workdir.rstrip("/")
     if outdir == "":
         outdir = workdir
-    workdir = f"{workdir}/{target_obsid}"
+    workdir = f"{workdir}/{target_obsid}_{jobid}"
     try:
         os.makedirs(workdir, exist_ok=True)
     except Exception:
@@ -1942,7 +1942,7 @@ def master_control(
     # Measurement set check and other working directory
     ###################################################
     outdir = outdir.rstrip("/")
-    outdir = f"{outdir}/{target_obsid}"
+    outdir = f"{outdir}/{target_obsid}_{jobid}"
     caldir = f"{outdir}/caltables"
     caldir = caldir.rstrip("/")
     try:
@@ -4377,8 +4377,6 @@ def cli():
     else:
         jobid = args.jobid
 
-    os.system(f"rm -rf {args.workdir}/dask_*")
-
     ###########################################################
     # Estimating jobs memory size (5 times each measurment set)
     ###########################################################
@@ -4615,11 +4613,7 @@ def cli():
         traceback.print_exc()
     finally:
         time.sleep(5)
-        print("Clearning caches...")
-        drop_cache(args.target_datadir)
-        drop_cache(args.cal_datadir)
-        drop_cache(args.workdir)
-        drop_cache(args.outdir)
+        print("Closing clusters...")
         with contextlib.suppress(Exception):
             dask_client.cancel(dask_client.futures)
         with contextlib.suppress(Exception):
