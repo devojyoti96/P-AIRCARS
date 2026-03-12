@@ -1901,7 +1901,7 @@ def master_control(
     # Preparing target output directories
     ####################################
     outdir = outdir.rstrip("/")
-    target_outdir = f"{outdir}/{target_obsid}"    
+    target_outdir = f"{outdir}/{target_obsid}_target"    
     try:
         os.makedirs(target_outdir, exist_ok=True)
     except Exception:
@@ -2177,7 +2177,7 @@ def master_control(
         # Making calibrator output directories
         ######################################################
         if has_cal:
-            cal_outdir = f"{outdir}/{calibrator_obsid}"
+            cal_outdir = f"{outdir}/{calibrator_obsid}_cal"
             try:
                 os.makedirs(cal_outdir, exist_ok=True)
             except Exception:
