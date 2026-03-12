@@ -712,7 +712,7 @@ def run_basic_cal_rounds(
 
         if keep_backup:
             os.system(f"mv {workdir}/backup/* {workdir}")
-        print(f"rm -rf {workdir}/backup")
+        os.system(f"rm -rf {workdir}/backup")
         print("##################")
         print("Basic calibration is done successfully.")
         print("##################")
