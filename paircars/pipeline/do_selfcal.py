@@ -919,13 +919,7 @@ def do_polselfcal(
             instrument_fov, 3.0 * sun_size * 60
         )  # 3 times sun size at that frequency
         imsize = int(fov / cellsize)
-        pow2 = np.ceil(np.log2(imsize)).astype("int")
-        possible_sizes = []
-        for p in range(pow2):
-            for k in [3, 5]:
-                possible_sizes.append(k * 2**p)
-        possible_sizes = np.sort(np.array(possible_sizes))
-        possible_sizes = possible_sizes[possible_sizes >= imsize]
+        imsize = next_fft_size(imsize)
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
             refant = unflagged_antenna_names[0]

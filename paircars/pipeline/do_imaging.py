@@ -13,6 +13,7 @@ from paircars.utils.basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
 from paircars.utils.image_utils import (
     create_circular_mask,
     make_stokes_wsclean_imagecube,
+    next_fft_size,
 )
 from paircars.utils.imaging import (
     calc_sun_dia,
@@ -709,13 +710,7 @@ def run_all_imaging(
             if fov < (2 * (cutout_rsun * 16) * 60):
                 fov = 2 * (cutout_rsun * 16) * 60
             imsize = int(fov / cellsize)
-            pow2 = np.ceil(np.log2(imsize)).astype("int")
-            possible_sizes = []
-            for p in range(pow2):
-                for k in [3, 5]:
-                    possible_sizes.append(k * 2**p)
-            possible_sizes = np.sort(np.array(possible_sizes))
-            possible_sizes = possible_sizes[possible_sizes >= imsize]
+            imsize = next_fft_size(imsize)
             os.makedirs(workdir + "/logs", exist_ok=True)
             logfile = (
                 workdir
