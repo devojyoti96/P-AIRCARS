@@ -84,7 +84,7 @@ def do_selfcal(
     solar_selfcal=True,
     ncpu=1,
     mem=1,
-    logfile="selfcal.log",
+    logfile="intselfcal.log",
 ):
     """
     Do selfcal iterations and use convergence rules to stop
@@ -693,7 +693,7 @@ def do_polselfcal(
     try_nondisk_flag=True,
     ncpu=1,
     mem=1,
-    logfile="selfcal.log",
+    logfile="polselfcal.log",
 ):
     """
     Do selfcal iterations and use convergence rules to stop
@@ -1256,7 +1256,7 @@ def do_full_selfcal(
     solar_selfcal=True,
     ncpu=1,
     mem=1,
-    logfile="selfcal.log",
+    logfile_prefix="selfcal",
 ):
     """
     Perform both intensity and polarisation self-calibration
@@ -1278,7 +1278,7 @@ def do_full_selfcal(
     mem = abs(mem)
 
     selfcaldir = selfcaldir.rstrip("/")
-    logfile = logfile.rstrip("/").split(".log")[0]
+    logfile_prefix = logfile_prefix.rstrip("/")
     print(f"Starting intensity self-calibration for ms: {msname}.")
     unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
     refant = unflagged_antenna_names[0]
@@ -1310,7 +1310,7 @@ def do_full_selfcal(
         solar_selfcal=solar_selfcal,
         ncpu=ncpu,
         mem=mem,
-        logfile=f"{logfile}_int.log",
+        logfile=f"{logfile_prefix}_int.log",
     )
     if intensity_selfcal_msg != 0:
         return intensity_selfcal_msg, 1, [], [], ""
@@ -1336,7 +1336,7 @@ def do_full_selfcal(
             try_nondisk_flag=try_nondisk_flag,
             ncpu=ncpu,
             mem=mem,
-            logfile=f"{logfile}_pol.log",
+            logfile=f"{logfile_prefix}_pol.log",
         )
         return (
             intensity_selfcal_msg,
@@ -1623,16 +1623,16 @@ def main(
             os.makedirs(f"{workdir}/logs", exist_ok=True)
             tasks = []
             for ms in mslist:
-                logfile = (
+                logfile_prefix = (
                     workdir
                     + "/logs/"
                     + os.path.basename(ms).split(".ms")[0]
-                    + "_selfcal.log"
+                    + "_selfcal"
                 )
                 print(f"Measurement set name: {ms}.")
-                print(f"Self-cal log file: {logfile}.int")
+                print(f"Self-cal log file: {logfile_prefix}_int.log")
                 if do_polcal:
-                    print(f"Polarisation self-cal log file: {logfile}.pol")
+                    print(f"Polarisation self-cal log file: {logfile_prefix}_pol.pol")
                 tasks.append(
                     delayed(partial_do_selfcal)(
                         ms,
@@ -1643,7 +1643,7 @@ def main(
                         + "_selfcal",
                         ncpu=n_threads,
                         mem=mem_limit,
-                        logfile=logfile,
+                        logfile_prefix=logfile_prefix,
                     )
                 )
             print("Starting all self-calibration...\n")
