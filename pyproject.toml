@@ -42,10 +42,9 @@ dev = [
   "pytest==8.3.3",
   "pytest-mock>=3.14.0",
   "pytest-asyncio",
-  "ruff"
+  "ruff",
+  "black",
 ]
-
-# Console scripts entry points
 [project.scripts]
 run-mwa-basic-cal = "paircars.pipeline.basic_cal:cli"
 run-mwa-apply-basiccal = "paircars.pipeline.do_apply_basiccal:cli"

@@ -693,8 +693,10 @@ def run_all_imaging(
         print(f"Memory per worker: {mem_limit} GB")
         print("#################################")
 
-        cutout_rsun = max(5, cutout_rsun) # Minimum 5 solar radii cutout, default is 10 solar radii
-        
+        cutout_rsun = max(
+            5, cutout_rsun
+        )  # Minimum 5 solar radii cutout, default is 10 solar radii
+
         tasks = []
         for i in range(len(mslist)):
             ms = mslist[i]
@@ -705,8 +707,8 @@ def run_all_imaging(
             msmd.open(ms)
             freqMHz = msmd.meanfreq(0, unit="MHz")
             msmd.close()
-            cutout_rsun_arcsec = cutout_rsun*16*60
-            fov = min(instrument_fov, 2*cutout_rsun_arcsec)
+            cutout_rsun_arcsec = cutout_rsun * 16 * 60
+            fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
             imsize = int(fov / cellsize)
             imsize = get_fft_size(imsize)
             os.makedirs(workdir + "/logs", exist_ok=True)

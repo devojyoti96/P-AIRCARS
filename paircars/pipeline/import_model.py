@@ -28,7 +28,6 @@ from paircars.utils.udocker_utils import (
     check_udocker_container,
 )
 
-
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 datadir = get_datadir()

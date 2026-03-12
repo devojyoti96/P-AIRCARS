@@ -14,7 +14,6 @@ from paircars.utils.basic_utils import (
     suppress_output,
     get_datadir,
     weighted_mean,
-    mjdsec_to_timestamp,
 )
 from paircars.utils.calibration import (
     get_caltable_metadata,
@@ -25,7 +24,6 @@ from paircars.utils.flagging import (
     get_unflagged_antennas,
     get_chans_flag,
     do_flag_backup,
-    get_chans_flag_per_time,
 )
 from paircars.utils.imaging import (
     calc_field_of_view,
@@ -233,7 +231,6 @@ def do_selfcal(
         msmd.open(msname)
         scan = int(msmd.scannumbers()[0])
         field = int(msmd.fieldsforscan(scan)[0])
-        freqMHz = msmd.meanfreq(0, unit="MHz")
         msmd.close()
         if hascor:
             intlogger.info(f"Spliting corrected data to ms : {selfcalms}")
@@ -276,9 +273,9 @@ def do_selfcal(
         intlogger.info("Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
-        cutout_rsun=10.0
-        cutout_rsun_arcsec = cutout_rsun*16*60
-        fov = min(instrument_fov, 2*cutout_rsun_arcsec)
+        cutout_rsun = 10.0
+        cutout_rsun_arcsec = cutout_rsun * 16 * 60
+        fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
         if refant == "":
@@ -810,29 +807,6 @@ def do_polselfcal(
                     flagmanager(vis=msname, mode="restore", versionname="nondisk_1")
                 flagmanager(vis=msname, mode="delete", versionname="nondisk_1")
 
-        ######################################
-        # Choosing the best time (least flags)
-        ######################################
-        '''times, flag_frac = get_chans_flag_per_time(msname)
-        times = np.array(times)
-        flag_frac = np.array(flag_frac)
-        total_time_range = max(times) - min(times)
-        if total_time_range <= 240:
-            pos = np.argmin(flag_frac)
-            best_time_mjdsec = times[pos]
-            best_time = mjdsec_to_timestamp(best_time_mjdsec, str_format=1)
-        else:
-            bins = (times - times.min()) // 240
-            result = []
-            for b in np.unique(bins):
-                idx = bins == b
-                i = np.argmin(flag_frac[idx])
-                result.append(times[idx][i])
-            best_times = [
-                mjdsec_to_timestamp(mjdsec, str_format=1) for mjdsec in result
-            ]
-            best_time = ",".join(best_times)'''
-
         ##############################
         # Spliting corrected data
         ##############################
@@ -841,12 +815,6 @@ def do_polselfcal(
         msmd.open(msname)
         scan = int(msmd.scannumbers()[0])
         field = int(msmd.fieldsforscan(scan)[0])
-        freqMHz = msmd.meanfreq(0, unit="MHz")
-        times = msmd.timesforspws(0)
-        if len(times) > 1:
-            abs(np.nanmin(np.diff(times)))
-        else:
-            msmd.exposuretime(scan)["value"]
         msmd.close()
         if hascor:
             pollogger.info(f"Spliting corrected data to ms : {selfcalms}")
@@ -856,7 +824,6 @@ def do_polselfcal(
                     spw=split_spw,
                     field=str(field),
                     scan=str(scan),
-                    #timerange=best_time,
                     outputvis=selfcalms,
                     datacolumn="corrected",
                 )
@@ -869,7 +836,6 @@ def do_polselfcal(
                     spw=split_spw,
                     field=str(field),
                     scan=str(scan),
-                    #timerange=best_time,
                     outputvis=selfcalms,
                     datacolumn="data",
                 )
@@ -927,12 +893,12 @@ def do_polselfcal(
         pollogger.info("Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
-        cutout_rsun=10.0
-        cutout_rsun_arcsec = cutout_rsun*16*60
-        fov = min(instrument_fov, 2*cutout_rsun_arcsec)
+        cutout_rsun = 10.0
+        cutout_rsun_arcsec = cutout_rsun * 16 * 60
+        fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
-        
+
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
             refant = unflagged_antenna_names[0]
@@ -1777,12 +1743,22 @@ def main(
                     os.system(f"rm -rf {pol_selfcaldir}")
 
             if len(gcal_list) > 0:
-                print(f"Final gaincal selfcal caltables: {gcal_list}")
+                print("#####################################################")
+                print(f"Final gaincal selfcal caltables in: {int_selfcaldir}")
+                for gcal in gcal_list:
+                    print(gcal)
                 msg = 0
                 if len(bpass_list) > 0:
-                    print(f"Final bandpass selfcal caltables: {bpass_list}")
+                    print("#####################################################")
+                    print(f"Final bandpass selfcal caltables in: {int_selfcaldir}")
+                    for bpass in bpass_list:
+                        print(bpass)
                 if len(dcal_list) > 0:
-                    print(f"Final polarisation selfcal caltables: {dcal_list}")
+                    print("#####################################################")
+                    print(f"Final polarisation selfcal caltables in: {pol_selfcaldir}")
+                    for dcal in dcal_list:
+                        print(dcal)
+                print("#####################################################")
             else:
                 print("No self-calibration is successful.")
                 msg = 1

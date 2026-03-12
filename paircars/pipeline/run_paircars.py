@@ -22,6 +22,105 @@ from paircars.utils.prefect_setup_utils import (
 from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow
 
 
+def create_target_calibrator_list(
+    target_datadir_list,
+    target_metafits_list,
+    calibrator_datadir_list="",
+    calibrator_metafits_list="",
+):
+    """
+    Create target and calibrator list after filtering wrong inputs
+    """
+    ######################################
+    # Target data directories and metafits
+    ######################################
+    target_dic = {}
+    cal_dic = {}
+    target_datadir_list = target_datadir_list.split(",")
+    target_metafits_list = target_metafits_list.split(",")
+    if len(target_datadir_list) != len(target_metafits_list):
+        print(
+            "Number of target data directories and metafits do not match. Provide correct list."
+        )
+        return target_dic, cal_dic
+
+    for i in range(len(target_datadir_list)):
+        target_datadir = target_datadir_list[i]
+        target_metafits = target_metafits_list[i]
+        if target_datadir == "" or target_datadir.startswith("~"):
+            print(f"Please provide full path of target directory: {target_datadir}.")
+        else:
+            target_datadir = os.path.abspath(target_datadir)
+            if os.path.exists(target_datadir) is False:
+                print(
+                    f"Target data directory: {target_datadir} does not exist. Provide correct full path."
+                )
+            else:
+                if target_metafits == "" or target_metafits.startswith("~"):
+                    print(
+                        f"Please provide full path of target metafits: {target_metafits}."
+                    )
+                else:
+                    target_metafits = os.path.abspath(target_metafits)
+                    if os.path.exists(target_metafits) is False:
+                        print(f"Target metafits: {target_metafits} does not exist.")
+                    else:
+                        target_dic[target_datadir] = target_metafits
+
+    #####################################################
+    # Checking calibrator data directories and metafits
+    #####################################################
+    calibrator_datadir_list = calibrator_datadir_list.split(",")
+    calibrator_metafits_list = calibrator_metafits_list.split(",")
+    if len(calibrator_datadir_list) != len(calibrator_metafits_list):
+        print(
+            "Number of calibrator data directories and metafits do not match. Provide correct list to use calibrators."
+        )
+        has_cal = False
+    else:
+        cal_dic = {}
+        for i in range(len(calibrator_datadir_list)):
+            calibrator_datadir = calibrator_datadir_list[i]
+            calibrator_metafits = calibrator_metafits_list[i]
+            if calibrator_datadir == "" or calibrator_datadir.startswith("~"):
+                print(
+                    f"Please provide full path of calibrator directory: {calibrator_datadir}."
+                )
+            else:
+                calibrator_datadir = os.path.abspath(calibrator_datadir)
+                if os.path.exists(calibrator_datadir) is False:
+                    print(
+                        f"Calibrator data directory: {calibrator_datadir} does not exist. Provide correct full path."
+                    )
+                else:
+                    if calibrator_metafits == "" or calibrator_metafits.startswith("~"):
+                        print(
+                            f"Please provide full path of calibrator metafits: {calibrator_metafits}."
+                        )
+                    else:
+                        calibrator_metafits = os.path.abspath(calibrator_metafits)
+                        if os.path.exists(calibrator_metafits) is False:
+                            print(
+                                f"Calibrator metafits: {calibrator_metafits} does not exist."
+                            )
+                        else:
+                            cal_dic[calibrator_datadir] = calibrator_metafits
+
+    if workdir.startswith("~"):
+        print("Please provide full path of work directory.")
+        return 1
+    else:
+        workdir = os.path.abspath(workdir)
+    if outdir.startswith("~"):
+        print("Please provide full path of output directory.")
+        return 1
+    else:
+        outdir = os.path.abspath(outdir)
+
+    if jobid is None:
+        jobid = get_jobid()
+
+
 def cli():
     parser = argparse.ArgumentParser(
         description="Run P-AIRCARS for calibration and imaging of solar observations.",
@@ -406,15 +505,15 @@ def cli():
         print("Prefect server is not running.")
         print("Prefect setup is initiating ....")
         port = args.port
-        postgres_port = port+1000
+        postgres_port = port + 1000
 
         if check_port_status(port) is False:
             if scheduler_name != "local":
-                port = get_free_port(start_port=port, end_port=port+990)
+                port = get_free_port(start_port=port, end_port=port + 990)
 
         if check_port_status(postgres_port) is False:
             if scheduler_name != "local":
-                get_free_port(start_port=postgres_port, end_port=postgres_port+990)
+                get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
 
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)

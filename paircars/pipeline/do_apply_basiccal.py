@@ -155,11 +155,11 @@ def applysol(
                 f"Applying solution on ms: {msname} from gaintables: {','.join(gaintable)}."
             )
             try:
-                has_kcross=False
+                has_kcross = False
                 for g in gaintable:
                     if g.endswith("kcrosscal"):
-                        has_kcross=True
-                if not has_kcross:  
+                        has_kcross = True
+                if not has_kcross:
                     os.system(f"touch {msname}/.nokcross")
                 with suppress_output():
                     applycal(

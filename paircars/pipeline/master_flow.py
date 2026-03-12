@@ -1775,7 +1775,7 @@ def master_control(
     """
     print("P-AIRCARS workflow started...")
     emails = get_emails()
-    
+
     ###############################################
     # Checking validity of directories and metafits
     ###############################################
@@ -1809,7 +1809,7 @@ def master_control(
     else:
         if calibrator_metafits != "":
             calibrator_metafits = os.path.abspath(calibrator_metafits)
-            
+
     if workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
@@ -1823,11 +1823,11 @@ def master_control(
 
     if jobid is None:
         jobid = get_jobid()
-        
+
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
-    
+
     #############################################
     # Listing target ms
     #############################################
@@ -1886,11 +1886,11 @@ def master_control(
     print("Preparing working directories....")
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
-        
+
     workdir = workdir.rstrip("/")
     if outdir == "":
         outdir = workdir
-        
+
     workdir = f"{workdir}/{target_obsid}_{jobid}"
     try:
         os.makedirs(workdir, exist_ok=True)
@@ -1899,13 +1899,13 @@ def master_control(
             f"Work directory: {workdir} can not be created. Please check the path carefully."
         )
         traceback.print_exc()
-        return 1 
-        
+        return 1
+
     ####################################
     # Preparing target output directories
     ####################################
     outdir = outdir.rstrip("/")
-    target_outdir = f"{outdir}/{target_obsid}_target"    
+    target_outdir = f"{outdir}/{target_obsid}_target"
     try:
         os.makedirs(target_outdir, exist_ok=True)
     except Exception:
@@ -1917,16 +1917,15 @@ def master_control(
     selfcaldir = f"{target_outdir}/caltables"
     os.makedirs(selfcaldir, exist_ok=True)
 
-
     os.chdir(workdir)
     scheduler_name = get_scheduler_name()
-    
+
     #################################
     # Setup logger
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    
+
     if (
         scheduler_name != "local"
         or masterlog is None
@@ -1972,7 +1971,7 @@ def master_control(
     # Initiating paircars data
     #####################################
     init_paircars_data()
-    observer = None    
+    observer = None
     n_threads = os.environ.get("OMP_NUM_THREADS")
     if n_threads is None:
         n_threads = 1
@@ -2126,7 +2125,7 @@ def master_control(
                 "No calibrator observation is provided. Continuing based on self-calibration."
             )
             has_cal = False
-            
+
         ######################################################
         # Downloading calibrator metafits if it does not exist
         ######################################################
@@ -2180,7 +2179,7 @@ def master_control(
                     )
                     print("P-AIRCARS will not use calibrators.")
                     has_cal = False
-         
+
         ######################################################
         # Filtering only matching coarse channel calibrator ms
         ######################################################
@@ -2210,7 +2209,7 @@ def master_control(
                 traceback.print_exc()
                 has_cal = False
             basicaldir = f"{cal_outdir}/caltables"
-            os.makedirs(basicaldir,exist_ok=True)      
+            os.makedirs(basicaldir, exist_ok=True)
 
         #####################################
         # Settings for solar data
@@ -2450,7 +2449,7 @@ def master_control(
         ##########################################
         # Checking presence of basic caltables
         ##########################################
-        caltables_check=False
+        caltables_check = False
         if calibrator_obsid is not None:
             print(
                 f"Searching for existing bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
@@ -2464,34 +2463,37 @@ def master_control(
             crossphase_tables = sorted(
                 glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
-            if len(bandpass_tables)>0:
+            if len(bandpass_tables) > 0:
                 has_cal = True
                 print("###################################################")
-                print(f"Bandpass tables ae already present in calibration directory: {basicaldir}")
+                print(
+                    f"Bandpass tables ae already present in calibration directory: {basicaldir}"
+                )
                 for bpass in bandpass_tables:
                     print(f"{os.path.basename(bpass)}")
                 print("####################################################")
-                print(f"Crosshand phase tables are already present in calibration directory: {basicaldir}")
+                print(
+                    f"Crosshand phase tables are already present in calibration directory: {basicaldir}"
+                )
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
                 print("####################################################")
                 if emails != "":
-                    email_msg = f"Gain solutions from calibrator are already present."
+                    email_msg = "Gain solutions from calibrator are already present."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 ####################################
                 # Stoping further basic calibrations
                 ####################################
-                do_basic_cal=False
-                do_cal_flag=False
-                do_import_model=False
-                caltables_check=True # Key to tell caltables has been checked 
+                do_basic_cal = False
+                do_cal_flag = False
+                do_import_model = False
+                caltables_check = True  # Key to tell caltables has been checked
             else:
                 has_cal = False
         else:
             has_cal = False
-
 
         ##############################
         # Run spliting jobs
@@ -2773,7 +2775,9 @@ def master_control(
                     glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
                 )
                 if len(crossphase_tables) > 0:
-                    crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
+                    crossphase_tables = interpolate_bpass(
+                        crossphase_tables, overwrite=True
+                    )
                 if len(bandpass_tables) == 0:
                     print(
                         f"No bandpass table is present in calibration directory : {basicaldir}."
@@ -2791,7 +2795,9 @@ def master_control(
                     for bpass in bandpass_tables:
                         print(f"{os.path.basename(bpass)}")
                     print("####################################################")
-                    print(f"Crosshand phase tables in calibration directory: {basicaldir}")
+                    print(
+                        f"Crosshand phase tables in calibration directory: {basicaldir}"
+                    )
                     for kcross in crossphase_tables:
                         print(f"{os.path.basename(kcross)}")
                     print("####################################################")
@@ -2801,10 +2807,16 @@ def master_control(
         ###############################################
         # Making diagnostic plots
         ###############################################
-        if has_cal and len(bandpass_tables) > 0 and do_basic_cal and not caltables_check:
+        if (
+            has_cal
+            and len(bandpass_tables) > 0
+            and do_basic_cal
+            and not caltables_check
+        ):
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, bpass_plots = plot_caltable_diagnostics(
-                bandpass_tables, f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_bcal"
+                bandpass_tables,
+                f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_bcal",
             )
             if msg == 0:
                 print(
@@ -2812,7 +2824,12 @@ def master_control(
                 )
             else:
                 print("Error in creating diagnostic plots for bandpass tables.")
-        if has_cal and len(crossphase_tables) > 0 and do_basic_cal and not caltables_check:
+        if (
+            has_cal
+            and len(crossphase_tables) > 0
+            and do_basic_cal
+            and not caltables_check
+        ):
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, kcross_plots = plot_caltable_diagnostics(
                 crossphase_tables,
@@ -3221,8 +3238,12 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        selfcal_gaincal = sorted(glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal"))
-        selfcal_bandpass = sorted(glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal"))
+        selfcal_gaincal = sorted(
+            glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
+        )
+        selfcal_bandpass = sorted(
+            glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
+        )
         if len(selfcal_bandpass) > 0:
             selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
         if do_polcal:
@@ -3265,7 +3286,8 @@ def master_control(
         if do_selfcal and len(selfcal_bandpass) > 0:
             os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
             msg, bcal_plots = plot_caltable_diagnostics(
-                selfcal_bandpass, f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal"
+                selfcal_bandpass,
+                f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal",
             )
             if msg == 0:
                 print(
@@ -3279,7 +3301,8 @@ def master_control(
         if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
             os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
             msg, dcal_plots = plot_quartical_tables(
-                selfcal_leakages, f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal"
+                selfcal_leakages,
+                f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
             )
             if msg == 0:
                 print(
@@ -3707,11 +3730,13 @@ def master_control(
             imagedir = target_outdir + f"/imagedir_f_all_t_all_pol_{pol}_w_{weight_str}"
         elif image_freqres != -1 and image_timeres == -1:
             imagedir = (
-                target_outdir + f"/imagedir_f_{image_freqres}_t_all_pol_{pol}_w_{weight_str}"
+                target_outdir
+                + f"/imagedir_f_{image_freqres}_t_all_pol_{pol}_w_{weight_str}"
             )
         elif image_freqres == -1 and image_timeres != -1:
             imagedir = (
-                target_outdir + f"/imagedir_f_all_t_{image_timeres}_pol_{pol}_w_{weight_str}"
+                target_outdir
+                + f"/imagedir_f_all_t_{image_timeres}_pol_{pol}_w_{weight_str}"
             )
         else:
             imagedir = (
@@ -4049,7 +4074,9 @@ def master_control(
         final_split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
         if len(final_split_target_mslist) > 0:
             os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup target measurement sets in: {target_outdir}/ms_flags")
+            print(
+                f"Doing flag backup target measurement sets in: {target_outdir}/ms_flags"
+            )
             for target_ms in final_split_target_mslist:
                 do_flag_backup(target_ms, flagtype="finalflag")
                 if os.path.exists(

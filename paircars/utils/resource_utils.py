@@ -6,7 +6,6 @@ import tempfile
 import os
 from contextlib import contextmanager
 
-
 POSIX_FADV_DONTNEED = 4
 libc = ctypes.CDLL("libc.so.6")
 

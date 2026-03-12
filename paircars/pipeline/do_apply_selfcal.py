@@ -23,7 +23,6 @@ from paircars.utils.proc_manage_utils import (
 from paircars.utils.resource_utils import drop_cache
 from paircars.pipeline.do_apply_basiccal import applysol
 
-
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
