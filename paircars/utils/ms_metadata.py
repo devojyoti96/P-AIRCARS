@@ -123,10 +123,12 @@ def get_timeranges(
             time_ranges.append(f"{mjdsec_to_timestamp(start_time, str_format=1)}")
         else:
             pass 
-    if len(time_ranges)==1:
-        edge_time = mjdsec_to_timestamp(times[-1], str_format=1)
-        if edge_time not in time_ranges:
-            time_ranges.append(edge_time)
+    ###########################################################################
+    # Always add edge time to make interpolation of gains, not extrapolation
+    ###########################################################################
+    edge_time = mjdsec_to_timestamp(times[-1], str_format=1)
+    if edge_time not in time_ranges:
+        time_ranges.append(edge_time)
     return time_ranges
 
 
