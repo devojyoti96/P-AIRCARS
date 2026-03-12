@@ -14,6 +14,17 @@ from contextlib import contextmanager
 ##########################
 # Basic utility funactions
 ##########################
+def internet_available(timeout=10):
+    """
+    Check internet connection
+    """
+    try:
+        socket.create_connection(("8.8.8.8", 53), timeout=timeout)
+        return True
+    except OSError:
+        return False
+        
+        
 def test_permission(path):
     """
     Test read, write, execute permission of a file or directory

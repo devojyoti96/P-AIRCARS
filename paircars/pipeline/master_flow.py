@@ -22,6 +22,7 @@ from prefect.settings import get_current_settings
 from prefect.tasks import exponential_backoff
 from paircars.utils.basic_utils import (
     get_cachedir,
+    internet_available,
 )
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -1575,9 +1576,14 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
     logger_timestamp : str
         Logger timestamp
     """
-    email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
-    email_msg = f"{msg}"
-    success_msg, error_msg = send_notification(emails, email_subject, email_msg)
+    internet_on = internet_available()
+    if internet_on:
+        try:
+            email_subject = f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
+            email_msg = f"{msg}"
+            success_msg, error_msg = send_notification(emails, email_subject, email_msg)
+        except Exception:
+            print("Could not send log emails.")
 
 
 @flow(
@@ -1964,26 +1970,31 @@ def master_control(
         # Reading remotelink and emails
         #####################################
         remote_link = ""
-        if remote_logger:
-            trial = 0
-            while trial <= 5:
-                try:
-                    remote_link = get_remote_logger_link()
-                except Exception:
-                    traceback.print_exc()
-                    pass
-                if remote_link != "":
-                    break
-                else:
-                    time.sleep(5)
-                    trial += 1
-            if remote_link == "":
-                print("Please provide a valid remote link.")
-                remote_logger = False
+        internet_on = internet_available()
+        if not internet_on:
+            print("Internet connection is not available for remote logging.")
+        else:
+            if remote_logger:
+                trial = 0
+                while trial <= 5:
+                    try:
+                        remote_link = get_remote_logger_link()
+                    except Exception:
+                        traceback.print_exc()
+                        pass
+                    if remote_link != "":
+                        break
+                    else:
+                        time.sleep(5)
+                        trial += 1
+                if remote_link == "":
+                    print("Please provide a valid remote link.")
+                    remote_logger = False
 
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-            if emails != "":
+            internet_on = internet_available() 
+            if internet_on and emails != "":
                 email_subject = (
                     f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
                 )
@@ -2028,7 +2039,8 @@ def master_control(
             #####################
             # Notify over email
             #####################
-            if emails != "":
+            internet_on = internet_available() 
+            if emails != "" and internet_on:
                 email_subject = (
                     f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
                 )
@@ -3835,7 +3847,10 @@ def master_control(
         #################################################################
         if make_overlay is False and len(images)>0:
             images = filter_images(images, min_time_sep=60.0)
-        if len(images) > 0:
+        internet_on = internet_available()
+        if not internet_on:
+            print("Internet connection is not available. Can not make overlays")
+        elif len(images) > 0:
             if adaptive:
                 scale_worker_and_wait(
                     dask_cluster, dask_client, max(2, min(len(images) + 1, max_worker))

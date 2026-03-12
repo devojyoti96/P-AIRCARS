@@ -24,10 +24,10 @@ def get_fft_size(n):
         if is_fft_good(n):
             if n<128:
                 if n<=1:
-                    return n
+                    n=1
                 else:
-                    return 1<<n.bit_length()
-            return n
+                    n = 1<<n.bit_length()
+            return  n + (n % 2)
         n += 1
 
 
