@@ -171,7 +171,7 @@ def create_logger(logname, logfile):
     """
     logger = logging.getLogger(logname)
     # If logger already configured, return it
-    if logger.handlers:
+    if logger.hasHandlers():
         return logger, logfile
     formatter = logging.Formatter("%(message)s")
     logger.setLevel(logging.DEBUG)
