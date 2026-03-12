@@ -438,7 +438,7 @@ def plot_G_jones_time_vs_gain(
                             if n == 0:
                                 ax.set_ylabel("Gain Phase (degree)", fontsize=14)
                     if n == 0:
-                        ax.set_title(f"Antenna {ant+1}, ant_names[ant]", fontsize=14)
+                        ax.set_title(f"Antenna {ant+1}, ant_names{ant]", fontsize=14)
                         ax.set_xlabel("Time (s)", fontsize=14)
                         ax.legend(fontsize=10, ncol=2, loc="upper right")
                     ax.set_ylim(miny, maxy)
