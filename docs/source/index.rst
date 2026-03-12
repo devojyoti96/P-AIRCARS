@@ -25,7 +25,7 @@ P-AIRCARS serves as a reference pipeline for science-ready processing of **P-AIR
 
 Software environment
 --------------------
-P-AIRCARS is tested on operating systems, Ubunut 22 and Ubunut 24, and under Python 3.10 environment. Using P-AIRCARS in other operating systems and python version does not gurantee successful run and limited support for debugging is available. User may look at **Containersed Use** section in those scenarios. 
+P-AIRCARS is tested on operating systems, Ubunut 22, Ubunut 24, and CentOS7 under Python 3.10 environment. Using P-AIRCARS in other operating systems and python version does not gurantee successful run and limited support for debugging is available. User may look at **Containersed Use** section in those scenarios. 
 
 Sample dataset
 ---------------

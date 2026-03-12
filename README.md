@@ -26,7 +26,7 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
 
 ## Software environment
 
-**P-AIRCARS** is tested on Ubuntu22 and Ubuntu 24 and with Python 3.10. P-AIRCARS may not work in other operating system and python versions. If user wants to use P-AIRCARS in other environments, limited support is available in debugging or solving the issues. User may look at **Containersed Use** section in the docuement for these scenarios.
+**P-AIRCARS** is tested on Ubuntu22, Ubuntu 24, and CentOS 7 with Python 3.10. P-AIRCARS may not work in other operating system and python versions. If user wants to use P-AIRCARS in other environments, limited support is available in debugging or solving the issues. User may look at **Containersed Use** section in the docuement for these scenarios.
 
 ## Quickstart
 
