@@ -1,4 +1,5 @@
 import numpy as np
+import numexpr as ne
 import traceback
 import glob
 import os
@@ -31,6 +32,59 @@ from .image_utils import (
 from .udocker_utils import run_wsclean, run_quartical
 
 
+def cal_crossphase(imagename):
+    """
+    Function to calculate Stokes U, V leakage through correlation analysis
+    
+    Parameters
+    ----------
+    imagename : str
+        FITS image
+        
+    Returns
+    -------
+    float
+        Cross hand phase
+    """
+    data = fits.getdata(imagename)
+    u_data = data[2, 0, ...].astype(np.float64)
+    v_data = data[3, 0, ...].astype(np.float64)
+    max_pos = np.where(np.abs(v_data) == np.nanmax(np.abs(v_data)))
+    peak_v = v_data[max_pos][0]
+    crossphase_list = np.arange(-180, 180, 1)
+    psi = np.deg2rad(crossphase_list)
+    if u_data.size > 1 and v_data.size > 1:
+        cospsi = np.cos(psi)[:, None, None]
+        sinpsi = np.sin(psi)[:, None, None]
+        u = u_data[None, ...]
+        v = v_data[None, ...]
+        # rotation using numexpr
+        new_u = ne.evaluate("cospsi*u + sinpsi*v")
+        new_v = ne.evaluate("-sinpsi*u + cospsi*v")
+        # compute correlation coefficient for each psi
+        cc_list = []
+        for i in range(len(crossphase_list)):
+            cc = abs(np.corrcoef(new_u[i].ravel(), new_v[i].ravel())[1, 0])
+            cc_list.append(cc)
+        cc_list = np.array(cc_list)
+    pos = np.argsort(cc_list)
+    cross_phases = crossphase_list[pos[0:4]]
+    psi = np.deg2rad(cross_phases)
+    cospsi = np.cos(psi)[:, None, None]
+    sinpsi = np.sin(psi)[:, None, None]
+    u = u_data[None, ...]
+    v = v_data[None, ...]
+    new_u = ne.evaluate("cospsi*u + sinpsi*v")
+    new_v = ne.evaluate("-sinpsi*u + cospsi*v")
+    x = np.nanmax(np.abs(new_u), axis=(-2, -1))
+    pos = np.argsort(x)
+    for i in pos[0:2]:
+        peak_new_v = new_v[i][max_pos]
+        if np.sign(peak_new_v) == np.sign(peak_v):
+            cross_phase = cross_phases[i]
+            return cross_phase
+            
+            
 def determine_disk_visibility(msname):
     """
     Determine whether solar disk is visible or not

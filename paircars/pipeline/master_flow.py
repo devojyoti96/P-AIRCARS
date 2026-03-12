@@ -1773,8 +1773,12 @@ def master_control(
     int
         Success message
     """
-    print("P-AIRCARS workfkow started...")
+    print("P-AIRCARS workflow started...")
     emails = get_emails()
+    
+    ###############################################
+    # Checking validity of directories and metafits
+    ###############################################
     if target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
@@ -1944,6 +1948,9 @@ def master_control(
             os.system(f"rm -rf {master_logfile}")
         os.symlink(masterlog, master_logfile)
 
+    #####################################
+    # Setup dask client
+    #####################################
     dask_dir = None
     try:
         dask_client = get_client()
@@ -1972,6 +1979,9 @@ def master_control(
     else:
         n_threads = max(1, int(n_threads))
 
+    #########################################
+    # Setup remote loggger and email notifier
+    #########################################
     try:
         #####################################
         # Reading remotelink and emails
@@ -2042,7 +2052,6 @@ def master_control(
                 print(
                     "Remote link or jobname is blank. Not transmiting to remote logger."
                 )
-
             #####################
             # Notify over email
             #####################
@@ -2171,24 +2180,7 @@ def master_control(
                     )
                     print("P-AIRCARS will not use calibrators.")
                     has_cal = False
-
-
-        ######################################################
-        # Making calibrator output directories
-        ######################################################
-        if has_cal:
-            cal_outdir = f"{outdir}/{calibrator_obsid}_cal"
-            try:
-                os.makedirs(cal_outdir, exist_ok=True)
-            except Exception:
-                print(
-                    f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
-                )
-                traceback.print_exc()
-                has_cal = False
-            basicaldir = f"{cal_outdir}/caltables"
-            os.makedirs(basicaldir,exist_ok=True)               
-                
+         
         ######################################################
         # Filtering only matching coarse channel calibrator ms
         ######################################################
@@ -2203,6 +2195,22 @@ def master_control(
                         f"Coarse channel: {coarse_chan} of calibrator measurement set: {ms} is used."
                     )
             calibrator_mslist = filtered_calms
+
+        ######################################################
+        # Making calibrator output directories
+        ######################################################
+        if calibrator_obsid is not None:
+            cal_outdir = f"{outdir}/{calibrator_obsid}_cal"
+            try:
+                os.makedirs(cal_outdir, exist_ok=True)
+            except Exception:
+                print(
+                    f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
+                )
+                traceback.print_exc()
+                has_cal = False
+            basicaldir = f"{cal_outdir}/caltables"
+            os.makedirs(basicaldir,exist_ok=True)      
 
         #####################################
         # Settings for solar data
@@ -2440,40 +2448,40 @@ def master_control(
                     )
 
         ##########################################
-        # Checking presence of necessary caltables
+        # Checking presence of basic caltables
         ##########################################
+        caltables_check=False
         if calibrator_obsid is not None:
             print(
-                f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
+                f"Searching for existing bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
             )
             bandpass_tables = sorted(
                 glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
             )
             print(
-                f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
+                f"Searching for existing crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
             )
             crossphase_tables = sorted(
                 glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
-            if len(bandpass_tables) == 0:
-                print(
-                    f"No bandpass table is present in calibration directory : {basicaldir}."
-                )
-            else:
+            if len(bandpass_tables)>0:
                 has_cal = True
                 print("###################################################")
-                print(f"Bandpass tables in calibration directory: {basicaldir}")
+                print(f"Bandpass tables ae already present in calibration directory: {basicaldir}")
                 for bpass in bandpass_tables:
                     print(f"{os.path.basename(bpass)}")
                 print("####################################################")
-                print(f"Crosshand phase tables in calibration directory: {basicaldir}")
+                print(f"Crosshand phase tables are already present in calibration directory: {basicaldir}")
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
                 print("####################################################")
-                bandpass_tables + crossphase_tables
+                ####################################
+                # Stoping further basic calibrations
+                ####################################
                 do_basic_cal=False
                 do_cal_flag=False
                 do_import_model=False
+                caltables_check=True # Key to tell caltables has been checked 
         else:
             has_cal = False
 
@@ -2738,10 +2746,10 @@ def master_control(
         if (do_cal_flag or do_import_model or do_basic_cal) and adaptive:
             scale_worker_and_wait(dask_cluster, dask_client, 2)
 
-        ##########################################
-        # Checking presence of necessary caltables
-        ##########################################
-        if calibrator_obsid is not None:
+        ##################################################################
+        # Checking presence of necessary caltables if not checked already
+        #################################################################
+        if calibrator_obsid is not None and not caltables_check:
             print(
                 f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
             )
@@ -2779,14 +2787,13 @@ def master_control(
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
                 print("####################################################")
-                bandpass_tables + crossphase_tables
         else:
             has_cal = False
 
         ###############################################
         # Making diagnostic plots
         ###############################################
-        if has_cal and len(bandpass_tables) > 0 and do_basic_cal:
+        if has_cal and len(bandpass_tables) > 0 and do_basic_cal and not caltables_check:
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, bpass_plots = plot_caltable_diagnostics(
                 bandpass_tables, f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_bcal"
@@ -2797,7 +2804,7 @@ def master_control(
                 )
             else:
                 print("Error in creating diagnostic plots for bandpass tables.")
-        if has_cal and len(crossphase_tables) > 0 and do_basic_cal:
+        if has_cal and len(crossphase_tables) > 0 and do_basic_cal and not caltables_check:
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, kcross_plots = plot_caltable_diagnostics(
                 crossphase_tables,

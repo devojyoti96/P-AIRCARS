@@ -328,6 +328,12 @@ def cli():
         dest="cluster",
         help="Running in cluster environment",
     )
+    advanced_resource.add_argument(
+        "--port",
+        type=int,
+        default=4260,
+        help="Prefect port",
+    )
 
     # === Advanced job scheduler parameters ===
     advanced_slurm = parser.add_argument_group(
@@ -399,16 +405,16 @@ def cli():
     if prefect_status is False:
         print("Prefect server is not running.")
         print("Prefect setup is initiating ....")
-        port = 4260
-        postgres_port = 5260
+        port = args.port
+        postgres_port = port+1000
 
         if check_port_status(port) is False:
             if scheduler_name != "local":
-                port = get_free_port(start_port=4260, end_port=5250)
+                port = get_free_port(start_port=port, end_port=port+990)
 
         if check_port_status(postgres_port) is False:
             if scheduler_name != "local":
-                get_free_port(start_port=5260, end_port=6250)
+                get_free_port(start_port=postgres_port, end_port=postgres_port+990)
 
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)

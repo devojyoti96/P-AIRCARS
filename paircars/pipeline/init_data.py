@@ -155,7 +155,7 @@ def main(
         E-mails for notifications
     """
     required_gb = 20
-    postgres_port = 5260
+    postgres_port = port+1000
 
     try:
         kill_port(port)
@@ -171,11 +171,11 @@ def main(
 
     if check_port_status(port) is False:
         if scheduler_name != "local":
-            port = get_free_port(start_port=port, end_port=5250)
+            port = get_free_port(start_port=port, end_port=port+990)
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":
-            get_free_port(start_port=5260, end_port=6250)
+            get_free_port(start_port=postgres_port, end_port=postgres_port+990)
 
     if init:
         ######################################

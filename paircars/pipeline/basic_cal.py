@@ -711,9 +711,8 @@ def run_basic_cal_rounds(
         final_bcals, final_kcrosscals = filtered_final_caltables(all_caltables, workdir)
 
         if keep_backup:
-            print(f"Backup directory: {workdir}/backup")
-        else:
-            print(f"rm -rf {workdir}/backup")
+            os.system(f"mv {workdir}/backup/* {workdir}")
+        print(f"rm -rf {workdir}/backup")
         print("##################")
         print("Basic calibration is done successfully.")
         print("##################")
