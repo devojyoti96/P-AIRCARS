@@ -188,15 +188,17 @@ def flag_non_disk(msname):
             msmd.close()
             for c, t in zip(chans, timestamps):
                 spw = f"0:{c}"
-                timerange = f"{mjdsec_to_timestamp(times[t], str_format=1)}"
-                print(spw,timerange)
-                flagdata(
-                    vis=msname,
-                    mode="manual",
-                    spw=spw,
-                    timerange=timerange,
-                    flagbackup=False,
-                )
+                timerange = f"{mjdsec_to_timestamp(times[t], str_format=1)}"    
+                try:
+                    flagdata(
+                        vis=msname,
+                        mode="manual",
+                        spw=spw,
+                        timerange=timerange,
+                        flagbackup=False,
+                    )
+                except Exception:
+                    pass
             unflag_chans, flag_chans = get_chans_flag(msname)
             if len(unflag_chans) == 0:
                 return 1
