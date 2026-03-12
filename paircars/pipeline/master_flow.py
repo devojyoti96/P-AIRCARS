@@ -1805,6 +1805,7 @@ def master_control(
     else:
         if calibrator_metafits != "":
             calibrator_metafits = os.path.abspath(calibrator_metafits)
+            
     if workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
@@ -1818,6 +1819,11 @@ def master_control(
 
     if jobid is None:
         jobid = get_jobid()
+        
+    max_worker = max(2, max_worker)  # Minimum 2 workers are needed
+    cpu_frac = min(0.8, abs(cpu_frac))
+    mem_frac = min(0.8, abs(mem_frac))
+    
     #############################################
     # Listing target ms
     #############################################
@@ -1871,14 +1877,16 @@ def master_control(
             return 1
 
     ###################################
-    # Preparing working directories
+    # Preparing target working directories
     ###################################
     print("Preparing working directories....")
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
+        
     workdir = workdir.rstrip("/")
     if outdir == "":
         outdir = workdir
+        
     workdir = f"{workdir}/{target_obsid}_{jobid}"
     try:
         os.makedirs(workdir, exist_ok=True)
@@ -1887,15 +1895,34 @@ def master_control(
             f"Work directory: {workdir} can not be created. Please check the path carefully."
         )
         traceback.print_exc()
+        return 1 
+        
+    ####################################
+    # Preparing target output directories
+    ####################################
+    outdir = outdir.rstrip("/")
+    target_outdir = f"{outdir}/{target_obsid}"    
+    try:
+        os.makedirs(target_outdir, exist_ok=True)
+    except Exception:
+        print(
+            f"Output directory: {target_outdir} can not created. Please check the path carefully."
+        )
+        traceback.print_exc()
         return 1
+    selfcaldir = f"{target_outdir}/caltables"
+    os.makedirs(selfcaldir, exist_ok=True)
+
 
     os.chdir(workdir)
     scheduler_name = get_scheduler_name()
+    
     #################################
     # Setup logger
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
+    
     if (
         scheduler_name != "local"
         or masterlog is None
@@ -1922,11 +1949,11 @@ def master_control(
         dask_client = get_client()
         dask_cluster = dask_client.cluster
     except Exception:
-        if mem_frac <= 0:
-            mem_frac = 0.8
         result = get_local_dask_cluster(
             workdir,
+            cpu_frac=cpu_frac,
             mem_frac=mem_frac,
+            max_worker=max(2, max_worker),
         )
         if result is None:
             print("Error occured in creating local cluster.")
@@ -1938,29 +1965,7 @@ def master_control(
     # Initiating paircars data
     #####################################
     init_paircars_data()
-    observer = None
-
-    ###################################################
-    # Measurement set check and other working directory
-    ###################################################
-    outdir = outdir.rstrip("/")
-    outdir = f"{outdir}/{target_obsid}_{jobid}"
-    caldir = f"{outdir}/caltables"
-    caldir = caldir.rstrip("/")
-    try:
-        os.makedirs(outdir, exist_ok=True)
-    except Exception:
-        print(
-            f"Output directory: {outdir} can not created. Please check the path carefully."
-        )
-        traceback.print_exc()
-        return 1
-    os.makedirs(caldir, exist_ok=True)
-
-    max_worker = max(2, max_worker)  # Minimum 2 workers are needed
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
+    observer = None    
     n_threads = os.environ.get("OMP_NUM_THREADS")
     if n_threads is None:
         n_threads = 1
@@ -2112,6 +2117,7 @@ def master_control(
                 "No calibrator observation is provided. Continuing based on self-calibration."
             )
             has_cal = False
+            
         ######################################################
         # Downloading calibrator metafits if it does not exist
         ######################################################
@@ -2166,6 +2172,23 @@ def master_control(
                     print("P-AIRCARS will not use calibrators.")
                     has_cal = False
 
+
+        ######################################################
+        # Making calibrator output directories
+        ######################################################
+        if has_cal:
+            cal_outdir = f"{outdir}/{calibrator_obsid}"
+            try:
+                os.makedirs(cal_outdir, exist_ok=True)
+            except Exception:
+                print(
+                    f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
+                )
+                traceback.print_exc()
+                has_cal = False
+            basicaldir = f"{cal_outdir}/caltables"
+            os.makedirs(basicaldir,exist_ok=True)               
+                
         ######################################################
         # Filtering only matching coarse channel calibrator ms
         ######################################################
@@ -2391,7 +2414,7 @@ def master_control(
                 ",".join(target_mslist),
                 target_metafits,
                 workdir,
-                outdir,
+                target_outdir,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
@@ -2415,6 +2438,45 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
+
+        ##########################################
+        # Checking presence of necessary caltables
+        ##########################################
+        if calibrator_obsid is not None:
+            print(
+                f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
+            )
+            bandpass_tables = sorted(
+                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
+            )
+            print(
+                f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
+            )
+            crossphase_tables = sorted(
+                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+            )
+            if len(bandpass_tables) == 0:
+                print(
+                    f"No bandpass table is present in calibration directory : {basicaldir}."
+                )
+            else:
+                has_cal = True
+                print("###################################################")
+                print(f"Bandpass tables in calibration directory: {basicaldir}")
+                for bpass in bandpass_tables:
+                    print(f"{os.path.basename(bpass)}")
+                print("####################################################")
+                print(f"Crosshand phase tables in calibration directory: {basicaldir}")
+                for kcross in crossphase_tables:
+                    print(f"{os.path.basename(kcross)}")
+                print("####################################################")
+                bandpass_tables + crossphase_tables
+                do_basic_cal=False
+                do_cal_flag=False
+                do_import_model=False
+        else:
+            has_cal = False
+
 
         ##############################
         # Run spliting jobs
@@ -2517,7 +2579,7 @@ def master_control(
                 ",".join(split_cal_mslist),
                 calibrator_metafits,
                 workdir,
-                outdir,
+                cal_outdir,
                 flag_calibrators=True,
                 jobid=jobid,
                 flag_quack=False,
@@ -2643,7 +2705,7 @@ def master_control(
                 ",".join(split_cal_mslist),
                 calibrator_metafits,
                 workdir,
-                outdir,
+                cal_outdir,
                 perform_polcal=do_polcal,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
@@ -2681,24 +2743,24 @@ def master_control(
         ##########################################
         if calibrator_obsid is not None:
             print(
-                f"Searching for bandpass tables: {caldir}/calibrator_{calibrator_obsid}*.bcal"
+                f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
             )
             bandpass_tables = sorted(
-                glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.bcal")
+                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
             )
             if len(bandpass_tables) > 0:
                 bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
             print(
-                f"Searching for crossphase tables: {caldir}/calibrator_{calibrator_obsid}*.kcrossscal"
+                f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
             )
             crossphase_tables = sorted(
-                glob.glob(f"{caldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
             if len(crossphase_tables) > 0:
                 crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
             if len(bandpass_tables) == 0:
                 print(
-                    f"No bandpass table is present in calibration directory : {caldir}."
+                    f"No bandpass table is present in calibration directory : {basicaldir}."
                 )
                 has_cal = False
                 if emails != "":
@@ -2709,11 +2771,11 @@ def master_control(
             else:
                 has_cal = True
                 print("###################################################")
-                print(f"Bandpass tables in calibration directory: {caldir}")
+                print(f"Bandpass tables in calibration directory: {basicaldir}")
                 for bpass in bandpass_tables:
                     print(f"{os.path.basename(bpass)}")
                 print("####################################################")
-                print(f"Crosshand phase tables in calibration directory: {caldir}")
+                print(f"Crosshand phase tables in calibration directory: {basicaldir}")
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
                 print("####################################################")
@@ -2725,9 +2787,9 @@ def master_control(
         # Making diagnostic plots
         ###############################################
         if has_cal and len(bandpass_tables) > 0 and do_basic_cal:
-            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
+            os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, bpass_plots = plot_caltable_diagnostics(
-                bandpass_tables, f"{outdir}/diagnostic_plots/{calibrator_obsid}_bcal"
+                bandpass_tables, f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_bcal"
             )
             if msg == 0:
                 print(
@@ -2736,10 +2798,10 @@ def master_control(
             else:
                 print("Error in creating diagnostic plots for bandpass tables.")
         if has_cal and len(crossphase_tables) > 0 and do_basic_cal:
-            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
+            os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, kcross_plots = plot_caltable_diagnostics(
                 crossphase_tables,
-                f"{outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal",
+                f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal",
                 plot_all_ants=False,
             )
             if msg == 0:
@@ -2908,7 +2970,7 @@ def master_control(
                 ",".join(selfcal_mslist),
                 target_metafits,
                 workdir,
-                outdir,
+                target_outdir,
                 flag_calibrators=False,
                 flag_quack=False,
                 jobid=jobid,
@@ -2968,7 +3030,7 @@ def master_control(
                     calibrator_metafits,
                     target_metafits,
                     workdir,
-                    caldir,
+                    basicaldir,
                     overwrite_datacolumn=False,
                     only_amplitude=only_amplitude,
                     applymode="calflag",
@@ -3090,13 +3152,13 @@ def master_control(
             if cal_applied:
                 print("Calibrator solutions are applied.")
             else:
-                print("Calibration soplutions are not applied")
+                print("Calibration solutions are not applied")
             future_selfcal = run_selfcal_jobs.with_options(
                 task_run_name=f"selfcal_{jobid}"
             ).submit(
                 ",".join(selfcal_mslist),
                 workdir,
-                caldir,
+                selfcaldir,
                 target_metafits,
                 cal_applied,
                 solint=solint,
@@ -3144,13 +3206,13 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        selfcal_gaincal = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.gcal"))
-        selfcal_bandpass = sorted(glob.glob(f"{caldir}/selfcal_{target_obsid}*.bcal"))
+        selfcal_gaincal = sorted(glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal"))
+        selfcal_bandpass = sorted(glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal"))
         if len(selfcal_bandpass) > 0:
             selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
         if do_polcal:
             selfcal_leakages = sorted(
-                glob.glob(f"{caldir}/selfcal_{target_obsid}*.dcal")
+                glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
             )
             if len(selfcal_leakages) > 0:
                 selfcal_leakages = interpolate_quartical(
@@ -3172,9 +3234,9 @@ def master_control(
         # Plotting self-caltables
         ###########################################
         if do_selfcal and len(selfcal_gaincal) > 0:
-            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
+            os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
             msg, gcal_plots = plot_caltable_diagnostics(
-                selfcal_gaincal, f"{outdir}/diagnostic_plots/{target_obsid}_gcal"
+                selfcal_gaincal, f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal"
             )
             if msg == 0:
                 print(
@@ -3186,9 +3248,9 @@ def master_control(
                 )
 
         if do_selfcal and len(selfcal_bandpass) > 0:
-            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
+            os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
             msg, bcal_plots = plot_caltable_diagnostics(
-                selfcal_bandpass, f"{outdir}/diagnostic_plots/{target_obsid}_bcal"
+                selfcal_bandpass, f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal"
             )
             if msg == 0:
                 print(
@@ -3200,9 +3262,9 @@ def master_control(
                 )
 
         if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
-            os.makedirs(f"{outdir}/diagnostic_plots", exist_ok=True)
+            os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
             msg, dcal_plots = plot_quartical_tables(
-                selfcal_leakages, f"{outdir}/diagnostic_plots/{target_obsid}_dcal"
+                selfcal_leakages, f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal"
             )
             if msg == 0:
                 print(
@@ -3345,7 +3407,7 @@ def master_control(
                 ",".join(split_target_mslist),
                 target_metafits,
                 workdir,
-                outdir,
+                target_outdir,
                 flag_calibrators=False,
                 flag_quack=False,
                 jobid=jobid,
@@ -3399,7 +3461,7 @@ def master_control(
                     calibrator_metafits,
                     target_metafits,
                     workdir,
-                    caldir,
+                    basicaldir,
                     overwrite_datacolumn=True,
                     only_amplitude=only_amplitude,
                     applymode="calflag",
@@ -3504,7 +3566,7 @@ def master_control(
                     ",".join(split_target_mslist),
                     target_metafits,
                     workdir,
-                    caldir,
+                    selfcaldir,
                     overwrite_datacolumn=False,
                     applymode=selfcal_applymode,
                     jobid=jobid,
@@ -3573,7 +3635,7 @@ def master_control(
                 ).submit(
                     ",".join(split_target_mslist),
                     workdir,
-                    outdir,
+                    target_outdir,
                     freqrange=freqrange,
                     timerange=timerange,
                     minuv=minuv,
@@ -3627,18 +3689,18 @@ def master_control(
         else:
             weight_str = weight
         if image_freqres == -1 and image_timeres == -1:
-            imagedir = outdir + f"/imagedir_f_all_t_all_pol_{pol}_w_{weight_str}"
+            imagedir = target_outdir + f"/imagedir_f_all_t_all_pol_{pol}_w_{weight_str}"
         elif image_freqres != -1 and image_timeres == -1:
             imagedir = (
-                outdir + f"/imagedir_f_{image_freqres}_t_all_pol_{pol}_w_{weight_str}"
+                target_outdir + f"/imagedir_f_{image_freqres}_t_all_pol_{pol}_w_{weight_str}"
             )
         elif image_freqres == -1 and image_timeres != -1:
             imagedir = (
-                outdir + f"/imagedir_f_all_t_{image_timeres}_pol_{pol}_w_{weight_str}"
+                target_outdir + f"/imagedir_f_all_t_{image_timeres}_pol_{pol}_w_{weight_str}"
             )
         else:
             imagedir = (
-                outdir
+                target_outdir
                 + f"/imagedir_f_{image_freqres}_t_{image_timeres}_pol_{pol}_w_{weight_str}"
             )
 
@@ -3677,7 +3739,7 @@ def master_control(
                     f"{imagedir}/images",
                     target_metafits,
                     workdir,
-                    leakage_dir=caldir,
+                    leakage_dir=selfcaldir,
                     jobid=jobid,
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
@@ -3726,7 +3788,7 @@ def master_control(
                         dask_client,
                         max(2, min(len(split_cal_mslist) + 1, max_worker)),
                     )
-                msplot_outdir = f"{outdir}/ms_diagnostics_plots"
+                msplot_outdir = f"{cal_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
                 if len(split_cal_mslist) > 0:
                     if emails != "":
@@ -3786,7 +3848,7 @@ def master_control(
                         dask_client,
                         max(2, min(len(split_target_mslist) + 1, max_worker)),
                     )
-                msplot_outdir = f"{outdir}/ms_diagnostics_plots"
+                msplot_outdir = f"{target_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
                 print("###########################")
                 print(
@@ -3931,19 +3993,19 @@ def master_control(
         ######################################
         final_cal_mslist = sorted(glob.glob(workdir + "/calibrator*_spw_*.ms"))
         if len(final_cal_mslist) > 0:
-            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            os.makedirs(f"{cal_outdir}/ms_flags", exist_ok=True)
             print(
-                f"Doing flag backup for calibrator measurement sets in: {outdir}/ms_flags"
+                f"Doing flag backup for calibrator measurement sets in: {cal_outdir}/ms_flags"
             )
             for cal_ms in final_cal_mslist:
                 do_flag_backup(cal_ms, flagtype="finalflag")
                 if os.path.exists(
-                    f"{outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                    f"{cal_outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
                 ):
                     os.system(
-                        f"rm -rf {outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                        f"rm -rf {cal_outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
                     )
-                os.system(f"mv {cal_ms}.flagversions {outdir}/ms_flags/")
+                os.system(f"mv {cal_ms}.flagversions {cal_outdir}/ms_flags/")
                 if keep_backup is False:
                     os.system(f"rm -rf {cal_ms}")
         ######################################
@@ -3951,19 +4013,19 @@ def master_control(
         ######################################
         final_selfcal_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
         if len(final_selfcal_mslist) > 0:
-            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
+            os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
             print(
-                f"Doing flag backup of self-calibration measurement sets in: {outdir}/ms_flags"
+                f"Doing flag backup of self-calibration measurement sets in: {target_outdir}/ms_flags"
             )
             for selfcal_ms in final_selfcal_mslist:
                 do_flag_backup(selfcal_ms, flagtype="finalflag")
                 if os.path.exists(
-                    f"{outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
+                    f"{target_outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
                 ):
                     os.system(
-                        f"rm -rf {outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
+                        f"rm -rf {target_outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
                     )
-                os.system(f"mv {selfcal_ms}.flagversions {outdir}/ms_flags/")
+                os.system(f"mv {selfcal_ms}.flagversions {target_outdir}/ms_flags/")
                 if keep_backup is False:
                     os.system(f"rm -rf {selfcal_ms}")
         ######################################
@@ -3971,19 +4033,19 @@ def master_control(
         ######################################
         final_split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
         if len(final_split_target_mslist) > 0:
-            os.makedirs(f"{outdir}/ms_flags", exist_ok=True)
-            print(f"Doing flag backup target measurement sets in: {outdir}/ms_flags")
+            os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
+            print(f"Doing flag backup target measurement sets in: {target_outdir}/ms_flags")
             for target_ms in final_split_target_mslist:
                 do_flag_backup(target_ms, flagtype="finalflag")
                 if os.path.exists(
-                    f"{outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                    f"{target_outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
                 ):
                     os.system(
-                        f"rm -rf {outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                        f"rm -rf {target_outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
                     )
-                os.system(f"mv {target_ms}.flagversions {outdir}/ms_flags/")
+                os.system(f"mv {target_ms}.flagversions {target_outdir}/ms_flags/")
                 if keep_calibrated_ms:
-                    calibrated_msdir = f"{outdir}/calibrated_ms"
+                    calibrated_msdir = f"{target_outdir}/calibrated_ms"
                     os.makedirs(calibrated_msdir, exist_ok=True)
                     os.system(f"mv {target_ms} {calibrated_msdir}")
                 elif keep_backup is False:
