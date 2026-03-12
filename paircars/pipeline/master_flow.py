@@ -2464,7 +2464,6 @@ def master_control(
                 glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
             )
             if len(bandpass_tables) > 0:
-                has_cal = True
                 print("###################################################")
                 print(
                     f"Bandpass tables ae already present in calibration directory: {basicaldir}"
@@ -2490,8 +2489,7 @@ def master_control(
                 do_cal_flag = False
                 do_import_model = False
                 caltables_check = True  # Key to tell caltables has been checked
-            else:
-                has_cal = False
+                has_cal = True
         else:
             has_cal = False
 
