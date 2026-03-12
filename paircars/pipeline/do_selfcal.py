@@ -1602,7 +1602,7 @@ def main(
                 print(f"Measurement set name: {ms}.")
                 print(f"Self-cal log file: {logfile_prefix}_int.log")
                 if do_polcal:
-                    print(f"Polarisation self-cal log file: {logfile_prefix}_pol.pol")
+                    print(f"Polarisation self-cal log file: {logfile_prefix}_pol.log")
                 tasks.append(
                     delayed(partial_do_selfcal)(
                         ms,
