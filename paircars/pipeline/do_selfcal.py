@@ -348,6 +348,7 @@ def do_selfcal(
                 + ", Calibration mode: "
                 + str(calmode)
             )
+            intlogger.info("######################################")
             msg, gaintable, dyn, rms, final_image, final_model, final_residual, _ = (
                 selfcal_round(
                     msname,
@@ -449,6 +450,7 @@ def do_selfcal(
                 RMS3 = RMS2
                 RMS2 = RMS1
                 RMS1 = rms
+            intlogger.info("######################################")
             intlogger.info(
                 "RMS based dynamic ranges: "
                 + str(DR1)
@@ -969,6 +971,7 @@ def do_polselfcal(
             ##################################
             pollogger.info("######################################")
             pollogger.info("Selfcal iteration : " + str(num_iter))
+            pollogger.info("######################################")
             if num_iter == 0:
                 pbcor = True
                 leakagecor = True
@@ -1098,6 +1101,7 @@ def do_polselfcal(
                     QL3 = q_leakage
                     UL3 = u_leakage
                     VL3 = v_leakage
+                pollogger.info("######################################")
                 pollogger.info(
                     "RMS based dynamic ranges: "
                     + str(DR1)
