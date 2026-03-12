@@ -406,7 +406,7 @@ def plot_G_jones_time_vs_gain(
             axes = axes.flatten()
             for n in range(len(all_ants)):
                 ants = all_ants[n]
-                all_ant_names[n]
+                ant_names = all_ant_names[n]
                 times = all_times[n]
                 gains = all_gains[n]
                 for i, ant in enumerate(ants[idx : idx + plots_per_fig]):
