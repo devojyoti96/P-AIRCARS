@@ -226,13 +226,13 @@ def get_logid(logfile):
     if name in logmap:
         return logmap[name]
     elif ".log.int" in name:
-        name = name.split("_selfcal.log.int")[0].split("selfcal_")[1]
+        name = name.split("_selfcal_int.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
         spw = name.split("_")[-1]
         return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
     elif ".log.pol" in name:
-        name = name.split("_selfcal.log.pol")[0].split("selfcal_")[1]
+        name = name.split("_selfcal_pol.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("ch")[1].split("_")[0]
         spw = name.split("_")[-1]

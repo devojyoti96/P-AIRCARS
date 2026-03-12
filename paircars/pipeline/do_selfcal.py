@@ -72,7 +72,7 @@ def do_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -279,17 +279,10 @@ def do_selfcal(
         instrument_fov = calc_field_of_view(msname, FWHM=False)
         sun_size = calc_sun_dia(freqMHz)
         fov = min(
-            instrument_fov, 2 * sun_size * 60
-        )  # 2 times sun size at that frequency
+            instrument_fov, 10.0 * sun_size * 60
+        )  # 3 times sun size at that frequency
         imsize = int(fov / cellsize)
-        pow2 = np.ceil(np.log2(imsize)).astype("int")
-        possible_sizes = []
-        for p in range(pow2):
-            for k in [3, 5]:
-                possible_sizes.append(k * 2**p)
-        possible_sizes = np.sort(np.array(possible_sizes))
-        possible_sizes = possible_sizes[possible_sizes >= imsize]
-        imsize = max(512, int(possible_sizes[0]))
+        imsize = get_fft_size(imsize)
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
             refant = unflagged_antenna_names[0]
@@ -320,7 +313,7 @@ def do_selfcal(
         use_previous_model = False
         nondisk_flag = True
         min_DR = 0
-        min_iter = max(3, min_iter)  # Minimum 3 iterations
+        min_iter = max(5, min_iter)  # Minimum 5 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -691,7 +684,7 @@ def do_polselfcal(
     refant="",
     max_iter=10,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     threshold=3.0,
     DR_convergence_frac=0.1,
     uvrange="",
@@ -936,10 +929,11 @@ def do_polselfcal(
         instrument_fov = calc_field_of_view(msname, FWHM=False)
         sun_size = calc_sun_dia(freqMHz)
         fov = min(
-            instrument_fov, 3.0 * sun_size * 60
+            instrument_fov, 10.0 * sun_size * 60
         )  # 3 times sun size at that frequency
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
+        
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
             refant = unflagged_antenna_names[0]
@@ -966,7 +960,7 @@ def do_polselfcal(
         last_round_gaintable = []
         last_leakage_file = ""
         last_round_ms = ""
-        min_iter = max(3, min_iter)  # Minimum 3 iterations
+        min_iter = max(5, min_iter)  # Minimum 5 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ##########################################
@@ -982,11 +976,11 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = False
-            elif num_iter == 1:
+            elif num_iter < 1:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter == 2:
+            elif num_iter == 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
@@ -1251,7 +1245,7 @@ def do_full_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -1287,7 +1281,7 @@ def do_full_selfcal(
     mem = abs(mem)
 
     selfcaldir = selfcaldir.rstrip("/")
-    logfile = logfile.rstrip("/")
+    logfile = logfile.rstrip("/").split(".log")[0]
     print(f"Starting intensity self-calibration for ms: {msname}.")
     unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
     refant = unflagged_antenna_names[0]
@@ -1306,7 +1300,7 @@ def do_full_selfcal(
         end_threshold=end_threshold,
         max_iter=max_iter,
         max_DR=max_DR,
-        min_iter=max(3, min_iter),
+        min_iter=max(5, min_iter),
         DR_convergence_frac=DR_convergence_frac,
         uvrange=uvrange,
         minuv=minuv,
@@ -1319,7 +1313,7 @@ def do_full_selfcal(
         solar_selfcal=solar_selfcal,
         ncpu=ncpu,
         mem=mem,
-        logfile=f"{logfile}.int",
+        logfile=f"{logfile}_int.log",
     )
     if intensity_selfcal_msg != 0:
         return intensity_selfcal_msg, 1, [], [], ""
@@ -1334,7 +1328,7 @@ def do_full_selfcal(
             metafits=metafits,
             max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
-            min_iter=max(3, min_iter),
+            min_iter=max(5, min_iter),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,
@@ -1345,7 +1339,7 @@ def do_full_selfcal(
             try_nondisk_flag=try_nondisk_flag,
             ncpu=ncpu,
             mem=mem,
-            logfile=f"{logfile}.pol",
+            logfile=f"{logfile}_pol.log",
         )
         return (
             intensity_selfcal_msg,
@@ -1366,7 +1360,7 @@ def main(
     stop_thresh=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=3,
+    min_iter=5,
     conv_frac=0.1,
     solint="60s",
     uvrange="",
@@ -1410,7 +1404,7 @@ def main(
     max_DR : float, optional
         Maximum dynamic range allowed before halting iterations. Default is 100000.
     min_iter : int, optional
-        Minimum number of iterations before checking for convergence. Default is 3.
+        Minimum number of iterations before checking for convergence. Default is 5.
     conv_frac : float, optional
         Convergence criterion: fractional change in dynamic range below which iteration stops. Default is 0.1.
     solint : str, optional
@@ -1898,7 +1892,7 @@ def cli():
     adv_args.add_argument(
         "--min_iter",
         type=int,
-        default=3,
+        default=5,
         help="Minimum number of selfcal iterations",
         metavar="Integer",
     )
