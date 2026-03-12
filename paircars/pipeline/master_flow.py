@@ -2832,6 +2832,7 @@ def master_control(
             msg, kcross_plots = plot_caltable_diagnostics(
                 crossphase_tables,
                 f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal",
+                quantities=["phase"],
                 plot_all_ants=False,
             )
             if msg == 0:

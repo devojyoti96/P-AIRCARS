@@ -369,6 +369,7 @@ def plot_G_jones_time_vs_gain(
     pols,
     prefix,
     output_prefix,
+    quantities=["amp","phase"],
 ):
     """
     Plot time vs. gain
@@ -381,7 +382,7 @@ def plot_G_jones_time_vs_gain(
     min_time = np.nanmin(np.array(all_times))
     start_timestamp = mjdsec_to_timestamp(min_time)
     output_pdfs = []
-    for quantity in ["amp", "phase"]:
+    for quantity in quantities:
         out_files = []
         for idx in range(0, max_ant, plots_per_fig):
             fig, axes = plt.subplots(nrows, ncols, figsize=(15, 10))
@@ -471,6 +472,7 @@ def plot_B_jones_freq_vs_gain(
     pols,
     prefix,
     output_prefix,
+    quantities=["amp","phase"],
     plot_all_ants=True,
 ):
     """
@@ -485,7 +487,7 @@ def plot_B_jones_freq_vs_gain(
     if plots_per_fig < ncols * nrows:
         ncols = nrows = int(np.sqrt(plots_per_fig))
     output_pdfs = []
-    for quantity in ["amp", "phase"]:
+    for quantity in quantities:
         out_files = []
         for idx in range(0, max_ant, plots_per_fig):
             if plot_all_ants:
@@ -581,7 +583,7 @@ def plot_B_jones_freq_vs_gain(
     return output_pdfs
 
 
-def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
+def plot_caltable_diagnostics(caltables, outfile_prefix, quantities=["amp","phase"], plot_all_ants=True):
     """
     Plot diagonistic plot of casa caltables
 
@@ -591,6 +593,8 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
         Caltable names
     outfile_prefix : str
         Output plot file name prefix
+    quantities : list
+        Quantities to plot (amp, phase)
     plot_all_ants : bool, optional
         Plot all antennas or only the single one
 
@@ -658,6 +662,7 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
                 pols,
                 "GJones",
                 outfile_prefix,
+                quantities=quantities,
             )
         elif final_cal_type == "B Jones":
             output_pdfs = plot_B_jones_freq_vs_gain(
@@ -670,6 +675,7 @@ def plot_caltable_diagnostics(caltables, outfile_prefix, plot_all_ants=True):
                 pols,
                 "BJones",
                 outfile_prefix,
+                quantities=quantities,
                 plot_all_ants=plot_all_ants,
             )
         else:
