@@ -20,9 +20,16 @@ The following output will appear in terminal:
 Directory structure
 -------------------
 
-All intermediate data products will be saved in ``<workdir>/<target_obsid>``.
+All intermediate data products will be saved in ``<workdir>/<target_obsid>_<jobid>``.
+    
+.. note::
+   
+   ``jobid`` is added to work directory name to avoid conflicts.
+   
 
-All final data products will be saved in ``<outputdir>/<target_obsid>``.
+All final data products will be saved in ``<outputdir>/<target_obsid>_target``.
+
+All calibrator data products will be saved in ``<outdir>/<calibrator_obsid>_cal``.
 
 .. note :: 
 
@@ -39,11 +46,12 @@ All final data products will be saved in ``<outputdir>/<target_obsid>``.
 
        graph LR
            WD["Work directory:<br>workdir"] --> CAL["Calibrator ms:<br>calibrator.ms"]
+           WD["Work directory:<br>workdir"] --> CAL["Bandpass calibration tables:<br>calibrator*.bcal"]
+           WD["Work directory:<br>workdir"] --> CAL["Crossphase calibration tables:<br>calibrator*.kcrosscal"]
            WD --> SCMS["`Self-cal ms(s):<br>selfcal_*_spw_*.ms`"]
            WD --> INTSCDIR["`Intensity self-cal directories:<br>selfcal*_spw_*_selfcal.int`"]
            WD --> POLSCDIR["`Polarisation self-cal directories:<br>selfcal*_spw_*_selfcal.pol`"]
            WD --> TMS["`Target ms(s):<br>targets*_spw_*.ms`"]
-           WD --> BACK["Backup directory:<br>backup"]
            WD --> LOG["Log directory:<br>logs"]
            LOG --> LOGF["*.log"]
                       
@@ -53,14 +61,22 @@ All final data products will be saved in ``<outputdir>/<target_obsid>``.
    .. mermaid::
 
        graph LR
-           WD["Output directory:<br>{outdir}"] --> CALTABLE["Caltable directory:<br>caltables"]
-           WD --> DP["`Diagnostic plots:<br>diagnostic_plots`"]
-           DP --> DPPDF["`Diagnostic plots of ms and caltables in PDF:<br>*.pdf`"]
-           WD --> DS["`Dynamic spectra:<br>dynamic_spectra`"]
-           WD --> DS["`Calibrated visibilities:<br>calibrated_ms`"]
-           WD --> FS["`Flag summary:<br>flag_summary`"]
-           WD --> FV["`Flag backup:<br>ms_flags`"]
-           WD --> IMG["`Image directory:<br>imagedir_f_*_t_*_w_briggs_*`"]
+           WD["Output directory:<br>{outdir}"] --> WDC["Calibrator output directory:{outdir}/{cal_obsid}_cal"]
+           WD["Output directory:<br>{outdir}"] --> WDT["Target output directory:{outdir}/{target_obsid}_target"]
+           WDC --> CALTABLE["Caltable directory:<br>caltables"]
+           WDC --> DPC["`Diagnostic plots:<br>diagnostic_plots`"]
+           WDC --> FS["`Flag summary:<br>flag_summary`"]
+           WDC --> FV["`Flag backup:<br>ms_flags`"]
+           DPC --> DPPDF["`Diagnostic plots of calibrator ms and caltables in PDF:<br>*.pdf`"]
+           CALTABLE --> BCAL["`Bandpass caltable:<br>*.bcal`"]
+           CALTABLE --> BCALATT["`Attenuation corrected bandpass caltable:<br>*.bcal.att`"]
+           CALTABLE --> KCROSSCAL["`Crossphase caltable:<br>*.kcrosscal`"]
+                     
+           WDT --> DS["`Dynamic spectra:<br>dynamic_spectra`"]
+           WDT --> DS["`Calibrated visibilities:<br>calibrated_ms`"]
+           WDT --> DPT["`Diagnostic plots:<br>diagnostic_plots`"]
+           WDT --> SELFCALTABLE["Caltable directory:<br>caltables"]
+           WDT --> IMG["`Image directory:<br>imagedir_f_*_t_*_w_briggs_*`"]
            IMG --> IMAGE["Fits image:<br>images"]
            IMG --> MODEL["Fits models:<br>models"]
            IMG --> RES["Fits residual:<br>residuals"]
