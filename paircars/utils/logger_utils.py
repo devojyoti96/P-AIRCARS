@@ -4,7 +4,6 @@ import logging
 import argparse
 import requests
 import time
-import sys
 import os
 import getpass
 import urllib.request

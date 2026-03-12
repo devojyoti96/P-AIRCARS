@@ -444,7 +444,7 @@ def plot_G_jones_time_vs_gain(
                         ax.set_title(f"Antenna {ant+1}, {ant_names[ant]}", fontsize=14)
                         ax.set_xlabel("Time (s)", fontsize=14)
                         ax.legend(fontsize=10, ncol=2, loc="upper right")
-                    ax.set_ylim(miny, maxy)
+                    ax.set_ylim(miny - pad, maxy + pad)
             for j in range(i + 1, plots_per_fig):
                 fig.delaxes(axes[j])
             plt.tight_layout(rect=[0, 0, 1, 0.99])

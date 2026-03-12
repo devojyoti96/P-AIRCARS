@@ -108,8 +108,6 @@ def determine_disk_visibility(msname):
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
-    times = msmd.timesforspws(0)
-    len(times)
     msmd.nchan(0)
     msmd.close()
     wavelength = (3 * 10**8) / freq
@@ -1113,10 +1111,6 @@ def selfcal_round(
         num_chan = msmd.nchan(0)
         freqres = msmd.chanres(0, unit="MHz")[0]
         bw = num_chan * freqres
-
-        times = msmd.timesforspws(0)
-        total_time_range = max(times) - min(times)
-
         msmd.close()
 
         #####################################
