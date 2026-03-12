@@ -71,7 +71,6 @@ All calibrator data products will be saved in ``<outdir>/<calibrator_obsid>_cal`
            CALTABLE --> BCAL["`Bandpass caltable:<br>*.bcal`"]
            CALTABLE --> BCALATT["`Attenuation corrected bandpass caltable:<br>*.bcal.att`"]
            CALTABLE --> KCROSSCAL["`Crossphase caltable:<br>*.kcrosscal`"]
-                     
            WDT --> DS["`Dynamic spectra:<br>dynamic_spectra`"]
            WDT --> DS["`Calibrated visibilities:<br>calibrated_ms`"]
            WDT --> DPT["`Diagnostic plots:<br>diagnostic_plots`"]
