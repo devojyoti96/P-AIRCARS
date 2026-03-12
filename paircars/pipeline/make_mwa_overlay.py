@@ -205,6 +205,7 @@ def main(
     finally:
         os.system(f"rm -rf {imagedir}/*aia*.fits")
         os.system(f"rm -rf {imagedir}/*suvi*.fits")
+        os.system(f"rm -rf {workdir}/aiamaps")
         time.sleep(5)
         drop_cache(imagedir)
         clean_shutdown(observer)
