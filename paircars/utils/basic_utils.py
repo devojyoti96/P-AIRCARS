@@ -216,6 +216,32 @@ def check_port_status(port):
             return False
 
 
+def chunk_by_start_gap(nums, gap=240):
+    """
+    Make chunks such that starting member of each group is sepetaed by certain gap
+    
+    Parameters
+    -----------
+    nums : list
+        List of numbers
+    gap : int, optonal
+        Gap size
+    
+    Returns
+    -------
+    list
+        Chunked list
+    """
+    nums = sorted(nums)
+    chunks = [[nums[0]]]
+    start = nums[0]
+    for n in nums[1:]:
+        if n - start >= gap:
+            chunks.append([])
+            start = n
+        chunks[-1].append(n)
+    return chunks
+
 def split_into_chunks(lst, target_chunk_size):
     """
     Split a list into equal number of elements
