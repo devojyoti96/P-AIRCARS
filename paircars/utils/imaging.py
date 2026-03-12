@@ -6,6 +6,31 @@ from .mwa_utils import get_bad_chans
 ##################################
 # Imaging related
 ##################################
+def is_fft_good(n):
+    """
+    Whether this number is good for FFTW or not
+    """
+    for p in [2,3,5,7]:
+        while n % p == 0:
+            n //= p
+    return n == 1
+
+
+def get_fft_size(n):
+    """
+    Give the best number larger than the given number for best FFT performance
+    """
+    while True:
+        if is_fft_good(n):
+            if n<128:
+                if n<=1:
+                    return n
+                else:
+                    return 1<<n.bit_length()
+            return n
+        n += 1
+
+
 def calc_sun_dia(freqMHz):
     """
     Function to calculate the diameter of the Sun at a given frequency (White 2016)

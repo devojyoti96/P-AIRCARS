@@ -13,7 +13,6 @@ from paircars.utils.basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
 from paircars.utils.image_utils import (
     create_circular_mask,
     make_stokes_wsclean_imagecube,
-    next_fft_size,
 )
 from paircars.utils.imaging import (
     calc_sun_dia,
@@ -22,6 +21,7 @@ from paircars.utils.imaging import (
     calc_cellsize,
     calc_multiscale_scales,
     get_multiscale_bias,
+    get_fft_size,
 )
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -710,7 +710,7 @@ def run_all_imaging(
             if fov < (2 * (cutout_rsun * 16) * 60):
                 fov = 2 * (cutout_rsun * 16) * 60
             imsize = int(fov / cellsize)
-            imsize = next_fft_size(imsize)
+            imsize = get_fft_size(imsize)
             os.makedirs(workdir + "/logs", exist_ok=True)
             logfile = (
                 workdir

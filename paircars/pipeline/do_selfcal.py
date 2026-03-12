@@ -27,7 +27,7 @@ from paircars.utils.flagging import (
     do_flag_backup,
     get_chans_flag_per_time,
 )
-from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize
+from paircars.utils.imaging import calc_sun_dia, calc_field_of_view, calc_cellsize, get_fft_size
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -919,7 +919,7 @@ def do_polselfcal(
             instrument_fov, 3.0 * sun_size * 60
         )  # 3 times sun size at that frequency
         imsize = int(fov / cellsize)
-        imsize = next_fft_size(imsize)
+        imsize = get_fft_size(imsize)
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
             refant = unflagged_antenna_names[0]
