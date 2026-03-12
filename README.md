@@ -34,12 +34,15 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
 
 **P-AIRCARS** is distributed on [PyPI]. To use it:
 
-1. Create conda environment with python 3.10
+1. Create conda environment with python 3.10 with compaitable C/C++ libraries
 
     ```text
-    conda create -n paircars_env python=3.10
+    conda create -n paircars_env --override-channels -c conda-forge python=3.10 gcc_linux-64=14 gxx_linux-64=14 gfortran_linux-64=14 cmake pkg-config pip
+    
     conda activate paircars_env
     ```
+    
+    We suggest using **Mamba** for fast conda installtion and environment creation.
 
 2. Install P-AIRCARS in conda environment
 
@@ -52,6 +55,7 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
     ```text
     init-paircars-setup --init
     ```
+    By default, the necessary data will be saved in home directory and requires about 20 GB of disk space. We suggest using any other location with larger disk space and specify that by ``--datadir </full/path/to/paircars_datadir>`` in the above command.
     
 4. Before running the pipeline, setup your data as following:
     

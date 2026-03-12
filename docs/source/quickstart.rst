@@ -3,7 +3,7 @@ Quickstart
 P-AIRCARS is distributed on
 `PyPI <https://pypi.org/project/paircars/>`__. To use it:
 
-1. Create conda environment with python 3.10
+1. Create conda environment with python 3.10 with compaitable C/C++ libraries
 
    .. code-block:: bash
 
