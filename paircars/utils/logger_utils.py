@@ -110,14 +110,13 @@ class RemoteLogger(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        print(msg)
         try:
             requests.post(
                 f"{self.remote_link}/api/log",
                 json={
                     "job_id": self.job_id,
                     "log_id": self.log_id,
-                    "message": msg,
+                    "message": f"{msg}\n",
                     "password": self.password,
                     "first": False,
                 },
@@ -172,7 +171,7 @@ def create_logger(logname, logfile):
     logger = logging.getLogger(logname)
     # If logger already configured, return it
     if logger.hasHandlers():
-        return logger, logfile
+        logger.handlers.clear()
     formatter = logging.Formatter("%(message)s")
     logger.setLevel(logging.DEBUG)
     filehandle = logging.FileHandler(logfile)
