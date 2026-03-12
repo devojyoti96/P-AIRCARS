@@ -716,7 +716,6 @@ def run_all_imaging(
                     possible_sizes.append(k * 2**p)
             possible_sizes = np.sort(np.array(possible_sizes))
             possible_sizes = possible_sizes[possible_sizes >= imsize]
-            imsize = max(512, int(possible_sizes[0]))
             os.makedirs(workdir + "/logs", exist_ok=True)
             logfile = (
                 workdir

@@ -926,7 +926,6 @@ def do_polselfcal(
                 possible_sizes.append(k * 2**p)
         possible_sizes = np.sort(np.array(possible_sizes))
         possible_sizes = possible_sizes[possible_sizes >= imsize]
-        imsize = max(512, int(possible_sizes[0]))
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
             refant = unflagged_antenna_names[0]
