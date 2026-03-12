@@ -166,7 +166,7 @@ def do_selfcal(
         )
         if os.path.exists(logfile):
             sub_observer = init_logger(
-                "remotelogger_selfcal_{os.path.basename(msname).split('.ms')[0]}",
+                "remotelogger_intselfcal_{os.path.basename(msname).split('.ms')[0]}",
                 logfile,
                 jobname=jobname,
                 password=password,
@@ -766,7 +766,7 @@ def do_polselfcal(
         )
         if os.path.exists(logfile):
             sub_observer = init_logger(
-                "remotelogger_selfcal_{os.path.basename(msname).split('.ms')[0]}",
+                "remotelogger_polselfcal_{os.path.basename(msname).split('.ms')[0]}",
                 logfile,
                 jobname=jobname,
                 password=password,
