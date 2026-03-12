@@ -2482,6 +2482,8 @@ def master_control(
                 do_cal_flag=False
                 do_import_model=False
                 caltables_check=True # Key to tell caltables has been checked 
+            else:
+                has_cal = False
         else:
             has_cal = False
 
@@ -2749,46 +2751,47 @@ def master_control(
         ##################################################################
         # Checking presence of necessary caltables if not checked already
         #################################################################
-        if calibrator_obsid is not None and not caltables_check:
-            print(
-                f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
-            )
-            bandpass_tables = sorted(
-                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
-            )
-            if len(bandpass_tables) > 0:
-                bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
-            print(
-                f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
-            )
-            crossphase_tables = sorted(
-                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-            )
-            if len(crossphase_tables) > 0:
-                crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
-            if len(bandpass_tables) == 0:
+        if not caltables_check:
+            if calibrator_obsid is not None:
                 print(
-                    f"No bandpass table is present in calibration directory : {basicaldir}."
+                    f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
                 )
-                has_cal = False
-                if emails != "":
-                    email_msg = "No bandpass calibration table is found."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                bandpass_tables = sorted(
+                    glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
+                )
+                if len(bandpass_tables) > 0:
+                    bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
+                print(
+                    f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
+                )
+                crossphase_tables = sorted(
+                    glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+                )
+                if len(crossphase_tables) > 0:
+                    crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
+                if len(bandpass_tables) == 0:
+                    print(
+                        f"No bandpass table is present in calibration directory : {basicaldir}."
                     )
+                    has_cal = False
+                    if emails != "":
+                        email_msg = "No bandpass calibration table is found."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                else:
+                    has_cal = True
+                    print("###################################################")
+                    print(f"Bandpass tables in calibration directory: {basicaldir}")
+                    for bpass in bandpass_tables:
+                        print(f"{os.path.basename(bpass)}")
+                    print("####################################################")
+                    print(f"Crosshand phase tables in calibration directory: {basicaldir}")
+                    for kcross in crossphase_tables:
+                        print(f"{os.path.basename(kcross)}")
+                    print("####################################################")
             else:
-                has_cal = True
-                print("###################################################")
-                print(f"Bandpass tables in calibration directory: {basicaldir}")
-                for bpass in bandpass_tables:
-                    print(f"{os.path.basename(bpass)}")
-                print("####################################################")
-                print(f"Crosshand phase tables in calibration directory: {basicaldir}")
-                for kcross in crossphase_tables:
-                    print(f"{os.path.basename(kcross)}")
-                print("####################################################")
-        else:
-            has_cal = False
+                has_cal = False
 
         ###############################################
         # Making diagnostic plots
