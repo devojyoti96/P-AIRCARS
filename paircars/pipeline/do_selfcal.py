@@ -28,7 +28,6 @@ from paircars.utils.flagging import (
     get_chans_flag_per_time,
 )
 from paircars.utils.imaging import (
-    calc_sun_dia,
     calc_field_of_view,
     calc_cellsize,
     get_fft_size,
@@ -277,10 +276,9 @@ def do_selfcal(
         intlogger.info("Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
-        sun_size = calc_sun_dia(freqMHz)
-        fov = min(
-            instrument_fov, 10.0 * sun_size * 60
-        )  # 3 times sun size at that frequency
+        cutout_rsun=10.0
+        cutout_rsun_arcsec = cutout_rsun*16*60
+        fov = min(instrument_fov, 2*cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
         if refant == "":
@@ -927,10 +925,9 @@ def do_polselfcal(
         pollogger.info("Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
-        sun_size = calc_sun_dia(freqMHz)
-        fov = min(
-            instrument_fov, 10.0 * sun_size * 60
-        )  # 3 times sun size at that frequency
+        cutout_rsun=10.0
+        cutout_rsun_arcsec = cutout_rsun*16*60
+        fov = min(instrument_fov, 2*cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
         
