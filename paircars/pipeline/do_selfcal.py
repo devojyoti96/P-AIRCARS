@@ -817,10 +817,12 @@ def do_polselfcal(
         # Choosing the best time (least flags)
         ######################################
         times, flag_frac = get_chans_flag_per_time(msname)
+        times = np.array(times)
+        flag_frac = np.array(flag_frac)
         total_time_range = max(times) - min(times)
-        if total_time_range<=240: # If smaller than 240s (4min), only one timestamp is chosen
+        if total_time_range<=240:
             pos = np.argmin(flag_frac)
-            best_time_mjdsec = times[pos] #TODO: if ms is more than 4min, add 4min time intervals
+            best_time_mjdsec = times[pos] 
             best_time = mjdsec_to_timestamp(best_time_mjdsec, str_format=1)
         else:
             bins = (times - times.min()) // chunk
@@ -830,9 +832,8 @@ def do_polselfcal(
                 i = np.argmin(flag_frac[idx])
                 result.append(times[idx][i])
             best_times = [mjdsec_to_timestamp(mjdsec, str_format=1) for mjdsec in result]
-            best_time = ",".join(best_time)
-            
-
+            best_time = ",".join(best_times)
+           
         ##############################
         # Spliting corrected data
         ##############################

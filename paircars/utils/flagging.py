@@ -194,6 +194,7 @@ def get_chans_flag_per_time(msname):
     else:
         flag_frac = np.array([np.nansum(flag) / np.size(flag)])
     flag_frac = flag_frac.tolist()
+    times = time.tolist()
     return times, flag_frac
 
 
