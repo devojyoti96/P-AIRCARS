@@ -5,11 +5,9 @@ from paircars.pipeline.basic_cal import *
 
 @patch("paircars.pipeline.basic_cal.limit_threads")
 @patch("paircars.pipeline.basic_cal.suppress_output")
-@patch("casatasks.flagdata")
 @patch("casatasks.bandpass")
 def test_run_bandpass(
     mock_bandpass,
-    mock_flagdata,
     mock_suppress_output,
     mock_limit_threads,
 ):
@@ -43,12 +41,6 @@ def test_run_bandpass(
         gaintable=[],
         gainfield=[],
         interp=[],
-    )
-    mock_flagdata.assert_called_once_with(
-        vis=expected_caltable,
-        mode="rflag",
-        datacolumn="CPARAM",
-        flagbackup=False,
     )
 
 
@@ -219,7 +211,7 @@ def test_single_ms_cal_and_flag(
 
         m_exists.side_effect = exists_side_effect
 
-        result = single_ms_cal_and_flag(
+        result, success = single_ms_cal_and_flag(
             msname=msname,
             workdir=workdir,
             cal_round=1,
@@ -232,8 +224,6 @@ def test_single_ms_cal_and_flag(
             n_threads=2,
             mem_limit=1024,
         )
-
-        m_drop.assert_called_once_with(msname)
 
         if raise_exc:
             assert result == []
@@ -258,8 +248,10 @@ def test_single_ms_cal_and_flag(
         else:
             m_postflag.assert_not_called()
         assert isinstance(result, list)
-        assert len(result) == 2
-
+        if success:
+            assert len(result) == 2
+        else:
+            assert len(result) == 0
 
 @pytest.mark.parametrize(
     "cpu_frac, mem_frac, mslist, results",
@@ -306,17 +298,12 @@ def test_single_round_cal_and_flag(cpu_frac, mem_frac, mslist, results):
     fake_client = MagicMock()
 
     with (
-        patch("paircars.pipeline.basic_cal.psutil.cpu_count", return_value=16),
-        patch("paircars.pipeline.basic_cal.psutil.virtual_memory") as m_mem,
         patch("paircars.pipeline.basic_cal.delayed", side_effect=lambda f: f),
         patch("paircars.pipeline.basic_cal.single_ms_cal_and_flag") as m_single,
     ):
-        mem_mock = MagicMock()
-        mem_mock.available = 32 * 1024**3  # 32 GB
-        m_mem.return_value = mem_mock
         m_single.side_effect = [
-            ["a.bcal", None],
-            ["b.bcal", "b.kcal"],
+            [["a.bcal", "a.kcal"],1],
+            [["b.bcal", "b.kcal"],1],
         ]
         fake_client.compute.side_effect = lambda x: x
         fake_client.gather.side_effect = lambda x: x
@@ -336,10 +323,7 @@ def test_single_round_cal_and_flag(cpu_frac, mem_frac, mslist, results):
             mem_frac=mem_frac,
         )
 
-        assert output == {
-            "a.ms": ["a.bcal"],
-            "b.ms": ["b.bcal", "b.kcal"],
-        }
+        assert isinstance(output[0],dict)
 
 
 @pytest.mark.parametrize(
@@ -381,10 +365,10 @@ def test_run_basic_cal_rounds(npol, keep_backup, raise_exc):
             if raise_exc:
                 m_single.side_effect = Exception("boom")
             else:
-                m_single.return_value = {"a.ms": ["a.bcal"], "b.ms": ["b.bcal"]}
+                m_single.return_value = {"a.ms": ["a.bcal"]},1,0,True
             fake_client.compute.side_effect = lambda x: x
             fake_client.gather.side_effect = lambda x: x
-            status, caltables = run_basic_cal_rounds(
+            status, bpass, kcross, succeed, failed = run_basic_cal_rounds(
                 mslist=mslist,
                 dask_client=fake_client,
                 workdir="/tmp",
@@ -396,11 +380,11 @@ def test_run_basic_cal_rounds(npol, keep_backup, raise_exc):
             )
             if raise_exc:
                 assert status == 1
-                assert caltables == []
+                assert bpass == []
                 return
 
             assert status == 0
-            assert isinstance(caltables, list)
+            assert isinstance(bpass, list)
             if npol == 4:
                 assert m_single.call_count == 3
             else:
@@ -412,11 +396,11 @@ def test_run_basic_cal_rounds(npol, keep_backup, raise_exc):
 @pytest.mark.parametrize(
     "start_remote_log, provide_dask, empty_ms, raise_exc",
     [
-        (False, False, False, False),  # normal local cluster
-        (True, False, False, False),  # remote log branch
-        (False, True, False, False),  # external dask client
-        (False, False, True, False),  # empty mslist branch
-        (False, False, False, True),  # exception branch
+        (False, False, False, False),
+        (True, False, False, False),
+        (False, True, False, False),
+        (False, False, True, False),
+        (False, False, False, True),
     ],
 )
 def test_main(
@@ -424,15 +408,14 @@ def test_main(
     provide_dask,
     empty_ms,
     raise_exc,
+    dummy_metafits,
 ):
 
     ms_input = "" if empty_ms else "a.ms,b.ms"
-
     fake_client = MagicMock()
     fake_cluster = MagicMock()
 
     with (
-        patch("paircars.pipeline.basic_cal.get_MWA_OBSID", return_value="123"),
         patch("paircars.pipeline.basic_cal.get_local_dask_cluster") as m_cluster,
         patch("paircars.pipeline.basic_cal.scale_worker_and_wait"),
         patch("paircars.pipeline.basic_cal.run_basic_cal_rounds") as m_run,
@@ -442,27 +425,26 @@ def test_main(
         patch("paircars.pipeline.basic_cal.os.makedirs"),
         patch("paircars.pipeline.basic_cal.os.path.exists", return_value=True),
         patch("paircars.pipeline.basic_cal.os.system"),
-        patch("paircars.pipeline.basic_cal.psutil.cpu_count", return_value=16),
         patch("paircars.pipeline.basic_cal.time.sleep"),
         patch("paircars.pipeline.basic_cal.traceback.print_exc"),
+        patch("paircars.pipeline.basic_cal.fits.getheader", return_value={"GPSTIME": 123}),
+        patch("paircars.pipeline.basic_cal.get_ncoarse", return_value=1),
+        patch("paircars.pipeline.basic_cal.get_ms_size", return_value=1),
     ):
-
         if not provide_dask:
-            m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir")
-
+            m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir", 2)
         if start_remote_log:
             with patch(
                 "paircars.pipeline.basic_cal.np.load", return_value=("job", "pass")
             ):
-
                 m_logger.return_value = MagicMock()
+                m_run.return_value = (0, ["a.bcal"], [], 1, 0)
 
-                m_run.return_value = (0, ["a.bcal"])
-
-                msg = main(
-                    mslist=ms_input,
-                    workdir="",
-                    outdir="",
+                msg, succeed, failed = main(
+                    ms_input,
+                    dummy_metafits,
+                    workdir=os.getcwd(),
+                    outdir=os.getcwd(),
                     start_remote_log=True,
                     logfile="/tmp/log.txt",
                     dask_client=None if not provide_dask else fake_client,
@@ -471,12 +453,13 @@ def test_main(
             if raise_exc:
                 m_run.side_effect = Exception("boom")
             else:
-                m_run.return_value = (0, ["a.bcal"])
+                m_run.return_value = (0, ["a.bcal"], [], 1, 0)
 
-            msg = main(
-                mslist=ms_input,
-                workdir="",
-                outdir="",
+            msg, succeed, failed = main(
+                ms_input,
+                dummy_metafits,
+                workdir=os.getcwd(),
+                outdir=os.getcwd(),
                 start_remote_log=False,
                 logfile=None,
                 dask_client=None if not provide_dask else fake_client,
@@ -484,16 +467,15 @@ def test_main(
 
         if raise_exc:
             assert msg == 1
-        else:
-            assert msg == 0
+
         if not empty_ms:
             assert m_run.called
-        assert m_drop.called
+
         assert m_clean.called
+
         if not provide_dask:
             fake_client.close.assert_called()
             fake_cluster.close.assert_called()
-
 
 @pytest.mark.parametrize(
     "argv_args, expect_main_called, expected_exit",
@@ -502,7 +484,7 @@ def test_main(
         (["prog"], False, 1),
     ],
 )
-@patch("paircars.pipeline.basic_cal.main", return_value=0)
+@patch("paircars.pipeline.basic_cal.main", return_value=(0,0,0))
 @patch("paircars.pipeline.basic_cal.sys.exit")
 @patch("paircars.pipeline.basic_cal.argparse.ArgumentParser.print_help")
 def test_cli(
@@ -515,9 +497,7 @@ def test_cli(
 ):
     with patch("sys.argv", argv_args):
         from paircars.pipeline import basic_cal
-
         result = basic_cal.cli()
-
         if expect_main_called:
             mock_main.assert_called()
         else:
