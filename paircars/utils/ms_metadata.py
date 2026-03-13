@@ -108,13 +108,18 @@ def get_timeranges(
             )
             time_ranges.append(t)
             return time_ranges
-    end_time - start_time
     timeres = times[1] - times[0]
     ntime_chunk = max(1, int(time_interval / timeres))
     ntime = int(time_window / timeres)
-    for i in range(0, len(times), ntime_chunk):
-        start_time = times[i]
-        end_time = times[i + ntime]
+    for i in range(0, len(times)+ntime_chunk, ntime_chunk):
+        try:
+            start_time = times[i]
+        except Exception:   
+            start_time = times[-1]
+        try:
+            end_time = times[i + ntime]
+        except Exception:
+            end_time = times[-1]
         if end_time > start_time:
             time_ranges.append(
                 f"{mjdsec_to_timestamp(start_time, str_format=1)}~{mjdsec_to_timestamp(end_time, str_format=1)}"
@@ -123,12 +128,6 @@ def get_timeranges(
             time_ranges.append(f"{mjdsec_to_timestamp(start_time, str_format=1)}")
         else:
             pass 
-    ###########################################################################
-    # Always add edge time to make interpolation of gains, not extrapolation
-    ###########################################################################
-    edge_time = mjdsec_to_timestamp(times[-1], str_format=1)
-    if edge_time not in time_ranges:
-        time_ranges.append(edge_time)
     return time_ranges
 
 

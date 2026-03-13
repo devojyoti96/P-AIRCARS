@@ -3115,9 +3115,8 @@ def master_control(
                             f"More than 80% channels are flagged for ms: {selfcalms}. Not using for self-calibration."
                         )
                 selfcal_mslist = filtered_selfcalms_list
-            #else:
-            
-            selfcal_applymode = "calflag" #TODO: checking 
+            else:
+                selfcal_applymode = "calflag"
 
             ###############################################
             # Performing sidereal correction before selfcal
