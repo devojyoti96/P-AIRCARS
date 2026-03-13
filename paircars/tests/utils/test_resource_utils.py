@@ -12,12 +12,14 @@ from paircars.utils.resource_utils import *
 def test_drop_file_cache(
     mock_advise, mock_close, mock_open, mock_isfile, mock_platform, capsys
 ):
-    drop_file_cache("/dummy/file", verbose=True)
+    os.system(f"touch {os.getcwd()}/dummyfile")
+    drop_file_cache(f"{os.getcwd()}/dummyfile", verbose=True)
     mock_open.assert_called_once()
     mock_close.assert_called_once()
     mock_advise.assert_called_once_with(42, 0, 0, 4)
     out = capsys.readouterr().out
-    assert "[cache drop] Released: /dummy/file" in out
+    assert f"[cache drop] Released: {os.getcwd()}/dummyfile" in out
+    os.system(f"rm -rf {os.getcwd()}/dummyfile")
 
 
 @patch("paircars.utils.resource_utils.platform.system", return_value="Linux")

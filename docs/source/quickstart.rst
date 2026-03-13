@@ -7,13 +7,13 @@ P-AIRCARS is distributed on
 
    .. code-block:: bash
 
-      conda create -n paircars_env --override-channels -c conda-forge python=3.10 gcc_linux-64=14 gxx_linux-64=14 gfortran_linux-64=14 cmake pkg-config pip
+      conda create -n paircars_env python=3.10 gcc_linux-64=14 gxx_linux-64=14 gfortran_linux-64=14 cmake pkg-config pip
       
       conda activate paircars_env
       
-  .. note::
-  
-     We suggest using **Mamba** for fast conda installtion and environment creation.
+.. note::
+
+ We suggest using **Mamba** for fast conda installtion and environment creation.
 
 2. Install P-AIRCARS in conda environment
 

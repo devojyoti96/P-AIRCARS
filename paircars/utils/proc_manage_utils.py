@@ -167,7 +167,7 @@ def scale_worker_and_wait(
         print(f"Successfully scaled to {nworker} workers")
         return 0
     except TimeoutError:
-        workers = len(dask_client.scheduler_info()["workers"])
+        workers = get_total_worker(dask_client)
         print(f"Scaling timeout. Current workers: {workers}")
         return 1
 
@@ -179,6 +179,7 @@ def get_local_dask_cluster(
     min_mem=1,
     max_worker=-1,
     spill_frac=0.7,
+    wait_time=60.0,
     verbose=True,
 ):
     """
@@ -198,6 +199,8 @@ def get_local_dask_cluster(
         Maximum worker
     spill_frac : float, optional
         Spill to disk at this fraction
+    wait_time : float, optional
+        Wait time in seconds
     verbose : bool, optional
         Verbose (details of cluster)
 
@@ -214,6 +217,7 @@ def get_local_dask_cluster(
     """
     cpu_frac = min(abs(cpu_frac), 0.8)
     mem_frac = min(abs(mem_frac), 0.8)
+    max_worker = max(2, max_worker)
     logging.getLogger("distributed").setLevel(logging.ERROR)
     print("Creating local cluster on the current node.")
     # Set up Dask working directories
@@ -221,7 +225,7 @@ def get_local_dask_cluster(
     os.makedirs(dask_dir, exist_ok=True)
     dask_dir_tmp = f"{dask_dir}/tmp"
     os.makedirs(dask_dir_tmp, exist_ok=True)
-
+    min_mem = max(0.1,min_mem)
     try:
         # Raise file descriptor limit
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -244,11 +248,11 @@ def get_local_dask_cluster(
             usable_mem = round(total_mem * mem_frac, 2)
             n_worker_mem = int(usable_mem / min_mem)
             if n_worker_mem < 2:
-                if total_time > 60:
+                if total_time > wait_time:
                     print(
                         "Minimum available memory is not sufficient for at-least 2 workers."
                     )
-                    return
+                    return None, None, dask_dir, n_worker_mem
                 else:
                     time.sleep(1)
                     total_time += 1

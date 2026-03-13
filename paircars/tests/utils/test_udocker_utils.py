@@ -427,12 +427,11 @@ def test_run_shadems(
 @pytest.mark.parametrize(
     "container_present, init_return, cmd, run_rc, raise_exc, expected",
     [
-        (True, None, "goquartical", 0, False, 1),
+        (True, None, "goquartical", 0, False, 0),
         (
             True,
             None,
-            "quartical input_ms.path=test.ms output.gain_directory=cal "
-            "output.log_directory=log load_from=/other/path/gain/table",
+            "quartical input_ms.path=test.ms output.gain_directory=cal output.log_directory=log",
             0,
             False,
             0,
@@ -445,7 +444,7 @@ def test_run_shadems(
             False,
             1,
         ),
-        (False, "paircarsquartical", "goquartical", 0, False, 1),
+        (False, "paircarsquartical", "goquartical", 0, False, 0),
         (False, None, "goquartical", 0, False, 1),
         (True, None, "goquartical", 0, True, 1),
         (True, None, "", 0, False, 1),

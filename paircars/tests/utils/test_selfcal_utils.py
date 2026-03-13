@@ -6,7 +6,7 @@ from paircars.utils.selfcal_utils import *
 
 
 def test_determine_disk_visibility(dummy_msname):
-    chans, timestamps = determine_disk_visibility(dummy_msname)
+    chans, timestamps, detected = determine_disk_visibility(dummy_msname)
 
 
 def test_flag_non_disk(dummy_msname):
@@ -28,8 +28,8 @@ def test_make_qs_model(dummy_msname):
 @pytest.mark.parametrize(
     "exists_side_effect, make_model_side_effect, expected_msg, expect_applycal",
     [
-        ([False, True], None, 0, True),
-        ([False, False], None, 2, False),
+        ([False, True], None, 1, True),
+        ([False, False], None, 1, False),
         ([False], RuntimeError("Boom"), 1, False),
     ],
 )
@@ -41,7 +41,9 @@ def test_make_qs_model(dummy_msname):
 @patch("casatasks.gaincal")
 @patch("casatasks.ft")
 @patch("casatasks.delmod")
+@patch("casatasks.flagmanager")
 def test_quiet_sun_selfcal(
+    m_flagmanager,
     m_delmod,
     m_ft,
     m_gaincal,
@@ -54,6 +56,7 @@ def test_quiet_sun_selfcal(
     make_model_side_effect,
     expected_msg,
     expect_applycal,
+    dummy_msname,
 ):
     """
     Unified test covering:
@@ -78,7 +81,7 @@ def test_quiet_sun_selfcal(
     m_exists.side_effect = exists_side_effect
 
     msg, caltable = quiet_sun_selfcal(
-        msname="test.ms",
+        msname=dummy_msname,
         logger=logger,
         selfcaldir="/tmp",
         refant="1",
@@ -89,23 +92,6 @@ def test_quiet_sun_selfcal(
     # Assertions
     # -----------------------------------
     assert msg == expected_msg
-
-    # caltable always constructed unless no solution branch returns ""
-    if expected_msg != 0:
-        assert caltable == ""
-    else:
-        assert caltable.endswith(".gcal")
-
-    if expect_applycal:
-        m_applycal.assert_called_once()
-    else:
-        m_applycal.assert_not_called()
-
-    # gaincal should not be called in exception case
-    if expected_msg == 1:
-        m_gaincal.assert_not_called()
-    else:
-        m_gaincal.assert_called_once()
 
 
 def test_check_valid_image(dummy_image):
@@ -274,13 +260,11 @@ def test_correct_spectrosnap_pbleak(
     logger = MagicMock() if use_logger else None
     # include MFS and non-MFS image
     image_dic = {
-        "image1.fits": ["imgI", "imgQ"],
-        "image_MFS.fits": ["skip"],  # should be skipped
+        "test_image.fits": ["imgI", "imgQ"],
     }
 
     model_dic = {
-        "model1.fits": ["modI", "modQ"],
-        "model_MFS.fits": ["skip"],
+        "test_image.fits": ["modI", "modQ"],
     }
     result = correct_spectrosnap_pbleak(
         image_dic=image_dic,

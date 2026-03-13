@@ -305,6 +305,11 @@ def plot_quartical_tables(caltables, output_prefix, ncols=3, nrows=3):
                         miny = np.nanmin(x)
                         maxy = np.nanmax(x)
                         pad = 0.1 * (maxy - miny)
+                    if axes is None:
+                        return 1, []
+
+                    if not isinstance(axes, np.ndarray):
+                        axes = np.array([axes])
                     axes = axes.flatten()
                     for i, ant in enumerate(all_ants[idx : idx + plots_per_fig]):
                         ax = axes[i]

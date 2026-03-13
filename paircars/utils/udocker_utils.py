@@ -689,7 +689,10 @@ def run_shadems(
         msname = splited_cmd[-1]
         datapath = os.path.dirname(os.path.abspath(msname))
     temp_name = "shadems_udocker_" + next(tempfile._get_candidate_names())
-    temp_docker_path = os.path.join(datapath, temp_name)
+    if datapath is not None:
+        temp_docker_path = os.path.join(datapath, temp_name)
+    else:
+        temp_docker_path = os.path.join(os.getcwd(), temp_name)
     if splited_cmd[-1] not in ["-h", "--help"]:
         cmd = f"{' '.join(splited_cmd[:-1])} {temp_docker_path}/{os.path.basename(msname)}"
     cmd_args = cmd.split(" ")
@@ -763,7 +766,10 @@ def run_quartical(
     gain_path = None
     if len(splited_cmd) == 1 and "goquartical" in cmd:
         temp_name = "quartical_udocker_" + next(tempfile._get_candidate_names())
-        temp_docker_path = os.path.join(datapath, temp_name)
+        if datapath is not None:
+            temp_docker_path = os.path.join(datapath, temp_name)
+        else:
+            temp_docker_path = os.path.join(os.getcwd(), temp_name)
     elif len(splited_cmd) > 1:
         for i in range(len(splited_cmd)):
             cmd_arg = splited_cmd[i]

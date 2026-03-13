@@ -173,7 +173,6 @@ def flag_non_disk(msname):
         Measurement set
     """
     from casatasks import flagdata
-
     try:
         chans, timestamps, detected_timestamps = determine_disk_visibility(msname)
         if len(detected_timestamps) == 0:
@@ -195,7 +194,7 @@ def flag_non_disk(msname):
                         flagbackup=False,
                     )
                 except Exception:
-                    pass
+                    continue
             unflag_chans, flag_chans = get_chans_flag(msname)
             if len(unflag_chans) == 0:
                 return 1

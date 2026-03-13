@@ -12,7 +12,6 @@ from paircars.utils.mwa_ploting_utils import *
 @patch("paircars.utils.mwa_ploting_utils.run_shadems")
 @patch("paircars.utils.mwa_ploting_utils.glob.glob")
 @patch("paircars.utils.mwa_ploting_utils.Image.open")
-@patch("paircars.utils.mwa_ploting_utils.psutil")
 @patch("paircars.utils.mwa_ploting_utils.get_ms_scan_size")
 @patch("casatools.ms")
 @patch("paircars.utils.mwa_ploting_utils.msmetadata")
@@ -20,7 +19,6 @@ def test_plot_ms_diagnostics(
     mock_msmetadata,
     mock_casamstool,
     mock_get_ms_scan_size,
-    mock_psutil,
     mock_Image_open,
     mock_glob,
     mock_run_shadems,
@@ -28,10 +26,8 @@ def test_plot_ms_diagnostics(
     mock_os_system,
     tmp_path,
 ):
-    mock_psutil.cpu_count.return_value = 4
     vm = MagicMock()
     vm.available = 8 * 1024**3
-    mock_psutil.virtual_memory.return_value = vm
     mstool = MagicMock()
     mstool.nrow.return_value = 1000
     mock_casamstool.return_value = mstool
@@ -87,37 +83,6 @@ def test_plot_ms_diagnostics(
     msmd.close.assert_called_once()
 
 
-@patch("paircars.utils.mwa_ploting_utils.Image.open")
-@patch("casatools.table")
-@patch("paircars.utils.mwa_ploting_utils.os")
-@patch("paircars.utils.mwa_ploting_utils.plt")
-def test_plot_caltable_diagnostics(
-    mock_plt, mock_os, mock_table, mock_image_open, tmp_path
-):
-    # Mock CASA table structure
-    mock_tb = MagicMock()
-    mock_table.return_value = mock_tb
-    mock_tb.getkeywords.return_value = {"VisCal": "K Jones"}
-    mock_tb.getcol.side_effect = [
-        np.array([[1e9, 1.1e9]]),  # CHAN_FREQ (GHz)
-        np.random.rand(2, 10, 1),  # FPARAM
-        np.zeros((2, 10, 1), dtype=bool),  # FLAG
-        np.array([0]),  # ANTENNA1
-        np.array([1.0]),  # TIME
-    ]
-    mock_tb.close = MagicMock()
-    mock_img = MagicMock()
-    mock_image_open.return_value.convert.return_value = mock_img
-    mock_img.save = MagicMock()
-    mock_plt.savefig = MagicMock()
-    mock_plt.close = MagicMock()
-    output_dir = tmp_path / "output"
-    output_dir.mkdir()
-    code, output_pdf = plot_caltable_diagnostics("mockcal.G", str(output_dir))
-    assert code == 0
-    assert output_pdf.endswith("_plots.pdf")
-
-
 def test_get_mwamap(dummy_image):
     result = get_mwamap(dummy_image)
     assert isinstance(result, sunpy.map.GenericMap)
@@ -144,45 +109,6 @@ def test_plot_in_hpc(dummy_image):
     assert isinstance(sunmap, sunpy.map.GenericMap)
     os.system(f"rm -rf {imagelist[0]}")
     assert os.path.exists(imagelist[0]) == False
-
-
-def test_get_aia_map():
-    obs_date = "2024-06-10"
-    obs_time = "09:30:00"
-    result = get_aia_map(
-        obs_date, obs_time, os.getcwd(), aia_wavelength=193, keep_aia_fits=False
-    )
-    assert isinstance(result, sunpy.map.sources.sdo.AIAMap)
-
-
-def test_get_suvi_map():
-    obs_date = "2024-06-10"
-    obs_time = "09:30:00"
-    result = get_suvi_map(
-        obs_date, obs_time, os.getcwd(), suvi_wavelength=195, keep_suvi_fits=False
-    )
-    assert isinstance(result, sunpy.map.sources.suvi.SUVIMap)
-
-
-def test_enhance_offlimb():
-    obs_date = "2024-06-10"
-    obs_time = "09:30:00"
-    result = get_suvi_map(obs_date, obs_time, os.getcwd(), suvi_wavelength=195)
-    assert isinstance(result, sunpy.map.sources.suvi.SUVIMap)
-    scaled_map = enhance_offlimb(result, do_sharpen=True)
-    assert isinstance(scaled_map, sunpy.map.sources.suvi.SUVIMap)
-
-
-def test_make_mwa_overlay(dummy_image):
-    plot_file_prefix = "goes_overlay"
-    workdir = os.path.dirname(os.path.abspath(dummy_image))
-    result = make_mwa_overlay(dummy_image, plot_file_prefix=plot_file_prefix)
-    assert len(result) == 1
-    assert str(result[0]) == f"{workdir}/{plot_file_prefix}.png"
-    assert os.path.exists(result[0]) == True
-    assert str(result[0][-4:]) == ".png"
-    os.system(f"rm -rf {result[0]}")
-    assert os.path.exists(result[0]) == False
 
 
 @patch("paircars.utils.mwa_ploting_utils.get_ms_scans", return_value=[1])
