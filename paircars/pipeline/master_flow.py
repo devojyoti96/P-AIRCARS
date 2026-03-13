@@ -905,9 +905,10 @@ def run_selfcal_jobs(
     cal_applied,
     start_thresh=5.0,
     stop_thresh=3.0,
-    max_iter=100,
+    max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    intselfcal_min_iter=3,
+    polselfcal_min_iter=5,
     conv_frac=0.3,
     solint="60s",
     do_apcal=True,
@@ -952,8 +953,10 @@ def run_selfcal_jobs(
         Maximum numbers of selfcal iterations
     max_DR : float, optional
         Maximum dynamic range
-    min_iter : int, optional
-        Minimum numbers of seflcal iterations at different stages
+    intselfcal_min_iter : int, optional
+        Minimum numbers of intensity seflcal iterations at different stages
+    polselfcal_min_iter : int, optional
+        Minimum numbers of polarisation selfcal iterations
     conv_frac : float, optional
         Dynamic range fractional change to consider as converged
     uvrange : str, optional
@@ -1026,7 +1029,8 @@ def run_selfcal_jobs(
                 stop_thresh=float(stop_thresh),
                 max_iter=float(max_iter),
                 max_DR=float(max_DR),
-                min_iter=float(min_iter),
+                intselfcal_min_iter=int(intselfcal_min_iter),
+                polselfcal_min_iter=int(polselfcal_min_iter),
                 conv_frac=float(conv_frac),
                 solint=solint,
                 uvrange=uvrange,

@@ -69,7 +69,7 @@ def do_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    min_iter=3,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -308,7 +308,7 @@ def do_selfcal(
         use_previous_model = False
         nondisk_flag = True
         min_DR = 0
-        min_iter = max(5, min_iter)  # Minimum 5 iterations
+        min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -942,7 +942,7 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = False
-            elif num_iter < 1:
+            elif num_iter < 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
@@ -1212,7 +1212,8 @@ def do_full_selfcal(
     end_threshold=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    intselfcal_min_iter=3,
+    polselfcal_min_iter=5,
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
@@ -1267,7 +1268,7 @@ def do_full_selfcal(
         end_threshold=end_threshold,
         max_iter=max_iter,
         max_DR=max_DR,
-        min_iter=max(5, min_iter),
+        min_iter=max(3, intselfcal_min_iter),
         DR_convergence_frac=DR_convergence_frac,
         uvrange=uvrange,
         minuv=minuv,
@@ -1295,7 +1296,7 @@ def do_full_selfcal(
             metafits=metafits,
             max_iter=max(10, int(max_iter / 3)),
             max_DR=max_DR,
-            min_iter=max(5, min_iter),
+            min_iter=max(5, polselfcal_min_iter),
             threshold=end_threshold,
             DR_convergence_frac=DR_convergence_frac,
             uvrange=uvrange,
@@ -1327,7 +1328,8 @@ def main(
     stop_thresh=3,
     max_iter=30,
     max_DR=100000,
-    min_iter=5,
+    intselfcal_min_iter=3,
+    polselfcal_min_iter=5,
     conv_frac=0.1,
     solint="60s",
     uvrange="",
@@ -1370,8 +1372,10 @@ def main(
         Maximum number of self-calibration iterations. Default is 30.
     max_DR : float, optional
         Maximum dynamic range allowed before halting iterations. Default is 100000.
-    min_iter : int, optional
-        Minimum number of iterations before checking for convergence. Default is 5.
+    intselfcal_min_iter : int, optional
+        Minimum number of iterations before checking for convergence for intensity selfcal. Default is 3.
+    polselfcal_min_iter : int, optional
+        Minimum number of iterations before checking for convergence for polarisation selfcal. Default is 5.
     conv_frac : float, optional
         Convergence criterion: fractional change in dynamic range below which iteration stops. Default is 0.1.
     solint : str, optional
@@ -1542,7 +1546,8 @@ def main(
                 end_threshold=float(stop_thresh),
                 max_iter=int(max_iter),
                 max_DR=float(max_DR),
-                min_iter=int(min_iter),
+                intselfcal_min_iter = int(intselfcal_min_iter),
+                polselfcal_min_iter=int(polselfcal_min_iter),
                 DR_convergence_frac=float(conv_frac),
                 uvrange=str(uvrange),
                 minuv=float(minuv),
@@ -1867,10 +1872,17 @@ def cli():
         metavar="Float",
     )
     adv_args.add_argument(
-        "--min_iter",
+        "--intselfcal_min_iter",
+        type=int,
+        default=3,
+        help="Minimum number of intensity selfcal iterations",
+        metavar="Integer",
+    )
+    adv_args.add_argument(
+        "--polselfcal_min_iter",
         type=int,
         default=5,
-        help="Minimum number of selfcal iterations",
+        help="Minimum number of polarisation selfcal iterations",
         metavar="Integer",
     )
     adv_args.add_argument(
@@ -1979,7 +1991,8 @@ def cli():
         stop_thresh=args.stop_thresh,
         max_iter=args.max_iter,
         max_DR=args.max_DR,
-        min_iter=args.min_iter,
+        intselfcal_min_iter=args.intselfcal_min_iter,
+        polselfcal_min_iter=args.polselfcal_min_iter,
         conv_frac=args.conv_frac,
         solint=args.solint,
         uvrange=args.uvrange,
