@@ -1749,18 +1749,18 @@ def main(
 
             if len(gcal_list) > 0:
                 print("#####################################################")
-                print(f"Final gaincal selfcal caltables:")
+                print("Final gaincal selfcal caltables:")
                 for gcal in gcal_list:
                     print(gcal)
                 msg = 0
                 if len(bpass_list) > 0:
                     print("#####################################################")
-                    print(f"Final bandpass selfcal caltables:")
+                    print("Final bandpass selfcal caltables:")
                     for bpass in bpass_list:
                         print(bpass)
                 if len(dcal_list) > 0:
                     print("#####################################################")
-                    print(f"Final polarisation selfcal caltables:")
+                    print("Final polarisation selfcal caltables:")
                     for dcal in dcal_list:
                         print(dcal)
                 print("#####################################################")

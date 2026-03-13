@@ -31,7 +31,6 @@ from .image_utils import (
 )
 from .udocker_utils import run_wsclean, run_quartical
 
-
 def cal_crossphase(imagename):
     """
     Function to calculate Stokes U, V leakage through correlation analysis

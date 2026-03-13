@@ -377,18 +377,17 @@ def submit_local_master_flow(args, jobid):
         print(f"Batch script: {script_path} is ready for submission.")
         print(f"Main logger: {log_file}")
         print("######################################################")
-        seen = set()
         try:
             # Always run job in background
             with open(log_file, "a", buffering=1) as log:
-                process = subprocess.Popen(
+                subprocess.Popen(
                     ["bash", script_path],
                     stdout=log,
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
                     bufsize=1,
                 )
-            print(f"Master flow started in background")
+            print("Master flow started in background")
             print(f"Main log: {log_file}")
             if not log2term:
                 return 0

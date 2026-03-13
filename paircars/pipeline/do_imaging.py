@@ -701,10 +701,6 @@ def run_all_imaging(
             num_pixel_in_psf = calc_npix_in_psf(weight, robust=robust)
             cellsize = calc_cellsize(ms, num_pixel_in_psf)
             instrument_fov = calc_field_of_view(ms, FWHM=False)
-            msmd = msmetadata()
-            msmd.open(ms)
-            freqMHz = msmd.meanfreq(0, unit="MHz")
-            msmd.close()
             cutout_rsun_arcsec = cutout_rsun * 16 * 60
             fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
             imsize = int(fov / cellsize)

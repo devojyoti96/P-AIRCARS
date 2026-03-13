@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
 from pyfiglet import Figlet
+from collections import deque
 from paircars.utils.basic_utils import get_cachedir
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
@@ -502,7 +503,6 @@ def submit_slurm_master_flow(args, jobid):
             else:
                 print("Streaming logs to terminal...\n")
                 last_lines = deque(maxlen=50)
-                seen = set()
                 only_run_print = False
                 with open(log_file, "r") as log:
                     log.seek(0, os.SEEK_END)
@@ -512,29 +512,23 @@ def submit_slurm_master_flow(args, jobid):
                             time.sleep(0.5)
                             continue
                         last_lines.append(line)
-                        last_line = last_lines[-1]
                         if (
-                            "task run" in last_line.lower()
-                            or "flow_run" in last_line.lower()
-                        ) and not only_run_print:
-                            only_run_print = True
-
-                        if not only_run_print or (
-                            only_run_print
-                            and (
-                                "task run" in line.lower() or "flow run" in line.lower()
-                            )
+                            "task run" in line.lower()
+                            or "flow run" in line.lower()
                         ):
-                            if line not in seen:
-                                seen.add(line)
-                                sys.stdout.write(line)
-                                sys.stdout.flush()
+                            only_run_print = True
+                        if not only_run_print or (
+                            "task run" in line.lower()
+                            or "flow run" in line.lower()
+                        ):
+                            sys.stdout.write(line)
+                            sys.stdout.flush()
                         if (
                             "flow run" in line.lower()
                             and "finished in state completed" in line.lower()
                         ):
                             break
-                    return 0
+                            return 0
         else:
             print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
         return 0 if exit_code == 0 else 1
