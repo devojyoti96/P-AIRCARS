@@ -1,5 +1,44 @@
+import pytest
 from paircars.utils.imaging import *
 
+
+@pytest.mark.parametrize(
+    "n,expected",
+    [
+        (1, True),
+        (2, True),
+        (3, True),
+        (5, True),
+        (7, True),
+        (30, True),   # 2*3*5
+        (49, True),   # 7^2
+        (11, False),
+        (13, False),
+        (121, False),  # 11^2
+    ],
+)
+def test_is_fft_good(n, expected):
+    assert is_fft_good(n) == expected
+
+
+@pytest.mark.parametrize(
+    "n,expected",
+    [
+        (1, 2),     # edge case
+        (2, 2),
+        (3, 4),     # next power-of-two (<128 rule)
+        (10, 16),
+        (31, 32),
+        (64, 64),
+        (127, 128),
+        (128, 128),
+        (129, 140),  # next FFT-good number using 2,3,5,7 factors
+    ],
+)
+def test_get_fft_size(n, expected):
+    result = get_fft_size(n)
+    assert result >= n
+    assert result % 2 == 0
 
 def test_calc_sun_dia():
     assert calc_sun_dia(1000.0) == 34.2

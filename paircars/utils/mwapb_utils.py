@@ -5,8 +5,7 @@ import time
 import warnings
 import numpy as np
 import astropy.units as u
-#import paircars.utils.hyperbeam as mwa_hyperbeam
-import mwa_hyperbeam
+import paircars.utils.hyperbeam as mwa_hyperbeam
 from scipy.interpolate import RegularGridInterpolator
 from astropy.io import fits
 from astropy.time import Time

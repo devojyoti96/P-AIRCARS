@@ -25,9 +25,9 @@ def internet_available(timeout=10):
         return False
 
 
-def test_permission(path):
+def check_permission(path):
     """
-    Test read, write, execute permission of a file or directory
+    check read, write, execute permission of a file or directory
 
     Parameters
     ----------

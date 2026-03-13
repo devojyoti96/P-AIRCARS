@@ -6,7 +6,7 @@ import numpy as np
 from paircars.utils.basic_utils import (
     check_port_status,
     get_free_port,
-    test_permission,
+    check_permission,
 )
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import (
@@ -383,14 +383,14 @@ def cli():
         print("Please provide full path of output directory.")
         return 1
 
-    target_datadir_permission = test_permission(args.target_datadir)
+    target_datadir_permission = check_permission(args.target_datadir)
     if target_datadir_permission is False:
         print(
             f"Do not have permission for target data directory: {args.target_datadir}"
         )
         return
 
-    cal_datadir_permission = test_permission(args.cal_datadir)
+    cal_datadir_permission = check_permission(args.cal_datadir)
     if cal_datadir_permission is False:
         print(
             f"Do not have permission for calibrator data directory: {args.cal_datadir}"

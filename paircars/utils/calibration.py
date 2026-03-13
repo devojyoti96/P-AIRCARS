@@ -206,7 +206,7 @@ def interpolate_bpass(caltables, overwrite=False):
         tb.open(f"{outcal}/SPECTRAL_WINDOW")
         freqs = tb.getcol("CHAN_FREQ")
         tb.close()
-        pos = np.where(freqs == all_freqs_sorted)[0]
+        pos = np.searchsorted(all_freqs_sorted, freqs.flatten())
         interp_gain_out = interpolated_gains[:, pos, :]
         tb.open(outcal, nomodify=False)
         flags = tb.getcol("FLAG")
@@ -305,7 +305,7 @@ def interpolate_quartical(caltables, overwrite=False):
             gain_flag = gains[0].gain_flags.to_numpy()
             bool_gain_flag = gains[0].gain_flags.values.astype(bool)
             freqs = gains[0].gain_freq.to_numpy()
-            pos = np.where(freqs[:, None] == all_freqs_sorted)[0]
+            pos = np.searchsorted(all_freqs_sorted, freqs.flatten())
             interp_gain_out = interpolated_gains[:, pos, ...]
             gain_data[bool_gain_flag, :] = interp_gain_out[bool_gain_flag, :]
             gains[0].update(

@@ -128,3 +128,47 @@ def test_make_stokes_wsclean_imagecube(dummy_image):
     result = make_stokes_wsclean_imagecube([dummy_image], outfile_name)
     assert result == outfile_name
     os.system(f"rm -rf {outfile_name}")
+    
+@pytest.mark.parametrize(
+    "ctype_key",
+    ["CTYPE3", "CTYPE4"],
+)
+@patch("paircars.utils.image_utils.timestamp_to_mjdsec")
+@patch("paircars.utils.image_utils.fits.getheader")
+def test_filter_images(mock_getheader, mock_mjdsec, ctype_key):
+    headers = {
+        "img1.fits": {
+            ctype_key: "FREQ",
+            "CDELT3" if ctype_key == "CTYPE3" else "CDELT4": 2e6,
+            "CRVAL3" if ctype_key == "CTYPE3" else "CRVAL4": 100e6,
+            "DATE-OBS": "2023-01-01T00:00:00.000",
+        },
+        "img2.fits": {
+            ctype_key: "FREQ",
+            "CDELT3" if ctype_key == "CTYPE3" else "CDELT4": 2e6,
+            "CRVAL3" if ctype_key == "CTYPE3" else "CRVAL4": 100e6,
+            "DATE-OBS": "2023-01-01T00:01:30.000",
+        },
+        "img3.fits": {
+            ctype_key: "FREQ",
+            "CDELT3" if ctype_key == "CTYPE3" else "CDELT4": 1e6,  # lower BW
+            "CRVAL3" if ctype_key == "CTYPE3" else "CRVAL4": 100e6,
+            "DATE-OBS": "2023-01-01T00:02:00.000",
+        },
+    }
+    def header_side_effect(image):
+        return headers[image]
+    mock_getheader.side_effect = header_side_effect
+    times = {
+        "2023-01-01T00:00:00": 0,
+        "2023-01-01T00:01:30": 90,
+        "2023-01-01T00:02:00": 120,
+    }
+    mock_mjdsec.side_effect = lambda t, date_format=1: times[t]
+    imagelist = ["img1.fits", "img2.fits", "img3.fits"]
+    result = filter_images(imagelist, min_time_sep=60)
+    # img3 should be removed due to smaller BW
+    assert "img3.fits" not in result
+    # img1 and img2 should remain (90 sec separation)
+    assert "img1.fits" in result
+    assert "img2.fits" in result

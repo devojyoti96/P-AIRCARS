@@ -31,11 +31,9 @@ def test_reset_weights_and_flags(dummy_msname):
 @patch("paircars.utils.casatasks.limit_threads")
 @patch("paircars.utils.casatasks.os.system")
 @patch("paircars.utils.casatasks.os.path.exists", return_value=False)
-@patch("paircars.utils.casatasks.psutil.Process")
 @patch("paircars.utils.casatasks.msmetadata")
 def test_single_mstransform(
     mock_msmetadata,
-    mock_psutil_process,
     mock_exists,
     mock_system,
     mock_limit_threads,

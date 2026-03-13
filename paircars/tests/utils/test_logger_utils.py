@@ -134,7 +134,7 @@ def test_remote_logger_emit_success(mock_post):
         json={
             "job_id": "job123",
             "log_id": "log456",
-            "message": "This is a test message",
+            "message": "This is a test message\n",
             "password": "securepass",
             "first": False,
         },
@@ -186,7 +186,7 @@ def test_log_tail_handler_reads_new_lines():
 def test_create_logger():
     logfile = os.getcwd() + "/logfile"
     logname = "testlog"
-    result_logger, result_logfile = create_logger(logname, logfile, verbose=False)
+    result_logger, result_logfile = create_logger(logname, logfile)
     assert result_logfile == logfile
     assert os.path.exists(result_logfile) == True
     result_logger.info("Testing")
@@ -203,7 +203,7 @@ def test_create_logger():
         ),
         ("selfcal_target.log", "All self-calibrations"),
         (
-            "selfcal_1111474560_ch103-104_spw_0~7_selfcal.log.int",
+            "selfcal_1111474560_ch103-104_spw_0~7_selfcal_int.log",
             "Intensity self-calibration, OBSID: 1111474560, coarse channel: 103-104, spectral window: 0~7",
         ),
         (

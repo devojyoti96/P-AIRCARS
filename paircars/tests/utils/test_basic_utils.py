@@ -4,6 +4,12 @@ from unittest.mock import patch, MagicMock, mock_open
 from paircars.utils.basic_utils import *
 
 
+def test_check_permission():
+    cwd = os.getcwd()
+    assert check_permission(cwd) is True
+    assert check_permission("/") is False
+    
+
 def test_suppress_output_fd():
     with suppress_output():
         os.write(1, b"This should not appear\n")
