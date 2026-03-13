@@ -208,7 +208,7 @@ def applysol(
                                     "output.overwrite=True",
                                     "output.products=[corrected_data]",
                                     "output.columns=[CORRECTED_DATA]",
-                                    "output.flags=False",
+                                    "output.flags=True", # Checking TODO
                                     f"solver.terms=[{soltype}]",
                                     "solver.iter_recipe=[0]",
                                     "solver.propagate_flags=False",
