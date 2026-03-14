@@ -30,8 +30,6 @@ from paircars.pipeline.do_imaging import *
     "paircars.pipeline.do_imaging.create_circular_mask",
     return_value="solar_mask.fits",
 )
-@patch("paircars.pipeline.do_imaging.psutil.virtual_memory")
-@patch("paircars.pipeline.do_imaging.psutil.cpu_count", return_value=4)
 @patch("paircars.pipeline.do_imaging.init_logger")
 @patch(
     "paircars.pipeline.do_imaging.create_logger",
@@ -50,8 +48,6 @@ def test_perform_imaging(
     mock_ts_to_mjd,
     mock_create_logger,
     mock_init_logger,
-    mock_cpu_count,
-    mock_virt_mem,
     mock_create_mask,
     mock_psf,
     mock_sun_dia,
@@ -65,9 +61,6 @@ def test_perform_imaging(
     expected_status,
 ):
     # Setup mocks
-    mem_mock = MagicMock()
-    mem_mock.total = 16 * 1024**3  # 16 GB
-    mock_virt_mem.return_value = mem_mock
 
     msmd_inst = MagicMock()
     msmd_inst.meanfreq.return_value = 1400
@@ -103,8 +96,6 @@ def test_perform_imaging(
 @patch("paircars.pipeline.do_imaging.calc_field_of_view", return_value=1500.0)
 @patch("paircars.pipeline.do_imaging.calc_cellsize", return_value=5.0)
 @patch("paircars.pipeline.do_imaging.calc_npix_in_psf", return_value=3)
-@patch("paircars.pipeline.do_imaging.resource.setrlimit")
-@patch("paircars.pipeline.do_imaging.resource.getrlimit", return_value=(1024, 4096))
 @patch(
     "paircars.pipeline.do_imaging.initialize_wsclean_container",
     return_value="paircarswsclean",
@@ -127,8 +118,6 @@ def test_run_all_imaging(
     mock_check_col,
     mock_check_udocker,
     mock_init_container,
-    mock_getrlimit,
-    mock_setrlimit,
     mock_npix,
     mock_cellsize,
     mock_fov,
@@ -162,7 +151,7 @@ def test_run_all_imaging(
     # Dask client
     client = MagicMock()
     cluster = MagicMock()
-    mock_get_dask.return_value = (client, cluster, "/mock/dask_dir")
+    mock_get_dask.return_value = (client, cluster, "/mock/dask_dir", 1)
 
     # Imaging result
     client.compute.return_value = [MagicMock()]
@@ -174,7 +163,7 @@ def test_run_all_imaging(
     workdir = "/tmp/mockwork"
     outdir = "/tmp/mockout"
 
-    result = run_all_imaging(
+    result, succeed, failed, total_images  = run_all_imaging(
         mslist,
         client,
         workdir=workdir,
@@ -208,7 +197,11 @@ def test_run_all_imaging(
 @patch("paircars.pipeline.do_imaging.time.sleep", return_value=None)
 @patch("paircars.pipeline.do_imaging.traceback.print_exc", return_value=None)
 @patch("paircars.pipeline.do_imaging.run_all_imaging")
-def test_main_do_imaging(
+@patch("paircars.pipeline.do_imaging.os.chdir",return_value=True)
+@patch("paircars.pipeline.do_imaging.get_ncoarse",return_value=1)
+def test_main(
+    mock_ncoarse,
+    mock_chdir,
     mock_run_all_imaging,
     mock_trace,
     mock_sleep,
@@ -244,11 +237,12 @@ def test_main_do_imaging(
 
     mock_create_logger.return_value = (MagicMock(), "/mock/logfile")
     if compute_success:
-        mock_run_all_imaging.return_value = 0
+        mock_run_all_imaging.return_value = (0, 1, 0, 1)
     else:
         mock_run_all_imaging.side_effect = Exception("Mock failure")
+        
     dask_client = MagicMock()
-    msg = main(
+    msg, succeed, failed, total_images = main(
         mslist=mslist_str,
         workdir=workdir,
         outdir=outdir,
@@ -286,7 +280,7 @@ def test_main_do_imaging(
         ),
     ],
 )
-@patch("paircars.pipeline.do_imaging.main", return_value=0)
+@patch("paircars.pipeline.do_imaging.main", return_value= (0, 1, 0, 1))
 @patch("paircars.pipeline.do_imaging.sys.exit")
 @patch("paircars.pipeline.do_imaging.argparse.ArgumentParser.print_help")
 def test_cli_do_imaging(mock_print_help, mock_exit, mock_main, argv, should_exit):
@@ -295,3 +289,4 @@ def test_cli_do_imaging(mock_print_help, mock_exit, mock_main, argv, should_exit
 
         result = do_imaging.cli()
         assert result == should_exit
+        

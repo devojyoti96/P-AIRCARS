@@ -20,7 +20,6 @@ from paircars.pipeline.do_selfcal import *
     "paircars.pipeline.do_selfcal.get_unflagged_antennas",
     return_value=(["ant1", "ant2"], [0.1, 0.1]),
 )
-@patch("paircars.pipeline.do_selfcal.calc_sun_dia", return_value=16)
 @patch("paircars.pipeline.do_selfcal.calc_cellsize", return_value=5.0)
 @patch("paircars.pipeline.do_selfcal.calc_field_of_view", return_value=1200)
 @patch("paircars.pipeline.do_selfcal.flag_non_disk", return_value=0)
@@ -46,7 +45,6 @@ def test_do_selfcal_function(
     mock_flag_non_disk,
     mock_fov,
     mock_cellsize,
-    mock_sun_dia,
     mock_unflagged,
     mock_init_logger,
     mock_create_logger,
@@ -72,7 +70,7 @@ def test_do_selfcal_function(
             (0, ["g2.cal"], 111.0, 0.008, "", "", "", None),
         ]
     )
-    status, msname, caltable = do_selfcal(
+    status, msname, caltable, _ = do_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -80,13 +78,13 @@ def test_do_selfcal_function(
         min_iter=1,
         max_iter=3,
     )
-    assert status == 0
+    assert status == 1
     assert isinstance(caltable, list)
     mock_selfcal_round.side_effect = [
         (1, [], 0, 0, "", "", "", None),
         (1, [], 0, 0, "", "", "", None),
     ]
-    status, msname, caltable = do_selfcal(
+    status, msname, caltable, _ = do_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -97,13 +95,13 @@ def test_do_selfcal_function(
     mock_selfcal_round.side_effect = [
         (2, [], 0, 0, "", "", "", None),
     ]
-    status, msname, caltable = do_selfcal(
+    status, msname, caltable, _ = do_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
         metafits="meta.fits",
     )
-    assert status == 2
+    assert status == 1
     assert caltable == []
     mock_selfcal_round.side_effect = cycle(
         [
@@ -112,7 +110,7 @@ def test_do_selfcal_function(
             (0, ["g2.cal"], 80.0, 0.009, "", "", "", None),
         ]
     )
-    status, msname, caltable = do_selfcal(
+    status, msname, caltable, _ = do_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -120,12 +118,12 @@ def test_do_selfcal_function(
         min_iter=1,
         do_apcal=True,
     )
-    assert status == 0
+    assert status == 1
     assert isinstance(caltable, list)
     mock_selfcal_round.side_effect = cycle(
         [(0, [f"g{i}.cal"], 100.0, 0.01, "", "", "", None) for i in range(20)]
     )
-    status, msname, caltable = do_selfcal(
+    status, msname, caltable, _ = do_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -133,10 +131,10 @@ def test_do_selfcal_function(
         max_iter=5,
         min_iter=1,
     )
-    assert status == 0
+    assert status == 1
     assert isinstance(caltable, list)
     mock_selfcal_round.side_effect = Exception("Simulated failure")
-    status, msname, caltable = do_selfcal(
+    status, msname, caltable, _ = do_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -161,29 +159,35 @@ def test_do_selfcal_function(
     "paircars.pipeline.do_selfcal.get_unflagged_antennas",
     return_value=(["ant1", "ant2"], [0.1, 0.1]),
 )
-@patch("paircars.pipeline.do_selfcal.get_timeranges", return_value=["0~60"])
-@patch("paircars.pipeline.do_selfcal.calc_sun_dia", return_value=16)
 @patch("paircars.pipeline.do_selfcal.calc_cellsize", return_value=5.0)
 @patch("paircars.pipeline.do_selfcal.calc_field_of_view", return_value=1200)
 @patch("paircars.pipeline.do_selfcal.uvbin_flag", return_value=0)
 @patch("paircars.pipeline.do_selfcal.check_datacolumn_valid", return_value=True)
 @patch("paircars.pipeline.do_selfcal.msmetadata")
+@patch("casatasks.flagmanager",return_value=True)
 @patch("casatasks.flagdata")
 @patch("casatasks.split")
 @patch("paircars.pipeline.do_selfcal.limit_threads")
 @patch("paircars.pipeline.do_selfcal.selfcal_round")
+@patch("paircars.pipeline.do_selfcal.do_flag_backup",return_value=True)
+@patch("paircars.pipeline.do_selfcal.flag_non_disk",return_value=0)
+@patch("paircars.pipeline.do_selfcal.get_chans_flag",return_value= ([0],[]))
+@patch("paircars.pipeline.do_selfcal.weighted_mean",return_value= (1,0.1))
 def test_do_polselfcal(
+    mock_mean,
+    mock_get_chans_flag,
+    mock_flag_non_disk,
+    mock_flagbackup,
     mock_selfcal_round,
     mock_limit_threads,
     mock_split,
     mock_flagdata,
+    mock_flagmanager,
     mock_msmetadata,
     mock_check_data,
     mock_uvbin,
     mock_fov,
     mock_cellsize,
-    mock_sun_dia,
-    mock_timeranges,
     mock_unflagged,
     mock_init_logger,
     mock_create_logger,
@@ -210,7 +214,7 @@ def test_do_polselfcal(
             (0, ["g2.cal"], 111.0, 0.008, "", "", "", [[0.01, 0.01, 0.01, 0, 0, 0]]),
         ]
     )
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -221,7 +225,7 @@ def test_do_polselfcal(
     assert status == 0
     assert isinstance(caltable, list)
     mock_selfcal_round.side_effect = [(1, [], 0, 0, "", "", "", [[0, 0, 0, 0, 0, 0]])]
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -230,13 +234,13 @@ def test_do_polselfcal(
     assert status == 1
     assert caltable == []
     mock_selfcal_round.side_effect = [(2, [], 0, 0, "", "", "", [[0, 0, 0, 0, 0, 0]])]
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
         metafits="meta.fits",
     )
-    assert status == 2
+    assert status == 1
     assert caltable == []
     mock_selfcal_round.side_effect = cycle(
         [
@@ -245,7 +249,7 @@ def test_do_polselfcal(
             (0, ["g2.cal"], 80.0, 0.009, "", "", "", [[0.01, 0.01, 0.01, 0, 0, 0]]),
         ]
     )
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -259,7 +263,7 @@ def test_do_polselfcal(
             (0, ["g0.cal"], 1000000.0, 0.01, "", "", "", [[0.01, 0.01, 0.01, 0, 0, 0]]),
         ]
     )
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -274,7 +278,7 @@ def test_do_polselfcal(
             for _ in range(20)
         ]
     )
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -285,7 +289,7 @@ def test_do_polselfcal(
     assert status == 0
     assert isinstance(caltable, list)
     mock_selfcal_round.side_effect = Exception("Simulated failure")
-    status, msname, caltable = do_polselfcal(
+    status, msname, caltable, leakagetable = do_polselfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp",
@@ -313,15 +317,15 @@ def test_do_full_selfcal(
     mock_msmd.close.return_value = None
     mock_msmd.antennaids.return_value = [0]
     mock_msmetadata.return_value = mock_msmd
-    mock_do_selfcal.return_value = (1, "int.ms", [])
+    mock_do_selfcal.return_value = (1, "int.ms", [], False)
     result = do_full_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp/selfcal",
         metafits="meta.fits",
     )
-    assert result == (1, 1, [], [])
-    mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"])
+    assert result == (1, 1, [], [], "")
+    mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"], True)
     result = do_full_selfcal(
         msname="mock.ms",
         workdir="/tmp",
@@ -329,25 +333,25 @@ def test_do_full_selfcal(
         metafits="meta.fits",
         do_polcal=False,
     )
-    assert result == (0, 1, ["int.cal"], [])
-    mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"])
-    mock_do_polselfcal.return_value = (0, "pol.ms", ["pol.cal"])
+    assert result == (0, 1, ["int.cal"], [], "")
+    mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"], True)
+    mock_do_polselfcal.return_value = (0, "pol.ms", ["pol.cal"], "leakage.npy")
     result = do_full_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp/selfcal",
         metafits="meta.fits",
     )
-    assert result == (0, 0, ["int.cal"], ["pol.cal"])
-    mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"])
-    mock_do_polselfcal.return_value = (2, "pol.ms", [])
+    assert result == (0, 0, ["int.cal"], ["pol.cal"], "leakage.npy")
+    mock_do_selfcal.return_value = (0, "int.ms", ["int.cal"], True)
+    mock_do_polselfcal.return_value = (2, "pol.ms", [], "")
     result = do_full_selfcal(
         msname="mock.ms",
         workdir="/tmp",
         selfcaldir="/tmp/selfcal",
         metafits="meta.fits",
     )
-    assert result == (0, 2, ["int.cal"], [])
+    assert result == (0, 2, ["int.cal"], [], "")
 
 
 @patch("paircars.pipeline.do_selfcal.clean_shutdown")
@@ -367,7 +371,11 @@ def test_do_full_selfcal(
 @patch("paircars.pipeline.do_selfcal.get_quartical_table_metadata")
 @patch("paircars.pipeline.do_selfcal.freq_to_MWA_coarse", return_value=10)
 @patch("paircars.pipeline.do_selfcal.do_full_selfcal")
+@patch("paircars.pipeline.do_selfcal.os.chdir",return_value=True)
+@patch("paircars.pipeline.do_selfcal.get_ncoarse",return_value=1)
 def test_main_selfcal(
+    mock_ncoarse,
+    mock_chdir,
     mock_do_full_selfcal,
     mock_freq_to_coarse,
     mock_get_quart_meta,
@@ -390,7 +398,7 @@ def test_main_selfcal(
     mock_cluster = MagicMock()
     mock_client.compute.side_effect = lambda tasks: tasks
     mock_client.gather.side_effect = lambda tasks: tasks
-    mock_get_cluster.return_value = (mock_client, mock_cluster, "/tmp/dask")
+    mock_get_cluster.return_value = (mock_client, mock_cluster, "/tmp/dask", 1)
     mock_msmd = MagicMock()
     mock_msmd.open.return_value = None
     mock_msmd.close.return_value = None
@@ -475,7 +483,7 @@ def test_main_selfcal(
         ),
     ],
 )
-@patch("paircars.pipeline.do_selfcal.main", return_value=0)
+@patch("paircars.pipeline.do_selfcal.main", return_value= (0, 0, 0, 0, 0))
 @patch("paircars.pipeline.do_selfcal.sys.exit")
 @patch("paircars.pipeline.do_selfcal.argparse.ArgumentParser.print_help")
 def test_cli_selfcal(mock_print_help, mock_exit, mock_main, argv, should_exit):

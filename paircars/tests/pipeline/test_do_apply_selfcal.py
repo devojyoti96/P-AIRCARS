@@ -24,8 +24,6 @@ def test_run_all_applysol_selfcal(
     mslist = ["a.ms"]
     fake_client = MagicMock()
     with (
-        patch("paircars.pipeline.do_apply_selfcal.psutil.cpu_count", return_value=8),
-        patch("paircars.pipeline.do_apply_selfcal.psutil.virtual_memory") as m_mem,
         patch("paircars.pipeline.do_apply_selfcal.os.chdir"),
         patch("paircars.pipeline.do_apply_selfcal.np.unique", return_value=mslist),
         patch("paircars.pipeline.do_apply_selfcal.fits.getheader") as m_header,
@@ -38,9 +36,6 @@ def test_run_all_applysol_selfcal(
         patch("paircars.pipeline.do_apply_selfcal.os.system") as m_system,
         patch("paircars.pipeline.do_apply_selfcal.traceback.print_exc"),
     ):
-        mem_mock = MagicMock()
-        mem_mock.available = 16 * 1024**3
-        m_mem.return_value = mem_mock
         m_header.return_value = {"GPSTIME": "123"}
         if not has_tables:
             m_glob.return_value = []
@@ -67,7 +62,7 @@ def test_run_all_applysol_selfcal(
         else:
             fake_client.compute.side_effect = lambda x: x
             fake_client.gather.side_effect = lambda x: [0] if dask_sum == 0 else [1]
-        result = run_all_applysol(
+        gain_succeed, gain_failed, pol_succeed, pol_failed = run_all_applysol(
             mslist=mslist,
             metafits="meta.fits",
             dask_client=fake_client,
@@ -75,19 +70,19 @@ def test_run_all_applysol_selfcal(
             caldir="/cal",
         )
         if raise_exc:
-            assert result == 1
+            assert gain_succeed == 0
             return
 
         if not has_tables:
-            assert result == 1
+            assert gain_succeed == 0
             return
 
         if not valid_ms:
-            assert result == 1
+            assert gain_succeed == 0
             return
 
         if not coarse_match:
-            assert result == 1
+            assert gain_succeed == 0
             return
 
 
@@ -120,12 +115,15 @@ def test_main_apply_selfcal(
         patch("paircars.pipeline.do_apply_selfcal.os.makedirs"),
         patch("paircars.pipeline.do_apply_selfcal.os.path.exists") as m_exists,
         patch("paircars.pipeline.do_apply_selfcal.os.system"),
-        patch("paircars.pipeline.do_apply_selfcal.psutil.cpu_count", return_value=16),
         patch("paircars.pipeline.do_apply_selfcal.time.sleep"),
         patch("paircars.pipeline.do_apply_selfcal.traceback.print_exc"),
+        patch("paircars.pipeline.do_apply_selfcal.os.chdir") as m_chdir,
+        patch("paircars.pipeline.do_apply_selfcal.msmetadata") as m_msmd,
+        patch("paircars.pipeline.do_apply_selfcal.get_ncoarse") as m_ncoarse,
+        patch("paircars.pipeline.do_apply_selfcal.freq_to_MWA_coarse") as m_freq_to_MWA_coarse,
     ):
-        m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir")
-
+        m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir", 1)
+        m_chdir.return_value = True
         def exists_side_effect(path):
             if "jobname_password.npy" in path:
                 return start_remote_log
@@ -134,6 +132,12 @@ def test_main_apply_selfcal(
             if path == "/tmp/log.txt":
                 return True
             return True
+            
+        mock_msmd = MagicMock()
+        m_msmd.return_value = mock_msmd
+        mock_msmd.chanfreqs.return_value = np.array([150.0,200.0])
+        m_ncoarse.return_value = 1
+        m_freq_to_MWA_coarse.return_value = 1
 
         m_exists.side_effect = exists_side_effect
         if start_remote_log:
@@ -142,9 +146,9 @@ def test_main_apply_selfcal(
                 return_value=("job", "pass"),
             ):
                 m_logger.return_value = MagicMock()
-                m_run.return_value = 0
+                m_run.return_value = (1, 0, 1, 0)
 
-                result = main(
+                gain_succeed, gain_failed, pol_succeed, pol_failed = main(
                     mslist=ms_input,
                     metafits="meta.fits",
                     workdir="",
@@ -157,9 +161,9 @@ def test_main_apply_selfcal(
             if raise_exc:
                 m_run.side_effect = Exception("boom")
             else:
-                m_run.return_value = 0
+                m_run.return_value = (1, 0, 1, 0)
 
-            result = main(
+            gain_succeed, gain_failed, pol_succeed, pol_failed = main(
                 mslist=ms_input,
                 metafits="meta.fits",
                 workdir="",
@@ -169,12 +173,12 @@ def test_main_apply_selfcal(
                 dask_client=None if not provide_dask else fake_client,
             )
         if not caldir_exists:
-            assert result == 1
+            assert gain_succeed == 0
             return
         if raise_exc:
-            assert result == 1
+            assert gain_succeed == 0
         else:
-            assert result == 0
+            assert gain_succeed == 1
         if caldir_exists:
             assert m_run.called
         assert m_drop.called
@@ -209,7 +213,7 @@ def test_main_apply_selfcal(
         ),
     ],
 )
-@patch("paircars.pipeline.do_apply_selfcal.main", return_value=0)
+@patch("paircars.pipeline.do_apply_selfcal.main", return_value= (1, 0, 1, 0))
 @patch("paircars.pipeline.do_apply_selfcal.sys.exit")
 @patch("paircars.pipeline.do_apply_selfcal.argparse.ArgumentParser.print_help")
 def test_cli_apply_selfcal(mock_print_help, mock_exit, mock_main, argv, should_exit):

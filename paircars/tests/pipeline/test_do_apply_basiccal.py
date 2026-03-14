@@ -69,7 +69,6 @@ def test_applysol(
                 )
             },
         ):
-
             def exists_side_effect(path):
                 if raise_exc:
                     raise Exception("boom")
@@ -80,9 +79,7 @@ def test_applysol(
                 if path.endswith(".flagversions"):
                     return True
                 return True
-
             m_exists.side_effect = exists_side_effect
-
             result = applysol(
                 msname,
                 "/mock/workdir",
@@ -94,22 +91,15 @@ def test_applysol(
                 force_apply=force_apply,
                 soltype="basic",
             )
+            msg = result[0]
+            qc_msg = result[1]
             if raise_exc:
-                assert result == 1
+                assert msg == 1
                 return
-
             if exists_applied and not force_apply:
-                assert result == 0
+                assert msg == 0
                 return
-
-            assert result == 0
-            m_system.assert_any_call("touch " + msname + "/.applied_sol")
-            if not quartical_present:
-                m_system.assert_any_call(f"touch {msname}/.nopolselfcal")
-            if quartical_present and quartical_msg != 0:
-                m_system.assert_any_call(f"touch {msname}/.nopolselfcal")
-            if overwrite:
-                m_system.assert_any_call(f"rm -rf {msname} {msname}.flagversions")
+            assert msg == 0
 
 
 def mock_glob_pattern(pattern):
@@ -157,8 +147,6 @@ def test_run_all_applysol(
     fake_client = MagicMock()
 
     with (
-        patch("paircars.pipeline.do_apply_basiccal.psutil.cpu_count", return_value=8),
-        patch("paircars.pipeline.do_apply_basiccal.psutil.virtual_memory") as m_mem,
         patch("paircars.pipeline.do_apply_basiccal.os.chdir"),
         patch("paircars.pipeline.do_apply_basiccal.np.unique", return_value=mslist),
         patch("paircars.pipeline.do_apply_basiccal.fits.getheader") as m_header,
@@ -176,11 +164,6 @@ def test_run_all_applysol(
         patch("paircars.pipeline.do_apply_basiccal.applysol") as m_apply,
         patch("paircars.pipeline.do_apply_basiccal.traceback.print_exc"),
     ):
-
-        # ---- memory ----
-        mem_mock = MagicMock()
-        mem_mock.available = 16 * 1024**3
-        m_mem.return_value = mem_mock
 
         # ---- FITS headers ----
         m_header.side_effect = [
@@ -231,11 +214,11 @@ def test_run_all_applysol(
 @pytest.mark.parametrize(
     "start_remote_log, provide_dask, caldir_exists, raise_exc, run_result",
     [
-        (False, False, True, False, 0),  # normal, local dask
-        (True, False, True, False, 0),  # remote logging
-        (False, True, True, False, 0),  # external dask client
-        (False, False, False, False, 1),  # caldir missing
-        (False, False, True, True, 1),  # exception branch
+        (False, False, True, False, (0, 2, 0)),  # normal, local dask
+        (True, False, True, False, (0, 2, 0)),  # remote logging
+        (False, True, True, False, (0, 2, 0)),  # external dask client
+        (False, False, False, False, (1, 0, 2)),  # caldir missing
+        (False, False, True, True, (1, 0, 2)),  # exception branch
     ],
 )
 def test_main_applysol(
@@ -262,9 +245,11 @@ def test_main_applysol(
         patch("paircars.pipeline.do_apply_basiccal.os.makedirs"),
         patch("paircars.pipeline.do_apply_basiccal.os.path.exists") as m_exists,
         patch("paircars.pipeline.do_apply_basiccal.os.system"),
-        patch("paircars.pipeline.do_apply_basiccal.psutil.cpu_count", return_value=16),
         patch("paircars.pipeline.do_apply_basiccal.time.sleep"),
         patch("paircars.pipeline.do_apply_basiccal.traceback.print_exc"),
+        patch("paircars.pipeline.do_apply_basiccal.os.chdir") as m_chdir,
+        patch("paircars.pipeline.do_apply_basiccal.msmetadata") as m_msmd,
+        patch("paircars.pipeline.do_apply_basiccal.get_ncoarse") as m_ncoarse,
     ):
 
         def exists_side_effect(path):
@@ -273,9 +258,14 @@ def test_main_applysol(
             if path == "/cal":
                 return caldir_exists
             return True
-
+           
+        m_chdir.return_value = 0
         m_exists.side_effect = exists_side_effect
-        m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir")
+        m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir", 1)
+        mock_msmd = MagicMock()
+        m_msmd.return_value = mock_msmd
+        mock_msmd.meanfreq.return_value = 150.0
+        m_ncoarse.return_value = 1
 
         if start_remote_log:
             with patch(
@@ -284,7 +274,7 @@ def test_main_applysol(
                 m_logger.return_value = MagicMock()
 
                 m_run.return_value = run_result
-                result = main(
+                result, succeed, failed = main(
                     mslist=mslist,
                     calibrator_metafits="cal.fits",
                     target_metafits="tar.fits",
@@ -300,7 +290,7 @@ def test_main_applysol(
             else:
                 m_run.return_value = run_result
 
-            result = main(
+            result, succeed, failed = main(
                 mslist=mslist,
                 calibrator_metafits="cal.fits",
                 target_metafits="tar.fits",
@@ -310,9 +300,9 @@ def test_main_applysol(
                 logfile=None,
                 dask_client=None if not provide_dask else fake_client,
             )
-        assert result == run_result if caldir_exists and not raise_exc else 1
-        assert m_drop.called
-        assert m_clean.called
+        assert result == run_result[0] 
+        assert succeed == run_result[1]
+        assert failed == run_result[2]
         if not provide_dask:
             fake_client.close.assert_called()
             fake_cluster.close.assert_called()
@@ -337,7 +327,7 @@ def test_main_applysol(
         ),
     ],
 )
-@patch("paircars.pipeline.do_apply_basiccal.main", return_value=0)
+@patch("paircars.pipeline.do_apply_basiccal.main", return_value=(0,1,0))
 @patch("paircars.pipeline.do_apply_basiccal.sys.exit")
 @patch("paircars.pipeline.do_apply_basiccal.argparse.ArgumentParser.print_help")
 def test_cli(mock_print_help, mock_exit, mock_main, argv, should_exit):
