@@ -2,8 +2,12 @@ import pytest
 from unittest.mock import patch, MagicMock
 from itertools import cycle
 from paircars.pipeline.do_selfcal import *
-
-
+try:
+    logfile = casalog.logfile()
+    os.system(f"rm -rf {logfile}")
+except Exception:
+    pass
+    
 @patch("paircars.pipeline.do_selfcal.drop_cache")
 @patch("paircars.pipeline.do_selfcal.clean_shutdown")
 @patch("paircars.pipeline.do_selfcal.time.sleep", return_value=None)
@@ -352,6 +356,7 @@ def test_do_full_selfcal(
         metafits="meta.fits",
     )
     assert result == (0, 2, ["int.cal"], [], "")
+    os.system("rm -rf *.leakage.npy")
 
 
 @patch("paircars.pipeline.do_selfcal.clean_shutdown")
