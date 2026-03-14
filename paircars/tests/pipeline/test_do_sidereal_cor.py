@@ -72,7 +72,7 @@ def test_cor_sidereal_motion(
     # Dask client mock
     mock_client = MagicMock()
     mock_cluster = MagicMock()
-    mock_get_dask.return_value = (mock_client, mock_cluster, "/mock/dask_dir")
+    mock_get_dask.return_value = (mock_client, mock_cluster, "/mock/dask_dir", 1)
 
     # Compute mock return
     mock_client.compute.return_value = [MagicMock()] * len(compute_result)
@@ -87,7 +87,7 @@ def test_cor_sidereal_motion(
     mock_exists.side_effect = exists_side_effect
 
     # === Run test ===
-    code, corrected = cor_sidereal_motion(mslist, mock_client, workdir)
+    code, corrected, succeed, failed = cor_sidereal_motion(mslist, mock_client, workdir)
 
     assert code == expected_code
     assert corrected == expected_mslist
@@ -109,7 +109,11 @@ def test_cor_sidereal_motion(
 @patch("paircars.pipeline.do_sidereal_cor.clean_shutdown")
 @patch("time.sleep", return_value=None)
 @patch("traceback.print_exc", return_value=None)
+@patch("paircars.pipeline.do_sidereal_cor.os.chdir",return_value=True)
+@patch("paircars.pipeline.do_sidereal_cor.get_ncoarse",return_value=1)
 def test_main_sidereal(
+    mock_ncoarse,
+    mock_chdir,
     mock_trace,
     mock_sleep,
     mock_shutdown,
@@ -131,10 +135,13 @@ def test_main_sidereal(
         return ms_exists if path in mslist else False
 
     mock_exists.side_effect = exists_side_effect
-    mock_cor_sidereal.return_value = (0 if cor_success else 1, ["corrected.ms"])
+    if cor_success:
+        mock_cor_sidereal.return_value = (0, ["corrected.ms"], 1, 0)
+    else:
+        mock_cor_sidereal.return_value = (1, [], 0, 1)
 
     dask_client = MagicMock()
-    result = main(
+    result, succeed, failed = main(
         mslist=mslist_str,
         workdir="/mock/workdir",
         cpu_frac=0.7,
@@ -157,7 +164,7 @@ def test_main_sidereal(
         ),  # Normal
     ],
 )
-@patch("paircars.pipeline.do_sidereal_cor.main", return_value=0)
+@patch("paircars.pipeline.do_sidereal_cor.main", return_value= (0, 1, 0))
 @patch("paircars.pipeline.do_sidereal_cor.sys.exit")
 @patch("paircars.pipeline.do_sidereal_cor.argparse.ArgumentParser.print_help")
 def test_cli_sidereal(

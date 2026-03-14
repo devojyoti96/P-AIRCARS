@@ -214,18 +214,16 @@ def main(
         min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
         min_mem /= total_ncoarse
 
-        result = get_local_dask_cluster(
+        dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
-        if result is None:
+        if dask_client is None:
             print("Error occured in creating local cluster.")
             return 1
-        else:
-            dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
