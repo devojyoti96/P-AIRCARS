@@ -388,7 +388,10 @@ def do_flagging(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
+        if len(worker_mem_list)>0:
+            mem_limit = round(min(worker_mem_list), 3)
+        else:
+            mem_limit =1
         n_threads = os.environ.get("OMP_NUM_THREADS")
         if n_threads is not None:
             n_threads = int(n_threads)
@@ -616,18 +619,16 @@ def main(
         min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
         min_mem /= total_ncoarse
 
-        result = get_local_dask_cluster(
+        dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
-        if result is None:
+        if dask_client is None:
             print("Error occured in creating local cluster.")
             return 1, succeed, failed
-        else:
-            dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:

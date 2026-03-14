@@ -5,7 +5,8 @@ from paircars.pipeline.import_model import *
 
 
 @pytest.mark.parametrize("raise_error", [False, True])
-def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
+@patch("paircars.pipeline.import_model.run_hyperdrive")
+def test_import_hyperdrive(mock_hyperdrive, tmp_path, monkeypatch, raise_error):
     msname = "test.ms"
     metafits = "test.metafits"
     monkeypatch.setattr(
@@ -18,12 +19,12 @@ def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
     )
     monkeypatch.setattr("os.path.exists", lambda x: True)
     if raise_error:
-
+        mock_hyperdrive.return_value = 1
         def fake_run(*args, **kwargs):
             raise RuntimeError("hyperdrive failed")
 
     else:
-
+        mock_hyperdrive.return_value = 0
         def fake_run(*args, **kwargs):
             return None
 
@@ -64,21 +65,23 @@ def test_import_hyperdrive(tmp_path, monkeypatch, raise_error):
 @patch("paircars.pipeline.import_model.os.path.exists")
 @patch("paircars.pipeline.import_model.get_local_dask_cluster")
 @patch("paircars.pipeline.import_model.scale_worker_and_wait")
-@patch("paircars.pipeline.import_model.psutil.cpu_count", return_value=8)
-@patch("paircars.pipeline.import_model.psutil.virtual_memory")
 @patch("paircars.pipeline.import_model.np.load", return_value=("job", "pass"))
 @patch("paircars.pipeline.import_model.init_logger")
 @patch("paircars.pipeline.import_model.get_ms_size", return_value=1)
 @patch("paircars.pipeline.import_model.import_hyperdrive_model")
 @patch("paircars.pipeline.import_model.delayed")
+@patch("paircars.pipeline.import_model.os.chdir",return_value=True)
+@patch("paircars.pipeline.import_model.get_ncoarse",return_value=1)
+@patch("paircars.pipeline.import_model.run_hyperdrive",return_value=0)
 def test_main_import_model(
+    mock_hyoerdrive,
+    mock_ncoarse,
+    mock_chdir,
     mock_delayed,
     mock_import_model,
     mock_get_ms_size,
     mock_init_logger,
     mock_np_load,
-    mock_virtual_mem,
-    mock_cpu_count,
     mock_scale,
     mock_get_cluster,
     mock_path_exists,
@@ -87,6 +90,7 @@ def test_main_import_model(
     mock_sleep,
     mock_drop_cache,
     mock_shutdown,
+    dummy_metafits,
 ):
     def fake_exists(path):
         if "jobname_password.npy" in path:
@@ -96,41 +100,40 @@ def test_main_import_model(
         return True
 
     mock_path_exists.side_effect = fake_exists
-    mock_virtual_mem.return_value.available = 16 * 1024**3  # 16GB
     mock_delayed.side_effect = lambda fn: fn
     mock_client = MagicMock()
     mock_cluster = MagicMock()
     mock_client.compute.side_effect = lambda tasks: tasks
     mock_client.gather.side_effect = lambda tasks: tasks
-    mock_get_cluster.return_value = (mock_client, mock_cluster, "/tmp/dask")
+    mock_get_cluster.return_value = (mock_client, mock_cluster, "/tmp/dask", 1)
     mock_import_model.return_value = 0
-    msg = main(
+    msg, succeed, failed = main(
         mslist="mock1.ms,mock2.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
     )
     assert msg == 0
     assert mock_import_model.call_count == 2
-    mock_import_model.side_effect = [0, 1]
+    mock_import_model.side_effect = 1
 
-    msg = main(
+    msg, succeed, failed = main(
         mslist="mock1.ms,mock2.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
     )
     assert msg == 1
 
-    msg = main(
+    msg, succeed, failed = main(
         mslist="",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
     )
     assert msg == 1
 
     mock_import_model.side_effect = Exception("Simulated failure")
-    msg = main(
+    msg, succeed, failed = main(
         mslist="mock.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
     )
 
@@ -138,9 +141,9 @@ def test_main_import_model(
     mock_import_model.side_effect = None
     mock_import_model.return_value = 0
 
-    msg = main(
+    msg, succeed, failed = main(
         mslist="mock.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         start_remote_log=True,
         logfile="log.txt",
@@ -152,9 +155,9 @@ def test_main_import_model(
 
     external_client = MagicMock()
 
-    msg = main(
+    msg, succeed, failed = main(
         mslist="mock.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         dask_client=external_client,
     )
@@ -169,7 +172,7 @@ def test_main_import_model(
         (["prog.py", "mock.ms", "--workdir", "/mock/work"], False),  # Valid
     ],
 )
-@patch("paircars.pipeline.import_model.main", return_value=0)
+@patch("paircars.pipeline.import_model.main", return_value=(0,1,0))
 @patch("paircars.pipeline.import_model.sys.exit")
 @patch("paircars.pipeline.import_model.argparse.ArgumentParser.print_help")
 def test_cli(

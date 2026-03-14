@@ -36,13 +36,11 @@ def test_single_ms_flag(dummy_msname):
 @patch("paircars.pipeline.flagging.get_bad_chans", return_value="0:1~10")
 @patch("paircars.pipeline.flagging.suppress_output")
 @patch("paircars.pipeline.flagging.os.chdir")
-@patch("paircars.pipeline.flagging.psutil.virtual_memory")
-@patch("paircars.pipeline.flagging.psutil.cpu_count", return_value=8)
 @patch("paircars.pipeline.flagging.delayed")
+@patch("casatasks.flagdata",return_value=0)
 def test_do_flagging(
+    mock_flagdata,
     mock_delayed,
-    mock_cpu,
-    mock_virtual_mem,
     mock_chdir,
     mock_suppress,
     mock_get_bad_chans,
@@ -50,8 +48,8 @@ def test_do_flagging(
     mock_flag_backup,
     mock_single_ms_flag,
     mock_flagsummary,
+    dummy_metafits,
 ):
-    mock_virtual_mem.return_value.available = 16 * 1024**3  # 16GB
     mock_delayed.side_effect = lambda fn: fn
     mock_client = MagicMock()
     mock_client.compute.side_effect = lambda tasks: tasks
@@ -59,14 +57,14 @@ def test_do_flagging(
     mock_single_ms_flag.return_value = 0
     msg = do_flagging(
         mslist=["mock1.ms", "mock2.ms"],
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         dask_client=mock_client,
         workdir="/tmp",
         outdir="/tmp/out",
     )
     msg = do_flagging(
         mslist=["mock.ms"],
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         dask_client=mock_client,
         workdir="/tmp",
         outdir="/tmp/out",
@@ -76,7 +74,7 @@ def test_do_flagging(
     mock_single_ms_flag.side_effect = Exception("Simulated failure")
     msg = do_flagging(
         mslist=["mock.ms"],
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         dask_client=mock_client,
         workdir="/tmp",
         outdir="/tmp/out",
@@ -91,15 +89,19 @@ def test_do_flagging(
 @patch("paircars.pipeline.flagging.os.path.exists")
 @patch("paircars.pipeline.flagging.get_local_dask_cluster")
 @patch("paircars.pipeline.flagging.scale_worker_and_wait")
-@patch("paircars.pipeline.flagging.psutil.cpu_count", return_value=8)
 @patch("paircars.pipeline.flagging.np.load", return_value=("job", "pass"))
 @patch("paircars.pipeline.flagging.init_logger")
 @patch("paircars.pipeline.flagging.do_flagging")
+@patch("paircars.pipeline.flagging.os.chdir",return_value=True)
+@patch("paircars.pipeline.flagging.get_ncoarse",return_value=1)
+@patch("casatasks.flagdata",return_value=1)
 def test_main_flagging(
+    mock_flagdata,
+    mock_ncoarse,
+    mock_chdir,
     mock_do_flagging,
     mock_init_logger,
     mock_np_load,
-    mock_cpu_count,
     mock_scale,
     mock_get_cluster,
     mock_path_exists,
@@ -108,6 +110,7 @@ def test_main_flagging(
     mock_sleep,
     mock_drop_cache,
     mock_shutdown,
+    dummy_metafits,
 ):
     def fake_exists(path):
         if "jobname_password.npy" in path:
@@ -119,44 +122,44 @@ def test_main_flagging(
     mock_path_exists.side_effect = fake_exists
     mock_client = MagicMock()
     mock_cluster = MagicMock()
-    mock_get_cluster.return_value = (mock_client, mock_cluster, "/tmp/dask")
-    mock_do_flagging.return_value = 0
-    msg = main(
+    mock_get_cluster.return_value = (mock_client, mock_cluster, "/tmp/dask", 1)
+    mock_do_flagging.return_value = (0, 2, 0)
+    msg, succeed, failed = main(
         mslist="mock1.ms,mock2.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         outdir="/tmp/out",
     )
     assert msg == 0
     mock_do_flagging.assert_called_once()
-    mock_do_flagging.return_value = 1
-    msg = main(
+    mock_do_flagging.return_value = (1, 0, 1)
+    msg, succeed, failed = main(
         mslist="mock.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         outdir="/tmp/out",
     )
     assert msg == 1
-    msg = main(
+    msg, succeed, failed = main(
         mslist="",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         outdir="/tmp/out",
     )
     assert msg == 1
     mock_do_flagging.side_effect = Exception("Simulated failure")
-    msg = main(
+    msg, succeed, failed = main(
         mslist="mock.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         outdir="/tmp/out",
     )
     assert msg == 1
     mock_do_flagging.side_effect = None
-    mock_do_flagging.return_value = 0
-    msg = main(
+    mock_do_flagging.return_value = (0, 1, 0)
+    msg, succeed, failed = main(
         mslist="mock.ms",
-        metafits="meta.fits",
+        metafits=dummy_metafits,
         workdir="/tmp/work",
         outdir="/tmp/out",
         start_remote_log=True,
@@ -177,7 +180,7 @@ def test_main_flagging(
         ),
     ],
 )
-@patch("paircars.pipeline.flagging.main", return_value=0)
+@patch("paircars.pipeline.flagging.main", return_value= (0, 1, 0))
 @patch("paircars.pipeline.flagging.sys.exit")
 @patch("paircars.pipeline.flagging.argparse.ArgumentParser.print_help")
 def test_cli_flagging(
