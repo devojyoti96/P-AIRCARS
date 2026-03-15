@@ -8,7 +8,7 @@ import os
 from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
-from paircars.utils.flagging import flagsummary, do_flag_backup, get_chans_flag
+from paircars.utils.flagging import flagsummary, do_flag_backup
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -83,7 +83,7 @@ def single_ms_flag(
     mem_limit = abs(mem_limit)
 
     limit_threads(n_threads=n_threads)
-    from casatasks import flagdata, flagmanager
+    from casatasks import flagdata
 
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.flag_*")
@@ -303,7 +303,7 @@ def single_ms_flag(
         ######################
         if run_solarflagger:
             do_flag_backup(msname, flagtype="solarflag")
-            result = flagger(
+            flagger(
                 msname,
                 datacolumn,
                 threshold=max(3.0, threshold),
