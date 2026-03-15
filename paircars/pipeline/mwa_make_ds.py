@@ -15,7 +15,6 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.ms_metadata import get_ms_size
 from paircars.utils.mwa_ploting_utils import make_ds_plot
 from paircars.utils.mwa_utils import get_MWA_OBSID, get_ncoarse
 from paircars.utils.proc_manage_utils import (
@@ -267,16 +266,11 @@ def main(
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
-        max_ms_size = max(target_ms_sizes)
-        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
-        min_mem /= total_ncoarse
 
         result = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
         if result is None:

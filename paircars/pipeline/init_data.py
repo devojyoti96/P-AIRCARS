@@ -5,7 +5,6 @@ import requests
 import sys
 import os
 import getpass
-import numpy as np
 from datetime import datetime as dt
 from parfive import Downloader
 from paircars.utils.basic_utils import (
@@ -330,7 +329,6 @@ def main(
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
-        np.load(config_file, allow_pickle=True).all()
         if msg != 0:
             if scheduler_name != "local":
                 print(

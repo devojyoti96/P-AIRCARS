@@ -8,18 +8,19 @@ import os
 from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
-from paircars.utils.flagging import flagsummary, do_flag_backup
+from paircars.utils.flagging import flagsummary, do_flag_backup, get_chans_flag
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.ms_metadata import check_datacolumn_valid, get_ms_size
+from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import get_bad_chans, get_mwa_bad_ants, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
 )
+from paircars.utils.solarflagger import flagger
 from paircars.utils.resource_utils import drop_cache, limit_threads
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -36,6 +37,7 @@ def single_ms_flag(
     flagdimension="freqtime",
     flag_autocorr=True,
     flag_quack=True,
+    run_solarflagger=False,
     threshold=5.0,
     n_threads=1,
     mem_limit=1,
@@ -63,6 +65,8 @@ def single_ms_flag(
         Flag autocorrelations or not
     flag_quack : bool, optional
         Flag quack timestamps
+    run_solarflagger : bool, optional
+        Run solar flagger or not
     threshold : float, optional
         Flagging threshold
     n_threads : int, optional
@@ -79,7 +83,7 @@ def single_ms_flag(
     mem_limit = abs(mem_limit)
 
     limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
+    from casatasks import flagdata, flagmanager
 
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.flag_*")
@@ -98,7 +102,7 @@ def single_ms_flag(
                         cmdreason="badchan",
                         flagbackup=False,
                     )
-            except BaseException:
+            except Exception:
                 pass
 
         ##############################
@@ -114,7 +118,7 @@ def single_ms_flag(
                         cmdreason="badant",
                         flagbackup=False,
                     )
-            except BaseException:
+            except Exception:
                 pass
 
         #################################
@@ -139,7 +143,7 @@ def single_ms_flag(
                         datacolumn=datacolumn,
                         flagbackup=False,
                     )
-            except BaseException:
+            except Exception:
                 pass
 
         #################################
@@ -155,7 +159,7 @@ def single_ms_flag(
                     autocorr=flag_autocorr,
                     flagbackup=False,
                 )
-        except BaseException:
+        except Exception:
             pass
 
         #################################
@@ -171,7 +175,7 @@ def single_ms_flag(
                         datacolumn=datacolumn,
                         flagbackup=False,
                     )
-            except BaseException:
+            except Exception:
                 pass
 
         ####################################################
@@ -235,8 +239,8 @@ def single_ms_flag(
                         freqfit="poly",
                         extendflags=True,
                         flagdimension=flagdimension,
-                        timecutoff=max(4.0, threshold - 1),
-                        freqcutoff=max(3.0, threshold - 2),
+                        timecutoff=max(4.0, threshold),
+                        freqcutoff=max(3.0, threshold),
                         growaround=False,
                         action="apply",
                         flagbackup=False,
@@ -244,7 +248,7 @@ def single_ms_flag(
                         writeflags=True,
                         datacolumn=datacolumn,
                     )
-            except BaseException:
+            except Exception:
                 pass
 
         #############
@@ -257,8 +261,8 @@ def single_ms_flag(
                         vis=msname,
                         mode="rflag",
                         extendflags=True,
-                        timedevscale=threshold,
-                        freqdevscale=threshold,
+                        timedevscale=max(5.0, threshold),
+                        freqdevscale=max(5.0, threshold),
                         growaround=False,
                         action="apply",
                         flagbackup=False,
@@ -266,7 +270,7 @@ def single_ms_flag(
                         writeflags=True,
                         datacolumn=datacolumn,
                     )
-            except BaseException:
+            except Exception:
                 pass
 
         ##############
@@ -292,8 +296,21 @@ def single_ms_flag(
                         overwrite=True,
                         writeflags=True,
                     )
-            except BaseException:
+            except Exception:
                 pass
+                
+        ######################
+        # Solar flagger
+        ######################
+        if run_solarflagger:
+            do_flag_backup(msname, flagtype="solarflag")
+            result = flagger(
+                msname,
+                datacolumn,
+                threshold=max(3.0, threshold),
+                num_processes=n_threads,
+                flagbackup=False,
+            )
         os.system(f"touch {msname}/.flag_succeed")
         return 0
     except Exception:
@@ -317,6 +334,8 @@ def do_flagging(
     flag_autocorr=True,
     flag_quack=True,
     flag_backup=True,
+    run_solarflagger=False,
+    threshold=5.0,
     restore_flag=True,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -354,6 +373,10 @@ def do_flagging(
         Flag quack timestamps
     flag_backup : bool, optional
         Flag backup
+    run_solarflagger : bool, optional
+        Run solar flagger or not
+    threshold : float, optional
+        Flag threshold
     restore_flag : bool, optional
         Restore previous flags
     cpu_frac : float, optional
@@ -449,7 +472,8 @@ def do_flagging(
                     flagdimension=flagdimension,
                     flag_autocorr=flag_autocorr,
                     flag_quack=flag_quack,
-                    threshold=5.0,
+                    threshold=threshold,
+                    run_solarflagger=run_solarflagger,
                     n_threads=n_threads,
                     mem_limit=mem_limit,
                 )
@@ -495,6 +519,8 @@ def main(
     flag_quack=True,
     flagbackup=True,
     flagdimension="freqtime",
+    run_solarflagger=False,
+    threshold=5.0,
     restore_flag=True,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -535,6 +561,10 @@ def main(
         If True, saves a flag backup before applying new flags. Default is True.
     flagdimension : str, optional
         Dimension over which to apply automated flagging (e.g., "freqtime"). Default is "freqtime".
+    run_solarflagger : bool, optional
+        Run solar flagger or not
+    threshold : float, optional
+        Flagging threshold
     restore_flag : bool, optional
         Restore previous flags
     cpu_frac : float, optional
@@ -614,16 +644,11 @@ def main(
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
-        max_ms_size = max(target_ms_sizes)
-        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
-        min_mem /= total_ncoarse
 
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
@@ -646,6 +671,8 @@ def main(
             flagdimension=flagdimension,
             flag_autocorr=flag_autocorr,
             flag_quack=flag_quack,
+            run_solarflagger=run_solarflagger,
+            threshold=threshold,
             restore_flag=restore_flag,
             flag_backup=flagbackup,
             cpu_frac=cpu_frac,
@@ -731,6 +758,18 @@ def cli():
         help="Do not backup flags",
     )
     adv_args.add_argument(
+        "--run_solarflagger",
+        dest="run_solarflagger",
+        action="store_true",
+        help="Run solar flagger or not",
+    )
+    adv_args.add_argument(
+        "--threshold",
+        type=float,
+        default=5.0,
+        help="Flag threshold",
+    )
+    adv_args.add_argument(
         "--no_restore",
         dest="restore_flag",
         action="store_false",
@@ -776,6 +815,8 @@ def cli():
         flag_quack=args.flag_quack,
         flagbackup=args.flagbackup,
         flagdimension=args.flagdimension,
+        run_solarflagger=args.run_solarflagger,
+        threshold=args.threshold,
         restore_flag=args.restore_flag,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,

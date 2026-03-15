@@ -120,6 +120,39 @@ def calc_minuv(msname, chan_number=-1):
     return round(float(minuv), 2), round(float(minuv / wavelength), 2)
 
 
+def calc_uvtaper(msname):
+    """
+    Calculate UV-taper
+    
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+        
+    Returns
+    -------
+    float
+        UV-taper in lambda at highest frequency
+    """
+    tb=table()
+    tb.open(msname)
+    u, v, w = tb.getcol("UVW")
+    tb.close()
+    msmd=msmetadata()
+    msmd.open(msname)
+    freqs = msmd.chanfreqs(0)
+    max_freq = np.nanmax(freqs)
+    wavelength = (3*10**8)/max_freq
+    msmd.close()
+    r = np.sqrt(u**2 + v**2)
+    r_bins = np.linspace(r.min(), r.max(), 100)
+    counts, edges = np.histogram(r, bins=r_bins)
+    max_counts = np.nanmax(counts)
+    pos = np.where(counts<0.05*max_counts)[0][0]
+    uvtaper = edges[pos]/wavelength
+    return round(uvtaper,0)
+    
+
 def calc_field_of_view(msname, FWHM=True):
     """
     Calculate optimum field of view in arcsec.

@@ -264,6 +264,33 @@ def get_mwa_bad_ants(metafits):
     return bad_antennas
 
 
+def get_gleam_uvrange(msname):
+    """
+    Get UV-range for GLEAM model
+
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+
+    Returns
+    -------
+    str
+        UV-range in CASA format
+    """
+    msmd = msmetadata()
+    msmd.open(msname)
+    freq = msmd.meanfreq(0)
+    msmd.close()
+    wavelength = (3 * 10**8) / freq
+    minuv_m = 112
+    maxuv_m = 3000
+    minuv_l = round(minuv_m / wavelength, 1)
+    maxuv_l = round(maxuv_m / wavelength, 1)
+    uvrange = f"{minuv_l}~{maxuv_l}lambda"
+    return uvrange
+
+
 def download_MWA_metafits(OBSID, outdir=".", max_tries=5):
     """
     Download MWA metafits file for a given OBSID.

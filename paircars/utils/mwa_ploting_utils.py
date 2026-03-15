@@ -1468,17 +1468,21 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 ncpu=ncpu,
             )
         map_obstimes = []
-        for euv_fits in euv_images:
-            m = Map(euv_fits)
-            map_obstimes.append(m.date.value.split(".")[0])
-        map_mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in map_obstimes]
-        final_maps = []
-        map_mjdsecs = np.array(map_mjdsecs)
-        all_obstimes_mjdsecs = np.array(all_obstimes_mjdsecs)
-        for fits_time in all_obstimes_mjdsecs:
-            pos = np.argmin(np.abs(map_mjdsecs - fits_time))
-            final_maps.append(euv_images[pos])
-        return final_maps
+        if len(euv_images)==0:
+            print("No EUV images are found.")
+            return []
+        else:
+            for euv_fits in euv_images:
+                m = Map(euv_fits)
+                map_obstimes.append(m.date.value.split(".")[0])
+            map_mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in map_obstimes]
+            final_maps = []
+            map_mjdsecs = np.array(map_mjdsecs)
+            all_obstimes_mjdsecs = np.array(all_obstimes_mjdsecs)
+            for fits_time in all_obstimes_mjdsecs:
+                pos = np.argmin(np.abs(map_mjdsecs - fits_time))
+                final_maps.append(euv_images[pos])
+            return final_maps
     except Exception:
         traceback.print_exc()
         return []

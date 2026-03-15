@@ -8,7 +8,8 @@ from casatools import msmetadata
 from astropy.io import fits
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
 from .resource_utils import limit_threads
-from .flagging import do_flag_backup, uvbin_flag, flag_quartical_table, get_chans_flag
+from .flagging import do_flag_backup, flag_quartical_table, get_chans_flag
+from .solarflagger import flagger
 from .calibration import (
     fluxcal_caltable,
     uvrange_casa_to_quartical,
@@ -20,6 +21,7 @@ from .imaging import (
     get_optimal_image_interval,
     calc_multiscale_scales,
     get_multiscale_bias,
+    calc_uvtaper,
 )
 from .image_utils import (
     create_circular_mask,
@@ -979,6 +981,7 @@ def selfcal_round(
     solve_array_leakage=False,
     pol_solnorm=False,
     do_uvsub_flag=False,
+    restore_flag=True,
     ncpu=-1,
     mem=-1,
 ):
@@ -1051,6 +1054,8 @@ def selfcal_round(
         Normalise quartical solutions or not
     do_uvsub_flag : bool, optional
         Perform UVsub flagging
+    restore_flag : bool, optional
+        Restore last round flags or not
     ncpu : int, optional
         Number of CPUs to use in WSClean
     mem : float, optional
@@ -1083,12 +1088,19 @@ def selfcal_round(
     from casatools import table
 
     cwd = os.getcwd()
-    ##################################
-    # Setup wsclean params
-    ##################################
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
     os.chdir(selfcaldir)
+
+    if minuv>0:
+        if uvrange=="" or uvrange.startswith(">"):
+            uvrange=f">{minuv}lambda"
+        elif uvrange.startswith("<"):
+            maxuv = uvrange.split("lambda")[0].split("<")[1]
+            uvrange=f"{minuv}~{maxuv}lambda"
+        elif "~" in uvrange:
+            maxuv = uvrange.split("lambda")[0].split("~")[-1]
+            uvrange = f"{minuv}~{maxuv}lambda"
 
     if not use_previous_model:
         delmod(vis=msname, otf=True, scr=True)
@@ -1149,23 +1161,27 @@ def selfcal_round(
 
         if weight == "briggs":
             weight += " " + str(robust)
-
+            
+        uvtaper = calc_uvtaper(msname)
+        
         wsclean_args = [
             "-quiet",
-            "-scale " + str(cellsize) + "asec",
-            "-size " + str(imsize) + " " + str(imsize),
+            f"-scale {cellsize}asec",
+            f"-size {imsize} {imsize}",
             "-no-dirty",
             "-gridder wgridder",
-            "-weight " + weight,
+            f"-weight {weight}",
             "-niter 10000",
             "-mgain 0.85",
             "-nmiter 5",
             "-gain 0.1",
-            "-minuv-l " + str(minuv),
-            "-j " + str(ncpu),
-            "-abs-mem " + str(mem),
-            "-auto-mask " + str(threshold + 0.1),
-            "-auto-threshold " + str(threshold),
+            f"-minuv-l {minuv}",
+            f"-maxuv-l {uvtaper}"
+            "-taper-tukey",
+            f"-j {ncpu}",
+            f"-abs-mem {mem}",
+            f"-auto-mask {threshold + 0.1}",
+            f"-auto-threshold {threshold}",
         ]
         if do_intensity_cal:
             wsclean_args.append("-pol I")
@@ -1178,7 +1194,7 @@ def selfcal_round(
 
         ngrid = max(1, int(ncpu / 2))
         if ngrid > 1:
-            wsclean_args.append("-parallel-gridding " + str(ngrid))
+            wsclean_args.append(f"-parallel-gridding {ngrid}")
 
         ################################################
         # Creating and using solar mask
@@ -1390,7 +1406,8 @@ def selfcal_round(
                 if "selfcal" in version:
                     try:
                         with suppress_output():
-                            flagmanager(vis=msname, mode="restore", versionname=version)
+                            if restore_flag:
+                                flagmanager(vis=msname, mode="restore", versionname=version)
                             flagmanager(vis=msname, mode="delete", versionname=version)
                     except BaseException:
                         pass
@@ -1459,7 +1476,7 @@ def selfcal_round(
                 os.system("rm -rf " + gain_caltable)
 
             logger.info(
-                f"gaincal(vis='{msname}',caltable='{gain_caltable}',uvrange='{uvrange}',refant='{refant}',solint='{solint}',calmode='{calmode}',minsnr=1,solnorm={solnorm})\n"
+                f"gaincal(vis='{msname}',caltable='{gain_caltable}',uvrange='{uvrange}',refant='{refant}',solint='{solint}',calmode='{calmode}',minsnr=3,solnorm={solnorm})\n"
             )
             with suppress_output():
                 gaincal(
@@ -1467,7 +1484,7 @@ def selfcal_round(
                     caltable=gain_caltable,
                     uvrange=uvrange,
                     refant=refant,
-                    minsnr=1,
+                    minsnr=3,
                     calmode=calmode,
                     solint=f"{solint}",
                     solnorm=solnorm,
@@ -1479,38 +1496,63 @@ def selfcal_round(
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
 
+            #################################
+            # Gaincal flagging
+            #################################
+            (
+                _,
+                _,
+                _,
+                pre_flag_frac,
+                pre_chan_flag_frac,
+                pre_ant_flag_frac,
+                pre_time_flag_frac,
+            ) = get_cal_flag_info(gain_caltable)
+            do_flag_backup(gain_caltable, flagtype="gainflag")
             with suppress_output():
-                #################################
-                # Gaincal flagging
-                #################################
-                (
-                    _,
-                    _,
-                    _,
-                    flag_frac,
-                    chan_flag_frac,
-                    ant_flag_frac,
-                    time_flag_frac,
-                ) = get_cal_flag_info(gain_caltable)
-                if flag_frac < 0.5 and ant_flag_frac < 0.5 and time_flag_frac < 0.5:
-                    do_flag_backup(gain_caltable, flagtype="gainflag")
-                    flagdata(
-                        vis=gain_caltable,
-                        mode="rflag",
-                        datacolumn="CPARAM",
-                        timedevscale=10.0,
-                        freqdevscale=10.0,
-                        flagbackup=False,
-                    )
-                    if flag_frac > 0.5 or ant_flag_frac > 0.5 or time_flag_frac > 0.5:
-                        flagmanager(
-                            vis=gain_caltable,
-                            mode="restore",
-                            versionname="gainflag_1",
-                        )
-                    flagmanager(
-                        vis=gain_caltable, mode="delete", versionname="gainflag_1"
-                    )
+                flagdata(
+                    vis=gain_caltable,
+                    mode="rflag",
+                    datacolumn="CPARAM",
+                    timedevscale=5.0,
+                    freqdevscale=5.0,
+                    flagbackup=False,
+                )
+            (
+                _,
+                _,
+                _,
+                flag_frac,
+                chan_flag_frac,
+                ant_flag_frac,
+                time_flag_frac,
+            ) = get_cal_flag_info(gain_caltable)
+            if flag_frac-pre_flag_frac > 0.5 or ant_flag_frac-pre_ant_flag_frac > 0.5 or time_flag_frac-pre_time_flag_frac > 0.5:
+                logger.info("Restoring flags of gaincal solutions.")
+                flagmanager(
+                    vis=gain_caltable,
+                    mode="restore",
+                    versionname="gainflag_1",
+                )
+            else:
+                tb=table()
+                tb.open(gain_caltable)
+                gain=tb.getcol("CPARAM")
+                flag=tb.getcol("FLAG")
+                tb.close()
+                gain[flag]=np.nan
+                tb.open(gain_caltable,nomodify=False)
+                new_gain = tb.getcol("CPARAM")
+                shape = new_gain.shape
+                for i in range(shape[0]):
+                    avg = np.nanmedian(np.abs(gain[i,...]))
+                    new_gain[i,...] = new_gain[i,...]/avg
+                tb.putcol("CPARAM",new_gain)
+                tb.flush()
+                tb.close()
+            flagmanager(
+                vis=gain_caltable, mode="delete", versionname="gainflag_1"
+            )
 
             ##################################
             # Perform bandpass calibration
@@ -1521,7 +1563,7 @@ def selfcal_round(
                     os.system("rm -rf " + bpass_caltable)
 
                 logger.info(
-                    f"bandpass(vis='{msname}',caltable='{bpass_caltable}',uvrange='{uvrange}',refant='{refant}',solint='inf',gaintable=['{gain_caltable}'],minsnr=1,solnorm=True)\n"
+                    f"bandpass(vis='{msname}',caltable='{bpass_caltable}',uvrange='{uvrange}',refant='{refant}',solint='inf',gaintable=['{gain_caltable}'],interp={interp},minsnr=3,solnorm=True)\n"
                 )
                 with suppress_output():
                     bandpass(
@@ -1529,8 +1571,9 @@ def selfcal_round(
                         caltable=bpass_caltable,
                         uvrange=uvrange,
                         refant=refant,
-                        minsnr=1,
+                        minsnr=3,
                         solint="inf",
+                        interp=interp,
                         gaintable=[gain_caltable],
                         solnorm=True,
                     )
@@ -1542,42 +1585,58 @@ def selfcal_round(
                 interp.append("linear,linear")
 
             if calmode == "ap":
+                #############################
+                # Bandpass flagging
+                #############################
+                (
+                    _,
+                    _,
+                    _,
+                    pre_flag_frac,
+                    pre_chan_flag_frac,
+                    pre_ant_flag_frac,
+                    pre_time_flag_frac,
+                ) = get_cal_flag_info(bpass_caltable)
+                do_flag_backup(bpass_caltable, flagtype="bpassflag")
                 with suppress_output():
-                    #############################
-                    # Bandpass flagging
-                    #############################
-                    (
-                        _,
-                        _,
-                        _,
-                        flag_frac,
-                        chan_flag_frac,
-                        ant_flag_frac,
-                        time_flag_frac,
-                    ) = get_cal_flag_info(bpass_caltable)
-                    if flag_frac < 0.5 and ant_flag_frac < 0.5 and chan_flag_frac < 0.5:
-                        do_flag_backup(bpass_caltable, flagtype="bpassflag")
-                        flagdata(
-                            vis=bpass_caltable,
-                            mode="rflag",
-                            datacolumn="CPARAM",
-                            timedevscale=10.0,
-                            freqdevscale=10.0,
-                            flagbackup=False,
-                        )
-                        if (
-                            flag_frac > 0.5
-                            or ant_flag_frac > 0.5
-                            or chan_flag_frac > 0.5
-                        ):
-                            flagmanager(
-                                vis=bpass_caltable,
-                                mode="restore",
-                                versionname="bpassflag_1",
-                            )
-                        flagmanager(
-                            vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
-                        )
+                    flagdata(
+                        vis=bpass_caltable,
+                        mode="rflag",
+                        datacolumn="CPARAM",
+                        timedevscale=5.0,
+                        freqdevscale=5.0,
+                        flagbackup=False,
+                    )
+                if (
+                    flag_frac-pre_flag_frac > 0.5
+                    or ant_flag_frac-pre_ant_flag_frac > 0.5
+                    or chan_flag_frac-pre_chan_flag_frac > 0.5
+                ):
+                    logger.info("Restoring flags of bandpass solutions.")
+                    flagmanager(
+                        vis=bpass_caltable,
+                        mode="restore",
+                        versionname="bpassflag_1",
+                    )
+                else:
+                    tb=table()
+                    tb.open(bpass_caltable)
+                    gain=tb.getcol("CPARAM")
+                    flag=tb.getcol("FLAG")
+                    tb.close()
+                    gain[flag]=np.nan
+                    tb.open(bpass_caltable,nomodify=False)
+                    new_gain = tb.getcol("CPARAM")
+                    shape = new_gain.shape
+                    for i in range(shape[0]):
+                        avg = np.nanmedian(np.abs(gain[i,...]))
+                        new_gain[i,...] = new_gain[i,...]/avg
+                    tb.putcol("CPARAM",new_gain)
+                    tb.flush()
+                    tb.close()
+                flagmanager(
+                    vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
+                )
 
                 if fluxscale_mwa:
                     logger.info("Flux scaled caltable using MWA reference bandpass.")
@@ -1652,10 +1711,6 @@ def selfcal_round(
             ######################################
             # Applying quartical solutions
             ######################################
-            if applymode == "calonly":
-                calflag = False
-            else:
-                calflag = True
             temp_pol_caltable = (
                 prefix.replace("present", f"{round_number}") + "_temp.dcal"
             )
@@ -1669,7 +1724,7 @@ def selfcal_round(
                 "output.overwrite=True",
                 "output.products=[corrected_data]",
                 "output.columns=[CORRECTED_DATA]",
-                f"output.flags={calflag}",
+                "output.flags=True",
                 "solver.terms=[D]",
                 "solver.iter_recipe=[0]",
                 "solver.propagate_flags=False",
@@ -1706,16 +1761,14 @@ def selfcal_round(
         # UVsub flagging
         ######################################
         if do_uvsub_flag:
-            logger.info("UVsub flagging on residual data. Threshold: 5.0.\n")
-            uvbin_flag(
+            logger.info("UVsub flagging on residual data.\n")
+            flagger(
                 msname,
-                uvbin_size=50,
-                datacolumn="residual",
-                mode="rflag",
+                "residual",
                 threshold=5.0,
+                num_processes=ncpu,
                 flagbackup=False,
             )
-
         return (
             0,
             applycal_gaintable,

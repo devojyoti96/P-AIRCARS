@@ -639,33 +639,6 @@ def get_nearest_gaincal_table(caltable_list, timestamp):
         return None
 
 
-def get_gleam_uvrange(msname):
-    """
-    Get UV-range for GLEAM model
-
-    Parameters
-    ----------
-    msname : str
-        Measurement set
-
-    Returns
-    -------
-    str
-        UV-range in CASA format
-    """
-    msmd = msmetadata()
-    msmd.open(msname)
-    freq = msmd.meanfreq(0)
-    msmd.close()
-    wavelength = (3 * 10**8) / freq
-    minuv_m = 112
-    maxuv_m = 2500
-    minuv_l = round(minuv_m / wavelength, 1)
-    maxuv_l = round(maxuv_m / wavelength, 1)
-    uvrange = f"{minuv_l}~{maxuv_l}lambda"
-    return uvrange
-
-
 def uvrange_casa_to_quartical(msname, uvrange=""):
     """
     Get quartical uv-range from CASA format uv-range

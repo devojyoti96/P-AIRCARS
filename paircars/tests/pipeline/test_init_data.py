@@ -199,7 +199,8 @@ def test_init_paircars_data(
         (False, 1),
     ],
 )
-def test_main(init_flag, expected_return, monkeypatch):
+@patch("paircars.pipeline.init_data.start_prefect_server",return_value = (0, "config.npy", "profile.path", "prefect.env", "prefect.dashboard", "prefect.pid"))
+def test_main(mock_prefect, init_flag, expected_return, monkeypatch):
     from paircars.pipeline import init_data
 
     # Mock all lower-level functions to prevent real execution
@@ -227,6 +228,24 @@ def test_main(init_flag, expected_return, monkeypatch):
         "initialize_shadems_container",
         Mock(return_value="paircarsshadems"),
     )
+    
+    monkeypatch.setattr(
+        init_data,
+        "initialize_postgres_container",
+        Mock(return_value="paircarspostgres"),
+    )
+    
+    monkeypatch.setattr(
+        init_data,
+        "initialize_hyperdrive_container",
+        Mock(return_value="paircarshyperdrive"),
+    )
+    
+    monkeypatch.setattr(
+        init_data,
+        "initialize_hyperbeam_container",
+        Mock(return_value="paircarshyperbeam"),
+    )
 
     result = init_data.main(
         init=init_flag,
@@ -234,7 +253,6 @@ def test_main(init_flag, expected_return, monkeypatch):
         update=True,
         link="http://remote.url",
         emails="test@example.com",
-        prefect_server=False,
     )
 
     assert result == expected_return

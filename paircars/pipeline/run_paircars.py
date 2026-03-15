@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 import argparse
-import numpy as np
 from paircars.utils.basic_utils import (
     check_port_status,
     get_free_port,
@@ -88,6 +87,16 @@ def cli():
         "--only_amplitude",
         action="store_true",
         help="Apply only amplitude part of gain solution from calibrator or not",
+    )
+    advanced_cal.add_argument(
+        "--redo_basic_cal",
+        action="store_true",
+        help="Redo basic calibration or not",
+    )
+    advanced_cal.add_argument(
+        "--redo_selfcal",
+        action="store_true",
+        help="Redo self-calibration or not",
     )
 
     # === Advanced imaging parameters ===
@@ -419,7 +428,6 @@ def cli():
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)
         )
-        np.load(config_file, allow_pickle=True).all()
         if msg != 0:
             if scheduler_name != "local":
                 print(

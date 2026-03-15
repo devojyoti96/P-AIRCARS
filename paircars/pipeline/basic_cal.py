@@ -11,7 +11,6 @@ from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import suppress_output
 from paircars.utils.calibration import (
-    get_gleam_uvrange,
     get_caltable_metadata,
 )
 from paircars.utils.crossphasecal import crossphasecal
@@ -26,8 +25,8 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
-from paircars.utils.ms_metadata import get_uvrange_exclude, get_ms_size
-from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
+from paircars.utils.ms_metadata import get_uvrange_exclude
+from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse, get_gleam_uvrange
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -837,16 +836,11 @@ def main(
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
-        total_ms_size = sum(target_ms_sizes)
-        min_mem = round(10 * total_ms_size, 2)  # 10 times the size of the ms
-        min_mem /= total_ncoarse
 
         dask_client, dask_cluster, dask_dir, nworker  = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:

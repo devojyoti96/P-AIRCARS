@@ -22,6 +22,7 @@ from paircars.utils.imaging import (
     calc_multiscale_scales,
     get_multiscale_bias,
     get_fft_size,
+    calc_uvtaper,
 )
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -29,7 +30,7 @@ from paircars.utils.logger_utils import (
     create_logger,
     init_logger,
 )
-from paircars.utils.ms_metadata import check_datacolumn_valid, get_ms_size
+from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.mwa_ploting_utils import rename_mwasolar_image
 from paircars.utils.proc_manage_utils import (
@@ -248,32 +249,35 @@ def perform_imaging(
             weight += " " + str(robust)
         if threshold <= 1:
             threshold = 1.1
+        uvtaper = calc_uvtaper(msname)
 
         wsclean_args = [
             "-quiet",
-            "-scale " + str(cellsize) + "asec",
-            "-size " + str(imsize) + " " + str(imsize),
+            f"-scale {cellsize}asec",
+            f"-size {imsize} {imsize}",
             "-no-dirty",
             "-gridder wgridder",
-            "-weight " + weight,
-            "-name " + prefix,
-            "-pol " + str(pol),
+            f"-weight {weight}",
+            f"-name {prefix}",
+            f"-pol {pol}",
             "-niter 10000",
             "-mgain 0.85",
             "-nmiter 5",
             "-gain 0.1",
-            "-minuv-l " + str(minuv),
-            "-j " + str(ncpu),
-            "-abs-mem " + str(round(mem, 2)),
-            "-auto-threshold 1 -auto-mask " + str(threshold),
+            f"-minuv-l {minuv}",
+            f"-maxuv-l {uvtaper}"
+            "-taper-tukey",
+            f"-j {ncpu}",
+            f"-abs-mem {round(mem, 2)}",
+            f"-auto-threshold 1 -auto-mask {threshold}",
             "-no-update-model-required",
         ]
         if datacolumn != "CORRECTED_DATA" and datacolumn != "corrected":
-            wsclean_args.append("-data-column " + datacolumn)
+            wsclean_args.append(f"-data-column {datacolumn}")
 
         ngrid = max(1, int(ncpu / 2))
         if ngrid > 1:
-            wsclean_args.append("-parallel-gridding " + str(ngrid))
+            wsclean_args.append(f"-parallel-gridding {ngrid}")
 
         if pol == "I":
             wsclean_args.append("-no-negative")
@@ -949,16 +953,11 @@ def main(
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
-        max_ms_size = max(target_ms_sizes)
-        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
-        min_mem /= total_ncoarse
 
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
@@ -1094,7 +1093,7 @@ def cli():
         "--minuv_l",
         dest="minuv",
         type=float,
-        default=0.0,
+        default=10,
         help="Minimum UV distance in wavelengths",
     )
     adv_args.add_argument(

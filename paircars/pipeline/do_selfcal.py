@@ -19,7 +19,6 @@ from paircars.utils.calibration import (
     get_quartical_table_metadata,
 )
 from paircars.utils.flagging import (
-    uvbin_flag,
     get_unflagged_antennas,
     get_chans_flag,
     do_flag_backup,
@@ -37,9 +36,8 @@ from paircars.utils.logger_utils import (
 )
 from paircars.utils.ms_metadata import (
     check_datacolumn_valid,
-    get_ms_size,
 )
-from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
+from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse, get_gleam_uvrange
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -71,7 +69,7 @@ def do_selfcal(
     min_iter=3,
     DR_convergence_frac=0.1,
     uvrange="",
-    minuv=0,
+    minuv=10,
     solint="60s",
     weight="briggs",
     robust=0.0,
@@ -152,7 +150,7 @@ def do_selfcal(
     mem = abs(mem)
 
     limit_threads(n_threads=ncpu)
-    from casatasks import split, flagdata, flagmanager
+    from casatasks import split, flagmanager
 
     sub_observer = None
     intlogger, logfile = create_logger(
@@ -221,6 +219,12 @@ def do_selfcal(
                 return 1, msname, [], False
             solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
             applymode = "calflag"
+            
+        #########################################
+        # Default to use only Phase-I range (3km)
+        #########################################
+        if uvrange == "":
+            uvrange = get_gleam_uvrange(msname)
 
         ##############################
         # Spliting corrected data
@@ -256,16 +260,19 @@ def do_selfcal(
         ################################################################
         # Initial flagging -- zeros, extreme bad data, and non-disk data
         ################################################################
-        intlogger.info("Initial flagging -- zeros, extreme bad data, and non-disk data")
-        with suppress_output():
-            flagdata(
-                vis=msname,
-                mode="clip",
-                clipzeros=True,
-                datacolumn="data",
-                flagbackup=False,
+        intlogger.info("Checking initial flagging...")
+        unflag_chans, flag_chans = get_chans_flag(msname)
+        if len(unflag_chans) > 0:
+            temp_ms = f"{msname}.tempsplit"
+            unflag_chans = [f"{i}" for i in unflag_chans]
+            unflag_spw = f"0:{';'.join(unflag_chans)}"
+            print(f"Spliting only unflagged spectral window: {unflag_spw}")
+            split(
+                vis=msname, outputvis=temp_ms, datacolumn="all", spw=unflag_spw
             )
-
+            os.system(f"rm -rf {msname} {msname}.flagversions")
+            os.system(f"mv {temp_ms} {msname}")
+            
         ############################################
         # Imaging and calibration parameters
         ############################################
@@ -298,6 +305,7 @@ def do_selfcal(
         num_iter = 0
         num_iter_after_ap = 0
         num_iter_fixed_sigma = 0
+        num_iter_after_uvsub=0
         last_sigma_DR1 = 0
         sigma_reduced_count = 0
         calmode = "p"
@@ -308,6 +316,8 @@ def do_selfcal(
         nondisk_flag = True
         min_DR = 0
         min_iter = max(3, min_iter)  # Minimum 3 iterations
+        do_uvsub_flag=False
+        restore_flag=True
         os.system("rm -rf *_selfcal_present*")
 
         ###########################################
@@ -370,6 +380,8 @@ def do_selfcal(
                     do_intensity_cal=True,
                     do_polcal=False,
                     solar_attn=solar_attn,
+                    do_uvsub_flag=do_uvsub_flag,
+                    restore_flag=restore_flag,
                     ncpu=ncpu,
                     mem=round(mem, 2),
                 )
@@ -412,6 +424,8 @@ def do_selfcal(
                         do_intensity_cal=True,
                         do_polcal=False,
                         solar_attn=solar_attn,
+                        do_uvsub_flag=False,
+                        restore_flag=True,
                         ncpu=ncpu,
                         mem=round(mem, 2),
                     )
@@ -464,7 +478,10 @@ def do_selfcal(
                 use_previous_model = True
             else:
                 use_previous_model = False
-
+            
+            if do_uvsub_flag:
+                num_iter_after_uvsub+=1
+       
             #########################################################
             # If DR decreased below starting DR
             #########################################################
@@ -475,13 +492,18 @@ def do_selfcal(
                 intlogger.info(
                     f"Dynamic range decreased below start dynamic range: {min_DR}."
                 )
-                if os.path.exists(last_round_ms):
-                    os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable, nondisk_flag
+                if not do_uvsub_flag and num_iter_after_uvsub==0 and calmode=="ap":
+                    intlogger.info("Trying uvsub flagging.")
+                    do_uvsub_flag=True
+                    restore_flag=False
+                else:
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable, nondisk_flag
 
             #########################################################
             # If DR is decreasing (DR decrease in phase-only selfcal)
@@ -520,28 +542,41 @@ def do_selfcal(
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
                 )
-                if os.path.exists(last_round_ms):
-                    os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable, nondisk_flag
+                if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    intlogger.info("Trying uvsub flagging.")
+                    do_uvsub_flag=True
+                    restore_flag=False
+                else:
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable, nondisk_flag
 
             ##########################
             # If DR suddenly decreased
             ##########################
             if DR3 < 0.7 * DR2 and calmode == "ap" and num_iter_after_ap > 1:
-                intlogger.info(
-                    "Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                )
-                if os.path.exists(last_round_ms):
-                    os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
-                os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
-                clean_shutdown(sub_observer)
-                return 0, msname, last_round_gaintable, nondisk_flag
+                if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    intlogger.info(
+                        "Dynamic range dropped suddenly.\n"
+                    )
+                    intlogger.info("Trying uvsub flagging.")
+                    do_uvsub_flag=True
+                    restore_flag=False
+                else:   
+                    intlogger.info(
+                        "Dynamic range dropped suddenly. Using last round caltable as final.\n"
+                    )
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable, nondisk_flag
 
             ###########################
             # If maximum DR has reached
@@ -579,16 +614,27 @@ def do_selfcal(
                         + str(end_threshold)
                         + "sigma...\n"
                     )
+                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        intlogger.info("Trying uvsub flagging.")
+                        do_uvsub_flag=True
+                        restore_flag=False
+                        use_previous_model=True
                     threshold = end_threshold
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
                     continue
                 else:
-                    intlogger.info("Selfcal calibration has converged.\n")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, nondisk_flag
+                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        intlogger.info("Trying uvsub flagging.")
+                        do_uvsub_flag=True
+                        restore_flag=False
+                        use_previous_model=True
+                    else:
+                        intlogger.info("Selfcal calibration has converged.\n")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, gaintable, nondisk_flag
             else:
                 ################################################################
                 # Condition 2
@@ -614,6 +660,10 @@ def do_selfcal(
                             threshold -= 1
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
+                        if not do_uvsub_flag and num_iter_after_uvsub==0:
+                            intlogger.info("Trying uvsub flagging.")
+                            do_uvsub_flag=True
+                            restore_flag=False
                     ######################################
                     # Converged if already in apcal
                     ######################################
@@ -626,6 +676,11 @@ def do_selfcal(
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                         else:
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                        if not do_uvsub_flag and num_iter_after_uvsub==0:
+                            intlogger.info("Trying uvsub flagging.")
+                            do_uvsub_flag=True
+                            restore_flag=False
+                            use_previous_model=True
                 ######################################
                 # Condition 3
                 # Reducing threshold if not converged
@@ -636,11 +691,17 @@ def do_selfcal(
                     and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
                 ):
-                    intlogger.info("Self-calibration has converged.\n")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, nondisk_flag
+                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        intlogger.info("Trying uvsub flagging.")
+                        do_uvsub_flag=True
+                        restore_flag=False
+                        use_previous_model=True
+                    else:
+                        intlogger.info("Self-calibration has converged.\n")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, gaintable, nondisk_flag
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
@@ -664,6 +725,7 @@ def do_selfcal(
             if calmode == "ap":
                 num_iter_after_ap += 1
             num_iter_fixed_sigma += 1
+            os.system(f"cp -r {msname} {msname}.round{num_iter}")
     except Exception:
         intlogger.exception(traceback.print_exc())
         os.system("rm -rf *_selfcal_present*")
@@ -684,7 +746,7 @@ def do_polselfcal(
     threshold=3.0,
     DR_convergence_frac=0.1,
     uvrange="",
-    minuv=0,
+    minuv=10,
     weight="briggs",
     robust=0.0,
     solar_selfcal=True,
@@ -843,7 +905,7 @@ def do_polselfcal(
         ################################################################
         # Initial flagging -- zeros, extreme bad data
         ################################################################
-        pollogger.info("Initial flagging -- zeros and extreme bad data.")
+        pollogger.info("Checking initial flagging...")
         with suppress_output():
             flagdata(
                 vis=msname,
@@ -852,39 +914,23 @@ def do_polselfcal(
                 datacolumn="data",
                 flagbackup=False,
             )
-            do_flag_backup(msname, flagtype="pol_selfcal")
-            result = uvbin_flag(
-                msname,
-                uvbin_size=10,
-                datacolumn="data",
-                mode="rflag",
-                threshold=10.0,
-                flagbackup=False,
+        unflag_chans, flag_chans = get_chans_flag(msname)
+        if len(unflag_chans) > 0:
+            temp_ms = f"{msname}.tempsplit"
+            unflag_chans = [f"{i}" for i in unflag_chans]
+            unflag_spw = f"0:{';'.join(unflag_chans)}"
+            print(f"Spliting only unflagged spectral window: {unflag_spw}")
+            split(
+                vis=msname, outputvis=temp_ms, datacolumn="all", spw=unflag_spw
             )
-            unflag_chans, flag_chans = get_chans_flag(msname)
-            if result != 0:
-                pollogger.info("UV-bin flagging is not successful.")
-                restore_initial_flag = True
-            elif len(unflag_chans) == 0:
-                pollogger.info(
-                    "All channels are getting flagged in uvbin flagging. Restoring the flags."
-                )
-                restore_initial_flag = True
-            else:
-                restore_initial_flag = False
-            if restore_initial_flag:
-                flagmanager(vis=msname, mode="restore", versionname="pol_selfcal_1")
-                flagmanager(vis=msname, mode="delete", versionname="pol_selfcal_1")
-                if len(unflag_chans) > 0:
-                    temp_ms = f"{msname}/.tempsplit"
-                    unflag_chans = [f"{i}" for i in unflag_chans]
-                    unflag_spw = f"0:{';'.join(unflag_chans)}"
-                    print(f"Spliting only unflagged spectral window: {unflag_spw}")
-                    split(
-                        vis=msname, outputvis=temp_ms, datacolumn="all", spw=unflag_spw
-                    )
-                    os.system(f"rm -rf {msname} {msname}.flagversions")
-                    os.system(f"mv {temp_ms} {msname}")
+            os.system(f"rm -rf {msname} {msname}.flagversions")
+            os.system(f"mv {temp_ms} {msname}")
+                
+        #########################################
+        # Default to use only Phase-I range (3km)
+        #########################################
+        if uvrange == "":
+            uvrange = get_gleam_uvrange(msname)
 
         ############################################
         # Imaging and calibration parameters
@@ -921,6 +967,9 @@ def do_polselfcal(
         VL1 = VL2 = VL3 = 1.0
         num_iter = 0
         calc_chunks = True
+        do_uvsub_flag=False
+        restore_flag=True
+        num_iter_after_uvsub=0
         last_round_gaintable = []
         last_leakage_file = ""
         last_round_ms = ""
@@ -983,6 +1032,8 @@ def do_polselfcal(
                 pbcor=pbcor,
                 leakagecor=leakagecor,
                 pbuncor=pbuncor,
+                do_uvsub_flag=do_uvsub_flag,
+                restore_flag=restore_flag,
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
@@ -1110,7 +1161,15 @@ def do_polselfcal(
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
-
+                   
+                if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    pollogger.info("Trying uvsub flagging.")
+                    do_uvsub_flag=True
+                    restore_flag=False
+                   
+                if do_uvsub_flag:
+                    num_iter_after_uvsub+=1
+                         
                 ##############################################################
                 # If DR is decreasing (DR decrease in pol selfcal)
                 ##############################################################
@@ -1122,13 +1181,18 @@ def do_polselfcal(
                     pollogger.info(
                         "Dynamic range is decreasing after minimum numbers of rounds.\n"
                     )
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, last_leakage_file
+                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        pollogger.info("Trying uvsub flagging.")
+                        do_uvsub_flag=True
+                        restore_flag=False
+                    else:
+                        if os.path.exists(last_round_ms):
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"mv {last_round_ms} {msname}")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # If maximum DR has reached
@@ -1144,16 +1208,24 @@ def do_polselfcal(
                 # If DR suddenly decreased
                 ##########################
                 if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_converged:
-                    pollogger.info(
-                        "Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                    )
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, last_leakage_file
+                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        pollogger.info(
+                            "Dynamic range dropped suddenly.\n"
+                        )
+                        pollogger.info("Trying uvsub flagging.")
+                        do_uvsub_flag=True
+                        restore_flag=False
+                    else:
+                        pollogger.info(
+                            "Dynamic range dropped suddenly. Using last round caltable as final.\n"
+                        )
+                        if os.path.exists(last_round_ms):
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"mv {last_round_ms} {msname}")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # Checking DR convergence
@@ -1168,11 +1240,16 @@ def do_polselfcal(
                     and num_iter > min_iter
                     and leakage_converged
                 ):
-                    pollogger.info("Self-calibration has converged.\n")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file
+                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        pollogger.info("Trying uvsub flagging.")
+                        do_uvsub_flag=True
+                        restore_flag=False
+                    else:
+                        pollogger.info("Self-calibration has converged.\n")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, gaintable, leakage_file
                 #########################################
                 # If maximum iteration has reached
                 #########################################
@@ -1215,7 +1292,7 @@ def do_full_selfcal(
     polselfcal_min_iter=5,
     DR_convergence_frac=0.1,
     uvrange="",
-    minuv=0,
+    minuv=10,
     solint="60s",
     weight="briggs",
     robust=0.0,
@@ -1256,6 +1333,13 @@ def do_full_selfcal(
     msmd.open(msname)
     refant = str(msmd.antennaids(refant)[0])
     msmd.close()
+    
+    #########################################
+    # Default to use only Phase-I range (3km)
+    #########################################
+    if uvrange == "":
+        uvrange = get_gleam_uvrange(msname)
+        
     intensity_selfcal_msg, selfcal_ms, gaintable, try_nondisk_flag = do_selfcal(
         msname=msname,
         workdir=workdir,
@@ -1332,7 +1416,7 @@ def main(
     conv_frac=0.1,
     solint="60s",
     uvrange="",
-    minuv=0,
+    minuv=10,
     weight="briggs",
     robust=0.0,
     applymode="calonly",
@@ -1382,7 +1466,7 @@ def main(
     uvrange : str, optional
         UV range to be used for imaging and calibration, in CASA format. Default is "" (all baselines).
     minuv : float, optional
-        Minimum baseline length (in wavelengths) to include. Default is 0.
+        Minimum baseline length (in wavelengths) to include. Default is 10.
     weight : str, optional
         Weighting scheme for imaging (e.g., "natural", "uniform", "briggs"). Default is "briggs".
     robust : float, optional
@@ -1478,16 +1562,11 @@ def main(
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-        target_ms_sizes = [get_ms_size(msname) for msname in mslist]
-        max_ms_size = max(target_ms_sizes)
-        min_mem = round(10 * max_ms_size, 2)  # 10 times the size of the ms
-        min_mem /= total_ncoarse
 
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            min_mem=min_mem,
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
@@ -1902,7 +1981,7 @@ def cli():
     adv_args.add_argument(
         "--minuv",
         type=float,
-        default=0,
+        default=10,
         help="Minimum UV-lambda used for imaging",
         metavar="Float",
     )

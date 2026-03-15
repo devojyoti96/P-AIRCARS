@@ -179,7 +179,7 @@ def get_local_dask_cluster(
     min_mem=1,
     max_worker=-1,
     spill_frac=0.7,
-    wait_time=60.0,
+    wait_time=10.0,
     verbose=True,
 ):
     """
@@ -225,7 +225,7 @@ def get_local_dask_cluster(
     os.makedirs(dask_dir, exist_ok=True)
     dask_dir_tmp = f"{dask_dir}/tmp"
     os.makedirs(dask_dir_tmp, exist_ok=True)
-    min_mem = max(0.1,min_mem)
+    min_mem = max(0.1, min_mem)
     try:
         # Raise file descriptor limit
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -249,10 +249,16 @@ def get_local_dask_cluster(
             n_worker_mem = int(usable_mem / min_mem)
             if n_worker_mem < 2:
                 if total_time > wait_time:
-                    print(
-                        "Minimum available memory is not sufficient for at-least 2 workers."
-                    )
-                    return None, None, dask_dir, n_worker_mem
+                    total_mem = psutil.virtual_memory().total / 1024**3  # In GB
+                    usable_mem = round(total_mem * mem_frac, 2)
+                    n_worker_mem = int(usable_mem / min_mem)
+                    if n_worker_mem<2:
+                        print(
+                            f"Minimum available memory: {usable_mem}GB is not sufficient for at-least 2 workers."
+                        )
+                        return None, None, dask_dir, n_worker_mem   
+                    else:
+                        break                     
                 else:
                     time.sleep(1)
                     total_time += 1
