@@ -1555,9 +1555,10 @@ def selfcal_round(
                 tb.putcol("CPARAM",new_gain)
                 tb.flush()
                 tb.close()
-            flagmanager(
-                vis=gain_caltable, mode="delete", versionname="gainflag_1"
-            )
+            with suppress_output():
+                flagmanager(
+                    vis=gain_caltable, mode="delete", versionname="gainflag_1"
+                )
 
             ##################################
             # Perform bandpass calibration
@@ -1639,16 +1640,17 @@ def selfcal_round(
                     tb.putcol("CPARAM",new_gain)
                     tb.flush()
                     tb.close()
-                flagmanager(
-                    vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
-                )
+                with suppress_output():
+                    flagmanager(
+                        vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
+                    )
 
                 if fluxscale_mwa:
                     logger.info("Flux scaled caltable using MWA reference bandpass.")
                     fluxcal_caltable(bpass_caltable, attn=solar_attn)
 
             logger.info(
-                f"applycal(vis={msname},gaintable={applycal_gaintable},interp={interp},applymode='{applymode}',calwt=[False],flagbackup=False)\n"
+                f"applycal(vis='{msname}',gaintable={applycal_gaintable},interp={interp},applymode='{applymode}',calwt=s[False],flagbackup=False)\n"
             )
             with suppress_output():
                 applycal(
@@ -1682,7 +1684,7 @@ def selfcal_round(
                 f"output.log_directory={quartical_log}",
                 "solver.terms=[D]",
                 "solver.iter_recipe=[200]",
-                "solver.propagate_flags=False",
+                "solver.propagate_flags=True",
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
                 "D.type=complex",
@@ -1732,7 +1734,7 @@ def selfcal_round(
                 "output.flags=True",
                 "solver.terms=[D]",
                 "solver.iter_recipe=[0]",
-                "solver.propagate_flags=False",
+                "solver.propagate_flags=True",
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
                 "D.type=complex",

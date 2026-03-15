@@ -211,7 +211,7 @@ def applysol(
                                     "output.flags=True", 
                                     f"solver.terms=[{soltype}]",
                                     "solver.iter_recipe=[0]",
-                                    "solver.propagate_flags=False",
+                                    "solver.propagate_flags=True",
                                     f"solver.threads={n_threads}",
                                     "dask.threads=1",
                                     f"{soltype}.type=complex",
