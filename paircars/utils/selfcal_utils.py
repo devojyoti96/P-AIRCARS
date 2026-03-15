@@ -1176,7 +1176,7 @@ def selfcal_round(
             "-nmiter 5",
             "-gain 0.1",
             f"-minuv-l {minuv}",
-            f"-maxuv-l {uvtaper}"
+            f"-maxuv-l {uvtaper}",
             "-taper-tukey",
             f"-j {ncpu}",
             f"-abs-mem {mem}",
