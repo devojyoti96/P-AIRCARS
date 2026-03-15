@@ -3388,52 +3388,52 @@ def master_control(
                             selfcal_leakages, overwrite=True
                         )                
 
-            ###########################################
-            # Plotting self-caltables
-            ###########################################
-            if do_selfcal and len(selfcal_gaincal) > 0:
-                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                msg, gcal_plots = plot_caltable_diagnostics(
-                    selfcal_gaincal, f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal"
-                )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for self-calibration gaincal tables are saved in : {gcal_plots}."
+                ###########################################
+                # Plotting self-caltables
+                ###########################################
+                if do_selfcal and len(selfcal_gaincal) > 0:
+                    os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
+                    msg, gcal_plots = plot_caltable_diagnostics(
+                        selfcal_gaincal, f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal"
                     )
-                else:
-                    print(
-                        "Error in creating diagnostic plots for self-calibration gaincal tables."
-                    )
+                    if msg == 0:
+                        print(
+                            f"Diagnostic plots for self-calibration gaincal tables are saved in : {gcal_plots}."
+                        )
+                    else:
+                        print(
+                            "Error in creating diagnostic plots for self-calibration gaincal tables."
+                        )
 
-            if do_selfcal and len(selfcal_bandpass) > 0:
-                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                msg, bcal_plots = plot_caltable_diagnostics(
-                    selfcal_bandpass,
-                    f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal",
-                )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for self-calibration bandpass tables are saved in : {bcal_plots}."
+                if do_selfcal and len(selfcal_bandpass) > 0:
+                    os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
+                    msg, bcal_plots = plot_caltable_diagnostics(
+                        selfcal_bandpass,
+                        f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal",
                     )
-                else:
-                    print(
-                        "Error in creating diagnostic plots for self-calibration bandpass tables."
-                    )
+                    if msg == 0:
+                        print(
+                            f"Diagnostic plots for self-calibration bandpass tables are saved in : {bcal_plots}."
+                        )
+                    else:
+                        print(
+                            "Error in creating diagnostic plots for self-calibration bandpass tables."
+                        )
 
-            if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
-                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                msg, dcal_plots = plot_quartical_tables(
-                    selfcal_leakages,
-                    f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
-                )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
+                if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
+                    os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
+                    msg, dcal_plots = plot_quartical_tables(
+                        selfcal_leakages,
+                        f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
                     )
-                else:
-                    print(
-                        "Error in creating diagnostic plots for self-calibration leakage tables."
-                    )
+                    if msg == 0:
+                        print(
+                            f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
+                        )
+                    else:
+                        print(
+                            "Error in creating diagnostic plots for self-calibration leakage tables."
+                        )
 
         #############################################
         # Spliting targets if not started already
