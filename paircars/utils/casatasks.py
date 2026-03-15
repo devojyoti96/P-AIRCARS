@@ -173,7 +173,7 @@ def single_mstransform(
             )
         time.sleep(5)
         if os.path.exists(outputms):
-            print("Initiating weights for ms: {outputms}")
+            print(f"Initiating weights for ms: {outputms}")
             with suppress_output():
                 initweights(vis=outputms, wtmode="ones", dowtsp=True)
                 flagdata(

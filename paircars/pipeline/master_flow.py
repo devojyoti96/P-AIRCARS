@@ -2867,68 +2867,37 @@ def master_control(
         selfcal_checked=False
         if not redo_selfcal:
             if target_obsid is not None:
-                print(
-                    f"Searching for self-calibration gaincal tables: {selfcaldir}/selfcal_{target_obsid}*.gcal"
-                )
                 selfcal_gaincal = sorted(
                     glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
                 )
-                if len(selfcal_gaincal)==0:
-                    do_apply_selfcal = False
-                else:
-                    print("###################################################")
-                    print(
-                        f"Self-calibration gaincal tables are already present in calibration directory: {selfcaldir}"
-                    )
-                    for gcal in selfcal_gaincal:
-                        print(f"{os.path.basename(gcal)}")
-                    print("####################################################")
-                    print(
-                        f"Searching for self-calibration bandpass tables: {selfcaldir}/selfcal_{target_obsid}*.bcal"
-                    )
+                if len(selfcal_gaincal)>0:
                     selfcal_bandpass = sorted(
                         glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
                     )
                     if len(selfcal_bandpass) > 0:
-                        print("###################################################")
-                        print(
-                            f"Self-calibration bandpass tables are already present in calibration directory: {selfcaldir}"
-                        )
-                        for bpass in selfcal_bandpass:
-                            print(f"{os.path.basename(bpass)}")
-                        print("####################################################")
                         selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
                     if do_polcal:
-                        print(
-                            f"Searching for self-calibration polarisation tables: {selfcaldir}/selfcal_{target_obsid}*.dcal"
-                        )
                         selfcal_leakages = sorted(
                             glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
                         )
                         selfcal_checked=True
                         if len(selfcal_leakages) > 0:
-                            print("###################################################")
-                            print(
-                                f"Self-calibration polarisation leakage tables are already present in calibration directory: {selfcaldir}"
-                            )
-                            for dcal in selfcal_leakages:
-                                print(f"{os.path.basename(dcal)}")
-                            print("####################################################")
                             selfcal_leakages = interpolate_quartical(
                                 selfcal_leakages, overwrite=True
                             )
                     else:
                         selfcal_checked=True
-           
-                if selfcal_checked:
-                    if emails != "":
-                        email_msg = "Self-calibration solutions for target are already present."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    do_selfcal=False # If self-cal tables already exist, do not perform selfcal
-                else:
-                    do_apply_selfcal=False
+
+        ####################################################
+        # If selfcal tables present, do not perform selfcal
+        ####################################################
+        if selfcal_checked:
+            if emails != "":
+                email_msg = "Self-calibration solutions for target are already present."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            do_selfcal=False # If self-cal tables already exist, do not perform selfcal
                 
         ###################################################
         # Start spliting selfcal ms
@@ -3328,113 +3297,112 @@ def master_control(
         ########################################
         # Checking self-cal caltables
         ########################################
-        if not selfcal_checked:
+        print(
+            f"Searching for self-calibration gaincal tables: {selfcaldir}/selfcal_{target_obsid}*.gcal"
+        )
+        selfcal_gaincal = sorted(
+            glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
+        )
+        if len(selfcal_gaincal)==0:
             print(
-                f"Searching for self-calibration gaincal tables: {selfcaldir}/selfcal_{target_obsid}*.gcal"
+                "Self-calibration is not performed and no self-calibration caltable is available."
             )
-            selfcal_gaincal = sorted(
-                glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
-            )
-            if len(selfcal_gaincal)==0:
-                print(
-                    "Self-calibration is not performed and no self-calibration caltable is available."
+            do_apply_selfcal = False
+            if emails != "":
+                email_msg = "Self-calibration is not performed and no self-calibration caltable is available."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
                 )
-                do_apply_selfcal = False
-                if emails != "":
-                    email_msg = "Self-calibration is not performed and no self-calibration caltable is available."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-            else:
+        else:
+            print("###################################################")
+            print(
+                f"Self-calibration gaincal tables in calibration directory: {selfcaldir}"
+            )
+            for gcal in selfcal_gaincal:
+                print(f"{os.path.basename(gcal)}")
+            print("####################################################")
+            
+            print(
+                f"Searching for self-calibration bandpass tables: {selfcaldir}/selfcal_{target_obsid}*.bcal"
+            )
+            selfcal_bandpass = sorted(
+                glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
+            )
+            if len(selfcal_bandpass) > 0:
                 print("###################################################")
                 print(
-                    f"Self-calibration gaincal tables in calibration directory: {selfcaldir}"
+                    f"Self-calibration bandpass tables in calibration directory: {selfcaldir}"
                 )
-                for gcal in selfcal_gaincal:
-                    print(f"{os.path.basename(gcal)}")
+                for bpass in selfcal_bandpass:
+                    print(f"{os.path.basename(bpass)}")
                 print("####################################################")
-                
+                selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
+            if do_polcal:
                 print(
-                    f"Searching for self-calibration bandpass tables: {selfcaldir}/selfcal_{target_obsid}*.bcal"
+                    f"Searching for self-calibration polarisation leakage tables: {selfcaldir}/selfcal_{target_obsid}*.dcal"
                 )
-                selfcal_bandpass = sorted(
-                    glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
+                selfcal_leakages = sorted(
+                    glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
                 )
-                if len(selfcal_bandpass) > 0:
+                if len(selfcal_leakages) > 0:
                     print("###################################################")
                     print(
-                        f"Self-calibration bandpass tables in calibration directory: {selfcaldir}"
+                        f"Self-calibration polarisation leakage tables in calibration directory: {selfcaldir}"
                     )
-                    for bpass in selfcal_bandpass:
-                        print(f"{os.path.basename(bpass)}")
+                    for dcal in selfcal_leakages:
+                        print(f"{os.path.basename(dcal)}")
                     print("####################################################")
-                    selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
-                if do_polcal:
+                    selfcal_leakages = interpolate_quartical(
+                        selfcal_leakages, overwrite=True
+                    )                
+
+            ###########################################
+            # Plotting self-caltables
+            ###########################################
+            if do_selfcal and len(selfcal_gaincal) > 0:
+                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
+                msg, gcal_plots = plot_caltable_diagnostics(
+                    selfcal_gaincal, f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal"
+                )
+                if msg == 0:
                     print(
-                        f"Searching for self-calibration polarisation leakage tables: {selfcaldir}/selfcal_{target_obsid}*.dcal"
+                        f"Diagnostic plots for self-calibration gaincal tables are saved in : {gcal_plots}."
                     )
-                    selfcal_leakages = sorted(
-                        glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
+                else:
+                    print(
+                        "Error in creating diagnostic plots for self-calibration gaincal tables."
                     )
-                    if len(selfcal_leakages) > 0:
-                        print("###################################################")
-                        print(
-                            f"Self-calibration polarisation leakage tables in calibration directory: {selfcaldir}"
-                        )
-                        for dcal in selfcal_leakages:
-                            print(f"{os.path.basename(dcal)}")
-                        print("####################################################")
-                        selfcal_leakages = interpolate_quartical(
-                            selfcal_leakages, overwrite=True
-                        )                
 
-                ###########################################
-                # Plotting self-caltables
-                ###########################################
-                if do_selfcal and len(selfcal_gaincal) > 0:
+            if do_selfcal and len(selfcal_bandpass) > 0:
+                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
+                msg, bcal_plots = plot_caltable_diagnostics(
+                    selfcal_bandpass,
+                    f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal",
+                )
+                if msg == 0:
+                    print(
+                        f"Diagnostic plots for self-calibration bandpass tables are saved in : {bcal_plots}."
+                    )
+                else:
+                    print(
+                        "Error in creating diagnostic plots for self-calibration bandpass tables."
+                    )
+
+            if do_selfcal and do_polcal:
+                if len(selfcal_leakages) > 0:
                     os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                    msg, gcal_plots = plot_caltable_diagnostics(
-                        selfcal_gaincal, f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal"
+                    msg, dcal_plots = plot_quartical_tables(
+                        selfcal_leakages,
+                        f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
                     )
                     if msg == 0:
                         print(
-                            f"Diagnostic plots for self-calibration gaincal tables are saved in : {gcal_plots}."
+                            f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
                         )
                     else:
                         print(
-                            "Error in creating diagnostic plots for self-calibration gaincal tables."
+                            "Error in creating diagnostic plots for self-calibration leakage tables."
                         )
-
-                if do_selfcal and len(selfcal_bandpass) > 0:
-                    os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                    msg, bcal_plots = plot_caltable_diagnostics(
-                        selfcal_bandpass,
-                        f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal",
-                    )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for self-calibration bandpass tables are saved in : {bcal_plots}."
-                        )
-                    else:
-                        print(
-                            "Error in creating diagnostic plots for self-calibration bandpass tables."
-                        )
-
-                if do_selfcal and do_polcal:
-                    if len(selfcal_leakages) > 0:
-                        os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                        msg, dcal_plots = plot_quartical_tables(
-                            selfcal_leakages,
-                            f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
-                        )
-                        if msg == 0:
-                            print(
-                                f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
-                            )
-                        else:
-                            print(
-                                "Error in creating diagnostic plots for self-calibration leakage tables."
-                            )
 
         #############################################
         # Spliting targets if not started already

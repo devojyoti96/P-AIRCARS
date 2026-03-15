@@ -209,8 +209,7 @@ def single_ms_flag(
                 print(
                     "Corrected data column is chosen for flagging, but it is not present."
                 )
-                os.system(f"touch {msname}/.flag_failed")
-                return 1
+                datacolumn="data"
             else:
                 datacolumn = "corrected"
 
