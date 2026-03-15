@@ -23,6 +23,7 @@ from paircars.utils.imaging import (
     get_multiscale_bias,
     get_fft_size,
     calc_uvtaper,
+    calc_maxuv,
 )
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -250,6 +251,8 @@ def perform_imaging(
         if threshold <= 1:
             threshold = 1.1
         uvtaper = calc_uvtaper(msname)
+        _, maxuv = calc_maxuv(msname)
+        taper = max(0, maxuv-uvtaper)
 
         wsclean_args = [
             "-quiet",
@@ -265,13 +268,14 @@ def perform_imaging(
             "-nmiter 5",
             "-gain 0.1",
             f"-minuv-l {minuv}",
-            f"-maxuv-l {uvtaper}",
-            "-taper-tukey",
+            f"-maxuv-l {maxuv}",
             f"-j {ncpu}",
             f"-abs-mem {round(mem, 2)}",
             f"-auto-threshold 1 -auto-mask {threshold}",
             "-no-update-model-required",
         ]
+        if taper>0:
+            wsclean_args.append(f"-taper-tukey {taper}")
         if datacolumn != "CORRECTED_DATA" and datacolumn != "corrected":
             wsclean_args.append(f"-data-column {datacolumn}")
 

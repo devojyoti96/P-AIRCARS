@@ -3420,20 +3420,21 @@ def master_control(
                             "Error in creating diagnostic plots for self-calibration bandpass tables."
                         )
 
-                if do_selfcal and do_polcal and len(selfcal_leakages) > 0:
-                    os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                    msg, dcal_plots = plot_quartical_tables(
-                        selfcal_leakages,
-                        f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
-                    )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
+                if do_selfcal and do_polcal:
+                    if len(selfcal_leakages) > 0:
+                        os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
+                        msg, dcal_plots = plot_quartical_tables(
+                            selfcal_leakages,
+                            f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
                         )
-                    else:
-                        print(
-                            "Error in creating diagnostic plots for self-calibration leakage tables."
-                        )
+                        if msg == 0:
+                            print(
+                                f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
+                            )
+                        else:
+                            print(
+                                "Error in creating diagnostic plots for self-calibration leakage tables."
+                            )
 
         #############################################
         # Spliting targets if not started already

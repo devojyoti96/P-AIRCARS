@@ -22,6 +22,7 @@ from .imaging import (
     calc_multiscale_scales,
     get_multiscale_bias,
     calc_uvtaper,
+    calc_maxuv,
 )
 from .image_utils import (
     create_circular_mask,
@@ -1163,6 +1164,9 @@ def selfcal_round(
             weight += " " + str(robust)
             
         uvtaper = calc_uvtaper(msname)
+        _, maxuv = calc_maxuv(msname)
+        
+        taper = max(0, maxuv-uvtaper)
         
         wsclean_args = [
             "-quiet",
@@ -1176,13 +1180,14 @@ def selfcal_round(
             "-nmiter 5",
             "-gain 0.1",
             f"-minuv-l {minuv}",
-            f"-maxuv-l {uvtaper}",
-            "-taper-tukey",
+            f"-maxuv-l {maxuv}",
             f"-j {ncpu}",
             f"-abs-mem {mem}",
             f"-auto-mask {threshold + 0.1}",
             f"-auto-threshold {threshold}",
         ]
+        if taper>0:
+            wsclean_args.append(f"-taper-tukey {taper}")
         if do_intensity_cal:
             wsclean_args.append("-pol I")
             pol = "I"
