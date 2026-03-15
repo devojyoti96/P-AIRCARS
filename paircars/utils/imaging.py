@@ -144,8 +144,11 @@ def calc_uvtaper(msname):
     max_freq = np.nanmax(freqs)
     wavelength = (3*10**8)/max_freq
     msmd.close()
+    bin_size_lamnda = 100
+    bin_size = (100*wavelength)
     r = np.sqrt(u**2 + v**2)
-    r_bins = np.linspace(r.min(), r.max(), 100)
+    n_bins = int(max(r)/bin_size)
+    r_bins = np.linspace(r.min(), r.max(), n_bins)
     counts, edges = np.histogram(r, bins=r_bins)
     max_counts = np.nanmax(counts)
     pos = np.where(counts<0.05*max_counts)[0][0]
