@@ -144,8 +144,9 @@ def calc_uvtaper(msname):
     max_freq = np.nanmax(freqs)
     wavelength = (3*10**8)/max_freq
     msmd.close()
-    bin_size_lamnda = 100
-    bin_size = (100*wavelength)
+    sun_dia = np.deg2rad(calc_sun_dia(max_freq/10**6)/60.0)
+    bin_size_lambda = 1.22/sun_dia
+    bin_size = bin_size_lambda*wavelength
     r = np.sqrt(u**2 + v**2)
     n_bins = int(max(r)/bin_size)
     r_bins = np.linspace(r.min(), r.max(), n_bins)
