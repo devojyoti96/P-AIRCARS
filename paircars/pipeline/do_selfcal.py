@@ -489,6 +489,14 @@ def do_selfcal(
             
             if do_flag:
                 num_iter_after_flag+=1
+                
+            if num_iter_after_ap>1:
+                if not use_solarflagger and DR3<100:
+                    use_solarflagger=True
+                if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                    intlogger.info("Trying uvsub flagging.")
+                    do_flag=True
+                    restore_flag=False
        
             #########################################################
             # If DR decreased below starting DR
