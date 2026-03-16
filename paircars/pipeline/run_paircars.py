@@ -454,9 +454,11 @@ def cli():
         ############################################
         if not args.cluster or scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
+            print (msg)
             return msg
         elif scheduler_name == "slurm":
             msg = submit_slurm_master_flow(args, jobid)
+            print (msg)
             return msg
         else:
             print(

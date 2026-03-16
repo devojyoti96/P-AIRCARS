@@ -427,7 +427,6 @@ def submit_local_master_flow(args, jobid):
                         "flow run" in line.lower()
                         and "finished in state completed" in line.lower()
                     ):
-                        break
                         return 0
         except Exception:
             traceback.print_exc()
