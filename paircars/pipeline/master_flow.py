@@ -2956,7 +2956,7 @@ def master_control(
                 prefix=prefix,
                 force_split=True,
                 only_disk=True,
-                time_window=max(time_window, time_interval),
+                time_window=min(time_window, time_interval),
                 time_interval=time_interval,
                 quack_timestamps=quack_timestamps,
                 jobid=jobid,
