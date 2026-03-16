@@ -1156,8 +1156,8 @@ def selfcal_round(
             times = msmd.timesforspws(0)
             msmd.close()
             diff = np.diff(times)
-            change_idx = int(np.where(np.diff(diff) != 0)[0]/2) + 1
-            max_ntime = len(change_idx)
+            change_idx = np.where(np.diff(diff) != 0)[0] 
+            max_ntime = int(len(change_idx)/2)+1
             nintervals, _ = get_optimal_image_interval(
                 msname,
                 temporal_tol_factor=float(min_tol_factor / 100.0),
