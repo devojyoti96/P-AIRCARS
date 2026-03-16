@@ -1174,12 +1174,7 @@ def selfcal_round(
 
         if weight == "briggs":
             weight += " " + str(robust)
-            
-        uvtaper = calc_uvtaper(msname)
-        _, maxuv = calc_maxuv(msname)
-        
-        taper = max(0, maxuv-uvtaper)
-        
+               
         wsclean_args = [
             "-quiet",
             f"-scale {cellsize}asec",
@@ -1192,14 +1187,11 @@ def selfcal_round(
             "-nmiter 5",
             "-gain 0.1",
             f"-minuv-l {minuv}",
-            f"-maxuv-l {maxuv}",
             f"-j {ncpu}",
             f"-abs-mem {mem}",
             f"-auto-mask {threshold + 0.1}",
             f"-auto-threshold {threshold}",
         ]
-        if taper>0:
-            wsclean_args.append(f"-taper-tukey {taper}")
         if do_intensity_cal:
             wsclean_args.append("-pol I")
             pol = "I"

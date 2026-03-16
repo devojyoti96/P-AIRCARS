@@ -366,6 +366,7 @@ def do_selfcal(
                 if DR3<0.9*DR2: # If DR after flagging is smaller than 90% of last round DR, restore flags
                     restore_flag=True
                     min_iter+=1
+                    intlogger.info("Restoring previous uv-domain flags.")
                 else:   
                     restore_flag=False
             msg, gaintable, dyn, rms, final_image, final_model, final_residual, _ = (
@@ -499,7 +500,6 @@ def do_selfcal(
             if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
                 intlogger.info("Trying uvsub flagging.")
                 do_flag=True
-                use_previous_model=True
                 num_iter_after_flag+=1
        
             #########################################################
@@ -513,6 +513,9 @@ def do_selfcal(
                     f"Dynamic range decreased below start dynamic range: {min_DR}."
                 )
                 issue_occured = True
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 if calmode=="p":
                     intlogger.info("Changing calmode to 'ap'.")
                     calmode = "ap"
@@ -530,10 +533,8 @@ def do_selfcal(
                     intlogger.info("Trying uvsub flagging.")
                     do_flag=True
                     num_iter_after_flag+=1
+                    use_previous_model = False
                 else:
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -548,6 +549,9 @@ def do_selfcal(
                 and num_iter > min_iter
             ):
                 issue_occured = True
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 intlogger.info("Dynamic range decreasing in phase-only self-cal.")
                 if do_apcal:
                     intlogger.info("Changed calmode to 'ap'.")
@@ -558,9 +562,6 @@ def do_selfcal(
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
                 else:
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -575,6 +576,9 @@ def do_selfcal(
                 and num_iter_after_ap > min_iter
             ):
                 issue_occured = True
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
                 )
@@ -590,10 +594,8 @@ def do_selfcal(
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
                         num_iter_after_flag+=1
+                        use_previous_model = False
                     else:
-                        if os.path.exists(last_round_ms):
-                            os.system(f"rm -rf {msname}")
-                            os.system(f"mv {last_round_ms} {msname}")
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
@@ -604,6 +606,9 @@ def do_selfcal(
             ##########################
             if DR3 < 0.7 * DR2 and calmode == "ap" and num_iter_after_ap > 1:
                 issue_occured = True
+                if os.path.exists(last_round_ms):
+                    os.system(f"rm -rf {msname}")
+                    os.system(f"mv {last_round_ms} {msname}")
                 if do_bandpass:
                     intlogger.info("Switch off bandpass.")
                     do_bandpass = False
@@ -619,13 +624,11 @@ def do_selfcal(
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
                         num_iter_after_flag+=1
+                        use_previous_model = False
                     else:   
                         intlogger.info(
                             "Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                        )
-                        if os.path.exists(last_round_ms):
-                            os.system(f"rm -rf {msname}")
-                            os.system(f"mv {last_round_ms} {msname}")
+                        )                       
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
@@ -667,13 +670,6 @@ def do_selfcal(
                         + str(end_threshold)
                         + "sigma...\n"
                     )
-                    if not use_solarflagger and DR3<100:
-                        use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
-                        intlogger.info("Trying uvsub flagging.")
-                        do_flag=True
-                        use_previous_model=True
-                        num_iter_after_flag+=1
                     threshold = end_threshold
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
@@ -720,13 +716,6 @@ def do_selfcal(
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                         else:
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                        if not use_solarflagger and DR3<100:
-                            use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
-                            intlogger.info("Trying uvsub flagging.")
-                            do_flag=True
-                            use_previous_model=True
-                            num_iter_after_flag+=1
                 ######################################
                 # Condition 3
                 # If threshold reached, converged
@@ -736,20 +725,12 @@ def do_selfcal(
                     and num_iter > min_iter
                     and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
-                ):
-                    if not use_solarflagger and DR3<100:
-                        use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
-                        intlogger.info("Trying uvsub flagging.")
-                        do_flag=True
-                        use_previous_model=True
-                        num_iter_after_flag+=1
-                    else:                    
-                        intlogger.info("Self-calibration has converged.\n")
-                        os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
-                        clean_shutdown(sub_observer)
-                        return 0, msname, gaintable, nondisk_flag
+                ):                   
+                    intlogger.info("Self-calibration has converged.\n")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, gaintable, nondisk_flag
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
@@ -1024,6 +1005,7 @@ def do_polselfcal(
         num_iter_after_flag=0
         last_round_gaintable = []
         last_leakage_file = ""
+        solve_array_leakage=False
         last_round_ms = ""
         do_bandpass=True
         issue_occured = False
@@ -1098,6 +1080,7 @@ def do_polselfcal(
                 pbuncor=pbuncor,
                 do_flag=do_flag,
                 restore_flag=restore_flag,
+                solve_array_leakage=solve_array_leakage,
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
@@ -1224,6 +1207,9 @@ def do_polselfcal(
                         pollogger.warning("Leakages become nan. Serious calibration issue occured at the first round.")
                         return 1, msname, [], ""                        
                     pollogger.warning("Leakages become nan. Serious calibration issue occured.")
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
                     if do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
@@ -1235,9 +1221,6 @@ def do_polselfcal(
                             do_flag=True
                             restore_flag=False
                         else:
-                            if os.path.exists(last_round_ms):
-                                os.system(f"rm -rf {msname}")
-                                os.system(f"mv {last_round_ms} {msname}")
                             os.system("rm -rf *_selfcal_present*")
                             time.sleep(5)
                             clean_shutdown(sub_observer)
@@ -1267,7 +1250,13 @@ def do_polselfcal(
                         f"Dynamic range decreased below start dynamic range: {min_DR}."
                     )
                     issue_occured = True
-                    if do_bandpass:
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
+                    if not solve_array_leakage:
+                        pollogger.info("Solving over array instead of antenna.")
+                        solve_array_leakage=True
+                    elif do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
                     else:
@@ -1278,9 +1267,6 @@ def do_polselfcal(
                             do_flag=True
                             num_iter_after_flag+=1
                         else:
-                            if os.path.exists(last_round_ms):
-                                os.system(f"rm -rf {msname}")
-                                os.system(f"mv {last_round_ms} {msname}")
                             os.system("rm -rf *_selfcal_present*")
                             time.sleep(5)
                             clean_shutdown(sub_observer)
@@ -1298,24 +1284,13 @@ def do_polselfcal(
                         "Dynamic range is decreasing after minimum numbers of rounds.\n"
                     )
                     issue_occured = True
-                    if do_bandpass:
-                        pollogger.info("Switch off bandpass.")
-                        do_bandpass=False
-                    else:
-                        if not use_solarflagger and DR3<100:
-                            use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                            pollogger.info("Trying uvsub flagging.")
-                            do_flag=True
-                            num_iter_after_flag+=1
-                        else:
-                            if os.path.exists(last_round_ms):
-                                os.system(f"rm -rf {msname}")
-                                os.system(f"mv {last_round_ms} {msname}")
-                            os.system("rm -rf *_selfcal_present*")
-                            time.sleep(5)
-                            clean_shutdown(sub_observer)
-                            return 0, msname, last_round_gaintable, last_leakage_file
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # If maximum DR has reached
@@ -1332,30 +1307,16 @@ def do_polselfcal(
                 ##########################
                 if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_converged:
                     issue_occured = True
-                    if do_bandpass:
-                        pollogger.info("Switch off bandpass.")
-                        do_bandpass=False
-                    else:
-                        if not use_solarflagger and DR3<100:
-                            use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                            pollogger.info(
-                                "Dynamic range dropped suddenly.\n"
-                            )
-                            pollogger.info("Trying uvsub flagging.")
-                            do_flag=True
-                            num_iter_after_flag+=1
-                        else:
-                            pollogger.info(
-                                "Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                            )
-                            if os.path.exists(last_round_ms):
-                                os.system(f"rm -rf {msname}")
-                                os.system(f"mv {last_round_ms} {msname}")
-                            os.system("rm -rf *_selfcal_present*")
-                            time.sleep(5)
-                            clean_shutdown(sub_observer)
-                            return 0, msname, last_round_gaintable, last_leakage_file
+                    pollogger.info(
+                        "Dynamic range dropped suddenly. Using last round caltable as final.\n"
+                    )
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, last_round_gaintable, last_leakage_file
 
                 ###########################
                 # Checking DR convergence
@@ -1370,21 +1331,11 @@ def do_polselfcal(
                     and num_iter > min_iter
                     and leakage_converged
                 ):
-                    if not use_solarflagger and DR3<100:
-                        use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                        pollogger.info(
-                            "Dynamic range dropped suddenly.\n"
-                        )
-                        pollogger.info("Trying uvsub flagging.")
-                        do_flag=True
-                        num_iter_after_flag+=1
-                    else:
-                        pollogger.info("Self-calibration has converged.\n")
-                        os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
-                        clean_shutdown(sub_observer)
-                        return 0, msname, gaintable, leakage_file
+                    pollogger.info("Self-calibration has converged.\n")
+                    os.system("rm -rf *_selfcal_present*")
+                    time.sleep(5)
+                    clean_shutdown(sub_observer)
+                    return 0, msname, gaintable, leakage_file
                 #########################################
                 # If maximum iteration has reached
                 #########################################
