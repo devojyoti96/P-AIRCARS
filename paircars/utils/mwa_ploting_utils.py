@@ -1134,7 +1134,8 @@ def get_aia_map(
             end_mjdsec = timestamp_to_mjdsec(f"{end_time}", date_format=2)
             if end_mjdsec > start_mjdsec:
                 time = a.Time(t_start, t_end)
-                final_time_range.append(t_start, t_end)
+                final_time_range.append(t_start)
+                final_time_range.append(t_end)
             else:
                 time = a.Time(t_start, t_start)
                 final_time_range.append(t_start)

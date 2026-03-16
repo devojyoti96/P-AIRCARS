@@ -2490,29 +2490,30 @@ def master_control(
                 if len(bandpass_tables) > 0:
                     print("###################################################")
                     print(
-                        f"Bandpass tables ae already present in calibration directory: {basicaldir}"
+                        f"Bandpass tables are already present in calibration directory: {basicaldir}"
                     )
                     for bpass in bandpass_tables:
                         print(f"{os.path.basename(bpass)}")
-                    print("####################################################")
-                    print(
-                        f"Crosshand phase tables are already present in calibration directory: {basicaldir}"
-                    )
-                    for kcross in crossphase_tables:
-                        print(f"{os.path.basename(kcross)}")
-                    print("####################################################")
-                    if emails != "":
-                        email_msg = "Gain solutions from calibrator are already present."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
+                    if len(crossphase_tables)>0:
+                        print("####################################################")
+                        print(
+                            f"Crosshand phase tables are already present in calibration directory: {basicaldir}"
                         )
-                    ####################################
-                    # Stoping further basic calibrations
-                    ####################################
-                    do_basic_cal = False
-                    do_cal_flag = False
-                    do_import_model = False
-                    has_cal = True
+                        for kcross in crossphase_tables:
+                            print(f"{os.path.basename(kcross)}")
+                        print("####################################################")
+                        if emails != "":
+                            email_msg = "Gain solutions from calibrator are already present."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
+                        ####################################
+                        # Stoping further basic calibrations
+                        ####################################
+                        do_basic_cal = False
+                        do_cal_flag = False
+                        do_import_model = False
+                        has_cal = True
 
         ##############################
         # Run spliting jobs
