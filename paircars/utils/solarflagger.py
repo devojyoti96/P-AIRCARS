@@ -253,6 +253,10 @@ def flagger(
     --------
     int
         Success message
+    int
+        Total flag points
+    int
+        Total new flag points
     """
     print(f"Flagging : {msname}")
     do_flag_backup(msname,flagtype="solar_flagger")
@@ -400,17 +404,15 @@ def flagger(
         # Number of additional flagged data points
         n_final_flagged = np.sum(new_flags)
         n_additional_flagged = n_final_flagged - n_flagged
-        # Fraction of initially unflagged data points that are now flagged
-        n_additional_flagged / n_unflagged if n_unflagged > 0 else 0
         
         ################################
         # Putting flags
         ################################
         ms.putcol("FLAG", new_flags.T)
-        return 0
+        return 0, n_final_flagged, n_additional_flagged
     except Exception:
         traceback.print_exc()
-        return 1
+        return 1, None, None
     finally:
         ms.close()
         

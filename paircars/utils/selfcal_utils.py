@@ -982,7 +982,7 @@ def selfcal_round(
     do_polcal=False,
     solve_array_leakage=False,
     pol_solnorm=False,
-    do_uvsub_flag=False,
+    do_flag=False,
     restore_flag=True,
     ncpu=-1,
     mem=-1,
@@ -1056,7 +1056,7 @@ def selfcal_round(
         Perform a single leakage correction over the entire array
     pol_solnorm : bool, optional
         Normalise quartical solutions or not
-    do_uvsub_flag : bool, optional
+    do_flag : bool, optional
         Perform UVsub flagging
     restore_flag : bool, optional
         Restore last round flags or not
@@ -1785,15 +1785,22 @@ def selfcal_round(
         ######################################
         # UVsub flagging
         ######################################
-        if do_uvsub_flag:
-            logger.info("UVsub flagging on residual data.\n")
-            flagger(
-                msname,
-                "residual",
-                threshold=5.0,
-                num_processes=ncpu,
-                flagbackup=False,
-            )
+        if do_flag:
+            logger.info("Flagging in uv-domain data.\n")
+            for threshold in [10.0,7.0,5.0,3.0]:
+                count=0
+                while count<3:
+                    result, n_final_flagged, n_additional_flagged = flagger(
+                        msname,
+                        "corrected",
+                        threshold=5.0,
+                        num_processes=ncpu,
+                        flagbackup=False,
+                    )
+                    if n_additional_flagged==0:
+                        break
+                    else:
+                        count+=1
         return (
             0,
             applycal_gaintable,
