@@ -923,7 +923,7 @@ def run_selfcal_jobs(
     solar_selfcal=True,
     keep_backup=False,
     uvrange="",
-    minuv=0,
+    minuv=10,
     weight="briggs",
     robust=0.0,
     applymode="calonly",
@@ -1186,7 +1186,7 @@ def run_imaging_jobs(
     outdir,
     freqrange="",
     timerange="",
-    minuv=-1,
+    minuv=10,
     weight="briggs",
     robust=0.0,
     pol="IQUV",
@@ -1651,7 +1651,7 @@ def master_control(
     do_pbcor=True,
     weight="briggs",
     robust=0.0,
-    minuv=0,
+    minuv=10,
     image_freqres=1.28,
     image_timeres=10.0,
     pol="IQUV",
@@ -4321,7 +4321,7 @@ def cli():
     advanced_image.add_argument(
         "--minuv",
         type=float,
-        default=0,
+        default=10,
         help="Minimum baseline length (in wavelengths) to include in imaging",
     )
     advanced_image.add_argument(

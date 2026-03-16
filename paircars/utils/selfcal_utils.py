@@ -958,7 +958,7 @@ def selfcal_round(
     imsize,
     round_number=0,
     uvrange="",
-    minuv=0,
+    minuv=10,
     calmode="ap",
     solint="60s",
     solnorm=True,
