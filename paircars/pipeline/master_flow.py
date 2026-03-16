@@ -2473,7 +2473,6 @@ def master_control(
         ##########################################
         # Checking presence of basic caltables
         ##########################################
-        caltables_check = False
         if not redo_basic_cal:
             if calibrator_obsid is not None:
                 print(
@@ -2513,10 +2512,7 @@ def master_control(
                     do_basic_cal = False
                     do_cal_flag = False
                     do_import_model = False
-                    caltables_check = True  # Key to tell caltables has been checked
                     has_cal = True
-            else:
-                has_cal = False
 
         ##############################
         # Run spliting jobs
@@ -2781,52 +2777,50 @@ def master_control(
         ##################################################################
         # Checking presence of necessary caltables if not checked already
         #################################################################
-        if not caltables_check:
-            if calibrator_obsid is not None:
+        if calibrator_obsid is not None:
+            print(
+                f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
+            )
+            bandpass_tables = sorted(
+                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
+            )
+            if len(bandpass_tables) > 0:
+                bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
+            print(
+                f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
+            )
+            crossphase_tables = sorted(
+                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
+            )
+            if len(crossphase_tables) > 0:
+                crossphase_tables = interpolate_bpass(
+                    crossphase_tables, overwrite=True
+                )
+            if len(bandpass_tables) == 0:
                 print(
-                    f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
+                    f"No bandpass table is present in calibration directory : {basicaldir}."
                 )
-                bandpass_tables = sorted(
-                    glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
-                )
-                if len(bandpass_tables) > 0:
-                    bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
-                print(
-                    f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
-                )
-                crossphase_tables = sorted(
-                    glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-                )
-                if len(crossphase_tables) > 0:
-                    crossphase_tables = interpolate_bpass(
-                        crossphase_tables, overwrite=True
-                    )
-                if len(bandpass_tables) == 0:
-                    print(
-                        f"No bandpass table is present in calibration directory : {basicaldir}."
-                    )
-                    has_cal = False
-                    if emails != "":
-                        email_msg = "No bandpass calibration table is found."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                else:
-                    has_cal = True
-                    print("###################################################")
-                    print(f"Bandpass tables in calibration directory: {basicaldir}")
-                    for bpass in bandpass_tables:
-                        print(f"{os.path.basename(bpass)}")
-                    print("####################################################")
-                    print(
-                        f"Crosshand phase tables in calibration directory: {basicaldir}"
-                    )
-                    for kcross in crossphase_tables:
-                        print(f"{os.path.basename(kcross)}")
-                    print("####################################################")
-            else:
                 has_cal = False
-
+                if emails != "":
+                    email_msg = "No bandpass calibration table is found."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+            else:
+                has_cal = True
+                print("###################################################")
+                print(f"Bandpass tables in calibration directory: {basicaldir}")
+                for bpass in bandpass_tables:
+                    print(f"{os.path.basename(bpass)}")
+                print("####################################################")
+                print(
+                    f"Crosshand phase tables in calibration directory: {basicaldir}"
+                )
+                for kcross in crossphase_tables:
+                    print(f"{os.path.basename(kcross)}")
+                print("####################################################")
+          
+          
         ###############################################
         # Making diagnostic plots
         ###############################################
@@ -2834,7 +2828,6 @@ def master_control(
             has_cal
             and len(bandpass_tables) > 0
             and do_basic_cal
-            and not caltables_check
         ):
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, bpass_plots = plot_caltable_diagnostics(
@@ -2851,7 +2844,6 @@ def master_control(
             has_cal
             and len(crossphase_tables) > 0
             and do_basic_cal
-            and not caltables_check
         ):
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
             msg, kcross_plots = plot_caltable_diagnostics(
