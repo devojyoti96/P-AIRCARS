@@ -111,15 +111,16 @@ def get_timeranges(
     timeres = times[1] - times[0]
     ntime_chunk = max(1, int(time_interval / timeres))
     ntime = int(time_window / timeres)
+    times = times[ntime:-ntime]
     for i in range(0, len(times)+ntime_chunk, ntime_chunk):
         try:
             start_time = times[i]
         except Exception:   
-            start_time = times[-1]
+            start_time = times[-ntime]
         try:
             end_time = times[i + ntime]
         except Exception:
-            end_time = times[-ntime:-1]
+            end_time = times[-1]
         if end_time > start_time:
             time_ranges.append(
                 f"{mjdsec_to_timestamp(start_time, str_format=1)}~{mjdsec_to_timestamp(end_time, str_format=1)}"
