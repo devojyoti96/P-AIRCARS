@@ -357,7 +357,7 @@ def do_selfcal(
             intlogger.info("######################################")
             if num_iter_after_flag>0 and do_flag:
                 do_flag=False
-                if DR3<0.9*DR2: # If DR after flagging is smaller than 90% of last round DR, restore flags
+                if DR3<0.85*DR2 and DR3<0.9*DR2: # If DR is decreasing, restore flags
                     restore_flag=True
                     min_iter+=1
                     intlogger.info("Restoring previous uv-domain flags.")
@@ -582,6 +582,9 @@ def do_selfcal(
                         num_iter_after_flag+=1
                         use_previous_model = False
                     else:
+                        if not use_solarflagger and DR3<100:
+                            intlogger.info("Performing final flagging because DR is less than 100.")
+                            do_uvsub_flag(msname,threshold_list=[10,7,5])
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
@@ -611,7 +614,10 @@ def do_selfcal(
                         do_flag=True
                         num_iter_after_flag+=1
                         use_previous_model = False
-                    else:   
+                    else:  
+                        if not use_solarflagger and DR3<100:
+                            intlogger.info("Performing final flagging because DR is less than 100.")
+                            do_uvsub_flag(msname,threshold_list=[10,7,5]) 
                         intlogger.info(
                             "Dynamic range dropped suddenly. Using last round caltable as final.\n"
                         )                       
@@ -660,6 +666,9 @@ def do_selfcal(
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
                 else:
+                    if not use_solarflagger and DR3<100:
+                        intlogger.info("Performing final flagging because DR is less than 100.")
+                        do_uvsub_flag(msname,threshold_list=[10,7,5])
                     intlogger.info("Selfcal calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -712,6 +721,9 @@ def do_selfcal(
                     and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
                 ):                   
+                    if not use_solarflagger and DR3<100:
+                        intlogger.info("Performing final flagging because DR is less than 100.")
+                        do_uvsub_flag(msname,threshold_list=[10,7,5])
                     intlogger.info("Self-calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -724,6 +736,9 @@ def do_selfcal(
                     (not do_apcal and num_iter == max_iter)
                     or (do_apcal and calmode == "ap" and num_iter_after_ap == max_iter)
                 ):
+                    if not use_solarflagger and DR3<100:
+                        intlogger.info("Performing final flagging because DR is less than 100.")
+                        do_uvsub_flag(msname,threshold_list=[10,7,5])
                     intlogger.info(
                         "Self-calibration is finished. Maximum iteration is reached.\n"
                     )
@@ -1228,6 +1243,16 @@ def do_polselfcal(
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
+                        
+                #########################################################
+                # If solving per antenna decrease DR, solve per array
+                #########################################################
+                if not solve_array_leakage and (DR3<DR2 or RMS3>RMS2):
+                    pollogger.info("Solving over array instead of antenna, as DR decreases.")
+                    solve_array_leakage=True
+                    if os.path.exists(last_round_ms):
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"mv {last_round_ms} {msname}")
                                           
                 #########################################################
                 # If DR decreased below starting DR
@@ -1240,10 +1265,7 @@ def do_polselfcal(
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
-                    if not solve_array_leakage:
-                        pollogger.info("Solving over array instead of antenna.")
-                        solve_array_leakage=True
-                    elif do_bandpass:
+                    if do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
                     else:

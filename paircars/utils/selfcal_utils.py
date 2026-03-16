@@ -85,6 +85,37 @@ def cal_crossphase(imagename):
             return cross_phase
 
 
+def do_uvsub_flag(msname,threshold_list=[10,7,5]):
+    """
+    Perform uv-sub flags
+    
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+    threshold_list: list, optional
+        Threshold list
+    """
+    try:
+        for threshold in threshold_list:
+            count=0
+            while count<2:
+                result, n_final_flagged, n_additional_flagged = flagger(
+                    msname,
+                    "residual",
+                    threshold=threshold,
+                    num_processes=ncpu,
+                    flagbackup=False,
+                )
+                if n_additional_flagged==0:
+                    break
+                else:
+                    count+=1
+    except Exception:
+        traceback.print_exc()
+    finally:
+        return
+            
 def determine_disk_visibility(msname):
     """
     Determine whether solar disk is visible or not
@@ -1783,20 +1814,7 @@ def selfcal_round(
         ######################################
         if do_flag:
             logger.info("Flagging in uv-domain data.\n")
-            for threshold in [10.0,7.0,5.0]:
-                count=0
-                while count<2:
-                    result, n_final_flagged, n_additional_flagged = flagger(
-                        msname,
-                        "residual",
-                        threshold=threshold,
-                        num_processes=ncpu,
-                        flagbackup=False,
-                    )
-                    if n_additional_flagged==0:
-                        break
-                    else:
-                        count+=1
+            do_uvsub_flag(msname,threshold_list=[10,7,5])
         return (
             0,
             applycal_gaintable,
