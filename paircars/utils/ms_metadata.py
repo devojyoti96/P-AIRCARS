@@ -116,7 +116,10 @@ def get_timeranges(
         try:
             start_time = times[i]
         except Exception:   
-            start_time = times[-ntime]
+            if ntime>0:
+                start_time = times[-ntime]
+            else:
+                start_time = times[-1]
         try:
             end_time = times[i + ntime]
         except Exception:
