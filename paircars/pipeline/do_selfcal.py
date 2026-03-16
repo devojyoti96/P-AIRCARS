@@ -499,6 +499,14 @@ def do_selfcal(
                     intlogger.info("Trying uvsub flagging.")
                     do_uvsub_flag=True
                     restore_flag=False
+                elif calmode=="p":
+                    intlogger.info("Changing calmode to 'ap'.")
+                    calmode = "ap"
+                    use_previous_model = False
+                    if threshold > end_threshold and num_iter_fixed_sigma > min_iter:
+                        threshold -= 1
+                        sigma_reduced_count += 1
+                        num_iter_fixed_sigma = 0
                 else:
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
@@ -545,10 +553,7 @@ def do_selfcal(
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
                 )
-                if calmode=="p":
-                    intlogger.info("Changing calmode to 'ap'")
-                    calmode = "ap"
-                elif use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
+                if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                     intlogger.info("Trying uvsub flagging.")
                     do_uvsub_flag=True
                     restore_flag=False
