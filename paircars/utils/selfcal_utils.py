@@ -1151,11 +1151,19 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
+            msmd=msmetadata()
+            msmd.open(msname)
+            times = msmd.timesforspws(0)
+            msmd.close()
+            diff = np.diff(times)
+            change_idx = np.where(np.diff(diff) != 0)[0] + 1
+            max_ntime = len(change_idx)
             nintervals, _ = get_optimal_image_interval(
                 msname,
                 temporal_tol_factor=float(min_tol_factor / 100.0),
                 spectral_tol_factor=0.1,
                 flag_central_chan=flag_central_chan,
+                max_ntime=max_ntime,
             )
         else:
             nchans = 1

@@ -119,7 +119,7 @@ def get_timeranges(
         try:
             end_time = times[i + ntime]
         except Exception:
-            end_time = times[-1]
+            end_time = times[-ntime:-1]
         if end_time > start_time:
             time_ranges.append(
                 f"{mjdsec_to_timestamp(start_time, str_format=1)}~{mjdsec_to_timestamp(end_time, str_format=1)}"
