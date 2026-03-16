@@ -1156,7 +1156,7 @@ def selfcal_round(
             times = msmd.timesforspws(0)
             msmd.close()
             diff = np.diff(times)
-            change_idx = np.where(np.diff(diff) != 0)[0] + 1
+            change_idx = int(np.where(np.diff(diff) != 0)[0]/2) + 1
             max_ntime = len(change_idx)
             nintervals, _ = get_optimal_image_interval(
                 msname,
@@ -1168,6 +1168,7 @@ def selfcal_round(
         else:
             nchans = 1
             nintervals = 1
+            max_ntime=1
 
         os.system(f"rm -rf {prefix}*image.fits {prefix}*residual.fits")
 
@@ -1704,7 +1705,12 @@ def selfcal_round(
             if solint=="inf":
                 quartical_args.append("D.time_interval=1")
             elif solint!="int":
-                quartical_args.append(f"D.time_interval={solint}")     
+                if max_ntime>1:
+                    quartical_args.append(f"D.time_interval={max_ntime}") 
+                else:
+                    quartical_args.append(f"D.time_interval={solint}")
+            else:
+                quartical_args.append(f"D.time_interval={max_ntime}")      
             if do_bandpass:
                 quartical_args.append(f"D.freq_interval={int(freqres*1000.0)}kHz")
             else:
@@ -1787,13 +1793,13 @@ def selfcal_round(
         ######################################
         if do_flag:
             logger.info("Flagging in uv-domain data.\n")
-            for threshold in [10.0,7.0,5.0,3.0]:
+            for threshold in [10.0,7.0,5.0]:
                 count=0
-                while count<3:
+                while count<2:
                     result, n_final_flagged, n_additional_flagged = flagger(
                         msname,
-                        "corrected",
-                        threshold=5.0,
+                        "residual",
+                        threshold=threshold,
                         num_processes=ncpu,
                         flagbackup=False,
                     )

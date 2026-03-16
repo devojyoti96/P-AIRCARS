@@ -361,6 +361,13 @@ def do_selfcal(
                 + str(calmode)
             )
             intlogger.info("######################################")
+            if num_iter_after_flag>0 and do_flag:
+                do_flag=False
+                if DR3<0.9*DR2: # If DR after flagging is smaller than 90% of last round DR, restore flags
+                    restore_flag=True
+                    min_iter+=1
+                else:   
+                    restore_flag=False
             msg, gaintable, dyn, rms, final_image, final_model, final_residual, _ = (
                 selfcal_round(
                     msname,
@@ -486,17 +493,6 @@ def do_selfcal(
                 use_previous_model = True
             else:
                 use_previous_model = False
-            
-            if do_flag:
-                num_iter_after_flag+=1
-                
-            if num_iter_after_ap>1:
-                if not use_solarflagger and DR3<100:
-                    use_solarflagger=True
-                if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                    intlogger.info("Trying uvsub flagging.")
-                    do_flag=True
-                    restore_flag=False
        
             #########################################################
             # If DR decreased below starting DR
@@ -522,10 +518,10 @@ def do_selfcal(
                     do_bandpass = False
                     use_previous_model = False
                     num_iter_after_ap=0
-                elif use_solarflagger and not do_flag and num_iter_after_flag==0 and calmode=="ap":
+                elif use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
                     intlogger.info("Trying uvsub flagging.")
                     do_flag=True
-                    restore_flag=False
+                    num_iter_after_flag+=1
                 else:
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
@@ -553,12 +549,6 @@ def do_selfcal(
                         threshold -= 1
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
-                    if not use_solarflagger and DR3<100:
-                        use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                        intlogger.info("Trying uvsub flagging.")
-                        do_flag=True
-                        restore_flag=False
                 else:
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
@@ -591,7 +581,7 @@ def do_selfcal(
                     if use_solarflagger and not do_flag and num_iter_after_flag==0:
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
-                        restore_flag=False
+                        num_iter_after_flag+=1
                     else:
                         if os.path.exists(last_round_ms):
                             os.system(f"rm -rf {msname}")
@@ -620,7 +610,7 @@ def do_selfcal(
                         )
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
-                        restore_flag=False
+                        num_iter_after_flag+=1
                     else:   
                         intlogger.info(
                             "Dynamic range dropped suddenly. Using last round caltable as final.\n"
@@ -671,11 +661,11 @@ def do_selfcal(
                     )
                     if not use_solarflagger and DR3<100:
                         use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
-                        restore_flag=False
                         use_previous_model=True
+                        num_iter_after_flag+=1
                     threshold = end_threshold
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
@@ -710,13 +700,6 @@ def do_selfcal(
                             threshold -= 1
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
-                        if not use_solarflagger and DR3<100:
-                            use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                            intlogger.info("Trying uvsub flagging.")
-                            do_flag=True
-                            restore_flag=False
-                            use_previous_model=True
                     ######################################
                     # Reducing threshold if already in apcal
                     ######################################
@@ -731,11 +714,11 @@ def do_selfcal(
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                         if not use_solarflagger and DR3<100:
                             use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                        if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
                             intlogger.info("Trying uvsub flagging.")
                             do_flag=True
-                            restore_flag=False
                             use_previous_model=True
+                            num_iter_after_flag+=1
                 ######################################
                 # Condition 3
                 # If threshold reached, converged
@@ -748,11 +731,11 @@ def do_selfcal(
                 ):
                     if not use_solarflagger and DR3<100:
                         use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
-                        restore_flag=False
                         use_previous_model=True
+                        num_iter_after_flag+=1
                     else:                    
                         intlogger.info("Self-calibration has converged.\n")
                         os.system("rm -rf *_selfcal_present*")
@@ -775,10 +758,10 @@ def do_selfcal(
                     return 0, msname, gaintable, nondisk_flag
             num_iter += 1
             os.system(f"cp -r {msname} {msname}.round{num_iter}")
+            if calmode == "ap":
+                num_iter_after_ap += 1
+            num_iter_fixed_sigma += 1
             if not issue_occured:
-                if calmode == "ap":
-                    num_iter_after_ap += 1
-                num_iter_fixed_sigma += 1
                 last_round_gaintable = gaintable
                 last_round_ms = f"{msname}.lastround"
                 if os.path.exists(last_round_ms):
@@ -1066,6 +1049,14 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = True
+                
+            if num_iter_after_flag>0 and do_flag:
+                do_flag=False
+                if DR3<0.9*DR2: # If DR after flagging is smaller than 90% of last round DR, restore flags
+                    restore_flag=True
+                    min_iter+=1
+                else:   
+                    restore_flag=False
             (
                 msg,
                 gaintable,
@@ -1259,9 +1250,6 @@ def do_polselfcal(
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
-                   
-                if do_flag:
-                    num_iter_after_flag+=1
                                           
                 #########################################################
                 # If DR decreased below starting DR
@@ -1280,7 +1268,7 @@ def do_polselfcal(
                         if use_solarflagger and not do_flag and num_iter_after_flag==0:
                             pollogger.info("Trying uvsub flagging.")
                             do_flag=True
-                            restore_flag=False
+                            num_iter_after_flag+=1
                         else:
                             if os.path.exists(last_round_ms):
                                 os.system(f"rm -rf {msname}")
@@ -1311,7 +1299,7 @@ def do_polselfcal(
                         if use_solarflagger and not do_flag and num_iter_after_flag==0:
                             pollogger.info("Trying uvsub flagging.")
                             do_flag=True
-                            restore_flag=False
+                            num_iter_after_flag+=1
                         else:
                             if os.path.exists(last_round_ms):
                                 os.system(f"rm -rf {msname}")
@@ -1348,7 +1336,7 @@ def do_polselfcal(
                             )
                             pollogger.info("Trying uvsub flagging.")
                             do_flag=True
-                            restore_flag=False
+                            num_iter_after_flag+=1
                         else:
                             pollogger.info(
                                 "Dynamic range dropped suddenly. Using last round caltable as final.\n"
@@ -1382,7 +1370,7 @@ def do_polselfcal(
                         )
                         pollogger.info("Trying uvsub flagging.")
                         do_flag=True
-                        restore_flag=False
+                        num_iter_after_flag+=1
                     else:
                         pollogger.info("Self-calibration has converged.\n")
                         os.system("rm -rf *_selfcal_present*")
