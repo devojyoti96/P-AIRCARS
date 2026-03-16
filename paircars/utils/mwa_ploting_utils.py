@@ -1457,7 +1457,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 suvi_wavelength=wavelength,
                 ncpu=ncpu,
             )
-            if len(euv_images)=0:
+            if len(euv_images)==0:
                 euv_images = get_aia_map(
                     start_obs_date,
                     start_obs_time,

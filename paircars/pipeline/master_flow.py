@@ -2871,7 +2871,6 @@ def master_control(
         ###################################################
         # Checking if selfcal tables already exist or not
         ###################################################
-        selfcal_checked=False
         if not redo_selfcal:
             if target_obsid is not None:
                 print("Checking pre-existing self-calibration solutions...")
@@ -2892,7 +2891,6 @@ def master_control(
                             selfcal_leakages = interpolate_quartical(
                                 selfcal_leakages, overwrite=True
                             )
-                            selfcal_checked=True
                             do_selfcal=False
                             print("Self-calibration solutions exist including polarisation calibration. Not performing self-calibration")
                             if emails != "":
