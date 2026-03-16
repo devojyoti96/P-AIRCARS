@@ -958,11 +958,12 @@ def selfcal_round(
     imsize,
     round_number=0,
     uvrange="",
-    minuv=10,
+    minuv=0,
     calmode="ap",
     solint="60s",
     solnorm=True,
     refant="1",
+    do_bandpass=True,
     applymode="calonly",
     threshold=3,
     weight="briggs",
@@ -1017,6 +1018,8 @@ def selfcal_round(
         Solution normalisation
     refant : str, optional
         Reference antenna
+    do_bandpass: bool, optional
+        Perform bandpass calibration
     applymode : str, optional
         Solution apply mode (calonly or calflag)
     threshold : float, optional
@@ -1559,15 +1562,17 @@ def selfcal_round(
                 flagmanager(
                     vis=gain_caltable, mode="delete", versionname="gainflag_1"
                 )
-
+            if not do_bandpass and fluxscale_mwa:
+                logger.info("Flux scaled gain caltable using MWA reference bandpass.")
+                fluxcal_caltable(gain_caltable, attn=solar_attn)
+                
             ##################################
             # Perform bandpass calibration
             ##################################
-            if calmode == "ap":
+            if calmode == "ap" and do_bandpass:
                 bpass_caltable = prefix.replace("present", f"{round_number}") + ".bcal"
                 if os.path.exists(bpass_caltable):
                     os.system("rm -rf " + bpass_caltable)
-
                 logger.info(
                     f"bandpass(vis='{msname}',caltable='{bpass_caltable}',uvrange='{uvrange}',refant='{refant}',solint='inf',gaintable=['{gain_caltable}'],interp={interp},minsnr=3,solnorm=True)\n"
                 )
@@ -1585,69 +1590,69 @@ def selfcal_round(
                     )
                 if not os.path.exists(bpass_caltable):
                     logger.error("No bandpass solutions are found.\n")
-                    return 3, applycal_gaintable, 0, 0, "", "", "", []
-
-                applycal_gaintable.append(bpass_caltable)
-                interp.append("linear,linear")
-
-            if calmode == "ap":
-                #############################
-                # Bandpass flagging
-                #############################
-                (
-                    _,
-                    _,
-                    _,
-                    pre_flag_frac,
-                    pre_chan_flag_frac,
-                    pre_ant_flag_frac,
-                    pre_time_flag_frac,
-                ) = get_cal_flag_info(bpass_caltable)
-                do_flag_backup(bpass_caltable, flagtype="bpassflag")
-                with suppress_output():
-                    flagdata(
-                        vis=bpass_caltable,
-                        mode="rflag",
-                        datacolumn="CPARAM",
-                        timedevscale=5.0,
-                        freqdevscale=5.0,
-                        flagbackup=False,
-                    )
-                if (
-                    flag_frac-pre_flag_frac > 0.5
-                    or ant_flag_frac-pre_ant_flag_frac > 0.5
-                    or chan_flag_frac-pre_chan_flag_frac > 0.5
-                ):
-                    logger.info("Restoring flags of bandpass solutions.")
-                    flagmanager(
-                        vis=bpass_caltable,
-                        mode="restore",
-                        versionname="bpassflag_1",
-                    )
+                    if fluxscale_mwa:
+                        logger.info("Flux scaled gain caltable using MWA reference bandpass.")
+                        fluxcal_caltable(gain_caltable, attn=solar_attn)
                 else:
-                    tb=table()
-                    tb.open(bpass_caltable)
-                    gain=tb.getcol("CPARAM")
-                    flag=tb.getcol("FLAG")
-                    tb.close()
-                    gain[flag]=np.nan
-                    tb.open(bpass_caltable,nomodify=False)
-                    new_gain = tb.getcol("CPARAM")
-                    shape = new_gain.shape
-                    for i in range(shape[0]):
-                        avg = np.nanmedian(np.abs(gain[i,...]))
-                        new_gain[i,...] = new_gain[i,...]/avg
-                    tb.putcol("CPARAM",new_gain)
-                    tb.flush()
-                    tb.close()
-                with suppress_output():
-                    flagmanager(
-                        vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
-                    )
+                    applycal_gaintable.append(bpass_caltable)
+                    interp.append("linear,linear")
 
-                if fluxscale_mwa:
-                    logger.info("Flux scaled caltable using MWA reference bandpass.")
-                    fluxcal_caltable(bpass_caltable, attn=solar_attn)
+                    #############################
+                    # Bandpass flagging
+                    #############################
+                    (
+                        _,
+                        _,
+                        _,
+                        pre_flag_frac,
+                        pre_chan_flag_frac,
+                        pre_ant_flag_frac,
+                        pre_time_flag_frac,
+                    ) = get_cal_flag_info(bpass_caltable)
+                    do_flag_backup(bpass_caltable, flagtype="bpassflag")
+                    with suppress_output():
+                        flagdata(
+                            vis=bpass_caltable,
+                            mode="rflag",
+                            datacolumn="CPARAM",
+                            timedevscale=5.0,
+                            freqdevscale=5.0,
+                            flagbackup=False,
+                        )
+                    if (
+                        flag_frac-pre_flag_frac > 0.5
+                        or ant_flag_frac-pre_ant_flag_frac > 0.5
+                        or chan_flag_frac-pre_chan_flag_frac > 0.5
+                    ):
+                        logger.info("Restoring flags of bandpass solutions.")
+                        flagmanager(
+                            vis=bpass_caltable,
+                            mode="restore",
+                            versionname="bpassflag_1",
+                        )
+                    else:
+                        tb=table()
+                        tb.open(bpass_caltable)
+                        gain=tb.getcol("CPARAM")
+                        flag=tb.getcol("FLAG")
+                        tb.close()
+                        gain[flag]=np.nan
+                        tb.open(bpass_caltable,nomodify=False)
+                        new_gain = tb.getcol("CPARAM")
+                        shape = new_gain.shape
+                        for i in range(shape[0]):
+                            avg = np.nanmedian(np.abs(gain[i,...]))
+                            new_gain[i,...] = new_gain[i,...]/avg
+                        tb.putcol("CPARAM",new_gain)
+                        tb.flush()
+                        tb.close()
+                    with suppress_output():
+                        flagmanager(
+                            vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
+                        )   
+                    if fluxscale_mwa:
+                        logger.info("Flux scaled bandpass caltable using MWA reference bandpass.")
+                        fluxcal_caltable(bpass_caltable, attn=solar_attn)
 
             logger.info(
                 f"applycal(vis='{msname}',gaintable={applycal_gaintable},interp={interp},applymode='{applymode}',calwt=s[False],flagbackup=False)\n"
@@ -1687,10 +1692,15 @@ def selfcal_round(
                 "solver.propagate_flags=True",
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
-                "D.type=complex",
-                f"D.time_interval={solint}",
-                f"D.freq_interval={int(freqres*1000.0)}kHz",
-            ]
+                "D.type=complex"]
+            if solint=="inf":
+                quartical_args.append("D.time_interval=1")
+            elif solint!="int":
+                quartical_args.append(f"D.time_interval={solint}")     
+            if do_bandpass:
+                quartical_args.append(f"D.freq_interval={int(freqres*1000.0)}kHz")
+            else:
+                quartical_args.append("D.freq_interval=1")
             if solve_array_leakage:
                 quartical_args.append("D.solve_per=array")
             quartical_cmd = " ".join(quartical_args)

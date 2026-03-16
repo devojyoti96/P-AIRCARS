@@ -7,7 +7,7 @@ import math
 from astropy.wcs import FITSFixedWarning
 from astropy.io import fits
 from astropy.time import Time
-from casatools import msmetadata
+from casatools import msmetadata, ms as casamstool
 
 warnings.simplefilter("ignore", category=FITSFixedWarning)
 
@@ -290,6 +290,67 @@ def get_gleam_uvrange(msname):
     uvrange = f"{minuv_l}~{maxuv_l}lambda"
     return uvrange
 
+
+def get_selfcal_uvrange(msname):
+    """
+    Get UV-range for self-calibration
+
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+
+    Returns
+    -------
+    str
+        UV-range in CASA format
+    """
+    msmd = msmetadata()
+    msmd.open(msname)
+    freq = msmd.meanfreq(0)
+    msmd.close()
+    wavelength = (3 * 10**8) / freq
+    maxuv_m = 3000
+    maxuv_l = round(maxuv_m / wavelength, 1)
+    uvrange = f"{0}~{maxuv_l}lambda"
+    return uvrange
+
+
+def get_selfcal_ntimes(msname):
+    """
+    Number of timestamps to include in one self-calibration chunk
+    It is determined based on the fact that MWA Phase-I provide ~2000 spectroscopic snapshot UV points with in 100lambda 
+    
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+        
+    Returns
+    -------
+    int
+        Number of time chunks
+    """
+    msmd = msmetadata()
+    msmd.open(msname)
+    freq = msmd.meanfreq(0)
+    msmd.close()
+    wavelength = (3*10**8)/freq
+    uvmax = round(100*wavelength,1)
+    mstool = casamstool()
+    mstool.open(msname)
+    mstool.select({"uvdist":[0.01,uvmax]})
+    flags = mstool.getdata("FLAG",ifraxis=True)["flag"]
+    mstool.close()
+    flags = np.sum(flags,axis=(0,1)).astype("bool")
+    shape = flags.shape
+    if len(shape)==1:
+        n_points = np.nansum(~flags)
+    else:
+        n_points = np.nansum(~flags[:,0])
+    n_time = max(1, math.ceil(2000/n_points))
+    return n_time
+    
 
 def download_MWA_metafits(OBSID, outdir=".", max_tries=5):
     """

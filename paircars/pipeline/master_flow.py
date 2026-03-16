@@ -52,6 +52,7 @@ from paircars.utils.mwa_utils import (
     get_MWA_coarse_chan,
     get_MWA_OBSID,
     download_MWA_metafits,
+    get_selfcal_ntimes,
 )
 from paircars.utils.proc_manage_utils import (
     get_jobid,
@@ -923,7 +924,7 @@ def run_selfcal_jobs(
     solar_selfcal=True,
     keep_backup=False,
     uvrange="",
-    minuv=10,
+    minuv=0,
     weight="briggs",
     robust=0.0,
     applymode="calonly",
@@ -1186,7 +1187,7 @@ def run_imaging_jobs(
     outdir,
     freqrange="",
     timerange="",
-    minuv=10,
+    minuv=0,
     weight="briggs",
     robust=0.0,
     pol="IQUV",
@@ -1651,7 +1652,7 @@ def master_control(
     do_pbcor=True,
     weight="briggs",
     robust=0.0,
-    minuv=10,
+    minuv=0,
     image_freqres=1.28,
     image_timeres=10.0,
     pol="IQUV",
@@ -2936,6 +2937,13 @@ def master_control(
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
             print("###########################")
+            n_time_chunk = get_selfcal_ntimes(target_mslist[0])
+            msmd.open(target_mslist[0])
+            times = msmd.timesforspws(0)
+            timeres = np.nanmean(np.diff(times))
+            msmd.close()
+            time_window = round(timeres * n_time_chunk,1)
+            print(f"Time window for each self-calibration chunk: {time_window}s.")
             future_selfcal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -2948,7 +2956,7 @@ def master_control(
                 prefix=prefix,
                 force_split=True,
                 only_disk=True,
-                time_window=min(1.0, time_interval),
+                time_window=max(time_window, time_interval),
                 time_interval=time_interval,
                 quack_timestamps=quack_timestamps,
                 jobid=jobid,
@@ -4314,7 +4322,7 @@ def cli():
     advanced_image.add_argument(
         "--minuv",
         type=float,
-        default=10,
+        default=0,
         help="Minimum baseline length (in wavelengths) to include in imaging",
     )
     advanced_image.add_argument(

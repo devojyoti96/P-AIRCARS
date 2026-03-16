@@ -558,7 +558,7 @@ def run_all_imaging(
     timeres=-1,
     weight="briggs",
     robust=0.0,
-    minuv=10,
+    minuv=0,
     pol="I",
     threshold=1.0,
     use_multiscale=True,
@@ -806,7 +806,7 @@ def main(
     timeres=-1,
     weight="briggs",
     robust=0.0,
-    minuv=10,
+    minuv=0,
     threshold=1.0,
     cutout_rsun=10.0,
     use_multiscale=True,
@@ -1097,7 +1097,7 @@ def cli():
         "--minuv_l",
         dest="minuv",
         type=float,
-        default=10,
+        default=0,
         help="Minimum UV distance in wavelengths",
     )
     adv_args.add_argument(
