@@ -254,6 +254,7 @@ def flagger(
     int
         Success message
     """
+    print(f"Flagging : {msname}")
     do_flag_backup(msname,flagtype="solar_flagger")
     ms = table()
     msmd = msmetadata()

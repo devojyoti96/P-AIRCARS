@@ -1622,6 +1622,7 @@ def master_control(
     do_applycal=True,
     only_amplitude=False,
     redo_basic_cal=False,
+    use_solarflagger=False,
     # Target data preparation
     freqrange="",
     timerange="",
@@ -1703,6 +1704,8 @@ def master_control(
         Apply only amplitude part of gain solution from calibrator
     redo_basic_cal : bool, optional
         Redo basic calibration
+    use_solarflagger : bool, optional
+        Use solar flagger or not
 
     freqrange : str, optional
         Frequency range to image in MHz (xx1~xx2,xx3~xx4,)
@@ -2867,6 +2870,7 @@ def master_control(
         selfcal_checked=False
         if not redo_selfcal:
             if target_obsid is not None:
+                print("Checking pre-existing self-calibration solutions...")
                 selfcal_gaincal = sorted(
                     glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
                 )
@@ -2880,25 +2884,21 @@ def master_control(
                         selfcal_leakages = sorted(
                             glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
                         )
-                        selfcal_checked=True
                         if len(selfcal_leakages) > 0:
                             selfcal_leakages = interpolate_quartical(
                                 selfcal_leakages, overwrite=True
                             )
+                            selfcal_checked=True
+                            do_selfcal=False
+                            print("Self-calibration solutions exist including polarisation calibration. Not performing self-calibration")
+                            if emails != "":
+                                email_msg = "Self-calibration solutions including polarisation for target are already present."
+                                send_task_notification(
+                                    emails, email_msg, jobid, target_obsid, timestamp
+                                )
                     else:
-                        selfcal_checked=True
-
-        ####################################################
-        # If selfcal tables present, do not perform selfcal
-        ####################################################
-        if selfcal_checked:
-            if emails != "":
-                email_msg = "Self-calibration solutions for target are already present."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            do_selfcal=False # If self-cal tables already exist, do not perform selfcal
-                
+                        print("Self-calibration solutions exist without polarisation calibration. Henc, performing self-calibration")
+                     
         ###################################################
         # Start spliting selfcal ms
         ###################################################
@@ -3192,7 +3192,7 @@ def master_control(
                 flag_calibrators=False,
                 flag_quack=False,
                 datacolumn="corrected",
-                run_solarflagger=True,
+                run_solarflagger=use_solarflagger,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
@@ -3702,7 +3702,7 @@ def master_control(
                 flag_calibrators=False,
                 flag_quack=False,
                 datacolumn="corrected",
-                run_solarflagger=True,
+                run_solarflagger=use_solarflagger,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
@@ -4275,7 +4275,12 @@ def cli():
         action="store_true",
         help="Redo self-calibration",
     )
-
+    advanced_cal.add_argument(
+        "--use_solarflagger",
+        action="store_true",
+        help="Use solar flagger",
+    )
+    
     # === Advanced imaging parameters ===
     advanced_image = parser.add_argument_group(
         "###################\nAdvanced imaging parameters\n###################"
@@ -4757,6 +4762,7 @@ def cli():
             do_applycal=args.do_applycal,
             only_amplitude=args.only_amplitude,
             redo_basic_cal=args.redo_basic_cal,
+            use_solarflagger=args.use_solarflagger,
             # Target data preparation
             freqrange=args.freqrange,
             timerange=args.timerange,

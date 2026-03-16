@@ -98,6 +98,11 @@ def cli():
         action="store_true",
         help="Redo self-calibration or not",
     )
+    advanced_cal.add_argument(
+        "--use_solarflagger",
+        action="store_true",
+        help="Use solar flagger",
+    )
 
     # === Advanced imaging parameters ===
     advanced_image = parser.add_argument_group(
