@@ -493,6 +493,14 @@ def do_selfcal(
                 use_previous_model = True
             else:
                 use_previous_model = False
+                
+            if not use_solarflagger and DR3<100:
+                use_solarflagger=True
+            if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
+                intlogger.info("Trying uvsub flagging.")
+                do_flag=True
+                use_previous_model=True
+                num_iter_after_flag+=1
        
             #########################################################
             # If DR decreased below starting DR
@@ -518,7 +526,7 @@ def do_selfcal(
                     do_bandpass = False
                     use_previous_model = False
                     num_iter_after_ap=0
-                elif use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
+                elif use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
                     intlogger.info("Trying uvsub flagging.")
                     do_flag=True
                     num_iter_after_flag+=1
@@ -661,7 +669,7 @@ def do_selfcal(
                     )
                     if not use_solarflagger and DR3<100:
                         use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
+                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
                         use_previous_model=True
@@ -714,7 +722,7 @@ def do_selfcal(
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                         if not use_solarflagger and DR3<100:
                             use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
+                        if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
                             intlogger.info("Trying uvsub flagging.")
                             do_flag=True
                             use_previous_model=True
@@ -731,7 +739,7 @@ def do_selfcal(
                 ):
                     if not use_solarflagger and DR3<100:
                         use_solarflagger=True
-                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>1:
+                    if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
                         intlogger.info("Trying uvsub flagging.")
                         do_flag=True
                         use_previous_model=True
