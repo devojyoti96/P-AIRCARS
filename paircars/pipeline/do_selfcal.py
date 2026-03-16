@@ -37,7 +37,7 @@ from paircars.utils.logger_utils import (
 from paircars.utils.ms_metadata import (
     check_datacolumn_valid,
 )
-from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse, get_selfcal_uvrange
+from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -222,12 +222,6 @@ def do_selfcal(
                 return 1, msname, [], False
             solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
             applymode = "calflag"
-            
-        #########################################
-        # Default to use only Phase-I range (3km)
-        #########################################
-        if uvrange == "":
-            uvrange = get_selfcal_uvrange(msname)
 
         ##############################
         # Spliting corrected data
@@ -289,10 +283,10 @@ def do_selfcal(
         imsize = get_fft_size(imsize)
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
-            refant = unflagged_antenna_names[0]
             msmd = msmetadata()
             msmd.open(msname)
-            refant = str(msmd.antennaids(refant)[0])
+            refant_ids = sorted([msmd.antennaids(antname)[0] for antname in unflagged_antenna_names])[0]
+            refant = str(refant_ids)
             msmd.close()
 
         ############################################
@@ -463,19 +457,18 @@ def do_selfcal(
                 return msg, msname, [], nondisk_flag
             if num_iter == 0:
                 DR1 = DR3 = DR2 = dyn
-                RMS1 = RMS2 = RMS3 = rms
+                RMS1 = RMS3 = RMS2 = rms
                 min_DR = dyn
             elif num_iter == 1:
                 DR3 = dyn
-                RMS2 = RMS1
-                RMS1 = rms
+                RMS3 = rms
             else:
                 DR1 = DR2
                 DR2 = DR3
                 DR3 = dyn
-                RMS3 = RMS2
-                RMS2 = RMS1
-                RMS1 = rms
+                RMS1 = RMS2
+                RMS2 = RMS3
+                RMS3 = rms
             intlogger.info("######################################")
             intlogger.info(
                 "RMS based dynamic ranges: "
@@ -495,13 +488,6 @@ def do_selfcal(
             else:
                 use_previous_model = False
                 
-            if not use_solarflagger and DR3<100:
-                use_solarflagger=True
-            if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap>0:
-                intlogger.info("Trying uvsub flagging.")
-                do_flag=True
-                num_iter_after_flag+=1
-       
             #########################################################
             # If DR decreased below starting DR
             #########################################################
@@ -748,6 +734,12 @@ def do_selfcal(
             num_iter += 1
             os.system(f"cp -r {msname} {msname}.round{num_iter}")
             if calmode == "ap":
+                if not use_solarflagger and DR3<100:
+                    use_solarflagger=True
+                if use_solarflagger and not do_flag and num_iter_after_flag==0 and num_iter_after_ap==0:
+                    intlogger.info("Trying uvsub flagging.")
+                    do_flag=True
+                    num_iter_after_flag+=1
                 num_iter_after_ap += 1
             num_iter_fixed_sigma += 1
             if not issue_occured:
@@ -959,12 +951,6 @@ def do_polselfcal(
             os.system(f"rm -rf {msname} {msname}.flagversions")
             os.system(f"mv {temp_ms} {msname}")
                 
-        #########################################
-        # Default to use only Phase-I range (3km)
-        #########################################
-        if uvrange == "":
-            uvrange = get_selfcal_uvrange(msname)
-
         ############################################
         # Imaging and calibration parameters
         ############################################
@@ -976,13 +962,12 @@ def do_polselfcal(
         fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
-
         if refant == "":
             unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
-            refant = unflagged_antenna_names[0]
             msmd = msmetadata()
             msmd.open(msname)
-            refant = str(msmd.antennaids(refant)[0])
+            refant_ids = sorted([msmd.antennaids(antname)[0] for antname in unflagged_antenna_names])[0]
+            refant = str(refant_ids)
             msmd.close()
 
         ############################################
@@ -1005,7 +990,6 @@ def do_polselfcal(
         num_iter_after_flag=0
         last_round_gaintable = []
         last_leakage_file = ""
-        solve_array_leakage=False
         last_round_ms = ""
         do_bandpass=True
         issue_occured = False
@@ -1027,18 +1011,22 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = False
+                solve_array_leakage=True
             elif num_iter < 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
+                solve_array_leakage=True
             elif num_iter == 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
+                solve_array_leakage=True
             else:
                 pbcor = True
                 leakagecor = True
                 pbuncor = True
+                solve_array_leakage=False
                 
             if num_iter_after_flag>0 and do_flag:
                 do_flag=False
@@ -1145,8 +1133,7 @@ def do_polselfcal(
                     VL1 = VL2 = VL3 = v_leakage
                 elif num_iter == 1:
                     DR3 = dyn
-                    RMS2 = RMS1
-                    RMS1 = rms
+                    RMS3 = rms
                     QL3 = q_leakage
                     UL3 = u_leakage
                     VL3 = v_leakage
@@ -1154,9 +1141,9 @@ def do_polselfcal(
                     DR1 = DR2
                     DR2 = DR3
                     DR3 = dyn
-                    RMS3 = RMS2
-                    RMS2 = RMS1
-                    RMS1 = rms
+                    RMS1 = RMS2
+                    RMS2 = RMS3
+                    RMS3 = rms
                     QL1 = QL2
                     UL1 = UL2
                     VL1 = VL2
@@ -1417,18 +1404,12 @@ def do_full_selfcal(
     logfile_prefix = logfile_prefix.rstrip("/")
     print(f"Starting intensity self-calibration for ms: {msname}.")
     unflagged_antenna_names, flag_frac_list = get_unflagged_antennas(msname)
-    refant = unflagged_antenna_names[0]
     msmd = msmetadata()
     msmd.open(msname)
-    refant = str(msmd.antennaids(refant)[0])
+    refant_ids = sorted([msmd.antennaids(antname)[0] for antname in unflagged_antenna_names])[0]
+    refant = str(refant_ids)
     msmd.close()
     
-    #########################################
-    # Default to use only Phase-I range (3km)
-    #########################################
-    if uvrange == "":
-        uvrange = get_selfcal_uvrange(msname)
-        
     intensity_selfcal_msg, selfcal_ms, gaintable, try_nondisk_flag = do_selfcal(
         msname=msname,
         workdir=workdir,

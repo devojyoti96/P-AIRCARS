@@ -21,8 +21,6 @@ from .imaging import (
     get_optimal_image_interval,
     calc_multiscale_scales,
     get_multiscale_bias,
-    calc_uvtaper,
-    calc_maxuv,
 )
 from .image_utils import (
     create_circular_mask,
