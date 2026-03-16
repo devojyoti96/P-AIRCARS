@@ -928,6 +928,7 @@ def run_selfcal_jobs(
     robust=0.0,
     applymode="calonly",
     min_tol_factor=1.0,
+    use_solarflagger=False,
     jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -986,6 +987,8 @@ def run_selfcal_jobs(
         Solution apply mode
     solar_selfcal : bool, optional
         Whether is is solar selfcal or not
+    use_solarflagger : bool, optional
+        Use solar flagger or not
     remote_log: bool, optional
         Start remote logger
 
@@ -1049,6 +1052,7 @@ def run_selfcal_jobs(
                 do_apcal=do_apcal,
                 do_polcal=do_polcal,
                 solar_selfcal=solar_selfcal,
+                use_solarflagger=use_solarflagger,
                 keep_backup=keep_backup,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
@@ -3261,6 +3265,7 @@ def master_control(
                 weight="briggs",
                 robust=0.0,
                 applymode=selfcal_applymode,
+                use_solarflagger=use_solarflagger,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),

@@ -77,6 +77,7 @@ def do_selfcal(
     min_tol_factor=1.0,
     applymode="calonly",
     solar_selfcal=True,
+    use_solarflagger=False,
     ncpu=1,
     mem=1,
     logfile="intselfcal.log",
@@ -128,6 +129,8 @@ def do_selfcal(
         Solution apply mode
     solar_selfcal : bool, optional
         Whether is is solar selfcal or not
+    use_solarflagger : bool, optional
+        Use solar flagging or not
     ncpu : int, optional
         Number of CPU threads to use
     mem : float, optional
@@ -492,7 +495,7 @@ def do_selfcal(
                 intlogger.info(
                     f"Dynamic range decreased below start dynamic range: {min_DR}."
                 )
-                if not do_uvsub_flag and num_iter_after_uvsub==0 and calmode=="ap":
+                if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0 and calmode=="ap":
                     intlogger.info("Trying uvsub flagging.")
                     do_uvsub_flag=True
                     restore_flag=False
@@ -542,7 +545,10 @@ def do_selfcal(
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
                 )
-                if not do_uvsub_flag and num_iter_after_uvsub==0:
+                if calmode=="p":
+                    intlogger.info("Changing calmode to 'ap'")
+                    calmode = "ap"
+                elif use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                     intlogger.info("Trying uvsub flagging.")
                     do_uvsub_flag=True
                     restore_flag=False
@@ -559,7 +565,7 @@ def do_selfcal(
             # If DR suddenly decreased
             ##########################
             if DR3 < 0.7 * DR2 and calmode == "ap" and num_iter_after_ap > 1:
-                if not do_uvsub_flag and num_iter_after_uvsub==0:
+                if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                     intlogger.info(
                         "Dynamic range dropped suddenly.\n"
                     )
@@ -614,7 +620,7 @@ def do_selfcal(
                         + str(end_threshold)
                         + "sigma...\n"
                     )
-                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                         intlogger.info("Trying uvsub flagging.")
                         do_uvsub_flag=True
                         restore_flag=False
@@ -624,7 +630,7 @@ def do_selfcal(
                     num_iter_fixed_sigma = 0
                     continue
                 else:
-                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                         intlogger.info("Trying uvsub flagging.")
                         do_uvsub_flag=True
                         restore_flag=False
@@ -660,7 +666,7 @@ def do_selfcal(
                             threshold -= 1
                             sigma_reduced_count += 1
                             num_iter_fixed_sigma = 0
-                        if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                             intlogger.info("Trying uvsub flagging.")
                             do_uvsub_flag=True
                             restore_flag=False
@@ -676,7 +682,7 @@ def do_selfcal(
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
                         else:
                             last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                        if not do_uvsub_flag and num_iter_after_uvsub==0:
+                        if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                             intlogger.info("Trying uvsub flagging.")
                             do_uvsub_flag=True
                             restore_flag=False
@@ -691,7 +697,7 @@ def do_selfcal(
                     and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
                 ):
-                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                         intlogger.info("Trying uvsub flagging.")
                         do_uvsub_flag=True
                         restore_flag=False
@@ -750,6 +756,7 @@ def do_polselfcal(
     weight="briggs",
     robust=0.0,
     solar_selfcal=True,
+    use_solarflagger=False,
     try_nondisk_flag=True,
     ncpu=1,
     mem=1,
@@ -790,6 +797,8 @@ def do_polselfcal(
         Briggs weighting robust parameter (-1 to 1)
     solar_selfcal : bool, optional
         Whether is is solar selfcal or not
+    use_solarflagger : bool, optional
+        Use solar flagger or not
     try_nondisk_flag : bool, optional
         Try to flag non-disk data chunks or not
     ncpu : int, optional
@@ -1162,7 +1171,7 @@ def do_polselfcal(
                         os.system(f"rm -rf {msname}")
                         os.system(f"mv {last_round_ms} {msname}")
                    
-                if not do_uvsub_flag and num_iter_after_uvsub==0:
+                if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                     pollogger.info("Trying uvsub flagging.")
                     do_uvsub_flag=True
                     restore_flag=False
@@ -1181,7 +1190,7 @@ def do_polselfcal(
                     pollogger.info(
                         "Dynamic range is decreasing after minimum numbers of rounds.\n"
                     )
-                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                         pollogger.info("Trying uvsub flagging.")
                         do_uvsub_flag=True
                         restore_flag=False
@@ -1208,7 +1217,7 @@ def do_polselfcal(
                 # If DR suddenly decreased
                 ##########################
                 if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_converged:
-                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                         pollogger.info(
                             "Dynamic range dropped suddenly.\n"
                         )
@@ -1240,7 +1249,7 @@ def do_polselfcal(
                     and num_iter > min_iter
                     and leakage_converged
                 ):
-                    if not do_uvsub_flag and num_iter_after_uvsub==0:
+                    if use_solarflagger and not do_uvsub_flag and num_iter_after_uvsub==0:
                         pollogger.info("Trying uvsub flagging.")
                         do_uvsub_flag=True
                         restore_flag=False
@@ -1301,6 +1310,7 @@ def do_full_selfcal(
     min_tol_factor=1.0,
     applymode="calonly",
     solar_selfcal=True,
+    use_solarflagger=False,
     ncpu=1,
     mem=1,
     logfile_prefix="selfcal",
@@ -1362,6 +1372,7 @@ def do_full_selfcal(
         min_tol_factor=min_tol_factor,
         applymode=applymode,
         solar_selfcal=solar_selfcal,
+        use_solarflagger=use_solarflagger,
         ncpu=ncpu,
         mem=mem,
         logfile=f"{logfile_prefix}_int.log",
@@ -1387,6 +1398,7 @@ def do_full_selfcal(
             weight=weight,
             robust=robust,
             solar_selfcal=solar_selfcal,
+            use_solarflagger=use_solarflagger,
             try_nondisk_flag=try_nondisk_flag,
             ncpu=ncpu,
             mem=mem,
@@ -1424,6 +1436,7 @@ def main(
     do_apcal=True,
     do_polcal=True,
     solar_selfcal=True,
+    use_solarflagger=False,
     keep_backup=False,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -1481,6 +1494,8 @@ def main(
         Whether perform polarisation self-calibration or not
     solar_selfcal : bool, optional
         If True, uses solar-specific masking and flux normalization. Default is True.
+    use_solarflagger : bool, optional
+        Use solar flagger or not. Default is False.
     keep_backup : bool, optional
         If True, keeps backup MS before applying selfcal solutions. Default is False.
     cpu_frac : float, optional
@@ -1635,6 +1650,7 @@ def main(
                 applymode=applymode,
                 min_tol_factor=float(min_tol_factor),
                 solar_selfcal=solar_selfcal,
+                use_solarflagger=use_solarflagger,
             )
 
             ####################################
@@ -2026,6 +2042,11 @@ def cli():
         help="Do not perform solar self-calibration",
     )
     adv_args.add_argument(
+        "--use_solarflagger",
+        action="store_true",
+        help="Use solar flagger or not",
+    )
+    adv_args.add_argument(
         "--keep_backup",
         action="store_true",
         help="Keep backup of self-calibration rounds",
@@ -2083,6 +2104,7 @@ def cli():
         do_apcal=args.do_apcal,
         do_polcal=args.do_polcal,
         solar_selfcal=args.solar_selfcal,
+        use_solarflagger=args.use_solarflagger,
         keep_backup=args.keep_backup,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
