@@ -1171,17 +1171,23 @@ def get_aia_map(
                     except Exception:
                         pointing_corrected_map = aia_map
                     # Step 2: register (we are skipping PSF deconvolution)
-                    registered_map = register(pointing_corrected_map)
+                    try:
+                        registered_map = register(pointing_corrected_map)
+                    except Exception:
+                        registered_map = pointing_corrected_map
                     # Step 3: instrument degradation correction
                     try:
                         corrected_map = correct_degradation(registered_map)
                     except Exception:
                         corrected_map = registered_map
                     # Step 4: Normalize by exposure time
-                    normalized_data = (
-                        corrected_map.data / corrected_map.exposure_time.to(u.s).value
-                    )
-                    normalized_map = Map(normalized_data, corrected_map.meta)
+                    try:
+                        normalized_data = (
+                            corrected_map.data / corrected_map.exposure_time.to(u.s).value
+                        )
+                        normalized_map = Map(normalized_data, corrected_map.meta)
+                    except Exception:
+                        normalized_map = corrected_map
                     for image in downloaded_files:
                         basename = image.split(".image")[0]
                         os.system(f"rm -rf {basename}*")
