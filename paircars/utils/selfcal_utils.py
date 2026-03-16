@@ -85,7 +85,7 @@ def cal_crossphase(imagename):
             return cross_phase
 
 
-def do_uvsub_flag(msname,threshold_list=[10,7,5]):
+def do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=1):
     """
     Perform uv-sub flags
     
@@ -95,6 +95,8 @@ def do_uvsub_flag(msname,threshold_list=[10,7,5]):
         Measurement set
     threshold_list: list, optional
         Threshold list
+    ncpu: int, optional
+        Number of CPU threads to use
     """
     try:
         for threshold in threshold_list:
@@ -1814,7 +1816,7 @@ def selfcal_round(
         ######################################
         if do_flag:
             logger.info("Flagging in uv-domain data.\n")
-            do_uvsub_flag(msname,threshold_list=[10,7,5])
+            do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
         return (
             0,
             applycal_gaintable,

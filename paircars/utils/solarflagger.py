@@ -328,8 +328,6 @@ def flagger(
         # --- Initial Flag Count ---
         # Number of unflagged data points initially
         n_flagged = np.sum(flags)
-        n_total = flags.size
-        n_unflagged = n_total - n_flagged
         data[flags] = np.nan
 
         # Calculate UV distances in wavelengths

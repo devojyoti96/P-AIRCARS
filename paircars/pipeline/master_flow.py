@@ -2940,7 +2940,6 @@ def master_control(
             times = msmd.timesforspws(0)
             timeres = np.nanmean(np.diff(times))
             msmd.close()
-            print(f"Time window for each self-calibration chunk: {time_window}s.")
             future_selfcal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(

@@ -37,13 +37,13 @@ from paircars.utils.logger_utils import (
 from paircars.utils.ms_metadata import (
     check_datacolumn_valid,
 )
-from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
+from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
 )
 from paircars.utils.resource_utils import drop_cache, limit_threads
-from paircars.utils.selfcal_utils import quiet_sun_selfcal, selfcal_round, flag_non_disk
+from paircars.utils.selfcal_utils import quiet_sun_selfcal, selfcal_round, flag_non_disk, do_uvsub_flag
 from paircars.utils.udocker_utils import (
     check_udocker_container,
     initialize_wsclean_container,
@@ -148,6 +148,8 @@ def do_selfcal(
         Final caltable
     bool
         Whether non-disk data chunks flagging was successful or not
+    float
+        Final dynamic range
     """
     ncpu = max(1, ncpu)
     mem = abs(mem)
@@ -219,7 +221,7 @@ def do_selfcal(
                 intlogger.error(
                     "Calibration solutions were not applied and target metafits is also not supplied. Provide any one of them."
                 )
-                return 1, msname, [], False
+                return 1, msname, [], False, 0
             solar_attn = float(fits.getheader(metafits)["ATTEN_DB"])
             applymode = "calflag"
 
@@ -443,18 +445,18 @@ def do_selfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return msg, msname, [], nondisk_flag
+                        return msg, msname, [], nondisk_flag, 0
                     else:
                         threshold = end_threshold
                 else:
                     os.system("rm -rf *_selfcal_present*")
-                    return msg, msname, [], nondisk_flag
+                    return msg, msname, [], nondisk_flag, 0
             elif msg > 1:
                 intlogger.error("Self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return msg, msname, [], nondisk_flag
+                return msg, msname, [], nondisk_flag, 0
             if num_iter == 0:
                 DR1 = DR3 = DR2 = dyn
                 RMS1 = RMS3 = RMS2 = rms
@@ -524,7 +526,7 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, nondisk_flag
+                    return 0, msname, last_round_gaintable, nondisk_flag, DR2
 
             #########################################################
             # If DR is decreasing (DR decrease in phase-only selfcal)
@@ -551,7 +553,7 @@ def do_selfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, nondisk_flag
+                    return 0, msname, last_round_gaintable, nondisk_flag, DR2
 
             ##############################################################
             # If DR is decreasing (DR decrease in amplitude-phase selfcal)
@@ -584,11 +586,11 @@ def do_selfcal(
                     else:
                         if not use_solarflagger and DR3<100:
                             intlogger.info("Performing final flagging because DR is less than 100.")
-                            do_uvsub_flag(msname,threshold_list=[10,7,5])
+                            do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return 0, msname, last_round_gaintable, nondisk_flag
+                        return 0, msname, last_round_gaintable, nondisk_flag, DR2
 
             ##########################
             # If DR suddenly decreased
@@ -617,14 +619,14 @@ def do_selfcal(
                     else:  
                         if not use_solarflagger and DR3<100:
                             intlogger.info("Performing final flagging because DR is less than 100.")
-                            do_uvsub_flag(msname,threshold_list=[10,7,5]) 
+                            do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu) 
                         intlogger.info(
                             "Dynamic range dropped suddenly. Using last round caltable as final.\n"
                         )                       
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return 0, msname, last_round_gaintable, nondisk_flag
+                        return 0, msname, last_round_gaintable, nondisk_flag, DR2
 
             ###########################
             # If maximum DR has reached
@@ -634,7 +636,7 @@ def do_selfcal(
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return 0, msname, gaintable, nondisk_flag
+                return 0, msname, gaintable, nondisk_flag, DR3
 
             ###########################
             # Checking DR convergence
@@ -668,12 +670,12 @@ def do_selfcal(
                 else:
                     if not use_solarflagger and DR3<100:
                         intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5])
+                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
                     intlogger.info("Selfcal calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, nondisk_flag
+                    return 0, msname, gaintable, nondisk_flag, DR3
             else:
                 ################################################################
                 # Condition 2
@@ -723,12 +725,12 @@ def do_selfcal(
                 ):                   
                     if not use_solarflagger and DR3<100:
                         intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5])
+                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
                     intlogger.info("Self-calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, nondisk_flag
+                    return 0, msname, gaintable, nondisk_flag, DR3
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
@@ -738,14 +740,14 @@ def do_selfcal(
                 ):
                     if not use_solarflagger and DR3<100:
                         intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5])
+                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
                     intlogger.info(
                         "Self-calibration is finished. Maximum iteration is reached.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, nondisk_flag
+                    return 0, msname, gaintable, nondisk_flag, DR3
             num_iter += 1
             os.system(f"cp -r {msname} {msname}.round{num_iter}")
             if calmode == "ap":
@@ -768,7 +770,7 @@ def do_selfcal(
         os.system("rm -rf *_selfcal_present*")
         time.sleep(5)
         clean_shutdown(sub_observer)
-        return 1, msname, [], False
+        return 1, msname, [], False, 0
 
 
 def do_polselfcal(
@@ -849,6 +851,8 @@ def do_polselfcal(
         Final caltable
     str
         Leakage file
+    float
+        Final image dynamic range
     """
     ncpu = max(1, ncpu)
     mem = abs(mem)
@@ -1090,13 +1094,13 @@ def do_polselfcal(
             if msg == 1:
                 pollogger.info("No model flux is picked up.")
                 os.system("rm -rf *_selfcal_present*")
-                return msg, msname, [], ""
+                return msg, msname, [], "", 0
             elif msg > 2:
                 pollogger.error("Polarisation self-calibration failed.")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(5)
                 clean_shutdown(sub_observer)
-                return msg, msname, [], ""
+                return msg, msname, [], "", 0
             elif msg == 2:
                 if calc_chunks is False:
                     if num_iter > min_iter:
@@ -1109,7 +1113,7 @@ def do_polselfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return 0, msname, last_round_gaintable, last_leakage_file
+                        return 0, msname, last_round_gaintable, last_leakage_file, DR2
                     else:
                         issue_occured = True
                         pollogger.error(
@@ -1118,7 +1122,7 @@ def do_polselfcal(
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
-                        return msg, msname, [], ""
+                        return msg, msname, [], "", 0
                 else:
                     issue_occured = True
                     pollogger.warning(
@@ -1207,7 +1211,7 @@ def do_polselfcal(
                     issue_occured = True
                     if num_iter==0:
                         pollogger.warning("Leakages become nan. Serious calibration issue occured at the first round.")
-                        return 1, msname, [], ""                        
+                        return 1, msname, [], "", 0                        
                     pollogger.warning("Leakages become nan. Serious calibration issue occured.")
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
@@ -1226,7 +1230,7 @@ def do_polselfcal(
                             os.system("rm -rf *_selfcal_present*")
                             time.sleep(5)
                             clean_shutdown(sub_observer)
-                            return 0, msname, last_round_gaintable, last_leakage_file
+                            return 0, msname, last_round_gaintable, last_leakage_file, DR2
                     
                 ##########################################
                 # If leakage increased
@@ -1279,7 +1283,7 @@ def do_polselfcal(
                             os.system("rm -rf *_selfcal_present*")
                             time.sleep(5)
                             clean_shutdown(sub_observer)
-                            return 0, msname, last_round_gaintable, last_leakage_file
+                            return 0, msname, last_round_gaintable, last_leakage_file, DR2
                         
                 ##############################################################
                 # If DR is decreasing (DR decrease in pol selfcal)
@@ -1299,7 +1303,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, last_leakage_file
+                    return 0, msname, last_round_gaintable, last_leakage_file, DR2
 
                 ###########################
                 # If maximum DR has reached
@@ -1309,7 +1313,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file
+                    return 0, msname, gaintable, leakage_file, DR3
 
                 ##########################
                 # If DR suddenly decreased
@@ -1325,7 +1329,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, last_leakage_file
+                    return 0, msname, last_round_gaintable, last_leakage_file, DR2
 
                 ###########################
                 # Checking DR convergence
@@ -1344,7 +1348,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file
+                    return 0, msname, gaintable, leakage_file, DR3
                 #########################################
                 # If maximum iteration has reached
                 #########################################
@@ -1357,7 +1361,7 @@ def do_polselfcal(
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file
+                    return 0, msname, gaintable, leakage_file, DR3
                 num_iter += 1
                 os.system(f"cp -r {msname} {msname}.round{num_iter}")
                 if not issue_occured:
@@ -1372,7 +1376,7 @@ def do_polselfcal(
         os.system("rm -rf *_selfcal_present*")
         time.sleep(5)
         clean_shutdown(sub_observer)
-        return 1, msname, [], ""
+        return 1, msname, [], "", 0
 
 
 def do_full_selfcal(
@@ -1418,6 +1422,10 @@ def do_full_selfcal(
         Polarisation selfcal gaintables
     str
         Leakage information file
+    float
+        Final intensity selfcal dynamic range
+    float
+        Final polarisation selfcal dynamic range
     """
     ncpu = max(1, ncpu)
     mem = abs(mem)
@@ -1432,7 +1440,7 @@ def do_full_selfcal(
     refant = str(refant_ids)
     msmd.close()
     
-    intensity_selfcal_msg, selfcal_ms, gaintable, try_nondisk_flag = do_selfcal(
+    intensity_selfcal_msg, selfcal_ms, gaintable, try_nondisk_flag, int_DR = do_selfcal(
         msname=msname,
         workdir=workdir,
         selfcaldir=f"{selfcaldir}_int",
@@ -1460,12 +1468,12 @@ def do_full_selfcal(
         logfile=f"{logfile_prefix}_int.log",
     )
     if intensity_selfcal_msg != 0:
-        return intensity_selfcal_msg, 1, [], [], ""
+        return intensity_selfcal_msg, 1, [], [], "", int_DR, 0
     elif do_polcal is False:
-        return 0, 1, gaintable, [], ""
+        return 0, 1, gaintable, [], "", int_DR, 0
     else:
         print(f"Starting polarisation self-calibration for ms: {msname}.")
-        pol_selfcal_msg, pol_selfcal_ms, quartical_table, leakage_file = do_polselfcal(
+        pol_selfcal_msg, pol_selfcal_ms, quartical_table, leakage_file, pol_DR = do_polselfcal(
             msname=selfcal_ms,
             workdir=workdir,
             selfcaldir=f"{selfcaldir}_pol",
@@ -1492,6 +1500,8 @@ def do_full_selfcal(
             gaintable,
             quartical_table,
             leakage_file,
+            int_DR,
+            pol_DR,
         )
 
 
@@ -1597,6 +1607,10 @@ def main(
     -------
     int
         Success message
+    float
+        Intensity selfcal dynamic range
+    float
+        Polarisation selfcal dynamic range
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -1640,18 +1654,16 @@ def main(
             0,
             0,
             0,
+            0,
+            0,
         )
     else:
         int_succeed = 0
         int_failed = len(mslist)
         pol_succeed = 0
         pol_failed = len(mslist)
-
-    total_ncoarse = 0
-    for msname in mslist:
-        ncoarse = get_ncoarse(msname)
-        total_ncoarse += ncoarse
-    total_ncoarse = max(1, total_ncoarse)
+        int_DR = 0
+        pol_DR = 0
 
     dask_cluster = None
     if dask_client is None:
@@ -1668,7 +1680,7 @@ def main(
         )
         if dask_client is None:
             print("Error occured in creating local cluster.")
-            return 1
+            return 1, 0, 0, 0, 0, 0, 0
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     ###########################
@@ -1683,7 +1695,7 @@ def main(
             print(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
-            return 1, int_succeed, int_failed, pol_succeed, pol_failed
+            return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0
 
     if do_polcal:
         container_name = "paircarsquartical"
@@ -1697,7 +1709,7 @@ def main(
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1, int_succeed, int_failed, pol_succeed, pol_failed
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0
 
     try:
         if len(mslist) == 0:
@@ -1749,7 +1761,7 @@ def main(
             mslist = filtered_mslist
             if len(mslist) == 0:
                 print("No filtered ms to continue.")
-                return 1, int_succeed, int_failed, pol_succeed, pol_failed
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0
 
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
@@ -1809,9 +1821,13 @@ def main(
             failed_intselfcal = 0
             succeed_polselfcal = 0
             failed_polselfcal = 0
+            int_DR = 0
+            pol_DR = 0
             for i in range(len(results)):
                 r = results[i]
                 int_msg = r[0]
+                int_DR+= r[5]
+                pol_DR+= r[6]
                 if int_msg != 0:
                     print(
                         f"Intensity self-calibration was not successful for ms: {mslist[i]}."
@@ -1962,9 +1978,19 @@ def main(
                 pol_succeed, pol_failed = succeed_polselfcal, failed_polselfcal
             if succeed_intselfcal == 0:
                 msg = 1
+            if len(results)>0:
+                int_DR = int_DR / len(results)
+                pol_DR = pol_DR / len(results)
+            else:
+                int_DR = 0
+                pol_DR = 0
+            print(f"Average intensity self-calibration dynamic range: {int_DR}")
+            print(f"Average polarisation self-calibration dynamic range: {pol_DR}")
     except Exception:
         traceback.print_exc()
         msg = 1
+        int_DR = 0
+        pol_DR = 0
     finally:
         time.sleep(5)
         clean_shutdown(observer)
@@ -1977,7 +2003,7 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-    return msg, int_succeed, int_failed, pol_succeed, pol_failed
+    return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR
 
 
 def cli():

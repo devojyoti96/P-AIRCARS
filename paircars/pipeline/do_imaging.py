@@ -252,7 +252,8 @@ def perform_imaging(
             threshold = 1.1
         uvtaper = calc_uvtaper(msname)
         _, maxuv = calc_maxuv(msname)
-        taper = max(0, maxuv-uvtaper)
+        maxuv = round(maxuv,1)
+        taper = round(max(0, maxuv-uvtaper),1)
 
         wsclean_args = [
             "-quiet",

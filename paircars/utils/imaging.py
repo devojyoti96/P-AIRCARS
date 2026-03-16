@@ -146,13 +146,13 @@ def calc_uvtaper(msname):
     msmd.close()
     sun_dia = np.deg2rad(calc_sun_dia(max_freq/10**6)/60.0)
     bin_size_lambda = 1.22/sun_dia
-    bin_size = bin_size_lambda*wavelength
+    bin_size = (bin_size_lambda*wavelength)/2.0
     r = np.sqrt(u**2 + v**2)
     n_bins = int(max(r)/bin_size)
     r_bins = np.linspace(r.min(), r.max(), n_bins)
     counts, edges = np.histogram(r, bins=r_bins)
     max_counts = np.nanmax(counts)
-    pos = np.where(counts<0.05*max_counts)[0][0]
+    pos = np.where(counts<0.01*max_counts)[0][0]
     uvtaper = edges[pos]/wavelength
     return round(uvtaper,0)
     
