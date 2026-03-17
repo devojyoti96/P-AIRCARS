@@ -1447,7 +1447,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
             )
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
         mid_mjdsec = mjdsecs[int(len(mjdsecs)/2)] 
-        start_time = mjdsec_to_timestamp(min(mid_mjdsec), str_format=0)[:-5]
+        start_time = mjdsec_to_timestamp(mid_mjdsec, str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
         start_obs_time = ":".join(start_time.split("T")[-1].split(":")[:2])
         start_year = int(start_obs_date.split("-")[0])
