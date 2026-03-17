@@ -112,17 +112,15 @@ def main(
         if cpu_frac <= 0:
             cpu_frac = 0.8
 
-        result = get_local_dask_cluster(
+        dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             max_worker=len(mslist) + 1,
         )
-        if result is None:
+        if dask_client is None:
             print("Error occured in creating local cluster.")
             return 1
-        else:
-            dask_client, dask_cluster, dask_dir, nworker = result
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:

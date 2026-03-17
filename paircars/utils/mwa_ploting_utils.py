@@ -1118,7 +1118,6 @@ def get_aia_map(
     aiadir = f"{workdir}/aiamaps"
     os.makedirs(aiadir, exist_ok=True)
     try:
-        print("Downloading AIA images....")
         final_time_range = []
         if obs_end_date == "" or obs_end_time == "":
             start_time = dt.fromisoformat(f"{obs_date}T{obs_time}")
@@ -1140,6 +1139,7 @@ def get_aia_map(
                 time = a.Time(t_start, t_start)
                 final_time_range.append(t_start)
 
+        print("Downloading AIA images....")
         a.Instrument("aia")
         jsoc_wavelength = a.Wavelength(aia_wavelength * u.angstrom)
         results = Fido.search(

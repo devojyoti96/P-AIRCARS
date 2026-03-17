@@ -1490,7 +1490,7 @@ def run_make_overlay(
         stop_event.set()
         log_thread_overlay.join(timeout=5)
     if msg != 0:
-        raise RuntimeError("EUV overlay is failed.")
+        return 1, succeed, failed
     else:
         return msg, succeed, failed
 
@@ -1983,18 +1983,16 @@ def master_control(
         dask_client = get_client()
         dask_cluster = dask_client.cluster
     except Exception:
-        result = get_local_dask_cluster(
+        dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
             max_worker=max(2, max_worker),
         )
-        if result is None:
+        if dask_client is None:
             print("Error occured in creating local cluster.")
             return 1
-        else:
-            dask_client, dask_cluster, dask_dir = result
-
+            
     #####################################
     # Initiating paircars data
     #####################################
@@ -4081,15 +4079,29 @@ def master_control(
             )
             try:
                 msg, succeed, failed = future_overlay.result()
-                if emails != "":
-                    email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Finished task: Making overlays are done.")
-                print(f"Final image directory: {imagedir}/overlay_pngs")
-                print("###########################")
+                if msg==0:
+                    if emails != "":
+                        email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print("Finished task: Making overlays are done.")
+                    print(f"Final image directory: {imagedir}/overlay_pngs")
+                    print("###########################")
+                else:
+                    if emails != "":
+                        email_msg = f"Making overlays are not successful EUV images could not be download.\nSucceeded: {succeed}, failed: {failed}."
+                        send_task_notification(
+                            emails, email_msg, jobid, target_obsid, timestamp
+                        )
+                    print("###########################")
+                    print("Finished task: Making overlays are not successful.")
+                    if len(glob.glob(f"{imagedir}/overlay_pngs/*.png"))==0:
+                        os.system(f"rm -rf {imagedir}/overlay_pngs")
+                    else:
+                        print(f"Final image directory: {imagedir}/overlay_pngs")
+                    print("###########################")
             except Exception:
                 print("!!!! WARNING: Overlay of the images are not successful. !!!!")
                 traceback.print_exc()
