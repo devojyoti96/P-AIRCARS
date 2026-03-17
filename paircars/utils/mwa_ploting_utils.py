@@ -1451,7 +1451,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
         start_obs_date = start_time.split("T")[0]
         start_obs_time = ":".join(start_time.split("T")[-1].split(":")[:2])
         start_year = int(start_obs_date.split("-")[0])
-        if start_year >= 2019 and end_year >= 2019:
+        if start_year >= 2019:
             euv_images = get_suvi_map(
                 start_obs_date,
                 start_obs_time,
