@@ -303,13 +303,20 @@ def single_ms_flag(
         ######################
         if run_solarflagger:
             do_flag_backup(msname, flagtype="solarflag")
-            flagger(
-                msname,
-                datacolumn,
-                threshold=max(3.0, threshold),
-                num_processes=n_threads,
-                flagbackup=False,
-            )
+            for th in range(10,threshold,2):
+                count=0
+                while count<2:
+                    result, n_final_flagged, n_additional_flagged = flagger(
+                        msname,
+                        datacolumn,
+                        threshold=max(3.0, th),
+                        num_processes=n_threads,
+                        flagbackup=False,
+                    )
+                    if n_additional_flagged==0:
+                        break
+                    else:
+                        count+=1
         os.system(f"touch {msname}/.flag_succeed")
         return 0
     except Exception:
