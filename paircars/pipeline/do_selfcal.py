@@ -1607,6 +1607,14 @@ def main(
     -------
     int
         Success message
+    int
+        Intensity selfcal success number
+    int
+        Intensity selfcal failed number
+    int
+        Polarisation selfcal success number
+    int
+        Polarisation selfcal failed nunber
     float
         Intensity selfcal dynamic range
     float

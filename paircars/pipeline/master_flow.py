@@ -1004,6 +1004,10 @@ def run_selfcal_jobs(
         Polarisation self-calibration succeed ms number
     int
         Polarisation self-calibration failed ms number
+    float
+        Mean intensity self-calibration dynamic range
+    float
+        Mean polarisation self-calibration dynamic range
     """
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
@@ -1029,7 +1033,7 @@ def run_selfcal_jobs(
         # Selfcal jobs
         ########################
         with get_dask_client() as dask_client:
-            msg, int_succeed, int_failed, pol_succeed, pol_failed = do_selfcal.main(
+            msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR = do_selfcal.main(
                 mslist,
                 metafits,
                 workdir,
@@ -1067,7 +1071,7 @@ def run_selfcal_jobs(
     if msg != 0:
         raise RuntimeError("Self-calibration is failed.")
     else:
-        return msg, int_succeed, int_failed, pol_succeed, pol_failed
+        return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR
 
 
 @task(
@@ -3267,13 +3271,13 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg, int_succeed, int_failed, pol_succeed, pol_failed = (
+                msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR = (
                     future_selfcal.result()
                 )
                 if emails != "":
-                    email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}."
+                    email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}, average DR: {int_DR}."
                     if do_polcal:
-                        email_msg += f"\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}."
+                        email_msg += f"\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}, average DR; {pol_DR}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
