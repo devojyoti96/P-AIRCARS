@@ -1023,7 +1023,7 @@ def do_polselfcal(
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter = 3:
+            elif num_iter == 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
@@ -1244,7 +1244,7 @@ def do_polselfcal(
                 ):
                     issue_occured = True
                     pollogger.info(
-                        "Leakage increased by 10%.
+                        "Leakage increased by 10%."
                     )
                     if os.path.exists(last_round_ms):   
                         pollogger.info("Replacing with previous measurement set.")
@@ -1266,7 +1266,7 @@ def do_polselfcal(
                         num_iter-=1
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                    if not solve_per_array:
+                    if not solve_array_leakage:
                         pollogger.info("Solving over array instead of antenna.")
                         solve_array_leakage=True 
                     elif do_bandpass:
