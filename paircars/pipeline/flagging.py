@@ -305,7 +305,7 @@ def single_ms_flag(
             do_flag_backup(msname, flagtype="solarflag")
             for th in range(10,int(threshold),2):
                 count=0
-                while count<2:
+                while count<10:
                     result, n_final_flagged, n_additional_flagged = flagger(
                         msname,
                         datacolumn,

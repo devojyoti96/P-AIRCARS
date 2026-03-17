@@ -1189,13 +1189,14 @@ def selfcal_round(
             diff = np.diff(times)
             change_idx = np.where(np.diff(diff) != 0)[0] 
             max_ntime = int(len(change_idx)/2)+1
-            nintervals, _ = get_optimal_image_interval(
+            nintervals, nchans_variablity = get_optimal_image_interval(
                 msname,
                 temporal_tol_factor=float(min_tol_factor / 100.0),
-                spectral_tol_factor=0.1,
+                spectral_tol_factor=float(min_tol_factor / 100.0),
                 flag_central_chan=flag_central_chan,
                 max_ntime=max_ntime,
             )
+            nchans = min(nchans,nchans_variablity)
         else:
             nchans = 1
             nintervals = 1

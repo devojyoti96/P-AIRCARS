@@ -176,11 +176,11 @@ def applysol(
                 gain_msg = 1
             if gain_msg == 0 and soltype != "basic":
                 os.system(f"rm -rf {msname}/.nopolselfcal")
+                qc_success=False
                 if len(quartical_table) > 0:
                     for qc in quartical_table:
                         if os.path.exists(qc) is False:
                             print(f"Quartical table: {qc} is not present.")
-                            os.system(f"touch {msname}/.nopolselfcal")
                         else:
                             print(
                                 f"Applying solution on ms: {msname} from quartical table: {qc}."
@@ -193,7 +193,6 @@ def applysol(
                             soltypes = get_quartical_soltype(qc)
                             if len(soltypes) == 0:
                                 print("No solution is present.")
-                                os.system(f"touch {msname}/.nopolselfcal")
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
                             else:
@@ -223,10 +222,12 @@ def applysol(
                                 )
                                 if quartical_msg != 0:
                                     print("Quartical solutions did not apply.")
-                                    os.system(f"touch {msname}/.nopolselfcal")
+                                else:
+                                    qc_success=True
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
-                if os.path.exists(f"{msname}/.nopolselfcal"):
+                if not qc_success:
+                    os.system(f"touch {msname}/.nopolselfcal")
                     pol_msg = 1
                 else:
                     pol_msg = 0
@@ -235,6 +236,8 @@ def applysol(
             else:
                 os.system(f"touch {msname}/.nopolselfcal")
                 pol_msg = 1
+        if gain_msg == 0:
+            os.system("touch " + msname + check_file)
         if overwrite_datacolumn:
             print(f"Over writing data column with corrected data for ms: {msname}.")
             outputvis = msname.split(".ms")[0] + "_cor.ms"
@@ -250,8 +253,6 @@ def applysol(
                 os.system(f"mv {outputvis} {msname}")
             for t in touch_file_names:
                 os.system(f"touch {msname}/{t}")
-        if gain_msg == 0:
-            os.system("touch " + msname + check_file)
         return gain_msg, pol_msg
     except Exception:
         traceback.print_exc()

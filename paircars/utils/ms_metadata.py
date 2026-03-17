@@ -111,7 +111,7 @@ def get_timeranges(
     timeres = times[1] - times[0]
     ntime_chunk = max(1, int(time_interval / timeres))
     ntime = int(time_window / timeres)
-    for i in range(0, len(times)+ntime_chunk, ntime_chunk):
+    for i in range(0, len(times), ntime_chunk):
         try:
             start_time = times[i]
         except Exception:   
