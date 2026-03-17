@@ -1446,21 +1446,16 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 timestamp_to_mjdsec(obs_datetime, date_format=1)
             )
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
-        start_time = mjdsec_to_timestamp(min(mjdsecs), str_format=0)[:-5]
+        mid_mjdsec = mjdsecs[int(len(mjdsecs)/2)] 
+        start_time = mjdsec_to_timestamp(min(mid_mjdsec), str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
         start_obs_time = ":".join(start_time.split("T")[-1].split(":")[:2])
         start_year = int(start_obs_date.split("-")[0])
-        end_time = mjdsec_to_timestamp(max(mjdsecs), str_format=0)[:-5]
-        obs_end_date = end_time.split("T")[0]
-        end_year = int(obs_end_date.split("-")[0])
-        obs_end_time = ":".join(end_time.split("T")[-1].split(":")[:2])
         if start_year >= 2019 and end_year >= 2019:
             euv_images = get_suvi_map(
                 start_obs_date,
                 start_obs_time,
                 workdir,
-                obs_end_date=obs_end_date,
-                obs_end_time=obs_end_time,
                 suvi_wavelength=wavelength,
                 ncpu=ncpu,
             )
@@ -1469,8 +1464,6 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                     start_obs_date,
                     start_obs_time,
                     workdir,
-                    obs_end_date=obs_end_date,
-                    obs_end_time=obs_end_time,
                     aia_wavelength=wavelength,
                     ncpu=ncpu,
                 )    
@@ -1479,8 +1472,6 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 start_obs_date,
                 start_obs_time,
                 workdir,
-                obs_end_date=obs_end_date,
-                obs_end_time=obs_end_time,
                 aia_wavelength=wavelength,
                 ncpu=ncpu,
             )

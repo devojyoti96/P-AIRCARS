@@ -508,10 +508,6 @@ def do_selfcal(
                     intlogger.info("Changing calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
-                    if threshold > end_threshold and num_iter_fixed_sigma > min_iter:
-                        threshold -= 1
-                        sigma_reduced_count += 1
-                        num_iter_fixed_sigma = 0
                 elif do_bandpass:
                     intlogger.info("Switch off bandpass.")
                     do_bandpass = False
@@ -545,10 +541,6 @@ def do_selfcal(
                     intlogger.info("Changed calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
-                    if threshold > end_threshold and num_iter_fixed_sigma > min_iter:
-                        threshold -= 1
-                        sigma_reduced_count += 1
-                        num_iter_fixed_sigma = 0
                 else:
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -697,10 +689,6 @@ def do_selfcal(
                         )
                         calmode = "ap"
                         use_previous_model = False
-                        if num_iter_fixed_sigma > min_iter:
-                            threshold -= 1
-                            sigma_reduced_count += 1
-                            num_iter_fixed_sigma = 0
                     ######################################
                     # Reducing threshold if already in apcal
                     ######################################
@@ -1011,6 +999,7 @@ def do_polselfcal(
         last_leakage_file = ""
         last_round_ms = ""
         do_bandpass=True
+        solve_array_leakage=True
         issue_occured = False
         min_iter = max(5, min_iter)  # Minimum 5 iterations
         os.system("rm -rf *_selfcal_present*")
@@ -1030,22 +1019,19 @@ def do_polselfcal(
                 pbcor = True
                 leakagecor = True
                 pbuncor = False
-                solve_array_leakage=True
             elif num_iter < 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-                solve_array_leakage=True
             elif num_iter == 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
-                solve_array_leakage=True
+                solve_array_leakage=False
             else:
                 pbcor = True
                 leakagecor = True
                 pbuncor = True
-                solve_array_leakage=False
                 
             if num_iter_after_flag>0 and do_flag:
                 do_flag=False
