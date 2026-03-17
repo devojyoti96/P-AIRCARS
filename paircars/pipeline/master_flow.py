@@ -3698,7 +3698,7 @@ def master_control(
             print("Starting task: Flagging final target measurement sets .....")
             print("###########################")
             if not use_solarflagger:
-                dr_files = glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
+                dr_files = glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.DR")
                 if len(dr_files)>0:
                     int_DR_list=[]
                     pol_DR_list=[]

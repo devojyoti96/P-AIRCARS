@@ -1920,7 +1920,8 @@ def main(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
                             )
                             failed_polselfcal += 1
-                np.save(f"{caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR",[int_DR,pol_DR])
+                np.save(f"{caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy",[int_DR,pol_DR])
+                os.system(f"mv {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR")
 
             if not keep_backup:
                 for ms in mslist:
