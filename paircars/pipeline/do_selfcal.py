@@ -1240,6 +1240,7 @@ def do_polselfcal(
                 if not solve_array_leakage and (DR3<DR2 or RMS3>RMS2):
                     pollogger.info("Solving over array instead of antenna, as DR decreases.")
                     solve_array_leakage=True
+                    issue_occured=True
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
