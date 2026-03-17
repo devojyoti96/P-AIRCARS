@@ -1293,7 +1293,7 @@ def do_polselfcal(
                     if (
                         (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
                         and num_iter > min_iter
-                        and num_iter_after_reset > min_iter
+                        and num_iter_after_reset > 1
                         and leakage_converged
                     ):
                         pollogger.info(
@@ -1311,7 +1311,7 @@ def do_polselfcal(
                 ###########################
                 # If maximum DR has reached
                 ###########################
-                if DR3 >= max_DR and num_iter > min_iter and num_iter_after_reset > min_iter and leakage_converged:
+                if DR3 >= max_DR and num_iter > min_iter and num_iter_after_reset > 1 and leakage_converged:
                     pollogger.info("Maximum dynamic range is reached.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -1321,7 +1321,7 @@ def do_polselfcal(
                 ##########################
                 # If DR suddenly decreased
                 ##########################
-                if DR3 < 0.7 * DR2 and num_iter > min_iter and num_iter_after_reset > min_iter and leakage_converged:
+                if DR3 < 0.7 * DR2 and num_iter > min_iter and num_iter_after_reset > 1 and leakage_converged:
                     issue_occured = True
                     pollogger.info(
                         "Dynamic range dropped suddenly. Using last round caltable as final.\n"
@@ -1345,7 +1345,7 @@ def do_polselfcal(
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and num_iter_after_reset > min_iter
+                    and num_iter_after_reset > 1
                     and leakage_converged
                 ):
                     pollogger.info("Self-calibration has converged.\n")
@@ -1356,7 +1356,7 @@ def do_polselfcal(
                 #########################################
                 # If maximum iteration has reached
                 #########################################
-                elif num_iter > min_iter and num_iter_after_reset > min_iter and num_iter_after_reset == max_iter:
+                elif num_iter > min_iter and num_iter_after_reset > 1 and num_iter == max_iter:
                     pollogger.info(
                         "Self-calibration is finished. Maximum iteration is reached.\n"
                     )
