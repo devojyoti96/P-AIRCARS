@@ -1023,12 +1023,13 @@ def do_polselfcal(
                 pbcor = False
                 leakagecor = True
                 pbuncor = False
-            elif num_iter == 3:
+            elif num_iter = 3:
                 pbcor = False
                 leakagecor = True
                 pbuncor = True
-                solve_array_leakage=False
             else:
+                if num_iter==min_iter:
+                    solve_array_leakage=False # This is to make sure if it failed, last round ms has same state of polcal
                 pbcor = True
                 leakagecor = True
                 pbuncor = True
@@ -1190,19 +1191,35 @@ def do_polselfcal(
                 if num_iter==0:
                     min_DR = dyn
                     
+                #########################################################
+                # If solving per antenna decrease DR, solve per array
+                #########################################################
+                if not solve_array_leakage and (DR3<DR2 or RMS3>RMS2) and num_iter>min_iter:
+                    pollogger.info("Solving over array instead of antenna, as DR decreases.")
+                    solve_array_leakage=True
+                    issue_occured=True
+                    if os.path.exists(last_round_ms):
+                        pollogger.info("Replacing with previous measurement set.")
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")                              
                 #########################################
                 # If leakage becomes nan
                 #########################################
-                if np.isnan(QL3) or np.isnan(UL3) or np.isnan(VL3):
+                elif np.isnan(QL3) or np.isnan(UL3) or np.isnan(VL3):
                     issue_occured = True
                     if num_iter==0:
                         pollogger.warning("Leakages become nan. Serious calibration issue occured at the first round.")
                         return 1, msname, [], "", 0                        
                     pollogger.warning("Leakages become nan. Serious calibration issue occured.")
                     if os.path.exists(last_round_ms):
+                        pollogger.info("Replacing with previous measurement set.")
+                        num_iter-=1
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                    if do_bandpass:
+                    if not solve_array_leakage:
+                        pollogger.info("Solving over array instead of antenna.")
+                        solve_array_leakage=True
+                    elif do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
                     else:
@@ -1216,35 +1233,26 @@ def do_polselfcal(
                             os.system("rm -rf *_selfcal_present*")
                             time.sleep(5)
                             clean_shutdown(sub_observer)
-                            return 0, msname, last_round_gaintable, last_leakage_file, DR2
-                    
+                            return 0, msname, last_round_gaintable, last_leakage_file, DR2                   
                 ##########################################
                 # If leakage increased
                 ##########################################
-                if (num_iter==2 or num_iter > 4) and (
+                elif (num_iter==2 or num_iter > 4) and (
                     (abs(QL3) - abs(QL2)) > 0.1
                     or (abs(UL3) - abs(UL2)) > 0.1
                     or (abs(VL3) - abs(VL2)) > 0.1
                 ):
                     issue_occured = True
                     pollogger.info(
-                        "Leakage increased by 10%. Replacing with previous measurement set."
+                        "Leakage increased by 10%.
                     )
-                    if os.path.exists(last_round_ms):
+                    if os.path.exists(last_round_ms):   
+                        pollogger.info("Replacing with previous measurement set.")
+                        num_iter-=1
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
                         
-                #########################################################
-                # If solving per antenna decrease DR, solve per array
-                #########################################################
-                if not solve_array_leakage and (DR3<DR2 or RMS3>RMS2):
-                    pollogger.info("Solving over array instead of antenna, as DR decreases.")
-                    solve_array_leakage=True
-                    issue_occured=True
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"cp -r {last_round_ms} {msname}")
-                                          
+                
                 #########################################################
                 # If DR decreased below starting DR
                 #########################################################
@@ -1254,9 +1262,14 @@ def do_polselfcal(
                     )
                     issue_occured = True
                     if os.path.exists(last_round_ms):
+                        pollogger.info("Replacing with previous measurement set.")
+                        num_iter-=1
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                    if do_bandpass:
+                    if not solve_per_array:
+                        pollogger.info("Solving over array instead of antenna.")
+                        solve_array_leakage=True 
+                    elif do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
                     else:
