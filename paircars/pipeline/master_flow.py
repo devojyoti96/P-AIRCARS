@@ -52,6 +52,7 @@ from paircars.utils.mwa_utils import (
     get_MWA_coarse_chan,
     get_MWA_OBSID,
     download_MWA_metafits,
+    get_selfcal_ntimes,
 )
 from paircars.utils.proc_manage_utils import (
     get_jobid,
@@ -2938,10 +2939,12 @@ def master_control(
             print("###########################")
             print(f"Starting task: Spliting {prefix} .....")
             print("###########################")
+            ntime = get_selfcal_ntimes(target_mslist[0])
             msmd.open(target_mslist[0])
             times = msmd.timesforspws(0)
             timeres = np.nanmean(np.diff(times))
             msmd.close()
+            time_window = min(10, round(ntime*timeres,1)) # Maximum 10s
             future_selfcal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -2954,7 +2957,7 @@ def master_control(
                 prefix=prefix,
                 force_split=True,
                 only_disk=True,
-                time_window=min(timeres, time_interval),
+                time_window=min(time_window, time_interval),
                 time_interval=time_interval,
                 quack_timestamps=quack_timestamps,
                 jobid=jobid,
