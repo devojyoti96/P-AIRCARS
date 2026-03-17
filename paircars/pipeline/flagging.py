@@ -309,7 +309,7 @@ def single_ms_flag(
                     result, n_final_flagged, n_additional_flagged = flagger(
                         msname,
                         datacolumn,
-                        threshold=max(3.0, th),
+                        threshold=max(5.0, th),
                         num_processes=n_threads,
                         flagbackup=False,
                     )
