@@ -503,7 +503,7 @@ def do_selfcal(
                 issue_occured = True
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
+                    os.system(f"cp -r {last_round_ms} {msname}")
                 if calmode=="p":
                     intlogger.info("Changing calmode to 'ap'.")
                     calmode = "ap"
@@ -539,7 +539,7 @@ def do_selfcal(
                 issue_occured = True
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
+                    os.system(f"cp -r {last_round_ms} {msname}")
                 intlogger.info("Dynamic range decreasing in phase-only self-cal.")
                 if do_apcal:
                     intlogger.info("Changed calmode to 'ap'.")
@@ -566,7 +566,7 @@ def do_selfcal(
                 issue_occured = True
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
+                    os.system(f"cp -r {last_round_ms} {msname}")
                 intlogger.info(
                     "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
                 )
@@ -599,7 +599,7 @@ def do_selfcal(
                 issue_occured = True
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
-                    os.system(f"mv {last_round_ms} {msname}")
+                    os.system(f"cp -r {last_round_ms} {msname}")
                 if do_bandpass:
                     intlogger.info("Switch off bandpass.")
                     do_bandpass = False
@@ -1109,7 +1109,7 @@ def do_polselfcal(
                         )
                         if os.path.exists(last_round_ms):
                             os.system(f"rm -rf {msname}")
-                            os.system(f"mv {last_round_ms} {msname}")
+                            os.system(f"cp -r {last_round_ms} {msname}")
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
                         clean_shutdown(sub_observer)
@@ -1215,7 +1215,7 @@ def do_polselfcal(
                     pollogger.warning("Leakages become nan. Serious calibration issue occured.")
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
                     if do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
@@ -1246,7 +1246,7 @@ def do_polselfcal(
                     )
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
                         
                 #########################################################
                 # If solving per antenna decrease DR, solve per array
@@ -1256,7 +1256,7 @@ def do_polselfcal(
                     solve_array_leakage=True
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
                                           
                 #########################################################
                 # If DR decreased below starting DR
@@ -1268,7 +1268,7 @@ def do_polselfcal(
                     issue_occured = True
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
                     if do_bandpass:
                         pollogger.info("Switch off bandpass.")
                         do_bandpass=False
@@ -1299,7 +1299,7 @@ def do_polselfcal(
                     issue_occured = True
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -1325,7 +1325,7 @@ def do_polselfcal(
                     )
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
-                        os.system(f"mv {last_round_ms} {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
