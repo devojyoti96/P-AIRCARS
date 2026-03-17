@@ -1001,6 +1001,7 @@ def do_polselfcal(
         do_bandpass=True
         solve_array_leakage=True
         issue_occured = False
+        num_iter_after_reset=0
         min_iter = max(5, min_iter)  # Minimum 5 iterations
         os.system("rm -rf *_selfcal_present*")
 
@@ -1198,6 +1199,7 @@ def do_polselfcal(
                     pollogger.info("Solving over array instead of antenna, as DR decreases.")
                     solve_array_leakage=True
                     issue_occured=True
+                    num_iter_after_reset=0
                     if os.path.exists(last_round_ms):
                         pollogger.info("Replacing with previous measurement set.")
                         os.system(f"rm -rf {msname}")
@@ -1217,6 +1219,7 @@ def do_polselfcal(
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
                     if not solve_array_leakage:
+                        num_iter_after_reset=0
                         pollogger.info("Solving over array instead of antenna.")
                         solve_array_leakage=True
                     elif do_bandpass:
@@ -1255,7 +1258,7 @@ def do_polselfcal(
                 # If DR decreased below starting DR
                 #########################################################
                 else:
-                    if DR3 < 0.9 * min_DR and num_iter > 1:
+                    if DR3 < 0.9 * min_DR and num_iter_after_reset > 1:
                         pollogger.info(
                             f"Dynamic range decreased below start dynamic range: {min_DR}."
                         )
@@ -1266,6 +1269,7 @@ def do_polselfcal(
                             os.system(f"rm -rf {msname}")
                             os.system(f"cp -r {last_round_ms} {msname}")
                         if not solve_array_leakage:
+                            num_iter_after_reset=0
                             pollogger.info("Solving over array instead of antenna.")
                             solve_array_leakage=True 
                         elif do_bandpass:
@@ -1289,6 +1293,7 @@ def do_polselfcal(
                     if (
                         (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
                         and num_iter > min_iter
+                        and num_iter_after_reset > min_iter
                         and leakage_converged
                     ):
                         pollogger.info(
@@ -1306,7 +1311,7 @@ def do_polselfcal(
                 ###########################
                 # If maximum DR has reached
                 ###########################
-                if DR3 >= max_DR and num_iter > min_iter and leakage_converged:
+                if DR3 >= max_DR and num_iter > min_iter and num_iter_after_reset > min_iter and leakage_converged:
                     pollogger.info("Maximum dynamic range is reached.\n")
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -1316,7 +1321,7 @@ def do_polselfcal(
                 ##########################
                 # If DR suddenly decreased
                 ##########################
-                if DR3 < 0.7 * DR2 and num_iter > min_iter and leakage_converged:
+                if DR3 < 0.7 * DR2 and num_iter > min_iter and num_iter_after_reset > min_iter and leakage_converged:
                     issue_occured = True
                     pollogger.info(
                         "Dynamic range dropped suddenly. Using last round caltable as final.\n"
@@ -1340,6 +1345,7 @@ def do_polselfcal(
                 if (
                     abs(DR1 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
+                    and num_iter_after_reset > min_iter
                     and leakage_converged
                 ):
                     pollogger.info("Self-calibration has converged.\n")
@@ -1350,7 +1356,7 @@ def do_polselfcal(
                 #########################################
                 # If maximum iteration has reached
                 #########################################
-                elif num_iter > min_iter and num_iter == max_iter:
+                elif num_iter > min_iter and num_iter_after_reset > min_iter and num_iter_after_reset == max_iter:
                     pollogger.info(
                         "Self-calibration is finished. Maximum iteration is reached.\n"
                     )
@@ -1361,6 +1367,7 @@ def do_polselfcal(
                     clean_shutdown(sub_observer)
                     return 0, msname, gaintable, leakage_file, DR3
                 num_iter += 1
+                num_iter_after_reset+=1
                 os.system(f"cp -r {msname} {msname}.round{num_iter}")
                 if not issue_occured:
                     last_round_gaintable = gaintable
