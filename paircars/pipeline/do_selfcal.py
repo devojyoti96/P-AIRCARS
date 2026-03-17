@@ -1251,59 +1251,57 @@ def do_polselfcal(
                         num_iter-=1
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                        
-                
                 #########################################################
                 # If DR decreased below starting DR
                 #########################################################
-                if DR3 < 0.9 * min_DR and num_iter > 1:
-                    pollogger.info(
-                        f"Dynamic range decreased below start dynamic range: {min_DR}."
-                    )
-                    issue_occured = True
-                    if os.path.exists(last_round_ms):
-                        pollogger.info("Replacing with previous measurement set.")
-                        num_iter-=1
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"cp -r {last_round_ms} {msname}")
-                    if not solve_array_leakage:
-                        pollogger.info("Solving over array instead of antenna.")
-                        solve_array_leakage=True 
-                    elif do_bandpass:
-                        pollogger.info("Switch off bandpass.")
-                        do_bandpass=False
-                    else:
-                        if not use_solarflagger and DR3<100:
-                            use_solarflagger=True
-                        if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                            pollogger.info("Trying uvsub flagging.")
-                            do_flag=True
-                            num_iter_after_flag+=1
+                else:
+                    if DR3 < 0.9 * min_DR and num_iter > 1:
+                        pollogger.info(
+                            f"Dynamic range decreased below start dynamic range: {min_DR}."
+                        )
+                        issue_occured = True
+                        if os.path.exists(last_round_ms):
+                            pollogger.info("Replacing with previous measurement set.")
+                            num_iter-=1
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"cp -r {last_round_ms} {msname}")
+                        if not solve_array_leakage:
+                            pollogger.info("Solving over array instead of antenna.")
+                            solve_array_leakage=True 
+                        elif do_bandpass:
+                            pollogger.info("Switch off bandpass.")
+                            do_bandpass=False
                         else:
-                            os.system("rm -rf *_selfcal_present*")
-                            time.sleep(5)
-                            clean_shutdown(sub_observer)
-                            return 0, msname, last_round_gaintable, last_leakage_file, DR2
-                        
-                ##############################################################
-                # If DR is decreasing (DR decrease in pol selfcal)
-                ##############################################################
-                if (
-                    (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
-                    and num_iter > min_iter
-                    and leakage_converged
-                ):
-                    pollogger.info(
-                        "Dynamic range is decreasing after minimum numbers of rounds.\n"
-                    )
-                    issue_occured = True
-                    if os.path.exists(last_round_ms):
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"cp -r {last_round_ms} {msname}")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, last_leakage_file, DR2
+                            if not use_solarflagger and DR3<100:
+                                use_solarflagger=True
+                            if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                                pollogger.info("Trying uvsub flagging.")
+                                do_flag=True
+                                num_iter_after_flag+=1
+                            else:
+                                os.system("rm -rf *_selfcal_present*")
+                                time.sleep(5)
+                                clean_shutdown(sub_observer)
+                                return 0, msname, last_round_gaintable, last_leakage_file, DR2            
+                    ##############################################################
+                    # If DR is decreasing (DR decrease in pol selfcal)
+                    ##############################################################
+                    if (
+                        (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
+                        and num_iter > min_iter
+                        and leakage_converged
+                    ):
+                        pollogger.info(
+                            "Dynamic range is decreasing after minimum numbers of rounds.\n"
+                        )
+                        issue_occured = True
+                        if os.path.exists(last_round_ms):
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"cp -r {last_round_ms} {msname}")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, last_round_gaintable, last_leakage_file, DR2
 
                 ###########################
                 # If maximum DR has reached
