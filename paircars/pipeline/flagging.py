@@ -303,7 +303,7 @@ def single_ms_flag(
         ######################
         if run_solarflagger:
             do_flag_backup(msname, flagtype="solarflag")
-            for th in range(10,threshold,2):
+            for th in range(10,int(threshold),2):
                 count=0
                 while count<2:
                     result, n_final_flagged, n_additional_flagged = flagger(
