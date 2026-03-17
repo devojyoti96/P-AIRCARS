@@ -3694,6 +3694,23 @@ def master_control(
             print("###########################")
             print("Starting task: Flagging final target measurement sets .....")
             print("###########################")
+            if not use_solarflagger:
+                dr_files = glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
+                if len(dr_files)>0:
+                    int_DR_list=[]
+                    pol_DR_list=[]
+                    for dr_file in dr_files:
+                        int_DR, pol_DR = np.load(dr_file,allow_pickle=True)
+                        int_DR_list.append(int_DR)
+                        pol_DR_list.append(pol_DR)
+                    avg_int_DR = np.nanmedian(int_DR_list)
+                    avg_pol_DR = np.nanmedian(pol_DR_list)
+                    if avg_int_DR<100 or avg_pol_DR<100:
+                        print(f"Average intensity self-calibration dynamic range: {avg_int_DR} is smaller than 100.")
+                        print(f"Average polarisation self-calibration dynamic range: {avg_pol_DR} is smaller than 100.")
+                        print("Using solar flagger.")
+                        use_solarflagger=True
+                
             future_flag = run_flag.with_options(
                 task_run_name=f"flagging_target_{jobid}"
             ).submit(

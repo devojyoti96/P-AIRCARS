@@ -1656,8 +1656,8 @@ def main(
         int_failed = len(mslist)
         pol_succeed = 0
         pol_failed = len(mslist)
-        int_DR = 0
-        pol_DR = 0
+        avg_int_DR = 0
+        avg_pol_DR = 0
 
     dask_cluster = None
     if dask_client is None:
@@ -1815,13 +1815,15 @@ def main(
             failed_intselfcal = 0
             succeed_polselfcal = 0
             failed_polselfcal = 0
-            int_DR = 0
-            pol_DR = 0
+            int_DR_list = []
+            pol_DR_list = []
             for i in range(len(results)):
                 r = results[i]
                 int_msg = r[0]
-                int_DR+= r[5]
-                pol_DR+= r[6]
+                int_DR = r[5]
+                pol_DR = r[6]
+                int_DR_list.append(int_DR)
+                pol_DR_list.append(pol_DR)
                 if int_msg != 0:
                     print(
                         f"Intensity self-calibration was not successful for ms: {mslist[i]}."
@@ -1918,6 +1920,7 @@ def main(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
                             )
                             failed_polselfcal += 1
+                np.save(f"{caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR",[int_DR,pol_DR])
 
             if not keep_backup:
                 for ms in mslist:
@@ -1972,19 +1975,21 @@ def main(
                 pol_succeed, pol_failed = succeed_polselfcal, failed_polselfcal
             if succeed_intselfcal == 0:
                 msg = 1
-            if len(results)>0:
-                int_DR = int_DR / len(results)
-                pol_DR = pol_DR / len(results)
+            if len(int_DR_list)>0:
+                avg_int_DR = np.nanmedian(int_DR_list)
             else:
-                int_DR = 0
-                pol_DR = 0
-            print(f"Average intensity self-calibration dynamic range: {int_DR}")
-            print(f"Average polarisation self-calibration dynamic range: {pol_DR}")
+                avg_int_DR=0
+            if len(pol_DR_list)>0:
+                avg_pol_DR = np.nanmedian(pol_DR_list)
+            else:
+                avg_pol_DR=0
+            print(f"Average intensity self-calibration dynamic range: {avg_int_DR}")
+            print(f"Average polarisation self-calibration dynamic range: {avg_pol_DR}")
     except Exception:
         traceback.print_exc()
         msg = 1
-        int_DR = 0
-        pol_DR = 0
+        avg_int_DR = 0
+        avg_pol_DR = 0
     finally:
         time.sleep(5)
         clean_shutdown(observer)
@@ -1997,7 +2002,7 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-    return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR
+    return msg, int_succeed, int_failed, pol_succeed, pol_failed, avg_int_DR, avg_pol_DR
 
 
 def cli():
