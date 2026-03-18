@@ -1037,8 +1037,8 @@ class SolarPhaseCenter:
 
                 # Set CRPIX to apparent pixel position (1-based for FITS)
                 # Add 1 because FITS CRPIX is 1-based but our pixel positions are 0-based
-                header["CRPIX1"] = float(apparent_pix_x + 100)
-                header["CRPIX2"] = float(apparent_pix_y + 100)
+                header["CRPIX1"] = float(apparent_pix_x + 1)
+                header["CRPIX2"] = float(apparent_pix_y + 1)
 
                 # Set CRVAL to true solar position
                 header["CRVAL1"] = float(true_ra)
