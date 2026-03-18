@@ -518,8 +518,6 @@ def correct_spectrosnap_phaseshift(
             wsclean_models = model_dic[modelname]
             valid_image = check_valid_image(imagename)
             if valid_image:
-                logger.info("#########################################")
-                logger.info(f"Phase shift correction for: {imagename}.")
                 success_msg, shift_needed = single_image_update_phasecenter(
                     wsclean_images,
                     wsclean_models,
@@ -532,7 +530,6 @@ def correct_spectrosnap_phaseshift(
                     logger.info(f"Phase center is shifted for {imagename}")
                 else:
                     logger.info(f"No phase center shift is needed for {imagename}")
-                logger.info("#############################################")
         return 0
     except Exception:
         traceback.print_exc()
@@ -1411,7 +1408,6 @@ def selfcal_round(
         wsclean_images_dic = {}
         wsclean_models_dic = {}
         wsclean_residuals_dic = {}
-        logger.info(pollist)
         for suffix in ["image", "model", "residual"]:
             stokeslist = []
             for p in pollist:
@@ -1420,7 +1416,6 @@ def selfcal_round(
                         sorted(glob.glob(prefix + "*" + f"-{suffix}.fits"))
                     )
                 else:
-                    logger.info(prefix + "*" + p + f"-{suffix}.fits")
                     stokeslist.append(
                         sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
                     )
@@ -1493,7 +1488,7 @@ def selfcal_round(
         #######################################
         # Remove chunk files
         #######################################
-        images = list(wsclean_images_dic.keys())
+        '''images = list(wsclean_images_dic.keys())
         models = list(wsclean_models_dic.keys())
         residuals = list(wsclean_residuals_dic.keys())
         for i in range(len(images)):
@@ -1508,7 +1503,7 @@ def selfcal_round(
             for mod in wsclean_models:
                 os.system(f"rm -rf {mod}")
             for res in wsclean_residuals:
-                os.system(f"rm -rf {res}")
+                os.system(f"rm -rf {res}")'''
 
         #####################################
         # Analyzing images
