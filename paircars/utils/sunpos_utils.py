@@ -15,6 +15,7 @@ from casatools import msmetadata
 from .basic_utils import get_datadir, mjdsec_to_timestamp
 from .udocker_utils import run_solar_sidereal_cor, run_chgcenter
 from .image_utils import create_circular_mask_array
+from .imaging import calc_sun_dia
 
 #####################################
 # Sun position related
