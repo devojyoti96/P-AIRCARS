@@ -439,6 +439,7 @@ def single_image_update_phasecenter(
     cellsize, 
     imsize,
     stokes,
+    logger,
 ):
     """
     Update phase center of a single set of polarisation image
@@ -468,10 +469,13 @@ def single_image_update_phasecenter(
         Whether phase shift needed or not
     """
     try:
-        msg, shift_needed, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec = cal_solar_phaseshift(image_cube)
+        msg, shift_needed, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(image_cube)
         if msg!=0:
             return msg, shift_needed
-        if shift_needed:
+        if not shift_needed:
+            logger.info(f"Shift {seperation_arcsec}arcsec is smaller than cellsize for {image_cube}. Shifting is not required.")
+        else:
+            logger.info(f"Shift {seperation_arcsec}arcsec is more than cellsize for {image_cube}. Shifting is required.")
             shift_func = partial(
                 shift_solarcenter,
                 sun_radeg=sun_radeg,
@@ -545,12 +549,10 @@ def correct_spectrosnap_phaseshift(
                     cellsize, 
                     imsize,
                     stokes,
+                    logger,
                 )
                 if shift_needed:
-                    logger.info(f"Phase center is shifted for {imagename}")
                     shifted=True
-                else:
-                    logger.info(f"No phase center shift is needed for {imagename}")
         return 0, shifted
     except Exception:
         traceback.print_exc()
@@ -1466,7 +1468,6 @@ def selfcal_round(
         #########################################
         # Shifting solar center to phase center
         #########################################
-        cont=input("?")
         logger.info("Shifting images...")
         shifting_msg, shifted = correct_spectrosnap_phaseshift(
                 wsclean_images_dic,
@@ -1501,7 +1502,6 @@ def selfcal_round(
         # Predict models
         ####################################
         if do_polcal or shifted:
-            cont=input("?")
             prediction_failed = False
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
@@ -1509,7 +1509,6 @@ def selfcal_round(
             prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
             if prediction_msg != 0:
                 prediction_failed = True
-            cont=input("?")
 
         if do_polcal:
             #######################################

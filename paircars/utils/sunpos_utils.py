@@ -12,7 +12,7 @@ from astropy.coordinates import (
 from astropy.io import fits
 from astropy.wcs import WCS
 from casatools import msmetadata
-from .basic_utils import get_datadir, mjdsec_to_timestamp
+from .basic_utils import get_datadir, mjdsec_to_timestamp, angular_separation_equatorial
 from .udocker_utils import run_solar_sidereal_cor, run_chgcenter
 from .image_utils import create_circular_mask_array
 from .imaging import calc_sun_dia
@@ -219,6 +219,8 @@ def cal_solar_phaseshift(imagename, sigma=10):
         Apparent RA pixel of solarcenter
     int
         Apparent DEC pixel of solarcenter
+    float
+        Shift size in arcseconds
     """
     def gaussian_2d(xy, amplitude, x0, y0, sigma_x, sigma_y, offset):
         x, y = xy
@@ -297,14 +299,16 @@ def cal_solar_phaseshift(imagename, sigma=10):
         y_cen = result.dec.deg
         ra = float(x_cen)
         dec = float(y_cen)
-        if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
+        seperation_deg = angular_separation_equatorial(ra, dec, sun_radeg, sun_decdeg)
+        seperation_arcsec = seperation_deg*3600.0
+        if seperation_arcsec <= cellsize:
             need_shifting = False
         else:
             need_shifting = True
-        return 0, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec
+        return 0, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec
     except Exception:
         traceback.print_exc()
-        return 1, False, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0
+        return 1, False, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0, 0
 
 
 def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, apparent_pix_ra=None, apparent_pix_dec=None, need_shifting=True, overwrite=True):
@@ -338,7 +342,7 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         Output image name
     """
     if sun_radeg is None or sun_decdeg is None or apparent_pix_ra is None or apparent_pix_dec is None:
-        msg, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec = cal_solar_phaseshift(imagename, sigma=sigma)
+        msg, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename, sigma=sigma)
     try:
         if need_shifting:
             data = fits.getdata(imagename)
