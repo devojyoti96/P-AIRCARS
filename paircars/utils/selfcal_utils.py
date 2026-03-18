@@ -31,6 +31,7 @@ from .image_utils import (
     make_stokes_wsclean_imagecube,
 )
 from .udocker_utils import run_wsclean, run_quartical
+from .move_solarcenter import SolarPhaseCenter
 
 def cal_crossphase(imagename):
     """
@@ -429,7 +430,109 @@ def check_valid_image(imagename):
     else:
         return True
 
+def single_image_update_phasecenter(
+    wsclean_images,
+    wsclean_models,
+    image_cube,
+    model_cube,
+    cellsize, 
+    imsize,
+):
+    """
+    Update phase center of a single set of polarisation image
 
+    Parameters
+    ----------
+    wsclean_images : list
+        List of wsclean Stokes images
+    wsclean_models : list
+        List of wsclean Stokes models
+    image_cube : str
+        Stokes image cube name
+    model_cube : str
+        Stokes model cube name
+    cellsize : float
+        Pixel size in arcseconds
+    imsize : int
+        Image size
+
+    Returns
+    -------
+    int
+        Success message
+    """
+    try:
+        spc = SolarPhaseCenter(cellsize=cellsize,imsize=imsize)
+        phaseshift_info = spc.cal_solar_phaseshift(image_cube,fit_gaussian=True)
+        shift_needed = phaseshift_info["needs_shift"]
+        if shift_needed:
+            for imagename in wsclean_images:
+                spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
+            for modelname in wsclean_models:
+                spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
+        return 0
+    except Exception:
+        traceback.print_exc()
+        return 1
+        
+        
+def correct_spectrosnap_phaseshift(
+    image_dic,
+    model_dic,
+    cellsize,
+    imsize,
+    logger=None,
+):
+    """
+    Correct spectrocopic snapshot images for phase shift
+
+    Parameters
+    ----------
+    image_dic : dict
+        Image dictionary
+    model_dic : dict
+        Model dictionary
+    cellsize : float
+        Pixel size in arcsecond
+    imsize : int
+        Iamge size
+    logger : logger, optional
+        Python logger
+        
+    Returns
+    -------
+    int
+        Success message
+    """
+    try:
+        images = list(image_dic.keys())
+        models = list(model_dic.keys())
+        for i in range(len(images)):
+            imagename = images[i]
+            modelname = models[i]
+            if "MFS" not in imagename:
+                wsclean_images = image_dic[imagename]
+                wsclean_models = model_dic[modelname]
+                valid_image = check_valid_image(imagename)
+                if valid_image:
+                    if logger is not None:
+                        logger.info(f"Phase shift correction for: {imagename}.")
+                    else:
+                        print(f"Phase shift correction for: {imagename}.")
+                    single_image_update_phasecenter(
+                        wsclean_images,
+                        wsclean_models,
+                        imagename,
+                        modelname,
+                        cellsize, 
+                        imsize,
+                    )
+        return 0
+    except Exception:
+        traceback.print_exc()
+        return 1
+    
+                
 def calc_leakage(imagename, threshold=5, disc_size=50):
     """
     Calculate Stokes I to Q, U, V leakages
@@ -1294,44 +1397,57 @@ def selfcal_round(
         if msg != 0:
             logger.error("Imaging is not successful.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", []
+    
+        #######################################
+        # Making stokes cube
+        #######################################
+        pollist = list(pol)
+        wsclean_images_dic = {}
+        wsclean_models_dic = {}
+        wsclean_residuals_dic = {}
+        for suffix in ["image", "model", "residual"]:
+            stokeslist = []
+            for p in pollist:
+                stokeslist.append(
+                    sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
+                )
+            for i in range(len(stokeslist[0])):
+                wsclean_images = sorted(
+                    [stokeslist[k][i] for k in range(len(pollist))]
+                )
+                image_prefix = (
+                    selfcaldir
+                    + "/"
+                    + os.path.basename(wsclean_images[0])
+                    .split(f"-{suffix}")[0]
+                    .split("-I")[0]
+                )
+                image_cube = make_stokes_wsclean_imagecube(
+                    wsclean_images,
+                    image_prefix + f"-IQUV-{suffix}.fits",
+                    keep_wsclean_images=True,
+                )
+                if suffix == "image":
+                    wsclean_images_dic[image_cube] = wsclean_images
+                elif suffix == "model":
+                    wsclean_models_dic[image_cube] = wsclean_images
+                elif suffix == "residual":
+                    wsclean_residuals_dic[image_cube] = wsclean_images
 
+        #########################################
+        # Shifting solar center to phase center
+        #########################################
+        shifting_msg = correct_spectrosnap_phaseshift(
+                wsclean_images_dic,
+                wsclean_models_dic,
+                cellsize,
+                imsize,
+                logger=logger,
+            )
+        if shifting_msg!=0:
+            logger.warning("Error occured in phase shift correction.")
+        
         if do_polcal:
-            #######################################
-            # Making stokes cube
-            #######################################
-            pollist = ["I", "Q", "U", "V"]
-            wsclean_images_dic = {}
-            wsclean_models_dic = {}
-            wsclean_residuals_dic = {}
-            for suffix in ["image", "model", "residual"]:
-                stokeslist = []
-                for p in pollist:
-                    stokeslist.append(
-                        sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
-                    )
-                for i in range(len(stokeslist[0])):
-                    wsclean_images = sorted(
-                        [stokeslist[k][i] for k in range(len(pollist))]
-                    )
-                    image_prefix = (
-                        selfcaldir
-                        + "/"
-                        + os.path.basename(wsclean_images[0])
-                        .split(f"-{suffix}")[0]
-                        .split("-I")[0]
-                    )
-                    image_cube = make_stokes_wsclean_imagecube(
-                        wsclean_images,
-                        image_prefix + f"-IQUV-{suffix}.fits",
-                        keep_wsclean_images=True,
-                    )
-                    if suffix == "image":
-                        wsclean_images_dic[image_cube] = wsclean_images
-                    elif suffix == "model":
-                        wsclean_models_dic[image_cube] = wsclean_images
-                    elif suffix == "residual":
-                        wsclean_residuals_dic[image_cube] = wsclean_images
-
             ################################
             # Leakage correction
             ################################
@@ -1340,42 +1456,43 @@ def selfcal_round(
                     wsclean_images_dic,
                     wsclean_models_dic,
                     metafits,
-                    logger,
+                    logger=logger,
                     pbcor=pbcor,
                     leakagecor=leakagecor,
                     pbuncor=pbuncor,
                     ncpu=ncpu,
                 )
-            ####################################
-            # Predict models
-            ####################################
-            prediction_failed = False
-            delmod(vis=msname, otf=True, scr=True)
-            wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
-            logger.info(f"\nWSClean command: {wsclean_cmd}\n")
-            prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
-            if prediction_msg != 0:
-                prediction_failed = True
+                
+        ####################################
+        # Predict models
+        ####################################
+        prediction_failed = False
+        delmod(vis=msname, otf=True, scr=True)
+        wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
+        logger.info(f"\nWSClean command: {wsclean_cmd}\n")
+        prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+        if prediction_msg != 0:
+            prediction_failed = True
 
-            #######################################
-            # Remove chunk files
-            #######################################
-            images = list(wsclean_images_dic.keys())
-            models = list(wsclean_models_dic.keys())
-            residuals = list(wsclean_residuals_dic.keys())
-            for i in range(len(images)):
-                imagename = images[i]
-                modelname = models[i]
-                residualname = residuals[i]
-                wsclean_images = wsclean_images_dic[imagename]
-                wsclean_models = wsclean_models_dic[modelname]
-                wsclean_residuals = wsclean_residuals_dic[residualname]
-                for img in wsclean_images:
-                    os.system(f"rm -rf {img}")
-                for mod in wsclean_models:
-                    os.system(f"rm -rf {mod}")
-                for res in wsclean_residuals:
-                    os.system(f"rm -rf {res}")
+        #######################################
+        # Remove chunk files
+        #######################################
+        images = list(wsclean_images_dic.keys())
+        models = list(wsclean_models_dic.keys())
+        residuals = list(wsclean_residuals_dic.keys())
+        for i in range(len(images)):
+            imagename = images[i]
+            modelname = models[i]
+            residualname = residuals[i]
+            wsclean_images = wsclean_images_dic[imagename]
+            wsclean_models = wsclean_models_dic[modelname]
+            wsclean_residuals = wsclean_residuals_dic[residualname]
+            for img in wsclean_images:
+                os.system(f"rm -rf {img}")
+            for mod in wsclean_models:
+                os.system(f"rm -rf {mod}")
+            for res in wsclean_residuals:
+                os.system(f"rm -rf {res}")
 
         #####################################
         # Analyzing images
