@@ -471,16 +471,20 @@ def single_image_update_phasecenter(
         phaseshift_info = spc.cal_solar_phaseshift(image_cube,fit_gaussian=True)
         shift_needed = phaseshift_info["needs_shift"]
         print(phaseshift_info)
-        phaseshift_info["apparent_pix_x"] = phaseshift_info["apparent_pix_x"]+200.0
-        phaseshift_info["apparent_pix_x"] = phaseshift_info["apparent_pix_x"]+200.0
+        #phaseshift_info["apparent_pix_x"] = phaseshift_info["apparent_pix_x"]+10.0
+        #phaseshift_info["apparent_pix_x"] = phaseshift_info["apparent_pix_x"]+60.0
         print(phaseshift_info)
         if shift_needed:
-            spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
+            #spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
+            spc.visually_center_image(image_cube,image_cube,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
             for imagename in wsclean_images:
-                spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
-            spc.shift_phasecenter(model_cube,phase_result=phaseshift_info,stokes=stokes)
+                #spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
+                spc.visually_center_image(imagename,imagename,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
+            #spc.shift_phasecenter(model_cube,phase_result=phaseshift_info,stokes=stokes)
+            spc.visually_center_image(model_cube,model_cube,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
             for modelname in wsclean_models:
-                spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
+                #spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
+                spc.visually_center_image(modelname,modelname,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
         return 0, shift_needed
     except Exception:
         traceback.print_exc()
