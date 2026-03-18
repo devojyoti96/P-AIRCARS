@@ -1688,7 +1688,7 @@ def selfcal_round(
                         fluxcal_caltable(bpass_caltable, attn=solar_attn)
 
             logger.info(
-                f"applycal(vis='{msname}',gaintable={applycal_gaintable},interp={interp},applymode='{applymode}',calwt=s[False],flagbackup=False)\n"
+                f"applycal(vis='{msname}',gaintable={applycal_gaintable},interp={interp},applymode='{applymode}',calwt=[False],flagbackup=False)\n"
             )
             with suppress_output():
                 applycal(
@@ -1729,10 +1729,7 @@ def selfcal_round(
             if solint=="inf":
                 quartical_args.append("D.time_interval=1")
             elif solint!="int":
-                if max_ntime>1:
-                    quartical_args.append(f"D.time_interval={max_ntime}") 
-                else:
-                    quartical_args.append(f"D.time_interval={solint}")
+                quartical_args.append(f"D.time_interval={solint}")
             else:
                 quartical_args.append(f"D.time_interval={max_ntime}")      
             if do_bandpass:
