@@ -437,6 +437,7 @@ def single_image_update_phasecenter(
     model_cube,
     cellsize, 
     imsize,
+    stokes,
 ):
     """
     Update phase center of a single set of polarisation image
@@ -455,6 +456,8 @@ def single_image_update_phasecenter(
         Pixel size in arcseconds
     imsize : int
         Image size
+    stokes : str
+        Stokes planes of image cube
 
     Returns
     -------
@@ -468,8 +471,10 @@ def single_image_update_phasecenter(
         phaseshift_info = spc.cal_solar_phaseshift(image_cube,fit_gaussian=True)
         shift_needed = phaseshift_info["needs_shift"]
         if shift_needed:
+            spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
             for imagename in wsclean_images:
                 spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
+            spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
             for modelname in wsclean_models:
                 spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
         return 0, shift_needed
@@ -483,6 +488,7 @@ def correct_spectrosnap_phaseshift(
     model_dic,
     cellsize,
     imsize,
+    stokes,
     logger,
 ):
     """
@@ -497,7 +503,9 @@ def correct_spectrosnap_phaseshift(
     cellsize : float
         Pixel size in arcsecond
     imsize : int
-        Iamge size
+        Image size
+    stokes : str
+        Stokes planes of image list
     logger : logger, optional
         Python logger
         
@@ -509,8 +517,6 @@ def correct_spectrosnap_phaseshift(
     try:
         images = list(image_dic.keys())
         models = list(model_dic.keys())
-        logger.info(images)
-        logger.info(models)
         for i in range(len(images)):
             imagename = images[i]
             modelname = models[i]
@@ -525,6 +531,7 @@ def correct_spectrosnap_phaseshift(
                     modelname,
                     cellsize, 
                     imsize,
+                    stokes,
                 )
                 if shift_needed:
                     logger.info(f"Phase center is shifted for {imagename}")
@@ -1485,25 +1492,26 @@ def selfcal_round(
         if prediction_msg != 0:
             prediction_failed = True
 
-        #######################################
-        # Remove chunk files
-        #######################################
-        '''images = list(wsclean_images_dic.keys())
-        models = list(wsclean_models_dic.keys())
-        residuals = list(wsclean_residuals_dic.keys())
-        for i in range(len(images)):
-            imagename = images[i]
-            modelname = models[i]
-            residualname = residuals[i]
-            wsclean_images = wsclean_images_dic[imagename]
-            wsclean_models = wsclean_models_dic[modelname]
-            wsclean_residuals = wsclean_residuals_dic[residualname]
-            for img in wsclean_images:
-                os.system(f"rm -rf {img}")
-            for mod in wsclean_models:
-                os.system(f"rm -rf {mod}")
-            for res in wsclean_residuals:
-                os.system(f"rm -rf {res}")'''
+        if do_polcal:
+            #######################################
+            # Remove chunk files
+            #######################################
+            images = list(wsclean_images_dic.keys())
+            models = list(wsclean_models_dic.keys())
+            residuals = list(wsclean_residuals_dic.keys())
+            for i in range(len(images)):
+                imagename = images[i]
+                modelname = models[i]
+                residualname = residuals[i]
+                wsclean_images = wsclean_images_dic[imagename]
+                wsclean_models = wsclean_models_dic[modelname]
+                wsclean_residuals = wsclean_residuals_dic[residualname]
+                for img in wsclean_images:
+                    os.system(f"rm -rf {img}")
+                for mod in wsclean_models:
+                    os.system(f"rm -rf {mod}")
+                for res in wsclean_residuals:
+                    os.system(f"rm -rf {res}")
 
         #####################################
         # Analyzing images
