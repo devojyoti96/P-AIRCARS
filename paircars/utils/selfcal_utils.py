@@ -1498,6 +1498,7 @@ def selfcal_round(
             prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
             if prediction_msg != 0:
                 prediction_failed = True
+            cont=input("?")
 
         if do_polcal:
             #######################################
