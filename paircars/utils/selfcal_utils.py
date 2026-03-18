@@ -471,8 +471,8 @@ def single_image_update_phasecenter(
         phaseshift_info = spc.cal_solar_phaseshift(image_cube,fit_gaussian=True)
         shift_needed = phaseshift_info["needs_shift"]
         print(phaseshift_info)
-        phaseshift_info["true_ra"] = phaseshift_info["true_ra"]+1.0
-        phaseshift_info["true_dec"] = phaseshift_info["true_dec"]+1.0
+        phaseshift_info["true_ra"] = phaseshift_info["true_ra"]+60.0
+        phaseshift_info["true_dec"] = phaseshift_info["true_dec"]+60.0
         print(phaseshift_info)
         if shift_needed:
             spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
