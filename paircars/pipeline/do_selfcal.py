@@ -278,8 +278,7 @@ def do_selfcal(
         intlogger.info("Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
-        cutout_rsun = 10.0
-        cutout_rsun_arcsec = cutout_rsun * 16 * 60
+        cutout_rsun_arcsec = 10 * 16 * 60 # 10 solar radii
         fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
@@ -494,91 +493,57 @@ def do_selfcal(
             #################################
             ######################################################################
             # Condition 1: If DR is decreasing (DR decrease in phase-only selfcal)
+            # Condition 2: If DR suddenly decreased or decreased below starting DR after apcal
+            # Condition 3: If DR is decreasing, DR decrease in amplitude-phase selfcal
             ######################################################################
-            if (
-                (DR3 < 0.85 * DR2 and DR3 < 0.9 * DR1 and DR2 > DR1)
-                and calmode == "p"
-                and num_iter > min_iter
-            ):
+            cond1 = (DR3 < 0.85 * DR2 and DR3 < 0.9 * DR1 and DR2 > DR1) and calmode == "p" and num_iter > min_iter
+            cond2 = (DR3 < 0.7*DR2 or DR3 <0.9*min_DR) and calmode == "ap" and num_iter_after_ap > 1
+            cond3 = DR3 < 0.9 * DR2 and DR2 > 1.1 * DR1 and calmode == "ap" and num_iter_after_ap > min_iter
+            if cond1 or cond2 or cond3:
                 issue_occured = True
+                ################################
+                # Replacing with previous ms
+                #################################
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
                     os.system(f"cp -r {last_round_ms} {msname}")
-                intlogger.info("Dynamic range decreasing in phase-only self-cal.")
-                if do_apcal:
+                #############################################
+                # Printing condition message
+                ##############################################
+                if cond1:
+                    intlogger.info("Dynamic range decreasing in phase-only self-cal.")
+                if cond2:
+                    intlogger.info("Dynamic range dropped suddenly or drop below starting dynamic range.")
+                if cond3:
+                    intlogger.info("Dynamic range is decreasing after minimum numbers of 'ap' round.\n")
+                ##################################################
+                # Performing steps
+                ##################################################
+                if do_apcal and calmode=="p":
                     intlogger.info("Changed calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
+                elif calmode=="ap" and threshold>end_threshold:
+                    threshold-=1
+                    intlogger.info(f"Reducing threshold to: {threshold}") 
                 else:
-                    intlogger.warning("Stopping self-calibration. Using last round caltable as final.\n")
                     if not use_solarflagger and DR3<100:
-                        intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, nondisk_flag, DR2
-                    
-            ###################################################################################
-            # Condition 2: If DR suddenly decreased or decreased below starting DR after apcal
-            ###################################################################################
-            if (DR3 < 0.7*DR2 or DR3 <0.9*min_DR) and calmode == "ap" and num_iter_after_ap > 1:
-                issue_occured = True
-                if os.path.exists(last_round_ms):
-                    os.system(f"rm -rf {msname}")
-                    os.system(f"cp -r {last_round_ms} {msname}")
-                intlogger.info("Dynamic range dropped suddenly.")
-                if not use_solarflagger and DR3<100:
-                    use_solarflagger=True
-                if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                    intlogger.info("Trying uvsub flagging.")
-                    do_flag=True
-                    num_iter_after_flag+=1
-                    use_previous_model = False
-                else: 
-                    intlogger.info(
-                        "Stopping self-calibration. Using last round caltable as final.\n"
-                    ) 
-                    if not use_solarflagger and DR3<100:
-                        intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)                     
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, nondisk_flag, DR2
-            ###########################################################################
-            # Condition 3: If DR is decreasing, DR decrease in amplitude-phase selfcal
-            ###########################################################################
-            elif (
-                DR3 < 0.9 * DR2 
-                and DR2 > 1.1 * DR1
-                and calmode == "ap"
-                and num_iter_after_ap > min_iter
-            ):
-                issue_occured = True
-                if os.path.exists(last_round_ms):
-                    os.system(f"rm -rf {msname}")
-                    os.system(f"cp -r {last_round_ms} {msname}")
-                intlogger.info(
-                    "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
-                )
-                if not use_solarflagger and DR3<100:
-                    use_solarflagger=True
-                if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                    intlogger.info("Trying uvsub flagging.")
-                    do_flag=True
-                    num_iter_after_flag+=1
-                    use_previous_model = False
-                else:
-                    intlogger.warning("Stopping self-calibration. Using last round caltable as final.")
-                    if not use_solarflagger and DR3<100:
-                        intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    clean_shutdown(sub_observer)
-                    return 0, msname, last_round_gaintable, nondisk_flag, DR2
-                    
+                        use_solarflagger=True
+                    if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                        intlogger.info("Trying uvsub flagging.")
+                        do_flag=True
+                        num_iter_after_flag+=1
+                        use_previous_model = False
+                    else:
+                        intlogger.warning("Stopping self-calibration. Using last round caltable as final.\n")
+                        if not use_solarflagger and DR3<100:
+                            intlogger.info("Performing final flagging because DR is less than 100.")
+                            do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(5)
+                        clean_shutdown(sub_observer)
+                        return 0, msname, last_round_gaintable, nondisk_flag, DR2
+                                    
             ###########################
             # If maximum DR has reached
             ###########################
@@ -588,13 +553,14 @@ def do_selfcal(
                 time.sleep(5)
                 clean_shutdown(sub_observer)
                 return 0, msname, gaintable, nondisk_flag, DR3
+                
             ###########################
             # Checking DR convergence
             ###########################
             # Condition 1
             # (If DR did not increase after one round of sigma reduction, do not reduce sigma further and exit)
             ###########################
-            elif (
+            if (
                 ((do_apcal and calmode == "ap") or not do_apcal)
                 and num_iter_fixed_sigma > min_iter
                 and (
@@ -923,8 +889,7 @@ def do_polselfcal(
         pollogger.info("Estimating imaging Parameters ...")
         cellsize = calc_cellsize(msname, 3)
         instrument_fov = calc_field_of_view(msname, FWHM=False)
-        cutout_rsun = 10.0
-        cutout_rsun_arcsec = cutout_rsun * 16 * 60
+        cutout_rsun_arcsec = 10 * 16 * 60 # 10 solar radii
         fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
         imsize = int(fov / cellsize)
         imsize = get_fft_size(imsize)
@@ -1152,9 +1117,40 @@ def do_polselfcal(
                 )
                                                 
                 ########################################
-                # DR decrease of leakage issues
+                # Leakage pr big DR related issues
                 #########################################
-                # Condition 1: If leakage becomes nan
+                ###################################################################
+                # Condition 1: If solving per antenna decrease DR, solve per array
+                ###################################################################
+                if not solve_array_leakage and (DR3<1.1*DR2 or RMS3>0.9*RMS2):
+                    pollogger.info("Solving over array instead of antenna, as DR decreases.")
+                    solve_array_leakage=True
+                    issue_occured=True
+                    num_iter_after_reset=0
+                    if os.path.exists(last_round_ms):
+                        pollogger.info("Replacing with previous measurement set.")
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")                                         
+                ##########################################
+                # Condition 2: If leakage increased
+                ##########################################
+                if (num_iter==2 or num_iter > 4) and (
+                    (abs(QL3) - abs(QL2)) > 0.1
+                    or (abs(UL3) - abs(UL2)) > 0.1
+                    or (abs(VL3) - abs(VL2)) > 0.1
+                ):
+                    issue_occured = True
+                    pollogger.info(
+                        "Leakage increased by 10%."
+                    )
+                    if os.path.exists(last_round_ms):   
+                        pollogger.info("Replacing with previous measurement set.")
+                        num_iter-=1
+                        os.system(f"rm -rf {msname}")
+                        os.system(f"cp -r {last_round_ms} {msname}")
+                
+                #########################################
+                # Condition 3: If leakage becomes nan
                 #########################################
                 if np.isnan(QL3) or np.isnan(UL3) or np.isnan(VL3):
                     issue_occured = True
@@ -1187,107 +1183,58 @@ def do_polselfcal(
                                 return 0, msname, last_round_gaintable, last_leakage_file, DR2   
                             else:
                                 pollogger.error("Leakages become nan. Serious calibration issue occured at the before completing minimum rounds.")
-                                return 1, msname, [], "", 0 
-                ###################################################################
-                # Condition 2: If solving per antenna decrease DR, solve per array
-                ###################################################################
-                elif not solve_array_leakage and (DR3<1.1*DR2 or RMS3>0.9*RMS2):
-                    pollogger.info("Solving over array instead of antenna, as DR decreases.")
-                    solve_array_leakage=True
-                    issue_occured=True
-                    num_iter_after_reset=0
+                                return 1, msname, [], "", 0     
+                                
+                                
+                ################################
+                # DR decraeses
+                ################################    
+                # Condition 1: If DR decreased below starting DR 
+                # Condition 2: If DR is decreasing (DR decrease in pol selfcal)
+                # Condition 3: If DR suddenly decreased
+                ###############################################################      
+                cond1 = DR3 < 0.9 * min_DR and num_iter_after_reset > 1
+                cond2 = (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1) and num_iter > min_iter and num_iter_after_reset > 1 and leakage_converged
+                cond3 = DR3 < 0.7 * DR2 and num_iter > min_iter and num_iter_after_reset > 1 and leakage_converged
+                if cond1 or cond2 or cond3: 
+                    ##############################
+                    # Printing condition messages
+                    ##############################
+                    if cond1:
+                        pollogger.info(f"Dynamic range decreased below start dynamic range: {min_DR}.")
+                    if cond2:
+                        pollogger.info("Dynamic range is decreasing after minimum numbers of rounds.")
+                    if cond3:
+                        pollogger.info("Dynamic range dropped suddenly. Using last round caltable as final.")
+                    ###################################
+                    # Replacing previous ms
+                    ###################################
+                    issue_occured = True
                     if os.path.exists(last_round_ms):
                         pollogger.info("Replacing with previous measurement set.")
                         os.system(f"rm -rf {msname}")
-                        os.system(f"cp -r {last_round_ms} {msname}")                                         
-                ##########################################
-                # Condition 3: If leakage increased
-                ##########################################
-                elif (num_iter==2 or num_iter > 4) and (
-                    (abs(QL3) - abs(QL2)) > 0.1
-                    or (abs(UL3) - abs(UL2)) > 0.1
-                    or (abs(VL3) - abs(VL2)) > 0.1
-                ):
-                    issue_occured = True
-                    pollogger.info(
-                        "Leakage increased by 10%."
-                    )
-                    if os.path.exists(last_round_ms):   
-                        pollogger.info("Replacing with previous measurement set.")
-                        num_iter-=1
-                        os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                else:
-                    #########################################################
-                    # Condition 4: If DR decreased below starting DR
-                    #########################################################
-                    if DR3 < 0.9 * min_DR and num_iter_after_reset > 1:
-                        pollogger.info(
-                            f"Dynamic range decreased below start dynamic range: {min_DR}."
-                        )
-                        issue_occured = True
-                        if os.path.exists(last_round_ms):
-                            pollogger.info("Replacing with previous measurement set.")
-                            num_iter-=1
-                            os.system(f"rm -rf {msname}")
-                            os.system(f"cp -r {last_round_ms} {msname}")
-                        if not solve_array_leakage:
-                            num_iter_after_reset=0
-                            pollogger.info("Solving over array instead of antenna.")
-                            solve_array_leakage=True 
+                    if not solve_array_leakage:
+                        num_iter_after_reset=0
+                        pollogger.info("Solving over array instead of antenna.")
+                        solve_array_leakage=True 
+                    else:
+                        if not use_solarflagger and DR3<100:
+                            use_solarflagger=True
+                        if use_solarflagger and not do_flag and num_iter_after_flag==0:
+                            pollogger.info("Trying uvsub flagging.")
+                            do_flag=True
+                            num_iter_after_flag+=1
                         else:
-                            if not use_solarflagger and DR3<100:
-                                use_solarflagger=True
-                            if use_solarflagger and not do_flag and num_iter_after_flag==0:
-                                pollogger.info("Trying uvsub flagging.")
-                                do_flag=True
-                                num_iter_after_flag+=1
+                            if num_iter> min_iter:
+                                pollogger.warning("Stopping self-calibration. Using last round caltables.")
+                                os.system("rm -rf *_selfcal_present*")
+                                time.sleep(5)
+                                clean_shutdown(sub_observer)
+                                return 0, msname, last_round_gaintable, last_leakage_file, DR2 
                             else:
-                                if num_iter> min_iter:
-                                    pollogger.warning("Stopping self-calibration. Using last round caltables.")
-                                    os.system("rm -rf *_selfcal_present*")
-                                    time.sleep(5)
-                                    clean_shutdown(sub_observer)
-                                    return 0, msname, last_round_gaintable, last_leakage_file, DR2 
-                                else:
-                                    pollogger.error("Encountered this error before minimum number of rounds.")
-                                    return 1, msname, [], "", 0                  
-                    ##############################################################
-                    # Condition 5: If DR is decreasing (DR decrease in pol selfcal)
-                    ##############################################################
-                    elif (
-                        (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
-                        and num_iter > min_iter
-                        and num_iter_after_reset > 1
-                        and leakage_converged
-                    ):
-                        pollogger.info(
-                            "Dynamic range is decreasing after minimum numbers of rounds.\n"
-                        )
-                        pollogger.warning("Stopping self-calibration. Using last round caltables.")
-                        issue_occured = True
-                        if os.path.exists(last_round_ms):
-                            os.system(f"rm -rf {msname}")
-                            os.system(f"cp -r {last_round_ms} {msname}")
-                        os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
-                        clean_shutdown(sub_observer)
-                        return 0, msname, last_round_gaintable, last_leakage_file, DR2
-                    ########################################
-                    # Condition 6: If DR suddenly decreased
-                    ########################################
-                    elif DR3 < 0.7 * DR2 and num_iter > min_iter and num_iter_after_reset > 1 and leakage_converged:
-                        issue_occured = True
-                        pollogger.info(
-                            "Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                        )
-                        if os.path.exists(last_round_ms):
-                            os.system(f"rm -rf {msname}")
-                            os.system(f"cp -r {last_round_ms} {msname}")
-                        os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
-                        clean_shutdown(sub_observer)
-                        return 0, msname, last_round_gaintable, last_leakage_file, DR2
+                                pollogger.error("Encountered this error before minimum number of rounds.")
+                                return 1, msname, [], "", 0                  
                         
                 ###########################
                 # If maximum DR has reached
