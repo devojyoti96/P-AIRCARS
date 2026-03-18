@@ -262,7 +262,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         base_mean = np.nanmean(data2d[~circular_mask])
         sigma = int((sun_dia/2)*60.0/cellsize) 
         p0 = [np.nanmax(subdata), x0, y0, sigma, sigma, base_mean]
-        popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),data_region.ravel(),p0=p0,maxfev=5000)
+        popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),subdata.ravel(),p0=p0,maxfev=5000)
         apparent_pix_x = int(popt[1])
         apparent_pix_y = int(popt[2])
     except Exception:
