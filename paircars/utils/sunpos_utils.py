@@ -364,12 +364,12 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
             new_data = np.roll(np.roll(data, offset_dec, axis=-2), offset_ra, axis=-1)
             if overwrite:
                 outfile = imagename
-                fits.writeto(imagename, data=data, header=header, overwrite=True)
+                fits.writeto(imagename, data=new_data, header=header, overwrite=True)
             else:
                 outfile = imagename.split(".fits")[0] + "_centered.fits"
                 fits.writeto(
                     outfile,
-                    data=data,
+                    data=new_data,
                     header=header,
                     overwrite=True,
                 )

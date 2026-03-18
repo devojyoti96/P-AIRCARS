@@ -1149,11 +1149,11 @@ class SolarPhaseCenter:
             )
 
             # Shift the data using numpy roll for efficiency
-            if len(data.shape) == 2:
-                new_data = np.roll(np.roll(data, offset_y, axis=0), offset_x, axis=1)
-            else:
+            #if len(data.shape) == 2:
+            #    new_data = np.roll(np.roll(data, offset_y, axis=0), offset_x, axis=1)
+            #else:
                 # For higher dimensions, roll on last two axes
-                new_data = np.roll(np.roll(data, offset_y, axis=-2), offset_x, axis=-1)
+            new_data = np.roll(np.roll(data, offset_y, axis=-2), offset_x, axis=-1)
 
             # Update the header - CRPIX is 1-based in FITS
             header["CRPIX1"] = float(center_x + 1)  # 1-based
