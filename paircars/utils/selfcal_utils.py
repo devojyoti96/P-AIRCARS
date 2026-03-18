@@ -460,6 +460,8 @@ def single_image_update_phasecenter(
     -------
     int
         Success message
+    bool
+        Whether phase shift needed or not
     """
     try:
         spc = SolarPhaseCenter(cellsize=cellsize,imsize=imsize)
@@ -470,10 +472,10 @@ def single_image_update_phasecenter(
                 spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
             for modelname in wsclean_models:
                 spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
-        return 0
+        return 0, shift_needed
     except Exception:
         traceback.print_exc()
-        return 1
+        return 1, False
         
         
 def correct_spectrosnap_phaseshift(
@@ -510,23 +512,23 @@ def correct_spectrosnap_phaseshift(
         for i in range(len(images)):
             imagename = images[i]
             modelname = models[i]
-            if "MFS" not in imagename:
-                wsclean_images = image_dic[imagename]
-                wsclean_models = model_dic[modelname]
-                valid_image = check_valid_image(imagename)
-                if valid_image:
-                    if logger is not None:
-                        logger.info(f"Phase shift correction for: {imagename}.")
-                    else:
-                        print(f"Phase shift correction for: {imagename}.")
-                    single_image_update_phasecenter(
-                        wsclean_images,
-                        wsclean_models,
-                        imagename,
-                        modelname,
-                        cellsize, 
-                        imsize,
-                    )
+            wsclean_images = image_dic[imagename]
+            wsclean_models = model_dic[modelname]
+            valid_image = check_valid_image(imagename)
+            if valid_image:
+                if logger is not None:
+                    logger.info(f"Phase shift correction for: {imagename}.")
+                else:
+                    print(f"Phase shift correction for: {imagename}.")
+                success_msg, shift_needed = single_image_update_phasecenter(
+                    wsclean_images,
+                    wsclean_models,
+                    imagename,
+                    modelname,
+                    cellsize, 
+                    imsize,
+                )
+                logger.info(f"Shifting needed for {imagename}: {shift_needed}")
         return 0
     except Exception:
         traceback.print_exc()
@@ -1437,6 +1439,7 @@ def selfcal_round(
         #########################################
         # Shifting solar center to phase center
         #########################################
+        logger.info("Shifting images...")
         shifting_msg = correct_spectrosnap_phaseshift(
                 wsclean_images_dic,
                 wsclean_models_dic,
@@ -1446,6 +1449,8 @@ def selfcal_round(
             )
         if shifting_msg!=0:
             logger.warning("Error occured in phase shift correction.")
+        else:
+            logger.info("Image shift is done.")
         
         if do_polcal:
             ################################
