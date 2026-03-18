@@ -177,8 +177,14 @@ def run_all_applysol(
                 if start_coarse_chan >= s and end_coarse_chan <= e:
                     gaintable = selfcal_tables[i]
                     gaintable_prefix = gaintable.split(".gcal")[0]
-                    gaintable = [f"{gaintable_prefix}.gcal", f"{gaintable_prefix}.bcal"]
-                    quartical_table = [f"{gaintable_prefix}.dcal"]
+                    gaintable = []
+                    quartical_table=[]
+                    if os.path.exists(f"{gaintable_prefix}.gcal"):
+                        gaintable.append(f"{gaintable_prefix}.gcal")
+                    if os.path.exists(f"{gaintable_prefix}.bcal"):
+                        gaintable.append(f"{gaintable_prefix}.bcal")
+                    if os.path.exists(f"{gaintable_prefix}.dcal"):
+                        quartical_table.append(f"{gaintable_prefix}.dcal")
 
             if len(gaintable) == 0:
                 print(

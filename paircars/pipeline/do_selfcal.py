@@ -315,7 +315,6 @@ def do_selfcal(
         nondisk_flag = True
         min_DR = 0
         issue_occured=False
-        do_bandpass=True
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         do_flag=False
         restore_flag=True
@@ -387,7 +386,6 @@ def do_selfcal(
                     robust=robust,
                     use_solar_mask=solar_selfcal,
                     fluxscale_mwa=fluxscale_mwa,
-                    do_bandpass=do_bandpass,
                     do_intensity_cal=True,
                     do_polcal=False,
                     solar_attn=solar_attn,
@@ -433,7 +431,6 @@ def do_selfcal(
                         use_solar_mask=solar_selfcal,
                         fluxscale_mwa=fluxscale_mwa,
                         do_intensity_cal=True,
-                        do_bandpass=True,
                         do_polcal=False,
                         solar_attn=solar_attn,
                         do_flag=False,
@@ -513,11 +510,6 @@ def do_selfcal(
                     intlogger.info("Changing calmode to 'ap'.")
                     calmode = "ap"
                     use_previous_model = False
-                elif do_bandpass:
-                    intlogger.info("Switch off bandpass.")
-                    do_bandpass = False
-                    use_previous_model = False
-                    num_iter_after_ap=0
                 else:
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
@@ -559,6 +551,9 @@ def do_selfcal(
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
                     os.system(f"cp -r {last_round_ms} {msname}")
+                intlogger.info(
+                    "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
+                )
                 if not use_solarflagger and DR3<100:
                     use_solarflagger=True
                 if use_solarflagger and not do_flag and num_iter_after_flag==0:
@@ -566,14 +561,6 @@ def do_selfcal(
                     do_flag=True
                     num_iter_after_flag+=1
                     use_previous_model = False
-                intlogger.info(
-                    "Dynamic range is decreasing after minimum numbers of 'ap' round.\n"
-                )
-                if do_bandpass:
-                    intlogger.info("Switch off bandpass.")
-                    do_bandpass = False
-                    use_previous_model = False
-                    num_iter_after_ap=0
                 else:
                     if not use_solarflagger and DR3<100:
                         intlogger.info("Performing final flagging because DR is less than 100.")
@@ -591,6 +578,7 @@ def do_selfcal(
                 if os.path.exists(last_round_ms):
                     os.system(f"rm -rf {msname}")
                     os.system(f"cp -r {last_round_ms} {msname}")
+                intlogger.info("Dynamic range dropped suddenly.")
                 if not use_solarflagger and DR3<100:
                     use_solarflagger=True
                 if use_solarflagger and not do_flag and num_iter_after_flag==0:
@@ -601,18 +589,13 @@ def do_selfcal(
                     do_flag=True
                     num_iter_after_flag+=1
                     use_previous_model = False
-                if do_bandpass:
-                    intlogger.info("Switch off bandpass.")
-                    do_bandpass = False
-                    use_previous_model = False
-                    num_iter_after_ap=0
                 else: 
-                    if not use_solarflagger and DR3<100:
-                        intlogger.info("Performing final flagging because DR is less than 100.")
-                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu) 
                     intlogger.info(
                         "Dynamic range dropped suddenly. Using last round caltable as final.\n"
-                    )                       
+                    ) 
+                    if not use_solarflagger and DR3<100:
+                        intlogger.info("Performing final flagging because DR is less than 100.")
+                        do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)                     
                     os.system("rm -rf *_selfcal_present*")
                     time.sleep(5)
                     clean_shutdown(sub_observer)
@@ -997,7 +980,6 @@ def do_polselfcal(
         last_round_gaintable = []
         last_leakage_file = ""
         last_round_ms = ""
-        do_bandpass=True
         solve_array_leakage=True
         issue_occured = False
         num_iter_after_reset=0
@@ -1068,7 +1050,6 @@ def do_polselfcal(
                 use_solar_mask=solar_selfcal,
                 do_polcal=True,
                 do_intensity_cal=False,
-                do_bandpass=do_bandpass,
                 pbcor=pbcor,
                 leakagecor=leakagecor,
                 pbuncor=pbuncor,
@@ -1227,9 +1208,6 @@ def do_polselfcal(
                         num_iter_after_reset=0
                         pollogger.info("Solving over array instead of antenna.")
                         solve_array_leakage=True
-                    elif do_bandpass:
-                        pollogger.info("Switch off bandpass.")
-                        do_bandpass=False
                     else:
                         os.system("rm -rf *_selfcal_present*")
                         time.sleep(5)
@@ -1276,9 +1254,6 @@ def do_polselfcal(
                             num_iter_after_reset=0
                             pollogger.info("Solving over array instead of antenna.")
                             solve_array_leakage=True 
-                        elif do_bandpass:
-                            pollogger.info("Switch off bandpass.")
-                            do_bandpass=False
                         else:
                             os.system("rm -rf *_selfcal_present*")
                             time.sleep(5)

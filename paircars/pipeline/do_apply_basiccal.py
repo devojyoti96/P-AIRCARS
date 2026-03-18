@@ -151,6 +151,11 @@ def applysol(
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
                 if os.path.exists(msname + ".flagversions"):
                     os.system(f"rm -rf {msname}.flagversions")
+            filtered_gaintable=[]
+            for gtable in gaintable:
+                if os.path.exists(gtable):
+                    filtered_gaintable.append(gtable)
+            gaintable = filtered_gaintable
             print(
                 f"Applying solution on ms: {msname} from gaintables: {','.join(gaintable)}."
             )
