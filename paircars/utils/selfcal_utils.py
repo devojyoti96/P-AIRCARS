@@ -1458,7 +1458,6 @@ def selfcal_round(
                 wsclean_models_dic,
                 cellsize,
                 imsize,
-                pol,
                 logger,
             )
         if shifting_msg!=0:
