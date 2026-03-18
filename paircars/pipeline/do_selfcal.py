@@ -1911,9 +1911,12 @@ def main(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
                             )
                             failed_polselfcal += 1
-                np.save(f"{caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy",[int_DR,pol_DR])
-                os.system(f"mv {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR")
-
+                try:
+                    np.save(f"{caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy",[int_DR,pol_DR])
+                    os.system(f"mv {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR")
+                except Exception:
+                    traceback.print_exc()
+                
             if not keep_backup:
                 for ms in mslist:
                     int_selfcaldir = (
@@ -2184,7 +2187,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg, _, _, _, _ = main(
+    msg, _, _, _, _, _, _ = main(
         mslist=args.mslist,
         metafits=args.metafits,
         workdir=args.workdir,
