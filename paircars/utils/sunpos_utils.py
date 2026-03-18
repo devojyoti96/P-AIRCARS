@@ -207,13 +207,28 @@ def cal_solar_phaseshift(imagename, sigma=10):
     float
         DEC of the solarcenter in degree
     bool
-        Whther phase shift required or not. Not required if less than image pixel size
+        Whether phase shift required or not. Not required if less than image pixel size
     """
-    from scipy.ndimage import center_of_mass
-
+    def gaussian_2d(xy, amplitude, x0, y0, sigma_x, sigma_y, offset):
+        x, y = xy
+        g = offset + amplitude * np.exp(
+            -(
+                ((x - x0) ** 2) / (2 * sigma_x**2)
+                + ((y - y0) ** 2) / (2 * sigma_y**2)
+            )
+        )
+        return g.ravel()
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
     obstime = header["DATE-OBS"]
+    if header["CTYPE3"]=="FREQ":
+        freqMHz = float(header["CRVAL3"])/10**6 # In MHz
+        sun_dia = calc_sun_dia(freqMHz) # In arcmin
+    elif header["CTYPE4"]=="FREQ":
+        freqMHz = float(header["CRVAL4"])/10**6 # In MHz
+        sun_dia = calc_sun_dia(freqMHz) # In arcmin
+    else:
+        sun_dia = 32 # In arcmin
     (
         _,
         _,
@@ -222,28 +237,64 @@ def cal_solar_phaseshift(imagename, sigma=10):
         sun_decdeg,
     ) = radec_sun_at_time(obstime)
     cellsize = float(abs(header["CDELT1"])) * 3600.0  # In arcsec
-    pix_radius = int((4 * 16 * 60) / cellsize)  # 4 solar radii
-    circular_mask = create_circular_mask_array(data[0, 0, ...], pix_radius)
-    I_rms = data[0, 0, ...].copy()
-    I_rms[circular_mask] = np.nan
-    rms = np.nanstd(I_rms)
-    dataI = data[0, 0, ...].copy()
-    dataI[dataI < (sigma * rms)] = 0.0
-    dataI[dataI >= (sigma * rms)] = 1.0
-    cx, cy = center_of_mass(dataI)
-    w = WCS(imagename).celestial
-    result = w.array_index_to_world(int(cy), int(cx))
-    x_cen = result.ra.deg
-    y_cen = result.dec.deg
-    ra = float(x_cen)
-    dec = float(y_cen)
-    print(f"Aparent RA DEC: {ra} {dec}")
-    print(f"True RA, DEC: {sun_radeg}, {sun_decdeg}")
-    if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
-        msg = False
+    imsize = int(header["NAXIS1"]) # Image size
+    pix_radius = min(imsize, int((4 * 16 * 60) / cellsize))  # 4 solar radii
+    if data.ndim == 4:
+        data2d = data[0, 0, ...]
+    elif data.ndim == 3:
+        data2d = data[0,...]
     else:
-        msg = True
-    return ra, dec, msg
+        data2d = data        
+    circular_mask = create_circular_mask_array(data, pix_radius)
+    try:
+        from scipy.optimize import curve_fit
+        from scipy.ndimage import gaussian_filter
+        data2d = gaussian_filter(data2d, sigma=3)
+        max_pos = np.where(data2d==np.nanmax(data2d))
+        y0, x0 = max_pos[0], max_pos[1]  
+        y_min = max(0, y0 - pix_radius)
+        y_max = min(data2d.shape[0], y0 + pix_radius)
+        x_min = max(0, x0 - pix_radius)
+        x_max = min(data2d.shape[1], x0 + pix_radius)
+        y_grid, x_grid = np.mgrid[y_min:y_max, x_min:x_max]
+        subdata = data2d[y_min:y_max, x_min:x_max]
+        base_mean = np.nanmean(data2d[~circular_mask])
+        sigma = int((sun_dia/2)*60.0/cellsize) 
+        p0 = [np.nanmax(subdata), x0, y0, sigma, sigma, base_mean]
+        popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),data_region.ravel(),p0=p0,maxfev=5000)
+        apparent_pix_x = int(popt[1])
+        apparent_pix_y = int(popt[2])
+    except Exception:
+        from casatasks import imsmooth, exportfits
+        imsmooth(imagename=imagename,outfile=f"{imagename}.smoothed",targetres=True,beam={"major":f"{sun_dia}arcmin","minor":f"{sun_dia}arcmin","pa":"0deg"},overwrite=True)
+        exportfits(imagename=f"{imagename}.smoothed",fitsimage=f"{imagename}.smoothed.fits")
+        os.system(f"rm -rf {imagename}.smoothed")
+        data_smoothed = fits.getdata(f"{imagename}.smoothed.fits")
+        if data_smoothed.ndim == 4:
+            data2d_smoothed = data_smoothed[0, 0, ...]
+        elif data.ndim == 3:
+            data2d_smoothed = data_smoothed[0,...]
+        else:
+            data2d_smoothed = data_smoothed
+        max_pos = np.where(data2d_smoothed==np.nanmax(data2d_smoothed))
+        apparent_pix_y, apparent_pix_x = max_pos[0], max_pos[1] 
+    try:
+        w = WCS(imagename).celestial
+        result = w.array_index_to_world(apparent_pix_y, apparent_pix_x)
+        x_cen = result.ra.deg
+        y_cen = result.dec.deg
+        ra = float(x_cen)
+        dec = float(y_cen)
+        print(f"Aparent RA DEC: {ra} {dec}")
+        print(f"True RA, DEC: {sun_radeg}, {sun_decdeg}")
+        if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
+            need_shifting = False
+        else:
+            need_shifting = True
+        return 0, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_x, apparent_pix_y
+    except Exception:
+        traceback.print_exc()
+        return 1, False, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0
 
 
 def shift_solarcenter(imagename, sigma=10, overwrite=True):
