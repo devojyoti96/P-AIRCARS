@@ -252,7 +252,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         from scipy.ndimage import gaussian_filter
         data2d = gaussian_filter(data2d, sigma=3)
         max_pos = np.where(data2d==np.nanmax(data2d))
-        y0, x0 = max_pos[0], max_pos[1]  
+        y0, x0 = max_pos[0][0], max_pos[0][1]  
         y_min = max(0, y0 - pix_radius)
         y_max = min(data2d.shape[0], y0 + pix_radius)
         x_min = max(0, x0 - pix_radius)
@@ -266,6 +266,8 @@ def cal_solar_phaseshift(imagename, sigma=10):
         apparent_pix_x = int(popt[1])
         apparent_pix_y = int(popt[2])
     except Exception:
+        traceback.print_exc()
+        print("Using imsmooth")
         from casatasks import imsmooth, exportfits
         imsmooth(imagename=imagename,outfile=f"{imagename}.smoothed",targetres=True,beam={"major":f"{sun_dia}arcmin","minor":f"{sun_dia}arcmin","pa":"0deg"},overwrite=True)
         exportfits(imagename=f"{imagename}.smoothed",fitsimage=f"{imagename}.smoothed.fits")
@@ -278,7 +280,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         else:
             data2d_smoothed = data_smoothed
         max_pos = np.where(data2d_smoothed==np.nanmax(data2d_smoothed))
-        apparent_pix_y, apparent_pix_x = max_pos[0], max_pos[1] 
+        apparent_pix_y, apparent_pix_x = max_pos[0][0], max_pos[1][0] 
     try:
         w = WCS(imagename).celestial
         result = w.array_index_to_world(apparent_pix_y, apparent_pix_x)
