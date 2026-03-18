@@ -1041,8 +1041,8 @@ class SolarPhaseCenter:
                 header["CRPIX2"] = float(apparent_pix_y + 1)
 
                 # Set CRVAL to true solar position
-                #header["CRVAL1"] = float(true_ra)
-                #header["CRVAL2"] = float(true_dec)
+                header["CRVAL1"] = float(true_ra)
+                header["CRVAL2"] = float(true_dec)
 
                 # Add HISTORY
                 header.add_history(
