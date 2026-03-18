@@ -474,7 +474,7 @@ def single_image_update_phasecenter(
             spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
             for imagename in wsclean_images:
                 spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
-            spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
+            spc.shift_phasecenter(model_cube,phase_result=phaseshift_info,stokes=stokes)
             for modelname in wsclean_models:
                 spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
         return 0, shift_needed
