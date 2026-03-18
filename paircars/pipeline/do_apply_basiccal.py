@@ -173,6 +173,7 @@ def applysol(
                     )
                 gain_msg = 0
             except Exception:
+                traceback.print_exc()
                 gain_msg = 1
             if gain_msg == 0 and soltype != "basic":
                 os.system(f"rm -rf {msname}/.nopolselfcal")
