@@ -1409,6 +1409,7 @@ def selfcal_round(
         wsclean_images_dic = {}
         wsclean_models_dic = {}
         wsclean_residuals_dic = {}
+        logger.info(pollist)
         for suffix in ["image", "model", "residual"]:
             stokeslist = []
             for p in pollist:
@@ -1417,6 +1418,7 @@ def selfcal_round(
                         sorted(glob.glob(prefix + "*" + f"-{suffix}.fits"))
                     )
                 else:
+                    logger.info(prefix + "*" + p + f"-{suffix}.fits")
                     stokeslist.append(
                         sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
                     )
