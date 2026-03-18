@@ -246,7 +246,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         data2d = data[0,...]
     else:
         data2d = data        
-    circular_mask = create_circular_mask_array(data, pix_radius)
+    circular_mask = create_circular_mask_array(data2d, pix_radius)
     try:
         from scipy.optimize import curve_fit
         from scipy.ndimage import gaussian_filter
