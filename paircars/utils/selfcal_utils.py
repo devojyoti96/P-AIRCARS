@@ -483,7 +483,7 @@ def correct_spectrosnap_phaseshift(
     model_dic,
     cellsize,
     imsize,
-    logger=None,
+    logger,
 ):
     """
     Correct spectrocopic snapshot images for phase shift
@@ -518,10 +518,8 @@ def correct_spectrosnap_phaseshift(
             wsclean_models = model_dic[modelname]
             valid_image = check_valid_image(imagename)
             if valid_image:
-                if logger is not None:
-                    logger.info(f"Phase shift correction for: {imagename}.")
-                else:
-                    print(f"Phase shift correction for: {imagename}.")
+                logger.info("#########################################")
+                logger.info(f"Phase shift correction for: {imagename}.")
                 success_msg, shift_needed = single_image_update_phasecenter(
                     wsclean_images,
                     wsclean_models,
@@ -530,7 +528,11 @@ def correct_spectrosnap_phaseshift(
                     cellsize, 
                     imsize,
                 )
-                logger.info(f"Shifting needed for {imagename}: {shift_needed}")
+                if shift_needed:
+                    logger.info(f"Phase center is shifted for {imagename}")
+                else:
+                    logger.info(f"No phase center shift is needed for {imagename}")
+                logger.info("#############################################")
         return 0
     except Exception:
         traceback.print_exc()
@@ -1449,14 +1451,12 @@ def selfcal_round(
         # Shifting solar center to phase center
         #########################################
         logger.info("Shifting images...")
-        logger.info(f"Image dic: {wsclean_images_dic}")
-        logger.info(f"Model dic: {wsclean_models_dic}")
         shifting_msg = correct_spectrosnap_phaseshift(
                 wsclean_images_dic,
                 wsclean_models_dic,
                 cellsize,
                 imsize,
-                logger=logger,
+                logger,
             )
         if shifting_msg!=0:
             logger.warning("Error occured in phase shift correction.")
