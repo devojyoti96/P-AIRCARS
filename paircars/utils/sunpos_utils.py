@@ -252,7 +252,7 @@ def cal_solar_phaseshift(imagename, sigma=10):
         from scipy.ndimage import gaussian_filter
         data2d = gaussian_filter(data2d, sigma=3)
         max_pos = np.where(data2d==np.nanmax(data2d))
-        y0, x0 = max_pos[0][0], max_pos[0][1]  
+        y0, x0 = max_pos[0][0], max_pos[1][0]  
         y_min = max(0, y0 - pix_radius)
         y_max = min(data2d.shape[0], y0 + pix_radius)
         x_min = max(0, x0 - pix_radius)
@@ -270,9 +270,10 @@ def cal_solar_phaseshift(imagename, sigma=10):
         print("Using imsmooth")
         from casatasks import imsmooth, exportfits
         imsmooth(imagename=imagename,outfile=f"{imagename}.smoothed",targetres=True,beam={"major":f"{sun_dia}arcmin","minor":f"{sun_dia}arcmin","pa":"0deg"},overwrite=True)
-        exportfits(imagename=f"{imagename}.smoothed",fitsimage=f"{imagename}.smoothed.fits")
+        exportfits(imagename=f"{imagename}.smoothed",fitsimage=f"{imagename}.smoothed.fits",overwrite=True)
         os.system(f"rm -rf {imagename}.smoothed")
         data_smoothed = fits.getdata(f"{imagename}.smoothed.fits")
+        os.system(f"rm -rf {imagename}.smoothed.fits")
         if data_smoothed.ndim == 4:
             data2d_smoothed = data_smoothed[0, 0, ...]
         elif data.ndim == 3:
