@@ -1412,9 +1412,14 @@ def selfcal_round(
         for suffix in ["image", "model", "residual"]:
             stokeslist = []
             for p in pollist:
-                stokeslist.append(
-                    sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
-                )
+                if pollist is ["I"]:
+                    stokeslist.append(
+                        sorted(glob.glob(prefix + "*" + f"-{suffix}.fits"))
+                    )
+                else:
+                    stokeslist.append(
+                        sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
+                    )
             for i in range(len(stokeslist[0])):
                 wsclean_images = sorted(
                     [stokeslist[k][i] for k in range(len(pollist))]
