@@ -472,6 +472,7 @@ def single_image_update_phasecenter(
         msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(image_cube)
         if msg!=0:
             return msg, False
+        shift_needed=False
         logger.info(f"Shift {seperation_arcsec}arcsec for {image_cube}.")
         shift_func = partial(
             shift_solarcenter,
@@ -481,12 +482,16 @@ def single_image_update_phasecenter(
             apparent_pix_dec=apparent_pix_dec,
             overwrite=True
         )
-        shift_func(image_cube)
+        msg, outfile, shifted = shift_func(image_cube)
+        shift_needed = bool(shift_needed+shifted)
         for imagename in wsclean_images:
-            shift_func(imagename)
-        shift_func(model_cube)
+            msg, outfile, shifted = shift_func(imagename)
+            shift_needed = bool(shift_needed+shifted)
+        msg, outfile, shifted = shift_func(model_cube)
+        shift_needed = bool(shift_needed+shifted)
         for modelname in wsclean_models:
-            shift_func(modelname)
+            msg, outfile, shifted = shift_func(modelname)
+            shift_needed = bool(shift_needed+shifted)
         return 0, shift_needed
     except Exception:
         traceback.print_exc()
