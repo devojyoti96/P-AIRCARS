@@ -509,6 +509,8 @@ def correct_spectrosnap_phaseshift(
     try:
         images = list(image_dic.keys())
         models = list(model_dic.keys())
+        logger.info(images)
+        logger.info(models)
         for i in range(len(images)):
             imagename = images[i]
             modelname = models[i]
