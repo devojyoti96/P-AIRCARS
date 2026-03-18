@@ -513,7 +513,10 @@ def correct_spectrosnap_phaseshift(
     -------
     int
         Success message
+    bool
+        If shift needed for any image
     """
+    shifted=False
     try:
         images = list(image_dic.keys())
         models = list(model_dic.keys())
@@ -535,12 +538,13 @@ def correct_spectrosnap_phaseshift(
                 )
                 if shift_needed:
                     logger.info(f"Phase center is shifted for {imagename}")
+                    shifted=True
                 else:
                     logger.info(f"No phase center shift is needed for {imagename}")
-        return 0
+        return 0, shifted
     except Exception:
         traceback.print_exc()
-        return 1
+        return 1, shifted
     
                 
 def calc_leakage(imagename, threshold=5, disc_size=50):
@@ -1453,7 +1457,7 @@ def selfcal_round(
         # Shifting solar center to phase center
         #########################################
         logger.info("Shifting images...")
-        shifting_msg = correct_spectrosnap_phaseshift(
+        shifting_msg, shifted = correct_spectrosnap_phaseshift(
                 wsclean_images_dic,
                 wsclean_models_dic,
                 cellsize,
@@ -1485,13 +1489,15 @@ def selfcal_round(
         ####################################
         # Predict models
         ####################################
-        prediction_failed = False
-        delmod(vis=msname, otf=True, scr=True)
-        wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
-        logger.info(f"\nWSClean command: {wsclean_cmd}\n")
-        prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
-        if prediction_msg != 0:
-            prediction_failed = True
+        if do_polcal or shifted:
+            cont=input("?")
+            prediction_failed = False
+            delmod(vis=msname, otf=True, scr=True)
+            wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
+            logger.info(f"\nWSClean command: {wsclean_cmd}\n")
+            prediction_msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+            if prediction_msg != 0:
+                prediction_failed = True
 
         if do_polcal:
             #######################################
@@ -1627,7 +1633,7 @@ def selfcal_round(
         #########################################
         # If model prediction failed in polcal
         #########################################
-        if do_polcal and prediction_failed:
+        if (do_polcal or shifted) and prediction_failed:
             logger.error("Error in predicting model.")
             return (
                 2,
