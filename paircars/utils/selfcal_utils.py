@@ -467,12 +467,15 @@ def single_image_update_phasecenter(
         Success message
     bool
         Whether phase shift needed or not
+    float
+        Maximum offset in pixel 
     """
     try:
         msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(image_cube)
         if msg!=0:
             return msg, False
         shift_needed=False
+        r_offset_list=[]
         logger.info(f"Shift {seperation_arcsec}arcsec for {image_cube}.")
         shift_func = partial(
             shift_solarcenter,
@@ -482,20 +485,25 @@ def single_image_update_phasecenter(
             apparent_pix_dec=apparent_pix_dec,
             overwrite=True
         )
-        msg, outfile, shifted = shift_func(image_cube)
+        msg, outfile, shifted, r_offset = shift_func(image_cube)
         shift_needed = bool(shift_needed+shifted)
+        r_offset_list.append(r_offset)
         for imagename in wsclean_images:
-            msg, outfile, shifted = shift_func(imagename)
+            msg, outfile, shifted, r_offset = shift_func(imagename)
             shift_needed = bool(shift_needed+shifted)
-        msg, outfile, shifted = shift_func(model_cube)
+            r_offset_list.append(r_offset)
+        msg, outfile, shifted, r_offset = shift_func(model_cube)
         shift_needed = bool(shift_needed+shifted)
+        r_offset_list.append(r_offset)
         for modelname in wsclean_models:
-            msg, outfile, shifted = shift_func(modelname)
+            msg, outfile, shifted, r_offset = shift_func(modelname)
             shift_needed = bool(shift_needed+shifted)
-        return 0, shift_needed
+            r_offset_list.append(r_offset)
+        r_offset = max(r_offset_list)
+        return 0, shift_needed, r_offset
     except Exception:
         traceback.print_exc()
-        return 1, False
+        return 1, False, 0
         
         
 def correct_spectrosnap_phaseshift(
@@ -530,8 +538,11 @@ def correct_spectrosnap_phaseshift(
         Success message
     bool
         If shift needed for any image
+    int
+        Maximum pixel offset
     """
     shifted=False
+    max_pixel_offset_list=[]
     try:
         images = list(image_dic.keys())
         models = list(model_dic.keys())
@@ -542,7 +553,7 @@ def correct_spectrosnap_phaseshift(
             wsclean_models = model_dic[modelname]
             valid_image = check_valid_image(imagename)
             if valid_image:
-                success_msg, shift_needed = single_image_update_phasecenter(
+                success_msg, shift_needed, max_pixel_offset = single_image_update_phasecenter(
                     wsclean_images,
                     wsclean_models,
                     imagename,
@@ -552,12 +563,13 @@ def correct_spectrosnap_phaseshift(
                     stokes,
                     logger,
                 )
+                max_pixel_offset_list.append(max_pixel_offset)
                 if shift_needed:
                     shifted=True
-        return 0, shifted
+        return 0, shifted, max(max_pixel_offset_list)
     except Exception:
         traceback.print_exc()
-        return 1, shifted
+        return 1, shifted, 0
     
                 
 def calc_leakage(imagename, threshold=5, disc_size=50):
@@ -1244,6 +1256,8 @@ def selfcal_round(
         Residual image name
     list
         Leakage informations [Q_leakage, U_leakage, V_leakage, Q_leakage_error, U_leakage_error, V_leakage_error]
+    int
+        Maximum pixel offset
     """
     ncpu = max(1, ncpu)
     mem = max(1, mem)
@@ -1423,7 +1437,7 @@ def selfcal_round(
         msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         if msg != 0:
             logger.error("Imaging is not successful.\n")
-            return 1, applycal_gaintable, 0, 0, "", "", "", []
+            return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
     
         #######################################
         # Making stokes cube
@@ -1470,7 +1484,7 @@ def selfcal_round(
         # Shifting solar center to phase center
         #########################################
         logger.info("Shifting images...")
-        shifting_msg, shifted = correct_spectrosnap_phaseshift(
+        shifting_msg, shifted, max_pixel_offset = correct_spectrosnap_phaseshift(
                 wsclean_images_dic,
                 wsclean_models_dic,
                 cellsize,
@@ -1565,7 +1579,7 @@ def selfcal_round(
 
         if len(wsclean_images) == 0:
             logger.error("No image is made.")
-            return 1, applycal_gaintable, 0, 0, "", "", "", []
+            return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
         elif len(wsclean_images) == 1:
             os.system(f"cp -r {wsclean_images[0]} {final_image}")
         else:
@@ -1619,7 +1633,7 @@ def selfcal_round(
         )
         if model_flux == 0:
             logger.error("No model flux.\n")
-            return 1, applycal_gaintable, 0, 0, "", "", "", []
+            return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
 
         ############################
         # Flag backup before selfcal
@@ -1640,6 +1654,7 @@ def selfcal_round(
                 final_model,
                 final_residual,
                 [],
+                max_pixel_offset,
             )
 
         #########################################
@@ -1656,6 +1671,7 @@ def selfcal_round(
                 final_model,
                 final_residual,
                 [],
+                max_pixel_offset,
             )
 
         ##############################
@@ -1688,7 +1704,7 @@ def selfcal_round(
 
             if not os.path.exists(gain_caltable):
                 logger.error("No gain solutions are found.\n")
-                return 3, applycal_gaintable, 0, 0, "", "", "", []
+                return 3, applycal_gaintable, 0, 0, "", "", "", [], max_pixel_offset
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
 
@@ -1901,7 +1917,7 @@ def selfcal_round(
             os.system(f"rm -rf {quartical_log}")
             if quartical_msg != 0 or os.path.exists(pol_caltable) is False:
                 logger.error("Quartical calibration is not successful.\n")
-                return 3, [], 0, 0, "", "", "", []
+                return 3, [], 0, 0, "", "", "", [], max_pixel_offset
             applycal_gaintable.append(pol_caltable)
 
             ######################################
@@ -1950,7 +1966,7 @@ def selfcal_round(
                 logger.error(
                     "Quartical calibration applying solutions is not successful.\n"
                 )
-                return 3, [], 0, 0, "", "", "", []
+                return 3, [], 0, 0, "", "", "", [], max_pixel_offset
 
         #####################################
         # Flag zeros
@@ -1979,9 +1995,10 @@ def selfcal_round(
             final_model,
             final_residual,
             leakage_info_list,
+            max_pixel_offset,
         )
     except Exception:
         logger.exception(traceback.print_exc())
-        return 4, applycal_gaintable, 0, 0, "", "", "", []
+        return 4, applycal_gaintable, 0, 0, "", "", "", [], 0
     finally:
         os.chdir(cwd)

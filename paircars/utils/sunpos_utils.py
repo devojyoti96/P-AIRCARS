@@ -335,10 +335,13 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         Output image name
     bool
         Shifted or not
+    int
+        Maximum pixel offset 
     """
     if sun_radeg is None or sun_decdeg is None or apparent_pix_ra is None or apparent_pix_dec is None:
         msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename, sigma=sigma)
     shifted=False
+    r_offset=0
     try:
         data = fits.getdata(imagename)
         header = fits.getheader(imagename)
@@ -352,7 +355,7 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         center_dec = ny // 2
         offset_ra =  center_ra - apparent_pix_ra
         offset_dec = center_dec - apparent_pix_dec
-        print (offset_ra, offset_dec)
+        r_offset = max(offset_ra, offset_dec) 
         if abs(offset_ra)>0 or abs(offset_dec)>0:
             header["CRVAL1"] = float(sun_radeg)
             header["CRVAL2"] = float(sun_decdeg)
@@ -380,7 +383,7 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         outfile = imagename
         traceback.print_exc()
     finally:
-        return msg, outfile, shifted
+        return msg, outfile, shifted, r_offset
 
 
 def correct_solar_sidereal_motion(msname="", verbose=False):
