@@ -100,25 +100,21 @@ def do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=1):
     ncpu: int, optional
         Number of CPU threads to use
     """
-    try:
-        for threshold in threshold_list:
-            count=0
-            while count<2:
-                result, n_final_flagged, n_additional_flagged = flagger(
-                    msname,
-                    "residual",
-                    threshold=threshold,
-                    num_processes=ncpu,
-                    flagbackup=False,
-                )
-                if n_additional_flagged==0:
-                    break
-                else:
-                    count+=1
-    except Exception:
-        traceback.print_exc()
-    finally:
-        return
+    for threshold in threshold_list:
+        count=0
+        while count<5:
+            result, n_final_flagged, n_additional_flagged = flagger(
+                msname,
+                "residual",
+                threshold=threshold,
+                num_processes=ncpu,
+                flagbackup=False,
+            )
+            if n_additional_flagged==0:
+                break
+            else:
+                count+=1
+                
             
 def determine_disk_visibility(msname):
     """
@@ -1983,9 +1979,12 @@ def selfcal_round(
         ######################################
         # UVsub flagging
         ######################################
-        if do_flag:
-            logger.info("Flagging in uv-domain data.\n")
-            do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=ncpu)
+        try:
+            if do_flag:
+                logger.info("Flagging in uv-domain data.\n")
+                do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=max(1,ncpu))
+        except Exception:
+            logger.exception(traceback.print_exc())
         return (
             0,
             applycal_gaintable,
