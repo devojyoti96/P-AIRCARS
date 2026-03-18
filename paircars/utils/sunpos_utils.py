@@ -205,8 +205,6 @@ def cal_solar_phaseshift(imagename, sigma=10):
     -------
     int
         Success message
-    bool
-        Whether shifting is needed or not
     float
         RA of the apparent solar center in degree
     float
@@ -276,7 +274,6 @@ def cal_solar_phaseshift(imagename, sigma=10):
         p0 = [np.nanmax(subdata), x0, y0, sigma, sigma, base_mean]
         popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),subdata.ravel(),p0=p0,maxfev=5000)
         perr = np.sqrt(np.diag(pcov))
-        print (popt[1],popt[2],perr[1],perr[2])
         apparent_pix_ra = int(popt[1])
         apparent_pix_dec = int(popt[2])
     except Exception:
@@ -303,17 +300,13 @@ def cal_solar_phaseshift(imagename, sigma=10):
         dec = float(y_cen)
         seperation_deg = angular_separation_equatorial(ra, dec, sun_radeg, sun_decdeg)
         seperation_arcsec = seperation_deg*3600.0
-        if seperation_arcsec <= cellsize:
-            need_shifting = False
-        else:
-            need_shifting = True
-        return 0, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec
+        return 0, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec
     except Exception:
         traceback.print_exc()
-        return 1, False, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0, 0
+        return 1, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0, 0
 
 
-def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, apparent_pix_ra=None, apparent_pix_dec=None, need_shifting=True, overwrite=True):
+def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, apparent_pix_ra=None, apparent_pix_dec=None, overwrite=True):
     """
     Function to shift solar center to image phase center
 
@@ -331,8 +324,6 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         Apparent solar center pixel in RA
     apparent_pix_dec : int, optional
         Apparent solar center pixel in DEC 
-    need_shifting : bool, optional
-        Whether need shifting or not
     overwrite : bool, optional
         Overwrite existing image or not
 
@@ -342,27 +333,31 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         Success code 0: Successfully shifted, 1: Shifting is not required, 2: Error in shifting
     str
         Output image name
+    bool
+        Shifted or not
     """
     if sun_radeg is None or sun_decdeg is None or apparent_pix_ra is None or apparent_pix_dec is None:
-        msg, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename, sigma=sigma)
+        msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename, sigma=sigma)
+    shifted=False
     try:
-        if need_shifting:
-            data = fits.getdata(imagename)
-            header = fits.getheader(imagename)
-            if data.ndim == 4:
-                ny, nx = data[0,0,...].shape
-            elif data.ndim==3:
-                ny, nx = data[0, ...].shape
-            else:
-                ny, nx = data.shape
-            center_ra = nx // 2
-            center_dec = ny // 2
+        data = fits.getdata(imagename)
+        header = fits.getheader(imagename)
+        if data.ndim == 4:
+            ny, nx = data[0,0,...].shape
+        elif data.ndim==3:
+            ny, nx = data[0, ...].shape
+        else:
+            ny, nx = data.shape
+        center_ra = nx // 2
+        center_dec = ny // 2
+        offset_ra =  center_ra - apparent_pix_ra
+        offset_dec = center_dec - apparent_pix_dec
+        print (offset_ra, offset_dec)
+        if abs(offset_ra)>0 or abs(offset_dec)>0:
             header["CRVAL1"] = float(sun_radeg)
             header["CRVAL2"] = float(sun_decdeg)
             header["CRPIX1"] = float(center_ra+1)
             header["CRPIX2"] = float(center_dec+1)
-            offset_ra =  center_ra - apparent_pix_ra
-            offset_dec = center_dec - apparent_pix_dec
             new_data = np.roll(np.roll(data, offset_dec, axis=-2), offset_ra, axis=-1)
             if overwrite:
                 outfile = imagename
@@ -375,6 +370,7 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
                     header=header,
                     overwrite=True,
                 )
+            shifted=True
             msg = 0
         else:
             outfile = imagename
@@ -384,7 +380,7 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
         outfile = imagename
         traceback.print_exc()
     finally:
-        return msg, outfile
+        return msg, outfile, shifted
 
 
 def correct_solar_sidereal_motion(msname="", verbose=False):

@@ -469,28 +469,24 @@ def single_image_update_phasecenter(
         Whether phase shift needed or not
     """
     try:
-        msg, shift_needed, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(image_cube)
+        msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(image_cube)
         if msg!=0:
-            return msg, shift_needed
-        if not shift_needed:
-            logger.info(f"Shift {seperation_arcsec}arcsec is smaller than cellsize for {image_cube}. Shifting is not required.")
-        else:
-            logger.info(f"Shift {seperation_arcsec}arcsec is more than cellsize for {image_cube}. Shifting is required.")
-            shift_func = partial(
-                shift_solarcenter,
-                sun_radeg=sun_radeg,
-                sun_decdeg=sun_decdeg,
-                apparent_pix_ra=apparent_pix_ra,
-                apparent_pix_dec=apparent_pix_dec,
-                need_shifting=shift_needed,
-                overwrite=True
-            )
-            shift_func(image_cube)
-            for imagename in wsclean_images:
-                shift_func(imagename)
-            shift_func(model_cube)
-            for modelname in wsclean_models:
-                shift_func(modelname)
+            return msg, False
+        logger.info(f"Shift {seperation_arcsec}arcsec for {image_cube}.")
+        shift_func = partial(
+            shift_solarcenter,
+            sun_radeg=sun_radeg,
+            sun_decdeg=sun_decdeg,
+            apparent_pix_ra=apparent_pix_ra,
+            apparent_pix_dec=apparent_pix_dec,
+            overwrite=True
+        )
+        shift_func(image_cube)
+        for imagename in wsclean_images:
+            shift_func(imagename)
+        shift_func(model_cube)
+        for modelname in wsclean_models:
+            shift_func(modelname)
         return 0, shift_needed
     except Exception:
         traceback.print_exc()
