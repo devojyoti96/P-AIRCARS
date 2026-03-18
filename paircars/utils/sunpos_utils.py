@@ -275,6 +275,8 @@ def cal_solar_phaseshift(imagename, sigma=10):
         sigma = int((sun_dia/2)*60.0/cellsize) 
         p0 = [np.nanmax(subdata), x0, y0, sigma, sigma, base_mean]
         popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),subdata.ravel(),p0=p0,maxfev=5000)
+        perr = np.sqrt(np.diag(pcov))
+        print (popt[1],popt[2],perr[1],perr[2])
         apparent_pix_ra = int(popt[1])
         apparent_pix_dec = int(popt[2])
     except Exception:
@@ -357,8 +359,8 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
             center_dec = ny // 2
             header["CRVAL1"] = float(sun_radeg)
             header["CRVAL2"] = float(sun_decdeg)
-            header["CRPIX1"] = int(center_ra+1)
-            header["CRPIX2"] = int(center_dec+1)
+            header["CRPIX1"] = float(center_ra+1)
+            header["CRPIX2"] = float(center_dec+1)
             offset_ra =  center_ra - apparent_pix_ra
             offset_dec = center_dec - apparent_pix_dec
             new_data = np.roll(np.roll(data, offset_dec, axis=-2), offset_ra, axis=-1)
