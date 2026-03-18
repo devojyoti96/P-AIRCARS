@@ -1442,6 +1442,8 @@ def selfcal_round(
         # Shifting solar center to phase center
         #########################################
         logger.info("Shifting images...")
+        logger.info(f"Image dic: {wsclean_images_dic}")
+        logger.info(f"Model dic: {wsclean_models_dic}")
         shifting_msg = correct_spectrosnap_phaseshift(
                 wsclean_images_dic,
                 wsclean_models_dic,
