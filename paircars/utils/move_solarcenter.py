@@ -686,7 +686,7 @@ class SolarPhaseCenter:
             result["true_dec"] = 0.0
         else:
             # For RA/Dec images, get position from ephemeris
-            obs_time = self.get_observation_time(working_fits)
+            '''obs_time = self.get_observation_time(working_fits)
             if obs_time:
                 try:
                     true_ra, true_dec = self.get_solar_position(obs_time)
@@ -695,14 +695,14 @@ class SolarPhaseCenter:
                 except Exception as e:
                     print(f"Error getting solar position from ephemeris: {e}")
                     # Fall back to current phase center
-                    result["true_ra"] = radeg
-                    result["true_dec"] = decdeg
+                result["true_ra"] = radeg
+                result["true_dec"] = decdeg
             else:
                 print(
                     "Warning: No observation time found, using current phase center as true position"
-                )
-                result["true_ra"] = radeg
-                result["true_dec"] = decdeg
+                )'''
+            result["true_ra"] = radeg
+            result["true_dec"] = decdeg
 
         # Step 2: Find APPARENT solar position using image-based methods
         apparent_ra = None
