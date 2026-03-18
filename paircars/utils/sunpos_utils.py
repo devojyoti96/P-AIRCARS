@@ -203,12 +203,22 @@ def cal_solar_phaseshift(imagename, sigma=10):
 
     Returns
     -------
-    float
-        RA of the solar center in degree
-    float
-        DEC of the solarcenter in degree
+    int
+        Success message
     bool
-        Whether phase shift required or not. Not required if less than image pixel size
+        Whether shifting is needed or not
+    float
+        RA of the apparent solar center in degree
+    float
+        DEC of the apparent solarcenter in degree
+    float
+        RA of true solarcenter in degree
+    float
+        DEC of true solarcenter in degree
+    int
+        Apparent RA pixel of solarcenter
+    int
+        Apparent DEC pixel of solarcenter
     """
     def gaussian_2d(xy, amplitude, x0, y0, sigma_x, sigma_y, offset):
         x, y = xy
@@ -263,11 +273,9 @@ def cal_solar_phaseshift(imagename, sigma=10):
         sigma = int((sun_dia/2)*60.0/cellsize) 
         p0 = [np.nanmax(subdata), x0, y0, sigma, sigma, base_mean]
         popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),subdata.ravel(),p0=p0,maxfev=5000)
-        apparent_pix_x = int(popt[1])
-        apparent_pix_y = int(popt[2])
+        apparent_pix_ra = int(popt[1])
+        apparent_pix_dec = int(popt[2])
     except Exception:
-        traceback.print_exc()
-        print("Using imsmooth")
         from casatasks import imsmooth, exportfits
         imsmooth(imagename=imagename,outfile=f"{imagename}.smoothed",targetres=True,beam={"major":f"{sun_dia}arcmin","minor":f"{sun_dia}arcmin","pa":"0deg"},overwrite=True)
         exportfits(imagename=f"{imagename}.smoothed",fitsimage=f"{imagename}.smoothed.fits",overwrite=True)
@@ -281,27 +289,25 @@ def cal_solar_phaseshift(imagename, sigma=10):
         else:
             data2d_smoothed = data_smoothed
         max_pos = np.where(data2d_smoothed==np.nanmax(data2d_smoothed))
-        apparent_pix_y, apparent_pix_x = max_pos[0][0], max_pos[1][0] 
+        apparent_pix_dec, apparent_pix_ra = max_pos[0][0], max_pos[1][0] 
     try:
         w = WCS(imagename).celestial
-        result = w.array_index_to_world(apparent_pix_y, apparent_pix_x)
+        result = w.array_index_to_world(apparent_pix_dec, apparent_pix_ra)
         x_cen = result.ra.deg
         y_cen = result.dec.deg
         ra = float(x_cen)
         dec = float(y_cen)
-        print(f"Aparent RA DEC: {ra} {dec}")
-        print(f"True RA, DEC: {sun_radeg}, {sun_decdeg}")
         if np.sqrt((ra - sun_radeg) ** 2 + (dec - sun_decdeg) ** 2) < cellsize / 3600.0:
             need_shifting = False
         else:
             need_shifting = True
-        return 0, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_x, apparent_pix_y
+        return 0, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec
     except Exception:
         traceback.print_exc()
         return 1, False, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0
 
 
-def shift_solarcenter(imagename, sigma=10, overwrite=True):
+def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, apparent_pix_ra=None, apparent_pix_dec=None, need_shifting=True, overwrite=True):
     """
     Function to shift solar center to image phase center
 
@@ -311,6 +317,16 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
         Name of the image
     sigma : float, optional
         Sigma threshold for masking solar disk
+    sun_radeg : float, optional
+        Sun RA in degree 
+    sun_decdeg : float, optional
+        Sun DEC in degree
+    apparent_pix_ra :int, optional
+        Apparent solar center pixel in RA
+    apparent_pix_dec : int, optional
+        Apparent solar center pixel in DEC 
+    need_shifting : bool, optional
+        Whether need shifting or not
     overwrite : bool, optional
         Overwrite existing image or not
 
@@ -318,37 +334,51 @@ def shift_solarcenter(imagename, sigma=10, overwrite=True):
     -------
     int
         Success code 0: Successfully shifted, 1: Shifting is not required, 2: Error in shifting
+    str
+        Output image name
     """
-    sunra, sundec, shiftsun = cal_solar_phaseshift(imagename, sigma=sigma)
+    if sun_radeg is None or sun_decdeg is None or apparent_pix_ra is None or apparent_pix_dec is None:
+        msg, need_shifting, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec = cal_solar_phaseshift(imagename, sigma=sigma)
     try:
-        if shiftsun:
-            w = WCS(imagename).celestial
-            pix = w.all_world2pix(np.array([[sunra, sundec]]), 0)
-            ra_pix = int(np.round(pix[0][0]))
-            dec_pix = int(np.round(pix[0][1]))
+        if need_shifting:
             data = fits.getdata(imagename)
             header = fits.getheader(imagename)
-            header["CRPIX1"] = float(ra_pix + 1)
-            header["CRPIX2"] = float(dec_pix + 1)
-            header["CRVAL1"] = float(sunra)
-            header["CRVAL2"] = float(sundec)
+            if data.ndim == 4:
+                ny, nx = data[0,0,...].shape
+            elif data.ndim==3:
+                ny, nx = data[0, ...].shape
+            else:
+                ny, nx = data.shape
+            center_ra = nx // 2
+            center_dec = ny // 2
+            header["CRVAL1"] = float(sun_radeg)
+            header["CRVAL2"] = float(sun_decdeg)
+            header["CRPIX1"] = int(center_ra+1)
+            header["CRPIX2"] = int(center_dec+1)
+            offset_ra =  center_ra - apparent_pix_ra
+            offset_dec = center_dec - apparent_pix_dec
+            new_data = np.roll(np.roll(data, offset_dec, axis=-2), offset_ra, axis=-1)
             if overwrite:
+                outfile = imagename
                 fits.writeto(imagename, data=data, header=header, overwrite=True)
             else:
+                outfile = imagename.split(".fits")[0] + "_centered.fits"
                 fits.writeto(
-                    imagename.split(".fits")[0] + "_centered.fits",
+                    outfile,
                     data=data,
                     header=header,
                     overwrite=True,
                 )
             msg = 0
         else:
+            outfile = imagename
             msg = 1
     except Exception:
         msg = 2
+        outfile = imagename
         traceback.print_exc()
     finally:
-        return msg
+        return msg, outfile
 
 
 def correct_solar_sidereal_motion(msname="", verbose=False):

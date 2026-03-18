@@ -6,6 +6,7 @@ import os
 import subprocess
 from casatools import msmetadata
 from astropy.io import fits
+from functools import partial
 from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
 from .resource_utils import limit_threads
 from .flagging import do_flag_backup, flag_quartical_table, get_chans_flag
@@ -31,7 +32,7 @@ from .image_utils import (
     make_stokes_wsclean_imagecube,
 )
 from .udocker_utils import run_wsclean, run_quartical
-from .move_solarcenter import SolarPhaseCenter
+from .sunpos_utils import cal_solar_phaseshift, shift_solarcenter
 
 def cal_crossphase(imagename):
     """
@@ -467,24 +468,25 @@ def single_image_update_phasecenter(
         Whether phase shift needed or not
     """
     try:
-        spc = SolarPhaseCenter(cellsize=cellsize,imsize=imsize)
-        phaseshift_info = spc.cal_solar_phaseshift(image_cube,fit_gaussian=True)
-        shift_needed = phaseshift_info["needs_shift"]
-        print(phaseshift_info)
-        #phaseshift_info["apparent_pix_x"] = phaseshift_info["apparent_pix_x"]+10.0
-        #phaseshift_info["apparent_pix_x"] = phaseshift_info["apparent_pix_x"]+60.0
-        print(phaseshift_info)
+        msg, shift_needed, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec = cal_solar_phaseshift(image_cube)
+        if msg!=0:
+            return msg, shift_needed
         if shift_needed:
-            #spc.shift_phasecenter(image_cube,phase_result=phaseshift_info,stokes=stokes)
-            spc.visually_center_image(image_cube,image_cube,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
+            shift_func = partial(
+                shift_solarcenter,
+                sun_radeg=sun_radeg,
+                sun_decdeg=sun_decdeg,
+                apparent_pix_ra=apparent_pix_ra,
+                apparent_pix_dec=apparent_pix_dec,
+                need_shifting=shift_needed,
+                overwrite=True
+            )
+            shift_func(image_cube)
             for imagename in wsclean_images:
-                #spc.shift_phasecenter(imagename,phase_result=phaseshift_info)
-                spc.visually_center_image(imagename,imagename,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
-            #spc.shift_phasecenter(model_cube,phase_result=phaseshift_info,stokes=stokes)
-            spc.visually_center_image(model_cube,model_cube,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
+                shift_func(imagename)
+            shift_func(model_cube)
             for modelname in wsclean_models:
-                #spc.shift_phasecenter(modelname,phase_result=phaseshift_info)
-                spc.visually_center_image(modelname,modelname,phaseshift_info["apparent_pix_x"],phaseshift_info["apparent_pix_y"])
+                shift_func(modelname)
         return 0, shift_needed
     except Exception:
         traceback.print_exc()
