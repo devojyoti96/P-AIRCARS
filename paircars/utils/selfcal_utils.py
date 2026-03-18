@@ -1413,7 +1413,7 @@ def selfcal_round(
         for suffix in ["image", "model", "residual"]:
             stokeslist = []
             for p in pollist:
-                if pollist is ["I"]:
+                if pollist==["I"]:
                     stokeslist.append(
                         sorted(glob.glob(prefix + "*" + f"-{suffix}.fits"))
                     )
