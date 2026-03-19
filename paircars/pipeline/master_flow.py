@@ -1,25 +1,24 @@
-import os
-import numpy as np
-import argparse
 import traceback
 import time
 import glob
 import sys
+import os
 import socket
 import requests
 import getpass
 import contextlib
+import numpy as np
+import argparse
 from casatools import msmetadata
 from astropy.io import fits
 from datetime import datetime as dt
 from multiprocessing import Event
 from dask.distributed import get_client
-from prefect import flow, task
+from prefect import flow
+from functools import partial
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
-from prefect_dask import get_dask_client
 from prefect.settings import get_current_settings
-from prefect.tasks import exponential_backoff
 from paircars.utils.basic_utils import (
     get_cachedir,
     internet_available,
@@ -30,6 +29,7 @@ from paircars.utils.calibration import (
     max_time_solar_smearing,
     interpolate_bpass,
     interpolate_quartical,
+    get_caltable_metadata,
 )
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup, get_chans_flag
@@ -49,10 +49,10 @@ from paircars.utils.mwa_ploting_utils import (
 )
 from paircars.utils.mwa_utils import (
     get_ncoarse,
-    get_MWA_coarse_chan,
     get_MWA_OBSID,
     download_MWA_metafits,
     get_selfcal_ntimes,
+    freq_to_MWA_coarse,
 )
 from paircars.utils.proc_manage_utils import (
     get_jobid,
@@ -70,1543 +70,30 @@ from paircars.clusterutils.slurm_cluster import (
     is_slurm_job,
 )
 from paircars.utils.prefect_logger_utils import (
-    start_log_task_saver,
     start_flow_log_saver,
 )
 from paircars.pipeline import (
-    mwa_make_ds,
-    do_target_split,
-    flagging,
-    import_model,
-    basic_cal,
-    do_apply_basiccal,
-    do_sidereal_cor,
-    do_selfcal,
-    do_apply_selfcal,
-    do_imaging,
-    mwa_pbcor,
-    make_mwa_overlay,
     move_solarcenter,
-    make_ms_plot,
 )
 from paircars.pipeline.init_data import init_paircars_data
-
-
-@task(
-    name="moving_to_solar_center",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
+from paircars.pipeline.flows import basic_cal_subflow
+from paircars.pipeline.tasks import (
+    run_solar_phasecenter_jobs,
+    run_ds_jobs,
+    run_target_split_jobs,
+    run_flag,
+    run_import_model,
+    run_basic_cal_jobs,
+    run_apply_basiccal_sol,
+    run_solar_siderealcor_jobs,
+    run_selfcal_jobs,
+    run_apply_selfcal_sol,
+    run_imaging_jobs,
+    run_apply_pbcor,
+    run_make_overlay,
+    run_make_msplot,
+    send_task_notification,
 )
-def run_solar_phasecenter_jobs(
-    mslist,
-    workdir,
-    prefix="target",
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Move phase center to the Sun
-
-    Parameters
-    ----------
-    mslist: str
-        List of the measurement sets (comma separated)
-    workdir : str
-        Work directory
-    prefix : str, optional
-        Measurement set prefix
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    phasecor_basename = f"cor_phasecenter_{prefix}"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{phasecor_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_sidereal = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        #######################
-        print("###########################")
-        print("Moving phasecenter to the Sun .....")
-        print("###########################")
-        #######################
-        # Moving phasecenter motion correction
-        #######################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = move_solarcenter.main(
-                mslist,
-                workdir=workdir,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_sidereal.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Moving phasecenter to solar center is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="making_dynamic_spectra",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_ds_jobs(
-    mslist,
-    metafits,
-    workdir,
-    outdir,
-    plot_quantity="TB",
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Make dynamic spectra of the solar target
-
-    Parameters
-    ----------
-    mslist : str
-        Measurement sets (comma separated)
-    metafits : str
-        Metafits file
-    workdir : str
-        Name of the work directory
-    outdir : str
-        Name of the output directory
-    plot_quantity : str, optional
-        Plot quantity (TB or flux)
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    ds_basename = "ds_target"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{ds_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_ds = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ##################
-        print("###########################")
-        print("Making dynamic spectra of solar target .....")
-        print("###########################")
-        ##########################
-        # Making dynamic spectrum
-        ##########################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = mwa_make_ds.main(
-                mslist,
-                metafits,
-                workdir,
-                outdir,
-                plot_quantity=plot_quantity,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_ds.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Dynamic spectrum making is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="spliting_ms",
-    retries=2,
-    timeout_seconds=1800,
-    retry_delay_seconds=exponential_backoff(backoff_factor=60),
-    log_prints=True,
-)
-def run_target_split_jobs(
-    mslist,
-    metafits,
-    workdir,
-    datacolumn="data",
-    timeres=-1,
-    freqres=-1,
-    prefix="target",
-    time_window=-1,
-    time_interval=-1,
-    quack_timestamps=-1,
-    force_split=False,
-    only_disk=False,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Split measurement set
-
-    Parameters
-    ----------
-    mslist: str
-        Name of the measurement sets (comma separated)
-    metafits : str
-        Metafits file
-    workdir : str
-        Working directory
-    datacolumn : str, optional
-        Data column
-    timeres : float, optional
-        Time bin to average in seconds
-    freqres : float, optional
-        Frequency averaging in MHz
-    prefix : str, optional
-        Prefix of splited targets
-    time_window : float, optional
-        Time window in seconds
-    time_interval : float, optional
-        Time interval in seconds
-    quack_timestamps: int, optional
-        Number of timestamps to flag at the beginning and end of each scan ("quack").
-    force_split : bool, optional
-        Force to split
-    only_disk : bool, optional
-        Split only disk times
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for spliting measurement set
-    int
-        Expected splited ms number
-    int
-        Succeeded splited ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    split_basename = f"split_{prefix}"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{split_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_split = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ############
-        print("###########################")
-        print(f"Spliting {prefix} .....")
-        print("###########################")
-        ##################
-        # Spliting ms
-        ##################
-        with get_dask_client() as dask_client:
-            msg, expected, succeed = do_target_split.main(
-                mslist,
-                metafits,
-                workdir=workdir,
-                datacolumn=datacolumn,
-                time_window=time_window,
-                time_interval=time_interval,
-                freqres=freqres,
-                timeres=timeres,
-                quack_timestamps=quack_timestamps,
-                force_split=force_split,
-                only_disk=only_disk,
-                prefix=prefix,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_split.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Spliting measurement set into coarse channels is failed.")
-    else:
-        return msg, expected, succeed
-
-
-@task(
-    name="flagging",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_flag(
-    mslist,
-    metafits,
-    workdir,
-    outdir,
-    datacolumn="DATA",
-    flag_calibrators=True,
-    flag_bad_spw=False,
-    flag_quack=True,
-    run_solarflagger=False,
-    restore_flag=True,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Run flagging jobs
-
-    Parameters
-    ----------
-    mslist: str
-        Name of the measurement sets (comma separted)
-    metafits : str
-        Metafits file
-    workdir : str
-        Working directory
-    outdir : str
-        Output directory
-    datacolumn : str, optional
-        Data column
-    flag_calibrators : bool, optional
-        Flag calibrator fields
-    flag_bad_spw : bool, optional
-        Flag bad spectral windows
-    flag_quack : bool, optional
-        Flag quack timestamps
-    run_solarflagger : bool, optional
-        Run solar flagger or not
-    restore_flag : bool, optional
-        Restore flags or not
-    jobid : int, optional
-        Job ID
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message
-    int
-        Succeeded ms number
-    intrun_solarflagger
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    if flag_calibrators:
-        flagdimension = "freqtime"
-        flagfield_type = "cal"
-        use_tfcrop = True
-        flag_basename = f"flagging_{flagfield_type}_calibrator"
-    else:
-        flagdimension = "freq"
-        flagfield_type = "target"
-        use_tfcrop = False
-        flag_basename = f"flagging_{flagfield_type}_target"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{flag_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_flag = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ##############
-        print("###########################")
-        print("Flagging ....")
-        print("###########################")
-        ########################
-        # Calibrator ms flagging
-        ########################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = flagging.main(
-                mslist,
-                metafits,
-                workdir=workdir,
-                outdir=outdir,
-                datacolumn=datacolumn,
-                flag_bad_ants=True,
-                flag_bad_spw=flag_bad_spw,
-                use_tfcrop=use_tfcrop,
-                flag_autocorr=True,
-                flag_quack=flag_quack,
-                flagdimension=flagdimension,
-                restore_flag=restore_flag,
-                run_solarflagger=run_solarflagger,
-                flagbackup=False,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_flag.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Flagging is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="importing_model_visibilities",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_import_model(
-    mslist,
-    metafits,
-    workdir,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Importing calibrator models
-
-    Parameters
-    ----------
-    mslist : str
-        Name of the measurement sets (comma separated)
-    metafits : str
-        Metafits file
-    workdir : str
-        Working directory
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    model_basename = "modeling"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{model_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_model = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ##############
-        print("###########################")
-        print("Importing model visibilities ....")
-        print("###########################")
-        ###################################
-        # Calibrator ms visibility import
-        ###################################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = import_model.main(
-                mslist,
-                metafits,
-                workdir,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_model.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Importing calibrator model is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="basic_calibration",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_basic_cal_jobs(
-    mslist,
-    metafits,
-    workdir,
-    outdir,
-    perform_polcal=False,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    keep_backup=False,
-    remote_log=False,
-):
-    """
-    Perform basic calibration
-
-    Parameters
-    ----------
-    mslist: str
-        Name of the measurement sets (comma seperated)
-    metafits: str
-        Metafits file
-    workdir : str
-        Working directory
-    outdir : str
-        Output directory
-    perform_polcal : bool, optional
-        Perform full polarization calibration
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    keep_backup : bool, optional
-        Keep backups
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for basic calibration
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    cal_basename = "basic_cal"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{cal_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_cal = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ##############
-        print("###########################")
-        print("Performing basic calibration .....")
-        print("###########################")
-        ########################
-        # Basic calibration
-        ########################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = basic_cal.main(
-                mslist,
-                metafits,
-                workdir,
-                outdir,
-                perform_polcal=perform_polcal,
-                keep_backup=keep_backup,
-                start_remote_log=remote_log,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_cal.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Basic calibration is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="applying_basic_calibration",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_apply_basiccal_sol(
-    mslist,
-    calibrator_metafits,
-    target_metafits,
-    workdir,
-    caldir,
-    overwrite_datacolumn=True,
-    only_amplitude=False,
-    applymode="calflag",
-    prefix="target",
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Apply basic calibration solutions on splited target scans
-
-    Parameters
-    ----------
-    mslist: str
-        Target measurement set list (comma separated)
-    calibrator_metafits : str
-        Calibrator metafits
-    target_metafits : str
-        Target metafits
-    workdir : str
-        Working directory
-    caldir : str
-        Caltable directory
-    overwrite_datacolumn : bool
-        Overwrite data column or not
-    only_amplitude : bool, optional
-        Apply only amplitude part of the solution
-    applymode : str, optional
-        Applycal mode
-    prefix : str, optional
-        Applying on target of selfcal ms
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for applying calibration solutions and spliting target scans
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    applycal_basename = f"apply_basiccal_{prefix}"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{applycal_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_apply = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ######################
-        print("###########################")
-        print("Applying basic calibration solutions on solar target .....")
-        print("###########################")
-        ######################
-        # Applying basic calibration
-        ######################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = do_apply_basiccal.main(
-                mslist,
-                calibrator_metafits,
-                target_metafits,
-                workdir,
-                caldir,
-                applymode=applymode,
-                overwrite_datacolumn=overwrite_datacolumn,
-                only_amplitude=only_amplitude,
-                start_remote_log=remote_log,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_apply.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Applying basic calibration solutions is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="solar_sidereal_correction",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_solar_siderealcor_jobs(
-    mslist,
-    workdir,
-    prefix="target",
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Apply sidereal motion correction of the Sun
-
-    Parameters
-    ----------
-    mslist: str
-        List of the measurement sets (comma separated)
-    workdir : str
-        Work directory
-    prefix : str, optional
-        Measurement set prefix
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    sidereal_basename = f"cor_sidereal_{prefix}"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{sidereal_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_sidereal = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        #######################
-        print("###########################")
-        print("Correcting sidereal motion .....")
-        print("###########################")
-        #######################
-        # Sidereal motion correction
-        #######################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = do_sidereal_cor.main(
-                mslist,
-                workdir=workdir,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_sidereal.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Solar sidereal motion correction is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="selfcal",
-    log_prints=True,
-)
-def run_selfcal_jobs(
-    mslist,
-    workdir,
-    caldir,
-    metafits,
-    cal_applied,
-    start_thresh=5.0,
-    stop_thresh=3.0,
-    max_iter=30,
-    max_DR=100000,
-    intselfcal_min_iter=3,
-    polselfcal_min_iter=5,
-    conv_frac=0.3,
-    solint="60s",
-    do_apcal=True,
-    do_polcal=True,
-    solar_selfcal=True,
-    keep_backup=False,
-    uvrange="",
-    minuv=0,
-    weight="briggs",
-    robust=0.0,
-    applymode="calonly",
-    min_tol_factor=1.0,
-    use_solarflagger=False,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Self-calibration on target scans
-
-    Parameters
-    ----------
-    mslist: str
-        Target measurement set list (comma separated)
-    workdir : str
-        Working directory
-    caldir : str
-        Caltable directory
-    metafits : str
-        Metafits file
-    cal_applied : bool
-        Whether calibration solutions are applied or not
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    start_threshold : int, optional
-        Start CLEAN threhold
-    end_threshold : int, optional
-        End CLEAN threshold
-    max_iter : int, optional
-        Maximum numbers of selfcal iterations
-    max_DR : float, optional
-        Maximum dynamic range
-    intselfcal_min_iter : int, optional
-        Minimum numbers of intensity seflcal iterations at different stages
-    polselfcal_min_iter : int, optional
-        Minimum numbers of polarisation selfcal iterations
-    conv_frac : float, optional
-        Dynamic range fractional change to consider as converged
-    uvrange : str, optional
-        UV-range for calibration
-    minuv : float, optionial
-        Minimum UV-lambda to use in imaging
-    weight : str, optional
-        Image weighitng scheme
-    robust : float, optional
-        Robustness parameter for briggs weighting
-    solint : str, optional
-        Solutions interval
-    do_apcal : bool, optional
-        Perform ap-selfcal or not
-    do_polcal : bool, optional
-        Perform polarisation selfcal or not
-    min_tol_factor : float, optional
-        Minimum tolerance in temporal variation in imaging
-    applymode : str, optional
-        Solution apply mode
-    solar_selfcal : bool, optional
-        Whether is is solar selfcal or not
-    use_solarflagger : bool, optional
-        Use solar flagger or not
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for self-calibration
-    int
-        Intensity self-calibration succeeded ms number
-    int
-        Intensity self-calibration failed ms number
-    int
-        Polarisation self-calibration succeed ms number
-    int
-        Polarisation self-calibration failed ms number
-    float
-        Mean intensity self-calibration dynamic range
-    float
-        Mean polarisation self-calibration dynamic range
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    selfcal_basename = "selfcal_target"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{selfcal_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_selfcal = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ########################
-        print("###########################")
-        print("Performing self-calibration of solar targets .....")
-        print("###########################")
-        ########################
-        # Selfcal jobs
-        ########################
-        with get_dask_client() as dask_client:
-            msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR = do_selfcal.main(
-                mslist,
-                metafits,
-                workdir,
-                caldir,
-                cal_applied=cal_applied,
-                start_thresh=float(start_thresh),
-                stop_thresh=float(stop_thresh),
-                max_iter=float(max_iter),
-                max_DR=float(max_DR),
-                intselfcal_min_iter=int(intselfcal_min_iter),
-                polselfcal_min_iter=int(polselfcal_min_iter),
-                conv_frac=float(conv_frac),
-                solint=solint,
-                uvrange=uvrange,
-                minuv=float(minuv),
-                weight=weight,
-                robust=float(robust),
-                applymode=applymode,
-                min_tol_factor=float(min_tol_factor),
-                do_apcal=do_apcal,
-                do_polcal=do_polcal,
-                solar_selfcal=solar_selfcal,
-                use_solarflagger=use_solarflagger,
-                keep_backup=keep_backup,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_selfcal.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Self-calibration is failed.")
-    else:
-        return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR
-
-
-@task(
-    name="applying_self-calibration",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_apply_selfcal_sol(
-    mslist,
-    metafits,
-    workdir,
-    caldir,
-    overwrite_datacolumn=True,
-    applymode="calflag",
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Apply self-calibration solutions on splited target scans
-
-    Parameters
-    ----------
-    mslist: str
-        Target measurement set list (comma separated)
-    metafits : str
-        Metafits file
-    workdir : str
-        Working directory
-    caldir : str
-        Caltable directory
-    applymode : str, optional
-        Applycal mode
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    overwrite_datacolumn : bool
-        Overwrite data column or not
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for applying calibration solutions and spliting target scans
-    int
-        Succeeded gain solution ms number
-    int
-        Failed gain solution ms number
-    int
-        Succeeded polarisation solution ms number
-    int
-        Failed polarisation solution ms number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    applycal_basename = "apply_selfcal"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{applycal_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_applyselfcal = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ##################
-        print("###########################")
-        print("Applying self-calibration solutions on targets .....")
-        print("###########################")
-        ########################
-        # Applying self-calibration
-        ########################
-        with get_dask_client() as dask_client:
-            gain_succeed, gain_failed, pol_succeed, pol_failed = do_apply_selfcal.main(
-                mslist,
-                metafits,
-                workdir,
-                caldir,
-                applymode=applymode,
-                overwrite_datacolumn=overwrite_datacolumn,
-                start_remote_log=remote_log,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                dask_client=dask_client,
-            )
-        if gain_failed == 0:
-            msg = 0
-        else:
-            msg = 1
-    finally:
-        stop_event.set()
-        log_thread_applyselfcal.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Applying self-calibration solutions is failed.")
-    else:
-        return msg, gain_succeed, gain_failed, pol_succeed, pol_failed
-
-
-@task(
-    name="imaging",
-    log_prints=True,
-)
-def run_imaging_jobs(
-    mslist,
-    workdir,
-    outdir,
-    freqrange="",
-    timerange="",
-    minuv=0,
-    weight="briggs",
-    robust=0.0,
-    pol="IQUV",
-    freqres=1.28,
-    timeres=10.0,
-    threshold=1.0,
-    use_multiscale=True,
-    use_solar_mask=True,
-    cutout_rsun=10.0,
-    savemodel=False,
-    saveres=False,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Imaging on target scans
-
-    Parameters
-    ----------
-    mslist: str
-        Target measurement set list (comma separated)
-    workdir : str
-        Working directory
-    outdir : str
-        Output image directory
-    freqrange : str, optional
-        Frequency range to image in MHz
-    timerange : str, optional
-        Time range to image (YYYY/MM/DD/hh:mm:ss~YYYY/MM/DD/hh:mm:ss)
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    minuv : float, optionial
-        Minimum UV-lambda to use in imaging
-    weight : str, optional
-        Imaging weighting
-    robust : float, optional
-        Briggs weighting robust parameter (-1 to 1)
-    pol : str, optional
-        Stokes parameters to image
-    freqres : float, optional
-        Frequency resolution of spectral chunk in MHz (default : -1, no spectral chunking)
-    timeres : float, optional
-        Time resolution of temporal chunks in MHz (default : -1, no temporal chunking)
-    threshold : float, optional
-        CLEAN threshold in sigma
-    use_multiscale : bool, optional
-        Use multiscale or not
-    use_solar_mask : bool, optional
-        Use solar mask or not
-    cutout_rsun : float, optional
-        Cutout image size from center in solar radii (default : 10.0 solar radii)
-    savemodel : bool, optional
-        Save model images or not
-    saveres : bool, optional
-        Save residual images or not
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for imaging
-    int
-        Succeeded ms number
-    int
-        Failed ms number
-    int
-        Total images
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    imaging_basename = "imaging_target"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{imaging_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_imaging = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ######################
-        print("###########################")
-        print("Performing imaging of target scans .....")
-        print("###########################")
-        #######################
-        # Performing imaging
-        #######################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed, total_images = do_imaging.main(
-                mslist,
-                workdir,
-                outdir,
-                freqrange=freqrange,
-                timerange=timerange,
-                pol=pol,
-                freqres=float(freqres),
-                timeres=float(timeres),
-                weight=weight,
-                robust=float(robust),
-                minuv=float(minuv),
-                threshold=float(threshold),
-                cutout_rsun=float(cutout_rsun),
-                use_multiscale=use_multiscale,
-                use_solar_mask=use_solar_mask,
-                savemodel=savemodel,
-                saveres=saveres,
-                start_remote_log=remote_log,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                jobid=jobid,
-                logfile=logfile,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_imaging.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Imaging is failed.")
-    else:
-        return msg, succeed, failed, total_images
-
-
-@task(
-    name="applying_primary_beam",
-    log_prints=True,
-)
-def run_apply_pbcor(
-    imagedir,
-    metafits,
-    workdir,
-    leakage_dir="",
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Apply primary beam corrections on all images
-
-    Parameters
-    ----------
-    imagedir: str
-        Image directory name
-    metafits : str
-        Metafits file
-    workdir : str
-        Work directory
-    leakage_dir : str, optional
-        Leakage dile directory
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for applying primary beam correction on all images
-    int
-        Succeeded image number
-    int
-        Failed image number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    applypbcor_basename = "apply_pbcor"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{applypbcor_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_pbcor = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    try:
-        ###################
-        print("###########################")
-        print("Applying primary beam corrections on all images .....")
-        print("###########################")
-        #####################
-        # Applying primary beam correction
-        #####################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = mwa_pbcor.main(
-                imagedir,
-                metafits,
-                leakage_dir=leakage_dir,
-                workdir=workdir,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_pbcor.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Primary beam correction is failed.")
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="making_overlay",
-    log_prints=True,
-)
-def run_make_overlay(
-    imagedir,
-    outdir,
-    workdir="",
-    all_overlay=False,
-    jobid=0,
-    cpu_frac=0.8,
-    remote_log=False,
-):
-    """
-    Making overlays of all images on EUV images
-
-    Parameters
-    ----------
-    imagedir : str
-        Image directory name
-    outdir : str
-        Output directory
-    workdir : str, optional
-        Work directory
-    all_overlay : bool, optional
-        Whether to make overlays for all images or not
-    cpu_frac : float, optional
-        CPU fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for EUV overlays
-    int
-        Succeeded image number
-    int
-        Failed image number
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    overlay_basename = "do_overlay"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{overlay_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_overlay = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    os.makedirs(outdir, exist_ok=True)
-    try:
-        ###################
-        print("###########################")
-        print("Making overlays of images .....")
-        print("###########################")
-        #####################
-        # Making overlays
-        #####################
-        with get_dask_client() as dask_client:
-            msg, succeed, failed = make_mwa_overlay.main(
-                imagedir,
-                outdir,
-                workdir=workdir,
-                all_overlay=all_overlay,
-                cpu_frac=float(cpu_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_overlay.join(timeout=5)
-    if msg != 0:
-        return 1, succeed, failed
-    else:
-        return msg, succeed, failed
-
-
-@task(
-    name="making_msplot",
-    retries=2,
-    retry_delay_seconds=60,
-    log_prints=True,
-)
-def run_make_msplot(
-    mslist,
-    workdir,
-    outdir,
-    jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
-    remote_log=False,
-):
-    """
-    Making diagnostic plots of measurement sets
-
-    Parameters
-    ----------
-    mslist : str
-        Measurement set list (comma separated)
-    workdir : str, optional
-        Work directory
-    outdir : str
-        Output directory
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
-    remote_log: bool, optional
-        Start remote logger
-
-    Returns
-    -------
-    int
-        Success message for measurement set ploting
-    """
-    os.makedirs(workdir, exist_ok=True)
-    os.chdir(workdir)
-    msplot_basename = "do_msplot"
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{msplot_basename}.log"
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    ctx = get_run_context()
-    task_id = str(ctx.task_run.id)
-    task_name = ctx.task_run.name
-    stop_event = Event()
-    log_thread_overlay = start_log_task_saver(
-        task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-    )
-    os.makedirs(outdir, exist_ok=True)
-    try:
-        ###################
-        print("###########################")
-        print("Making diagnostic plots of all measurement sets .....")
-        print("###########################")
-        #####################
-        # Making plots
-        #####################
-        with get_dask_client() as dask_client:
-            msg = make_ms_plot.main(
-                mslist,
-                workdir,
-                outdir,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                logfile=logfile,
-                jobid=jobid,
-                start_remote_log=remote_log,
-                dask_client=dask_client,
-            )
-    finally:
-        stop_event.set()
-        log_thread_overlay.join(timeout=5)
-    if msg != 0:
-        raise RuntimeError("Measurement set diagnostic ploting is failed.")
-    else:
-        return msg
-
-
-def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
-    """
-    Send notification after each task is finished
-
-    Parameters
-    ----------
-    emails : str
-        E-mail ids
-    msg : str
-        Notification message
-    jobid : int
-        JobID
-    obsid : int
-        Observation ID
-    logger_timestamp : str
-        Logger timestamp
-    """
-    internet_on = internet_available()
-    if internet_on:
-        try:
-            email_subject = (
-                f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
-            )
-            email_msg = f"{msg}"
-            success_msg, error_msg = send_notification(emails, email_subject, email_msg)
-        except Exception:
-            print("Could not send log emails.")
-
 
 @flow(
     name="P-AIRCARS Master control",
@@ -1616,9 +103,10 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
 )
 def master_control(
     target_datadir,
-    target_metafits,
     workdir,
     outdir,
+    # Metafits and calibrators
+    target_metafits="",
     calibrator_datadir="",
     calibrator_metafits="",
     solar_data=True,
@@ -1685,12 +173,13 @@ def master_control(
     ----------
     target_datadir : str
         Target measurement set directory
-    target_metafits : str
-        Target metafits file
     workdir : str
         Work directory path
     outdir : str
         Output directory
+
+    target_metafits : str
+        Target metafits file
     calibrator_datadir : str, optional
         Calibrator data directory
     calibrator_metafits : str, optional
@@ -1805,9 +294,9 @@ def master_control(
     print("P-AIRCARS workflow started...")
     emails = get_emails()
 
-    ###############################################
-    # Checking validity of directories and metafits
-    ###############################################
+    #######################################################
+    # Checking validity of target directories and metafits
+    #######################################################
     if target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
@@ -1818,27 +307,10 @@ def master_control(
                 f"Target data directory: {target_datadir} does not exist. Provide correct full path."
             )
             return 1
-    if target_metafits.startswith("~"):
-        print("Please provide full path of target metafits.")
-        return 1
-    else:
-        target_metafits = os.path.abspath(target_metafits)
-        if os.path.exists(target_metafits) is False:
-            print(f"Target metafits: {target_metafits} does not exist.")
-            return 1
-    if calibrator_datadir.startswith("~"):
-        print("Please provide full path of calibrator data directory.")
-        return 1
-    else:
-        if calibrator_datadir != "":
-            calibrator_datadir = os.path.abspath(calibrator_datadir)
-    if calibrator_metafits.startswith("~"):
-        print("Please provide full path of calibrator metafits.")
-        return 1
-    else:
-        if calibrator_metafits != "":
-            calibrator_metafits = os.path.abspath(calibrator_metafits)
 
+    #################################################
+    # Checking workdir and outdir paths
+    #################################################
     if workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
@@ -1853,6 +325,9 @@ def master_control(
     if jobid is None:
         jobid = get_jobid()
 
+    #########################################
+    # Some validity checks for resources
+    #########################################
     max_worker = max(2, max_worker)  # Minimum 2 workers are needed
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -1868,50 +343,221 @@ def master_control(
         if emails != "":
             email_msg = "No measurement set is present in the target data directory."
             send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
-    test_msname = target_mslist[0]
-    if os.path.exists(target_metafits) is False:
-        target_obsid = get_MWA_OBSID(test_msname)
-        try:
-            target_metafits = download_MWA_metafits(
-                target_obsid, outdir=os.path.dirname(test_msname)
-            )
-        except Exception:
-            traceback.print_exc()
-            target_metafits = None
-        if target_metafits is None or os.path.exists(target_metafits) is False:
-            print(
-                f"Target metafits {target_metafits} does not exist. P-AIRCARS has stopped."
-            )
-            if emails != "":
-                email_msg = "Target metafits file does not exist."
-                send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
-            return 1
-    target_header = fits.getheader(target_metafits)
-    target_obsid = target_header["GPSTIME"]
-    target_freq_config = target_header["CHANNELS"]
-    target_coarse_chans = [get_MWA_coarse_chan(ms) for ms in target_mslist]
+        return 1
 
-    #########################################
-    # Verifying target obsid
-    #########################################
+    #################################################
+    # Verifying whether all target ms from same obsid
+    #################################################
     target_ms_obsids = [get_MWA_OBSID(ms) for ms in target_mslist]
     all_same_obsids = all(x == target_ms_obsids[0] for x in target_ms_obsids)
-    if all_same_obsids is False:
+    if not all_same_obsids:
         print(
             "All target measurement sets are not belong to same OBSID. Keep only measurement sets with same OBSID inside the target directory. P-AIRCARS has stopped."
         )
         return 1
     else:
-        target_ms_obsid = target_ms_obsids[0]
-        if target_ms_obsid != target_obsid:
+        target_obsid = target_ms_obsids[0]
+
+    ##############################################
+    # Downloading target metafits if not exist
+    ##############################################
+    if target_metafits == "" or not os.path.exists(target_metafits):
+        if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
+            target_metafits = f"{target_datadir}/{target_obsid}.metafits"
+        else:
+            try:
+                target_metafits = download_MWA_metafits(
+                    target_obsid, outdir=target_datadir
+                )
+            except Exception:
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
+                    send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
+                print(
+                    f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
+                )
+                return 1
+
+    ##################################################
+    # Downloading target metafits if not match with ms
+    ##################################################
+    metafits_obsid = fits.getheader(target_metafits)["GPSIME"]
+    if metafits_obsid != target_obsid:
+        print(
+            "Mismatch between target ms OBSID: {target_obsid} and metafits OBSID: {metafits_obsid}. Downloading metafits for OBSID: {target_obsid}."
+        )
+        try:
+            target_metafits = download_MWA_metafits(target_obsid, outdir=target_datadir)
+        except Exception:
+            traceback.print_exc()
+            if emails != "":
+                email_msg = f"Target metafits for OBSID: {target_obsid} could not be downloaded. P-AIRCARS has stopped."
+                send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
             print(
-                f"Target measurement set OBSID: {target_ms_obsid} is different from metafits provided OBSID: {target_obsid}. Provide correct metafits file. P-AIRCARS has stopped."
+                f"Target metafits for OBSID: {target_obsid} could not be downloaded. P-AIRCARS has stopped."
             )
             return 1
 
-    ###################################
+    ################################################
+    # Final target OBSID and frequency configuration
+    ################################################
+    target_header = fits.getheader(target_metafits)
+    target_obsid = int(target_header["GPSTIME"])
+    target_freq_config = target_header["CHANNELS"]
+    target_coarse_chans = [int(c) for c in target_freq_config.split(",")]
+
+    ################################################
+    # Filtering calibrators
+    ################################################
+    cal_datadir_list = calibrator_datadir.split(",")
+    cal_metafits_list = calibrator_metafits.split(",")
+    final_cal_datadir_list = []
+    final_cal_obsid_list = []
+    final_cal_metafits_list = []
+    final_cal_coarsechan_list = []
+
+    for i in range(len(cal_datadir_list)):
+        cal_datadir = cal_datadir_list[i]
+        #############################################
+        # Listing calibrator ms
+        #############################################
+        if cal_datadir != "" and os.path.exists(cal_datadir):
+            cal_mslist = sorted(glob.glob(f"{cal_datadir}/*.ms"))
+            if len(cal_mslist) == 0:
+                print(
+                    f"No measurement set is present in calibrator data directory: {cal_datadir}"
+                )
+                has_cal = False
+            else:
+                has_cal = True
+        else:
+            has_cal = False
+        ######################################################
+        # Verifying whether all calibraror ms from same obsid
+        ######################################################
+        if has_cal:
+            cal_ms_obsids = [get_MWA_OBSID(ms) for ms in cal_mslist]
+            all_same_obsids = all(x == cal_ms_obsids[0] for x in cal_ms_obsids)
+            if not all_same_obsids:
+                print(
+                    "All calibrator measurement sets are not belong to same OBSID. Not using this calibrator."
+                )
+                has_cal = False
+            else:
+                cal_obsid = cal_ms_obsids[0]
+        ##############################################
+        # Searching for calibrator metafits
+        ##############################################
+        cal_metafits = None
+        if has_cal and len(cal_metafits_list) > 0:
+            for metafits in cal_metafits_list:
+                if (metafits == "" or not os.path.exists(metafits)) and os.path.exists(
+                    f"{cal_datadir}/{cal_obsid}.metafits"
+                ):
+                    metafits = f"{cal_datadir}/{cal_obsid}.metafits"
+                metafits_obsid = fits.getheader(metafits)["GPSIME"]
+                if metafits_obsid == cal_obsid:
+                    cal_metafits = metafits
+                    break
+        ######################################################
+        # Downloading calibrator metafits if not match with ms
+        ######################################################
+        if has_cal and cal_metafits is None:
+            try:
+                cal_metafits = download_MWA_metafits(cal_obsid, outdir=cal_datadir)
+            except Exception:
+                traceback.print_exc()
+                print(
+                    f"Calibrator metafits for OBSID: {cal_obsid} could not be downloaded. Not using this calibrator."
+                )
+                has_cal = False
+        ####################################################################
+        # Including in final list if have overlapping frequency with target
+        ####################################################################
+        if has_cal and cal_metafits is not None:
+            cal_header = fits.getheader(cal_metafits)
+            cal_obsid = int(cal_header["GPSTIME"])
+            if (
+                abs(cal_obsid - target_obsid) < 12 * 3600
+            ):  # Only if calibrator is 12 hours apart
+                cal_freq_config = cal_header["CHANNELS"]
+                cal_coarse_chans = [int(c) for c in cal_freq_config.split(",")]
+                has_overlap = bool(set(cal_coarse_chans) & set(target_coarse_chans))
+                if not has_overlap:
+                    print(
+                        f"Calibrator with OBSID: {cal_obsid} do not have frequency overlap with target."
+                    )
+                    print(f"Target coarse channels: {target_coarse_chans}")
+                    print(f"Calibrator coarse channels: {cal_coarse_chans}")
+                else:
+                    final_cal_datadir_list.append(cal_datadir)
+                    final_cal_obsid_list.append(cal_obsid)
+                    final_cal_metafits_list.append(cal_metafits)
+                    final_cal_coarsechan_list.append(cal_coarse_chans)
+
+    ####################################################
+    # Check whether there is calibrator available or not
+    ####################################################
+    calibrator_dic = {}
+    if len(final_cal_datadir_list) > 0:
+        ####################################################
+        # Arranging in time
+        ####################################################
+        final_cal_datadir_list = np.array(final_cal_datadir_list)
+        final_cal_obsid_list = np.array(final_cal_obsid_list)
+        final_cal_metafits_list = np.array(final_cal_metafits_list)
+        final_cal_coarsechan_list = np.array(final_cal_coarsechan_list)
+        pos = np.argsort(abs(final_cal_obsid_list - target_obsid))
+        final_cal_datadir_list = final_cal_datadir_list[pos].tolist()
+        final_cal_obsid_list = final_cal_obsid_list[pos].tolist()
+        final_cal_metafits_list = final_cal_metafits_list[pos].tolist()
+        final_cal_coarsechan_list = final_cal_coarsechan_list[pos].tolist()
+        all_coarse_chans = []
+        for i in range(len(final_cal_datadir_list)):
+            cal_obsid = final_cal_obsid_list[i]
+            cal_datadir = final_cal_datadir_list[i]
+            cal_metafits = final_cal_metafits_list[i]
+            coarse_chans = final_cal_coarsechan_list[i]
+            overlapping_coarse_chans = list(
+                set(coarse_chans) & set(target_coarse_chans)
+            )
+            filtered_overlapping_coarse_chans = []
+            for c in overlapping_coarse_chans:
+                if c not in all_coarse_chans:
+                    filtered_overlapping_coarse_chans.append(c)
+                    all_coarse_chans.append(c)
+            if len(filtered_overlapping_coarse_chans) > 0:
+                calibrator_dic[cal_obsid] = [
+                    cal_datadir,
+                    cal_metafits,
+                    filtered_overlapping_coarse_chans,
+                ]
+
+    if len(calibrator_dic) == 0:
+        has_cal = False
+    else:
+        has_cal = True
+
+    ######################################################
+    # Making calibrator output directories
+    ######################################################
+    if has_cal:
+        cal_outdir = f"{outdir}/calibrators"
+        try:
+            os.makedirs(cal_outdir, exist_ok=True)
+        except Exception:
+            print(
+                f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
+            )
+            traceback.print_exc()
+            has_cal = False
+        basic_caldir = f"{cal_outdir}/caltables"
+        os.makedirs(basic_caldir, exist_ok=True)
+
+    #######################################
     # Preparing target working directories
-    ###################################
+    #######################################
     print("Preparing working directories....")
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
@@ -1920,7 +566,7 @@ def master_control(
     if outdir == "":
         outdir = workdir
 
-    workdir = f"{workdir}/{target_obsid}_{jobid}"
+    workdir = f"{workdir}/{target_obsid}_{jobid}_target"
     try:
         os.makedirs(workdir, exist_ok=True)
     except Exception:
@@ -1946,6 +592,9 @@ def master_control(
     selfcaldir = f"{target_outdir}/caltables"
     os.makedirs(selfcaldir, exist_ok=True)
 
+    #############################################
+    # Change to workdir and determining scheduler
+    #############################################
     os.chdir(workdir)
     scheduler_name = get_scheduler_name()
 
@@ -1988,16 +637,20 @@ def master_control(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            max_worker=max(2, max_worker),
+            max_worker=max_worker,
         )
         if dask_client is None:
             print("Error occured in creating local cluster.")
             return 1
-            
+
     #####################################
     # Initiating paircars data
     #####################################
     init_paircars_data()
+
+    ############################################
+    # Determine number of threads of main worker
+    ############################################
     observer = None
     n_threads = os.environ.get("OMP_NUM_THREADS")
     if n_threads is None:
@@ -2115,6 +768,16 @@ def master_control(
                 "#############################################################################"
             )
 
+        if not has_cal:
+            print(
+                f"No suitable calibrators are available for target OBSID: {target_obsid}."
+            )
+            if emails != "":
+                email_msg = f"No suitable calibrators are available for target OBSID: {target_obsid}."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+
         ###########################################
         # Setting up mutual conditions
         ###########################################
@@ -2141,102 +804,6 @@ def master_control(
                 do_applycal = True
             if not do_apply_selfcal:
                 do_apply_selfcal = True
-
-        ############################################
-        # Determining where to use calibrator or not
-        #############################################
-        calibrator_mslist = sorted(glob.glob(f"{calibrator_datadir}/*.ms"))
-        calibrator_obsid = None
-        if len(calibrator_mslist) == 0:
-            print(
-                "No calibrator observation is provided. Continuing based on self-calibration."
-            )
-            has_cal = False
-
-        ######################################################
-        # Downloading calibrator metafits if it does not exist
-        ######################################################
-        if os.path.exists(calibrator_metafits) is False:
-            test_cal_ms = calibrator_mslist[0]
-            cal_obsid = get_MWA_OBSID(test_cal_ms)
-            try:
-                calibrator_metafits = download_MWA_metafits(
-                    cal_obsid, outdir=os.path.dirname(test_cal_ms)
-                )
-            except Exception:
-                traceback.print_exc()
-                calibrator_metafits = None
-        if calibrator_metafits is not None and os.path.exists(calibrator_metafits):
-            calibrator_header = fits.getheader(calibrator_metafits)
-            calibrator_obsid = calibrator_header["GPSTIME"]
-            calibrator_freq_config = calibrator_header["CHANNELS"]
-            if np.abs(calibrator_obsid - target_obsid) > 12 * 3600:
-                print("Calibrator observations were taken 12 hours apart.")
-                has_cal = True
-            elif target_freq_config != calibrator_freq_config:
-                print(f"Target coarse channels: {target_freq_config}.")
-                print(f"Calibrator coarse channels: {calibrator_freq_config}.")
-                print("Calibrator and target frequency configuration is different.")
-                has_cal = False
-            else:
-                has_cal = True
-        else:
-            print(
-                "Calibrator ms is available, however, calibrator metafits is not available."
-            )
-            has_cal = False
-
-        #########################################
-        # Verifying calibrator obsid
-        #########################################
-        if has_cal:
-            cal_ms_obsids = [get_MWA_OBSID(ms) for ms in calibrator_mslist]
-            all_same_obsids = all(x == cal_ms_obsids[0] for x in cal_ms_obsids)
-            if all_same_obsids is False:
-                print(
-                    "All calibrator measurement sets are not belong to same OBSID. Keep only measurement sets with same OBSID inside the calibrator directory."
-                )
-                print("P-AIRCARS will not use calibrators.")
-                has_cal = False
-            else:
-                cal_ms_obsid = cal_ms_obsids[0]
-                if cal_ms_obsid != calibrator_obsid:
-                    print(
-                        f"Calibrator measurement set OBSID: {cal_ms_obsid} is different from metafits provided OBSID: {calibrator_obsid}. Provide correct metafits file."
-                    )
-                    print("P-AIRCARS will not use calibrators.")
-                    has_cal = False
-
-        ######################################################
-        # Filtering only matching coarse channel calibrator ms
-        ######################################################
-        if has_cal:
-            print("Filtering calibrator measurement sets...")
-            filtered_calms = []
-            for ms in calibrator_mslist:
-                coarse_chan = get_MWA_coarse_chan(ms)
-                if coarse_chan in target_coarse_chans:
-                    filtered_calms.append(ms)
-                    print(
-                        f"Coarse channel: {coarse_chan} of calibrator measurement set: {ms} is used."
-                    )
-            calibrator_mslist = filtered_calms
-
-        ######################################################
-        # Making calibrator output directories
-        ######################################################
-        if calibrator_obsid is not None:
-            cal_outdir = f"{outdir}/{calibrator_obsid}_cal"
-            try:
-                os.makedirs(cal_outdir, exist_ok=True)
-            except Exception:
-                print(
-                    f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
-                )
-                traceback.print_exc()
-                has_cal = False
-            basicaldir = f"{cal_outdir}/caltables"
-            os.makedirs(basicaldir, exist_ok=True)
 
         #####################################
         # Settings for solar data
@@ -2270,7 +837,7 @@ def master_control(
                 msmd.close()
                 if npol < 4:
                     print(
-                        f"Measurement set: {ms} is not full-polar. Do not performing polarization analysis."
+                        f"Measurement set: {msname} is not full-polar. Do not performing polarization analysis."
                     )
                     do_polcal = False
                     break
@@ -2351,17 +918,27 @@ def master_control(
 
         #############################
         # Reset any previous weights
-        ############################
+        #############################
         print("Resetting previous flags and weights....")
-        for msname in target_mslist:
-            reset_weights_and_flags(
-                msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
-            )
-        for msname in calibrator_mslist:
-            reset_weights_and_flags(
-                msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
-            )
+        if len(target_mslist) > 0:
+            for msname in target_mslist:
+                reset_weights_and_flags(
+                    msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
+                )
+        if has_cal:
+            cal_obsids = calibrator_dic.keys()
+            for cal_obsid in cal_obsids:
+                cal_datadir = calibrator_dic[cal_obsid][0]
+                calibrator_mslist = glob.glob(f"{cal_datadir}/*.ms")
+                if len(calibrator_mslist) > 0:
+                    for msname in calibrator_mslist:
+                        reset_weights_and_flags(
+                            msname,
+                            n_threads=n_threads,
+                            force_reset=do_forcereset_weightflag,
+                        )
         print("Reset is done.")
+        #################################
 
         if (move_solarcenter or make_ds) and adaptive:
             scale_worker_and_wait(
@@ -2369,7 +946,6 @@ def master_control(
                 dask_client,
                 max(2, min(len(target_mslist) + 1, max_worker)),
             )
-
         ########################################
         # Moving phasecenter to the solar center
         ########################################
@@ -2474,396 +1050,44 @@ def master_control(
                     )
 
         ##########################################
-        # Checking presence of basic caltables
+        # Basic calibration flows
         ##########################################
-        if not redo_basic_cal:
-            if calibrator_obsid is not None:
-                print(
-                    f"Searching for existing bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
-                )
-                bandpass_tables = sorted(
-                    glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
-                )
-                print(
-                    f"Searching for existing crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
-                )
-                crossphase_tables = sorted(
-                    glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-                )
-                if len(bandpass_tables) > 0:
-                    print("###################################################")
-                    print(
-                        f"Bandpass tables are already present in calibration directory: {basicaldir}"
-                    )
-                    for bpass in bandpass_tables:
-                        print(f"{os.path.basename(bpass)}")
-                    if len(crossphase_tables)>0:
-                        print("####################################################")
-                        print(
-                            f"Crosshand phase tables are already present in calibration directory: {basicaldir}"
-                        )
-                        for kcross in crossphase_tables:
-                            print(f"{os.path.basename(kcross)}")
-                        print("####################################################")
-                        if emails != "":
-                            email_msg = "Gain solutions from calibrator are already present."
-                            send_task_notification(
-                                emails, email_msg, jobid, target_obsid, timestamp
-                            )
-                        ####################################
-                        # Stoping further basic calibrations
-                        ####################################
-                        do_basic_cal = False
-                        do_cal_flag = False
-                        do_import_model = False
-                        has_cal = True
-
-        ##############################
-        # Run spliting jobs
-        ##############################
-        # If basic calibration is requested and calibrator ms and metafits are present
-        if (do_basic_cal or do_cal_flag or do_import_model) and has_cal:
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    max(2, min(total_ncoarse + 1, max_worker)),
-                )
-            prefix = "calibrator"
-            if emails != "":
-                email_msg = "Started spliting of calibrator measurement sets."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print(f"Starting task: Spliting {prefix} .....")
-            print("###########################")
-            future_cal_split = run_target_split_jobs.with_options(
-                task_run_name=f"spliting_{prefix}_{jobid}"
-            ).submit(
-                ",".join(calibrator_mslist),
-                calibrator_metafits,
-                workdir,
-                datacolumn="data",
-                timeres=10.0,
-                freqres=0.16,
-                prefix=prefix,
-                force_split=False,
-                time_window=-1,
-                time_interval=-1,
-                quack_timestamps=quack_timestamps,
-                jobid=jobid,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, expected, succeed = future_cal_split.result()
-                if emails != "":
-                    email_msg = f"Spliting of calibrator measurement sets are done.\nExpected: {expected}, succeeded: {succeed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Finished task: Spliting of calibrator measurement sets are done."
-                )
-                print("###########################")
-            except Exception:
-                print(
-                    "!!!! WARNING: Error in spliting calibrator measurement sets. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Spliting calibrator measurement set is failed."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                has_cal = False
-
-        if (do_cal_flag or do_import_model or do_basic_cal) and has_cal:
-            split_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_spw_*.ms"))
-            if len(split_cal_mslist) == 0:
-                print("No splited measurement set is present for basic calibration.")
-                has_cal = False
-                if adaptive:
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        2,
-                    )
-            else:
-                if adaptive:
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
-                    )
-
-        ##################################
-        # Run flagging jobs on calibrators
-        ##################################
-        # Only if basic calibration is requested
-        if do_cal_flag and has_cal:
-            if emails != "":
-                email_msg = "Started flagging of calibrators."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Flagging calibrators ....")
-            print("###########################")
-            future_flag = run_flag.with_options(
-                task_run_name=f"flagging_cal_{jobid}"
-            ).submit(
-                ",".join(split_cal_mslist),
-                calibrator_metafits,
-                workdir,
-                cal_outdir,
-                flag_calibrators=True,
-                jobid=jobid,
-                flag_quack=False,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_flag.result()
-                if emails != "":
-                    email_msg = f"Flagging of calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                filtered_ms = []
-                for c_ms in split_cal_mslist:
-                    c_ms = c_ms.rstrip("/")
-                    if os.path.exists(f"{c_ms}/.flag_succeed"):
-                        filtered_ms.append(c_ms)
-                    else:
-                        print(f"Issue in flagging of measurement set: {c_ms}")
-                if adaptive and len(filtered_ms) != len(split_cal_mslist):
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
-                    )
-                split_cal_mslist = filtered_ms  # Filtered target mslist
-                print("###########################")
-                print("Finished task: Flagging of calibrator is done.")
-                print("###########################")
-            except Exception:
-                print("!!!! WARNING: Flagging error. P-AIRCARS has stopped. !!!!")
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error in flagging calibrators."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                return 1
-
-        #################################
-        # Import model
-        #################################
-        if do_import_model and has_cal:
-            if emails != "":
-                email_msg = "Started importing sky model for calibrator."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Importing model visibilities ....")
-            print("###########################")
-            future_import_model = run_import_model.with_options(
-                task_run_name=f"importing_model_visibilities_{jobid}"
-            ).submit(
-                ",".join(split_cal_mslist),
-                calibrator_metafits,
-                workdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_import_model.result()
-                if emails != "":
-                    email_msg = f"Model import for calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Finished task: Model import for calibrator is done.")
-                print("###########################")
-                filtered_ms = []
-                for c_ms in split_cal_mslist:
-                    c_ms = c_ms.rstrip("/")
-                    if os.path.exists(f"{c_ms}/.modeling_succeed"):
-                        filtered_ms.append(c_ms)
-                    else:
-                        print(
-                            f"Issue in importing calibrator sky model of measurement set: {c_ms}"
-                        )
-                if adaptive and len(filtered_ms) != len(split_cal_mslist):
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
-                    )
-                split_cal_mslist = filtered_ms  # Filtered target mslist
-            except Exception:
-                print(
-                    "!!!! WARNING: Error in importing calibrator models. Not continuing calibration. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in importing model for calibrators. Not using calibrator solutions."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                has_cal = False
-                if do_selfcal is False:
-                    print(
-                        "Self-calibration is also switched off. P-AIRCARS has stopped."
-                    )
-                    return 1
-
-        ###############################
-        # Run basic calibration
-        ###############################
-        if do_basic_cal and has_cal:
-            if emails != "":
-                email_msg = "Started basic calibration."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Performing basic calibration .....")
-            print("###########################")
-            future_basical = run_basic_cal_jobs.with_options(
-                task_run_name=f"basic_calibration_{jobid}"
-            ).submit(
-                ",".join(split_cal_mslist),
-                calibrator_metafits,
-                workdir,
-                cal_outdir,
-                perform_polcal=do_polcal,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
+        if has_cal:
+            cal_obsids = list(calibrator_dic.keys())
+            basic_cal_runner = partial(
+                basic_cal_subflow,
+                target_obsid=target_obsid,
+                workdir=workdir,
+                cal_outdir=cal_outdir,
+                basic_caldir=basic_caldir,
+                do_basic_cal=do_basic_cal,
+                redo_basic_cal=redo_basic_cal,
+                do_cal_flag=do_cal_flag,
+                do_import_model=do_import_model,
+                do_polcal=do_polcal,
                 keep_backup=keep_backup,
-                remote_log=remote_logger,
+                quack_timestamps=quack_timestamps,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
+                jobid=jobid,
+                timestamp=timestamp,
+                emails=emails,
+                remote_logger=remote_logger,
             )
-            try:
-                msg, succeed, failed = future_basical.result()
-                if emails != "":
-                    email_msg = f"Basic calibration is done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+            futures = []
+            for cal_obsid in cal_obsids:
+                cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
+                future = basic_cal_runner.submit(
+                        cal_obsid=cal_obsid,
+                        cal_datadir=cal_datadir,
+                        cal_metafits=cal_metafits,
+                        coarse_chans=coarse_chans,
                     )
-                print("###########################")
-                print("Finished task: Basic calibration is done.")
-                print("###########################")
-            except Exception:
-                print(
-                    "!!!! WARNING: Error in basic calibration. Starting without basic calibration. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in basic calibration."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                has_cal = False
+                futures.append(future)
+            results = [f.result() for f in futures]
 
-        if (do_cal_flag or do_import_model or do_basic_cal) and adaptive:
-            scale_worker_and_wait(dask_cluster, dask_client, 2)
 
-        ##################################################################
-        # Checking presence of necessary caltables if not checked already
-        #################################################################
-        if calibrator_obsid is not None:
-            print(
-                f"Searching for bandpass tables: {basicaldir}/calibrator_{calibrator_obsid}*.bcal"
-            )
-            bandpass_tables = sorted(
-                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.bcal")
-            )
-            if len(bandpass_tables) > 0:
-                bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
-            print(
-                f"Searching for crossphase tables: {basicaldir}/calibrator_{calibrator_obsid}*.kcrossscal"
-            )
-            crossphase_tables = sorted(
-                glob.glob(f"{basicaldir}/calibrator_{calibrator_obsid}*.kcrosscal")
-            )
-            if len(crossphase_tables) > 0:
-                crossphase_tables = interpolate_bpass(
-                    crossphase_tables, overwrite=True
-                )
-            if len(bandpass_tables) == 0:
-                print(
-                    f"No bandpass table is present in calibration directory : {basicaldir}."
-                )
-                has_cal = False
-                if emails != "":
-                    email_msg = "No bandpass calibration table is found."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-            else:
-                has_cal = True
-                print("###################################################")
-                print(f"Bandpass tables in calibration directory: {basicaldir}")
-                for bpass in bandpass_tables:
-                    print(f"{os.path.basename(bpass)}")
-                print("####################################################")
-                print(
-                    f"Crosshand phase tables in calibration directory: {basicaldir}"
-                )
-                for kcross in crossphase_tables:
-                    print(f"{os.path.basename(kcross)}")
-                print("####################################################")
-          
-          
-        ###############################################
-        # Making diagnostic plots
-        ###############################################
-        if (
-            has_cal
-            and len(bandpass_tables) > 0
-            and do_basic_cal
-        ):
-            os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
-            msg, bpass_plots = plot_caltable_diagnostics(
-                bandpass_tables,
-                f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_bcal",
-            )
-            if msg == 0:
-                print(
-                    f"Diagnostic plots for bandpass tables are saved in : {bpass_plots}."
-                )
-            else:
-                print("Error in creating diagnostic plots for bandpass tables.")
-        if (
-            has_cal
-            and len(crossphase_tables) > 0
-            and do_basic_cal
-        ):
-            os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
-            msg, kcross_plots = plot_caltable_diagnostics(
-                crossphase_tables,
-                f"{cal_outdir}/diagnostic_plots/{calibrator_obsid}_kcrosscal",
-                quantities=["phase"],
-                plot_all_ants=False,
-            )
-            if msg == 0:
-                print(
-                    f"Diagnostic plots for crosshand phase tables are saved in : {kcross_plots}."
-                )
-            else:
-                print("Error in creating diagnostic plots for crosshand phase tables.")
-                
-                
+
         ###################################################
         # Checking if selfcal tables already exist or not
         ###################################################
@@ -2873,12 +1097,14 @@ def master_control(
                 selfcal_gaincal = sorted(
                     glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
                 )
-                if len(selfcal_gaincal)>0:
+                if len(selfcal_gaincal) > 0:
                     selfcal_bandpass = sorted(
                         glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
                     )
                     if len(selfcal_bandpass) > 0:
-                        selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
+                        selfcal_bandpass = interpolate_bpass(
+                            selfcal_bandpass, overwrite=True
+                        )
                     if do_polcal:
                         selfcal_leakages = sorted(
                             glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
@@ -2887,16 +1113,20 @@ def master_control(
                             selfcal_leakages = interpolate_quartical(
                                 selfcal_leakages, overwrite=True
                             )
-                            do_selfcal=False
-                            print("Self-calibration solutions exist including polarisation calibration. Not performing self-calibration")
+                            do_selfcal = False
+                            print(
+                                "Self-calibration solutions exist including polarisation calibration. Not performing self-calibration"
+                            )
                             if emails != "":
                                 email_msg = "Self-calibration solutions including polarisation for target are already present."
                                 send_task_notification(
                                     emails, email_msg, jobid, target_obsid, timestamp
                                 )
                     else:
-                        print("Self-calibration solutions exist without polarisation calibration. Henc, performing self-calibration")
-                     
+                        print(
+                            "Self-calibration solutions exist without polarisation calibration. Henc, performing self-calibration"
+                        )
+
         ###################################################
         # Start spliting selfcal ms
         ###################################################
@@ -2944,7 +1174,7 @@ def master_control(
             times = msmd.timesforspws(0)
             timeres = np.nanmean(np.diff(times))
             msmd.close()
-            time_window = min(10, round(ntime*timeres,1)) # Maximum 10s
+            time_window = min(10, round(ntime * timeres, 1))  # Maximum 10s
             future_selfcal_split = run_target_split_jobs.with_options(
                 task_run_name=f"spliting_{prefix}_{jobid}"
             ).submit(
@@ -3045,7 +1275,7 @@ def master_control(
                     dask_client,
                     max(2, min(len(selfcal_mslist) + 1, max_worker)),
                 )
-            
+
             ###################################
             # Apply basic calibration
             ###################################
@@ -3067,7 +1297,7 @@ def master_control(
                     calibrator_metafits,
                     target_metafits,
                     workdir,
-                    basicaldir,
+                    basic_caldir,
                     overwrite_datacolumn=False,
                     only_amplitude=only_amplitude,
                     applymode="calflag",
@@ -3232,7 +1462,7 @@ def master_control(
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                    
+
             #############################
             # Self-calibration
             #############################
@@ -3272,9 +1502,15 @@ def master_control(
                 remote_log=remote_logger,
             )
             try:
-                msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR = (
-                    future_selfcal.result()
-                )
+                (
+                    msg,
+                    int_succeed,
+                    int_failed,
+                    pol_succeed,
+                    pol_failed,
+                    int_DR,
+                    pol_DR,
+                ) = future_selfcal.result()
                 if emails != "":
                     email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}, average DR: {int_DR}."
                     if do_polcal:
@@ -3308,7 +1544,7 @@ def master_control(
         selfcal_gaincal = sorted(
             glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
         )
-        if len(selfcal_gaincal)==0:
+        if len(selfcal_gaincal) == 0:
             print(
                 "Self-calibration is not performed and no self-calibration caltable is available."
             )
@@ -3326,7 +1562,7 @@ def master_control(
             for gcal in selfcal_gaincal:
                 print(f"{os.path.basename(gcal)}")
             print("####################################################")
-            
+
             print(
                 f"Searching for self-calibration bandpass tables: {selfcaldir}/selfcal_{target_obsid}*.bcal"
             )
@@ -3359,7 +1595,7 @@ def master_control(
                     print("####################################################")
                     selfcal_leakages = interpolate_quartical(
                         selfcal_leakages, overwrite=True
-                    )                
+                    )
 
             ###########################################
             # Plotting self-caltables
@@ -3367,7 +1603,8 @@ def master_control(
             if do_selfcal and len(selfcal_gaincal) > 0:
                 os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
                 msg, gcal_plots = plot_caltable_diagnostics(
-                    selfcal_gaincal, f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal"
+                    selfcal_gaincal,
+                    f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal",
                 )
                 if msg == 0:
                     print(
@@ -3524,7 +1761,7 @@ def master_control(
                     dask_client,
                     max(2, min(len(split_target_mslist) + 1, max_worker)),
                 )
-            
+
             ####################################
             # Applying basic calibration
             #####################################
@@ -3546,7 +1783,7 @@ def master_control(
                     calibrator_metafits,
                     target_metafits,
                     workdir,
-                    basicaldir,
+                    basic_caldir,
                     overwrite_datacolumn=True,
                     only_amplitude=only_amplitude,
                     applymode="calflag",
@@ -3699,21 +1936,25 @@ def master_control(
             print("###########################")
             if not use_solarflagger:
                 dr_files = glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.DR")
-                if len(dr_files)>0:
-                    int_DR_list=[]
-                    pol_DR_list=[]
+                if len(dr_files) > 0:
+                    int_DR_list = []
+                    pol_DR_list = []
                     for dr_file in dr_files:
-                        int_DR, pol_DR = np.load(dr_file,allow_pickle=True)
+                        int_DR, pol_DR = np.load(dr_file, allow_pickle=True)
                         int_DR_list.append(int_DR)
                         pol_DR_list.append(pol_DR)
                     avg_int_DR = np.nanmedian(int_DR_list)
                     avg_pol_DR = np.nanmedian(pol_DR_list)
-                    if avg_int_DR<100 or avg_pol_DR<100:
-                        print(f"Average intensity self-calibration dynamic range: {avg_int_DR} is smaller than 100.")
-                        print(f"Average polarisation self-calibration dynamic range: {avg_pol_DR} is smaller than 100.")
+                    if avg_int_DR < 100 or avg_pol_DR < 100:
+                        print(
+                            f"Average intensity self-calibration dynamic range: {avg_int_DR} is smaller than 100."
+                        )
+                        print(
+                            f"Average polarisation self-calibration dynamic range: {avg_pol_DR} is smaller than 100."
+                        )
                         print("Using solar flagger.")
-                        use_solarflagger=True
-                
+                        use_solarflagger = True
+
             future_flag = run_flag.with_options(
                 task_run_name=f"flagging_target_{jobid}"
             ).submit(
@@ -4099,7 +2340,7 @@ def master_control(
             )
             try:
                 msg, succeed, failed = future_overlay.result()
-                if msg==0:
+                if msg == 0:
                     if emails != "":
                         email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
                         send_task_notification(
@@ -4117,7 +2358,7 @@ def master_control(
                         )
                     print("###########################")
                     print("Finished task: Making overlays are not successful.")
-                    if len(glob.glob(f"{imagedir}/overlay_pngs/*.png"))==0:
+                    if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
                         os.system(f"rm -rf {imagedir}/overlay_pngs")
                     else:
                         print(f"Final image directory: {imagedir}/overlay_pngs")
@@ -4246,7 +2487,6 @@ def cli():
     essential.add_argument(
         "target_datadir", type=str, help="Target measurement set directory"
     )
-    essential.add_argument("target_metafits", type=str, help="Target metafits file")
     essential.add_argument(
         "--workdir",
         type=str,
@@ -4260,6 +2500,12 @@ def cli():
         dest="outdir",
         required=True,
         help="Output products directory",
+    )
+    essential.add_argument(
+        "--target_metafits",
+        type=str,
+        dest="target_metafits",
+        help="Target metafits file",
     )
     essential.add_argument(
         "--cal_datadir",
@@ -4316,7 +2562,7 @@ def cli():
         action="store_true",
         help="Use solar flagger",
     )
-    
+
     # === Advanced imaging parameters ===
     advanced_image = parser.add_argument_group(
         "###################\nAdvanced imaging parameters\n###################"
@@ -4650,7 +2896,7 @@ def cli():
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
-    
+
     if args.cal_datadir:
         if os.path.exists(args.cal_datadir):
             cal_mslist = glob.glob(f"{args.cal_datadir}/*.ms")
@@ -4783,9 +3029,9 @@ def cli():
             task_runner=DaskTaskRunner(address=dask_addr),
         )(
             args.target_datadir,
-            args.target_metafits,
             args.workdir,
             args.outdir,
+            target_metafits=args.target_metafits,
             calibrator_datadir=args.cal_datadir,
             calibrator_metafits=args.cal_metafits,
             solar_data=args.solar_data,

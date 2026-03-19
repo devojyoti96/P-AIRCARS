@@ -15,7 +15,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_timeranges
-from paircars.utils.mwa_utils import get_MWA_coarse_bands, get_ncoarse
+from paircars.utils.mwa_utils import get_MWA_coarse_bands, get_ncoarse, get_MWA_coarse_chan
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -52,6 +52,7 @@ def split_target_scans(
     timeres,
     freqres,
     datacolumn,
+    split_coarse_chans=[],
     scan=1,
     prefix="targets",
     time_interval=-1,
@@ -80,7 +81,9 @@ def split_target_scans(
         Frequency resolution in MHz
     datacolumn : str
         Data column to split
-    scan : int
+    split_coarse_chans : list, optional
+        Split coarse channels
+    scan : int, optional
         Scan to split
     prefix : str, optional
         Splited ms prefix
@@ -149,18 +152,24 @@ def split_target_scans(
             coarse_channel_bands = get_MWA_coarse_bands(
                 msname, flag_central_chan=flag_central_chan
             )
+            coarse_chans = get_MWA_coarse_chan(msname)
+            if len(split_coarse_chans)==0:
+                split_coarse_chans = coarse_chans
             chanlist = []
             good_spwlist = []
-            for chan in coarse_channel_bands:
-                start_chan = chan[0]
-                end_chan = chan[1]
-                good_chans = chan[2]
-                if end_chan > start_chan:
-                    chanlist.append(f"{start_chan}~{end_chan}")
-                elif start_chan == end_chan:
-                    chanlist.append(f"{start_chan}")
-                good_chans = [f"{i}" for i in good_chans]
-                good_spwlist.append(f"0:{';'.join(good_chans)}")
+            for c in range(len(coarse_channel_bands)):
+                coarse_chan = coarse_chans[c]
+                if coarse_chan in split_coarse_chans:
+                    chan = coarse_channel_bands[c]
+                    start_chan = chan[0]
+                    end_chan = chan[1]
+                    good_chans = chan[2]split_coarse_chan_dic
+                    if end_chan > start_chan:
+                        chanlist.append(f"{start_chan}~{end_chan}")
+                    elif start_chan == end_chan:
+                        chanlist.append(f"{start_chan}")
+                    good_chans = [f"{i}" for i in good_chans]
+                    good_spwlist.append(f"0:{';'.join(good_chans)}")
 
             timerange_list = get_timeranges(
                 msname,
@@ -195,13 +204,10 @@ def split_target_scans(
                             n_threads=n_threads,
                         )
                     )
-
         print("Start spliting jobs...")
         future = dask_client.compute(tasks)
         result = dask_client.gather(future)
-
         splited_ms_list = splited_ms_list + result
-
         if len(splited_ms_list) == 0:
             print(f"Spliting of measurement set: {msname} is unsuccessful.")
             return 1, []
@@ -221,6 +227,7 @@ def main(
     metafits,
     workdir="",
     datacolumn="data",
+    split_coarse_chans=[],
     scan=1,
     time_window=-1,
     time_interval=-1,
@@ -250,6 +257,8 @@ def main(
         Working directory for intermediate and output products. If empty, defaults to `<msname>/workdir`.
     datacolumn : str, optional
         Column of the MS to use for splitting (e.g., "DATA", "CORRECTED"). Default is "data".
+    split_coarse_chans : list, optional
+        Split coarse channels 
     scan : int, optional
         Scan numbers to split.
     time_window : float, optional
@@ -326,7 +335,9 @@ def main(
     else:
         total_ncoarse = 0
         for msname in mslist:
-            ncoarse = get_ncoarse(msname)
+            ncoarse = len(split_coarse_chans)
+            if ncoarse==0:
+                ncoarse = get_ncoarse(msname)
             total_ncoarse += ncoarse
         total_ncoarse = max(1, total_ncoarse)
         expected = total_ncoarse
@@ -386,6 +397,7 @@ def main(
             float(timeres),
             float(freqres),
             datacolumn,
+            split_coarse_chans=split_coarse_chans,
             time_window=float(time_window),
             time_interval=float(time_interval),
             quack_timestamps=int(quack_timestamps),

@@ -1109,7 +1109,7 @@ def do_polselfcal(
                     f"Stokes I to U leakage: {round(UL1*100.0,3)}, {round(UL2*100.0,3)}, {round(UL3*100.0,3)}%."
                 )
                 pollogger.info(
-                    f"Stokes I to V leakage: {round(VL1*100.0,3)}, {round(VL2*100.0,3)}, {round(VL3*100.0,3)}%.\n"
+                    f"Stokes I to V leakage: {round(VL1*100.0,3)}, {round(VL2*100.0,3)}, {round(VL3*100.0,3)}%."
                 )
                 pollogger.info(f"Maximum pixel offset: {max_pixel_offset}")
                 leakage_converged = (QL3 == 0.0 and UL3 == 0.0 and VL3 == 0.0) or (

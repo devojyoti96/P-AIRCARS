@@ -36,28 +36,6 @@ def get_MWA_OBSID(msname):
     return obsid
 
 
-def get_ncoarse(msname):
-    """
-    Get number of coarse channels
-
-    Parameters
-    ----------
-    msname : str
-        Measurement set
-
-    Returns
-    -------
-    int
-        Number of coarse channels
-    """
-    msmd = msmetadata()
-    msmd.open(msname)
-    freqs = msmd.chanfreqs(0, unit="MHz")
-    bw = max(freqs) - min(freqs)
-    ncoarse = max(1, math.ceil(bw / 1.28))
-    return ncoarse
-
-
 def freq_to_MWA_coarse(freq):
     """
     Frequency to MWA coarse channel conversion.
@@ -72,8 +50,10 @@ def freq_to_MWA_coarse(freq):
     int
         MWA coarse channel number
     """
-    return int(round(freq / 1.28))
-
+    all_mwa_coarse_freq = np.arange(255)*1.28
+    coarse_chan = np.argmin(abs(freq-all_mwa_coarse_freq))
+    return coarse_chan
+    
 
 def get_MWA_coarse_chan(msname):
     """
@@ -86,17 +66,40 @@ def get_MWA_coarse_chan(msname):
 
     Returns
     -------
-    int
-        Coarse channel corresponding to central frequency of the measurement set
+    list
+        Coarse channel numbers corresponding of the measurement set
     """
     msmd = msmetadata()
     msmd.open(msname)
-    meanfreq = msmd.meanfreq(0, unit="MHz")
+    freqs = msmd.chanfreqs(0, unit="MHz")
     msmd.close()
-    ncoarse = freq_to_MWA_coarse(meanfreq)
+    coarse_chans = []
+    for f in freqs:
+        coarse_chan = freq_to_MWA_coarse(f)
+        if coarse_chan not in coarse_chans:
+            coarse_chans.append(coarse_chan) 
+    return coarse_chans
+
+
+def get_ncoarse(msname):
+    """
+    Get number of coarse channels
+
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+
+    Returns
+    -------
+    int
+        Number of coarse channels
+    """
+    coarse_chans = get_MWA_coarse_chan(msname)
+    ncoarse = len(coarse_chans)
     return ncoarse
-
-
+    
+    
 def get_MWA_coarse_bands(msname, flag_central_chan=False):
     """
     Get MWA coarse channel bands.
@@ -128,7 +131,6 @@ def get_MWA_coarse_bands(msname, flag_central_chan=False):
     nchan_coarse = int(round(1.28 / freqres))
     start_ms_freq = np.nanmin(freqs)
     end_ms_freq = np.nanmax(freqs)
-
     coarse_chans = []
     seen = set()
     for start_chan in range(0, nchan, nchan_coarse):

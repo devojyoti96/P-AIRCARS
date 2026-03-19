@@ -33,7 +33,6 @@ def cli():
     essential.add_argument(
         "target_datadir", type=str, help="Target measurement set directory"
     )
-    essential.add_argument("target_metafits", type=str, help="Target metafits file")
     essential.add_argument(
         "--workdir",
         type=str,
@@ -47,6 +46,12 @@ def cli():
         dest="outdir",
         required=True,
         help="Output products directory",
+    )
+    essential.add_argument(
+        "--target_metafits",
+        type=str,
+        dest="target_metafits",
+        help="Target metafits file",
     )
     essential.add_argument(
         "--cal_datadir",
