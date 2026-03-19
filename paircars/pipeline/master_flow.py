@@ -550,7 +550,7 @@ def master_control(
         print(
             f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are:"
         )
-        for cal_obsid in list(calibrator_dic.leys()):
+        for cal_obsid in list(calibrator_dic.keys()):
             print(f"{cal_obsid}")
 
     ######################################################
