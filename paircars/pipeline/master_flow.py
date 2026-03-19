@@ -1090,8 +1090,8 @@ def master_control(
                     cpu_frac,
                     mem_frac,
                     jobid,
-                    timestamp,
-                    emails,
+                    #timestamp,
+                    #emails,
                     remote_logger,
                 )
                 futures.append(future)
