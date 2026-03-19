@@ -1129,8 +1129,8 @@ def master_control(
                         mem_frac=mem_frac,
                         # Logging / metadata
                         jobid=jobid,
-                        #timestamp,
-                        #emails,
+                        timestamp=timestamp,
+                        emails=emails,
                         remote_logger=remote_logger,
                     )
                     futures.append(future)
