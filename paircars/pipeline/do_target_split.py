@@ -163,7 +163,7 @@ def split_target_scans(
                     chan = coarse_channel_bands[c]
                     start_chan = chan[0]
                     end_chan = chan[1]
-                    good_chans = chan[2]split_coarse_chan_dic
+                    good_chans = chan[2]
                     if end_chan > start_chan:
                         chanlist.append(f"{start_chan}~{end_chan}")
                     elif start_chan == end_chan:
