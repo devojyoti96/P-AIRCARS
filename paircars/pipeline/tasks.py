@@ -218,7 +218,7 @@ def run_target_split_jobs(
     metafits,
     workdir,
     datacolumn="data",
-    split_coarse_chan_dic={},
+    split_coarse_chans=[],
     timeres=-1,
     freqres=-1,
     prefix="target",
@@ -245,8 +245,8 @@ def run_target_split_jobs(
         Working directory
     datacolumn : str, optional
         Data column
-    split_coarse_chan_dic : dict, optional
-        Split coarse channels per measurement set
+    split_coarse_chans : list, optional
+        Split coarse channels 
     timeres : float, optional
         Time bin to average in seconds
     freqres : float, optional
@@ -308,7 +308,7 @@ def run_target_split_jobs(
                 metafits,
                 workdir=workdir,
                 datacolumn=datacolumn,
-                split_coarse_chan_dic=split_coarse_chan_dic,
+                split_coarse_chans=split_coarse_chans,
                 time_window=time_window,
                 time_interval=time_interval,
                 freqres=freqres,
