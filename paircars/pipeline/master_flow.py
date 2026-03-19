@@ -106,6 +106,7 @@ def master_control(
     target_datadir,
     workdir,
     outdir,
+    dask_addr,
     # Metafits and calibrators
     target_metafits="",
     calibrator_datadir="",
@@ -1070,7 +1071,8 @@ def master_control(
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
                 future = basic_cal_subflow.with_options(
-                    flow_run_name=f"basic_cal_{jobid}"
+                    flow_run_name=f"basic_cal_{jobid}",
+                    task_runner=DaskTaskRunner(address=dask_addr),
                 )(
                     cal_obsid,
                     cal_datadir,
@@ -3040,6 +3042,7 @@ def cli():
             args.target_datadir,
             args.workdir,
             args.outdir,
+            dask_addr,
             target_metafits=args.target_metafits,
             calibrator_datadir=args.cal_datadir,
             calibrator_metafits=args.cal_metafits,
