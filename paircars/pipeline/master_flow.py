@@ -1070,35 +1070,7 @@ def master_control(
             futures = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
-                import json
-                params = dict(
-                    cal_obsid=cal_obsid,
-                    target_obsid=target_obsid,
-                    cal_datadir=cal_datadir,
-                    cal_metafits=cal_metafits,
-                    coarse_chans=coarse_chans,
-                    workdir=workdir,
-                    cal_outdir=cal_outdir,
-                    basic_caldir=basic_caldir,
-                    do_basic_cal=do_basic_cal,
-                    redo_basic_cal=redo_basic_cal,
-                    do_cal_flag=do_cal_flag,
-                    do_import_model=do_import_model,
-                    do_polcal=do_polcal,
-                    keep_backup=keep_backup,
-                    quack_timestamps=quack_timestamps,
-                    cpu_frac=cpu_frac,
-                    mem_frac=mem_frac,
-                    jobid=jobid,
-                    timestamp=timestamp,
-                    emails=emails,
-                )
-
-                json.dumps(params)
-                '''future = basic_cal_subflow.with_options(
-                    flow_run_name=f"basic_cal_{jobid}",
-                    task_runner=DaskTaskRunner(address=dask_addr),
-                )(
+                future = basic_cal_subflow(
                     cal_obsid,
                     cal_datadir,
                     cal_metafits,
@@ -1122,8 +1094,7 @@ def master_control(
                     remote_logger,
                 )
                 futures.append(future)
-            results = [f.result() for f in futures]'''
-            return 
+            results = [f.result() for f in futures]
 
         ###################################################
         # Checking if selfcal tables already exist or not
