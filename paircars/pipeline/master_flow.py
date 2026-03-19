@@ -1068,8 +1068,10 @@ def master_control(
         if has_cal:
             cal_obsids = list(calibrator_dic.keys())
             futures = []
+            print (calibrator_dic)
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
+                print (cal_datadir, cal_metafits, coarse_chans)
                 future = basic_cal_subflow(
                     # Core observational inputs
                     cal_obsid=cal_obsid,
