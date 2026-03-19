@@ -1102,7 +1102,7 @@ def master_control(
                     remote_logger=remote_logger,
                 )
                 futures.append(future)
-            results = [f.result() for f in futures]
+            #results = [f.result() for f in futures]
 
         ###################################################
         # Checking if selfcal tables already exist or not
