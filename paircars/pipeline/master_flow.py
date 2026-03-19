@@ -382,7 +382,7 @@ def master_control(
     ##################################################
     # Downloading target metafits if not match with ms
     ##################################################
-    metafits_obsid = fits.getheader(target_metafits)["GPSIME"]
+    metafits_obsid = fits.getheader(target_metafits)["GPSTIME"]
     if metafits_obsid != target_obsid:
         print(
             "Mismatch between target ms OBSID: {target_obsid} and metafits OBSID: {metafits_obsid}. Downloading metafits for OBSID: {target_obsid}."
@@ -456,7 +456,7 @@ def master_control(
                     f"{cal_datadir}/{cal_obsid}.metafits"
                 ):
                     metafits = f"{cal_datadir}/{cal_obsid}.metafits"
-                metafits_obsid = fits.getheader(metafits)["GPSIME"]
+                metafits_obsid = fits.getheader(metafits)["GPSTIME"]
                 if metafits_obsid == cal_obsid:
                     cal_metafits = metafits
                     break
