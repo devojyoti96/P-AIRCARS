@@ -1095,7 +1095,7 @@ def master_control(
                 )
 
                 json.dumps(params)
-                future = basic_cal_subflow.with_options(
+                '''future = basic_cal_subflow.with_options(
                     flow_run_name=f"basic_cal_{jobid}",
                     task_runner=DaskTaskRunner(address=dask_addr),
                 )(
@@ -1122,7 +1122,8 @@ def master_control(
                     remote_logger,
                 )
                 futures.append(future)
-            results = [f.result() for f in futures]
+            results = [f.result() for f in futures]'''
+            return 
 
         ###################################################
         # Checking if selfcal tables already exist or not
