@@ -548,11 +548,9 @@ def master_control(
     else:
         has_cal = True
         print(
-            f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are:"
+            f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are: {list(calibrator_dic.keys())}"
         )
-        for cal_obsid in list(calibrator_dic.keys()):
-            print(f"{cal_obsid}")
-
+        
     ######################################################
     # Making calibrator output directories
     ######################################################
@@ -1073,7 +1071,7 @@ def master_control(
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
                 future = basic_cal_subflow.with_options(
                     flow_run_name=f"basic_cal_{jobid}"
-                ).submit(
+                )(
                     cal_obsid,
                     cal_datadir,
                     cal_metafits,
