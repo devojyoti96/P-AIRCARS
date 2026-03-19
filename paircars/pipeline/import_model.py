@@ -392,10 +392,10 @@ def main(
     worker_mem_list = []
     for addr, w in client_info.items():
         worker_mem_list.append(w["memory_limit"] / 1024**3)
-    if len(worker_mem_list)>0:
+    if len(worker_mem_list) > 0:
         mem_limit = round(min(worker_mem_list), 3)
     else:
-        mem_limit = 1 
+        mem_limit = 1
     n_threads = os.environ.get("OMP_NUM_THREADS")
     if n_threads is not None:
         n_threads = int(n_threads)

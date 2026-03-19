@@ -252,8 +252,8 @@ def perform_imaging(
             threshold = 1.1
         uvtaper = calc_uvtaper(msname)
         _, maxuv = calc_maxuv(msname)
-        maxuv = round(maxuv,1)
-        taper = round(max(0, maxuv-uvtaper),1)
+        maxuv = round(maxuv, 1)
+        taper = round(max(0, maxuv - uvtaper), 1)
 
         wsclean_args = [
             "-quiet",
@@ -275,7 +275,7 @@ def perform_imaging(
             f"-auto-threshold 1 -auto-mask {threshold}",
             "-no-update-model-required",
         ]
-        if taper>0:
+        if taper > 0:
             wsclean_args.append(f"-taper-tukey {taper}")
         if datacolumn != "CORRECTED_DATA" and datacolumn != "corrected":
             wsclean_args.append(f"-data-column {datacolumn}")
@@ -687,11 +687,11 @@ def run_all_imaging(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        if len(worker_mem_list)>0:
+        if len(worker_mem_list) > 0:
             mem_limit = round(min(worker_mem_list), 3)
         else:
             mem_limit = 1
-        
+
         n_threads = os.environ.get("OMP_NUM_THREADS")
         if n_threads is not None:
             n_threads = int(n_threads)

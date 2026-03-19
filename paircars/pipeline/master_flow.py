@@ -95,6 +95,7 @@ from paircars.pipeline.tasks import (
     send_task_notification,
 )
 
+
 @flow(
     name="P-AIRCARS Master control",
     version="3.0",
@@ -325,6 +326,9 @@ def master_control(
     if jobid is None:
         jobid = get_jobid()
 
+    print("#############################")
+    print(f"P-AIRCARS Job ID: {jobid}")
+    print("#############################")
     #########################################
     # Some validity checks for resources
     #########################################
@@ -332,6 +336,7 @@ def master_control(
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
+    print("Sorting out target data....")
     #############################################
     # Listing target ms
     #############################################
@@ -406,10 +411,13 @@ def master_control(
     target_obsid = int(target_header["GPSTIME"])
     target_freq_config = target_header["CHANNELS"]
     target_coarse_chans = [int(c) for c in target_freq_config.split(",")]
+    print(f"Target observation ID: {target_obsid}")
+    print(f"Target coarse channels: {target_coarse_chans}")
 
     ################################################
     # Filtering calibrators
     ################################################
+    print("Sorting out calibrator data....")
     cal_datadir_list = calibrator_datadir.split(",")
     cal_metafits_list = calibrator_metafits.split(",")
     final_cal_datadir_list = []
@@ -536,8 +544,14 @@ def master_control(
 
     if len(calibrator_dic) == 0:
         has_cal = False
+        print("No calibrator data is found.")
     else:
         has_cal = True
+        print(
+            f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are:"
+        )
+        for cal_obsid in list(calibrator_dic.leys()):
+            print(f"{cal_obsid}")
 
     ######################################################
     # Making calibrator output directories
@@ -661,6 +675,7 @@ def master_control(
     #########################################
     # Setup remote loggger and email notifier
     #########################################
+    print("Setting up remote logger and email notifier...")
     try:
         #####################################
         # Reading remotelink and emails
@@ -753,7 +768,6 @@ def master_control(
         # Printing basic info of the pipeline
         #####################################
         print("###########################")
-        print(f"P-AIRCARS Job ID: {jobid}")
         print(f"Work directory: {workdir}")
         print(f"Final product directory: {outdir}")
         print("###########################")
@@ -762,7 +776,7 @@ def master_control(
                 "############################################################################"
             )
             print(remote_link)
-            print(f"Job ID: {jobname}")
+            print(f"Remote Job ID: {jobname}")
             print(f"Remote access password: {password}")
             print(
                 "#############################################################################"
@@ -1054,39 +1068,36 @@ def master_control(
         ##########################################
         if has_cal:
             cal_obsids = list(calibrator_dic.keys())
-            basic_cal_runner = partial(
-                basic_cal_subflow,
-                target_obsid=target_obsid,
-                workdir=workdir,
-                cal_outdir=cal_outdir,
-                basic_caldir=basic_caldir,
-                do_basic_cal=do_basic_cal,
-                redo_basic_cal=redo_basic_cal,
-                do_cal_flag=do_cal_flag,
-                do_import_model=do_import_model,
-                do_polcal=do_polcal,
-                keep_backup=keep_backup,
-                quack_timestamps=quack_timestamps,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
-                jobid=jobid,
-                timestamp=timestamp,
-                emails=emails,
-                remote_logger=remote_logger,
-            )
             futures = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
-                future = basic_cal_runner.submit(
-                        cal_obsid=cal_obsid,
-                        cal_datadir=cal_datadir,
-                        cal_metafits=cal_metafits,
-                        coarse_chans=coarse_chans,
-                    )
+                future = basic_cal_subflow.with_options(
+                    flow_run_name=f"basic_cal_{jobid}"
+                ).submit(
+                    cal_obsid,
+                    cal_datadir,
+                    cal_metafits,
+                    coarse_chans,
+                    target_obsid,
+                    workdir,
+                    cal_outdir,
+                    basic_caldir,
+                    do_basic_cal,
+                    redo_basic_cal,
+                    do_cal_flag,
+                    do_import_model,
+                    do_polcal,
+                    keep_backup,
+                    quack_timestamps,
+                    cpu_frac,
+                    mem_frac,
+                    jobid,
+                    timestamp,
+                    emails,
+                    remote_logger,
+                )
                 futures.append(future)
             results = [f.result() for f in futures]
-
-
 
         ###################################################
         # Checking if selfcal tables already exist or not

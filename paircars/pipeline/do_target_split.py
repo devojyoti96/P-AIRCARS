@@ -15,7 +15,11 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import get_timeranges
-from paircars.utils.mwa_utils import get_MWA_coarse_bands, get_ncoarse, get_MWA_coarse_chan
+from paircars.utils.mwa_utils import (
+    get_MWA_coarse_bands,
+    get_ncoarse,
+    get_MWA_coarse_chan,
+)
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -153,7 +157,7 @@ def split_target_scans(
                 msname, flag_central_chan=flag_central_chan
             )
             coarse_chans = get_MWA_coarse_chan(msname)
-            if len(split_coarse_chans)==0:
+            if len(split_coarse_chans) == 0:
                 split_coarse_chans = coarse_chans
             chanlist = []
             good_spwlist = []
@@ -258,7 +262,7 @@ def main(
     datacolumn : str, optional
         Column of the MS to use for splitting (e.g., "DATA", "CORRECTED"). Default is "data".
     split_coarse_chans : list, optional
-        Split coarse channels 
+        Split coarse channels
     scan : int, optional
         Scan numbers to split.
     time_window : float, optional
@@ -336,7 +340,7 @@ def main(
         total_ncoarse = 0
         for msname in mslist:
             ncoarse = len(split_coarse_chans)
-            if ncoarse==0:
+            if ncoarse == 0:
                 ncoarse = get_ncoarse(msname)
             total_ncoarse += ncoarse
         total_ncoarse = max(1, total_ncoarse)
@@ -373,7 +377,7 @@ def main(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        if len(worker_mem_list)>0:
+        if len(worker_mem_list) > 0:
             mem_limit = round(min(worker_mem_list), 3)
         else:
             mem_limit = 1

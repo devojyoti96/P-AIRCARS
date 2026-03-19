@@ -459,13 +459,17 @@ def cli():
         ############################################
         if not args.cluster or scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
-            if msg!=0:
-                print("Some error may occured in batch script execution, while P-AIRCARS may be successully completed.")
+            if msg != 0:
+                print(
+                    "Some error may occured in batch script execution, while P-AIRCARS may be successully completed."
+                )
             return msg
         elif scheduler_name == "slurm":
             msg = submit_slurm_master_flow(args, jobid)
-            if msg!=0:
-                print("Some error may occured in batch script execution, while P-AIRCARS may be successully completed.")
+            if msg != 0:
+                print(
+                    "Some error may occured in batch script execution, while P-AIRCARS may be successully completed."
+                )
             return msg
         else:
             print(

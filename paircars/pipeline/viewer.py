@@ -244,13 +244,15 @@ class LogViewer(QWidget):
         inner_container = QWidget()
         inner_container.setObjectName("InnerContainer")
         inner_container.setLayout(inner_layout)
-        inner_container.setStyleSheet("""
+        inner_container.setStyleSheet(
+            """
             QWidget#InnerContainer {
                 background-color: #f0f0f0;
                 border-bottom-left-radius: 12px;
                 border-bottom-right-radius: 12px;
             }
-            """)
+            """
+        )
 
         outer_layout.addWidget(inner_container, 0, 0)
 
@@ -380,7 +382,8 @@ def cli():
 
     try:
         app = QApplication(sys.argv)
-        app.setStyleSheet("""
+        app.setStyleSheet(
+            """
             * {
                 font-family: \"Segoe UI\", \"Noto Sans\", \"Sans Serif\";
                 font-size: 15px;
@@ -391,7 +394,8 @@ def cli():
             QPushButton {
                 padding: 4px 14px;
             }
-        """)
+        """
+        )
         viewer = LogViewer()
         viewer.show()
         sys.exit(app.exec_())

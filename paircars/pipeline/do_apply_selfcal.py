@@ -178,7 +178,7 @@ def run_all_applysol(
                     gaintable = selfcal_tables[i]
                     gaintable_prefix = gaintable.split(".gcal")[0]
                     gaintable = []
-                    quartical_table=[]
+                    quartical_table = []
                     if os.path.exists(f"{gaintable_prefix}.gcal"):
                         gaintable.append(f"{gaintable_prefix}.gcal")
                     if os.path.exists(f"{gaintable_prefix}.bcal"):

@@ -208,7 +208,7 @@ def main(
             mem_frac = 0.8
         if cpu_frac <= 0:
             cpu_frac = 0.8
-            
+
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,

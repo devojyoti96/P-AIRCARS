@@ -209,7 +209,7 @@ def single_ms_flag(
                 print(
                     "Corrected data column is chosen for flagging, but it is not present."
                 )
-                datacolumn="data"
+                datacolumn = "data"
             else:
                 datacolumn = "corrected"
 
@@ -297,15 +297,15 @@ def single_ms_flag(
                     )
             except Exception:
                 pass
-                
+
         ######################
         # Solar flagger
         ######################
         if run_solarflagger:
             do_flag_backup(msname, flagtype="solarflag")
-            for th in range(10,int(threshold),2):
-                count=0
-                while count<10:
+            for th in range(10, int(threshold), 2):
+                count = 0
+                while count < 10:
                     result, n_final_flagged, n_additional_flagged = flagger(
                         msname,
                         datacolumn,
@@ -313,10 +313,10 @@ def single_ms_flag(
                         num_processes=n_threads,
                         flagbackup=False,
                     )
-                    if n_additional_flagged==0:
+                    if n_additional_flagged == 0:
                         break
                     else:
-                        count+=1
+                        count += 1
         os.system(f"touch {msname}/.flag_succeed")
         return 0
     except Exception:
@@ -417,10 +417,10 @@ def do_flagging(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        if len(worker_mem_list)>0:
+        if len(worker_mem_list) > 0:
             mem_limit = round(min(worker_mem_list), 3)
         else:
-            mem_limit =1
+            mem_limit = 1
         n_threads = os.environ.get("OMP_NUM_THREADS")
         if n_threads is not None:
             n_threads = int(n_threads)

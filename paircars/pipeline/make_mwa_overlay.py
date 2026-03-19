@@ -119,7 +119,7 @@ def main(
         image_sizes = [os.stat(image).st_size / 1024**3 for image in imagelist]
         max_image_size = max(image_sizes)
         min_mem = max(1, round(5 * max_image_size, 2))
-        dask_client, dask_cluster, dask_dir, njobs  = get_local_dask_cluster(
+        dask_client, dask_cluster, dask_dir, njobs = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,

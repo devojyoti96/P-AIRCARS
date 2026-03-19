@@ -151,7 +151,7 @@ def applysol(
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
                 if os.path.exists(msname + ".flagversions"):
                     os.system(f"rm -rf {msname}.flagversions")
-            filtered_gaintable=[]
+            filtered_gaintable = []
             for gtable in gaintable:
                 if os.path.exists(gtable):
                     filtered_gaintable.append(gtable)
@@ -182,7 +182,7 @@ def applysol(
                 gain_msg = 1
             if gain_msg == 0 and soltype != "basic":
                 os.system(f"rm -rf {msname}/.nopolselfcal")
-                qc_success=False
+                qc_success = False
                 if len(quartical_table) > 0:
                     for qc in quartical_table:
                         if os.path.exists(qc) is False:
@@ -213,7 +213,7 @@ def applysol(
                                     "output.overwrite=True",
                                     "output.products=[corrected_data]",
                                     "output.columns=[CORRECTED_DATA]",
-                                    "output.flags=True", 
+                                    "output.flags=True",
                                     f"solver.terms=[{soltype}]",
                                     "solver.iter_recipe=[0]",
                                     "solver.propagate_flags=True",
@@ -229,7 +229,7 @@ def applysol(
                                 if quartical_msg != 0:
                                     print("Quartical solutions did not apply.")
                                 else:
-                                    qc_success=True
+                                    qc_success = True
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
                 if not qc_success:

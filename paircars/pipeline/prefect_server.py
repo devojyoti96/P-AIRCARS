@@ -55,11 +55,11 @@ def cli():
 
     if check_port_status(port) is False:
         if scheduler_name != "local":
-            port = get_free_port(start_port=port, end_port=port+990)
+            port = get_free_port(start_port=port, end_port=port + 990)
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":
-            get_free_port(start_port=postgres_port, end_port=postgres_port+990)
+            get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
 
     if args.command == "start":
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
