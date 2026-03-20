@@ -94,14 +94,14 @@ def single_ms_flag(
         ##############################
         if badspw != "":
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="manual",
-                        spw=badspw,
-                        cmdreason="badchan",
-                        flagbackup=False,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="manual",
+                    spw=badspw,
+                    cmdreason="badchan",
+                    flagbackup=False,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
@@ -111,14 +111,14 @@ def single_ms_flag(
         ##############################
         if bad_ants_str != "":
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="manual",
-                        antenna=bad_ants_str,
-                        cmdreason="badant",
-                        flagbackup=False,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="manual",
+                    antenna=bad_ants_str,
+                    cmdreason="badant",
+                    flagbackup=False,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
@@ -128,21 +128,21 @@ def single_ms_flag(
         #################################
         if flag_quack:
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="quack",
-                        quackmode="beg",
-                        quackinterval=4.0,
-                        flagbackup=False,
-                    )
-                    flagdata(
-                        vis=msname,
-                        mode="quack",
-                        quackmode="endb",
-                        quackinterval=4.0,
-                        flagbackup=False,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="quack",
+                    quackmode="beg",
+                    quackinterval=4.0,
+                    flagbackup=False,
+                )
+                flagdata(
+                    vis=msname,
+                    mode="quack",
+                    quackmode="endb",
+                    quackinterval=4.0,
+                    flagbackup=False,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
@@ -198,15 +198,15 @@ def single_ms_flag(
         # Clip zero amplitude data points
         #################################
         try:
-            with suppress_output():
-                flagdata(
-                    vis=msname,
-                    mode="clip",
-                    clipzeros=True,
-                    datacolumn=datacolumn,
-                    autocorr=flag_autocorr,
-                    flagbackup=False,
-                )
+            #with suppress_output():
+            flagdata(
+                vis=msname,
+                mode="clip",
+                clipzeros=True,
+                datacolumn=datacolumn,
+                autocorr=flag_autocorr,
+                flagbackup=False,
+            )
         except Exception:
             traceback.print_exc()
             pass
@@ -216,14 +216,14 @@ def single_ms_flag(
         #################################
         if flag_autocorr:
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="manual",
-                        autocorr=True,
-                        datacolumn=datacolumn,
-                        flagbackup=False,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="manual",
+                    autocorr=True,
+                    datacolumn=datacolumn,
+                    flagbackup=False,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
@@ -233,23 +233,23 @@ def single_ms_flag(
         ##############
         if use_tfcrop:
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="tfcrop",
-                        timefit="line",
-                        freqfit="poly",
-                        extendflags=True,
-                        flagdimension=flagdimension,
-                        timecutoff=max(4.0, threshold),
-                        freqcutoff=max(3.0, threshold),
-                        growaround=False,
-                        action="apply",
-                        flagbackup=False,
-                        overwrite=True,
-                        writeflags=True,
-                        datacolumn=datacolumn,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="tfcrop",
+                    timefit="line",
+                    freqfit="poly",
+                    extendflags=True,
+                    flagdimension=flagdimension,
+                    timecutoff=max(4.0, threshold),
+                    freqcutoff=max(3.0, threshold),
+                    growaround=False,
+                    action="apply",
+                    flagbackup=False,
+                    overwrite=True,
+                    writeflags=True,
+                    datacolumn=datacolumn,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
@@ -259,20 +259,20 @@ def single_ms_flag(
         #############
         if use_rflag:
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="rflag",
-                        extendflags=True,
-                        timedevscale=max(5.0, threshold),
-                        freqdevscale=max(5.0, threshold),
-                        growaround=False,
-                        action="apply",
-                        flagbackup=False,
-                        overwrite=True,
-                        writeflags=True,
-                        datacolumn=datacolumn,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="rflag",
+                    extendflags=True,
+                    timedevscale=max(5.0, threshold),
+                    freqdevscale=max(5.0, threshold),
+                    growaround=False,
+                    action="apply",
+                    flagbackup=False,
+                    overwrite=True,
+                    writeflags=True,
+                    datacolumn=datacolumn,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
@@ -282,24 +282,24 @@ def single_ms_flag(
         ##############
         if use_tfcrop or use_rflag:
             try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="extend",
-                        datacolumn=datacolumn,
-                        clipzeros=True,
-                        extendflags=True,
-                        extendpols=True,
-                        growtime=80.0,
-                        growfreq=80.0,
-                        growaround=False,
-                        flagneartime=False,
-                        flagnearfreq=False,
-                        action="apply",
-                        flagbackup=False,
-                        overwrite=True,
-                        writeflags=True,
-                    )
+                #with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="extend",
+                    datacolumn=datacolumn,
+                    clipzeros=True,
+                    extendflags=True,
+                    extendpols=True,
+                    growtime=80.0,
+                    growfreq=80.0,
+                    growaround=False,
+                    flagneartime=False,
+                    flagnearfreq=False,
+                    action="apply",
+                    flagbackup=False,
+                    overwrite=True,
+                    writeflags=True,
+                )
             except Exception:
                 traceback.print_exc()
                 pass
