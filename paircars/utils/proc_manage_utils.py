@@ -402,8 +402,10 @@ def submit_local_master_flow(args, jobid):
             if not log2term:
                 return 0
             print("Streaming logs to terminal...\n")
-            last_lines = deque(maxlen=50)
+            last_lines = deque(maxlen=500)
             only_run_print = False
+            error_detected = False
+            ERROR_KEYS = ["traceback", "error", "exception", "failed"]
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
                 while True:
@@ -412,19 +414,30 @@ def submit_local_master_flow(args, jobid):
                         time.sleep(0.5)
                         continue
                     last_lines.append(line)
+                    lower = line.lower()
                     if (
-                        "task run" in line.lower() or "flow run" in line.lower()
-                    ) and "p-aircars execution is finished" not in line.lower():
+                        "task run" in lower or "flow run" in lower
+                    ) and "p-aircars execution is finished" not in lower:
                         only_run_print = True
+                    if any(k in lower for k in ERROR_KEYS):
+                        if not error_detected:
+                            error_detected = True
+                            print("\n" + "#" * 60)
+                            print("ERROR DETECTED — Showing recent log context\n")
+                            for l in last_lines:
+                                sys.stdout.write(l)
+
+                            print("#" * 60 + "\n")
                     if (
-                        not only_run_print
-                        or ("task run" in line.lower() or "flow run" in line.lower())
-                        or "p-aircars execution is finished" in line.lower()
+                        error_detected  
+                        or not only_run_print
+                        or ("task run" in lower or "flow run" in lower)
+                        or "p-aircars execution is finished" in lower
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if "p-aircars execution is finished" in line.lower():
-                        return 0
+                    if "p-aircars execution is finished" in lower:
+                        return 1 if error_detected else 0
         except Exception:
             traceback.print_exc()
             return 1
