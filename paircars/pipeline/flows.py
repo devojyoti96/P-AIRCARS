@@ -40,6 +40,7 @@ from paircars.utils.prefect_logger_utils import (
     description="Perform basic calibration using calibrator observations",
     log_prints=True,
 )'''
+@flow
 def basic_cal_subflow(
     # Core observational inputs
     cal_obsid,
@@ -80,6 +81,7 @@ def basic_cal_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
     )
+    print (ctx)
     ##########################################
     # Checking presence of basic caltables
     ##########################################

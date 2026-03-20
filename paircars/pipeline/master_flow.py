@@ -1096,9 +1096,9 @@ def master_control(
                 for arg in args:
                     print(arg,type(arg)) 
                 
-               
+                print("Type", type(basic_cal_subflow))
                 try:
-                    future = flow(basic_cal_subflow)(
+                    future = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1130,7 +1130,7 @@ def master_control(
                     futures.append(future)
                 except Exception:
                     traceback.print_exc()
-                    future = basic_cal_subflow(
+                    '''future = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1160,7 +1160,8 @@ def master_control(
                         remote_logger=remote_logger,
                     )
                     futures.append(future)
-            #results = [f.result() for f in futures]
+            #results = [f.result() for f in futures]'''
+            return 1
 
         ###################################################
         # Checking if selfcal tables already exist or not
