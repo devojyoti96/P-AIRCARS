@@ -356,7 +356,7 @@ def basic_cal_subflow(
 
         if do_cal_flag or do_import_model or do_basic_cal:
             split_cal_mslist = sorted(
-                glob.glob(f"{workdir}/calibrator_{cal_obsid}*spw_*.ms")
+                glob.glob(f"{workdir}/calibrator_{cal_obsid}*_ch_*.ms")
             )
             if len(split_cal_mslist) == 0:
                 print(

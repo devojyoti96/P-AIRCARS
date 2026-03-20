@@ -161,7 +161,6 @@ def split_target_scans(
                 use_coarse_chans = coarse_chans
             else:
                 use_coarse_chans = split_coarse_chans
-            chanlist = []
             coarse_chlist=[]
             good_spwlist = []
             for c in range(len(coarse_channel_bands)):
@@ -171,10 +170,6 @@ def split_target_scans(
                     start_chan = chan[0]
                     end_chan = chan[1]
                     good_chans = chan[2]
-                    if end_chan > start_chan:
-                        chanlist.append(f"{start_chan}~{end_chan}")
-                    elif start_chan == end_chan:
-                        chanlist.append(f"{start_chan}")
                     good_chans = [f"{i}" for i in good_chans]
                     good_spwlist.append(f"0:{';'.join(good_chans)}")
                     coarse_chlist.append(f"{coarse_chan}")
@@ -187,11 +182,10 @@ def split_target_scans(
                 quack_timestamps=quack_timestamps,
             )
             timerange = ",".join(timerange_list)
-            for i in range(len(chanlist)):
-                chanrange = chanlist[i]
+            for i in range(len(coarse_chlist)):
                 good_spw = good_spwlist[i]
                 coarse_chan = coarse_chlist[i]
-                outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_ch_{coarse_chan}_spw_{chanrange}.ms"
+                outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_ch_{coarse_chan}.ms"
                 if os.path.exists(f"{outputvis}/.splited") and force_split is False:
                     print(f"{outputvis} is already splited successfully.")
                     splited_ms_list.append(outputvis)

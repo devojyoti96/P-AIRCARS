@@ -103,6 +103,7 @@ def single_ms_flag(
                         flagbackup=False,
                     )
             except Exception:
+                traceback.print_exc()
                 pass
 
         ##############################
@@ -119,6 +120,7 @@ def single_ms_flag(
                         flagbackup=False,
                     )
             except Exception:
+                traceback.print_exc()
                 pass
 
         #################################
@@ -132,7 +134,6 @@ def single_ms_flag(
                         mode="quack",
                         quackmode="beg",
                         quackinterval=4.0,
-                        datacolumn=datacolumn,
                         flagbackup=False,
                     )
                     flagdata(
@@ -140,42 +141,10 @@ def single_ms_flag(
                         mode="quack",
                         quackmode="endb",
                         quackinterval=4.0,
-                        datacolumn=datacolumn,
                         flagbackup=False,
                     )
             except Exception:
-                pass
-
-        #################################
-        # Clip zero amplitude data points
-        #################################
-        try:
-            with suppress_output():
-                flagdata(
-                    vis=msname,
-                    mode="clip",
-                    clipzeros=True,
-                    datacolumn=datacolumn,
-                    autocorr=flag_autocorr,
-                    flagbackup=False,
-                )
-        except Exception:
-            pass
-
-        #################################
-        # Flag auto-correlations
-        #################################
-        if flag_autocorr:
-            try:
-                with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="manual",
-                        autocorr=True,
-                        datacolumn=datacolumn,
-                        flagbackup=False,
-                    )
-            except Exception:
+                traceback.print_exc()
                 pass
 
         ####################################################
@@ -225,6 +194,40 @@ def single_ms_flag(
             else:
                 datacolumn = "data"
 
+        #################################
+        # Clip zero amplitude data points
+        #################################
+        try:
+            with suppress_output():
+                flagdata(
+                    vis=msname,
+                    mode="clip",
+                    clipzeros=True,
+                    datacolumn=datacolumn,
+                    autocorr=flag_autocorr,
+                    flagbackup=False,
+                )
+        except Exception:
+            traceback.print_exc()
+            pass
+
+        #################################
+        # Flag auto-correlations
+        #################################
+        if flag_autocorr:
+            try:
+                with suppress_output():
+                    flagdata(
+                        vis=msname,
+                        mode="manual",
+                        autocorr=True,
+                        datacolumn=datacolumn,
+                        flagbackup=False,
+                    )
+            except Exception:
+                traceback.print_exc()
+                pass
+
         ##############
         # Tfcrop flag
         ##############
@@ -248,6 +251,7 @@ def single_ms_flag(
                         datacolumn=datacolumn,
                     )
             except Exception:
+                traceback.print_exc()
                 pass
 
         #############
@@ -270,6 +274,7 @@ def single_ms_flag(
                         datacolumn=datacolumn,
                     )
             except Exception:
+                traceback.print_exc()
                 pass
 
         ##############
@@ -296,6 +301,7 @@ def single_ms_flag(
                         writeflags=True,
                     )
             except Exception:
+                traceback.print_exc()
                 pass
 
         ######################
