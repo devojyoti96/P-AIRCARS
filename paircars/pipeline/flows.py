@@ -149,7 +149,7 @@ def basic_cal_subflow(
         )
         print("###########################")
         future_cal_split = run_target_split_jobs.with_options(
-            task_run_name=f"spliting_{cal_obsid}"
+            task_run_name=f"spliting_{prefix}_{cal_obsid}_{jobid}"
         ).submit(
             ",".join(cal_mslist),
             cal_metafits,
@@ -214,7 +214,7 @@ def basic_cal_subflow(
         print(f"Starting task: Flagging calibrators for OBSID {cal_obsid}....")
         print("###########################")
         future_flag = run_flag.with_options(
-            task_run_name=f"flagging_{cal_obsid}"
+            task_run_name=f"flagging_cal_{cal_obsid}_{jobid}"
         ).submit(
             ",".join(split_cal_mslist),
             cal_metafits,
@@ -272,7 +272,7 @@ def basic_cal_subflow(
         print(f"Starting task: Importing model visibilities for OBSID {cal_obsid}....")
         print("###########################")
         future_import_model = run_import_model.with_options(
-            task_run_name=f"model_{cal_obsid}"
+            task_run_name=f"importing_model_visibilities_{cal_obsid}_{jobid}"
         ).submit(
             ",".join(split_cal_mslist),
             cal_metafits,
@@ -327,7 +327,7 @@ def basic_cal_subflow(
         print(f"Starting task: Performing basic calibration for OBSID {cal_obsid}.....")
         print("###########################")
         future_basical = run_basic_cal_jobs.with_options(
-            task_run_name=f"calibration_{jobid}"
+            task_run_name=f"basic_calibration_{cal_obsid}_{jobid}"
         ).submit(
             ",".join(split_cal_mslist),
             cal_metafits,

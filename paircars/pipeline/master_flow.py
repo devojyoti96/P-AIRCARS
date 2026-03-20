@@ -1102,7 +1102,7 @@ def master_control(
                     )
                     futures.append(future)
                 except Exception:
-                    traceback.print_c()
+                    traceback.print_exc()
                     future = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
