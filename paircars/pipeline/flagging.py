@@ -22,6 +22,8 @@ from paircars.utils.proc_manage_utils import (
 )
 from paircars.utils.solarflagger import flagger
 from paircars.utils.resource_utils import drop_cache, limit_threads
+from casatasks import casalog
+casalog.showconsole(True)
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
