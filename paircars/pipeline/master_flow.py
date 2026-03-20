@@ -1124,37 +1124,7 @@ def master_control(
                     futures.append(f)
                 except Exception:
                     traceback.print_exc()
-                    '''future = basic_cal_subflow(
-                        # Core observational inputs
-                        cal_obsid=cal_obsid,
-                        cal_datadir=cal_datadir,
-                        cal_metafits=cal_metafits,
-                        coarse_chans=coarse_chans,
-                        target_obsid=target_obsid,
-                        # I/O and workspace
-                        workdir=workdir,
-                        cal_outdir=cal_outdir,
-                        basic_caldir=basic_caldir,
-                        # Calibration controls
-                        do_basic_cal=do_basic_cal,
-                        redo_basic_cal=redo_basic_cal,
-                        do_cal_flag=do_cal_flag,
-                        do_import_model=do_import_model,
-                        do_polcal=do_polcal,
-                        keep_backup=keep_backup,
-                        # Data conditioning
-                        quack_timestamps=quack_timestamps,
-                        # Resource management
-                        cpu_frac=cpu_frac,
-                        mem_frac=mem_frac,
-                        # Logging / metadata
-                        jobid=jobid,
-                        timestamp=timestamp,
-                        emails=emails,
-                        remote_logger=remote_logger,
-                    )
-                    futures.append(future)
-            #results = [f.result() for f in futures]'''
+            print (futures)
             return 1
 
         ###################################################

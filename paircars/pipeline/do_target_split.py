@@ -348,7 +348,6 @@ def main(
             ms_coarse_chans = list(set(ms_coarse_chans) & set(split_coarse_chans))
             ncoarse = len(ms_coarse_chans)
             total_ncoarse += ncoarse
-            print (total_ncoarse)
         total_ncoarse = max(1, total_ncoarse)
         expected = total_ncoarse
         succeed = 0

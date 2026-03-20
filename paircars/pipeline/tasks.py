@@ -207,7 +207,7 @@ def run_ds_jobs(
 
 
 @task(
-    name="split_ms",
+    name="split",
     retries=2,
     timeout_seconds=1800,
     retry_delay_seconds=exponential_backoff(backoff_factor=60),
@@ -549,7 +549,7 @@ def run_import_model(
 
 
 @task(
-    name="basic_cal",
+    name="calibration",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
