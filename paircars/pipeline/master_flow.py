@@ -1096,13 +1096,13 @@ def master_control(
                         mem_frac=mem_frac,
                         # Logging / metadata
                         jobid=jobid,
-                        #timestamp,
-                        #emails,
+                        timestamp=timestamp,
+                        emails=emails,
                         remote_logger=remote_logger,
                     )
                     futures.append(future)
                 except Exception:
-                    traceback.print_exc()
+                    traceback.print_c()
                     future = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
