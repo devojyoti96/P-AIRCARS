@@ -982,7 +982,7 @@ def master_control(
         ########################################
         # Moving phasecenter to the solar center
         ########################################
-        if do_move_solarcenter:
+        if solar_data and do_move_solarcenter:
             if emails != "":
                 email_msg = "Started moving phasecenter to solar center."
                 send_task_notification(
@@ -1090,8 +1090,9 @@ def master_control(
             futures = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
+                print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
-                    f = basic_cal_subflow(
+                    f = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}")(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
