@@ -12,7 +12,7 @@ from paircars.utils.mwa_ploting_utils import (
 from paircars.utils.mwa_utils import (
     freq_to_MWA_coarse,
 )
-from paircars.pipeline.tasks import (
+'''from paircars.pipeline.tasks import (
     run_solar_phasecenter_jobs,
     run_ds_jobs,
     run_target_split_jobs,
@@ -28,7 +28,7 @@ from paircars.pipeline.tasks import (
     run_make_overlay,
     run_make_msplot,
     send_task_notification,
-)
+)'''
 from prefect.context import get_run_context
 from multiprocessing import Event
 from paircars.utils.prefect_logger_utils import (
@@ -40,6 +40,13 @@ from paircars.utils.prefect_logger_utils import (
     description="Perform basic calibration using calibrator observations",
     log_prints=True,
 )'''
+
+@flow
+def test_subflow(i):
+    print("Subflow created",i)
+    return i
+
+'''
 @flow
 def basic_cal_subflow(
     # Core observational inputs
@@ -449,4 +456,4 @@ def basic_cal_subflow(
             print(
                 f"Error in creating diagnostic plots for crosshand phase tables for OBSID {cal_obsid}."
             )
-    return 0, bandpass_tables, crossphase_tables
+    return 0, bandpass_tables, crossphase_tables'''

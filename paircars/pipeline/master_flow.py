@@ -76,7 +76,7 @@ from paircars.pipeline import (
     move_solarcenter,
 )
 from paircars.pipeline.init_data import init_paircars_data
-from paircars.pipeline.flows import basic_cal_subflow
+from paircars.pipeline.flows import test_subflow
 from paircars.pipeline.tasks import (
     run_solar_phasecenter_jobs,
     run_ds_jobs,
@@ -1095,8 +1095,12 @@ def master_control(
                 print ("Types")
                 for arg in args:
                     print(arg,type(arg)) 
-                
-                print("Type", type(basic_cal_subflow))
+                try:
+                    result = test_subflow(10)
+                    print (result)
+                except Exception:
+                    tracebcak.print_exc()
+                '''print("Type", type(basic_cal_subflow))
                 try:
                     f = basic_cal_subflow.with_options(
                             flow_run_name=f"basiccal_{jobid}",
@@ -1133,7 +1137,7 @@ def master_control(
                     futures.append(f)
                 except Exception:
                     traceback.print_exc()
-                    '''future = basic_cal_subflow(
+                    future = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
