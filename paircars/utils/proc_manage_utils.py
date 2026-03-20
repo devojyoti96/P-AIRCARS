@@ -390,7 +390,7 @@ def submit_local_master_flow(args, jobid):
         try:
             # Always run job in background
             with open(log_file, "a", buffering=1) as log:
-                subprocess.Popen(
+                proc = subprocess.Popen(
                     ["bash", script_path],
                     stdout=log,
                     stderr=subprocess.STDOUT,
@@ -436,7 +436,7 @@ def submit_local_master_flow(args, jobid):
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if "p-aircars execution is finished" in lower:
+                    if "p-aircars execution is finished" in lower or "cluster closed" in lower:
                         return 1 if error_detected else 0
         except Exception:
             traceback.print_exc()

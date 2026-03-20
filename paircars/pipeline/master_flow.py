@@ -354,7 +354,7 @@ def master_control(
     ##############################################
     # Downloading target metafits if not exist
     ##############################################
-    if target_metafits == "":
+    if target_metafits == "" or not os.path.exists(target_metafits):
         if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
             target_metafits = f"{target_datadir}/{target_obsid}.metafits"
             download_metafits=False
@@ -2127,3 +2127,4 @@ def cli():
         with contextlib.suppress(Exception):
             dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
+        print("Cluster closed.")
