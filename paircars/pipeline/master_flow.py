@@ -1092,7 +1092,7 @@ def master_control(
                         timestamp,
                         emails,
                         remote_logger,]
-                print (type(i) for i in args)
+                print ("Types",type(i) for i in args)
                 try:
                     future = flow(basic_cal_subflow)(
                         # Core observational inputs
