@@ -37,6 +37,7 @@ def make_solar_DS(
     plot_quantity="TB",
     extension="png",
     showgui=False,
+    overwrite=False,
     cpu_frac=0.8,
     mem_frac=0.8,
 ):
@@ -61,6 +62,8 @@ def make_solar_DS(
         Image file extension
     showgui : bool, optional
         Show GUI
+    overwrite : bool, optional
+        Overwrite plot
     cpu_frac : float, optional
         CPU fraction to use
     mem_frac : float, optional
@@ -111,6 +114,12 @@ def make_solar_DS(
         succeed = 0
         failed = len(mslist)
 
+    obsid = get_MWA_OBSID(mslist[0])
+    ds_file_name = f"{obsid}_ds"
+    plot_file = f"{outdir}/dynamic_spectra/{ds_file_name}.{extension}"
+    if not overwrite and os.path.exists(plot_file):
+        return 0, plot_file, len(mslist), 0    
+        
     try:
         ###########################################
         tasks = []
@@ -144,9 +153,6 @@ def make_solar_DS(
         ###########################################
         # Plotting dynamic spectrum
         ###########################################
-        obsid = get_MWA_OBSID(mslist[0])
-        ds_file_name = f"{obsid}_ds"
-        plot_file = f"{outdir}/dynamic_spectra/{ds_file_name}.{extension}"
         plot_file = make_ds_plot(
             ds_files,
             plot_file=plot_file,
@@ -169,6 +175,7 @@ def main(
     outdir,
     plot_quantity="TB",
     extension="png",
+    overwrite=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
@@ -193,6 +200,8 @@ def main(
         Plotting quantity (TB or flux)
     extension : str, optional
         Plot extension
+    overwrite : bool, optional
+        Overwrite existing plot
     cpu_frac : float, optional
         CPU fraction
     mem_frac : float, optional
@@ -285,6 +294,7 @@ def main(
             metafits,
             workdir,
             outdir,
+            overwrite=overwrite,
             plot_quantity=plot_quantity,
             extension=extension,
             cpu_frac=cpu_frac,
@@ -352,6 +362,11 @@ def cli():
         help="Save file extension",
     )
     adv_args.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing plot or not",
+    )
+    adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
 
@@ -391,6 +406,7 @@ def cli():
         args.outdir,
         plot_quantity=args.plot_quantity,
         extension=args.extension,
+        overwrite=args.overwrite,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
         logfile=args.logfile,
