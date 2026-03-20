@@ -14,8 +14,26 @@ from astropy.io import fits
 from datetime import datetime as dt
 from multiprocessing import Event
 from dask.distributed import get_client
+
+from paircars.pipeline.tasks import (
+    run_solar_phasecenter_jobs,
+    run_ds_jobs,
+    run_target_split_jobs,
+    run_flag,
+    run_import_model,
+    run_basic_cal_jobs,
+    run_apply_basiccal_sol,
+    run_solar_siderealcor_jobs,
+    run_selfcal_jobs,
+    run_apply_selfcal_sol,
+    run_imaging_jobs,
+    run_apply_pbcor,
+    run_make_overlay,
+    run_make_msplot,
+    send_task_notification,
+)
+from paircars.pipeline.flows import test_subflow
 from prefect import flow
-from functools import partial
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect.settings import get_current_settings
@@ -76,25 +94,6 @@ from paircars.pipeline import (
     move_solarcenter,
 )
 from paircars.pipeline.init_data import init_paircars_data
-from paircars.pipeline.flows import test_subflow
-from paircars.pipeline.tasks import (
-    run_solar_phasecenter_jobs,
-    run_ds_jobs,
-    run_target_split_jobs,
-    run_flag,
-    run_import_model,
-    run_basic_cal_jobs,
-    run_apply_basiccal_sol,
-    run_solar_siderealcor_jobs,
-    run_selfcal_jobs,
-    run_apply_selfcal_sol,
-    run_imaging_jobs,
-    run_apply_pbcor,
-    run_make_overlay,
-    run_make_msplot,
-    send_task_notification,
-)
-
 
 @flow(
     name="P-AIRCARS Master control",
@@ -1099,7 +1098,7 @@ def master_control(
                     result = test_subflow(10)
                     print (result)
                 except Exception:
-                    tracebcak.print_exc()
+                    traceback.print_exc()
                 '''print("Type", type(basic_cal_subflow))
                 try:
                     f = basic_cal_subflow.with_options(
