@@ -14,26 +14,8 @@ from astropy.io import fits
 from datetime import datetime as dt
 from multiprocessing import Event
 from dask.distributed import get_client
-
-from paircars.pipeline.tasks import (
-    run_solar_phasecenter_jobs,
-    run_ds_jobs,
-    run_target_split_jobs,
-    run_flag,
-    run_import_model,
-    run_basic_cal_jobs,
-    run_apply_basiccal_sol,
-    run_solar_siderealcor_jobs,
-    run_selfcal_jobs,
-    run_apply_selfcal_sol,
-    run_imaging_jobs,
-    run_apply_pbcor,
-    run_make_overlay,
-    run_make_msplot,
-    send_task_notification,
-)
-from paircars.pipeline.flows import test_subflow
 from prefect import flow
+from functools import partial
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect.settings import get_current_settings
@@ -94,6 +76,25 @@ from paircars.pipeline import (
     move_solarcenter,
 )
 from paircars.pipeline.init_data import init_paircars_data
+from paircars.pipeline.flows import basic_cal_subflow
+from paircars.pipeline.tasks import (
+    run_solar_phasecenter_jobs,
+    run_ds_jobs,
+    run_target_split_jobs,
+    run_flag,
+    run_import_model,
+    run_basic_cal_jobs,
+    run_apply_basiccal_sol,
+    run_solar_siderealcor_jobs,
+    run_selfcal_jobs,
+    run_apply_selfcal_sol,
+    run_imaging_jobs,
+    run_apply_pbcor,
+    run_make_overlay,
+    run_make_msplot,
+    send_task_notification,
+)
+
 
 @flow(
     name="P-AIRCARS Master control",
@@ -1094,17 +1095,10 @@ def master_control(
                 print ("Types")
                 for arg in args:
                     print(arg,type(arg)) 
+                
+                print("Type", type(basic_cal_subflow))
                 try:
-                    result = test_subflow(10)
-                    print (result)
-                except Exception:
-                    traceback.print_exc()
-                '''print("Type", type(basic_cal_subflow))
-                try:
-                    f = basic_cal_subflow.with_options(
-                            flow_run_name=f"basiccal_{jobid}",
-                            task_runner=DaskTaskRunner(address=dask_addr),
-                        )(
+                    f = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1136,7 +1130,7 @@ def master_control(
                     futures.append(f)
                 except Exception:
                     traceback.print_exc()
-                    future = basic_cal_subflow(
+                    '''future = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -2931,6 +2925,7 @@ def cli():
     prefect_settings = get_current_settings()
     prefect_env = prefect_settings.to_environment_variables()
     api_url = prefect_env.get("PREFECT_API_URL")
+
 
     ######################################
     # Check connection to prefect server
