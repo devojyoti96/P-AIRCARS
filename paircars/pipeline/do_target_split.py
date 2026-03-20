@@ -344,10 +344,9 @@ def main(
     else:
         total_ncoarse = 0
         for msname in mslist:
-            ncoarse = len(split_coarse_chans)
-            print (ncoarse)
-            if ncoarse == 0:
-                ncoarse = get_ncoarse(msname)
+            ms_coarse_chans = get_MWA_coarse_chan(msname)
+            ms_coarse_chans = list(set(ms_coarse_chans) & set(split_coarse_chans))
+            ncoarse = len(ms_coarse_chans)
             total_ncoarse += ncoarse
             print (total_ncoarse)
         total_ncoarse = max(1, total_ncoarse)
