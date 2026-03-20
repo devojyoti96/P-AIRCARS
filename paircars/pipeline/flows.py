@@ -35,6 +35,7 @@ from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
 )
 
+print(os.environ)
 '''@flow(
     name="Basic calibration",
     description="Perform basic calibration using calibrator observations",

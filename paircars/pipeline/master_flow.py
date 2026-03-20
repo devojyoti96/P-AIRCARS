@@ -2925,7 +2925,6 @@ def cli():
     prefect_settings = get_current_settings()
     prefect_env = prefect_settings.to_environment_variables()
     api_url = prefect_env.get("PREFECT_API_URL")
-    f"{get_cachedir()}/prefect_{scheduler_name}"
 
     ######################################
     # Check connection to prefect server
