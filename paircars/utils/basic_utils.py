@@ -14,7 +14,7 @@ from contextlib import contextmanager
 ##########################
 # Basic utility funactions
 ##########################
-def print_banner(msg, pad=6):
+def print_banner(msg, pad=0):
     line = "#" * (len(msg) + pad)
     print(line)
     print(msg.center(len(line)))
