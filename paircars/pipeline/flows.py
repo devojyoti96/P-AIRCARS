@@ -31,11 +31,11 @@ from paircars.pipeline.tasks import (
 )
 
 
-@flow(
+'''@flow(
     name="Basic calibration",
     description="Perform basic calibration using calibrator observations",
     log_prints=True,
-)
+)'''
 def basic_cal_subflow(
     # Core observational inputs
     cal_obsid,
