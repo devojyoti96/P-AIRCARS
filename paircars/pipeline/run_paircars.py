@@ -386,15 +386,6 @@ def cli():
     if args.target_datadir.startswith("~"):
         print("Please provide full path of target directory.")
         return 1
-    if args.target_metafits.startswith("~"):
-        print("Please provide full path of target metafits.")
-        return 1
-    if args.cal_datadir.startswith("~"):
-        print("Please provide full path of calibrator data directory.")
-        return 1
-    if args.cal_metafits.startswith("~"):
-        print("Please provide full path of calibrator metafits.")
-        return 1
     if args.workdir.startswith("~"):
         print("Please provide full path of work directory.")
         return 1
@@ -409,13 +400,21 @@ def cli():
         )
         return
 
-    cal_datadir_permission = check_permission(args.cal_datadir)
-    if cal_datadir_permission is False:
-        print(
-            f"Do not have permission for calibrator data directory: {args.cal_datadir}"
-        )
+    cal_datadir_list = args.cal_datadir.split(",")
+    filtered_cal_datadir_list=[]
+    for cal_datadir in cal_datadir_list:
+        cal_datadir_permission = check_permission(cal_datadir)
+        if cal_datadir_permission is False:
+            print(
+                f"Do not have permission for calibrator data directory: {cal_datadir}"
+            )
+        else:
+            filtered_cal_datadir_list.append(cal_datadir)
+    cal_datadir_list = filtered_cal_datadir_list
+    if len(cal_datadir_list)>0:
+        args.cal_datadir = ",".join(cal_datadir_list)
+    else:
         args.cal_datadir = ""
-        args.cal_metafits = ""
 
     jobid = get_jobid()
     scheduler_name = get_scheduler_name()
