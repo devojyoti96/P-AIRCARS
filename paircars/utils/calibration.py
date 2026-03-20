@@ -842,8 +842,8 @@ def get_quartical_table_metadata(caltable):
         "End time": end_time,
     }
     return result
-    
-    
+
+
 def scale_bandpass(bandpass_table, cal_attn, target_attn):
     """
     Scale a bandpass calibration table using attenuation data.

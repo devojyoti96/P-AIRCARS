@@ -374,7 +374,7 @@ def plot_G_jones_time_vs_gain(
     pols,
     prefix,
     output_prefix,
-    quantities=["amp","phase"],
+    quantities=["amp", "phase"],
 ):
     """
     Plot time vs. gain
@@ -480,7 +480,7 @@ def plot_B_jones_freq_vs_gain(
     pols,
     prefix,
     output_prefix,
-    quantities=["amp","phase"],
+    quantities=["amp", "phase"],
     plot_all_ants=True,
 ):
     """
@@ -591,7 +591,9 @@ def plot_B_jones_freq_vs_gain(
     return output_pdfs
 
 
-def plot_caltable_diagnostics(caltables, outfile_prefix, quantities=["amp","phase"], plot_all_ants=True):
+def plot_caltable_diagnostics(
+    caltables, outfile_prefix, quantities=["amp", "phase"], plot_all_ants=True
+):
     """
     Plot diagonistic plot of casa caltables
 
@@ -1183,7 +1185,8 @@ def get_aia_map(
                     # Step 4: Normalize by exposure time
                     try:
                         normalized_data = (
-                            corrected_map.data / corrected_map.exposure_time.to(u.s).value
+                            corrected_map.data
+                            / corrected_map.exposure_time.to(u.s).value
                         )
                         normalized_map = Map(normalized_data, corrected_map.meta)
                     except Exception:
@@ -1446,7 +1449,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 timestamp_to_mjdsec(obs_datetime, date_format=1)
             )
         mjdsecs = [timestamp_to_mjdsec(t, date_format=1) for t in obstimes]
-        mid_mjdsec = mjdsecs[int(len(mjdsecs)/2)] 
+        mid_mjdsec = mjdsecs[int(len(mjdsecs) / 2)]
         start_time = mjdsec_to_timestamp(mid_mjdsec, str_format=0)[:-5]
         start_obs_date = start_time.split("T")[0]
         start_obs_time = ":".join(start_time.split("T")[-1].split(":")[:2])
@@ -1459,14 +1462,14 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 suvi_wavelength=wavelength,
                 ncpu=ncpu,
             )
-            if len(euv_images)==0:
+            if len(euv_images) == 0:
                 euv_images = get_aia_map(
                     start_obs_date,
                     start_obs_time,
                     workdir,
                     aia_wavelength=wavelength,
                     ncpu=ncpu,
-                )    
+                )
         else:
             euv_images = get_aia_map(
                 start_obs_date,
@@ -1476,7 +1479,7 @@ def get_all_euv_maps(mwa_fits_images, workdir, wavelength=195, ncpu=1):
                 ncpu=ncpu,
             )
         map_obstimes = []
-        if len(euv_images)==0:
+        if len(euv_images) == 0:
             print("No EUV images are found.")
             return []
         else:

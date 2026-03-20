@@ -242,7 +242,7 @@ def run_target_split_jobs(
     datacolumn : str, optional
         Data column
     split_coarse_chans : list, optional
-        Split coarse channels 
+        Split coarse channels
     timeres : float, optional
         Time bin to average in seconds
     freqres : float, optional
@@ -1509,7 +1509,7 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp, flow_nam
             email_subject = (
                 f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
             )
-            if flow_name=="":
+            if flow_name == "":
                 email_msg = f"{msg}"
             else:
                 email_msg = f"From {flow_name}\n{msg}"

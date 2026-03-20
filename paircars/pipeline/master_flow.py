@@ -19,7 +19,8 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect.settings import get_current_settings
 from paircars.utils.basic_utils import (
-    internet_available, print_banner,
+    internet_available,
+    print_banner,
 )
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -63,7 +64,11 @@ from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
 )
 from paircars.pipeline.init_data import init_paircars_data
-from paircars.pipeline.flows import basic_cal_subflow, pre_process_subflow, selfcal_subflow
+from paircars.pipeline.flows import (
+    basic_cal_subflow,
+    pre_process_subflow,
+    selfcal_subflow,
+)
 from paircars.pipeline.tasks import (
     run_target_split_jobs,
     run_flag,
@@ -352,8 +357,8 @@ def master_control(
         coarse_chans = get_MWA_coarse_chan(target_ms)
         for ch in coarse_chans:
             if ch not in target_ms_coarse_chans:
-                target_ms_coarse_chans.append(ch)    
-    
+                target_ms_coarse_chans.append(ch)
+
     ##############################################
     # Downloading target metafits if not exist
     ##############################################
@@ -482,7 +487,7 @@ def master_control(
                 abs(cal_obsid - target_obsid) < 12 * 3600
             ):  # Only if calibrator is 12 hours apart
                 cal_mslist = sorted(glob.glob(f"{cal_datadir}/*.ms"))
-                cal_ms_coarse_chans=[]
+                cal_ms_coarse_chans = []
                 for cal_ms in cal_mslist:
                     coarse_chans = get_MWA_coarse_chan(cal_ms)
                     for ch in coarse_chans:
@@ -490,7 +495,9 @@ def master_control(
                             cal_ms_coarse_chans.append(ch)
                 cal_freq_config = cal_header["CHANNELS"]
                 cal_coarse_chans = [int(c) for c in cal_freq_config.split(",")]
-                cal_coarse_chans = list(set(cal_coarse_chans) & set(cal_ms_coarse_chans))
+                cal_coarse_chans = list(
+                    set(cal_coarse_chans) & set(cal_ms_coarse_chans)
+                )
                 has_overlap = bool(set(cal_coarse_chans) & set(target_coarse_chans))
                 if not has_overlap:
                     print(
@@ -550,7 +557,7 @@ def master_control(
         print(
             f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are: {list(calibrator_dic.keys())}"
         )
-        
+
     ######################################################
     # Making calibrator output directories
     ######################################################
@@ -618,7 +625,7 @@ def master_control(
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
-        
+
     if (
         scheduler_name != "local"
         or masterlog is None
@@ -759,7 +766,9 @@ def master_control(
         #####################################
         print_banner(f"Work directory: {workdir}\nFinal product directory: {outdir}")
         if remote_logger:
-            print_banner(f"{remote_link}\nRemote Job ID: {jobname}\nRemote access password: {password}")
+            print_banner(
+                f"{remote_link}\nRemote Job ID: {jobname}\nRemote access password: {password}"
+            )
 
         if not has_cal:
             print_banner(
@@ -768,7 +777,12 @@ def master_control(
             if emails != "":
                 email_msg = f"No suitable calibrators are available for target OBSID: {target_obsid}."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name="Master flow {flow_name}",
                 )
 
         ###########################################
@@ -938,13 +952,19 @@ def master_control(
         if has_cal:
             cal_obsids = list(calibrator_dic.keys())
             succeed = 0
-            all_bandpass_tables=[]
-            all_crossphase_tables=[]
+            all_bandpass_tables = []
+            all_crossphase_tables = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
                 print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
-                    msg, bandpass_tables, crossphase_tables = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}")(
+                    (
+                        msg,
+                        bandpass_tables,
+                        crossphase_tables,
+                    ) = basic_cal_subflow.with_options(
+                        flow_run_name=f"basic_cal_{cal_obsid}"
+                    )(
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
                         cal_metafits=cal_metafits,
@@ -968,41 +988,62 @@ def master_control(
                         emails=emails,
                         remote_logger=remote_logger,
                     )
-                    if msg==0:
-                        succeed+=1
-                        all_bandpass_tables+=bandpass_tables
-                        all_crossphase_tables+=crossphase_tables
+                    if msg == 0:
+                        succeed += 1
+                        all_bandpass_tables += bandpass_tables
+                        all_crossphase_tables += crossphase_tables
                 except Exception:
                     traceback.print_exc()
-            failed = len(cal_obsids)-succeed
+            failed = len(cal_obsids) - succeed
             print(f"Total calibrators observations : {len(cal_obsids)}.")
             print(f"Total succeeded: {succeed}.")
             print(f"Total failed: {failed}.")
             if emails != "":
                 email_msg = f"Basic calibration of all calibrators are done.\nSucceeded: {succeed}, failed: {failed}."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name="Master flow {flow_name}",
                 )
-            if len(all_bandpass_tables)==0:
-                print("No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration.")
-                has_cal=False
+            if len(all_bandpass_tables) == 0:
+                print(
+                    "No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration."
+                )
+                has_cal = False
                 if emails != "":
                     email_msg = "No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name="Master flow {flow_name}",
                     )
-            elif len(all_crossphase_tables)==0:
-                print("No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted.")
+            elif len(all_crossphase_tables) == 0:
+                print(
+                    "No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted."
+                )
                 if emails != "":
                     email_msg = "No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name="Master flow {flow_name}",
                     )
-                    
+
         ###################################################
         # Target measurement set pre-processing flows
         ###################################################
-        msg, target_mslist = pre_process_subflow.with_options(flow_run_name=f"pre_process_{target_obsid}")(
+        msg, target_mslist = pre_process_subflow.with_options(
+            flow_run_name=f"pre_process_{target_obsid}"
+        )(
             # Core observational inputs
             target_mslist=target_mslist,
             target_metafits=target_metafits,
@@ -1019,53 +1060,63 @@ def master_control(
             emails=emails,
             remote_logger=remote_logger,
         )
-        if msg!=0 or len(target_mslist)==0:
+        if msg != 0 or len(target_mslist) == 0:
             print("Error occured in pre-processing steps target data.")
             if emails != "":
                 email_msg = "Error occured in pre-processing steps target data. P-AIRCARS has stopped."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name="Master flow {flow_name}",
                 )
             return 1
-        
+
         ##################################################
         # Self-calibration flows
         ##################################################
-        msg, selfcal_gaintable, selfcal_bandpass, selfcal_leakage = selfcal_subflow.with_options(flow_run_name=f"selfcal_{target_obsid}")(
-                target_mslist=target_mslist,
-                target_metafits=target_metafits,
-                target_obsid=target_obsid,
-                workdir=workdir,
-                basic_caldir=basic_caldir,
-                selfcaldir=selfcaldir,
-                target_outdir=target_outdir,
-                redo_selfcal=redo_selfcal,
-                do_selfcal=do_selfcal,
-                has_cal=has_cal,
-                solar_selfcal=solar_selfcal,
-                do_sidereal_cor=do_sidereal_cor,
-                use_solarflagger=use_solarflagger,
-                keep_backup=keep_backup,
-                solint=solint,
-                timeavg=timeavg, 
-                freqavg=freqavg,
-                image_timeres=image_timeres,
-                image_freqres=image_freqres,
-                quack_timestamps=quack_timestamps,
-                only_amplitude=only_amplitude,
-                do_ap_selfcal=do_ap_selfcal,
-                do_polcal=do_polcal,
-                uvrange=uvrange,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
-                jobid=jobid,
-                timestamp=timestamp,
-                emails=emails,
-                remote_logger=remote_logger,
-            )
-        if msg!=0 or len(selfcal_gaintable)==0:
+        (
+            msg,
+            selfcal_gaintable,
+            selfcal_bandpass,
+            selfcal_leakage,
+        ) = selfcal_subflow.with_options(flow_run_name=f"selfcal_{target_obsid}")(
+            target_mslist=target_mslist,
+            target_metafits=target_metafits,
+            target_obsid=target_obsid,
+            workdir=workdir,
+            basic_caldir=basic_caldir,
+            selfcaldir=selfcaldir,
+            target_outdir=target_outdir,
+            redo_selfcal=redo_selfcal,
+            do_selfcal=do_selfcal,
+            has_cal=has_cal,
+            solar_selfcal=solar_selfcal,
+            do_sidereal_cor=do_sidereal_cor,
+            use_solarflagger=use_solarflagger,
+            keep_backup=keep_backup,
+            solint=solint,
+            timeavg=timeavg,
+            freqavg=freqavg,
+            image_timeres=image_timeres,
+            image_freqres=image_freqres,
+            quack_timestamps=quack_timestamps,
+            only_amplitude=only_amplitude,
+            do_ap_selfcal=do_ap_selfcal,
+            do_polcal=do_polcal,
+            uvrange=uvrange,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
+            jobid=jobid,
+            timestamp=timestamp,
+            emails=emails,
+            remote_logger=remote_logger,
+        )
+        if msg != 0 or len(selfcal_gaintable) == 0:
             print_banner("No self-calibration solutions are available to apply.")
-            do_apply_selfcal=False
+            do_apply_selfcal = False
         return 0
 
         #############################################
@@ -2272,7 +2323,6 @@ def cli():
     prefect_settings = get_current_settings()
     prefect_env = prefect_settings.to_environment_variables()
     api_url = prefect_env.get("PREFECT_API_URL")
-
 
     ######################################
     # Check connection to prefect server

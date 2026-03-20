@@ -160,7 +160,7 @@ def split_target_scans(
                 use_coarse_chans = coarse_chans
             else:
                 use_coarse_chans = split_coarse_chans
-            coarse_chlist=[]
+            coarse_chlist = []
             good_spwlist = []
             for c in range(len(coarse_channel_bands)):
                 coarse_chan = coarse_chans[c]

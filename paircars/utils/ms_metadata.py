@@ -78,7 +78,9 @@ def get_timeranges(
     if len(times) == 1:
         time_ranges.append(mjdsec_to_timestamp(times[0], str_format=1))
         return time_ranges
-    if quack_timestamps > 0 and len(times)> 2*quack_timestamps+3: # At least 3 timestamps remain after quack flagging
+    if (
+        quack_timestamps > 0 and len(times) > 2 * quack_timestamps + 3
+    ):  # At least 3 timestamps remain after quack flagging
         quack_timestamps += 1
         times = times[quack_timestamps:-quack_timestamps]
     if only_disk:
@@ -114,8 +116,8 @@ def get_timeranges(
     for i in range(0, len(times), ntime_chunk):
         try:
             start_time = times[i]
-        except Exception:   
-            if ntime>0:
+        except Exception:
+            if ntime > 0:
                 start_time = times[-ntime]
             else:
                 start_time = times[-1]
@@ -130,7 +132,7 @@ def get_timeranges(
         elif start_time == end_time:
             time_ranges.append(f"{mjdsec_to_timestamp(start_time, str_format=1)}")
         else:
-            pass 
+            pass
     return time_ranges
 
 

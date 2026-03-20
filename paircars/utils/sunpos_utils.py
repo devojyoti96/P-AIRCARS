@@ -220,26 +220,25 @@ def cal_solar_phaseshift(imagename, sigma=10):
     float
         Shift size in arcseconds
     """
+
     def gaussian_2d(xy, amplitude, x0, y0, sigma_x, sigma_y, offset):
         x, y = xy
         g = offset + amplitude * np.exp(
-            -(
-                ((x - x0) ** 2) / (2 * sigma_x**2)
-                + ((y - y0) ** 2) / (2 * sigma_y**2)
-            )
+            -(((x - x0) ** 2) / (2 * sigma_x**2) + ((y - y0) ** 2) / (2 * sigma_y**2))
         )
         return g.ravel()
+
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
     obstime = header["DATE-OBS"]
-    if header["CTYPE3"]=="FREQ":
-        freqMHz = float(header["CRVAL3"])/10**6 # In MHz
-        sun_dia = calc_sun_dia(freqMHz) # In arcmin
-    elif header["CTYPE4"]=="FREQ":
-        freqMHz = float(header["CRVAL4"])/10**6 # In MHz
-        sun_dia = calc_sun_dia(freqMHz) # In arcmin
+    if header["CTYPE3"] == "FREQ":
+        freqMHz = float(header["CRVAL3"]) / 10**6  # In MHz
+        sun_dia = calc_sun_dia(freqMHz)  # In arcmin
+    elif header["CTYPE4"] == "FREQ":
+        freqMHz = float(header["CRVAL4"]) / 10**6  # In MHz
+        sun_dia = calc_sun_dia(freqMHz)  # In arcmin
     else:
-        sun_dia = 32 # In arcmin
+        sun_dia = 32  # In arcmin
     (
         _,
         _,
@@ -248,21 +247,22 @@ def cal_solar_phaseshift(imagename, sigma=10):
         sun_decdeg,
     ) = radec_sun_at_time(obstime)
     cellsize = float(abs(header["CDELT1"])) * 3600.0  # In arcsec
-    imsize = int(header["NAXIS1"]) # Image size
+    imsize = int(header["NAXIS1"])  # Image size
     pix_radius = min(imsize, int((4 * 16 * 60) / cellsize))  # 4 solar radii
     if data.ndim == 4:
         data2d = data[0, 0, ...]
     elif data.ndim == 3:
-        data2d = data[0,...]
+        data2d = data[0, ...]
     else:
-        data2d = data        
+        data2d = data
     circular_mask = create_circular_mask_array(data2d, pix_radius)
     try:
         from scipy.optimize import curve_fit
         from scipy.ndimage import gaussian_filter
+
         data2d = gaussian_filter(data2d, sigma=3)
-        max_pos = np.where(data2d==np.nanmax(data2d))
-        y0, x0 = max_pos[0][0], max_pos[1][0]  
+        max_pos = np.where(data2d == np.nanmax(data2d))
+        y0, x0 = max_pos[0][0], max_pos[1][0]
         y_min = max(0, y0 - pix_radius)
         y_max = min(data2d.shape[0], y0 + pix_radius)
         x_min = max(0, x0 - pix_radius)
@@ -270,26 +270,43 @@ def cal_solar_phaseshift(imagename, sigma=10):
         y_grid, x_grid = np.mgrid[y_min:y_max, x_min:x_max]
         subdata = data2d[y_min:y_max, x_min:x_max]
         base_mean = np.nanmean(data2d[~circular_mask])
-        sigma = int((sun_dia/2)*60.0/cellsize) 
+        sigma = int((sun_dia / 2) * 60.0 / cellsize)
         p0 = [np.nanmax(subdata), x0, y0, sigma, sigma, base_mean]
-        popt, pcov = curve_fit(gaussian_2d,(x_grid, y_grid),subdata.ravel(),p0=p0,maxfev=5000)
+        popt, pcov = curve_fit(
+            gaussian_2d, (x_grid, y_grid), subdata.ravel(), p0=p0, maxfev=5000
+        )
         apparent_pix_ra = int(popt[1])
         apparent_pix_dec = int(popt[2])
     except Exception:
         from casatasks import imsmooth, exportfits
-        imsmooth(imagename=imagename,outfile=f"{imagename}.smoothed",targetres=True,beam={"major":f"{sun_dia}arcmin","minor":f"{sun_dia}arcmin","pa":"0deg"},overwrite=True)
-        exportfits(imagename=f"{imagename}.smoothed",fitsimage=f"{imagename}.smoothed.fits",overwrite=True)
+
+        imsmooth(
+            imagename=imagename,
+            outfile=f"{imagename}.smoothed",
+            targetres=True,
+            beam={
+                "major": f"{sun_dia}arcmin",
+                "minor": f"{sun_dia}arcmin",
+                "pa": "0deg",
+            },
+            overwrite=True,
+        )
+        exportfits(
+            imagename=f"{imagename}.smoothed",
+            fitsimage=f"{imagename}.smoothed.fits",
+            overwrite=True,
+        )
         os.system(f"rm -rf {imagename}.smoothed")
         data_smoothed = fits.getdata(f"{imagename}.smoothed.fits")
         os.system(f"rm -rf {imagename}.smoothed.fits")
         if data_smoothed.ndim == 4:
             data2d_smoothed = data_smoothed[0, 0, ...]
         elif data.ndim == 3:
-            data2d_smoothed = data_smoothed[0,...]
+            data2d_smoothed = data_smoothed[0, ...]
         else:
             data2d_smoothed = data_smoothed
-        max_pos = np.where(data2d_smoothed==np.nanmax(data2d_smoothed))
-        apparent_pix_dec, apparent_pix_ra = max_pos[0][0], max_pos[1][0] 
+        max_pos = np.where(data2d_smoothed == np.nanmax(data2d_smoothed))
+        apparent_pix_dec, apparent_pix_ra = max_pos[0][0], max_pos[1][0]
     try:
         w = WCS(imagename).celestial
         result = w.array_index_to_world(apparent_pix_dec, apparent_pix_ra)
@@ -298,14 +315,31 @@ def cal_solar_phaseshift(imagename, sigma=10):
         ra = float(x_cen)
         dec = float(y_cen)
         seperation_deg = angular_separation_equatorial(ra, dec, sun_radeg, sun_decdeg)
-        seperation_arcsec = seperation_deg*3600.0
-        return 0, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec
+        seperation_arcsec = seperation_deg * 3600.0
+        return (
+            0,
+            ra,
+            dec,
+            sun_radeg,
+            sun_decdeg,
+            apparent_pix_ra,
+            apparent_pix_dec,
+            seperation_arcsec,
+        )
     except Exception:
         traceback.print_exc()
         return 1, sun_radeg, sun_decdeg, sun_radeg, sun_decdeg, 0, 0, 0
 
 
-def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, apparent_pix_ra=None, apparent_pix_dec=None, overwrite=True):
+def shift_solarcenter(
+    imagename,
+    sigma=10,
+    sun_radeg=None,
+    sun_decdeg=None,
+    apparent_pix_ra=None,
+    apparent_pix_dec=None,
+    overwrite=True,
+):
     """
     Function to shift solar center to image phase center
 
@@ -316,13 +350,13 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
     sigma : float, optional
         Sigma threshold for masking solar disk
     sun_radeg : float, optional
-        Sun RA in degree 
+        Sun RA in degree
     sun_decdeg : float, optional
         Sun DEC in degree
     apparent_pix_ra :int, optional
         Apparent solar center pixel in RA
     apparent_pix_dec : int, optional
-        Apparent solar center pixel in DEC 
+        Apparent solar center pixel in DEC
     overwrite : bool, optional
         Overwrite existing image or not
 
@@ -335,31 +369,45 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
     bool
         Shifted or not
     int
-        Maximum pixel offset 
+        Maximum pixel offset
     """
-    if sun_radeg is None or sun_decdeg is None or apparent_pix_ra is None or apparent_pix_dec is None:
-        msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename, sigma=sigma)
-    shifted=False
-    r_offset=0
+    if (
+        sun_radeg is None
+        or sun_decdeg is None
+        or apparent_pix_ra is None
+        or apparent_pix_dec is None
+    ):
+        (
+            msg,
+            ra,
+            dec,
+            sun_radeg,
+            sun_decdeg,
+            apparent_pix_ra,
+            apparent_pix_dec,
+            seperation_arcsec,
+        ) = cal_solar_phaseshift(imagename, sigma=sigma)
+    shifted = False
+    r_offset = 0
     try:
         data = fits.getdata(imagename)
         header = fits.getheader(imagename)
         if data.ndim == 4:
-            ny, nx = data[0,0,...].shape
-        elif data.ndim==3:
+            ny, nx = data[0, 0, ...].shape
+        elif data.ndim == 3:
             ny, nx = data[0, ...].shape
         else:
             ny, nx = data.shape
         center_ra = nx // 2
         center_dec = ny // 2
-        offset_ra =  center_ra - apparent_pix_ra
+        offset_ra = center_ra - apparent_pix_ra
         offset_dec = center_dec - apparent_pix_dec
-        r_offset = max(offset_ra, offset_dec) 
-        if abs(offset_ra)>0 or abs(offset_dec)>0:
+        r_offset = max(offset_ra, offset_dec)
+        if abs(offset_ra) > 0 or abs(offset_dec) > 0:
             header["CRVAL1"] = float(sun_radeg)
             header["CRVAL2"] = float(sun_decdeg)
-            header["CRPIX1"] = float(center_ra+1)
-            header["CRPIX2"] = float(center_dec+1)
+            header["CRPIX1"] = float(center_ra + 1)
+            header["CRPIX2"] = float(center_dec + 1)
             new_data = np.roll(np.roll(data, offset_dec, axis=-2), offset_ra, axis=-1)
             if overwrite:
                 outfile = imagename
@@ -372,7 +420,7 @@ def shift_solarcenter(imagename, sigma=10, sun_radeg=None, sun_decdeg=None, appa
                     header=header,
                     overwrite=True,
                 )
-            shifted=True
+            shifted = True
             msg = 0
         else:
             outfile = imagename

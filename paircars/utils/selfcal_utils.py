@@ -34,6 +34,7 @@ from .image_utils import (
 from .udocker_utils import run_wsclean, run_quartical
 from .sunpos_utils import cal_solar_phaseshift, shift_solarcenter
 
+
 def cal_crossphase(imagename):
     """
     Function to calculate Stokes U, V leakage through correlation analysis
@@ -87,10 +88,10 @@ def cal_crossphase(imagename):
             return cross_phase
 
 
-def do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=1):
+def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1):
     """
     Perform uv-sub flags
-    
+
     Parameters
     ----------
     msname : str
@@ -101,8 +102,8 @@ def do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=1):
         Number of CPU threads to use
     """
     for threshold in threshold_list:
-        count=0
-        while count<5:
+        count = 0
+        while count < 5:
             result, n_final_flagged, n_additional_flagged = flagger(
                 msname,
                 "residual",
@@ -110,12 +111,12 @@ def do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=1):
                 num_processes=ncpu,
                 flagbackup=False,
             )
-            if n_additional_flagged==0:
+            if n_additional_flagged == 0:
                 break
             else:
-                count+=1
-                
-            
+                count += 1
+
+
 def determine_disk_visibility(msname):
     """
     Determine whether solar disk is visible or not
@@ -205,6 +206,7 @@ def flag_non_disk(msname):
         Measurement set
     """
     from casatasks import flagdata
+
     try:
         chans, timestamps, detected_timestamps = determine_disk_visibility(msname)
         if len(detected_timestamps) == 0:
@@ -216,7 +218,7 @@ def flag_non_disk(msname):
             msmd.close()
             for c, t in zip(chans, timestamps):
                 spw = f"0:{c}"
-                timerange = f"{mjdsec_to_timestamp(times[t], str_format=1)}"    
+                timerange = f"{mjdsec_to_timestamp(times[t], str_format=1)}"
                 try:
                     flagdata(
                         vis=msname,
@@ -427,12 +429,13 @@ def check_valid_image(imagename):
     else:
         return True
 
+
 def single_image_update_phasecenter(
     wsclean_images,
     wsclean_models,
     image_cube,
     model_cube,
-    cellsize, 
+    cellsize,
     imsize,
     stokes,
     logger,
@@ -464,14 +467,23 @@ def single_image_update_phasecenter(
     bool
         Whether phase shift needed or not
     float
-        Maximum offset in pixel 
+        Maximum offset in pixel
     """
     try:
-        msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(image_cube)
-        if msg!=0:
+        (
+            msg,
+            ra,
+            dec,
+            sun_radeg,
+            sun_decdeg,
+            apparent_pix_ra,
+            apparent_pix_dec,
+            seperation_arcsec,
+        ) = cal_solar_phaseshift(image_cube)
+        if msg != 0:
             return msg, False
-        shift_needed=False
-        r_offset_list=[]
+        shift_needed = False
+        r_offset_list = []
         logger.info(f"Shift {seperation_arcsec}arcsec for {image_cube}.")
         shift_func = partial(
             shift_solarcenter,
@@ -479,29 +491,29 @@ def single_image_update_phasecenter(
             sun_decdeg=sun_decdeg,
             apparent_pix_ra=apparent_pix_ra,
             apparent_pix_dec=apparent_pix_dec,
-            overwrite=True
+            overwrite=True,
         )
         msg, outfile, shifted, r_offset = shift_func(image_cube)
-        shift_needed = bool(shift_needed+shifted)
+        shift_needed = bool(shift_needed + shifted)
         r_offset_list.append(r_offset)
         for imagename in wsclean_images:
             msg, outfile, shifted, r_offset = shift_func(imagename)
-            shift_needed = bool(shift_needed+shifted)
+            shift_needed = bool(shift_needed + shifted)
             r_offset_list.append(r_offset)
         msg, outfile, shifted, r_offset = shift_func(model_cube)
-        shift_needed = bool(shift_needed+shifted)
+        shift_needed = bool(shift_needed + shifted)
         r_offset_list.append(r_offset)
         for modelname in wsclean_models:
             msg, outfile, shifted, r_offset = shift_func(modelname)
-            shift_needed = bool(shift_needed+shifted)
+            shift_needed = bool(shift_needed + shifted)
             r_offset_list.append(r_offset)
         r_offset = max(r_offset_list)
         return 0, shift_needed, r_offset
     except Exception:
         traceback.print_exc()
         return 1, False, 0
-        
-        
+
+
 def correct_spectrosnap_phaseshift(
     image_dic,
     model_dic,
@@ -527,7 +539,7 @@ def correct_spectrosnap_phaseshift(
         Stokes planes of image list
     logger : logger, optional
         Python logger
-        
+
     Returns
     -------
     int
@@ -537,8 +549,8 @@ def correct_spectrosnap_phaseshift(
     int
         Maximum pixel offset
     """
-    shifted=False
-    max_pixel_offset_list=[]
+    shifted = False
+    max_pixel_offset_list = []
     try:
         images = list(image_dic.keys())
         models = list(model_dic.keys())
@@ -549,25 +561,27 @@ def correct_spectrosnap_phaseshift(
             wsclean_models = model_dic[modelname]
             valid_image = check_valid_image(imagename)
             if valid_image:
-                success_msg, shift_needed, max_pixel_offset = single_image_update_phasecenter(
-                    wsclean_images,
-                    wsclean_models,
-                    imagename,
-                    modelname,
-                    cellsize, 
-                    imsize,
-                    stokes,
-                    logger,
+                success_msg, shift_needed, max_pixel_offset = (
+                    single_image_update_phasecenter(
+                        wsclean_images,
+                        wsclean_models,
+                        imagename,
+                        modelname,
+                        cellsize,
+                        imsize,
+                        stokes,
+                        logger,
+                    )
                 )
                 max_pixel_offset_list.append(max_pixel_offset)
                 if shift_needed:
-                    shifted=True
+                    shifted = True
         return 0, shifted, max(max_pixel_offset_list)
     except Exception:
         traceback.print_exc()
         return 1, shifted, 0
-    
-                
+
+
 def calc_leakage(imagename, threshold=5, disc_size=50):
     """
     Calculate Stokes I to Q, U, V leakages
@@ -1267,12 +1281,12 @@ def selfcal_round(
     msname = os.path.abspath(msname)
     os.chdir(selfcaldir)
 
-    if minuv>0:
-        if uvrange=="" or uvrange.startswith(">"):
-            uvrange=f">{minuv}lambda"
+    if minuv > 0:
+        if uvrange == "" or uvrange.startswith(">"):
+            uvrange = f">{minuv}lambda"
         elif uvrange.startswith("<"):
             maxuv = uvrange.split("lambda")[0].split("<")[1]
-            uvrange=f"{minuv}~{maxuv}lambda"
+            uvrange = f"{minuv}~{maxuv}lambda"
         elif "~" in uvrange:
             maxuv = uvrange.split("lambda")[0].split("~")[-1]
             uvrange = f"{minuv}~{maxuv}lambda"
@@ -1322,13 +1336,13 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
-            msmd=msmetadata()
+            msmd = msmetadata()
             msmd.open(msname)
             times = msmd.timesforspws(0)
             msmd.close()
             diff = np.diff(times)
-            change_idx = np.where(np.diff(diff) != 0)[0] 
-            max_ntime = int(len(change_idx)/2)+1
+            change_idx = np.where(np.diff(diff) != 0)[0]
+            max_ntime = int(len(change_idx) / 2) + 1
             nintervals, nchans_variablity = get_optimal_image_interval(
                 msname,
                 temporal_tol_factor=float(min_tol_factor / 100.0),
@@ -1336,17 +1350,17 @@ def selfcal_round(
                 flag_central_chan=flag_central_chan,
                 max_ntime=max_ntime,
             )
-            nchans = min(nchans,nchans_variablity)
+            nchans = min(nchans, nchans_variablity)
         else:
             nchans = 1
             nintervals = 1
-            max_ntime=1
+            max_ntime = 1
 
         os.system(f"rm -rf {prefix}*image.fits {prefix}*residual.fits")
 
         if weight == "briggs":
             weight += " " + str(robust)
-               
+
         wsclean_args = [
             "-quiet",
             f"-scale {cellsize}asec",
@@ -1434,7 +1448,7 @@ def selfcal_round(
         if msg != 0:
             logger.error("Imaging is not successful.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
-    
+
         #######################################
         # Making stokes cube
         #######################################
@@ -1445,7 +1459,7 @@ def selfcal_round(
         for suffix in ["image", "model", "residual"]:
             stokeslist = []
             for p in pollist:
-                if pollist==["I"]:
+                if pollist == ["I"]:
                     stokeslist.append(
                         sorted(glob.glob(prefix + "*" + f"-{suffix}.fits"))
                     )
@@ -1454,9 +1468,7 @@ def selfcal_round(
                         sorted(glob.glob(prefix + "*" + p + f"-{suffix}.fits"))
                     )
             for i in range(len(stokeslist[0])):
-                wsclean_images = sorted(
-                    [stokeslist[k][i] for k in range(len(pollist))]
-                )
+                wsclean_images = sorted([stokeslist[k][i] for k in range(len(pollist))])
                 image_prefix = (
                     selfcaldir
                     + "/"
@@ -1481,18 +1493,18 @@ def selfcal_round(
         #########################################
         logger.info("Shifting images...")
         shifting_msg, shifted, max_pixel_offset = correct_spectrosnap_phaseshift(
-                wsclean_images_dic,
-                wsclean_models_dic,
-                cellsize,
-                imsize,
-                pol,
-                logger,
-            )
-        if shifting_msg!=0:
+            wsclean_images_dic,
+            wsclean_models_dic,
+            cellsize,
+            imsize,
+            pol,
+            logger,
+        )
+        if shifting_msg != 0:
             logger.warning("Error occured in phase shift correction.")
         else:
             logger.info("Image shift is done.")
-        
+
         if do_polcal:
             ################################
             # Leakage correction
@@ -1508,7 +1520,7 @@ def selfcal_round(
                     pbuncor=pbuncor,
                     ncpu=ncpu,
                 )
-                
+
         ####################################
         # Predict models
         ####################################
@@ -1613,7 +1625,9 @@ def selfcal_round(
                     try:
                         with suppress_output():
                             if restore_flag:
-                                flagmanager(vis=msname, mode="restore", versionname=version)
+                                flagmanager(
+                                    vis=msname, mode="restore", versionname=version
+                                )
                             flagmanager(vis=msname, mode="delete", versionname=version)
                     except BaseException:
                         pass
@@ -1735,7 +1749,11 @@ def selfcal_round(
                 ant_flag_frac,
                 time_flag_frac,
             ) = get_cal_flag_info(gain_caltable)
-            if flag_frac-pre_flag_frac > 0.5 or ant_flag_frac-pre_ant_flag_frac > 0.5 or time_flag_frac-pre_time_flag_frac > 0.5:
+            if (
+                flag_frac - pre_flag_frac > 0.5
+                or ant_flag_frac - pre_ant_flag_frac > 0.5
+                or time_flag_frac - pre_time_flag_frac > 0.5
+            ):
                 logger.info("Restoring flags of gaincal solutions.")
                 flagmanager(
                     vis=gain_caltable,
@@ -1743,29 +1761,27 @@ def selfcal_round(
                     versionname="gainflag_1",
                 )
             else:
-                tb=table()
+                tb = table()
                 tb.open(gain_caltable)
-                gain=tb.getcol("CPARAM")
-                flag=tb.getcol("FLAG")
+                gain = tb.getcol("CPARAM")
+                flag = tb.getcol("FLAG")
                 tb.close()
-                gain[flag]=np.nan
-                tb.open(gain_caltable,nomodify=False)
+                gain[flag] = np.nan
+                tb.open(gain_caltable, nomodify=False)
                 new_gain = tb.getcol("CPARAM")
                 shape = new_gain.shape
                 for i in range(shape[0]):
-                    avg = np.nanmedian(np.abs(gain[i,...]))
-                    new_gain[i,...] = new_gain[i,...]/avg
-                tb.putcol("CPARAM",new_gain)
+                    avg = np.nanmedian(np.abs(gain[i, ...]))
+                    new_gain[i, ...] = new_gain[i, ...] / avg
+                tb.putcol("CPARAM", new_gain)
                 tb.flush()
                 tb.close()
             with suppress_output():
-                flagmanager(
-                    vis=gain_caltable, mode="delete", versionname="gainflag_1"
-                )
+                flagmanager(vis=gain_caltable, mode="delete", versionname="gainflag_1")
             if not do_bandpass and fluxscale_mwa:
                 logger.info("Flux scaled gain caltable using MWA reference bandpass.")
                 fluxcal_caltable(gain_caltable, attn=solar_attn)
-                
+
             ##################################
             # Perform bandpass calibration
             ##################################
@@ -1791,7 +1807,9 @@ def selfcal_round(
                 if not os.path.exists(bpass_caltable):
                     logger.error("No bandpass solutions are found.\n")
                     if fluxscale_mwa:
-                        logger.info("Flux scaled gain caltable using MWA reference bandpass.")
+                        logger.info(
+                            "Flux scaled gain caltable using MWA reference bandpass."
+                        )
                         fluxcal_caltable(gain_caltable, attn=solar_attn)
                 else:
                     applycal_gaintable.append(bpass_caltable)
@@ -1820,9 +1838,9 @@ def selfcal_round(
                             flagbackup=False,
                         )
                     if (
-                        flag_frac-pre_flag_frac > 0.5
-                        or ant_flag_frac-pre_ant_flag_frac > 0.5
-                        or chan_flag_frac-pre_chan_flag_frac > 0.5
+                        flag_frac - pre_flag_frac > 0.5
+                        or ant_flag_frac - pre_ant_flag_frac > 0.5
+                        or chan_flag_frac - pre_chan_flag_frac > 0.5
                     ):
                         logger.info("Restoring flags of bandpass solutions.")
                         flagmanager(
@@ -1831,27 +1849,29 @@ def selfcal_round(
                             versionname="bpassflag_1",
                         )
                     else:
-                        tb=table()
+                        tb = table()
                         tb.open(bpass_caltable)
-                        gain=tb.getcol("CPARAM")
-                        flag=tb.getcol("FLAG")
+                        gain = tb.getcol("CPARAM")
+                        flag = tb.getcol("FLAG")
                         tb.close()
-                        gain[flag]=np.nan
-                        tb.open(bpass_caltable,nomodify=False)
+                        gain[flag] = np.nan
+                        tb.open(bpass_caltable, nomodify=False)
                         new_gain = tb.getcol("CPARAM")
                         shape = new_gain.shape
                         for i in range(shape[0]):
-                            avg = np.nanmedian(np.abs(gain[i,...]))
-                            new_gain[i,...] = new_gain[i,...]/avg
-                        tb.putcol("CPARAM",new_gain)
+                            avg = np.nanmedian(np.abs(gain[i, ...]))
+                            new_gain[i, ...] = new_gain[i, ...] / avg
+                        tb.putcol("CPARAM", new_gain)
                         tb.flush()
                         tb.close()
                     with suppress_output():
                         flagmanager(
                             vis=bpass_caltable, mode="delete", versionname="bpassflag_1"
-                        )   
+                        )
                     if fluxscale_mwa:
-                        logger.info("Flux scaled bandpass caltable using MWA reference bandpass.")
+                        logger.info(
+                            "Flux scaled bandpass caltable using MWA reference bandpass."
+                        )
                         fluxcal_caltable(bpass_caltable, attn=solar_attn)
 
             logger.info(
@@ -1892,13 +1912,14 @@ def selfcal_round(
                 "solver.propagate_flags=True",
                 f"solver.threads={ncpu}",
                 "dask.threads=1",
-                "D.type=complex"]
-            if solint=="inf":
+                "D.type=complex",
+            ]
+            if solint == "inf":
                 quartical_args.append("D.time_interval=1")
-            elif solint!="int":
+            elif solint != "int":
                 quartical_args.append(f"D.time_interval={solint}")
             else:
-                quartical_args.append(f"D.time_interval={max_ntime}")      
+                quartical_args.append(f"D.time_interval={max_ntime}")
             if do_bandpass:
                 quartical_args.append(f"D.freq_interval={int(freqres*1000.0)}kHz")
             else:
@@ -1982,7 +2003,7 @@ def selfcal_round(
         try:
             if do_flag:
                 logger.info("Flagging in uv-domain data.\n")
-                do_uvsub_flag(msname,threshold_list=[10,7,5],ncpu=max(1,ncpu))
+                do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu))
         except Exception:
             logger.exception(traceback.print_exc())
         return (

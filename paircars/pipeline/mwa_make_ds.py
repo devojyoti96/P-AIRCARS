@@ -118,8 +118,8 @@ def make_solar_DS(
     ds_file_name = f"{obsid}_ds"
     plot_file = f"{outdir}/dynamic_spectra/{ds_file_name}.{extension}"
     if not overwrite and os.path.exists(plot_file):
-        return 0, plot_file, len(mslist), 0    
-        
+        return 0, plot_file, len(mslist), 0
+
     try:
         ###########################################
         tasks = []

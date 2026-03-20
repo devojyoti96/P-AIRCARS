@@ -115,11 +115,11 @@ def applysol(
                 if os.path.exists(gtable):
                     if only_amplitude and gtable.endswith(".bcal"):
                         os.system(f"cp -r {gtable} {gtable}.amp")
-                        tb=table()
-                        tb.open(f"{gtable}.amp",nomodify=False)
-                        gain=tb.getcol("CPARAM")
-                        gain=np.abs(gain)
-                        tb.putcol("CPARAM",gain)
+                        tb = table()
+                        tb.open(f"{gtable}.amp", nomodify=False)
+                        gain = tb.getcol("CPARAM")
+                        gain = np.abs(gain)
+                        tb.putcol("CPARAM", gain)
                         tb.flush()
                         tb.close()
                         gtable = f"{gtable}.amp"
@@ -146,7 +146,7 @@ def applysol(
                         calwt=[False] * len(gaintable),
                         flagbackup=False,
                     )
-                if len(only_ampcals)>0:
+                if len(only_ampcals) > 0:
                     for ampcal in only_ampcals:
                         os.system(f"rm -rf {ampcal}")
                 gain_msg = 0
@@ -259,7 +259,7 @@ def run_all_applysol(
     mslist : list
         Measurement set list
     target_metafits : str
-        Target metafits file    
+        Target metafits file
     dask_client : dask.client
         Dask client
     workdir : str
@@ -304,8 +304,8 @@ def run_all_applysol(
         target_header = fits.getheader(target_metafits)
         target_attn = target_header["ATTEN_DB"]
         bandpass_table = glob.glob(caldir + f"/calibrator*.bcal.att{target_attn}")
-        if len(bandpass_table)==0:
-            bandpass_table = glob.glob(caldir + "/calibrator*.bcal")    
+        if len(bandpass_table) == 0:
+            bandpass_table = glob.glob(caldir + "/calibrator*.bcal")
             att_scaled = False
         else:
             att_scaled = True

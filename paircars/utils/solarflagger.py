@@ -19,15 +19,15 @@ def uvbin_flagger(
 
     Parameters
     ----------
-    uvwave: numpy.array        
+    uvwave: numpy.array
         UV distances in wavelengths (1D numpy array)
-    data: numpy.array          
+    data: numpy.array
         Visibility amplitudes (1D numpy array for this optimized version)
-    threshold: float, optional     
+    threshold: float, optional
         Flagging threshold multiplier for MAD (default: 5.0)
     min_bin_samples: int, optional
         Minimum number of samples required in a bin (default: 5)
-    num_bins: int, optional      
+    num_bins: int, optional
         Number of logarithmic bins to use (default: 50)
 
     Returns
@@ -228,17 +228,17 @@ def flagger(
     num_bins=30,
     binning_type="log",
     flagbackup=True,
-):  
+):
     """
     Flagger optimized for solar observations
 
     Parameters
     ----------
-    msname: str       
+    msname: str
         Measurement set.
     datacolumn: str
         Name of the data column (e.g. 'DATA', 'CORRECTED_DATA', 'RESIDUAL').
-    threshold: float, optional 
+    threshold: float, optional
         Multiplier for the MAD-based flagging threshold.
     num_processes: int, optional
         Number of processes for parallel processing.
@@ -248,7 +248,7 @@ def flagger(
         Binning type (linear or log)
     flagbackup : bool, optional
         Take flag backup or not
-        
+
     Returns
     --------
     int
@@ -259,45 +259,49 @@ def flagger(
         Total new flag points
     """
     print(f"Flagging : {msname}")
-    do_flag_backup(msname,flagtype="solar_flagger")
+    do_flag_backup(msname, flagtype="solar_flagger")
     ms = table()
     msmd = msmetadata()
     msmd.open(msname)
     freq_Hz = msmd.meanfreq(0)
     msmd.close()
-    ms.open(msname, nomodify=False) 
+    ms.open(msname, nomodify=False)
     try:
         time_col = ms.getcol("TIME")
         colnames = ms.colnames()
         unique_times = np.unique(time_col)
         # --- Determine Data Shape ---
         datacolumn = datacolumn.upper()
-        if datacolumn=="CORRECTED":
-            datacolumn="CORRECTED_DATA"
+        if datacolumn == "CORRECTED":
+            datacolumn = "CORRECTED_DATA"
         if datacolumn == "RESIDUAL":
-            if "MODEL_DATA" in colnames:    
+            if "MODEL_DATA" in colnames:
                 if "CORRECTED_DATA" in colnames:
                     data = ms.getcol("CORRECTED_DATA") - ms.getcol("MODEL_DATA")
                 else:
                     data = ms.getcol("DATA") - ms.getcol("MODEL_DATA")
             else:
-                print("Requested residual datacolumn, but model data is not present. Using corrected or datacolumn whichever is available.")
+                print(
+                    "Requested residual datacolumn, but model data is not present. Using corrected or datacolumn whichever is available."
+                )
                 if "CORRECTED_DATA" in colnames:
-                    data =  ms.getcol("CORRECTED_DATA")
+                    data = ms.getcol("CORRECTED_DATA")
                 else:
                     data = ms.getcol("DATA")
         elif datacolumn == "RESIDUAL_DATA":
-            if "MODEL_DATA" in colnames: 
+            if "MODEL_DATA" in colnames:
                 data = ms.getcol("DATA") - ms.getcol("MODEL_DATA")
             else:
                 print("Model data is not present. Using data column instead.")
                 data = ms.getcol("DATA")
-        elif datacolumn=="CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
+        elif datacolumn == "CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
             data = ms.getcol("CORRECTED_DATA")
         else:
             data = ms.getcol("DATA")
-            
-        data = data.T # Make transpose, because original code is written using casacore, which follows C convention
+
+        data = (
+            data.T
+        )  # Make transpose, because original code is written using casacore, which follows C convention
         data_actual_shape = data.shape
         if len(data_actual_shape) == 3:
             n_rows, nchan, npol = data_actual_shape
@@ -317,7 +321,7 @@ def flagger(
         else:
             flags = np.zeros(data_actual_shape, dtype=bool)  # Use determined shape
         # --- Get UVW Data ---
-        uvw = ms.getcol("UVW").T # Due to original casacore functions
+        uvw = ms.getcol("UVW").T  # Due to original casacore functions
         if uvw.shape[0] != n_rows:
             raise ValueError(
                 f"UVW table rows ({uvw.shape[0]}) do not match data rows ({n_rows})"
@@ -402,7 +406,7 @@ def flagger(
         # Number of additional flagged data points
         n_final_flagged = np.sum(new_flags)
         n_additional_flagged = n_final_flagged - n_flagged
-        
+
         ################################
         # Putting flags
         ################################
@@ -413,4 +417,3 @@ def flagger(
         return 1, None, None
     finally:
         ms.close()
-        

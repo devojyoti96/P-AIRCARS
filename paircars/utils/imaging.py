@@ -123,39 +123,39 @@ def calc_minuv(msname, chan_number=-1):
 def calc_uvtaper(msname):
     """
     Calculate UV-taper
-    
+
     Parameters
     ----------
     msname : str
         Measurement set
-        
+
     Returns
     -------
     float
         UV-taper in lambda at highest frequency
     """
-    tb=table()
+    tb = table()
     tb.open(msname)
     u, v, w = tb.getcol("UVW")
     tb.close()
-    msmd=msmetadata()
+    msmd = msmetadata()
     msmd.open(msname)
     freqs = msmd.chanfreqs(0)
     max_freq = np.nanmax(freqs)
-    wavelength = (3*10**8)/max_freq
+    wavelength = (3 * 10**8) / max_freq
     msmd.close()
-    sun_dia = np.deg2rad(calc_sun_dia(max_freq/10**6)/60.0)
-    bin_size_lambda = 1.22/sun_dia
-    bin_size = (bin_size_lambda*wavelength)/2.0
+    sun_dia = np.deg2rad(calc_sun_dia(max_freq / 10**6) / 60.0)
+    bin_size_lambda = 1.22 / sun_dia
+    bin_size = (bin_size_lambda * wavelength) / 2.0
     r = np.sqrt(u**2 + v**2)
-    n_bins = int(max(r)/bin_size)
+    n_bins = int(max(r) / bin_size)
     r_bins = np.linspace(r.min(), r.max(), n_bins)
     counts, edges = np.histogram(r, bins=r_bins)
     max_counts = np.nanmax(counts)
-    pos = np.where(counts<0.01*max_counts)[0][0]
-    uvtaper = edges[pos]/wavelength
-    return round(uvtaper,0)
-    
+    pos = np.where(counts < 0.01 * max_counts)[0][0]
+    uvtaper = edges[pos] / wavelength
+    return round(uvtaper, 0)
+
 
 def calc_field_of_view(msname, FWHM=True):
     """

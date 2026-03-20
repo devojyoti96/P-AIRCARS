@@ -113,9 +113,9 @@ def create_circular_mask_array(data, radius, center_x=0, center_y=0):
     """
     shape = data.shape
     center = (shape[0] // 2, shape[1] // 2)
-    if center_x!=0:
+    if center_x != 0:
         center_x = center[1]
-    if center_y!=0:
+    if center_y != 0:
         center_y = center[0]
     Y, X = np.ogrid[: shape[0], : shape[1]]
     dist_from_center = (X - center_x) ** 2 + (Y - center_y) ** 2
@@ -371,14 +371,16 @@ def make_timeavg_image(wsclean_images, outfile_name, keep_wsclean_images=True):
     for i in range(len(wsclean_images)):
         image = wsclean_images[i]
         image_data = fits.getdata(image)
-        if len(data)==0:
+        if len(data) == 0:
             data.append(image_data)
         else:
             last_data = data[-1]
-            if image_data.shape==last_data.shape:
+            if image_data.shape == last_data.shape:
                 data.append(image_data)
             else:
-                print(f"Image data shape: {image_data.shape} does not match with last data: {last_data.shape}")
+                print(
+                    f"Image data shape: {image_data.shape} does not match with last data: {last_data.shape}"
+                )
         timestamps.append(fits.getheader(image)["DATE-OBS"])
     data = np.array(data)
     data = np.nanmean(data, axis=0)

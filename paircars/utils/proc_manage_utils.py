@@ -252,13 +252,13 @@ def get_local_dask_cluster(
                     total_mem = psutil.virtual_memory().total / 1024**3  # In GB
                     usable_mem = round(total_mem * mem_frac, 2)
                     n_worker_mem = int(usable_mem / min_mem)
-                    if n_worker_mem<2:
+                    if n_worker_mem < 2:
                         print(
                             f"Minimum available memory: {usable_mem}GB is not sufficient for at-least 2 workers."
                         )
-                        return None, None, dask_dir, n_worker_mem   
+                        return None, None, dask_dir, n_worker_mem
                     else:
-                        break                     
+                        break
                 else:
                     time.sleep(1)
                     total_time += 1
@@ -413,19 +413,15 @@ def submit_local_master_flow(args, jobid):
                         continue
                     last_lines.append(line)
                     if (
-                        ("task run" in line.lower()
-                        or "flow run" in line.lower()) and "p-aircars execution is finished" not in line.lower()
-                    ):
+                        "task run" in line.lower() or "flow run" in line.lower()
+                    ) and "p-aircars execution is finished" not in line.lower():
                         only_run_print = True
                     if not only_run_print or (
-                        "task run" in line.lower()
-                        or "flow run" in line.lower()
+                        "task run" in line.lower() or "flow run" in line.lower()
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if (
-                        "p-aircars execution is finished" in line.lower()
-                    ):
+                    if "p-aircars execution is finished" in line.lower():
                         return 0
         except Exception:
             traceback.print_exc()

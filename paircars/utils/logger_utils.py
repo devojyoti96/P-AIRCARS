@@ -159,7 +159,7 @@ def create_logger(logname, logfile):
         Name of the log
     logfile : str, optional
         Log file name
-        
+
     Returns
     -------
     logger

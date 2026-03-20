@@ -50,10 +50,10 @@ def freq_to_MWA_coarse(freq):
     int
         MWA coarse channel number
     """
-    all_mwa_coarse_freq = np.arange(255)*1.28
-    coarse_chan = np.argmin(abs(freq-all_mwa_coarse_freq))
+    all_mwa_coarse_freq = np.arange(255) * 1.28
+    coarse_chan = np.argmin(abs(freq - all_mwa_coarse_freq))
     return coarse_chan
-    
+
 
 def get_MWA_coarse_chan(msname):
     """
@@ -77,7 +77,7 @@ def get_MWA_coarse_chan(msname):
     for f in freqs:
         coarse_chan = freq_to_MWA_coarse(f)
         if coarse_chan not in coarse_chans:
-            coarse_chans.append(coarse_chan) 
+            coarse_chans.append(coarse_chan)
     return coarse_chans
 
 
@@ -98,8 +98,8 @@ def get_ncoarse(msname):
     coarse_chans = get_MWA_coarse_chan(msname)
     ncoarse = len(coarse_chans)
     return ncoarse
-    
-    
+
+
 def get_MWA_coarse_bands(msname, flag_central_chan=False):
     """
     Get MWA coarse channel bands.
@@ -321,13 +321,13 @@ def get_selfcal_uvrange(msname):
 def get_selfcal_ntimes(msname):
     """
     Number of timestamps to include in one self-calibration chunk
-    It is determined based on the fact that MWA Phase-I provide ~2000 spectroscopic snapshot UV points with in 100lambda 
-    
+    It is determined based on the fact that MWA Phase-I provide ~2000 spectroscopic snapshot UV points with in 100lambda
+
     Parameters
     ----------
     msname : str
         Measurement set
-        
+
     Returns
     -------
     int
@@ -337,22 +337,22 @@ def get_selfcal_ntimes(msname):
     msmd.open(msname)
     freq = msmd.meanfreq(0)
     msmd.close()
-    wavelength = (3*10**8)/freq
-    uvmax = round(100*wavelength,1)
+    wavelength = (3 * 10**8) / freq
+    uvmax = round(100 * wavelength, 1)
     mstool = casamstool()
     mstool.open(msname)
-    mstool.select({"uvdist":[0.01,uvmax]})
-    flags = mstool.getdata("FLAG",ifraxis=True)["flag"]
+    mstool.select({"uvdist": [0.01, uvmax]})
+    flags = mstool.getdata("FLAG", ifraxis=True)["flag"]
     mstool.close()
-    flags = np.sum(flags,axis=(0,1)).astype("bool")
+    flags = np.sum(flags, axis=(0, 1)).astype("bool")
     shape = flags.shape
-    if len(shape)==1:
+    if len(shape) == 1:
         n_points = np.nansum(~flags)
     else:
-        n_points = np.nansum(~flags[:,0])
-    n_time = max(1, math.ceil(2000/n_points))
+        n_points = np.nansum(~flags[:, 0])
+    n_time = max(1, math.ceil(2000 / n_points))
     return n_time
-    
+
 
 def download_MWA_metafits(OBSID, outdir=".", max_tries=5):
     """
