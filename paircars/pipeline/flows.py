@@ -105,7 +105,7 @@ def pre_process_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Moving phasecenter to the Sun.")
             future_movecenter = run_solar_phasecenter_jobs.with_options(
@@ -128,7 +128,7 @@ def pre_process_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner(
                     "Finished task: Moving phasecenter to solar center is done."
@@ -154,7 +154,7 @@ def pre_process_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, []
         #######################################
@@ -169,7 +169,7 @@ def pre_process_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Making dynamic spectra of solar target.")
             future_maskms = run_ds_jobs.with_options(
@@ -194,7 +194,7 @@ def pre_process_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Making solar dynamic spectra are done.")
             except Exception:
@@ -210,7 +210,7 @@ def pre_process_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
 
         return 0, target_mslist
@@ -279,13 +279,13 @@ def basic_cal_subflow(
         ##########################################
         if not redo_basic_cal:
             print(
-                f"Searching for existing bandpass tables:\n{basic_caldir}/calibrator_{cal_obsid}*.bcal"
+                f"Searching for existing bandpass tables: {basic_caldir}/calibrator_{cal_obsid}*.bcal"
             )
             bandpass_tables = sorted(
                 glob.glob(f"{basic_caldir}/calibrator_{cal_obsid}*.bcal")
             )
             print(
-                f"Searching for existing crossphase tables:\n{basic_caldir}/calibrator_{cal_obsid}*.kcrossscal"
+                f"Searching for existing crossphase tables: {basic_caldir}/calibrator_{cal_obsid}*.kcrossscal"
             )
             crossphase_tables = sorted(
                 glob.glob(f"{basic_caldir}/calibrator_{cal_obsid}*.kcrosscal")
@@ -301,7 +301,7 @@ def basic_cal_subflow(
                 ]
             else:
                 print_banner(
-                    f"Bandpass tables are already present.\nCalibration directory: {basic_caldir}"
+                    f"Bandpass tables are already present. Calibration directory: {basic_caldir}"
                 )
                 for bpass in bandpass_tables:
                     print(f"{os.path.basename(bpass)}")
@@ -316,7 +316,7 @@ def basic_cal_subflow(
                     ]
                 else:
                     print_banner(
-                        f"Crosshand phase tables are already present.\nCalibration directory: {basic_caldir}"
+                        f"Crosshand phase tables are already present. Calibration directory: {basic_caldir}"
                     )
                     for kcross in crossphase_tables:
                         print(f"{os.path.basename(kcross)}")
@@ -328,7 +328,7 @@ def basic_cal_subflow(
                             jobid,
                             target_obsid,
                             timestamp,
-                            flow_name=f"Subflow {flow_name}",
+                            flow_name=f"subflow {flow_name}",
                         )
                     return 0, bandpass_tables, crossphase_tables
 
@@ -338,7 +338,7 @@ def basic_cal_subflow(
         cal_mslist = glob.glob(f"{cal_datadir}/*.ms")
         if len(cal_mslist) == 0 or len(coarse_chans) == 0:
             print_banner(
-                f"No calibrator measurement set present.\nCoarse channels: {coarse_chans}.\nCalibrator directory: {cal_datadir}"
+                f"No calibrator measurement set present. Coarse channels: {coarse_chans}. Calibrator directory: {cal_datadir}"
             )
             if emails != "":
                 email_msg = f"[{cal_obsid}] No calibrator measurement set with coarse channels: {coarse_chans} is present in: {cal_datadir}."
@@ -348,7 +348,7 @@ def basic_cal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             return 1, [], []
 
@@ -368,7 +368,7 @@ def basic_cal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Spliting of calibrator measurement sets.")
             future_cal_split = run_target_split_jobs.with_options(
@@ -401,7 +401,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner(
                     "Finished task: Spliting of calibrator measurement sets are done."
@@ -421,7 +421,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], []
 
@@ -441,7 +441,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], []
 
@@ -458,7 +458,7 @@ def basic_cal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Flagging calibrators.")
             future_flag = run_flag.with_options(
@@ -485,7 +485,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 filtered_ms = []
                 for c_ms in split_cal_mslist:
@@ -507,7 +507,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
 
         #################################
@@ -522,7 +522,7 @@ def basic_cal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Importing model visibilities.")
             future_import_model = run_import_model.with_options(
@@ -546,7 +546,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Model import for calibrator is done.")
                 filtered_ms = []
@@ -559,7 +559,7 @@ def basic_cal_subflow(
                 split_cal_mslist = filtered_ms  # Filtered target mslist
             except Exception:
                 print_banner(
-                    "!!!! WARNING: Error in importing calibrator models.\nNot continuing calibration. !!!!"
+                    "!!!! WARNING: Error in importing calibrator models. Not continuing calibration. !!!!"
                 )
                 traceback.print_exc()
                 if emails != "":
@@ -570,7 +570,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], []
 
@@ -586,7 +586,7 @@ def basic_cal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Performing basic calibration.")
             future_basical = run_basic_cal_jobs.with_options(
@@ -613,7 +613,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Basic calibration is done.")
             except Exception:
@@ -627,7 +627,7 @@ def basic_cal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], []
 
@@ -635,14 +635,14 @@ def basic_cal_subflow(
         # Checking and interpolating bandpass tables
         ##################################################################
         print(
-            f"Searching for bandpass tables:\n{basic_caldir}/calibrator_{cal_obsid}*.bcal"
+            f"Searching for bandpass tables: {basic_caldir}/calibrator_{cal_obsid}*.bcal"
         )
         bandpass_tables = sorted(
             glob.glob(f"{basic_caldir}/calibrator_{cal_obsid}*.bcal")
         )
         if len(bandpass_tables) == 0:
             print(
-                f"No bandpass table is present.\nCalibration directory : {basic_caldir}."
+                f"No bandpass table is present. Calibration directory : {basic_caldir}."
             )
             if emails != "":
                 email_msg = f"[{cal_obsid}] No bandpass calibration table is found."
@@ -652,7 +652,7 @@ def basic_cal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             return 1, [], []
         bandpass_tables = interpolate_bpass(bandpass_tables, overwrite=True)
@@ -668,7 +668,7 @@ def basic_cal_subflow(
             print(f"Scaling for attenuation: {bpass_table}")
             scale_bandpass(bpass_table, cal_attn, target_attn)
 
-        print_banner(f"Bandpass tables in calibration directory:\n{basic_caldir}")
+        print_banner(f"Bandpass tables in calibration directory: {basic_caldir}")
         for bpass in bandpass_tables:
             print(f"{os.path.basename(bpass)}")
 
@@ -676,7 +676,7 @@ def basic_cal_subflow(
         # Checking crossphase tables
         ######################################
         print(
-            f"Searching for crossphase tables:\n{basic_caldir}/calibrator_{cal_obsid}*.kcrossscal"
+            f"Searching for crossphase tables: {basic_caldir}/calibrator_{cal_obsid}*.kcrossscal"
         )
         crossphase_tables = sorted(
             glob.glob(f"{basic_caldir}/calibrator_{cal_obsid}*.kcrosscal")
@@ -684,7 +684,7 @@ def basic_cal_subflow(
         if len(crossphase_tables) > 0:
             crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
             print_banner(
-                f"Crosshand phase tables in calibration directory: \n{basic_caldir}"
+                f"Crosshand phase tables in calibration directory: {basic_caldir}"
             )
             for kcross in crossphase_tables:
                 print(f"{os.path.basename(kcross)}")
@@ -700,7 +700,7 @@ def basic_cal_subflow(
             )
             if msg == 0:
                 print_banner(
-                    f"Diagnostic plots for bandpass tables are saved in:\n{bpass_plots}."
+                    f"Diagnostic plots for bandpass tables are saved in: {bpass_plots}."
                 )
             else:
                 print("Error in creating diagnostic plots for bandpass tables.")
@@ -714,7 +714,7 @@ def basic_cal_subflow(
             )
             if msg == 0:
                 print_banner(
-                    f"Diagnostic plots for crosshand phase tables are saved in:\n{kcross_plots}."
+                    f"Diagnostic plots for crosshand phase tables are saved in: {kcross_plots}."
                 )
             else:
                 print("Error in creating diagnostic plots for crosshand phase tables.")
@@ -823,7 +823,7 @@ def selfcal_subflow(
                             selfcal_leakage, overwrite=True
                         )
                         print_banner(
-                            "Self-calibration solutions exist including polarisation calibration.\nNot performing self-calibration"
+                            "Self-calibration solutions exist including polarisation calibration. Not performing self-calibration"
                         )
                         if emails != "":
                             email_msg = f"[{target_obsid}] Self-calibration solutions including polarisation for target are already present."
@@ -833,16 +833,16 @@ def selfcal_subflow(
                                 jobid,
                                 target_obsid,
                                 timestamp,
-                                flow_name=f"Subflow {flow_name}",
+                                flow_name=f"subflow {flow_name}",
                             )
                         return 0, selfcal_gaincal, selfcal_bandpass, selfcal_leakage
                     else:
                         print_banner(
-                            "Self-calibration solutions exist without polarisation calibration.\nHence, performing self-calibration"
+                            "Self-calibration solutions exist without polarisation calibration. Hence, performing self-calibration"
                         )
                 else:
                     print_banner(
-                        "Self-calibration solutions exist without polarisation calibration.\nPolarisation calibration is not requested."
+                        "Self-calibration solutions exist without polarisation calibration. Polarisation calibration is not requested."
                     )
                     return 0, selfcal_gaincal, selfcal_bandpass, []
 
@@ -861,7 +861,7 @@ def selfcal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             return 1, [], [], []
         else:
@@ -896,7 +896,7 @@ def selfcal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner(f"Starting task: Spliting {prefix}.")
             ntime = get_selfcal_ntimes(target_mslist[0])
@@ -936,7 +936,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner(
                     "Finished task: Spliting of measurement sets for self-calibration is done."
@@ -954,7 +954,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], [], []
 
@@ -971,14 +971,14 @@ def selfcal_subflow(
                     "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
                 )
                 if emails != "":
-                    email_msg = f"[{target_obsid}] No splited measurement set is found for self-calibration.\nNot continuting for self-calibration."
+                    email_msg = f"[{target_obsid}] No splited measurement set is found for self-calibration. Not continuting for self-calibration."
                     send_task_notification(
                         emails,
                         email_msg,
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], [], []
 
@@ -993,7 +993,7 @@ def selfcal_subflow(
             selfcal_mslist = filtered_mslist
             if len(selfcal_mslist) == 0:
                 print_banner(
-                    "No splited target scan ms are available in work directory for selfcal.\nNot continuing further for selfcal."
+                    "No splited target scan ms are available in work directory for selfcal. Not continuing further for selfcal."
                 )
                 if emails != "":
                     email_msg = f"[{target_obsid}] No splited measurement set is found for self-calibration. Not continuting for self-calibration."
@@ -1003,7 +1003,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], [], []
 
@@ -1027,7 +1027,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner(
                     "Starting task: Applying basic calibration on self-calibration measurement sets."
@@ -1059,14 +1059,14 @@ def selfcal_subflow(
                             jobid,
                             target_obsid,
                             timestamp,
-                            flow_name=f"Subflow {flow_name}",
+                            flow_name=f"subflow {flow_name}",
                         )
                     print_banner(
                         "Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
                     )
                 except Exception:
                     print_banner(
-                        "!!!! WARNING: Error in applying basic calibration solutions on target.\nContinuing selfcal without basic calibration.!!!!"
+                        "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
                     )
                     traceback.print_exc()
                     if emails != "":
@@ -1077,7 +1077,7 @@ def selfcal_subflow(
                             jobid,
                             target_obsid,
                             timestamp,
-                            flow_name=f"Subflow {flow_name}",
+                            flow_name=f"subflow {flow_name}",
                         )
 
             ########################################
@@ -1108,7 +1108,7 @@ def selfcal_subflow(
                             jobid,
                             target_obsid,
                             timestamp,
-                            flow_name=f"Subflow {flow_name}",
+                            flow_name=f"subflow {flow_name}",
                         )
                     return 1, [], [], []
                 else:
@@ -1131,7 +1131,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner(
                     "Starting task: Sidereal motion correction for self-calibration measurement sets."
@@ -1157,7 +1157,7 @@ def selfcal_subflow(
                             jobid,
                             target_obsid,
                             timestamp,
-                            flow_name=f"Subflow {flow_name}",
+                            flow_name=f"subflow {flow_name}",
                         )
                     print_banner(
                         "Finished task: Correction for solar sidereal motion is done."
@@ -1175,7 +1175,7 @@ def selfcal_subflow(
                             jobid,
                             target_obsid,
                             timestamp,
-                            flow_name=f"Subflow {flow_name}",
+                            flow_name=f"subflow {flow_name}",
                         )
 
             ############################
@@ -1189,7 +1189,7 @@ def selfcal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Flagging selfcal targets.")
             future_flag = run_flag.with_options(
@@ -1218,7 +1218,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 for s_ms in selfcal_mslist:
                     s_ms = s_ms.rstrip("/")
@@ -1242,7 +1242,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
 
             #############################
@@ -1256,7 +1256,7 @@ def selfcal_subflow(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name=f"Subflow {flow_name}",
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Self-calibrations.")
             if cal_applied:
@@ -1306,7 +1306,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Self-calibration is done.")
             except Exception:
@@ -1322,7 +1322,7 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
                 return 1, [], [], []
 
@@ -1330,7 +1330,7 @@ def selfcal_subflow(
             # Checking self-cal caltables
             ########################################
             print(
-                f"Searching for self-calibration gaincal tables:\n{selfcaldir}/selfcal_{target_obsid}*.gcal"
+                f"Searching for self-calibration gaincal tables: {selfcaldir}/selfcal_{target_obsid}*.gcal"
             )
             selfcal_gaincal = sorted(
                 glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
@@ -1347,23 +1347,23 @@ def selfcal_subflow(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name=f"Subflow {flow_name}",
+                        flow_name=f"subflow {flow_name}",
                     )
             else:
                 print_banner(
-                    f"Self-calibration gaincal tables in calibration directory:\n{selfcaldir}"
+                    f"Self-calibration gaincal tables in calibration directory: {selfcaldir}"
                 )
                 for gcal in selfcal_gaincal:
                     print(f"{os.path.basename(gcal)}")
                 print(
-                    f"Searching for self-calibration bandpass tables:\n{selfcaldir}/selfcal_{target_obsid}*.bcal"
+                    f"Searching for self-calibration bandpass tables: {selfcaldir}/selfcal_{target_obsid}*.bcal"
                 )
                 selfcal_bandpass = sorted(
                     glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
                 )
                 if len(selfcal_bandpass) > 0:
                     print_banner(
-                        f"Self-calibration bandpass tables in calibration directory:\n{selfcaldir}"
+                        f"Self-calibration bandpass tables in calibration directory: {selfcaldir}"
                     )
                     for bpass in selfcal_bandpass:
                         print(f"{os.path.basename(bpass)}")
@@ -1372,14 +1372,14 @@ def selfcal_subflow(
                     )
                 if do_polcal:
                     print(
-                        f"Searching for self-calibration polarisation leakage tables:\n{selfcaldir}/selfcal_{target_obsid}*.dcal"
+                        f"Searching for self-calibration polarisation leakage tables: {selfcaldir}/selfcal_{target_obsid}*.dcal"
                     )
                     selfcal_leakage = sorted(
                         glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
                     )
                     if len(selfcal_leakage) > 0:
                         print_banner(
-                            f"Self-calibration polarisation leakage tables in calibration directory:\n{selfcaldir}"
+                            f"Self-calibration polarisation leakage tables in calibration directory: {selfcaldir}"
                         )
                         for dcal in selfcal_leakage:
                             print(f"{os.path.basename(dcal)}")
@@ -1398,7 +1398,7 @@ def selfcal_subflow(
                     )
                     if msg == 0:
                         print(
-                            f"Diagnostic plots for self-calibration gaincal tables are saved in:\n{gcal_plots}."
+                            f"Diagnostic plots for self-calibration gaincal tables are saved in: {gcal_plots}."
                         )
                     else:
                         print(
@@ -1413,7 +1413,7 @@ def selfcal_subflow(
                     )
                     if msg == 0:
                         print(
-                            f"Diagnostic plots for self-calibration bandpass tables are saved in:\n{bcal_plots}."
+                            f"Diagnostic plots for self-calibration bandpass tables are saved in: {bcal_plots}."
                         )
                     else:
                         print(
@@ -1429,7 +1429,7 @@ def selfcal_subflow(
                         )
                         if msg == 0:
                             print(
-                                f"Diagnostic plots for self-calibration leakage tables are saved in: \n{dcal_plots}."
+                                f"Diagnostic plots for self-calibration leakage tables are saved in: {dcal_plots}."
                             )
                         else:
                             print(

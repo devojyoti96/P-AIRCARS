@@ -642,6 +642,7 @@ def run_basic_cal_jobs(
 )
 def run_apply_basiccal_sol(
     mslist,
+    target_metafits,
     workdir,
     caldir,
     overwrite_datacolumn=True,
@@ -660,6 +661,8 @@ def run_apply_basiccal_sol(
     ----------
     mslist: str
         Target measurement set list (comma separated)
+    target_metafits : str
+        Target metafits file
     workdir : str
         Working directory
     caldir : str
@@ -712,6 +715,7 @@ def run_apply_basiccal_sol(
         with get_dask_client() as dask_client:
             msg, succeed, failed = do_apply_basiccal.main(
                 mslist,
+                target_metafits,
                 workdir,
                 caldir,
                 applymode=applymode,

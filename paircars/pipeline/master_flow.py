@@ -782,7 +782,7 @@ def master_control(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name="Master flow {flow_name}",
+                    flow_name="master flow {flow_name}",
                 )
 
         ###########################################
@@ -1006,7 +1006,7 @@ def master_control(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name="Master flow {flow_name}",
+                    flow_name="master flow {flow_name}",
                 )
             if len(all_bandpass_tables) == 0:
                 print(
@@ -1021,7 +1021,7 @@ def master_control(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name="Master flow {flow_name}",
+                        flow_name="master flow {flow_name}",
                     )
             elif len(all_crossphase_tables) == 0:
                 print(
@@ -1035,7 +1035,7 @@ def master_control(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name="Master flow {flow_name}",
+                        flow_name="master flow {flow_name}",
                     )
 
         ###################################################
@@ -1070,7 +1070,7 @@ def master_control(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name="Master flow {flow_name}",
+                    flow_name="master flow {flow_name}",
                 )
             return 1
 
