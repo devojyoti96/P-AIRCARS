@@ -29,7 +29,6 @@ from paircars.utils.calibration import (
 )
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup
-from paircars.utils.image_utils import filter_images
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -38,7 +37,6 @@ from paircars.utils.logger_utils import (
     get_emails,
     init_logger,
 )
-from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import (
     get_ncoarse,
     get_MWA_OBSID,
@@ -68,18 +66,12 @@ from paircars.pipeline.flows import (
     basic_cal_subflow,
     pre_process_subflow,
     selfcal_subflow,
+    applysol_subflow,
+    imaging_subflow,
 )
 from paircars.pipeline.tasks import (
-    run_target_split_jobs,
-    run_flag,
-    run_apply_basiccal_sol,
-    run_solar_siderealcor_jobs,
-    run_apply_selfcal_sol,
-    run_imaging_jobs,
-    run_apply_pbcor,
-    run_make_overlay,
-    run_make_msplot,
     send_task_notification,
+    run_make_msplot,
 )
 
 
@@ -764,7 +756,10 @@ def master_control(
         #####################################
         # Printing basic info of the pipeline
         #####################################
-        print_banner(f"Work directory: {workdir}\nFinal product directory: {outdir}")
+        print_banner("Work directory")
+        print(f"{workdir}")
+        print_banner("Final product directory")
+        print(f"{outdir}")
         if remote_logger:
             print_banner(
                 f"{remote_link}\nRemote Job ID: {jobname}\nRemote access password: {password}"
@@ -782,7 +777,7 @@ def master_control(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name="master flow {flow_name}",
+                    flow_name=f"master flow {flow_name}",
                 )
 
         ###########################################
@@ -956,14 +951,27 @@ def master_control(
             all_crossphase_tables = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
+                if adaptive:
+                    cal_mslist = glob.glob(f"{cal_datadir}/*.ms")
+                total_ncoarse = 0
+                for calms in cal_mslist:
+                    ms_coarse_chans = get_MWA_coarse_chan(calms)
+                    ms_coarse_chans = list(set(ms_coarse_chans) & set(coarse_chans))
+                    ncoarse = len(ms_coarse_chans)
+                    total_ncoarse += ncoarse
+                    scale_worker_and_wait(
+                        dask_cluster,
+                        dask_client,
+                        max(2, min(total_ncoarse + 1, max_worker)),
+                    )
                 print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
                     (
-                        msg,
+                        basical_msg,
                         bandpass_tables,
                         crossphase_tables,
                     ) = basic_cal_subflow.with_options(
-                        flow_run_name=f"basic_cal_{cal_obsid}"
+                        flow_run_name=f"basiccal_subflow_{cal_obsid}"
                     )(
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -988,7 +996,7 @@ def master_control(
                         emails=emails,
                         remote_logger=remote_logger,
                     )
-                    if msg == 0:
+                    if basical_msg == 0:
                         succeed += 1
                         all_bandpass_tables += bandpass_tables
                         all_crossphase_tables += crossphase_tables
@@ -1006,7 +1014,7 @@ def master_control(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name="master flow {flow_name}",
+                    flow_name=f"master flow {flow_name}",
                 )
             if len(all_bandpass_tables) == 0:
                 print(
@@ -1021,7 +1029,7 @@ def master_control(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name="master flow {flow_name}",
+                        flow_name=f"master flow {flow_name}",
                     )
             elif len(all_crossphase_tables) == 0:
                 print(
@@ -1035,14 +1043,20 @@ def master_control(
                         jobid,
                         target_obsid,
                         timestamp,
-                        flow_name="master flow {flow_name}",
+                        flow_name=f"master flow {flow_name}",
                     )
 
         ###################################################
         # Target measurement set pre-processing flows
         ###################################################
-        msg, target_mslist = pre_process_subflow.with_options(
-            flow_run_name=f"pre_process_{target_obsid}"
+        if adaptive:
+            scale_worker_and_wait(
+                dask_cluster,
+                dask_client,
+                max(2, min(len(target_mslist) + 1, max_worker)),
+            )
+        preprocess_msg, target_mslist = pre_process_subflow.with_options(
+            flow_run_name=f"preprocess_subflow_{target_obsid}"
         )(
             # Core observational inputs
             target_mslist=target_mslist,
@@ -1060,7 +1074,7 @@ def master_control(
             emails=emails,
             remote_logger=remote_logger,
         )
-        if msg != 0 or len(target_mslist) == 0:
+        if preprocess_msg != 0 or len(target_mslist) == 0:
             print("Error occured in pre-processing steps target data.")
             if emails != "":
                 email_msg = "Error occured in pre-processing steps target data. P-AIRCARS has stopped."
@@ -1070,19 +1084,32 @@ def master_control(
                     jobid,
                     target_obsid,
                     timestamp,
-                    flow_name="master flow {flow_name}",
+                    flow_name=f"master flow {flow_name}",
                 )
             return 1
 
         ##################################################
         # Self-calibration flows
         ##################################################
+        if adaptive:
+            total_ncoarse = 0
+            for targetms in target_mslist:
+                ms_coarse_chans = get_MWA_coarse_chan(targetms)
+                ncoarse = len(ms_coarse_chans)
+                total_ncoarse += ncoarse
+            scale_worker_and_wait(
+                dask_cluster,
+                dask_client,
+                max(2, min(total_ncoarse + 1, max_worker)),
+            )
         (
-            msg,
+            selfcal_msg,
             selfcal_gaintable,
             selfcal_bandpass,
             selfcal_leakage,
-        ) = selfcal_subflow.with_options(flow_run_name=f"selfcal_{target_obsid}")(
+        ) = selfcal_subflow.with_options(
+            flow_run_name=f"selfcal_subflow_{target_obsid}"
+        )(
             target_mslist=target_mslist,
             target_metafits=target_metafits,
             target_obsid=target_obsid,
@@ -1114,532 +1141,124 @@ def master_control(
             emails=emails,
             remote_logger=remote_logger,
         )
-        if msg != 0 or len(selfcal_gaintable) == 0:
+        if selfcal_msg != 0 or len(selfcal_gaintable) == 0:
             print_banner("No self-calibration solutions are available to apply.")
             do_apply_selfcal = False
-        return 0
 
-        #############################################
-        # Spliting targets if not started already
-        #############################################
-        # If corrected data is requested or imaging is requested
-
+        ##############################################
+        # Apply solutions subflow
+        ##############################################
         if do_applycal or do_apply_selfcal or do_imaging:
             if adaptive:
+                total_ncoarse = 0
+                for targetms in target_mslist:
+                    ms_coarse_chans = get_MWA_coarse_chan(targetms)
+                    ncoarse = len(ms_coarse_chans)
+                    total_ncoarse += ncoarse
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
                     max(2, min(total_ncoarse + 1, max_worker)),
                 )
-            prefix = "target"
-            if emails != "":
-                email_msg = "Started spliting target for final processing."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print(f"Starting task: Spliting {prefix} .....")
-            print("###########################")
-            future_split = run_target_split_jobs.with_options(
-                task_run_name=f"spliting_{prefix}_{jobid}"
-            ).submit(
-                ",".join(target_mslist),
-                target_metafits,
-                workdir,
-                datacolumn="data",
-                force_split=True,
-                freqres=freqavg,
-                timeres=timeavg,
+            applycal_msg, split_target_mslist = applysol_subflow.with_options(
+                flow_run_name=f"applysol_subflow_{target_obsid}"
+            )(
+                target_mslist=target_mslist,
+                target_metafits=target_metafits,
+                target_obsid=target_obsid,
+                workdir=workdir,
+                basic_caldir=basic_caldir,
+                selfcaldir=selfcaldir,
+                target_outdir=target_outdir,
+                do_applycal=do_applycal,
+                do_apply_selfcal=do_apply_selfcal,
+                has_cal=has_cal,
+                do_polcal=do_polcal,
+                do_sidereal_cor=do_sidereal_cor,
+                use_solarflagger=use_solarflagger,
+                freqavg=freqavg,
+                timeavg=timeavg,
                 quack_timestamps=quack_timestamps,
-                prefix=prefix,
+                only_amplitude=only_amplitude,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
                 jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
+                timestamp=timestamp,
+                emails=emails,
+                remote_logger=remote_logger,
             )
-            ##########################################
-            # Checking target spliting is done or not
-            ##########################################
-            print("Checking spliting of targets status...")
-            try:
-                msg, expected, succeed = future_split.result()
-                if emails != "":
-                    email_msg = f"Spliting target for final processing is done.\nExpected: {expected}, succeeded: {succeed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Finished task: Spliting target for final processing is done.")
-                print("###########################")
-            except Exception:
-                print("!!!! WARNING: Error in spliting targets. !!!!")
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in spliting target for final processing."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                return 1
-            finally:
-                if adaptive:
-                    scale_worker_and_wait(dask_cluster, dask_client, 2)
-
-            ################################
-            # Checking splited final ms list
-            ################################
-            split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
-            if len(split_target_mslist) == 0:
-                print("!!!! WARNING: No target ms are present. !!!!")
+            if applycal_msg != 0 or len(split_target_mslist) == 0:
+                print("No calibrated target measurement set is available for imaging.")
                 if emails != "":
                     email_msg = (
-                        "No target measurement set is present for final processing."
+                        "Error occured in applying solutions. P-AIRCARS has stopped."
                     )
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"master flow {flow_name}",
                     )
                 return 1
-            ####################################
-            # Filtering any corrupted ms
-            #####################################
-            print(
-                "Checking final valid measurement sets before applying solutions and spawning imaging...."
+        else:
+            split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
+
+        ###################################
+        # Imaging subflow
+        ###################################
+        if adaptive:
+            scale_worker_and_wait(
+                dask_cluster,
+                dask_client,
+                max(2, min(len(split_target_mslist) + 1, max_worker)),
             )
-            filtered_mslist = []  # Filtering in case any ms is corrupted
-            for ms in split_target_mslist:
-                checkcol = check_datacolumn_valid(ms)
-                if checkcol:
-                    filtered_mslist.append(ms)
-                else:
-                    print(f"Issue in : {ms}")
-                    os.system(f"rm -rf {ms}")
-            split_target_mslist = filtered_mslist
-            if len(split_target_mslist) == 0:
-                print("No filtered target ms are available in work directory.")
-                if emails != "":
-                    email_msg = "No un-corrupted target measurement is present for final processing."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                return 1
-            print(
-                f"Target mslist : {[os.path.basename(i) for i in split_target_mslist]}"
-            )
-
-            #########################################################
-            # Applying basic solutions on target scans
-            #########################################################
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    max(2, min(len(split_target_mslist) + 1, max_worker)),
-                )
-
-            ####################################
-            # Applying basic calibration
-            #####################################
-            if (do_applycal or do_apply_selfcal) and has_cal:
-                if emails != "":
-                    email_msg = "Started applying basic calibration solutions on final target measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Starting task: Applying basic calibration on final target measurement sets....."
-                )
-                print("###########################")
-                future_apply_basical = run_apply_basiccal_sol.with_options(
-                    task_run_name=f"applying_basiccal_target_{jobid}"
-                ).submit(
-                    ",".join(split_target_mslist),
-                    calibrator_metafits,
-                    target_metafits,
-                    workdir,
-                    basic_caldir,
-                    overwrite_datacolumn=True,
-                    only_amplitude=only_amplitude,
-                    applymode="calflag",
-                    prefix="target",
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, succeed, failed = future_apply_basical.result()
-                    if emails != "":
-                        email_msg = f"Applying basic calibration solutions on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print(
-                        "Finished task: Applying basic calibration solutions on final target measurement sets are done."
-                    )
-                    print("###########################")
-                except Exception:
-                    print(
-                        "!!!! WARNING: Error in applying basic calibration solutions on target scans. Not continuing further.!!!!"
-                    )
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = "Error occured in applying basic calibration on final target measurement sets. P-AIRCARS has stopped."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    return 1
-
-            ###################################
-            # Correct sidereal motion
-            ###################################
-            if do_sidereal_cor:
-                if emails != "":
-                    email_msg = "Start correcting sidereal motion of the Sun on final target measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Starting task: Sidereal motion correction for final target measurement sets....."
-                )
-                print("###########################")
-                future_sidereal_cor = run_solar_siderealcor_jobs.with_options(
-                    task_run_name=f"solar_sidereal_correction_{jobid}"
-                ).submit(
-                    ",".join(split_target_mslist),
-                    workdir,
-                    prefix="target",
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, succeed, failed = future_sidereal_cor.result()
-                    if emails != "":
-                        email_msg = f"Sidereal motion correction of the Sun on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print(
-                        "Finished task: Sidereal motion correction of the Sun on final target measurement sets are done."
-                    )
-                    print("###########################")
-                except Exception:
-                    print("!!!! WARNING: Error in applying sidereal correction.!!!!")
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = "Error occured in sidereal motion correction on final target measurement sets."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-
-            ########################################
-            # Apply self-calibration
-            ########################################
-            if do_apply_selfcal:
-                selfcal_applymode = "calonly"
-                for msname in split_target_mslist:
-                    if not os.path.exists(f"{msname}/.applied_sol"):
-                        selfcal_applymode = "calflag"
-
-                if emails != "":
-                    email_msg = "Started applying self-calibration on final target measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Starting task: Applying self-calibration solutions on final target measurement sets....."
-                )
-                print("###########################")
-                future_apply_selfcal = run_apply_selfcal_sol.with_options(
-                    task_run_name=f"applying_selfcal_{jobid}"
-                ).submit(
-                    ",".join(split_target_mslist),
-                    target_metafits,
-                    workdir,
-                    selfcaldir,
-                    overwrite_datacolumn=False,
-                    applymode=selfcal_applymode,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, gain_succeed, gain_failed, pol_succeed, pol_failed = (
-                        future_apply_selfcal.result()
-                    )
-                    if emails != "":
-                        email_msg = f"Applying self-calibration on final target measurement sets are done.\nGain solutions applied: Succeeded: {gain_succeed}, failed: {gain_failed}."
-                        if do_polcal:
-                            email_msg += f"\nPolarisation solution applied: Succeeded: {pol_succeed}, failed: {pol_failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print(
-                        "Finished task: Applying self-calibration on final target measurement sets are done."
-                    )
-                    print("###########################")
-                except Exception:
-                    print(
-                        "!!!! WARNING: Error in applying self-calibration solutions on targets. !!!!"
-                    )
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = "Error occured in applying self-calibration solutions on final target measurement sets."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-
-            ############################
-            # Basic flagging
-            ############################
+        imaging_msg = imaging_subflow.with_options(
+            flow_run_name=f"imaging_subflow_{target_obsid}"
+        )(
+            split_target_mslist=split_target_mslist,
+            target_metafits=target_metafits,
+            target_obsid=target_obsid,
+            workdir=workdir,
+            selfcaldir=selfcaldir,
+            target_outdir=target_outdir,
+            do_imaging=do_imaging,
+            do_pbcor=do_pbcor,
+            do_polcal=do_polcal,
+            keep_backup=keep_backup,
+            make_overlay=make_overlay,
+            image_freqres=image_freqres,
+            image_timeres=image_timeres,
+            pol=pol,
+            freqrange=freqrange,
+            timerange=timerange,
+            minuv=minuv,
+            weight=weight,
+            robust=robust,
+            clean_threshold=clean_threshold,
+            use_multiscale=use_multiscale,
+            use_solar_mask=use_solar_mask,
+            cutout_rsun=cutout_rsun,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
+            jobid=jobid,
+            timestamp=timestamp,
+            emails=emails,
+            remote_logger=remote_logger,
+        )
+        if imaging_msg != 0:
+            print_banner("Error occured in imaging.")
             if emails != "":
-                email_msg = "Started flagging of final target measurement sets."
+                email_msg = "Error occured in imaging. P-AIRCARS has stopped."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"master flow {flow_name}",
                 )
-            print("###########################")
-            print("Starting task: Flagging final target measurement sets .....")
-            print("###########################")
-            if not use_solarflagger:
-                dr_files = glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.DR")
-                if len(dr_files) > 0:
-                    int_DR_list = []
-                    pol_DR_list = []
-                    for dr_file in dr_files:
-                        int_DR, pol_DR = np.load(dr_file, allow_pickle=True)
-                        int_DR_list.append(int_DR)
-                        pol_DR_list.append(pol_DR)
-                    avg_int_DR = np.nanmedian(int_DR_list)
-                    avg_pol_DR = np.nanmedian(pol_DR_list)
-                    if avg_int_DR < 100 or avg_pol_DR < 100:
-                        print(
-                            f"Average intensity self-calibration dynamic range: {avg_int_DR} is smaller than 100."
-                        )
-                        print(
-                            f"Average polarisation self-calibration dynamic range: {avg_pol_DR} is smaller than 100."
-                        )
-                        print("Using solar flagger.")
-                        use_solarflagger = True
-
-            future_flag = run_flag.with_options(
-                task_run_name=f"flagging_target_{jobid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                target_metafits,
-                workdir,
-                target_outdir,
-                flag_calibrators=False,
-                flag_quack=False,
-                datacolumn="corrected",
-                run_solarflagger=use_solarflagger,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_flag.result()
-                if emails != "":
-                    email_msg = f"Flagging of final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Finished task: Flagging of final target measurement sets are done."
-                )
-                print("###########################")
-            except Exception:
-                print(
-                    "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = (
-                        "Error occured in flagging of final target measurement sets."
-                    )
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-
-            ######################################
-            # Imaging
-            ######################################
-            if do_imaging:
-                if image_freqres > 0:
-                    print(f"Image frequency resolution: {image_freqres} MHz.")
-                else:
-                    print("Image frequency resolution: entire corase channel.")
-                if image_timeres > 0:
-                    print(f"Image time resolution: {image_timeres} s.")
-                else:
-                    print("Imaging entire scan.")
-                pol = pol.upper()
-                if pol not in ["I", "IQUV"]:
-                    pol = "IQUV"
-
-                if (
-                    not do_polcal
-                ):  # Only if do_polcal is False, overwrite to make only Stokes I
-                    pol = "I"
-
-                if emails != "":
-                    email_msg = "Started final imaging."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Starting task: Final imaging.....")
-                print("###########################")
-                future_imaging = run_imaging_jobs.with_options(
-                    task_run_name=f"imaging_{jobid}"
-                ).submit(
-                    ",".join(split_target_mslist),
-                    workdir,
-                    target_outdir,
-                    freqrange=freqrange,
-                    timerange=timerange,
-                    minuv=minuv,
-                    weight=weight,
-                    robust=float(robust),
-                    pol=pol,
-                    freqres=image_freqres,
-                    timeres=image_timeres,
-                    threshold=float(clean_threshold),
-                    use_multiscale=use_multiscale,
-                    use_solar_mask=use_solar_mask,
-                    cutout_rsun=cutout_rsun,
-                    savemodel=keep_backup,
-                    saveres=keep_backup,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, succeed, failed, total_images = future_imaging.result()
-                    if emails != "":
-                        email_msg = f"Final imaging is done.\nSucceeded: {succeed}, failed: {failed}.\nTotal images made: {total_images}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print("Finished task: Final imaging is done.")
-                    print("###########################")
-                except Exception:
-                    print(
-                        "!!!! WARNING: Final imaging on all measurement sets is not successful. Check the image directory. !!!!"
-                    )
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = (
-                            "Error occured in final imaging. P-AIRCARS has stopped."
-                        )
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    return 1
-            if adaptive:
-                scale_worker_and_wait(dask_cluster, dask_client, 2)
-
-        ########################################
-        # Naming of image directory
-        ########################################
-        if weight == "briggs":
-            weight_str = f"{weight}_{robust}"
-        else:
-            weight_str = weight
-        if image_freqres == -1 and image_timeres == -1:
-            imagedir = target_outdir + f"/imagedir_f_all_t_all_pol_{pol}_w_{weight_str}"
-        elif image_freqres != -1 and image_timeres == -1:
-            imagedir = (
-                target_outdir
-                + f"/imagedir_f_{image_freqres}_t_all_pol_{pol}_w_{weight_str}"
-            )
-        elif image_freqres == -1 and image_timeres != -1:
-            imagedir = (
-                target_outdir
-                + f"/imagedir_f_all_t_{image_timeres}_pol_{pol}_w_{weight_str}"
-            )
-        else:
-            imagedir = (
-                target_outdir
-                + f"/imagedir_f_{image_freqres}_t_{image_timeres}_pol_{pol}_w_{weight_str}"
-            )
-
-        os.system(f"rm -rf {imagedir}/images/*aia*.fits")
-        os.system(f"rm -rf {imagedir}/images/*suvi*.fits")
-        ###########################
-        # Primary beam correction
-        ###########################
-        if do_pbcor:
-            images = sorted(glob.glob(f"{imagedir}/images/*.fits"))
-            if len(images) == 0:
-                print(f"No image is present in image directory: {imagedir}/images")
-                if emails != "":
-                    email_msg = "No image is present in image directory for primary beam correction."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-            else:
-                if adaptive:
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        max(2, min(len(images) + 1, max_worker)),
-                    )
-                if emails != "":
-                    email_msg = "Started primary beam correction."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Starting task: Primary beam correction.....")
-                print("###########################")
-                future_pbcor = run_apply_pbcor.with_options(
-                    task_run_name=f"applying_primary_beam_{jobid}"
-                ).submit(
-                    f"{imagedir}/images",
-                    target_metafits,
-                    workdir,
-                    leakage_dir=selfcaldir,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, succeed, failed = future_pbcor.result()
-                    if emails != "":
-                        email_msg = f"Primary beam correction is done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print("Finished task: Primary beam correction is done.")
-                    print(f"Final image directory: {imagedir}/images")
-                    print("###########################")
-                except Exception:
-                    print(
-                        "!!!! WARNING: Primary beam corrections of the final images are not successful. !!!!"
-                    )
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = "Error occured in primary beam correction. P-AIRCARS has stopped."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    return 1
-                finally:
-                    if adaptive:
-                        scale_worker_and_wait(dask_cluster, dask_client, 2)
 
         ##############################################
         # Making diagnostic plots of measurement sets
@@ -1648,7 +1267,7 @@ def master_control(
             ###########################################
             # Ploting calibrator ms
             ###########################################
-            split_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_spw_*.ms"))
+            split_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_ch_*.ms"))
             if len(split_cal_mslist) == 0:
                 print("No calibrator measurement set is present for ploting.")
             else:
@@ -1666,13 +1285,11 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-                    print("###########################")
-                    print(
-                        "Starting task: Making diagnostic plots of calibrator measurement sets....."
+                    print_banner(
+                        "Starting task: Making diagnostic plots of calibrator measurement sets."
                     )
-                    print("###########################")
                     future_cal_plot = run_make_msplot.with_options(
-                        task_run_name=f"making_msplot_cal_{jobid}"
+                        task_run_name=f"msplot_cal_{jobid}"
                     ).submit(
                         ",".join(split_cal_mslist),
                         workdir,
@@ -1689,13 +1306,11 @@ def master_control(
                             send_task_notification(
                                 emails, email_msg, jobid, target_obsid, timestamp
                             )
-                        print("###########################")
-                        print(
+                        print_banner(
                             "Finished task: Making diagnostic plots for calibrator measurment sets are done."
                         )
-                        print("###########################")
                     except Exception:
-                        print(
+                        print_banner(
                             "!!!! WARNING: Diagnostic plot of calibrator measurment sets are not successful. !!!!"
                         )
                         traceback.print_exc()
@@ -1708,7 +1323,7 @@ def master_control(
             ###########################################
             # Ploting target ms
             ###########################################
-            split_target_mslist = sorted(glob.glob(f"{workdir}/target*_spw_*.ms"))
+            split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
             if len(split_target_mslist) == 0:
                 print("No target measurment set is present for ploting.")
             else:
@@ -1720,13 +1335,11 @@ def master_control(
                     )
                 msplot_outdir = f"{target_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
-                print("###########################")
-                print(
-                    "Starting task: Making diagnostic plots of target measurement sets....."
+                print_banner(
+                    "Starting task: Making diagnostic plots of target measurement sets."
                 )
-                print("###########################")
                 future_target_plot = run_make_msplot.with_options(
-                    task_run_name=f"making_msplot_{jobid}"
+                    task_run_name=f"msplot_target_{jobid}"
                 ).submit(
                     ",".join(split_target_mslist),
                     workdir,
@@ -1738,18 +1351,27 @@ def master_control(
                 )
                 try:
                     msg = future_target_plot.result()
-                    if emails != "":
-                        email_msg = "Making diagnostic plots for target measurement sets are done."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
+                    if msg == 0:
+                        if emails != "":
+                            email_msg = "Making diagnostic plots for target measurement sets are done."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
+                        print_banner(
+                            "Finished task: Making diagnostic plots for target measurment sets are done."
                         )
-                    print("###########################")
-                    print(
-                        "Finished task: Making diagnostic plots for target measurment sets are done."
-                    )
-                    print("###########################")
+                    else:
+                        print_banner(
+                            "Finished task: Error occured in making diagnostic plots for target measurment sets."
+                        )
+                        traceback.print_exc()
+                        if emails != "":
+                            email_msg = "Error occured in making diagnostic plots of target measurement sets."
+                            send_task_notification(
+                                emails, email_msg, jobid, target_obsid, timestamp
+                            )
                 except Exception:
-                    print(
+                    print_banner(
                         "!!!! WARNING: Diagnostic plot of target measurment sets are not successful. !!!!"
                     )
                     traceback.print_exc()
@@ -1758,97 +1380,13 @@ def master_control(
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
-        if adaptive:
-            scale_worker_and_wait(dask_cluster, dask_client, 2)
-        #######################################
-        # Make overlays
-        #######################################
-        images = sorted(glob.glob(f"{imagedir}/images/*.fits"))
-        if len(images) == 0:
-            print(
-                f"No image is present in image directory: {imagedir}/images for making overlays"
-            )
-            if emails != "":
-                email_msg = (
-                    "No image is present in image directory for making overlays."
-                )
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-
-        #################################################################
-        # Filtering only coarse channel images for default overlay mode
-        #################################################################
-        if make_overlay is False and len(images) > 0:
-            images = filter_images(images, min_time_sep=60.0)
-        internet_on = internet_available()
-        if not internet_on:
-            print("Internet connection is not available. Can not make overlays")
-        elif len(images) > 0:
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster, dask_client, max(2, min(len(images) + 1, max_worker))
-                )
-            #################################
-            # Start overlays
-            #################################
-            if emails != "":
-                email_msg = "Started making overlays."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Making overlay on EUV images.....")
-            print("###########################")
-            future_overlay = run_make_overlay.with_options(
-                task_run_name=f"making_overlay_{jobid}"
-            ).submit(
-                f"{imagedir}/images",
-                f"{imagedir}/overlay_pngs",
-                workdir=workdir,
-                all_overlay=make_overlay,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_overlay.result()
-                if msg == 0:
-                    if emails != "":
-                        email_msg = f"Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print("Finished task: Making overlays are done.")
-                    print(f"Final image directory: {imagedir}/overlay_pngs")
-                    print("###########################")
-                else:
-                    if emails != "":
-                        email_msg = f"Making overlays are not successful EUV images could not be download.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print("Finished task: Making overlays are not successful.")
-                    if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
-                        os.system(f"rm -rf {imagedir}/overlay_pngs")
-                    else:
-                        print(f"Final image directory: {imagedir}/overlay_pngs")
-                    print("###########################")
-            except Exception:
-                print("!!!! WARNING: Overlay of the images are not successful. !!!!")
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in making overlays."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
 
         ###########################################
         # Successful exit
         ###########################################
-        print("P-AIRCARS calibration and imaging pipeline is successfully executed.")
+        print_banner(
+            "P-AIRCARS calibration and imaging pipeline is successfully executed."
+        )
         if emails != "":
             email_msg = "P-AIRCARS processing is done successfully."
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
@@ -1858,24 +1396,24 @@ def master_control(
         if emails != "":
             email_msg = f"Error in running P-AIRCARS.\n{e}"
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
-        print("###########################")
-        print("Error occured in running P-AIRCARS.")
-        print("###########################")
+        print_banner("Error occured in running P-AIRCARS.")
         return 1
     finally:
         time.sleep(5)
         datalist = sorted(glob.glob(f"{target_datadir}/*"))
         for data in datalist:
             drop_cache(data)
-        callist = sorted(glob.glob(f"{calibrator_datadir}/*"))
-        for cal in callist:
-            drop_cache(cal)
+        cal_datadir_list = calibrator_datadir.split(",")
+        for cal_datadir in cal_datadir_list:
+            callist = sorted(glob.glob(f"{cal_datadir}/*"))
+            for cal in callist:
+                drop_cache(cal)
         ######################################
         # Keeping flag backups
         ######################################
         # Flag backups of calibrator measurement sets
         ######################################
-        final_cal_mslist = sorted(glob.glob(workdir + "/calibrator*_spw_*.ms"))
+        final_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_ch_*.ms"))
         if len(final_cal_mslist) > 0:
             os.makedirs(f"{cal_outdir}/ms_flags", exist_ok=True)
             print(
@@ -1895,7 +1433,7 @@ def master_control(
         ######################################
         # Flag backups of selfcal measurement sets
         ######################################
-        final_selfcal_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
+        final_selfcal_mslist = sorted(glob.glob(f"{workdir}/selfcal*_ch_*.ms"))
         if len(final_selfcal_mslist) > 0:
             os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
             print(
@@ -1915,7 +1453,7 @@ def master_control(
         ######################################
         # Flag backups of target measurement sets
         ######################################
-        final_split_target_mslist = sorted(glob.glob(workdir + "/target*_spw_*.ms"))
+        final_split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
         if len(final_split_target_mslist) > 0:
             os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
             print(

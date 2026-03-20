@@ -416,8 +416,10 @@ def submit_local_master_flow(args, jobid):
                         "task run" in line.lower() or "flow run" in line.lower()
                     ) and "p-aircars execution is finished" not in line.lower():
                         only_run_print = True
-                    if not only_run_print or (
-                        "task run" in line.lower() or "flow run" in line.lower()
+                    if (
+                        not only_run_print
+                        or ("task run" in line.lower() or "flow run" in line.lower())
+                        or "p-aircars execution is finished" in line.lower()
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
