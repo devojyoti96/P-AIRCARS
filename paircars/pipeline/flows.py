@@ -1981,7 +1981,12 @@ def imaging_subflow(
             if emails != "":
                 email_msg = f"[{target_obsid}] Started final imaging."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Final imaging.")
             future_imaging = run_imaging_jobs.with_options(
@@ -2014,7 +2019,12 @@ def imaging_subflow(
                 if emails != "":
                     email_msg = f"[{target_obsid}] Final imaging is done.\nSucceeded: {succeed}, failed: {failed}.\nTotal images made: {total_images}."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Final imaging is done.")
             except Exception:
@@ -2025,7 +2035,12 @@ def imaging_subflow(
                 if emails != "":
                     email_msg = "Error occured in final imaging. P-AIRCARS has stopped."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
                     )
 
         ########################################
@@ -2062,7 +2077,12 @@ def imaging_subflow(
             if emails != "":
                 email_msg = f"[{target_obsid}] No image is present in image directory."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
                 )
             return 1
 
@@ -2073,7 +2093,12 @@ def imaging_subflow(
             if emails != "":
                 email_msg = f"[{target_obsid}] Started primary beam correction."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Primary beam correction.")
             future_pbcor = run_apply_pbcor.with_options(
@@ -2093,7 +2118,12 @@ def imaging_subflow(
                 if emails != "":
                     email_msg = f"[{target_obsid}] Primary beam correction is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Primary beam correction is done.")
                 print(f"Final image directory: {imagedir}/images")
@@ -2105,7 +2135,12 @@ def imaging_subflow(
                 if emails != "":
                     email_msg = f"[{target_obsid}] Error occured in primary beam correction. P-AIRCARS has stopped."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
                     )
 
         #################################################################
@@ -2123,7 +2158,14 @@ def imaging_subflow(
         #################################
         if emails != "":
             email_msg = f"[{target_obsid}] Started making overlays."
-            send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
+            send_task_notification(
+                emails,
+                email_msg,
+                jobid,
+                target_obsid,
+                timestamp,
+                flow_name=f"subflow {flow_name}",
+            )
         print_banner("Starting task: Making overlay on EUV images.")
         future_overlay = run_make_overlay.with_options(
             task_run_name=f"making_overlay_{jobid}"
@@ -2142,7 +2184,12 @@ def imaging_subflow(
                 if emails != "":
                     email_msg = f"[{target_obsid}] Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Making overlays are done.")
                 print(f"Final image directory: {imagedir}/overlay_pngs")
@@ -2150,7 +2197,12 @@ def imaging_subflow(
                 if emails != "":
                     email_msg = f"[{target_obsid}] Making overlays are not successful EUV images could not be download.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
                     )
                 print_banner("Finished task: Making overlays are not successful.")
                 if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
@@ -2163,7 +2215,12 @@ def imaging_subflow(
             if emails != "":
                 email_msg = f"[{target_obsid}] Error occured in making overlays."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
                 )
         return 0
     except Exception:
