@@ -1084,7 +1084,7 @@ def master_control(
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
                 print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
-                    f = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}").submit(
+                    f = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}",task_runner=DaskTaskRunner(address=dask_addr),).submit(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
