@@ -28,7 +28,7 @@ from paircars.pipeline import (
 
 
 @task(
-    name="moving_to_solar_center",
+    name="move_center",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -113,7 +113,7 @@ def run_solar_phasecenter_jobs(
 
 
 @task(
-    name="making_dynamic_spectra",
+    name="make_ds",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -207,7 +207,7 @@ def run_ds_jobs(
 
 
 @task(
-    name="spliting_ms",
+    name="split_ms",
     retries=2,
     timeout_seconds=1800,
     retry_delay_seconds=exponential_backoff(backoff_factor=60),
@@ -334,7 +334,7 @@ def run_target_split_jobs(
 
 
 @task(
-    name="flagging",
+    name="flag",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -463,7 +463,7 @@ def run_flag(
 
 
 @task(
-    name="importing_model_visibilities",
+    name="model",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -549,7 +549,7 @@ def run_import_model(
 
 
 @task(
-    name="basic_calibration",
+    name="basic_cal",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -647,7 +647,7 @@ def run_basic_cal_jobs(
 
 
 @task(
-    name="applying_basic_calibration",
+    name="apply_basic_cal",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -756,7 +756,7 @@ def run_apply_basiccal_sol(
 
 
 @task(
-    name="solar_sidereal_correction",
+    name="sidereal_cor",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -1017,7 +1017,7 @@ def run_selfcal_jobs(
 
 
 @task(
-    name="applying_self-calibration",
+    name="apply_selfcal",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,
@@ -1265,7 +1265,7 @@ def run_imaging_jobs(
 
 
 @task(
-    name="applying_primary_beam",
+    name="apply_pbcor",
     log_prints=True,
 )
 def run_apply_pbcor(
@@ -1353,7 +1353,7 @@ def run_apply_pbcor(
 
 
 @task(
-    name="making_overlay",
+    name="make_overlay",
     log_prints=True,
 )
 def run_make_overlay(
@@ -1438,7 +1438,7 @@ def run_make_overlay(
 
 
 @task(
-    name="making_msplot",
+    name="make_msplot",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,

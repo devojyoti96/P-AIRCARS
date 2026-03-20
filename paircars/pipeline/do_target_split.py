@@ -158,12 +158,15 @@ def split_target_scans(
             )
             coarse_chans = get_MWA_coarse_chan(msname)
             if len(split_coarse_chans) == 0:
-                split_coarse_chans = coarse_chans
+                use_coarse_chans = coarse_chans
+            else:
+                use_coarse_chans = split_coarse_chans
             chanlist = []
+            coarse_chlist=[]
             good_spwlist = []
             for c in range(len(coarse_channel_bands)):
                 coarse_chan = coarse_chans[c]
-                if coarse_chan in split_coarse_chans:
+                if coarse_chan in use_coarse_chans:
                     chan = coarse_channel_bands[c]
                     start_chan = chan[0]
                     end_chan = chan[1]
@@ -174,6 +177,7 @@ def split_target_scans(
                         chanlist.append(f"{start_chan}")
                     good_chans = [f"{i}" for i in good_chans]
                     good_spwlist.append(f"0:{';'.join(good_chans)}")
+                    coarse_chlist.append(f"{coarse_chan}")
 
             timerange_list = get_timeranges(
                 msname,
@@ -186,7 +190,8 @@ def split_target_scans(
             for i in range(len(chanlist)):
                 chanrange = chanlist[i]
                 good_spw = good_spwlist[i]
-                outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_spw_{chanrange}.ms"
+                coarse_chan = coarse_chlist[i]
+                outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_ch_{coarse_chan}_spw_{chanrange}.ms"
                 if os.path.exists(f"{outputvis}/.splited") and force_split is False:
                     print(f"{outputvis} is already splited successfully.")
                     splited_ms_list.append(outputvis)
@@ -338,6 +343,7 @@ def main(
         return 1, 0, 0
     else:
         total_ncoarse = 0
+        print (split_coarse_chans)
         for msname in mslist:
             ncoarse = len(split_coarse_chans)
             if ncoarse == 0:
