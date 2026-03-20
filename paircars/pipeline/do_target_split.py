@@ -121,6 +121,7 @@ def split_target_scans(
         # Extracting time frequency information
         #######################################
         header = fits.getheader(metafits)
+        obsid = header["GPSTIME"]
         mode = header["MODE"]
         if "MWAX" in mode:
             flag_central_chan = False
@@ -182,7 +183,7 @@ def split_target_scans(
             for i in range(len(coarse_chlist)):
                 good_spw = good_spwlist[i]
                 coarse_chan = coarse_chlist[i]
-                outputvis = f"{workdir}/{prefix}_{os.path.basename(msname).split('.ms')[0]}_ch_{coarse_chan}.ms"
+                outputvis = f"{workdir}/{prefix}_{obsid}_ch_{coarse_chan}.ms"
                 if os.path.exists(f"{outputvis}/.splited") and force_split is False:
                     print(f"{outputvis} is already splited successfully.")
                     splited_ms_list.append(outputvis)
