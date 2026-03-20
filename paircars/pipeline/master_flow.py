@@ -705,18 +705,10 @@ def master_control(
             print("Internet connection is not available for remote logging.")
         else:
             if remote_logger:
-                trial = 0
-                while trial <= 5:
-                    try:
-                        remote_link = get_remote_logger_link()
-                    except Exception:
-                        traceback.print_exc()
-                        pass
-                    if remote_link != "":
-                        break
-                    else:
-                        time.sleep(5)
-                        trial += 1
+                try:
+                    remote_link = get_remote_logger_link()
+                except Exception:
+                    pass
                 if remote_link == "":
                     print("Please provide a valid remote link.")
                     remote_logger = False
@@ -1121,10 +1113,11 @@ def master_control(
                         emails=emails,
                         remote_logger=remote_logger,
                     )
+                    print("Output",f)
                     futures.append(f)
                 except Exception:
                     traceback.print_exc()
-            print (futures)
+            print ("FInal output",futures)
             return 1
 
         ###################################################
