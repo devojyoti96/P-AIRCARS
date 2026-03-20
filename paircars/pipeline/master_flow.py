@@ -1070,6 +1070,7 @@ def master_control(
             futures = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
+                basic_cal_subflow = flow(basic_cal_subflow)
                 future = basic_cal_subflow.with_options(flow_run_name=f"Basic calibration {cal_obsid}")(
                     # Core observational inputs
                     cal_obsid=cal_obsid,
