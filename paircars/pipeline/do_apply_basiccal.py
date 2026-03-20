@@ -2,7 +2,6 @@ import logging
 import numpy as np
 import argparse
 import traceback
-import warnings
 import time
 import glob
 import sys
@@ -30,56 +29,13 @@ logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
-def scale_bandpass(bandpass_table, cal_attn, target_attn, only_amplitude=False):
-    """
-    Scale a bandpass calibration table using attenuation data.
-
-    Parameters
-    ----------
-    bandpass_table : str
-        Input bandpass calibration table.
-    cal_attn : float
-        Calibrator attenuation
-    target_attn : float
-        Target attenuation
-    only_amplitude : bool, optional
-        Apply only amplitude
-
-    Returns
-    -------
-    str
-        Name of the output table.
-    """
-    warnings.filterwarnings("ignore", category=RuntimeWarning)
-    bandpass_table = bandpass_table.rstrip("/")
-    output_table = f"{bandpass_table}.att"
-    # Prepare output table
-    if os.path.exists(output_table):
-        os.system(f"rm -rf {output_table}")
-    os.system(f"cp -r {bandpass_table} {output_table}")
-    tb = table()
-    tb.open(output_table, nomodify=False)
-    gain = tb.getcol("CPARAM")
-    tb.getcol("FLAG")
-    if cal_attn == target_attn:
-        scaling = 1.0
-    else:
-        scaling = 10 ** (-(target_attn - cal_attn) / 20.0)
-    gain *= scaling
-    if only_amplitude:
-        gain = np.abs(gain)
-    tb.putcol("CPARAM", gain)
-    tb.flush()
-    tb.close()
-    return output_table
-
-
 def applysol(
     msname,
     workdir,
     gaintable=[],
     gainfield=[],
     interp=[],
+    only_amplitude=False,
     applymode="calflag",
     quartical_table=[],
     overwrite_datacolumn=False,
@@ -89,7 +45,7 @@ def applysol(
     soltype="basic",
 ):
     """
-    Apply flux calibrated and attenuation calibrated solutions
+    Apply calibration solutions
 
     Parameters
     ----------
@@ -103,6 +59,8 @@ def applysol(
         Gain field list
     interp : list, optional
         Gain interpolation
+    only_amplitude : bool, optional
+        Apply only amplitude
     applymode : str, optional
         Apply mode
     quartical_table : list, optional
@@ -152,8 +110,20 @@ def applysol(
                 if os.path.exists(msname + ".flagversions"):
                     os.system(f"rm -rf {msname}.flagversions")
             filtered_gaintable = []
+            only_ampcals = []
             for gtable in gaintable:
                 if os.path.exists(gtable):
+                    if only_amplitude and gtable.endswith(".bcal"):
+                        os.system(f"cp -r {gtable} {gtable}.amp")
+                        tb=table()
+                        tb.open(f"{gtable}.amp",nomodify=False)
+                        gain=tb.getcol("CPARAM")
+                        gain=np.abs(gain)
+                        tb.putcol("CPARAM",gain)
+                        tb.flush()
+                        tb.close()
+                        gtable = f"{gtable}.amp"
+                        only_ampcals.append(gtable)
                     filtered_gaintable.append(gtable)
             gaintable = filtered_gaintable
             print(
@@ -176,6 +146,9 @@ def applysol(
                         calwt=[False] * len(gaintable),
                         flagbackup=False,
                     )
+                if len(only_ampcals)>0:
+                    for ampcal in only_ampcals:
+                        os.system(f"rm -rf {ampcal}")
                 gain_msg = 0
             except Exception:
                 traceback.print_exc()
@@ -268,7 +241,6 @@ def applysol(
 def run_all_applysol(
     mslist,
     target_metafits,
-    calibrator_metafits,
     dask_client,
     workdir,
     caldir,
@@ -287,9 +259,7 @@ def run_all_applysol(
     mslist : list
         Measurement set list
     target_metafits : str
-        Target metafits file
-    calibrator_metafits : str
-        Calibrator metafits file
+        Target metafits file    
     dask_client : dask.client
         Dask client
     workdir : str
@@ -331,19 +301,15 @@ def run_all_applysol(
     try:
         os.chdir(workdir)
         mslist = np.unique(mslist).tolist()
-        calibrator_header = fits.getheader(calibrator_metafits)
         target_header = fits.getheader(target_metafits)
-        calibrator_obsid = calibrator_header["GPSTIME"]
-        cal_attn = calibrator_header["ATTEN_DB"]
         target_attn = target_header["ATTEN_DB"]
-        print(
-            f"Calibrator attenuation: {cal_attn}dB, Target attenuation: {target_attn}dB."
-        )
-        if only_amplitude:
-            print("Applying only amplitude.")
-
-        bandpass_table = glob.glob(caldir + f"/*{calibrator_obsid}*.bcal")
-        crossphase_table = glob.glob(caldir + f"/*{calibrator_obsid}*.kcrosscal")
+        bandpass_table = glob.glob(caldir + f"/calibrator*.bcal.att{target_attn}")
+        if len(bandpass_table)==0:
+            bandpass_table = glob.glob(caldir + "/calibrator*.bcal")    
+            att_scaled = False
+        else:
+            att_scaled = True
+        crossphase_table = glob.glob(caldir + "/calibrator*.kcrosscal")
 
         if len(bandpass_table) == 0:
             print(f"No bandpass table is present in calibration directory : {caldir}.")
@@ -352,16 +318,6 @@ def run_all_applysol(
             print(
                 f"No crosshand phase solution is present in calibration directory : {caldir}. Applying only bandpass solutions."
             )
-
-        ################################
-        # Scale bandpass for attenuators
-        ################################
-        att_caltables = []
-        for bpass_table in bandpass_table:
-            att_caltable = scale_bandpass(
-                bpass_table, cal_attn, target_attn, only_amplitude=only_amplitude
-            )
-            att_caltables.append(att_caltable)
 
         ####################################
         # Filtering any corrupted ms
@@ -405,11 +361,15 @@ def run_all_applysol(
         tasks = []
         failed = 0
         for ms in mslist:
+            if att_scaled:
+                os.system(f"touch {ms}/.att")
+            else:
+                os.system(f"touch {ms}/.noatt")
             msmd = msmetadata()
             msmd.open(ms)
             ms_freq = msmd.meanfreq(0, unit="MHz")
             msmd.close()
-            final_bpasstable = get_nearest_bandpass_table(att_caltables, ms_freq)
+            final_bpasstable = get_nearest_bandpass_table(bandpass_table, ms_freq)
             final_gaintable = [final_bpasstable]
             interp = ["linear,linear"]
             if len(crossphase_table) > 0:
@@ -427,6 +387,7 @@ def run_all_applysol(
                         overwrite_datacolumn=overwrite_datacolumn,
                         applymode=applymode,
                         interp=interp,
+                        only_amplitude=only_amplitude,
                         n_threads=n_threads,
                         mem_limit=mem_limit,
                         force_apply=force_apply,
@@ -471,7 +432,6 @@ def run_all_applysol(
 
 def main(
     mslist,
-    calibrator_metafits,
     target_metafits,
     workdir,
     caldir,
@@ -494,10 +454,8 @@ def main(
     ----------
     mslist : str
         Measurement set list (comma separated).
-    calibrator_metafits : str
-        Calibrator metafits
     target_metafits : str
-        Target metadfits
+        Target metafits file
     workdir : str
         Directory for logs, PID files, and temporary data products.
     caldir : str
@@ -604,7 +562,6 @@ def main(
             msg, succeed, failed = run_all_applysol(
                 mslist,
                 target_metafits,
-                calibrator_metafits,
                 dask_client,
                 workdir,
                 caldir,
@@ -648,16 +605,11 @@ def cli():
         help="Comma-separated list of measurement sets (required)",
     )
     basic_args.add_argument(
-        "--calibrator_metafits",
-        type=str,
-        required=True,
-        help="Calibrator metafits",
-    )
-    basic_args.add_argument(
         "--target_metafits",
         type=str,
+        default="",
         required=True,
-        help="Target metafits",
+        help="Target metafits file",
     )
     basic_args.add_argument(
         "--workdir",
@@ -728,7 +680,6 @@ def cli():
 
     msg, _, _ = main(
         args.mslist,
-        args.calibrator_metafits,
         args.target_metafits,
         args.workdir,
         args.caldir,

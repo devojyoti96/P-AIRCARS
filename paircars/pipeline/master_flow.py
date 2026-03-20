@@ -19,17 +19,15 @@ from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect.settings import get_current_settings
 from paircars.utils.basic_utils import (
-    internet_available,
+    internet_available, print_banner,
 )
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
     calc_time_smearing_timewidth,
     max_time_solar_smearing,
-    interpolate_bpass,
-    interpolate_quartical,
 )
 from paircars.utils.casatasks import reset_weights_and_flags
-from paircars.utils.flagging import do_flag_backup, get_chans_flag
+from paircars.utils.flagging import do_flag_backup
 from paircars.utils.image_utils import filter_images
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -40,15 +38,10 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import check_datacolumn_valid
-from paircars.utils.mwa_ploting_utils import (
-    plot_caltable_diagnostics,
-    plot_quartical_tables,
-)
 from paircars.utils.mwa_utils import (
     get_ncoarse,
     get_MWA_OBSID,
     download_MWA_metafits,
-    get_selfcal_ntimes,
     get_MWA_coarse_chan,
 )
 from paircars.utils.proc_manage_utils import (
@@ -70,13 +63,12 @@ from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
 )
 from paircars.pipeline.init_data import init_paircars_data
-from paircars.pipeline.flows import basic_cal_subflow, pre_process_subflow
+from paircars.pipeline.flows import basic_cal_subflow, pre_process_subflow, selfcal_subflow
 from paircars.pipeline.tasks import (
     run_target_split_jobs,
     run_flag,
     run_apply_basiccal_sol,
     run_solar_siderealcor_jobs,
-    run_selfcal_jobs,
     run_apply_selfcal_sol,
     run_imaging_jobs,
     run_apply_pbcor,
@@ -316,10 +308,8 @@ def master_control(
 
     if jobid is None:
         jobid = get_jobid()
+        print_banner(f"P-AIRCARS Job ID: {jobid}")
 
-    print("#############################")
-    print(f"P-AIRCARS Job ID: {jobid}")
-    print("#############################")
     #########################################
     # Some validity checks for resources
     #########################################
@@ -767,23 +757,12 @@ def master_control(
         #####################################
         # Printing basic info of the pipeline
         #####################################
-        print("###########################")
-        print(f"Work directory: {workdir}")
-        print(f"Final product directory: {outdir}")
-        print("###########################")
+        print_banner(f"Work directory: {workdir}\nFinal product directory: {outdir}")
         if remote_logger:
-            print(
-                "############################################################################"
-            )
-            print(remote_link)
-            print(f"Remote Job ID: {jobname}")
-            print(f"Remote access password: {password}")
-            print(
-                "#############################################################################"
-            )
+            print_banner(f"{remote_link}\nRemote Job ID: {jobname}\nRemote access password: {password}")
 
         if not has_cal:
-            print(
+            print_banner(
                 f"No suitable calibrators are available for target OBSID: {target_obsid}."
             )
             if emails != "":
@@ -859,7 +838,7 @@ def master_control(
         #################################################
         # Determining maximum allowed frequency averaging
         #################################################
-        print("Estimating optimal frequency averaging....")
+        print("Estimating optimal frequency averaging.")
         max_freqres_list = []
         freqres_list = []
         msmd = msmetadata()
@@ -966,29 +945,24 @@ def master_control(
                 print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
                     msg, bandpass_tables, crossphase_tables = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}")(
-                        # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
                         cal_metafits=cal_metafits,
                         coarse_chans=coarse_chans,
                         target_obsid=target_obsid,
-                        # I/O and workspace
+                        target_metafits=target_metafits,
                         workdir=workdir,
                         cal_outdir=cal_outdir,
                         basic_caldir=basic_caldir,
-                        # Calibration controls
                         do_basic_cal=do_basic_cal,
                         redo_basic_cal=redo_basic_cal,
                         do_cal_flag=do_cal_flag,
                         do_import_model=do_import_model,
                         do_polcal=do_polcal,
                         keep_backup=keep_backup,
-                        # Data conditioning
                         quack_timestamps=quack_timestamps,
-                        # Resource management
                         cpu_frac=cpu_frac,
                         mem_frac=mem_frac,
-                        # Logging / metadata
                         jobid=jobid,
                         timestamp=timestamp,
                         emails=emails,
@@ -1030,24 +1004,20 @@ def master_control(
         ###################################################
         msg, target_mslist = pre_process_subflow.with_options(flow_run_name=f"pre_process_{target_obsid}")(
             # Core observational inputs
-            target_mslist,
-            target_metafits,
-            target_obsid,
-            solar_data,
-            # I/O and workspace
-            workdir,
-            target_outdir,
-            # Processing controls
-            do_move_solarcenter,
-            make_ds,
-            # Resource management
-            cpu_frac,
-            mem_frac,
-            # Logging / metadata
-            jobid,
-            timestamp,
-            emails,
-            remote_logger,
+            target_mslist=target_mslist,
+            target_metafits=target_metafits,
+            target_obsid=target_obsid,
+            solar_data=solar_data,
+            workdir=workdir,
+            target_outdir=target_outdir,
+            do_move_solarcenter=do_move_solarcenter,
+            make_ds=make_ds,
+            cpu_frac=cpu_frac,
+            mem_frac=mem_frac,
+            jobid=jobid,
+            timestamp=timestamp,
+            emails=emails,
+            remote_logger=remote_logger,
         )
         if msg!=0 or len(target_mslist)==0:
             print("Error occured in pre-processing steps target data.")
@@ -1059,564 +1029,46 @@ def master_control(
             return 1
         else:
             return 0
-            
-        ###################################################
-        # Checking if selfcal tables already exist or not
-        ###################################################
-        if not redo_selfcal:
-            if target_obsid is not None:
-                print("Checking pre-existing self-calibration solutions...")
-                selfcal_gaincal = sorted(
-                    glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
-                )
-                if len(selfcal_gaincal) > 0:
-                    selfcal_bandpass = sorted(
-                        glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
-                    )
-                    if len(selfcal_bandpass) > 0:
-                        selfcal_bandpass = interpolate_bpass(
-                            selfcal_bandpass, overwrite=True
-                        )
-                    if do_polcal:
-                        selfcal_leakages = sorted(
-                            glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
-                        )
-                        if len(selfcal_leakages) > 0:
-                            selfcal_leakages = interpolate_quartical(
-                                selfcal_leakages, overwrite=True
-                            )
-                            do_selfcal = False
-                            print(
-                                "Self-calibration solutions exist including polarisation calibration. Not performing self-calibration"
-                            )
-                            if emails != "":
-                                email_msg = "Self-calibration solutions including polarisation for target are already present."
-                                send_task_notification(
-                                    emails, email_msg, jobid, target_obsid, timestamp
-                                )
-                    else:
-                        print(
-                            "Self-calibration solutions exist without polarisation calibration. Henc, performing self-calibration"
-                        )
-
-        ###################################################
-        # Start spliting selfcal ms
-        ###################################################
-        if do_selfcal:
-            ###############################################
-            # Removing previous self-calibration artificats
-            ###############################################
-            print("Removing all previous self-calibration artificats...")
-            os.system(
-                f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*"
-            )
-            prefix = "selfcal"
-            try:
-                time_interval = float(solint)
-            except BaseException:
-                if solint.endswith("s"):
-                    time_interval = float(solint.split("s")[0])
-                elif solint.endswith("min"):
-                    time_interval = float(solint.split("min")[0]) * 60
-                elif solint == "int":
-                    time_interval = image_timeres
-                else:
-                    time_interval = 60.0
-
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    max(2, min(total_ncoarse + 1, max_worker)),
-                )
-
-            ######################
-            # Spliting
-            ######################
-            if emails != "":
-                email_msg = "Started spliting of measurement sets for self-calibration."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print(f"Starting task: Spliting {prefix} .....")
-            print("###########################")
-            ntime = get_selfcal_ntimes(target_mslist[0])
-            msmd.open(target_mslist[0])
-            times = msmd.timesforspws(0)
-            timeres = np.nanmean(np.diff(times))
-            msmd.close()
-            time_window = min(10, round(ntime * timeres, 1))  # Maximum 10s
-            future_selfcal_split = run_target_split_jobs.with_options(
-                task_run_name=f"spliting_{prefix}_{jobid}"
-            ).submit(
-                ",".join(target_mslist),
-                target_metafits,
-                workdir,
-                datacolumn="data",
-                timeres=timeavg,
-                freqres=freqavg,
-                prefix=prefix,
-                force_split=True,
-                only_disk=True,
-                time_window=min(time_window, time_interval),
-                time_interval=time_interval,
-                quack_timestamps=quack_timestamps,
-                jobid=jobid,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                remote_log=remote_logger,
-            )
-            print("Checking status of spliting of target for selfcal ...")
-            try:
-                msg, expected, succeed = future_selfcal_split.result()
-                if emails != "":
-                    email_msg = f"Spliting of measurement sets for self-calibration is done.\nExpected: {expected}, succeeded: {succeed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Finished task: Spliting of measurement sets for self-calibration is done."
-                )
-                print("###########################")
-            except Exception:
-                print(
-                    "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
-                )
-                do_selfcal = False
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in spliting target measurement sets for self-calibration."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-            finally:
-                if adaptive:
-                    scale_worker_and_wait(dask_cluster, dask_client, 2)
-
-        ######################################
-        # Checking status of self-cal split
-        ######################################
-        if do_selfcal:
-            print("Checking measurement sets before spawning self-calibrations....")
-            ####################################
-            # Filtering any corrupted ms
-            #####################################
-            selfcal_target_mslist = sorted(glob.glob(workdir + "/selfcal*_spw_*.ms"))
-            if (selfcal_target_mslist) == 0:
-                print(
-                    "!!!! WARNING: Error in running spliting target scans for selfcal. !!!!"
-                )
-                do_selfcal = False
-                if emails != "":
-                    email_msg = "No splited measurement set is found for self-calibration. Not continuting for self-calibration."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-
-            filtered_mslist = []  # Filtering in case any ms is corrupted
-            for ms in selfcal_target_mslist:
-                checkcol = check_datacolumn_valid(ms)
-                if checkcol:
-                    filtered_mslist.append(ms)
-                else:
-                    print(f"Issue in : {ms}")
-                    os.system(f"rm -rf {ms}")
-            selfcal_mslist = filtered_mslist
-            if len(selfcal_mslist) == 0:
-                print(
-                    "No splited target scan ms are available in work directory for selfcal. Not continuing further for selfcal."
-                )
-                do_selfcal = False
-                if emails != "":
-                    email_msg = "No splited measurement set is found for self-calibration. Not continuting for self-calibration."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-            print(f"Selfcal mslist : {[os.path.basename(i) for i in selfcal_mslist]}")
-
-        #########################################################
-        # Flagging on targets for self-calibration
-        #########################################################
-        cal_applied = False
-        if do_selfcal:
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    max(2, min(len(selfcal_mslist) + 1, max_worker)),
-                )
-
-            ###################################
-            # Apply basic calibration
-            ###################################
-            if has_cal:
-                if emails != "":
-                    email_msg = "Started applying basic calibration solution on self-calibration measurement sets."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Starting task: Applying basic calibration on self-calibration measurement sets....."
-                )
-                print("###########################")
-                future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
-                    task_run_name=f"applying_basiccal_selfcal_{jobid}"
-                ).submit(
-                    ",".join(selfcal_mslist),
-                    calibrator_metafits,
-                    target_metafits,
-                    workdir,
-                    basic_caldir,
-                    overwrite_datacolumn=False,
-                    only_amplitude=only_amplitude,
-                    applymode="calflag",
-                    prefix="selfcal",
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, succeed, failed = future_apply_basical_selfcal.result()
-                    cal_applied = True
-                    if emails != "":
-                        email_msg = f"Applying basic calibration solution on self-calibration measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print(
-                        "Finished task: Applying basic calibration solution on self-calibration measurement sets are done."
-                    )
-                    print("###########################")
-                except Exception:
-                    print(
-                        "!!!! WARNING: Error in applying basic calibration solutions on target. Continuing selfcal without basic calibration.!!!!"
-                    )
-                    traceback.print_exc()
-                    cal_applied = False
-                    do_applycal = False
-                    if emails != "":
-                        email_msg = "Error occured in applying basic calibration solutions on self-calibration measurement sets."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-
-            if cal_applied:
-                selfcal_applymode = "calonly"
-                filtered_selfcalms_list = []
-                for selfcalms in selfcal_mslist:
-                    unflag_chans, flag_chans = get_chans_flag(
-                        msname=selfcalms, n_threads=n_threads
-                    )
-                    if len(flag_chans) / (len(flag_chans) + len(unflag_chans)) <= 0.8:
-                        filtered_selfcalms_list.append(selfcalms)
-                    else:
-                        print(
-                            f"More than 80% channels are flagged for ms: {selfcalms}. Not using for self-calibration."
-                        )
-                selfcal_mslist = filtered_selfcalms_list
-            else:
-                selfcal_applymode = "calflag"
-
-            ###############################################
-            # Performing sidereal correction before selfcal
-            ###############################################
-            os.system(
-                f"rm -rf {workdir}/*selfcal_int* {workdir}/*selfcal_pol* {workdir}/caltables/*selfcal*"
-            )
-            if adaptive:
-                scale_worker_and_wait(
-                    dask_cluster,
-                    dask_client,
-                    max(2, min(len(selfcal_mslist) + 1, max_worker)),
-                )
-            if do_sidereal_cor:
-                if emails != "":
-                    email_msg = "Started correcting for solar sidereal motion."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print(
-                    "Starting task: Sidereal motion correction for self-calibration measurement sets....."
-                )
-                print("###########################")
-                future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
-                    task_run_name=f"solar_sidereal_correction_{jobid}"
-                ).submit(
-                    ",".join(selfcal_mslist),
-                    workdir,
-                    prefix="selfcal",
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                )
-                try:
-                    msg, succeed, failed = future_sidereal_cor_selfcal.result()
-                    if emails != "":
-                        email_msg = f"Correction for solar sidereal motion is done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-                    print("###########################")
-                    print(
-                        "Finished task: Correction for solar sidereal motion is done."
-                    )
-                    print("###########################")
-                except Exception:
-                    print("Sidereal correction is not successful.")
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = "Error occured in sidereal motion correction."
-                        send_task_notification(
-                            emails, email_msg, jobid, target_obsid, timestamp
-                        )
-
-            ############################
-            # Basic flagging for selfcal
-            ############################
-            if emails != "":
-                email_msg = "Started flagging for self-calibration measurment sets."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Flagging selfcal targets .....")
-            print("###########################")
-            future_flag = run_flag.with_options(
-                task_run_name=f"flagging_selfcal_{jobid}"
-            ).submit(
-                ",".join(selfcal_mslist),
-                target_metafits,
-                workdir,
-                target_outdir,
-                flag_calibrators=False,
-                flag_quack=False,
-                datacolumn="corrected",
-                run_solarflagger=use_solarflagger,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_flag.result()
-                if emails != "":
-                    email_msg = f"Flagging for self-calibration measurment sets are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                for s_ms in selfcal_mslist:
-                    s_ms = s_ms.rstrip("/")
-                    if os.path.exists(f"{s_ms}/.flag_failed"):
-                        print(
-                            f"Issue in flagging of measurement set: {s_ms}. Check calibration solutions carefully."
-                        )
-                print("###########################")
-                print(
-                    "Finished task: Flagging for self-calibration measurment sets are done."
-                )
-                print("###########################")
-            except Exception:
-                print(
-                    "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = (
-                        "Error occured in flagging self-calibration measurement sets."
-                    )
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-
-            #############################
-            # Self-calibration
-            #############################
-            if emails != "":
-                email_msg = "Started self-calibration."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Self-calibrations.....")
-            print("###########################")
-            if cal_applied:
-                print("Calibrator solutions are applied.")
-            else:
-                print("Calibration solutions are not applied")
-            future_selfcal = run_selfcal_jobs.with_options(
-                task_run_name=f"selfcal_{jobid}"
-            ).submit(
-                ",".join(selfcal_mslist),
-                workdir,
-                selfcaldir,
-                target_metafits,
-                cal_applied,
-                solint=solint,
-                do_apcal=do_ap_selfcal,
-                do_polcal=do_polcal,
+        
+        ##################################################
+        # Self-calibration flows
+        ##################################################
+        msg, selfcal_gaintable, selfcal_bandpass, selfcal_leakage = selfcal_subflow.with_options(flow_run_name=f"selfcal_{target_obsid}")(
+                target_mslist=target_mslist,
+                target_metafits=target_metafits,
+                target_obsid=target_obsid,
+                workdir=workdir,
+                basic_caldir=basic_caldir,
+                selfcaldir=selfcaldir,
+                target_outdir=target_outdir,
+                redo_selfcal=redo_selfcal,
+                do_selfcal=do_selfcal,
+                has_cal=has_cal,
                 solar_selfcal=solar_selfcal,
-                keep_backup=keep_backup,
-                uvrange=uvrange,
-                weight="briggs",
-                robust=0.0,
-                applymode=selfcal_applymode,
+                do_sidereal_cor=do_sidereal_cor,
                 use_solarflagger=use_solarflagger,
+                keep_backup=keep_backup,
+                solint=solint,
+                timeavg=timeavg, 
+                freqavg=freqavg,
+                image_timeres=image_timeres,
+                image_freqres=image_freqres,
+                quack_timestamps=quack_timestamps,
+                only_amplitude=only_amplitude,
+                do_ap_selfcal=do_ap_selfcal,
+                do_polcal=do_polcal,
+                uvrange=uvrange,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
                 jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
+                timestamp=timestamp,
+                emails=emails,
+                remote_logger=remote_logger,
             )
-            try:
-                (
-                    msg,
-                    int_succeed,
-                    int_failed,
-                    pol_succeed,
-                    pol_failed,
-                    int_DR,
-                    pol_DR,
-                ) = future_selfcal.result()
-                if emails != "":
-                    email_msg = f"Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}, average DR: {int_DR}."
-                    if do_polcal:
-                        email_msg += f"\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}, average DR; {pol_DR}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Finished task: Self-calibration is done.")
-                print("###########################")
-            except Exception:
-                print(
-                    "!!!! WARNING: Error in self-calibration on targets. Not applying self-calibration. !!!!"
-                )
-                do_apply_selfcal = False
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in self-calibration."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-            if adaptive:
-                scale_worker_and_wait(dask_cluster, dask_client, 2)
-
-        ########################################
-        # Checking self-cal caltables
-        ########################################
-        print(
-            f"Searching for self-calibration gaincal tables: {selfcaldir}/selfcal_{target_obsid}*.gcal"
-        )
-        selfcal_gaincal = sorted(
-            glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.gcal")
-        )
-        if len(selfcal_gaincal) == 0:
-            print(
-                "Self-calibration is not performed and no self-calibration caltable is available."
-            )
-            do_apply_selfcal = False
-            if emails != "":
-                email_msg = "Self-calibration is not performed and no self-calibration caltable is available."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-        else:
-            print("###################################################")
-            print(
-                f"Self-calibration gaincal tables in calibration directory: {selfcaldir}"
-            )
-            for gcal in selfcal_gaincal:
-                print(f"{os.path.basename(gcal)}")
-            print("####################################################")
-
-            print(
-                f"Searching for self-calibration bandpass tables: {selfcaldir}/selfcal_{target_obsid}*.bcal"
-            )
-            selfcal_bandpass = sorted(
-                glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.bcal")
-            )
-            if len(selfcal_bandpass) > 0:
-                print("###################################################")
-                print(
-                    f"Self-calibration bandpass tables in calibration directory: {selfcaldir}"
-                )
-                for bpass in selfcal_bandpass:
-                    print(f"{os.path.basename(bpass)}")
-                print("####################################################")
-                selfcal_bandpass = interpolate_bpass(selfcal_bandpass, overwrite=True)
-            if do_polcal:
-                print(
-                    f"Searching for self-calibration polarisation leakage tables: {selfcaldir}/selfcal_{target_obsid}*.dcal"
-                )
-                selfcal_leakages = sorted(
-                    glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.dcal")
-                )
-                if len(selfcal_leakages) > 0:
-                    print("###################################################")
-                    print(
-                        f"Self-calibration polarisation leakage tables in calibration directory: {selfcaldir}"
-                    )
-                    for dcal in selfcal_leakages:
-                        print(f"{os.path.basename(dcal)}")
-                    print("####################################################")
-                    selfcal_leakages = interpolate_quartical(
-                        selfcal_leakages, overwrite=True
-                    )
-
-            ###########################################
-            # Plotting self-caltables
-            ###########################################
-            if do_selfcal and len(selfcal_gaincal) > 0:
-                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                msg, gcal_plots = plot_caltable_diagnostics(
-                    selfcal_gaincal,
-                    f"{target_outdir}/diagnostic_plots/{target_obsid}_gcal",
-                )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for self-calibration gaincal tables are saved in : {gcal_plots}."
-                    )
-                else:
-                    print(
-                        "Error in creating diagnostic plots for self-calibration gaincal tables."
-                    )
-
-            if do_selfcal and len(selfcal_bandpass) > 0:
-                os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                msg, bcal_plots = plot_caltable_diagnostics(
-                    selfcal_bandpass,
-                    f"{target_outdir}/diagnostic_plots/{target_obsid}_bcal",
-                )
-                if msg == 0:
-                    print(
-                        f"Diagnostic plots for self-calibration bandpass tables are saved in : {bcal_plots}."
-                    )
-                else:
-                    print(
-                        "Error in creating diagnostic plots for self-calibration bandpass tables."
-                    )
-
-            if do_selfcal and do_polcal:
-                if len(selfcal_leakages) > 0:
-                    os.makedirs(f"{target_outdir}/diagnostic_plots", exist_ok=True)
-                    msg, dcal_plots = plot_quartical_tables(
-                        selfcal_leakages,
-                        f"{target_outdir}/diagnostic_plots/{target_obsid}_dcal",
-                    )
-                    if msg == 0:
-                        print(
-                            f"Diagnostic plots for self-calibration leakage tables are saved in : {dcal_plots}."
-                        )
-                    else:
-                        print(
-                            "Error in creating diagnostic plots for self-calibration leakage tables."
-                        )
+        if msg!=0 or len(selfcal_gaintable)==0:
+            print_banner("No self-calibration solutions are available to apply.")
+            do_apply_selfcal=False
+        return 0
 
         #############################################
         # Spliting targets if not started already

@@ -3,6 +3,7 @@ import traceback
 import os
 import zarr
 import dask
+import warnings
 from casatools import msmetadata, table
 from daskms.experimental.zarr import xds_from_zarr, xds_to_zarr
 from numpy.linalg import inv
@@ -841,3 +842,42 @@ def get_quartical_table_metadata(caltable):
         "End time": end_time,
     }
     return result
+    
+    
+def scale_bandpass(bandpass_table, cal_attn, target_attn):
+    """
+    Scale a bandpass calibration table using attenuation data.
+
+    Parameters
+    ----------
+    bandpass_table : str
+        Input bandpass calibration table.
+    cal_attn : float
+        Calibrator attenuation
+    target_attn : float
+        Target attenuation
+
+    Returns
+    -------
+    str
+        Name of the output table.
+    """
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+    bandpass_table = bandpass_table.rstrip("/")
+    output_table = f"{bandpass_table}.att{target_attn}"
+    if os.path.exists(output_table):
+        os.system(f"rm -rf {output_table}")
+    os.system(f"cp -r {bandpass_table} {output_table}")
+    tb = table()
+    tb.open(output_table, nomodify=False)
+    gain = tb.getcol("CPARAM")
+    tb.getcol("FLAG")
+    if cal_attn == target_attn:
+        scaling = 1.0
+    else:
+        scaling = 10 ** (-(target_attn - cal_attn) / 20.0)
+    gain *= scaling
+    tb.putcol("CPARAM", gain)
+    tb.flush()
+    tb.close()
+    return output_table

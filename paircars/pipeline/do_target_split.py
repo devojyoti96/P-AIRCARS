@@ -17,7 +17,6 @@ from paircars.utils.logger_utils import (
 from paircars.utils.ms_metadata import get_timeranges
 from paircars.utils.mwa_utils import (
     get_MWA_coarse_bands,
-    get_ncoarse,
     get_MWA_coarse_chan,
 )
 from paircars.utils.proc_manage_utils import (
@@ -167,8 +166,6 @@ def split_target_scans(
                 coarse_chan = coarse_chans[c]
                 if coarse_chan in use_coarse_chans:
                     chan = coarse_channel_bands[c]
-                    start_chan = chan[0]
-                    end_chan = chan[1]
                     good_chans = chan[2]
                     good_chans = [f"{i}" for i in good_chans]
                     good_spwlist.append(f"0:{';'.join(good_chans)}")

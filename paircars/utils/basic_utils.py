@@ -14,6 +14,13 @@ from contextlib import contextmanager
 ##########################
 # Basic utility funactions
 ##########################
+def print_banner(msg, pad=6):
+    line = "#" * (len(msg) + pad)
+    print(line)
+    print(msg.center(len(line)))
+    print(line)
+
+
 def internet_available(timeout=10):
     """
     Check internet connection
