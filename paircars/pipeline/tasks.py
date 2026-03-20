@@ -1484,7 +1484,7 @@ def run_make_msplot(
         return msg
 
 
-def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
+def send_task_notification(emails, msg, jobid, obsid, logger_timestamp, flow_name=""):
     """
     Send notification after each task is finished
 
@@ -1500,6 +1500,8 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
         Observation ID
     logger_timestamp : str
         Logger timestamp
+    flow_name : str, optional
+        Flow name
     """
     internet_on = internet_available()
     if internet_on:
@@ -1507,7 +1509,10 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp):
             email_subject = (
                 f"P-AIRCARS Logger Details: {logger_timestamp}, OBSID: {obsid}"
             )
-            email_msg = f"{msg}"
+            if flow_name=="":
+                email_msg = f"{msg}"
+            else:
+                email_msg = f"From {flow_name}\n{msg}"
             success_msg, error_msg = send_notification(emails, email_subject, email_msg)
         except Exception:
             print("Could not send log emails.")

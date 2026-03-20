@@ -615,16 +615,16 @@ def master_control(
     #################################
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-
+    ctx = get_run_context()
+    flow_id = str(ctx.flow_run.id)
+    flow_name = ctx.flow_run.name
+        
     if (
         scheduler_name != "local"
         or masterlog is None
         or os.path.exists(masterlog) is False
     ):
         master_logfile = f"{logdir}/main.log"
-        ctx = get_run_context()
-        flow_id = str(ctx.flow_run.id)
-        flow_name = ctx.flow_run.name
         stop_event = Event()
         log_thread_flow = start_flow_log_saver(
             flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
@@ -768,7 +768,7 @@ def master_control(
             if emails != "":
                 email_msg = f"No suitable calibrators are available for target OBSID: {target_obsid}."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
                 )
 
         ###########################################
@@ -981,7 +981,7 @@ def master_control(
             if emails != "":
                 email_msg = f"Basic calibration of all calibrators are done.\nSucceeded: {succeed}, failed: {failed}."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
                 )
             if len(all_bandpass_tables)==0:
                 print("No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration.")
@@ -989,14 +989,14 @@ def master_control(
                 if emails != "":
                     email_msg = "No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
                     )
             elif len(all_crossphase_tables)==0:
                 print("No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted.")
                 if emails != "":
                     email_msg = "No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted."
                     send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
+                        emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
                     )
                     
         ###################################################
@@ -1024,11 +1024,9 @@ def master_control(
             if emails != "":
                 email_msg = "Error occured in pre-processing steps target data. P-AIRCARS has stopped."
                 send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
+                    emails, email_msg, jobid, target_obsid, timestamp, flow_name = "Master flow {flow_name}",
                 )
             return 1
-        else:
-            return 0
         
         ##################################################
         # Self-calibration flows
