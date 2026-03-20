@@ -81,7 +81,8 @@ def basic_cal_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
     )
-    print (ctx)
+    print(type(get_run_context()))
+    return
     ##########################################
     # Checking presence of basic caltables
     ##########################################

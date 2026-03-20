@@ -962,7 +962,7 @@ def master_control(
         ########################################
         # Moving phasecenter to the solar center
         ########################################
-        if solar_data and do_move_solarcenter:
+        if do_move_solarcenter:
             if emails != "":
                 email_msg = "Started moving phasecenter to solar center."
                 send_task_notification(
@@ -1098,7 +1098,7 @@ def master_control(
                 
                 print("Type", type(basic_cal_subflow))
                 try:
-                    future = basic_cal_subflow(
+                    f = basic_cal_subflow(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1127,7 +1127,7 @@ def master_control(
                         emails=emails,
                         remote_logger=remote_logger,
                     )
-                    futures.append(future)
+                    futures.append(f)
                 except Exception:
                     traceback.print_exc()
                     '''future = basic_cal_subflow(
