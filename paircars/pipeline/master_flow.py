@@ -354,23 +354,30 @@ def master_control(
     ##############################################
     # Downloading target metafits if not exist
     ##############################################
-    if target_metafits == "" or not os.path.exists(target_metafits):
+    if target_metafits == "":
         if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
             target_metafits = f"{target_datadir}/{target_obsid}.metafits"
+            download_metafits=False
         else:
-            try:
-                target_metafits = download_MWA_metafits(
-                    target_obsid, outdir=target_datadir
-                )
-            except Exception:
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
-                    send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
-                print(
-                    f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
-                )
-                return 1
+            download_metafits=True
+    elif not os.path.exists(target_metafits):
+        download_metafits=True
+    else:
+        download_metafits=False
+    if download_metafits:
+        try:
+            target_metafits = download_MWA_metafits(
+                target_obsid, outdir=target_datadir
+            )
+        except Exception:
+            traceback.print_exc()
+            if emails != "":
+                email_msg = f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
+                send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
+            print(
+                f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
+            )
+            return 1
 
     ##################################################
     # Downloading target metafits if not match with ms
