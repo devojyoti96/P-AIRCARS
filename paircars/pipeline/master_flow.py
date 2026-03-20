@@ -1070,6 +1070,29 @@ def master_control(
             futures = []
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
+                args = [
+                        cal_obsid,
+                        cal_datadir,
+                        cal_metafits,
+                        coarse_chans,
+                        target_obsid,
+                        workdir,
+                        cal_outdir,
+                        basic_caldir,
+                        do_basic_cal,
+                        redo_basic_cal,
+                        do_cal_flag,
+                        do_import_model,
+                        do_polcal,
+                        keep_backup,
+                        quack_timestamps,
+                        cpu_frac,
+                        mem_frac,
+                        jobid,
+                        timestamp,
+                        emails,
+                        remote_logger,]
+                print (type(i) for i in args)
                 try:
                     future = flow(basic_cal_subflow)(
                         # Core observational inputs

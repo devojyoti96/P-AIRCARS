@@ -29,7 +29,8 @@ from paircars.pipeline.tasks import (
     run_make_msplot,
     send_task_notification,
 )
-
+from prefect.context import get_run_context
+from multiprocessing import Event
 
 '''@flow(
     name="Basic calibration",
@@ -68,6 +69,14 @@ def basic_cal_subflow(
     """
     Basic calibration sub flow
     """
+    master_logfile = f"mainbasiccal.log"
+    ctx = get_run_context()
+    flow_id = str(ctx.flow_run.id)
+    flow_name = ctx.flow_run.name
+    stop_event = Event()
+    log_thread_flow = start_flow_log_saver(
+        flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
+    )
     ##########################################
     # Checking presence of basic caltables
     ##########################################
