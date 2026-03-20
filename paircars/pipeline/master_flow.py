@@ -1098,7 +1098,10 @@ def master_control(
                 
                 print("Type", type(basic_cal_subflow))
                 try:
-                    f = basic_cal_subflow(
+                    f = basic_cal_subflow.with_options(
+                            flow_run_name=f"basiccal_{jobid}",
+                            task_runner=DaskTaskRunner(address=dask_addr),
+                        )(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
