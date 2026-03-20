@@ -164,6 +164,7 @@ def split_target_scans(
             chanlist = []
             coarse_chlist=[]
             good_spwlist = []
+            print (len(coarse_channel_bands), len(coarse_chans))
             for c in range(len(coarse_channel_bands)):
                 coarse_chan = coarse_chans[c]
                 if coarse_chan in use_coarse_chans:
@@ -343,7 +344,6 @@ def main(
         return 1, 0, 0
     else:
         total_ncoarse = 0
-        print (split_coarse_chans)
         for msname in mslist:
             ncoarse = len(split_coarse_chans)
             if ncoarse == 0:

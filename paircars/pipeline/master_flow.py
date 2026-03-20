@@ -53,6 +53,7 @@ from paircars.utils.mwa_utils import (
     download_MWA_metafits,
     get_selfcal_ntimes,
     freq_to_MWA_coarse,
+    get_MWA_coarse_chan,
 )
 from paircars.utils.proc_manage_utils import (
     get_jobid,
@@ -365,6 +366,16 @@ def master_control(
         target_obsid = target_ms_obsids[0]
 
     ##############################################
+    # Determining target ms coarse channels
+    ##############################################
+    target_ms_coarse_chans = []
+    for target_ms in target_mslist:
+        coarse_chans = get_MWA_coarse_chan(target_ms)
+        for ch in coarse_chans:
+            if ch not in target_ms_coarse_chans:
+                target_ms_coarse_chans.append(ch)    
+    
+    ##############################################
     # Downloading target metafits if not exist
     ##############################################
     if target_metafits == "" or not os.path.exists(target_metafits):
@@ -412,6 +423,7 @@ def master_control(
     target_obsid = int(target_header["GPSTIME"])
     target_freq_config = target_header["CHANNELS"]
     target_coarse_chans = [int(c) for c in target_freq_config.split(",")]
+    target_coarse_chans = list(set(target_coarse_chans) & set(target_ms_coarse_chans))
     print(f"Target observation ID: {target_obsid}")
     print(f"Target coarse channels: {target_coarse_chans}")
 
@@ -490,8 +502,16 @@ def master_control(
             if (
                 abs(cal_obsid - target_obsid) < 12 * 3600
             ):  # Only if calibrator is 12 hours apart
+                cal_mslist = sorted(glob.glob(f"{cal_datadir}/*.ms"))
+                cal_ms_coarse_chans=[]
+                for cal_ms in cal_mslist:
+                    coarse_chans = get_MWA_coarse_chan(cal_ms)
+                    for ch in coarse_chans:
+                        if ch not in cal_ms_coarse_chans:
+                            cal_ms_coarse_chans.append(ch)
                 cal_freq_config = cal_header["CHANNELS"]
                 cal_coarse_chans = [int(c) for c in cal_freq_config.split(",")]
+                cal_coarse_chans = list(set(cal_coarse_chans) & set(cal_ms_coarse_chans))
                 has_overlap = bool(set(cal_coarse_chans) & set(target_coarse_chans))
                 if not has_overlap:
                     print(
