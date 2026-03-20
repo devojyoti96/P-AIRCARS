@@ -354,7 +354,7 @@ def master_control(
     ##############################################
     # Downloading target metafits if not exist
     ##############################################
-    if target_metafits == "":
+    if target_metafits == "" or target_metafits is None:
         if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
             target_metafits = f"{target_datadir}/{target_obsid}.metafits"
             download_metafits=False
@@ -1522,6 +1522,7 @@ def cli():
     essential.add_argument(
         "--target_metafits",
         type=str,
+        default="",
         dest="target_metafits",
         help="Target metafits file",
     )
@@ -1529,12 +1530,14 @@ def cli():
         "--cal_datadir",
         type=str,
         dest="cal_datadir",
+        default="",
         help="Calibrator measurement set directory",
     )
     essential.add_argument(
         "--cal_metafits",
         type=str,
         dest="cal_metafits",
+        default="",
         help="Calibrator metafits file",
     )
 

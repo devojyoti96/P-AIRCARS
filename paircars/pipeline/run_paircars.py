@@ -50,18 +50,21 @@ def cli():
     essential.add_argument(
         "--target_metafits",
         type=str,
+        default="",
         dest="target_metafits",
         help="Target metafits file",
     )
     essential.add_argument(
         "--cal_datadir",
         type=str,
+        default="",
         dest="cal_datadir",
         help="Calibrator measurement set directory",
     )
     essential.add_argument(
         "--cal_metafits",
         type=str,
+        default="",
         dest="cal_metafits",
         help="Calibrator metafits file",
     )
