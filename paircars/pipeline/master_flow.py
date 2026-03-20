@@ -3066,9 +3066,9 @@ def cli():
         )
         print("##########################################")
         if msg == 0:
-            print("P-AIRCARS successfully executed.")
+            print("P-AIRCARS execution is finished: Successful.")
         else:
-            print("Issued occured in P-AIRCARS execution.")
+            print("P-AIRCARS execution is finished: Unsuccessful.")
         print("##########################################")
     except Exception:
         traceback.print_exc()

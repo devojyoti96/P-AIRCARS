@@ -413,8 +413,8 @@ def submit_local_master_flow(args, jobid):
                         continue
                     last_lines.append(line)
                     if (
-                        "task run" in line.lower()
-                        or "flow run" in line.lower()
+                        ("task run" in line.lower()
+                        or "flow run" in line.lower()) and "p-aircars execution is finished" not in line.lower()
                     ):
                         only_run_print = True
                     if not only_run_print or (
@@ -424,8 +424,7 @@ def submit_local_master_flow(args, jobid):
                         sys.stdout.write(line)
                         sys.stdout.flush()
                     if (
-                        "flow run" in line.lower() and f"paircars_{jobid}" in line.lower()
-                        and "finished in state completed" in line.lower()
+                        "p-aircars execution is finished" in line.lower()
                     ):
                         return 0
         except Exception:
