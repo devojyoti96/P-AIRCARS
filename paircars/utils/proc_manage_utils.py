@@ -424,7 +424,7 @@ def submit_local_master_flow(args, jobid):
                         sys.stdout.write(line)
                         sys.stdout.flush()
                     if (
-                        "flow run" in line.lower()
+                        "flow run" in line.lower() and f"paircars_{jobid}" in line.lower()
                         and "finished in state completed" in line.lower()
                     ):
                         return 0
