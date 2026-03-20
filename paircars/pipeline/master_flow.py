@@ -1084,7 +1084,7 @@ def master_control(
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
                 print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
-                    f = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}")(
+                    f = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}").submit(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1113,11 +1113,10 @@ def master_control(
                         emails=emails,
                         remote_logger=remote_logger,
                     )
-                    print("Output",f)
                     futures.append(f)
                 except Exception:
                     traceback.print_exc()
-            print ("FInal output",futures)
+            print ("Final output",futures)
             return 1
 
         ###################################################
