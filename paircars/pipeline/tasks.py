@@ -28,7 +28,7 @@ from paircars.pipeline import (
 
 
 @task(
-    name="move_center",
+    name="move_solarcenter",
     retries=2,
     retry_delay_seconds=60,
     log_prints=True,

@@ -19,14 +19,6 @@ from paircars.pipeline.tasks import (
     run_flag,
     run_import_model,
     run_basic_cal_jobs,
-    run_apply_basiccal_sol,
-    run_solar_siderealcor_jobs,
-    run_selfcal_jobs,
-    run_apply_selfcal_sol,
-    run_imaging_jobs,
-    run_apply_pbcor,
-    run_make_overlay,
-    run_make_msplot,
     send_task_notification,
 )
 from prefect.context import get_run_context
@@ -34,6 +26,158 @@ from multiprocessing import Event
 from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
 )
+
+@flow(
+    name="Pre-processing target",
+    description="Perform pre-processing on target measurement sets",
+    log_prints=True,
+)
+def pre_process_subflow(
+    # Core observational inputs
+    target_mslist,
+    target_metafits,
+    target_obsid,
+    solar_data,
+    # I/O and workspace
+    workdir,
+    target_outdir,
+    # Processing controls
+    do_move_solarcenter,
+    make_ds,
+    # Resource management
+    cpu_frac,
+    mem_frac,
+    # Logging / metadata
+    jobid,
+    timestamp,
+    emails,
+    remote_logger,
+):
+    """
+    Pre-processing of target measurement set subflow
+    
+    Returns
+    -------
+    int
+        Flow success message
+    list
+        Filtered target measurement set list
+    """
+    logdir = f"{workdir}/logs"
+    os.makedirs(logdir, exist_ok=True)
+    pre_process_logfile = f"{logdir}/pre_process_{target_obsid}.log"
+    ctx = get_run_context()
+    flow_id = str(ctx.flow_run.id)
+    flow_name = ctx.flow_run.name
+    stop_event = Event()
+    log_thread_flow = start_flow_log_saver(
+        flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
+    )
+    try:
+        ########################################
+        # Moving phasecenter to the solar center
+        ########################################
+        if solar_data and do_move_solarcenter:
+            if emails != "":
+                email_msg = f"[{target_obsid}] Started moving phasecenter to solar center."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            print("###########################")
+            print("Starting task: Moving phasecenter to the Sun.")
+            print("###########################")
+            future_movecenter = run_solar_phasecenter_jobs.with_options(
+                task_run_name=f"move_solarcenter_{target_obsid}",
+            ).submit(
+                ",".join(target_mslist),
+                workdir,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+            )
+            try:
+                msg, succeed, failed = future_movecenter.result()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Moving phasecenter to solar center is done.\nSucceeded: {succeed}, failed: {failed}."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                print("###########################")
+                print("Finished task: Moving phasecenter to solar center is done.")
+                print("###########################")
+                filtered_ms = []
+                for t_ms in target_mslist:
+                    t_ms = t_ms.rstrip("/")
+                    if os.path.exists(f"{t_ms}/.solarcenter_move_succeed"):
+                        filtered_ms.append(t_ms)
+                    else:
+                        print(
+                            f"Issue in moving phasecneter to solar center for measurement set: {t_ms}"
+                        )
+                target_mslist = filtered_ms  # Filtered target mslist
+            except Exception:
+                print(
+                    "Error in moving phasecenter to solar center. P-AIRCARS has stopped."
+                )
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Error occured in moving phasecenter to solar center."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                return 1, []
+        #######################################
+        # Run dynamic spectra making
+        #######################################
+        if solar_data and make_ds:
+            if emails != "":
+                email_msg = f"[{target_obsid}] Started making solar dynamic spectra."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            print("###########################")
+            print("Starting task: Making dynamic spectra of solar target.")
+            print("###########################")
+            future_maskms = run_ds_jobs.with_options(
+                task_run_name=f"make_ds_{target_obsid}",
+            ).submit(
+                ",".join(target_mslist),
+                target_metafits,
+                workdir,
+                target_outdir,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+            )
+            try:
+                msg, succeed, failed = future_maskms.result()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                print("###########################")
+                print("Finished task: Making solar dynamic spectra are done.")
+                print("###########################")
+            except Exception:
+                print("!!! WARNING : Error in making dynamic spectra. !!!")
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Error occured in making dynamic spectra."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+        
+        return 0, target_mslist 
+    except Exception:
+        traceback.print_exc()
+        return 1, []
+    finally:
+        stop_event.set()
+        log_thread_flow.join(timeout=5)
+
 
 @flow(
     name="Basic calibration",
@@ -86,7 +230,6 @@ def basic_cal_subflow(
         ##########################################
         # Checking presence of basic caltables
         ##########################################
-        print(f"Performing calibration for calibrator with OBSID: {cal_obsid}")
         if not redo_basic_cal:
             print(
                 f"Searching for existing bandpass tables: {basic_caldir}/calibrator_{cal_obsid}*.bcal"
@@ -132,7 +275,7 @@ def basic_cal_subflow(
                         print(f"{os.path.basename(kcross)}")
                     print("####################################################")
                     if emails != "":
-                        email_msg = f"All gain solutions from calibrator for calibrator OBSID: {cal_obsid} are already present."
+                        email_msg = f"[{cal_obsid}] All gain solutions from calibrator are already present."
                         send_task_notification(
                             emails, email_msg, jobid, target_obsid, timestamp
                         )
@@ -146,6 +289,11 @@ def basic_cal_subflow(
             print(
                 f"No calibrator measurement set with coarse channels: {coarse_chans} is present in: {cal_datadir}"
             )
+            if emails != "":
+                email_msg = f"[{cal_obsid}] No calibrator measurement set with coarse channels: {coarse_chans} is present in: {cal_datadir}."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
             return 1, [], []
 
         ##############################
@@ -155,11 +303,11 @@ def basic_cal_subflow(
         if do_cal_flag or do_import_model or do_basic_cal:
             prefix = "calibrator"
             if emails != "":
-                email_msg = f"Started spliting of calibrator measurement sets for OBSID {cal_obsid}."
+                email_msg = f"[{cal_obsid}] Started spliting of calibrator measurement sets."
                 send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
             print("###########################")
             print(
-                f"Starting task: Spliting of calibrator measurement sets for OBSID {cal_obsid}......"
+                "Starting task: Spliting of calibrator measurement sets."
             )
             print("###########################")
             future_cal_split = run_target_split_jobs.with_options(
@@ -185,22 +333,22 @@ def basic_cal_subflow(
             try:
                 msg, expected, succeed = future_cal_split.result()
                 if emails != "":
-                    email_msg = f"Spliting of calibrator measurement sets for OBSID: {cal_obsid} are done.\nExpected: {expected}, succeeded: {succeed}."
+                    email_msg = f"[{cal_obsid}] Spliting of calibrator measurement sets are done.\nExpected: {expected}, succeeded: {succeed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Spliting of calibrator measurement sets for OBSID {cal_obsid} are done."
+                    "Finished task: Spliting of calibrator measurement sets are done."
                 )
                 print("###########################")
             except Exception:
                 print(
-                    f"!!!! WARNING: Error in spliting calibrator measurement sets for OBSID {cal_obsid}. !!!!"
+                    "!!!! WARNING: Error in spliting calibrator measurement sets. !!!!"
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = f"Spliting calibrator measurement set for OBSID {cal_obsid} is failed."
+                    email_msg = f"[{cal_obsid}] Spliting calibrator measurement set is failed."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -212,8 +360,13 @@ def basic_cal_subflow(
             )
             if len(split_cal_mslist) == 0:
                 print(
-                    f"No splited measurement set is present for basic calibration for OBSID {cal_obsid}."
+                    "No splited measurement set is present for basic calibration."
                 )
+                if emails != "":
+                    email_msg = f"[{cal_obsid}] No splited measurement set is present for basic calibration."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
                 return 1, [], []
 
         ##################################
@@ -222,10 +375,10 @@ def basic_cal_subflow(
         # Only if basic calibration is requested
         if do_cal_flag:
             if emails != "":
-                email_msg = f"Started flagging of calibrators for OBSID {cal_obsid}."
+                email_msg = f"[{cal_obsid}] Started flagging of calibrators."
                 send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
             print("###########################")
-            print(f"Starting task: Flagging calibrators for OBSID {cal_obsid}....")
+            print("Starting task: Flagging calibrators.")
             print("###########################")
             future_flag = run_flag.with_options(
                 task_run_name=f"flag_{cal_obsid}"
@@ -244,7 +397,7 @@ def basic_cal_subflow(
             try:
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
-                    email_msg = f"Flagging of calibrator for OBSID {cal_obsid} is done.\nSucceeded: {succeed}, failed: {failed}."
+                    email_msg = f"[{cal_obsid}] Flagging of calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -258,20 +411,19 @@ def basic_cal_subflow(
                 split_cal_mslist = filtered_ms  # Filtered target mslist
                 print("###########################")
                 print(
-                    f"Finished task: Flagging of calibrator is done for OBSID {cal_obsid}."
+                    "Finished task: Flagging of calibrator is done."
                 )
                 print("###########################")
             except Exception:
                 print(
-                    f"!!!! WARNING: Flagging error for calibrator with OBSID {cal_obsid}. !!!!"
+                    "!!!! WARNING: Flagging error for calibrator. !!!!"
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = f"Error in flagging calibrators for OBSID {cal_obsid}."
+                    email_msg = f"[{cal_obsid}] Error in flagging calibrators."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
-                return 1, [], []
 
         #################################
         # Import model
@@ -279,11 +431,11 @@ def basic_cal_subflow(
         if do_import_model:
             if emails != "":
                 email_msg = (
-                    f"Started importing sky model for calibrator for OBSID {cal_obsid}."
+                    f"[{cal_obsid}] Started importing sky model."
                 )
                 send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
             print("###########################")
-            print(f"Starting task: Importing model visibilities for OBSID {cal_obsid}....")
+            print("Starting task: Importing model visibilities.")
             print("###########################")
             future_import_model = run_import_model.with_options(
                 task_run_name=f"model_{cal_obsid}"
@@ -299,13 +451,13 @@ def basic_cal_subflow(
             try:
                 msg, succeed, failed = future_import_model.result()
                 if emails != "":
-                    email_msg = f"Model import for calibrator for OBSID {cal_obsid} is done.\nSucceeded: {succeed}, failed: {failed}."
+                    email_msg = f"[{cal_obsid}] Model import for calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
                 print(
-                    f"Finished task: Model import for calibrator for OBSID {cal_obsid} is done."
+                    "Finished task: Model import for calibrator is done."
                 )
                 print("###########################")
                 filtered_ms = []
@@ -320,11 +472,11 @@ def basic_cal_subflow(
                 split_cal_mslist = filtered_ms  # Filtered target mslist
             except Exception:
                 print(
-                    f"!!!! WARNING: Error in importing calibrator models for OBSID {cal_obsid}. Not continuing calibration. !!!!"
+                    "!!!! WARNING: Error in importing calibrator models. Not continuing calibration. !!!!"
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = f"Error occured in importing model for calibrators for OBSID {cal_obsid}. Not using calibrator solutions."
+                    email_msg = f"[{cal_obsid}] Error occured in importing model for calibrators. Not using calibrator solutions."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -335,10 +487,10 @@ def basic_cal_subflow(
         ###############################
         if do_basic_cal:
             if emails != "":
-                email_msg = f"Started basic calibration for OBSID {cal_obsid}."
+                email_msg = f"[{cal_obsid}] Started basic calibration."
                 send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
             print("###########################")
-            print(f"Starting task: Performing basic calibration for OBSID {cal_obsid}.....")
+            print("Starting task: Performing basic calibration.")
             print("###########################")
             future_basical = run_basic_cal_jobs.with_options(
                 task_run_name=f"calibration_{cal_obsid}"
@@ -357,20 +509,20 @@ def basic_cal_subflow(
             try:
                 msg, succeed, failed = future_basical.result()
                 if emails != "":
-                    email_msg = f"Basic calibration is done for OBSID {cal_obsid}.\nSucceeded: {succeed}, failed: {failed}."
+                    email_msg = f"[{cal_obsid}] Basic calibration is done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
                 print("###########################")
-                print(f"Finished task: Basic calibration is done for OBSID {cal_obsid}.")
+                print("Finished task: Basic calibration is done.")
                 print("###########################")
             except Exception:
                 print(
-                    f"!!!! WARNING: Error in basic calibration for OBSID {cal_obsid}. !!!!"
+                    "!!!! WARNING: Error in basic calibration. !!!!"
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = f"Error occured in basic calibration for OBSID {cal_obsid}."
+                    email_msg = f"[{cal_obsid}] Error occured in basic calibration."
                     send_task_notification(
                         emails, email_msg, jobid, target_obsid, timestamp
                     )
@@ -393,23 +545,23 @@ def basic_cal_subflow(
             crossphase_tables = interpolate_bpass(crossphase_tables, overwrite=True)
         if len(bandpass_tables) == 0:
             print(
-                f"No bandpass table is present for OBSID {cal_obsid} in calibration directory : {basic_caldir}."
+                f"No bandpass table is present in calibration directory : {basic_caldir}."
             )
             if emails != "":
-                email_msg = f"No bandpass calibration table is found for OBSID {cal_obsid}."
+                email_msg = f"[{cal_obsid}] No bandpass calibration table is found."
                 send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
             return 1, [], []
         else:
             print("###################################################")
             print(
-                f"Bandpass tables for OBSID {cal_obsid} in calibration directory: {basic_caldir}"
+                f"Bandpass tables in calibration directory: {basic_caldir}"
             )
             for bpass in bandpass_tables:
                 print(f"{os.path.basename(bpass)}")
             print("####################################################")
             if len(crossphase_tables) > 0:
                 print(
-                    f"Crosshand phase tables for OBSID {cal_obsid} in calibration directory: {basic_caldir}"
+                    f"Crosshand phase tables in calibration directory: {basic_caldir}"
                 )
                 for kcross in crossphase_tables:
                     print(f"{os.path.basename(kcross)}")
@@ -426,11 +578,11 @@ def basic_cal_subflow(
             )
             if msg == 0:
                 print(
-                    f"Diagnostic plots for bandpass tables for OBSID {cal_obsid} are saved in : {bpass_plots}."
+                    f"Diagnostic plots for bandpass tables are saved in : {bpass_plots}."
                 )
             else:
                 print(
-                    f"Error in creating diagnostic plots for bandpass tables for OBSID {cal_obsid}."
+                    "Error in creating diagnostic plots for bandpass tables."
                 )
         if len(crossphase_tables) > 0 and do_basic_cal:
             os.makedirs(f"{cal_outdir}/diagnostic_plots", exist_ok=True)
@@ -442,11 +594,11 @@ def basic_cal_subflow(
             )
             if msg == 0:
                 print(
-                    f"Diagnostic plots for crosshand phase tables for OBSID {cal_obsid} are saved in : {kcross_plots}."
+                    f"Diagnostic plots for crosshand phase tables are saved in : {kcross_plots}."
                 )
             else:
                 print(
-                    f"Error in creating diagnostic plots for crosshand phase tables for OBSID {cal_obsid}."
+                    "Error in creating diagnostic plots for crosshand phase tables."
                 )
         return 0, bandpass_tables, crossphase_tables
     except Exception:

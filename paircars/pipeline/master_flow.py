@@ -15,12 +15,10 @@ from datetime import datetime as dt
 from multiprocessing import Event
 from dask.distributed import get_client
 from prefect import flow
-from functools import partial
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect.settings import get_current_settings
 from paircars.utils.basic_utils import (
-    get_cachedir,
     internet_available,
 )
 from paircars.utils.calibration import (
@@ -29,7 +27,6 @@ from paircars.utils.calibration import (
     max_time_solar_smearing,
     interpolate_bpass,
     interpolate_quartical,
-    get_caltable_metadata,
 )
 from paircars.utils.casatasks import reset_weights_and_flags
 from paircars.utils.flagging import do_flag_backup, get_chans_flag
@@ -52,7 +49,6 @@ from paircars.utils.mwa_utils import (
     get_MWA_OBSID,
     download_MWA_metafits,
     get_selfcal_ntimes,
-    freq_to_MWA_coarse,
     get_MWA_coarse_chan,
 )
 from paircars.utils.proc_manage_utils import (
@@ -73,18 +69,11 @@ from paircars.clusterutils.slurm_cluster import (
 from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
 )
-from paircars.pipeline import (
-    move_solarcenter,
-)
 from paircars.pipeline.init_data import init_paircars_data
-from paircars.pipeline.flows import basic_cal_subflow
+from paircars.pipeline.flows import basic_cal_subflow, pre_process_subflow
 from paircars.pipeline.tasks import (
-    run_solar_phasecenter_jobs,
-    run_ds_jobs,
     run_target_split_jobs,
     run_flag,
-    run_import_model,
-    run_basic_cal_jobs,
     run_apply_basiccal_sol,
     run_solar_siderealcor_jobs,
     run_selfcal_jobs,
@@ -963,128 +952,20 @@ def master_control(
                             force_reset=do_forcereset_weightflag,
                         )
         print("Reset is done.")
-        #################################
-
-        if (move_solarcenter or make_ds) and adaptive:
-            scale_worker_and_wait(
-                dask_cluster,
-                dask_client,
-                max(2, min(len(target_mslist) + 1, max_worker)),
-            )
-        ########################################
-        # Moving phasecenter to the solar center
-        ########################################
-        if solar_data and do_move_solarcenter:
-            if emails != "":
-                email_msg = "Started moving phasecenter to solar center."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Moving phasecenter to the Sun .....")
-            print("###########################")
-            future_movecenter = run_solar_phasecenter_jobs.with_options(
-                task_run_name=f"moving_to_solar_center_{jobid}",
-            ).submit(
-                ",".join(target_mslist),
-                workdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_movecenter.result()
-                if emails != "":
-                    email_msg = f"Moving phasecenter to solar center is done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Finished task: Moving phasecenter to solar center is done.")
-                print("###########################")
-                filtered_ms = []
-                for t_ms in target_mslist:
-                    t_ms = t_ms.rstrip("/")
-                    if os.path.exists(f"{t_ms}/.solarcenter_move_succeed"):
-                        filtered_ms.append(t_ms)
-                    else:
-                        print(
-                            f"Issue in moving phasecneter to solar center for measurement set: {t_ms}"
-                        )
-                if adaptive and len(filtered_ms) != len(target_mslist):
-                    scale_worker_and_wait(
-                        dask_cluster,
-                        dask_client,
-                        max(2, min(len(target_mslist) + 1, max_worker)),
-                    )
-                target_mslist = filtered_ms  # Filtered target mslist
-            except Exception:
-                print(
-                    "Error in moving phasecenter to solar center. P-AIRCARS has stopped."
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in moving phasecenter to solar center."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                return 1
-
-        #######################################
-        # Run dynamic spectra making
-        #######################################
-        if solar_data and make_ds:
-            if emails != "":
-                email_msg = "Started making solar dynamic spectra."
-                send_task_notification(
-                    emails, email_msg, jobid, target_obsid, timestamp
-                )
-            print("###########################")
-            print("Starting task: Making dynamic spectra of solar target .....")
-            print("###########################")
-            future_maskms = run_ds_jobs.with_options(
-                task_run_name=f"making_dynamic_spectra_{jobid}",
-            ).submit(
-                ",".join(target_mslist),
-                target_metafits,
-                workdir,
-                target_outdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-            )
-            try:
-                msg, succeed, failed = future_maskms.result()
-                if emails != "":
-                    email_msg = f"Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
-                print("###########################")
-                print("Finished task: Making solar dynamic spectra are done.")
-                print("###########################")
-            except Exception:
-                print("!!! WARNING : Error in making dynamic spectra. !!!")
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = "Error occured in making dynamic spectra."
-                    send_task_notification(
-                        emails, email_msg, jobid, target_obsid, timestamp
-                    )
 
         ##########################################
         # Basic calibration flows
         ##########################################
         if has_cal:
             cal_obsids = list(calibrator_dic.keys())
-            futures = []
+            succeed = 0
+            all_bandpass_tables=[]
+            all_crossphase_tables=[]
             for cal_obsid in cal_obsids:
                 cal_datadir, cal_metafits, coarse_chans = calibrator_dic[cal_obsid]
                 print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
                 try:
-                    f = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}",task_runner=DaskTaskRunner(address=dask_addr),).submit(
+                    msg, bandpass_tables, crossphase_tables = basic_cal_subflow.with_options(flow_run_name=f"basic_cal_{cal_obsid}")(
                         # Core observational inputs
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1113,12 +994,72 @@ def master_control(
                         emails=emails,
                         remote_logger=remote_logger,
                     )
-                    futures.append(f)
+                    if msg==0:
+                        succeed+=1
+                        all_bandpass_tables+=bandpass_tables
+                        all_crossphase_tables+=crossphase_tables
                 except Exception:
                     traceback.print_exc()
-            print ("Final output",futures)
+            failed = len(cal_obsids)-succeed
+            print(f"Total calibrators observations : {len(cal_obsids)}.")
+            print(f"Total succeeded: {succeed}.")
+            print(f"Total failed: {failed}.")
+            if emails != "":
+                email_msg = f"Basic calibration of all calibrators are done.\nSucceeded: {succeed}, failed: {failed}."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
+            if len(all_bandpass_tables)==0:
+                print("No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration.")
+                has_cal=False
+                if emails != "":
+                    email_msg = "No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+            elif len(all_crossphase_tables)==0:
+                print("No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted.")
+                if emails != "":
+                    email_msg = "No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted."
+                    send_task_notification(
+                        emails, email_msg, jobid, target_obsid, timestamp
+                    )
+                    
+        ###################################################
+        # Target measurement set pre-processing flows
+        ###################################################
+        msg, target_mslist = pre_process_subflow.with_options(flow_run_name=f"pre_process_{target_obsid}")(
+            # Core observational inputs
+            target_mslist,
+            target_metafits,
+            target_obsid,
+            solar_data,
+            # I/O and workspace
+            workdir,
+            target_outdir,
+            # Processing controls
+            do_move_solarcenter,
+            make_ds,
+            # Resource management
+            cpu_frac,
+            mem_frac,
+            # Logging / metadata
+            jobid,
+            timestamp,
+            emails,
+            remote_logger,
+        )
+        if msg!=0 or len(target_mslist)==0:
+            print("Error occured in pre-processing steps target data.")
+            if emails != "":
+                email_msg = "Error occured in pre-processing steps target data. P-AIRCARS has stopped."
+                send_task_notification(
+                    emails, email_msg, jobid, target_obsid, timestamp
+                )
             return 1
-
+        else:
+            return 0
+            
         ###################################################
         # Checking if selfcal tables already exist or not
         ###################################################
