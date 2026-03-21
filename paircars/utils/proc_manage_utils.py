@@ -428,10 +428,10 @@ def submit_local_master_flow(args, jobid):
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if printing_traceback:
-                        return 1
-                    elif "p-aircars execution is finished" in lower or "cluster closed" in lower:
+                    if "p-aircars execution is finished" in lower or "cluster closed" in lower:
                         return 0
+                    elif printing_traceback and line.strip() == "":
+                        return 1
         except Exception:
             traceback.print_exc()
             return 1
