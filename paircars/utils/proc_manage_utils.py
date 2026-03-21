@@ -406,7 +406,7 @@ def submit_local_master_flow(args, jobid):
             only_run_print = False
             printing_traceback = False
             traceback_done = False
-            traceback_waittime = 15
+            traceback_waittime = -1
             last_write_time=time.time()
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
@@ -428,6 +428,7 @@ def submit_local_master_flow(args, jobid):
                         "traceback" in lower or "killed" in lower
                     ) and not printing_traceback:
                         printing_traceback = True
+                        traceback_waittime=15
                     if (
                         printing_traceback
                         or not only_run_print
