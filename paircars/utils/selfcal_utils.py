@@ -172,6 +172,7 @@ def determine_disk_visibility(msname):
     n_detected_per_time = np.nansum(detected, axis=0)
     detected_timestamps = np.where(n_detected_per_time > 0)[0]
     pos = np.where(r_I >= 0.1)
+    os.system(f"rm -rf {normed_msname}")
     if len(pos) == 0:
         return np.array([], dtype=int), np.array([], dtype=int), detected_timestamps
     elif len(pos) == 1:
