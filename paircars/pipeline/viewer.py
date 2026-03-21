@@ -413,7 +413,17 @@ def cli():
             if not os.path.exists(workdir):
                 print(f"Work directory : {workdir} is not present.")
                 sys.exit(1)
-            LOG_DIR = workdir.rstrip("/") + "/logs"
+            root = tk.Tk()
+            root.withdraw()  # hide main window
+
+            selected_dir = filedialog.askdirectory(
+                initialdir=workdir,
+                title="Select log directory"
+            )
+            if not selected_dir:
+                print("No directory selected. Exiting.")
+                sys.exit(1)
+            LOG_DIR = f"{selected_dir.rstrip('/')}/logs"
     else:
         if not os.path.exists(args.logdir):
             print(
