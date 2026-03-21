@@ -52,8 +52,7 @@ def freq_to_MWA_coarse(freq):
     """
     all_mwa_coarse_freq = np.arange(255) * 1.28
     diff = abs(freq - all_mwa_coarse_freq)
-    coarse_chan = np.where(diff==np.nanmin(diff))
-    print (coarse_chan)
+    coarse_chan = np.where(diff==np.nanmin(diff))[0][-1]
     return coarse_chan
 
 
@@ -76,8 +75,9 @@ def get_MWA_coarse_chan(msname):
     freqs = msmd.chanfreqs(0, unit="MHz")
     msmd.close()
     coarse_chans = []
+    print (freqs[0])
     for f in freqs:
-        coarse_chan = freq_to_MWA_coarse(round(f,2))
+        coarse_chan = freq_to_MWA_coarse(f)
         coarse_chans.append(coarse_chan)
     return coarse_chans
 
