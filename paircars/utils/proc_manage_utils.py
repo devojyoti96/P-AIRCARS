@@ -427,7 +427,7 @@ def submit_local_master_flow(args, jobid):
                         if line.strip() == "":
                             return 1
                     if (
-                        or not only_run_print
+                        not only_run_print
                         or ("task run" in lower or "flow run" in lower)
                         or "p-aircars execution is finished" in lower
                     ):
