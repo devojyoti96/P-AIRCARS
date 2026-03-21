@@ -209,6 +209,8 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA"):
         Normalized measurement set
     """
     outfile = f"{msname}.norm"
+    if os.path.exists(outfile):
+        os.system(f"rm -rf {outfile}")
     os.system(f"cp -r {msname} {outfile}")
     tb = table()
     tb.open(outfile, nomodify=False)
