@@ -414,6 +414,8 @@ def submit_local_master_flow(args, jobid):
                     line = log.readline()
                     wait_time = time.time()-last_write_time
                     print (wait_time)
+                    if wait_time>traceback_waittime:
+                        return 1
                     if not line:
                         time.sleep(0.5)
                         continue
@@ -436,8 +438,6 @@ def submit_local_master_flow(args, jobid):
                         sys.stdout.write(line)
                         sys.stdout.flush()
                         last_write_time=time.time()
-                    if wait_time>traceback_waittime:
-                        return 1
                     if (
                         "p-aircars execution is finished" in lower
                         or "cluster closed" in lower
