@@ -76,8 +76,7 @@ def get_MWA_coarse_chan(msname):
     coarse_chans = []
     for f in freqs:
         coarse_chan = freq_to_MWA_coarse(f)
-        if coarse_chan not in coarse_chans:
-            coarse_chans.append(coarse_chan)
+        coarse_chans.append(coarse_chan)
     return coarse_chans
 
 
