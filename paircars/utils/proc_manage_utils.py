@@ -421,8 +421,6 @@ def submit_local_master_flow(args, jobid):
                         only_run_print = True
                     if ("traceback" in lower or "killed" in lower) and not printing_traceback:
                         printing_traceback = True
-                    if printing_traceback and line.strip() == "":
-                        traceback_done = True
                     if (
                         printing_traceback or 
                         not only_run_print
@@ -431,7 +429,11 @@ def submit_local_master_flow(args, jobid):
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if traceback_done:
+                    if printing_traceback and (
+                        "error:" in lower or 
+                        "exception" in lower or 
+                        "failed" in lower
+                    ):
                         return 1
                     if "p-aircars execution is finished" in lower or "cluster closed" in lower:
                         return 0
