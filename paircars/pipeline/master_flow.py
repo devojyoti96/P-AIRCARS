@@ -32,8 +32,8 @@ from paircars.utils.flagging import do_flag_backup
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
-    generate_password,
     get_remote_logger_link,
+    get_remote_logger_password,
     get_emails,
     init_logger,
 )
@@ -719,7 +719,7 @@ def master_control(
             username = getpass.getuser()
             jobname = f"{username}-{hostname}:{timestamp}:{target_obsid}"
             if job_password is None:
-                password = generate_password()
+                password = get_remote_logger_password()
             else:
                 password = job_password
             np.save(
@@ -736,7 +736,7 @@ def master_control(
                 )
                 if master_logfile is not None and os.path.exists(master_logfile):
                     observer = init_logger(
-                        "master_log", master_logfile, jobname=jobname, password=password
+                        "master_log", master_logfile, log_type="master", jobname=jobname, password=password
                     )
             if observer is None:
                 print(

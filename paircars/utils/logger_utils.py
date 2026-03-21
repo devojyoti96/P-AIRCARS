@@ -43,7 +43,29 @@ def generate_password(length=6):
 def get_remote_logger_link():
     cachedir = get_cachedir()
     username = getpass.getuser()
-    link_file = os.path.join(cachedir, f"remotelink_{username}.txt")
+    link_file = os.path.join(cachedir, f".remotelink_{username}.txt")
+    try:
+        if os.path.isfile(link_file):
+            with open(link_file, "r") as f:
+                lines = [line.strip() for line in f if line.strip()]
+            remote_link = lines[0]
+        else:
+            return ""
+    except Exception:
+        return ""
+    try:
+        req = urllib.request.Request(remote_link, method="GET")
+        with urllib.request.urlopen(req, timeout=60) as response:
+            if response.status == 200:
+                return remote_link
+    except (urllib.error.URLError, urllib.error.HTTPError):
+        return ""
+
+
+def get_remote_logger_password():
+    cachedir = get_cachedir()
+    username = getpass.getuser()
+    link_file = os.path.join(cachedir, f".remotelink_password_{username}.txt")
     try:
         if os.path.isfile(link_file):
             with open(link_file, "r") as f:
@@ -65,7 +87,7 @@ def get_remote_logger_link():
 def get_emails():
     cachedir = get_cachedir()
     username = getpass.getuser()
-    email_file = os.path.join(cachedir, f"emails_{username}.txt")
+    email_file = os.path.join(cachedir, f".emails_{username}.txt")
     try:
         with open(email_file, "r") as f:
             lines = [line.strip() for line in f if line.strip()]
@@ -99,11 +121,12 @@ class RemoteLogger(logging.Handler):
     """
 
     def __init__(
-        self, job_id="default", log_id="run_default", remote_link="", password=""
+        self, job_id="default", log_id="run_default", log_type="master", remote_link="", password=""
     ):
         super().__init__()
         self.job_id = job_id
         self.log_id = log_id
+        self.log_type = log_type
         self.password = password
         self.remote_link = remote_link
 
@@ -115,6 +138,7 @@ class RemoteLogger(logging.Handler):
                 json={
                     "job_id": self.job_id,
                     "log_id": self.log_id,
+                    "log_type": self.log_type,
                     "message": f"{msg}\n",
                     "password": self.password,
                     "first": False,
@@ -187,53 +211,101 @@ def get_logid(logfile):
     """
     name = os.path.basename(logfile)
     logmap = {
-        "apply_basiccal_target.log": "Applying basic calibration solutions on targets",
-        "apply_basiccal_selfcal.log": "Applying basic calibration solutions for self-calibration",
-        "apply_pbcor.log": "Applying primary beam corrections",
-        "apply_selfcal.log": "Applying self-calibration solutions",
-        "basic_cal.log": "Basic calibration",
-        "cor_phasecenter_target.log": "Moving phasecenter to solar center",
-        "cor_sidereal_selfcal.log": "Correction of sidereal motion before self-calibration",
-        "cor_sidereal_target.log": "Correction of sidereal motion for target scans",
-        "flagging_cal_calibrator.log": "Basic flagging of calibrators",
-        "flagging_target_target.log": "Basic flagging of targets",
-        "modeling.log": "Simulating visibilities of calibrators",
-        "split_calibrator.log": "Spliting calibrator scans",
-        "split_target.log": "Spliting target",
-        "split_selfcal.log": "Spliting for self-calibration",
-        "selfcal_target.log": "All self-calibrations",
-        "imaging_target.log": "All imaging",
-        "ds_target.log": "Making dynamic spectra",
-        "do_overlay.log": "Making overlays",
-        "main.log": "All master log",
-        "do_msplot.log": "Diagnistic plot of ms",
+        "apply_basiccal_target": "Applying basic calibration solutions on targets",
+        "apply_basiccal_selfcal": "Applying basic calibration solutions for self-calibration",
+        "apply_pbcor": "Applying primary beam corrections",
+        "apply_selfcal": "Applying self-calibration solutions",
+        "basic_cal": "Basic calibration",
+        "cor_phasecenter_target": "Moving phasecenter to solar center",
+        "cor_sidereal_selfcal": "Correction of sidereal motion before self-calibration",
+        "cor_sidereal_target": "Correction of sidereal motion for target scans",
+        "flagging_cal_calibrator": "Basic flagging of calibrators",
+        "flagging_target_target": "Basic flagging of targets",
+        "modeling": "Simulating visibilities of calibrators",
+        "split_calibrator": "Spliting calibrator scans",
+        "split_target": "Spliting target",
+        "split_selfcal": "Spliting for self-calibration",
+        "selfcal_target": "All self-calibrations",
+        "imaging_target": "All imaging",
+        "ds_target": "Making dynamic spectra",
+        "do_overlay": "Making overlays",
+        "main": "All master log",
+        "do_msplot": "Diagnistic plot of ms",
     }
-
-    if name in logmap:
-        return logmap[name]
+    logmap_keys = list(logmap.keys())
+    for logmap_key in logmap_keys:
+        if name.startswith(logmap_key):
+            log_name = logmap[logmap_key]
+            try:
+                obsid = int(name.split(".log")[0].split("_")[-1])
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+    if name.startswith("subflow"):
+        if name.startswith("subflow_preprocess"):
+            log_name = "Pre-processing"
+            try:
+                obsid = name.split(".log")[0].split("subflow_preprocess_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_basiccal"):
+            log_name = "Basic calibration"
+            try:
+                obsid = name.split(".log")[0].split("subflow_basiccal_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_selfcal"):
+            log_name = "Self-calibration"
+            try:
+                obsid = name.split(".log")[0].split("subflow_selfcal_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_applysol"):
+            log_name = "Apply calibration solutions"
+            try:
+                obsid = name.split(".log")[0].split("subflow_applysol_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_imaging"):
+            log_name = "Imaging"
+            try:
+                obsid = name.split(".log")[0].split("subflow_imaging_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        else:
+            log_name = f"Subflow: {name}"
+            return log_name
     elif name.endswith("_int.log"):
         name = name.split("_selfcal_int.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("ch")[1].split("_")[0]
-        spw = name.split("_")[-1]
-        return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
+        coarse_chan = name.split("_")[-1]
+        return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
     elif name.endswith("_pol.log"):
         name = name.split("_selfcal_pol.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("ch")[1].split("_")[0]
-        spw = name.split("_")[-1]
-        return f"Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
+        coarse_chan = name.split("_")[-1]
+        return f"Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
     elif "imaging_target" in name:
         name = name.rstrip(".log").split("imaging_target_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("ch")[1].split("_")[0]
-        spw = name.split("_")[-1]
-        return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
+        coarse_chan = name.split("_")[-1]
+        return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
         return name
 
 
-def init_logger(logname, logfile, jobname="", password=""):
+def init_logger(logname, logfile, log_type="task", jobname="", password=""):
     """
     Initialize a remote logger with watchdog-based tailing.
 
@@ -243,6 +315,8 @@ def init_logger(logname, logfile, jobname="", password=""):
         Logger name.
     logfile : str
         Path to the local logfile to also monitor.
+    logtype : str, optional
+        Log type (only allowed values: master | subflow | task)
     jobname : str, optional
         Remote logger job ID.
     password : str
@@ -270,23 +344,24 @@ def init_logger(logname, logfile, jobname="", password=""):
         logger.handlers.clear()
     formatter = logging.Formatter("%(message)s")
     remote_link = get_remote_logger_link()
+    if log_type not in ["master","subflow","task"]:
+        log_type="task"
     if remote_link != "":
         if jobname:
             job_id = jobname
             log_id = get_logid(logfile)
             remote_handler = RemoteLogger(
-                job_id=job_id, log_id=log_id, remote_link=remote_link, password=password
+                job_id=job_id, log_id=log_id, log_type=log_type, remote_link=remote_link, password=password
             )
             remote_handler.setFormatter(formatter)
             logger.addHandler(remote_handler)
-
             try:
                 requests.post(
                     f"{remote_link}/api/log",
                     json={
                         "job_id": job_id,
                         "log_id": log_id,
-                        "message": "Job starting...",
+                        "message": "",
                         "password": password,
                         "first": True,
                     },

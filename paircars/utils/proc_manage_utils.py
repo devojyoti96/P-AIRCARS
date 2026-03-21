@@ -390,7 +390,7 @@ def submit_local_master_flow(args, jobid):
         try:
             # Always run job in background
             with open(log_file, "a", buffering=1) as log:
-                proc = subprocess.Popen(
+                subprocess.Popen(
                     ["bash", script_path],
                     stdout=log,
                     stderr=subprocess.STDOUT,

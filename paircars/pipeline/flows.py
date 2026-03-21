@@ -1,6 +1,7 @@
 import traceback
 import glob
 import os
+import time
 import numpy as np
 from prefect import flow
 from astropy.io import fits
@@ -46,6 +47,8 @@ from prefect.context import get_run_context
 from multiprocessing import Event
 from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
+    clean_shutdown,
+    init_logger,
 )
 
 
@@ -90,7 +93,7 @@ def pre_process_subflow(
     """
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    pre_process_logfile = f"{logdir}/preprocess_subflow_{target_obsid}.log"
+    pre_process_logfile = f"{logdir}/subflow_preprocess_{target_obsid}.log"
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
@@ -98,6 +101,20 @@ def pre_process_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
     )
+    observer=None
+    if os.path.exists(f"{workdir}/.jobname_password.npy"):
+        time.sleep(5)
+        jobname, password = np.load(
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
+        )
+        if pre_process_logfile is not None and os.path.exists(pre_process_logfile):
+            observer = init_logger(
+                "preprocess_subflow_log", pre_process_logfile, log_type="subflow", jobname=jobname, password=password
+            )
+    if observer is None:
+        print(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
     try:
         ########################################
         # Moving phasecenter to the solar center
@@ -228,6 +245,8 @@ def pre_process_subflow(
     finally:
         stop_event.set()
         log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 ############################
@@ -273,7 +292,7 @@ def basic_cal_subflow(
     """
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    basic_cal_logfile = f"{logdir}/basiccal_subflow_{cal_obsid}.log"
+    basic_cal_logfile = f"{logdir}/subflow_basiccal_{cal_obsid}.log"
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
@@ -281,6 +300,20 @@ def basic_cal_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, basic_cal_logfile, poll_interval=3, stop_event=stop_event
     )
+    observer=None
+    if os.path.exists(f"{workdir}/.jobname_password.npy"):
+        time.sleep(5)
+        jobname, password = np.load(
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
+        )
+        if basic_cal_logfile is not None and os.path.exists(basic_cal_logfile):
+            observer = init_logger(
+                "basic_cal_subflow_log", basic_cal_logfile, log_type="subflow", jobname=jobname, password=password
+            )
+    if observer is None:
+        print(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
     try:
         ##########################################
         # Checking presence of basic caltables
@@ -733,7 +766,8 @@ def basic_cal_subflow(
     finally:
         stop_event.set()
         log_thread_flow.join(timeout=5)
-
+        if observer is not None:
+            clean_shutdown(observer)
 
 ########################################################
 # Self-calibration subflows
@@ -797,14 +831,28 @@ def selfcal_subflow(
     """
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    pre_process_logfile = f"{logdir}/selfcal_subflow_{target_obsid}.log"
+    selfcal_subflow_logfile = f"{logdir}/subflow_selfcal_{target_obsid}.log"
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
+        flow_id, flow_name, selfcal_subflow_logfile, poll_interval=3, stop_event=stop_event
     )
+    observer=None
+    if os.path.exists(f"{workdir}/.jobname_password.npy"):
+        time.sleep(5)
+        jobname, password = np.load(
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
+        )
+        if selfcal_subflow_logfile is not None and os.path.exists(selfcal_subflow_logfile):
+            observer = init_logger(
+                "selfcal_subflow_log", selfcal_subflow_logfile, log_type="subflow", jobname=jobname, password=password
+            )
+    if observer is None:
+        print(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
     try:
         ###################################################
         # Checking if selfcal tables already exist or not
@@ -1450,6 +1498,8 @@ def selfcal_subflow(
     finally:
         stop_event.set()
         log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 ############################
@@ -1503,14 +1553,28 @@ def applysol_subflow(
     """
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    pre_process_logfile = f"{logdir}/applysol_subflow_{target_obsid}.log"
+    applysol_logfile = f"{logdir}/subflow_applysol_{target_obsid}.log"
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
+        flow_id, flow_name, applysol_logfile, poll_interval=3, stop_event=stop_event
     )
+    observer=None
+    if os.path.exists(f"{workdir}/.jobname_password.npy"):
+        time.sleep(5)
+        jobname, password = np.load(
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
+        )
+        if applysol_logfile is not None and os.path.exists(applysol_logfile):
+            observer = init_logger(
+                "applysol_subflow_log", applysol_logfile, log_type="subflow", jobname=jobname, password=password
+            )
+    if observer is None:
+        print(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
     try:
         #############################################
         # Spliting targets if not started already
@@ -1891,6 +1955,8 @@ def applysol_subflow(
     finally:
         stop_event.set()
         log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 ############################
@@ -1948,14 +2014,28 @@ def imaging_subflow(
     """
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    pre_process_logfile = f"{logdir}/imaging_subflow_{target_obsid}.log"
+    imaging_subflow_logfile = f"{logdir}/subflow_imaging_{target_obsid}.log"
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
+        flow_id, flow_name, imaging_subflow_logfile, poll_interval=3, stop_event=stop_event
     )
+    observer=None
+    if os.path.exists(f"{workdir}/.jobname_password.npy"):
+        time.sleep(5)
+        jobname, password = np.load(
+            f"{workdir}/.jobname_password.npy", allow_pickle=True
+        )
+        if imaging_subflow_logfile is not None and os.path.exists(imaging_subflow_logfile):
+            observer = init_logger(
+                "imaging_subflow_log", imaging_subflow_logfile, log_type="subflow", jobname=jobname, password=password
+            )
+    if observer is None:
+        print(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
     try:
         if do_imaging:
             ######################################
@@ -2229,3 +2309,5 @@ def imaging_subflow(
     finally:
         stop_event.set()
         log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)

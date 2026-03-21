@@ -41,6 +41,7 @@ def run_solar_phasecenter_jobs(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Move phase center to the Sun
@@ -57,8 +58,10 @@ def run_solar_phasecenter_jobs(
         CPU fraction to use
     mem_frac : float, optional
         Memory fraction to use
-    remote_log: bool, optional
+    remote_log : bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -74,7 +77,7 @@ def run_solar_phasecenter_jobs(
     phasecor_basename = f"cor_phasecenter_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{phasecor_basename}.log"
+    logfile = f"{logdir}/{phasecor_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -126,6 +129,7 @@ def run_ds_jobs(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Make dynamic spectra of the solar target
@@ -148,6 +152,8 @@ def run_ds_jobs(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -163,7 +169,7 @@ def run_ds_jobs(
     ds_basename = "ds_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{ds_basename}.log"
+    logfile = f"{logdir}/{ds_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -227,6 +233,7 @@ def run_target_split_jobs(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Split measurement set
@@ -265,6 +272,8 @@ def run_target_split_jobs(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -280,7 +289,7 @@ def run_target_split_jobs(
     split_basename = f"split_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{split_basename}.log"
+    logfile = f"{logdir}/{split_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -348,6 +357,7 @@ def run_flag(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Run flagging jobs
@@ -382,6 +392,8 @@ def run_flag(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -406,7 +418,7 @@ def run_flag(
         flag_basename = f"flagging_{flagfield_type}_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{flag_basename}.log"
+    logfile = f"{logdir}/{flag_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -468,6 +480,7 @@ def run_import_model(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Importing calibrator models
@@ -486,6 +499,8 @@ def run_import_model(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -501,7 +516,7 @@ def run_import_model(
     model_basename = "modeling"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{model_basename}.log"
+    logfile = f"{logdir}/{model_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -555,6 +570,7 @@ def run_basic_cal_jobs(
     mem_frac=0.8,
     keep_backup=False,
     remote_log=False,
+    obsid=0,
 ):
     """
     Perform basic calibration
@@ -579,6 +595,8 @@ def run_basic_cal_jobs(
         Keep backups
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -594,7 +612,7 @@ def run_basic_cal_jobs(
     cal_basename = "basic_cal"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{cal_basename}.log"
+    logfile = f"{logdir}/{cal_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -653,6 +671,7 @@ def run_apply_basiccal_sol(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Apply basic calibration solutions on splited target scans
@@ -681,6 +700,8 @@ def run_apply_basiccal_sol(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -696,7 +717,7 @@ def run_apply_basiccal_sol(
     applycal_basename = f"apply_basiccal_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{applycal_basename}.log"
+    logfile = f"{logdir}/{applycal_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -751,6 +772,7 @@ def run_solar_siderealcor_jobs(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Apply sidereal motion correction of the Sun
@@ -769,6 +791,8 @@ def run_solar_siderealcor_jobs(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -784,7 +808,7 @@ def run_solar_siderealcor_jobs(
     sidereal_basename = f"cor_sidereal_{prefix}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{sidereal_basename}.log"
+    logfile = f"{logdir}/{sidereal_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -853,6 +877,7 @@ def run_selfcal_jobs(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Self-calibration on target scans
@@ -911,6 +936,8 @@ def run_selfcal_jobs(
         Use solar flagger or not
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation IDs
 
     Returns
     -------
@@ -934,7 +961,7 @@ def run_selfcal_jobs(
     selfcal_basename = "selfcal_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{selfcal_basename}.log"
+    logfile = f"{logdir}/{selfcal_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -1011,6 +1038,7 @@ def run_apply_selfcal_sol(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Apply self-calibration solutions on splited target scans
@@ -1035,6 +1063,8 @@ def run_apply_selfcal_sol(
         Overwrite data column or not
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -1054,7 +1084,7 @@ def run_apply_selfcal_sol(
     applycal_basename = "apply_selfcal"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{applycal_basename}.log"
+    logfile = f"{logdir}/{applycal_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -1124,6 +1154,7 @@ def run_imaging_jobs(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Imaging on target scans
@@ -1170,6 +1201,8 @@ def run_imaging_jobs(
         Save residual images or not
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -1187,7 +1220,7 @@ def run_imaging_jobs(
     imaging_basename = "imaging_target"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{imaging_basename}.log"
+    logfile = f"{logdir}/{imaging_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -1251,6 +1284,7 @@ def run_apply_pbcor(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Apply primary beam corrections on all images
@@ -1271,6 +1305,8 @@ def run_apply_pbcor(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -1286,7 +1322,7 @@ def run_apply_pbcor(
     applypbcor_basename = "apply_pbcor"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{applypbcor_basename}.log"
+    logfile = f"{logdir}/{applypbcor_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -1336,6 +1372,7 @@ def run_make_overlay(
     jobid=0,
     cpu_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Making overlays of all images on EUV images
@@ -1354,6 +1391,8 @@ def run_make_overlay(
         CPU fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -1369,7 +1408,7 @@ def run_make_overlay(
     overlay_basename = "do_overlay"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{overlay_basename}.log"
+    logfile = f"{logdir}/{overlay_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()
@@ -1421,6 +1460,7 @@ def run_make_msplot(
     cpu_frac=0.8,
     mem_frac=0.8,
     remote_log=False,
+    obsid=0,
 ):
     """
     Making diagnostic plots of measurement sets
@@ -1439,6 +1479,8 @@ def run_make_msplot(
         Memory fraction to use
     remote_log: bool, optional
         Start remote logger
+    obsid : int, optional
+        Observation ID
 
     Returns
     -------
@@ -1450,7 +1492,7 @@ def run_make_msplot(
     msplot_basename = "do_msplot"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
-    logfile = f"{logdir}/{msplot_basename}.log"
+    logfile = f"{logdir}/{msplot_basename}_{obsid}.log"
     if os.path.exists(logfile):
         os.remove(logfile)
     ctx = get_run_context()

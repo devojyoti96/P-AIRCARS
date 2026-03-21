@@ -435,7 +435,7 @@ def cli():
 
         if check_port_status(postgres_port) is False:
             if scheduler_name != "local":
-                get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
+                postgres_port = get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
 
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)

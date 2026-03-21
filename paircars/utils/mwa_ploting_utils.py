@@ -2049,7 +2049,6 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         ax_spec.set_ylabel("Frequency (MHz)")
         ax_spec.set_xticklabels([])  # Remove x-axis labels from top plot
         # Y-ticks
-        coarse_freqs = np.arange(255)*1.28 # In MHz
         freqs_arr = np.array(freqs)
         # Identify valid frequency rows
         valid = ~np.isnan(freqs_arr)

@@ -14,7 +14,7 @@ from paircars.utils.basic_utils import (
     check_port_status,
     get_free_port,
 )
-from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
+from paircars.utils.logger_utils import SmartDefaultsHelpFormatter, generate_password
 from paircars.utils.prefect_setup_utils import start_prefect_server, stop_prefect_server
 from paircars.utils.resource_utils import has_space
 from paircars.utils.proc_manage_utils import get_scheduler_name
@@ -27,7 +27,6 @@ from paircars.utils.udocker_utils import (
     initialize_hyperbeam_container,
     initialize_postgres_container,
 )
-from paircars.utils.killjob_utils import kill_port
 from paircars.pipeline.beam_interpolate import do_beam_interpolate
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -78,7 +77,7 @@ def download_with_parfive(record_id, update=False, output_dir="zenodo_download")
         os.chmod(f, 0o755)
 
 
-def init_paircars_data(update=False, remote_link=None, emails=None):
+def init_paircars_data(update=False, remote_link=None, remotelink_password=None, emails=None):
     """
     Initiate P-AIRCARS data
 
@@ -88,6 +87,8 @@ def init_paircars_data(update=False, remote_link=None, emails=None):
         Update data, if already exists
     remote_link : str, optional
         Remote logger link to save in database
+    remotelink_password : str, optional
+        Remote link password
     emails : str, optional
         Email addresses to send remote logger JobID and password
     """
@@ -95,8 +96,9 @@ def init_paircars_data(update=False, remote_link=None, emails=None):
     os.makedirs(datadir, exist_ok=True)
     cachedir = get_cachedir()
     username = getpass.getuser()
-    linkfile = f"{cachedir}/remotelink_{username}.txt"
-    emailfile = f"{cachedir}/emails_{username}.txt"
+    linkfile = f"{cachedir}/.remotelink_{username}.txt"
+    linkpassword = f"{cachedir}/.remotelink_password_{username}.txt"
+    emailfile = f"{cachedir}/.emails_{username}.txt"
     if not os.path.exists(linkfile):
         with open(linkfile, "w") as f:
             f.write("")
@@ -104,6 +106,12 @@ def init_paircars_data(update=False, remote_link=None, emails=None):
     if remote_link is not None:
         with open(linkfile, "w") as f:
             f.write(str(remote_link))
+            
+        if remotelink_password is None:
+            remotelink_password = generate_password()
+        
+        with open(linkpassword, "w") as f:
+            f.write(str(remotelink_password))
 
     if emails is not None:
         with open(emailfile, "w") as f:
@@ -133,6 +141,7 @@ def main(
     datadir="",
     update=False,
     link=None,
+    password=None,
     emails=None,
 ):
     """
@@ -150,22 +159,13 @@ def main(
         Update existing data (if corrupted by somehow)
     link : str, optional
         Remote link
+    password : str, optional
+        Remote logger password
     emails : str, optional
         E-mails for notifications
     """
     required_gb = 20
     postgres_port = port + 1000
-
-    try:
-        kill_port(port)
-    except Exception:
-        pass
-
-    try:
-        kill_port(postgres_port)
-    except Exception:
-        pass
-
     scheduler_name = get_scheduler_name()
 
     if check_port_status(port) is False:
@@ -174,7 +174,7 @@ def main(
 
     if check_port_status(postgres_port) is False:
         if scheduler_name != "local":
-            get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
+            postgres_port = get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
 
     if init:
         ######################################
@@ -188,7 +188,7 @@ def main(
                 f"Minimum {required_gb}GB disk space is required in data directory: {datadir}. Please check disk space."
             )
             return 1
-        init_paircars_data(update=update, remote_link=link, emails=emails)
+        init_paircars_data(update=update, remote_link=link, remotelink_password=password, emails=emails)
         print("P-AIRCARS data are initiated.")
 
         #########################################
@@ -364,6 +364,9 @@ def cli():
         "--remotelink", dest="link", default=None, help="Set remote log link"
     )
     parser.add_argument(
+        "--remote_password", dest="password", default=None, help="Set remote log password"
+    )
+    parser.add_argument(
         "--emails",
         dest="emails",
         default=None,
@@ -382,6 +385,7 @@ def cli():
         port=args.port,
         update=args.update,
         link=args.link,
+        password=args.password,
         emails=args.emails,
     )
     if msg != 0:
