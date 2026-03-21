@@ -444,7 +444,7 @@ def cli():
             if not selected_dir:
                 print("No directory selected. Exiting.")
                 sys.exit(1)
-            LOG_DIR = f"{selected_dir}/logs/"  
+            LOG_DIR = f"{selected_dir}"  
         app.setStyleSheet(
             """
             * {
