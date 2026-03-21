@@ -153,6 +153,7 @@ def calc_solar_image_stat(imagename, disc_size=50):
     float
         Min-max dynamic range
     """
+    matplotlib.use("TkAgg")
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
     total_pix = int(header["NAXIS1"])
@@ -160,13 +161,21 @@ def calc_solar_image_stat(imagename, disc_size=50):
     radius = int((disc_size * 60) / pix_size)
     if radius > total_pix:
         radius = total_pix / 4.0
-    if len(data.shape) > 2:
+    if data.ndim==4:
         data = data[0, 0, ...]
+    elif data.ndim==3:
+        data = data[0,...]
+    else:
+        data = data
     mask = create_circular_mask_array(data, radius)
     masked_data = copy.deepcopy(data)
     masked_data[mask] = np.nan
     unmasked_data = copy.deepcopy(data)
     unmasked_data[~mask] = np.nan
+    plt.imshow(unmasked_data)
+    plt.show()
+    plt.imshow(masked_data)
+    plt.show()
     maxval = float(np.nanmax(unmasked_data))
     minval = float(np.nanmin(masked_data))
     rms = float(np.nanstd(masked_data))

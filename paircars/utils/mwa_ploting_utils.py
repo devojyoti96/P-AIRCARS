@@ -1201,7 +1201,7 @@ def plot_hpc_collage(
     fig.text(0.03, 0.5, "Solar-Y (arcsec)",
              va="center", rotation="vertical", fontsize=12)
     # ---- Save ----
-    fig.savefig(outfile, dpi=60)
+    fig.savefig(outfile, dpi=120)
     if showgui:
         plt.show()
     plt.close(fig)
