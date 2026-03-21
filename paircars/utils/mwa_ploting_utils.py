@@ -2060,6 +2060,8 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
                 block_starts.append(i)
         block_starts = np.array(block_starts)
         # Set ticks at those positions
+        ngap = int(len(block_starts)/10)
+        block_starts = block_starts[::ngap]
         ax_spec.set_yticks(block_starts)
         ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])
         # Plot time series
