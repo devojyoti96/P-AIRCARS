@@ -95,7 +95,7 @@ def create_circular_mask(msname, cellsize, imsize, mask_radius=20):
         return
 
 
-def create_circular_mask_array(data, radius, center_x=0, center_y=0):
+def create_circular_mask_array(data, radius, center_x=None, center_y=None):
     """
     Creating circular mask of a Numpy array
 
@@ -113,9 +113,9 @@ def create_circular_mask_array(data, radius, center_x=0, center_y=0):
     """
     shape = data.shape
     center = (shape[0] // 2, shape[1] // 2)
-    if center_x != 0:
+    if center_x is not 0:
         center_x = center[1]
-    if center_y != 0:
+    if center_y is not 0:
         center_y = center[0]
     Y, X = np.ogrid[: shape[0], : shape[1]]
     dist_from_center = (X - center_x) ** 2 + (Y - center_y) ** 2
