@@ -27,6 +27,7 @@ from paircars.utils.udocker_utils import (
     initialize_hyperbeam_container,
     initialize_postgres_container,
 )
+from paircars.utils.killjob_utils import kill_port
 from paircars.pipeline.beam_interpolate import do_beam_interpolate
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -138,6 +139,7 @@ def init_paircars_data(update=False, remote_link=None, remotelink_password=None,
 def main(
     init=False,
     port=4260,
+    do_kill_port=True,
     datadir="",
     update=False,
     link=None,
@@ -153,6 +155,8 @@ def main(
         Initiate setup
     port : int, optional
         Prefect port
+    do_kill_port : bool, optional
+        Try to kill port job if it is occupied 
     datadir : str, optional
         User provided custom data directory
     update : bool, optional
@@ -169,11 +173,27 @@ def main(
     scheduler_name = get_scheduler_name()
 
     if check_port_status(port) is False:
-        if scheduler_name != "local":
+        if do_kill_port:
+            try:
+                kill_port(port)
+                get_free_port=False
+            except Exception:
+                get_free_port=True
+        else:
+            get_free_port=True
+        if scheduler_name != "local" and get_free_port:
             port = get_free_port(start_port=port, end_port=port + 990)
 
     if check_port_status(postgres_port) is False:
-        if scheduler_name != "local":
+        if do_kill_port:
+            try:
+                kill_port(postgres_port)
+                get_free_port=False
+            except Exception:
+                get_free_port=True
+        else:
+            get_free_port=True
+        if scheduler_name != "local" and get_free_port:
             postgres_port = get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
 
     if init:
@@ -356,6 +376,7 @@ def cli():
     )
     parser.add_argument("--init", action="store_true", help="Initiate data")
     parser.add_argument("--port", type=int, default=4260, help="Prefect port")
+    parser.add_argument("--kill_port", action="store_true", help="Try to kill occupied port")
     parser.add_argument(
         "--datadir", type=str, default="", help="User provided data directory"
     )
@@ -383,6 +404,7 @@ def cli():
         init=args.init,
         datadir=args.datadir,
         port=args.port,
+        do_kill_port=args.kill_port,
         update=args.update,
         link=args.link,
         password=args.password,
