@@ -113,9 +113,9 @@ def create_circular_mask_array(data, radius, center_x=None, center_y=None):
     """
     shape = data.shape
     center = (shape[0] // 2, shape[1] // 2)
-    if center_x is not None:
+    if center_x is None:
         center_x = center[1]
-    if center_y is not None:
+    if center_y is None:
         center_y = center[0]
     Y, X = np.ogrid[: shape[0], : shape[1]]
     dist_from_center = (X - center_x) ** 2 + (Y - center_y) ** 2
