@@ -547,10 +547,14 @@ def filter_images(imagelist, min_time_sep=60.0):
         for freq, group in freq_groups.items():
             group = sorted(group, key=lambda x: x["mjdsec"])
             last_time = -np.inf
-            for info in group:
-                if info["mjdsec"] - last_time >= min_time_sep:
-                    final_images.append(info["image"])
-                    last_time = info["mjdsec"]
+            if min_time_sep>0:
+                for info in group:
+                    if info["mjdsec"] - last_time >= min_time_sep:
+                        final_images.append(info["image"])
+                        last_time = info["mjdsec"]
+            else:
+                info = group[int(len(group)/2)]
+                final_images.append(info["image"])
         return final_images
     except Exception:
         print("Error in filtering out images.")

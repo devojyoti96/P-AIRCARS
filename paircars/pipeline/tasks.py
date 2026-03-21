@@ -955,6 +955,10 @@ def run_selfcal_jobs(
         Mean intensity self-calibration dynamic range
     float
         Mean polarisation self-calibration dynamic range
+    float
+        Maximum intensity self-calibration dynamic range
+    float
+        Maximum polarisation self-calibration dynamic range
     """
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
@@ -978,7 +982,7 @@ def run_selfcal_jobs(
         # Selfcal jobs
         ########################
         with get_dask_client() as dask_client:
-            msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR = (
+            msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR, max_int_DR, max_pol_DR = (
                 do_selfcal.main(
                     mslist,
                     metafits,
@@ -1018,7 +1022,7 @@ def run_selfcal_jobs(
     if msg != 0:
         raise RuntimeError("Self-calibration is failed.")
     else:
-        return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR
+        return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR, max_int_DR, max_pol_DR
 
 
 @task(

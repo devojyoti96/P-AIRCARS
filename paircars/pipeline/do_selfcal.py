@@ -1646,9 +1646,13 @@ def main(
     int
         Polarisation selfcal failed nunber
     float
-        Intensity selfcal dynamic range
+        Average intensity selfcal dynamic range
     float
-        Polarisation selfcal dynamic range
+        Average polarisation selfcal dynamic range
+    float
+        Maximum intensity selfcal dynamic range
+    float
+        Maximum polarisation selfcal dynamic range
     """
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
@@ -1686,15 +1690,7 @@ def main(
 
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
-        return (
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        )
+        return 1, 0, 0, 0, 0, 0, 0, 0, 0
     else:
         int_succeed = 0
         int_failed = len(mslist)
@@ -1702,6 +1698,8 @@ def main(
         pol_failed = len(mslist)
         avg_int_DR = 0
         avg_pol_DR = 0
+        max_int_DR = 0
+        max_pol_DR = 0
 
     dask_cluster = None
     if dask_client is None:
@@ -1718,7 +1716,7 @@ def main(
         )
         if dask_client is None:
             print("Error occured in creating local cluster.")
-            return 1, 0, 0, 0, 0, 0, 0
+            return 1, 0, 0, 0, 0, 0, 0, 0, 0
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     ###########################
@@ -1733,7 +1731,7 @@ def main(
             print(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
-            return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0
+            return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0, 0, 0
 
     if do_polcal:
         container_name = "paircarsquartical"
@@ -1747,7 +1745,7 @@ def main(
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0, 0, 0
 
     try:
         if len(mslist) == 0:
@@ -1799,7 +1797,7 @@ def main(
             mslist = filtered_mslist
             if len(mslist) == 0:
                 print("No filtered ms to continue.")
-                return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0
+                return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0, 0, 0
 
             client_info = dask_client.scheduler_info()["workers"]
             njobs = len(client_info)
@@ -2030,12 +2028,16 @@ def main(
                 msg = 1
             if len(int_DR_list) > 0:
                 avg_int_DR = np.nanmedian(int_DR_list)
+                max_int_DR = np.nanmax(int_DR_list)
             else:
                 avg_int_DR = 0
+                max_int_DR = 0
             if len(pol_DR_list) > 0:
                 avg_pol_DR = np.nanmedian(pol_DR_list)
+                max_pol_DR = np.nanmax(pol_DR_list)
             else:
                 avg_pol_DR = 0
+                max_pol_DR = 0
             print(f"Average intensity self-calibration dynamic range: {avg_int_DR}")
             print(f"Average polarisation self-calibration dynamic range: {avg_pol_DR}")
     except Exception:
@@ -2043,6 +2045,8 @@ def main(
         msg = 1
         avg_int_DR = 0
         avg_pol_DR = 0
+        max_int_DR = 0
+        max_pol_DR = 0
     finally:
         time.sleep(5)
         clean_shutdown(observer)
@@ -2055,7 +2059,7 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-    return msg, int_succeed, int_failed, pol_succeed, pol_failed, avg_int_DR, avg_pol_DR
+    return msg, int_succeed, int_failed, pol_succeed, pol_failed, avg_int_DR, avg_pol_DR, max_int_DR, max_pol_DR
 
 
 def cli():
@@ -2245,7 +2249,7 @@ def cli():
 
     args = parser.parse_args()
 
-    msg, _, _, _, _, _, _ = main(
+    msg, _, _, _, _, _, _, _, _ = main(
         mslist=args.mslist,
         metafits=args.metafits,
         workdir=args.workdir,

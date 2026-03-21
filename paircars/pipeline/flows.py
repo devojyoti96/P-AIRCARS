@@ -1351,11 +1351,15 @@ def selfcal_subflow(
                     pol_failed,
                     int_DR,
                     pol_DR,
+                    max_int_DR,
+                    max_pol_DR,
                 ) = future_selfcal.result()
                 if emails != "":
-                    email_msg = f"[{target_obsid}] Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}, average DR: {int_DR}."
+                    email_msg = f"[{target_obsid}] Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}\n"
+                    email_msg = f"{email_msg}Average DR: {int_DR}, maximum DR: {max_int_DR}."
                     if do_polcal:
-                        email_msg += f"\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}, average DR; {pol_DR}."
+                        email_msg = f"{email_msg}\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}\n" 
+                        email_msg = f"{email_msg}Average DR: {pol_DR}, maximum DR: {max_pol_DR}."
                     send_task_notification(
                         emails,
                         email_msg,
@@ -2223,9 +2227,25 @@ def imaging_subflow(
                         flow_name=f"subflow {flow_name}",
                     )
 
+        filtered_images = filter_images(images, min_time_sep=60.0)
+        ##################################################################
+        # Sending image collage and DR information
+        ##################################################################
+        if emails != "":
+            email_msg = f"[{target_obsid}] Started making overlays."
+            send_task_notification(
+                emails,
+                email_msg,
+                jobid,
+                target_obsid,
+                timestamp,
+                flow_name=f"subflow {flow_name}",
+            )
+
+
         #################################################################
         # Filtering only coarse channel images for default overlay mode
-        #################################################################
+        #################################################################    
         if make_overlay is False and len(images) > 0:
             images = filter_images(images, min_time_sep=60.0)
         internet_on = internet_available()

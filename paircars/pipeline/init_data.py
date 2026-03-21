@@ -127,6 +127,7 @@ def init_paircars_data(update=False, remote_link=None, remotelink_password=None,
         download_with_parfive(record_id, update=update, output_dir=datadir)
         timestr = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(f"P-AIRCARS data are updated in: {datadir} at time: {timestr}")
+    
     freqres_list = [40, 80, 160, 320, 640]
     mwapb_file = f"{datadir}/mwa_full_embedded_element_pattern.h5"
     for freqres in freqres_list:
