@@ -153,9 +153,6 @@ def calc_solar_image_stat(imagename, disc_size=50):
     float
         Min-max dynamic range
     """
-    import matplotlib
-    import matplotlib.pyplot as plt
-    matplotlib.use("TkAgg")
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
     total_pix = int(header["NAXIS1"])
@@ -174,10 +171,6 @@ def calc_solar_image_stat(imagename, disc_size=50):
     masked_data[mask] = np.nan
     unmasked_data = copy.deepcopy(data)
     unmasked_data[~mask] = np.nan
-    plt.imshow(unmasked_data)
-    plt.show()
-    plt.imshow(masked_data)
-    plt.show()
     maxval = float(np.nanmax(unmasked_data))
     minval = float(np.nanmin(masked_data))
     rms = float(np.nanstd(masked_data))
