@@ -2049,19 +2049,19 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         ax_spec.set_ylabel("Frequency (MHz)")
         ax_spec.set_xticklabels([])  # Remove x-axis labels from top plot
         # Y-ticks
-        '''coarse_freqs = np.arange(255)*1.28 # In MHz
+        coarse_freqs = np.arange(255)*1.28 # In MHz
         freqs_arr = np.array(freqs)
         # Identify valid frequency rows
         valid = ~np.isnan(freqs_arr)
         # Find start index of each contiguous valid block
         block_starts = []
         for i in range(len(freqs_arr)):
-            if valid[i] and (i == 0 or not valid[i - 1]):
+            if valid[i]:
                 block_starts.append(i)
         block_starts = np.array(block_starts)
         # Set ticks at those positions
         ax_spec.set_yticks(block_starts)
-        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])'''
+        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])
         # Plot time series
         ax_ts.plot(timeseries)
         ax_ts.set_xlim(0, len(timeseries) - 1)
