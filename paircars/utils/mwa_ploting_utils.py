@@ -2050,17 +2050,26 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
         ax_spec.set_xticklabels([])  # Remove x-axis labels from top plot
         # Y-ticks
         freqs_arr = np.array(freqs)
-        # Identify valid frequency rows
+        # Mask valid frequencies
         valid = ~np.isnan(freqs_arr)
-        # Find start index of each contiguous valid block
-        block_starts = []
-        for i in range(len(freqs_arr)):
-            if valid[i] and (i == 0 or not valid[i - 1]):
-                block_starts.append(i)
-        block_starts = np.array(block_starts)
-        # Set ticks at those positions
-        ax_spec.set_yticks(block_starts)
-        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])
+        valid_freqs = freqs_arr[valid]
+        valid_idx = np.where(valid)[0]
+        # MWA coarse grid
+        mwa_grid = np.arange(255) * 1.28
+        # Find closest valid freq to each grid point
+        idx = np.searchsorted(valid_freqs, mwa_grid)
+        idx = np.clip(idx, 1, len(valid_freqs) - 1)
+        left = valid_freqs[idx - 1]
+        right = valid_freqs[idx]
+        choose_right = np.abs(right - mwa_grid) < np.abs(left - mwa_grid)
+        nearest = np.where(choose_right, idx, idx - 1)
+        # Map back to original indices
+        tick_positions = valid_idx[nearest]
+        # Remove duplicates (important!)
+        tick_positions = np.unique(tick_positions)
+        # Apply ticks
+        ax_spec.set_yticks(tick_positions)
+        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in tick_positions])
         # Plot time series
         ax_ts.plot(timeseries)
         ax_ts.set_xlim(0, len(timeseries) - 1)
