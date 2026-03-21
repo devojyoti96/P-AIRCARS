@@ -35,7 +35,7 @@ from paircars.utils.logger_utils import (
     get_remote_logger_link,
     get_remote_logger_password,
     get_emails,
-    init_logger,
+    #init_logger,
 )
 from paircars.utils.mwa_utils import (
     get_ncoarse,

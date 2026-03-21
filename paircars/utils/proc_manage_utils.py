@@ -388,7 +388,6 @@ def submit_local_master_flow(args, jobid):
         print(f"Main logger: {log_file}")
         print("######################################################")
         try:
-            # Always run job in background
             with open(log_file, "a", buffering=1) as log:
                 subprocess.Popen(
                     ["bash", script_path],
@@ -405,7 +404,10 @@ def submit_local_master_flow(args, jobid):
             last_lines = deque(maxlen=500)
             only_run_print = False
             printing_traceback = False
-            traceback_done = False
+            traceback_active = False
+            traceback_buffer = []
+            traceback_timer = None
+            TRACEBACK_WAIT = 15  # seconds
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
                 while True:
@@ -415,14 +417,41 @@ def submit_local_master_flow(args, jobid):
                         continue
                     last_lines.append(line)
                     lower = line.lower()
+                    now = time.time()
+                    # -----------------------------
+                    # Detect task/flow activity
+                    # -----------------------------
                     if (
                         "task run" in lower or "flow run" in lower
                     ) and "p-aircars execution is finished" not in lower:
                         only_run_print = True
-                    if (
-                        "traceback" in lower or "killed" in lower
-                    ) and not printing_traceback:
+                    # -----------------------------
+                    # Detect traceback start
+                    # -----------------------------
+                    if "traceback" in lower and not traceback_active:
+                        traceback_active = True
                         printing_traceback = True
+                        traceback_timer = now
+                        traceback_buffer = [line]
+                        continue
+                    # -----------------------------
+                    # Collect traceback lines
+                    # -----------------------------
+                    if traceback_active:
+                        traceback_buffer.append(line)
+                    # -----------------------------
+                    # If flow recovers → NOT final error
+                    # -----------------------------
+                    if traceback_active and (
+                        "task run" in lower or "flow run" in lower
+                    ):
+                        traceback_active = False
+                        printing_traceback = False
+                        traceback_buffer = []
+                        traceback_timer = None
+                    # -----------------------------
+                    # Print logic
+                    # -----------------------------
                     if (
                         printing_traceback
                         or not only_run_print
@@ -431,21 +460,27 @@ def submit_local_master_flow(args, jobid):
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if (
-                        printing_traceback
-                        and ("task run" not in lower and "flow run" not in lower)
-                        and (
-                            "error:" in lower
-                            or "exception" in lower
-                            or "failed" in lower
-                        )
-                    ):
-                        return 1
+                    # -----------------------------
+                    # Explicit success exit
+                    # -----------------------------
                     if (
                         "p-aircars execution is finished" in lower
                         or "cluster closed" in lower
                     ):
                         return 0
+                    # -----------------------------
+                    # Timeout-based FINAL traceback detection
+                    # -----------------------------
+                    if traceback_active and traceback_timer is not None:
+                        if now - traceback_timer > TRACEBACK_WAIT:
+                            print("\nFinal traceback detected. Exiting...\n")
+
+                            # Print full traceback nicely
+                            for l in traceback_buffer:
+                                sys.stdout.write(l)
+
+                            sys.stdout.flush()
+                            return 1
         except Exception:
             traceback.print_exc()
             return 1
