@@ -358,7 +358,7 @@ class LogViewer(QWidget):
                     line for line in full_data.splitlines(keepends=True) if line.strip()
                 ]
                 self.buffer = lines
-                self.log_view.setPlainText("".join(lines))
+                self.log_view.setPlainText("\n".join(lines))
                 self.log_view.moveCursor(QTextCursor.End)
         except Exception as e:
             self.buffer = [f"[Error reading file: {e}]\n"]
