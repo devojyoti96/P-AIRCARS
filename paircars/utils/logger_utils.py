@@ -372,6 +372,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
                     json={
                         "job_id": job_id,
                         "log_id": log_id,
+                        "log_type":log_type,
                         "message": "",
                         "password": password,
                         "first": True,

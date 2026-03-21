@@ -145,6 +145,7 @@ def pre_process_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_movecenter.result()
@@ -211,6 +212,7 @@ def pre_process_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_maskms.result()
@@ -436,6 +438,7 @@ def basic_cal_subflow(
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
                 remote_log=remote_logger,
+                obsid=cal_obsid,
             )
             try:
                 msg, expected, succeed = future_cal_split.result()
@@ -520,6 +523,7 @@ def basic_cal_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=cal_obsid,
             )
             try:
                 msg, succeed, failed = future_flag.result()
@@ -581,6 +585,7 @@ def basic_cal_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=cal_obsid,
             )
             try:
                 msg, succeed, failed = future_import_model.result()
@@ -648,6 +653,7 @@ def basic_cal_subflow(
                 mem_frac=round(mem_frac, 2),
                 keep_backup=keep_backup,
                 remote_log=remote_logger,
+                obsid=cal_obsid,
             )
             try:
                 msg, succeed, failed = future_basical.result()
@@ -995,6 +1001,7 @@ def selfcal_subflow(
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, expected, succeed = future_selfcal_split.result()
@@ -1117,6 +1124,7 @@ def selfcal_subflow(
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
+                    obsid=target_obsid,
                 )
                 try:
                     msg, succeed, failed = future_apply_basical_selfcal.result()
@@ -1216,6 +1224,7 @@ def selfcal_subflow(
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
+                    obsid=target_obsid,
                 )
                 try:
                     msg, succeed, failed = future_sidereal_cor_selfcal.result()
@@ -1277,6 +1286,7 @@ def selfcal_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_flag.result()
@@ -1355,6 +1365,7 @@ def selfcal_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 (
@@ -1631,6 +1642,7 @@ def applysol_subflow(
             cpu_frac=round(cpu_frac, 2),
             mem_frac=round(mem_frac, 2),
             remote_log=remote_logger,
+            obsid=target_obsid,
         )
         ##########################################
         # Checking target spliting is done or not
@@ -1726,6 +1738,7 @@ def applysol_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_apply_basical.result()
@@ -1786,6 +1799,7 @@ def applysol_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_sidereal_cor.result()
@@ -1839,7 +1853,7 @@ def applysol_subflow(
                 "Starting task: Applying self-calibration solutions on final target measurement sets."
             )
             future_apply_selfcal = run_apply_selfcal_sol.with_options(
-                task_run_name=f"apply_selfcal_{jobid}"
+                task_run_name=f"apply_selfcal_{target_obsid}"
             ).submit(
                 ",".join(split_target_mslist),
                 target_metafits,
@@ -1851,6 +1865,7 @@ def applysol_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, gain_succeed, gain_failed, pol_succeed, pol_failed = (
@@ -1939,6 +1954,7 @@ def applysol_subflow(
             cpu_frac=round(cpu_frac, 2),
             mem_frac=round(mem_frac, 2),
             remote_log=remote_logger,
+            obsid=target_obsid,
         )
         try:
             msg, succeed, failed = future_flag.result()
@@ -2123,6 +2139,7 @@ def imaging_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed, total_images = future_imaging.result()
@@ -2222,6 +2239,7 @@ def imaging_subflow(
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_pbcor.result()
@@ -2277,7 +2295,7 @@ def imaging_subflow(
                 )
             print_banner("Starting task: Making overlay on EUV images.")
             future_overlay = run_make_overlay.with_options(
-                task_run_name=f"making_overlay_{jobid}"
+                task_run_name=f"make_overlay_{target_obsid}"
             ).submit(
                 f"{imagedir}/images",
                 f"{imagedir}/overlay_pngs",
@@ -2286,6 +2304,7 @@ def imaging_subflow(
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 remote_log=remote_logger,
+                obsid=target_obsid,
             )
             try:
                 msg, succeed, failed = future_overlay.result()
