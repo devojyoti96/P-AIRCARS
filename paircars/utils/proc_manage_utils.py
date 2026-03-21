@@ -413,7 +413,6 @@ def submit_local_master_flow(args, jobid):
                 while True:
                     line = log.readline()
                     wait_time = time.time()-last_write_time
-                    print (wait_time)
                     if wait_time>traceback_waittime:
                         return 1
                     if not line:
