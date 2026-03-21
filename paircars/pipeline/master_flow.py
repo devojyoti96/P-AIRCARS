@@ -354,8 +354,7 @@ def master_control(
     ##############################################
     # Downloading target metafits if not exist
     ##############################################
-    target_metafits=None
-    if target_metafits == "":# or target_metafits is None:
+    if target_metafits == "" or target_metafits is None:
         if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
             target_metafits = f"{target_datadir}/{target_obsid}.metafits"
             download_metafits=False
@@ -2117,7 +2116,6 @@ def cli():
             print_banner("P-AIRCARS execution is finished: Unsuccessful.")
     except Exception:
         traceback.print_exc()
-        print_banner("P-AIRCARS execution is finished: Unsuccessful.")
     finally:
         time.sleep(5)
         print("Closing clusters...")
