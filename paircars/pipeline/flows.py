@@ -47,9 +47,7 @@ from paircars.pipeline.tasks import (
 from prefect.context import get_run_context
 from multiprocessing import Event
 from paircars.utils.prefect_logger_utils import (
-    start_flow_log_saver
-)
-from paircars.utils.logger_utils import (
+    start_flow_log_saver,
     clean_shutdown,
     init_logger,
 )

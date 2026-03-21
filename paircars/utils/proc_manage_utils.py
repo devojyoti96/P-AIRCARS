@@ -420,13 +420,8 @@ def submit_local_master_flow(args, jobid):
                         only_run_print = True
                     if "traceback" in lower or "killed" in lower:
                         printing_traceback = True
-                        
-                    if printing_traceback:
-                        sys.stdout.write(line)
-                        sys.stdout.flush()
-                        if line.strip() == "":
-                            return 1
                     if (
+                        printing_traceback or 
                         not only_run_print
                         or ("task run" in lower or "flow run" in lower)
                         or "p-aircars execution is finished" in lower
