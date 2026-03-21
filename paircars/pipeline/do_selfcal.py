@@ -1175,7 +1175,7 @@ def do_polselfcal(
                 ###################################################################
                 # Condition 1: If solving per antenna decrease DR, solve per array
                 ###################################################################
-                if not solve_array_leakage and (DR3 < 1.1 * DR2 or RMS3 > 0.9 * RMS2):
+                if not solve_array_leakage and (DR3 < DR2 or RMS3 > RMS2):
                     pollogger.info(
                         "Solving over array instead of antenna, as DR decreases."
                     )
