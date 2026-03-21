@@ -406,14 +406,14 @@ def submit_local_master_flow(args, jobid):
             only_run_print = False
             printing_traceback = False
             traceback_done = False
-            traceback_waittime = -1
+            traceback_waittime = None
             last_write_time=time.time()
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
                 while True:
                     line = log.readline()
                     wait_time = time.time()-last_write_time
-                    if wait_time>traceback_waittime:
+                    if traceback_waittime is not None and wait_time>traceback_waittime:
                         return 1
                     if not line:
                         time.sleep(0.5)
