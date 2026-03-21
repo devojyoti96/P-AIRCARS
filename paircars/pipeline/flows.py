@@ -136,18 +136,18 @@ def pre_process_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Moving phasecenter to the Sun.")
-            future_movecenter = run_solar_phasecenter_jobs.with_options(
-                task_run_name=f"move_solarcenter_{target_obsid}",
-            ).submit(
-                ",".join(target_mslist),
-                workdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_movecenter = run_solar_phasecenter_jobs.with_options(
+                    task_run_name=f"move_solarcenter_{target_obsid}",
+                ).submit(
+                    ",".join(target_mslist),
+                    workdir,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_movecenter.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Moving phasecenter to solar center is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -171,7 +171,7 @@ def pre_process_subflow(
                         print(f"Issue in moving phasecneter to solar center: {t_ms}")
                 target_mslist = filtered_ms  # Filtered target mslist
             except Exception:
-                print(
+                print_banner(
                     "Error in moving phasecenter to solar center. P-AIRCARS has stopped."
                 )
                 traceback.print_exc()
@@ -201,20 +201,20 @@ def pre_process_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Making dynamic spectra of solar target.")
-            future_maskms = run_ds_jobs.with_options(
-                task_run_name=f"make_ds_{target_obsid}",
-            ).submit(
-                ",".join(target_mslist),
-                target_metafits,
-                workdir,
-                target_outdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_maskms = run_ds_jobs.with_options(
+                    task_run_name=f"make_ds_{target_obsid}",
+                ).submit(
+                    ",".join(target_mslist),
+                    target_metafits,
+                    workdir,
+                    target_outdir,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_maskms.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
@@ -228,7 +228,7 @@ def pre_process_subflow(
                     )
                 print_banner("Finished task: Making solar dynamic spectra are done.")
             except Exception:
-                print("!!! WARNING : Error in making dynamic spectra. !!!")
+                print_banner("!!! WARNING : Error in making dynamic spectra. !!!")
                 traceback.print_exc()
                 if emails != "":
                     email_msg = (
@@ -419,28 +419,28 @@ def basic_cal_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Spliting of calibrator measurement sets.")
-            future_cal_split = run_target_split_jobs.with_options(
-                task_run_name=f"split_{cal_obsid}"
-            ).submit(
-                ",".join(cal_mslist),
-                cal_metafits,
-                workdir,
-                datacolumn="data",
-                split_coarse_chans=coarse_chans,
-                timeres=10.0,
-                freqres=0.16,
-                prefix=prefix,
-                force_split=False,
-                time_window=-1,
-                time_interval=-1,
-                quack_timestamps=quack_timestamps,
-                jobid=jobid,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                remote_log=remote_logger,
-                obsid=cal_obsid,
-            )
             try:
+                future_cal_split = run_target_split_jobs.with_options(
+                    task_run_name=f"split_{cal_obsid}"
+                ).submit(
+                    ",".join(cal_mslist),
+                    cal_metafits,
+                    workdir,
+                    datacolumn="data",
+                    split_coarse_chans=coarse_chans,
+                    timeres=10.0,
+                    freqres=0.16,
+                    prefix=prefix,
+                    force_split=False,
+                    time_window=-1,
+                    time_interval=-1,
+                    quack_timestamps=quack_timestamps,
+                    jobid=jobid,
+                    cpu_frac=float(cpu_frac),
+                    mem_frac=float(mem_frac),
+                    remote_log=remote_logger,
+                    obsid=cal_obsid,
+                )
                 msg, expected, succeed = future_cal_split.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Spliting of calibrator measurement sets are done.\nExpected: {expected}, succeeded: {succeed}."
@@ -510,22 +510,22 @@ def basic_cal_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Flagging calibrators.")
-            future_flag = run_flag.with_options(
-                task_run_name=f"flag_{cal_obsid}"
-            ).submit(
-                ",".join(split_cal_mslist),
-                cal_metafits,
-                workdir,
-                cal_outdir,
-                flag_calibrators=True,
-                jobid=jobid,
-                flag_quack=False,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=cal_obsid,
-            )
             try:
+                future_flag = run_flag.with_options(
+                    task_run_name=f"flag_{cal_obsid}"
+                ).submit(
+                    ",".join(split_cal_mslist),
+                    cal_metafits,
+                    workdir,
+                    cal_outdir,
+                    flag_calibrators=True,
+                    jobid=jobid,
+                    flag_quack=False,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=cal_obsid,
+                )
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Flagging of calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -575,19 +575,19 @@ def basic_cal_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Importing model visibilities.")
-            future_import_model = run_import_model.with_options(
-                task_run_name=f"model_{cal_obsid}"
-            ).submit(
-                ",".join(split_cal_mslist),
-                cal_metafits,
-                workdir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=cal_obsid,
-            )
             try:
+                future_import_model = run_import_model.with_options(
+                    task_run_name=f"model_{cal_obsid}"
+                ).submit(
+                    ",".join(split_cal_mslist),
+                    cal_metafits,
+                    workdir,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=cal_obsid,
+                )
                 msg, succeed, failed = future_import_model.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Model import for calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -640,22 +640,22 @@ def basic_cal_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Performing basic calibration.")
-            future_basical = run_basic_cal_jobs.with_options(
-                task_run_name=f"calibration_{cal_obsid}"
-            ).submit(
-                ",".join(split_cal_mslist),
-                cal_metafits,
-                workdir,
-                cal_outdir,
-                perform_polcal=do_polcal,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                keep_backup=keep_backup,
-                remote_log=remote_logger,
-                obsid=cal_obsid,
-            )
             try:
+                future_basical = run_basic_cal_jobs.with_options(
+                    task_run_name=f"calibration_{cal_obsid}"
+                ).submit(
+                    ",".join(split_cal_mslist),
+                    cal_metafits,
+                    workdir,
+                    cal_outdir,
+                    perform_polcal=do_polcal,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    keep_backup=keep_backup,
+                    remote_log=remote_logger,
+                    obsid=cal_obsid,
+                )
                 msg, succeed, failed = future_basical.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Basic calibration is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -982,28 +982,28 @@ def selfcal_subflow(
             timeres = np.nanmean(np.diff(times))
             msmd.close()
             time_window = min(10, round(ntime * timeres, 1))  # Maximum 10s
-            future_selfcal_split = run_target_split_jobs.with_options(
-                task_run_name=f"split_{target_obsid}"
-            ).submit(
-                ",".join(target_mslist),
-                target_metafits,
-                workdir,
-                datacolumn="data",
-                timeres=timeavg,
-                freqres=freqavg,
-                prefix=prefix,
-                force_split=True,
-                only_disk=True,
-                time_window=min(time_window, time_interval),
-                time_interval=time_interval,
-                quack_timestamps=quack_timestamps,
-                jobid=jobid,
-                cpu_frac=float(cpu_frac),
-                mem_frac=float(mem_frac),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_selfcal_split = run_target_split_jobs.with_options(
+                    task_run_name=f"split_{target_obsid}"
+                ).submit(
+                    ",".join(target_mslist),
+                    target_metafits,
+                    workdir,
+                    datacolumn="data",
+                    timeres=timeavg,
+                    freqres=freqavg,
+                    prefix=prefix,
+                    force_split=True,
+                    only_disk=True,
+                    time_window=min(time_window, time_interval),
+                    time_interval=time_interval,
+                    quack_timestamps=quack_timestamps,
+                    jobid=jobid,
+                    cpu_frac=float(cpu_frac),
+                    mem_frac=float(mem_frac),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, expected, succeed = future_selfcal_split.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Spliting of measurement sets for self-calibration is done.\nExpected: {expected}, succeeded: {succeed}."
@@ -1109,24 +1109,24 @@ def selfcal_subflow(
                 print_banner(
                     "Starting task: Applying basic calibration on self-calibration measurement sets."
                 )
-                future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
-                    task_run_name=f"apply_basic_cal_{target_obsid}"
-                ).submit(
-                    ",".join(selfcal_mslist),
-                    target_metafits,
-                    workdir,
-                    basic_caldir,
-                    overwrite_datacolumn=False,
-                    only_amplitude=only_amplitude,
-                    applymode="calflag",
-                    prefix="selfcal",
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                    obsid=target_obsid,
-                )
                 try:
+                    future_apply_basical_selfcal = run_apply_basiccal_sol.with_options(
+                        task_run_name=f"apply_basic_cal_{target_obsid}"
+                    ).submit(
+                        ",".join(selfcal_mslist),
+                        target_metafits,
+                        workdir,
+                        basic_caldir,
+                        overwrite_datacolumn=False,
+                        only_amplitude=only_amplitude,
+                        applymode="calflag",
+                        prefix="selfcal",
+                        jobid=jobid,
+                        cpu_frac=round(cpu_frac, 2),
+                        mem_frac=round(mem_frac, 2),
+                        remote_log=remote_logger,
+                        obsid=target_obsid,
+                    )
                     msg, succeed, failed = future_apply_basical_selfcal.result()
                     cal_applied = True
                     if emails != "":
@@ -1214,19 +1214,19 @@ def selfcal_subflow(
                 print_banner(
                     "Starting task: Sidereal motion correction for self-calibration measurement sets."
                 )
-                future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
-                    task_run_name=f"sidereal_cor_{target_obsid}"
-                ).submit(
-                    ",".join(selfcal_mslist),
-                    workdir,
-                    prefix="selfcal",
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                    obsid=target_obsid,
-                )
                 try:
+                    future_sidereal_cor_selfcal = run_solar_siderealcor_jobs.with_options(
+                        task_run_name=f"sidereal_cor_{target_obsid}"
+                    ).submit(
+                        ",".join(selfcal_mslist),
+                        workdir,
+                        prefix="selfcal",
+                        jobid=jobid,
+                        cpu_frac=round(cpu_frac, 2),
+                        mem_frac=round(mem_frac, 2),
+                        remote_log=remote_logger,
+                        obsid=target_obsid,
+                    )
                     msg, succeed, failed = future_sidereal_cor_selfcal.result()
                     if emails != "":
                         email_msg = f"[{target_obsid}] Correction for solar sidereal motion is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -1271,24 +1271,24 @@ def selfcal_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Flagging selfcal targets.")
-            future_flag = run_flag.with_options(
-                task_run_name=f"flag_{target_obsid}"
-            ).submit(
-                ",".join(selfcal_mslist),
-                target_metafits,
-                workdir,
-                target_outdir,
-                flag_calibrators=False,
-                flag_quack=False,
-                datacolumn="corrected",
-                run_solarflagger=use_solarflagger,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_flag = run_flag.with_options(
+                    task_run_name=f"flag_{target_obsid}"
+                ).submit(
+                    ",".join(selfcal_mslist),
+                    target_metafits,
+                    workdir,
+                    target_outdir,
+                    flag_calibrators=False,
+                    flag_quack=False,
+                    datacolumn="corrected",
+                    run_solarflagger=use_solarflagger,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Flagging for self-calibration measurment sets are done.\nSucceeded: {succeed}, failed: {failed}."
@@ -1343,31 +1343,31 @@ def selfcal_subflow(
                 print("Calibrator solutions are applied.")
             else:
                 print("Calibration solutions are not applied")
-            future_selfcal = run_selfcal_jobs.with_options(
-                task_run_name=f"selfcal_{target_obsid}"
-            ).submit(
-                ",".join(selfcal_mslist),
-                workdir,
-                selfcaldir,
-                target_metafits,
-                cal_applied,
-                solint=solint,
-                do_apcal=do_ap_selfcal,
-                do_polcal=do_polcal,
-                solar_selfcal=solar_selfcal,
-                keep_backup=keep_backup,
-                uvrange=uvrange,
-                weight="briggs",
-                robust=0.0,
-                applymode=selfcal_applymode,
-                use_solarflagger=use_solarflagger,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_selfcal = run_selfcal_jobs.with_options(
+                    task_run_name=f"selfcal_{target_obsid}"
+                ).submit(
+                    ",".join(selfcal_mslist),
+                    workdir,
+                    selfcaldir,
+                    target_metafits,
+                    cal_applied,
+                    solint=solint,
+                    do_apcal=do_ap_selfcal,
+                    do_polcal=do_polcal,
+                    solar_selfcal=solar_selfcal,
+                    keep_backup=keep_backup,
+                    uvrange=uvrange,
+                    weight="briggs",
+                    robust=0.0,
+                    applymode=selfcal_applymode,
+                    use_solarflagger=use_solarflagger,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 (
                     msg,
                     int_succeed,
@@ -1626,28 +1626,25 @@ def applysol_subflow(
                 flow_name=f"subflow {flow_name}",
             )
         print_banner(f"Starting task: Spliting {prefix}.")
-        future_split = run_target_split_jobs.with_options(
-            task_run_name=f"split_{target_obsid}"
-        ).submit(
-            ",".join(target_mslist),
-            target_metafits,
-            workdir,
-            datacolumn="data",
-            force_split=True,
-            freqres=freqavg,
-            timeres=timeavg,
-            quack_timestamps=quack_timestamps,
-            prefix=prefix,
-            jobid=jobid,
-            cpu_frac=round(cpu_frac, 2),
-            mem_frac=round(mem_frac, 2),
-            remote_log=remote_logger,
-            obsid=target_obsid,
-        )
-        ##########################################
-        # Checking target spliting is done or not
-        ##########################################
         try:
+            future_split = run_target_split_jobs.with_options(
+                task_run_name=f"split_{target_obsid}"
+            ).submit(
+                ",".join(target_mslist),
+                target_metafits,
+                workdir,
+                datacolumn="data",
+                force_split=True,
+                freqres=freqavg,
+                timeres=timeavg,
+                quack_timestamps=quack_timestamps,
+                prefix=prefix,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+                obsid=target_obsid,
+            )
             msg, expected, succeed = future_split.result()
             if emails != "":
                 email_msg = f"[{target_obsid}] Spliting target for final processing is done.\nExpected: {expected}, succeeded: {succeed}."
@@ -1723,24 +1720,24 @@ def applysol_subflow(
             print_banner(
                 "Starting task: Applying basic calibration on final target measurement sets."
             )
-            future_apply_basical = run_apply_basiccal_sol.with_options(
-                task_run_name=f"apply_basic_cal_{target_obsid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                target_metafits,
-                workdir,
-                basic_caldir,
-                overwrite_datacolumn=True,
-                only_amplitude=only_amplitude,
-                applymode="calflag",
-                prefix="target",
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_apply_basical = run_apply_basiccal_sol.with_options(
+                    task_run_name=f"apply_basic_cal_{target_obsid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    target_metafits,
+                    workdir,
+                    basic_caldir,
+                    overwrite_datacolumn=True,
+                    only_amplitude=only_amplitude,
+                    applymode="calflag",
+                    prefix="target",
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_apply_basical.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Applying basic calibration solutions on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
@@ -1789,19 +1786,19 @@ def applysol_subflow(
             print_banner(
                 "Starting task: Sidereal motion correction for final target measurement sets."
             )
-            future_sidereal_cor = run_solar_siderealcor_jobs.with_options(
-                task_run_name=f"sidereal_cor_{target_obsid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                workdir,
-                prefix="target",
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_sidereal_cor = run_solar_siderealcor_jobs.with_options(
+                    task_run_name=f"sidereal_cor_{target_obsid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    workdir,
+                    prefix="target",
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_sidereal_cor.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Sidereal motion correction of the Sun on final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
@@ -1852,22 +1849,22 @@ def applysol_subflow(
             print_banner(
                 "Starting task: Applying self-calibration solutions on final target measurement sets."
             )
-            future_apply_selfcal = run_apply_selfcal_sol.with_options(
-                task_run_name=f"apply_selfcal_{target_obsid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                target_metafits,
-                workdir,
-                selfcaldir,
-                overwrite_datacolumn=False,
-                applymode=selfcal_applymode,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_apply_selfcal = run_apply_selfcal_sol.with_options(
+                    task_run_name=f"apply_selfcal_{target_obsid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    target_metafits,
+                    workdir,
+                    selfcaldir,
+                    overwrite_datacolumn=False,
+                    applymode=selfcal_applymode,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, gain_succeed, gain_failed, pol_succeed, pol_failed = (
                     future_apply_selfcal.result()
                 )
@@ -1939,24 +1936,24 @@ def applysol_subflow(
                     print("Using solar flagger.")
                     use_solarflagger = True
 
-        future_flag = run_flag.with_options(
-            task_run_name=f"flag_{target_obsid}"
-        ).submit(
-            ",".join(split_target_mslist),
-            target_metafits,
-            workdir,
-            target_outdir,
-            flag_calibrators=False,
-            flag_quack=False,
-            datacolumn="corrected",
-            run_solarflagger=use_solarflagger,
-            jobid=jobid,
-            cpu_frac=round(cpu_frac, 2),
-            mem_frac=round(mem_frac, 2),
-            remote_log=remote_logger,
-            obsid=target_obsid,
-        )
         try:
+            future_flag = run_flag.with_options(
+                task_run_name=f"flag_{target_obsid}"
+            ).submit(
+                ",".join(split_target_mslist),
+                target_metafits,
+                workdir,
+                target_outdir,
+                flag_calibrators=False,
+                flag_quack=False,
+                datacolumn="corrected",
+                run_solarflagger=use_solarflagger,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+                obsid=target_obsid,
+            )
             msg, succeed, failed = future_flag.result()
             if emails != "":
                 email_msg = f"[{target_obsid}] Flagging of final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
@@ -2115,33 +2112,33 @@ def imaging_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Final imaging.")
-            future_imaging = run_imaging_jobs.with_options(
-                task_run_name=f"imaging_{target_obsid}"
-            ).submit(
-                ",".join(split_target_mslist),
-                workdir,
-                target_outdir,
-                freqrange=freqrange,
-                timerange=timerange,
-                minuv=minuv,
-                weight=weight,
-                robust=float(robust),
-                pol=pol,
-                freqres=image_freqres,
-                timeres=image_timeres,
-                threshold=float(clean_threshold),
-                use_multiscale=use_multiscale,
-                use_solar_mask=use_solar_mask,
-                cutout_rsun=cutout_rsun,
-                savemodel=keep_backup,
-                saveres=keep_backup,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_imaging = run_imaging_jobs.with_options(
+                    task_run_name=f"imaging_{target_obsid}"
+                ).submit(
+                    ",".join(split_target_mslist),
+                    workdir,
+                    target_outdir,
+                    freqrange=freqrange,
+                    timerange=timerange,
+                    minuv=minuv,
+                    weight=weight,
+                    robust=float(robust),
+                    pol=pol,
+                    freqres=image_freqres,
+                    timeres=image_timeres,
+                    threshold=float(clean_threshold),
+                    use_multiscale=use_multiscale,
+                    use_solar_mask=use_solar_mask,
+                    cutout_rsun=cutout_rsun,
+                    savemodel=keep_backup,
+                    saveres=keep_backup,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed, total_images = future_imaging.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Final imaging is done.\nSucceeded: {succeed}, failed: {failed}.\nTotal images made: {total_images}."
@@ -2228,20 +2225,20 @@ def imaging_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Primary beam correction.")
-            future_pbcor = run_apply_pbcor.with_options(
-                task_run_name=f"apply_pbcor_{target_obsid}"
-            ).submit(
-                f"{imagedir}/images",
-                target_metafits,
-                workdir,
-                leakage_dir=selfcaldir,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_pbcor = run_apply_pbcor.with_options(
+                    task_run_name=f"apply_pbcor_{target_obsid}"
+                ).submit(
+                    f"{imagedir}/images",
+                    target_metafits,
+                    workdir,
+                    leakage_dir=selfcaldir,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_pbcor.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Primary beam correction is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -2294,19 +2291,19 @@ def imaging_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner("Starting task: Making overlay on EUV images.")
-            future_overlay = run_make_overlay.with_options(
-                task_run_name=f"make_overlay_{target_obsid}"
-            ).submit(
-                f"{imagedir}/images",
-                f"{imagedir}/overlay_pngs",
-                workdir=workdir,
-                all_overlay=make_overlay,
-                jobid=jobid,
-                cpu_frac=round(cpu_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-            )
             try:
+                future_overlay = run_make_overlay.with_options(
+                    task_run_name=f"make_overlay_{target_obsid}"
+                ).submit(
+                    f"{imagedir}/images",
+                    f"{imagedir}/overlay_pngs",
+                    workdir=workdir,
+                    all_overlay=make_overlay,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
                 msg, succeed, failed = future_overlay.result()
                 if msg == 0:
                     if emails != "":

@@ -234,7 +234,7 @@ def get_logid(logfile):
         "imaging_target": "All imaging",
         "ds_target": "Making dynamic spectra",
         "do_overlay": "Making overlays",
-        "main": "All master log",
+        "main": "Master flow",
         "do_msplot": "Diagnistic plot of ms",
     }
     logmap_keys = list(logmap.keys())
