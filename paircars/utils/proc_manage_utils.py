@@ -418,7 +418,7 @@ def submit_local_master_flow(args, jobid):
                         "task run" in lower or "flow run" in lower
                     ) and "p-aircars execution is finished" not in lower:
                         only_run_print = True
-                    if "traceback" in lower or "killed" in lower:
+                    if ("traceback" in lower or "killed" in lower) and not printing_traceback:
                         printing_traceback = True
                     if (
                         printing_traceback or 
