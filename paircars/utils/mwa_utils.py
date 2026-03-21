@@ -75,7 +75,7 @@ def get_MWA_coarse_chan(msname):
     msmd.close()
     coarse_chans = []
     for f in freqs:
-        coarse_chan = freq_to_MWA_coarse(f)
+        coarse_chan = freq_to_MWA_coarse(round(f,2))
         coarse_chans.append(coarse_chan)
     return coarse_chans
 
