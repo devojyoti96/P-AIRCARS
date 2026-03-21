@@ -208,6 +208,7 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA"):
     str
         Normalized measurement set
     """
+    msname=msname.rstrip("/")
     outfile = f"{msname}.norm"
     if os.path.exists(outfile):
         os.system(f"rm -rf {outfile}")
