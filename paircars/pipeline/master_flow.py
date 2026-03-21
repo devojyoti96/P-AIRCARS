@@ -357,18 +357,16 @@ def master_control(
     if target_metafits == "" or target_metafits is None:
         if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
             target_metafits = f"{target_datadir}/{target_obsid}.metafits"
-            download_metafits=False
+            download_metafits = False
         else:
-            download_metafits=True
+            download_metafits = True
     elif not os.path.exists(target_metafits):
-        download_metafits=True
+        download_metafits = True
     else:
-        download_metafits=False
+        download_metafits = False
     if download_metafits:
         try:
-            target_metafits = download_MWA_metafits(
-                target_obsid, outdir=target_datadir
-            )
+            target_metafits = download_MWA_metafits(target_obsid, outdir=target_datadir)
         except Exception:
             traceback.print_exc()
             if emails != "":
@@ -736,7 +734,11 @@ def master_control(
                 )
                 if master_logfile is not None and os.path.exists(master_logfile):
                     observer = init_logger(
-                        "master_log", master_logfile, log_type="master", jobname=jobname, password=password
+                        "master_log",
+                        master_logfile,
+                        log_type="master",
+                        jobname=jobname,
+                        password=password,
                     )
             if observer is None:
                 print(

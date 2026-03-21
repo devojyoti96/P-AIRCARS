@@ -137,6 +137,7 @@ def determine_disk_visibility(msname):
         Timestamps where disk is detected at least in one channel
     """
     from casatools import ms as casamstool, table
+
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
@@ -152,7 +153,7 @@ def determine_disk_visibility(msname):
         datacolumn = "corrected"
     else:
         datacolumn = "data"
-    normed_msname = normalized_crosscorr_ms(msname, datacolumn = datacolumn.upper())
+    normed_msname = normalized_crosscorr_ms(msname, datacolumn=datacolumn.upper())
     mstool = casamstool()
     uvdist = 150.0 * wavelength
     mstool.open(normed_msname)

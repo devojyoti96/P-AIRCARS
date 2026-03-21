@@ -1078,7 +1078,7 @@ def plot_hpc_collage(
 ):
     """
     Plot a collage for spectral fits files
-    
+
     Parameters
     ----------
     fits_images : list
@@ -1095,13 +1095,14 @@ def plot_hpc_collage(
         Output file name
     showgui : bool, optional
         Show GUI
-    
+
     Returns
     -------
     str
         Output file name
     """
     from matplotlib.patches import Ellipse
+
     if showgui:
         matplotlib.use("TkAgg")
     maps, datas = [], []
@@ -1113,12 +1114,10 @@ def plot_hpc_collage(
         obstime = Time(hdr["date-obs"])
         mwa_map = get_mwamap(fits_image)
         tr = SkyCoord(
-            xlim[1]*u.arcsec, ylim[1]*u.arcsec,
-            frame=mwa_map.coordinate_frame
+            xlim[1] * u.arcsec, ylim[1] * u.arcsec, frame=mwa_map.coordinate_frame
         )
         bl = SkyCoord(
-            xlim[0]*u.arcsec, ylim[0]*u.arcsec,
-            frame=mwa_map.coordinate_frame
+            xlim[0] * u.arcsec, ylim[0] * u.arcsec, frame=mwa_map.coordinate_frame
         )
         cropped = mwa_map.submap(bl, top_right=tr)
         maps.append((cropped, hdr, obstime))
@@ -1131,14 +1130,14 @@ def plot_hpc_collage(
     # ---- Layout ----
     n = len(maps)
     temp_nrows = int(np.ceil(n / ncols))
-    if temp_nrows>ncols:
-        nrows=ncols
+    if temp_nrows > ncols:
+        nrows = ncols
         ncols = temp_nrows
     else:
         nrows = temp_nrows
-    fig = plt.figure(figsize=(3.5*ncols, 3.5*nrows))
+    fig = plt.figure(figsize=(3.5 * ncols, 3.5 * nrows))
     for i, (m, hdr, obstime) in enumerate(maps):
-        ax = plt.subplot(nrows, ncols, i+1, projection=m)
+        ax = plt.subplot(nrows, ncols, i + 1, projection=m)
         im = m.plot(axes=ax, cmap="inferno", norm=norm)
         if draw_limb:
             m.draw_limb(axes=ax)
@@ -1156,12 +1155,12 @@ def plot_hpc_collage(
             pixel_scale = abs(hdr["CDELT1"]) * 3600.0
             x0, x1 = ax.get_xlim()
             y0, y1 = ax.get_ylim()
-            x = x0 + 0.1*(x1-x0)
-            y = y0 + 0.1*(y1-y0)
+            x = x0 + 0.1 * (x1 - x0)
+            y = y0 + 0.1 * (y1 - y0)
             beam = Ellipse(
                 (x, y),
-                width=bmin/pixel_scale,
-                height=bmaj/pixel_scale,
+                width=bmin / pixel_scale,
+                height=bmaj / pixel_scale,
                 angle=bpa,
                 edgecolor="white",
                 facecolor="white",
@@ -1184,12 +1183,7 @@ def plot_hpc_collage(
             pass
     # ---- Layout (NO gaps, space for labels) ----
     plt.subplots_adjust(
-        left=0.08,
-        right=0.88,
-        bottom=0.08,
-        top=0.95,
-        wspace=0.0,
-        hspace=0.0
+        left=0.08, right=0.88, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
     )
     # ---- Colorbar ----
     cax = fig.add_axes([0.90, 0.15, 0.02, 0.7])
@@ -1197,16 +1191,17 @@ def plot_hpc_collage(
     cbar.set_label("Intensity", fontsize=10)
     # ---- Global labels ----
     fig.text(0.5, 0.03, "Solar-X (arcsec)", ha="center", fontsize=12)
-    fig.text(0.03, 0.5, "Solar-Y (arcsec)",
-             va="center", rotation="vertical", fontsize=12)
+    fig.text(
+        0.03, 0.5, "Solar-Y (arcsec)", va="center", rotation="vertical", fontsize=12
+    )
     # ---- Save ----
     fig.savefig(outfile, dpi=120)
     if showgui:
         plt.show()
     plt.close(fig)
     return outfile
-    
-    
+
+
 def get_aia_map(
     obs_date,
     obs_time,
@@ -2197,7 +2192,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
                 block_starts.append(i)
         block_starts = np.array(block_starts)
         # Set ticks at those positions
-        ngap = int(len(block_starts)/12)
+        ngap = int(len(block_starts) / 12)
         block_starts = block_starts[::ngap]
         ax_spec.set_yticks(block_starts)
         ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])

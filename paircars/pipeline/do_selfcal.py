@@ -1175,7 +1175,7 @@ def do_polselfcal(
                 ###################################################################
                 # Condition 1: If solving per antenna decrease DR, solve per array
                 ###################################################################
-                if not solve_array_leakage and (DR3 < 0.9*DR2 or RMS3 > 1.1*RMS2):
+                if not solve_array_leakage and (DR3 < 0.9 * DR2 or RMS3 > 1.1 * RMS2):
                     pollogger.info(
                         "Solving over array instead of antenna, as DR decreases."
                     )
@@ -2059,7 +2059,17 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-    return msg, int_succeed, int_failed, pol_succeed, pol_failed, avg_int_DR, avg_pol_DR, max_int_DR, max_pol_DR
+    return (
+        msg,
+        int_succeed,
+        int_failed,
+        pol_succeed,
+        pol_failed,
+        avg_int_DR,
+        avg_pol_DR,
+        max_int_DR,
+        max_pol_DR,
+    )
 
 
 def cli():

@@ -160,10 +160,10 @@ def calc_solar_image_stat(imagename, disc_size=50):
     radius = int((disc_size * 60) / pix_size)
     if radius > total_pix:
         radius = total_pix / 4.0
-    if data.ndim==4:
+    if data.ndim == 4:
         data = data[0, 0, ...]
-    elif data.ndim==3:
-        data = data[0,...]
+    elif data.ndim == 3:
+        data = data[0, ...]
     else:
         data = data
     mask = create_circular_mask_array(data, radius)
@@ -551,13 +551,13 @@ def filter_images(imagelist, min_time_sep=60.0):
         for freq, group in freq_groups.items():
             group = sorted(group, key=lambda x: x["mjdsec"])
             last_time = -np.inf
-            if min_time_sep>0:
+            if min_time_sep > 0:
                 for info in group:
                     if info["mjdsec"] - last_time >= min_time_sep:
                         final_images.append(info["image"])
                         last_time = info["mjdsec"]
             else:
-                info = group[int(len(group)/2)]
+                info = group[int(len(group) / 2)]
                 final_images.append(info["image"])
         return sorted(final_images)
     except Exception:

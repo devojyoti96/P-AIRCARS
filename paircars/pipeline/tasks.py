@@ -982,39 +982,47 @@ def run_selfcal_jobs(
         # Selfcal jobs
         ########################
         with get_dask_client() as dask_client:
-            msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR, max_int_DR, max_pol_DR = (
-                do_selfcal.main(
-                    mslist,
-                    metafits,
-                    workdir,
-                    caldir,
-                    cal_applied=cal_applied,
-                    start_thresh=float(start_thresh),
-                    stop_thresh=float(stop_thresh),
-                    max_iter=float(max_iter),
-                    max_DR=float(max_DR),
-                    intselfcal_min_iter=int(intselfcal_min_iter),
-                    polselfcal_min_iter=int(polselfcal_min_iter),
-                    conv_frac=float(conv_frac),
-                    solint=solint,
-                    uvrange=uvrange,
-                    minuv=float(minuv),
-                    weight=weight,
-                    robust=float(robust),
-                    applymode=applymode,
-                    min_tol_factor=float(min_tol_factor),
-                    do_apcal=do_apcal,
-                    do_polcal=do_polcal,
-                    solar_selfcal=solar_selfcal,
-                    use_solarflagger=use_solarflagger,
-                    keep_backup=keep_backup,
-                    cpu_frac=float(cpu_frac),
-                    mem_frac=float(mem_frac),
-                    logfile=logfile,
-                    jobid=jobid,
-                    start_remote_log=remote_log,
-                    dask_client=dask_client,
-                )
+            (
+                msg,
+                int_succeed,
+                int_failed,
+                pol_succeed,
+                pol_failed,
+                int_DR,
+                pol_DR,
+                max_int_DR,
+                max_pol_DR,
+            ) = do_selfcal.main(
+                mslist,
+                metafits,
+                workdir,
+                caldir,
+                cal_applied=cal_applied,
+                start_thresh=float(start_thresh),
+                stop_thresh=float(stop_thresh),
+                max_iter=float(max_iter),
+                max_DR=float(max_DR),
+                intselfcal_min_iter=int(intselfcal_min_iter),
+                polselfcal_min_iter=int(polselfcal_min_iter),
+                conv_frac=float(conv_frac),
+                solint=solint,
+                uvrange=uvrange,
+                minuv=float(minuv),
+                weight=weight,
+                robust=float(robust),
+                applymode=applymode,
+                min_tol_factor=float(min_tol_factor),
+                do_apcal=do_apcal,
+                do_polcal=do_polcal,
+                solar_selfcal=solar_selfcal,
+                use_solarflagger=use_solarflagger,
+                keep_backup=keep_backup,
+                cpu_frac=float(cpu_frac),
+                mem_frac=float(mem_frac),
+                logfile=logfile,
+                jobid=jobid,
+                start_remote_log=remote_log,
+                dask_client=dask_client,
             )
     finally:
         stop_event.set()
@@ -1022,7 +1030,17 @@ def run_selfcal_jobs(
     if msg != 0:
         raise RuntimeError("Self-calibration is failed.")
     else:
-        return msg, int_succeed, int_failed, pol_succeed, pol_failed, int_DR, pol_DR, max_int_DR, max_pol_DR
+        return (
+            msg,
+            int_succeed,
+            int_failed,
+            pol_succeed,
+            pol_failed,
+            int_DR,
+            pol_DR,
+            max_int_DR,
+            max_pol_DR,
+        )
 
 
 @task(
@@ -1534,7 +1552,9 @@ def run_make_msplot(
         return msg
 
 
-def send_task_notification(emails, msg, jobid, obsid, logger_timestamp, flow_name="", attachments=[]):
+def send_task_notification(
+    emails, msg, jobid, obsid, logger_timestamp, flow_name="", attachments=[]
+):
     """
     Send notification after each task is finished
 
@@ -1565,6 +1585,8 @@ def send_task_notification(emails, msg, jobid, obsid, logger_timestamp, flow_nam
                 email_msg = f"{msg}"
             else:
                 email_msg = f"From {flow_name}\n{msg}"
-            success_msg, error_msg = send_notification(emails, email_subject, email_msg, attachments=attachments)
+            success_msg, error_msg = send_notification(
+                emails, email_subject, email_msg, attachments=attachments
+            )
         except Exception:
             print("Could not send log emails.")

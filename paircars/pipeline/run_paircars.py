@@ -404,7 +404,7 @@ def cli():
         return
 
     cal_datadir_list = args.cal_datadir.split(",")
-    filtered_cal_datadir_list=[]
+    filtered_cal_datadir_list = []
     for cal_datadir in cal_datadir_list:
         cal_datadir_permission = check_permission(cal_datadir)
         if cal_datadir_permission is False:
@@ -414,7 +414,7 @@ def cli():
         else:
             filtered_cal_datadir_list.append(cal_datadir)
     cal_datadir_list = filtered_cal_datadir_list
-    if len(cal_datadir_list)>0:
+    if len(cal_datadir_list) > 0:
         args.cal_datadir = ",".join(cal_datadir_list)
     else:
         args.cal_datadir = ""
@@ -435,7 +435,9 @@ def cli():
 
         if check_port_status(postgres_port) is False:
             if scheduler_name != "local":
-                postgres_port = get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
+                postgres_port = get_free_port(
+                    start_port=postgres_port, end_port=postgres_port + 990
+                )
 
         msg, config_file, profile_path, env_file, dashboard, pid_file = (
             start_prefect_server(port, postgres_port, scheduler_name=scheduler_name)

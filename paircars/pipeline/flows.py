@@ -46,9 +46,7 @@ from paircars.pipeline.tasks import (
 )
 from prefect.context import get_run_context
 from multiprocessing import Event
-from paircars.utils.prefect_logger_utils import (
-    start_flow_log_saver
-)
+from paircars.utils.prefect_logger_utils import start_flow_log_saver
 from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
@@ -104,7 +102,7 @@ def pre_process_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
     )
-    observer=None
+    observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
         time.sleep(5)
         jobname, password = np.load(
@@ -112,12 +110,14 @@ def pre_process_subflow(
         )
         if pre_process_logfile is not None and os.path.exists(pre_process_logfile):
             observer = init_logger(
-                "preprocess_subflow_log", pre_process_logfile, log_type="subflow", jobname=jobname, password=password
+                "preprocess_subflow_log",
+                pre_process_logfile,
+                log_type="subflow",
+                jobname=jobname,
+                password=password,
             )
     if observer is None:
-        print(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
+        print("Remote link or jobname is blank. Not transmiting to remote logger.")
     try:
         ########################################
         # Moving phasecenter to the solar center
@@ -303,7 +303,7 @@ def basic_cal_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, basic_cal_logfile, poll_interval=3, stop_event=stop_event
     )
-    observer=None
+    observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
         time.sleep(5)
         jobname, password = np.load(
@@ -311,12 +311,14 @@ def basic_cal_subflow(
         )
         if basic_cal_logfile is not None and os.path.exists(basic_cal_logfile):
             observer = init_logger(
-                "basic_cal_subflow_log", basic_cal_logfile, log_type="subflow", jobname=jobname, password=password
+                "basic_cal_subflow_log",
+                basic_cal_logfile,
+                log_type="subflow",
+                jobname=jobname,
+                password=password,
             )
     if observer is None:
-        print(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
+        print("Remote link or jobname is blank. Not transmiting to remote logger.")
     try:
         ##########################################
         # Checking presence of basic caltables
@@ -772,6 +774,7 @@ def basic_cal_subflow(
         if observer is not None:
             clean_shutdown(observer)
 
+
 ########################################################
 # Self-calibration subflows
 ########################################################
@@ -840,22 +843,30 @@ def selfcal_subflow(
     flow_name = ctx.flow_run.name
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, selfcal_subflow_logfile, poll_interval=3, stop_event=stop_event
+        flow_id,
+        flow_name,
+        selfcal_subflow_logfile,
+        poll_interval=3,
+        stop_event=stop_event,
     )
-    observer=None
+    observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
         time.sleep(5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
-        if selfcal_subflow_logfile is not None and os.path.exists(selfcal_subflow_logfile):
+        if selfcal_subflow_logfile is not None and os.path.exists(
+            selfcal_subflow_logfile
+        ):
             observer = init_logger(
-                "selfcal_subflow_log", selfcal_subflow_logfile, log_type="subflow", jobname=jobname, password=password
+                "selfcal_subflow_log",
+                selfcal_subflow_logfile,
+                log_type="subflow",
+                jobname=jobname,
+                password=password,
             )
     if observer is None:
-        print(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
+        print("Remote link or jobname is blank. Not transmiting to remote logger.")
     try:
         ###################################################
         # Checking if selfcal tables already exist or not
@@ -1359,9 +1370,11 @@ def selfcal_subflow(
                 ) = future_selfcal.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}\n"
-                    email_msg = f"{email_msg}Average DR: {int_DR}, maximum DR: {max_int_DR}."
+                    email_msg = (
+                        f"{email_msg}Average DR: {int_DR}, maximum DR: {max_int_DR}."
+                    )
                     if do_polcal:
-                        email_msg = f"{email_msg}\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}\n" 
+                        email_msg = f"{email_msg}\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}\n"
                         email_msg = f"{email_msg}Average DR: {pol_DR}, maximum DR: {max_pol_DR}."
                     send_task_notification(
                         emails,
@@ -1568,7 +1581,7 @@ def applysol_subflow(
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, applysol_logfile, poll_interval=3, stop_event=stop_event
     )
-    observer=None
+    observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
         time.sleep(5)
         jobname, password = np.load(
@@ -1576,12 +1589,14 @@ def applysol_subflow(
         )
         if applysol_logfile is not None and os.path.exists(applysol_logfile):
             observer = init_logger(
-                "applysol_subflow_log", applysol_logfile, log_type="subflow", jobname=jobname, password=password
+                "applysol_subflow_log",
+                applysol_logfile,
+                log_type="subflow",
+                jobname=jobname,
+                password=password,
             )
     if observer is None:
-        print(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
+        print("Remote link or jobname is blank. Not transmiting to remote logger.")
     try:
         #############################################
         # Spliting targets if not started already
@@ -2027,22 +2042,30 @@ def imaging_subflow(
     flow_name = ctx.flow_run.name
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, imaging_subflow_logfile, poll_interval=3, stop_event=stop_event
+        flow_id,
+        flow_name,
+        imaging_subflow_logfile,
+        poll_interval=3,
+        stop_event=stop_event,
     )
-    observer=None
+    observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
         time.sleep(5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
-        if imaging_subflow_logfile is not None and os.path.exists(imaging_subflow_logfile):
+        if imaging_subflow_logfile is not None and os.path.exists(
+            imaging_subflow_logfile
+        ):
             observer = init_logger(
-                "imaging_subflow_log", imaging_subflow_logfile, log_type="subflow", jobname=jobname, password=password
+                "imaging_subflow_log",
+                imaging_subflow_logfile,
+                log_type="subflow",
+                jobname=jobname,
+                password=password,
             )
     if observer is None:
-        print(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
+        print("Remote link or jobname is blank. Not transmiting to remote logger.")
     try:
         if do_imaging:
             ######################################
@@ -2232,7 +2255,7 @@ def imaging_subflow(
 
         #################################################################
         # Filtering only coarse channel images for default overlay mode
-        #################################################################    
+        #################################################################
         if make_overlay is False and len(images) > 0:
             images = filter_images(images, min_time_sep=60.0)
         internet_on = internet_available()
@@ -2296,7 +2319,9 @@ def imaging_subflow(
                     else:
                         print(f"Final image directory: {imagedir}/overlay_pngs")
             except Exception:
-                print_banner("!!!! WARNING: Overlay of the images are not successful. !!!!")
+                print_banner(
+                    "!!!! WARNING: Overlay of the images are not successful. !!!!"
+                )
                 traceback.print_exc()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Error occured in making overlays."
@@ -2308,19 +2333,21 @@ def imaging_subflow(
                         timestamp,
                         flow_name=f"subflow {flow_name}",
                     )
-                                
+
         ##################################################################
         # Sending image collage and DR information
         ##################################################################
-        if emails != "" and len(images)>0:
-            dyn_range_list=[]
+        if emails != "" and len(images) > 0:
+            dyn_range_list = []
             for image in images:
-                dr=fits.getheader(image)["RMSDYN"]
+                dr = fits.getheader(image)["RMSDYN"]
                 dyn_range_list.append(dr)
             max_DR = np.nanmax(dyn_range_list)
             min_DR = np.nanmin(dyn_range_list)
             filtered_images = filter_images(images, min_time_sep=-1)
-            outfile = plot_hpc_collage(filtered_images, outfile = f"{workdir}/{target_obsid}_collage.png")
+            outfile = plot_hpc_collage(
+                filtered_images, outfile=f"{workdir}/{target_obsid}_collage.png"
+            )
             email_msg = f"[{target_obsid}] Imaging is completed.\nMaximum dynamic range: {max_DR}\nMinimum dynamic range: {min_DR}."
             send_task_notification(
                 emails,
@@ -2329,7 +2356,7 @@ def imaging_subflow(
                 target_obsid,
                 timestamp,
                 flow_name=f"subflow {flow_name}",
-                attachments=[outfile]
+                attachments=[outfile],
             )
             os.system(f"rm -rf {outfile}")
         return 0

@@ -78,7 +78,9 @@ def download_with_parfive(record_id, update=False, output_dir="zenodo_download")
         os.chmod(f, 0o755)
 
 
-def init_paircars_data(update=False, remote_link=None, remotelink_password=None, emails=None):
+def init_paircars_data(
+    update=False, remote_link=None, remotelink_password=None, emails=None
+):
     """
     Initiate P-AIRCARS data
 
@@ -107,10 +109,10 @@ def init_paircars_data(update=False, remote_link=None, remotelink_password=None,
     if remote_link is not None:
         with open(linkfile, "w") as f:
             f.write(str(remote_link))
-            
+
         if remotelink_password is None:
             remotelink_password = generate_password()
-        
+
         with open(linkpassword, "w") as f:
             f.write(str(remotelink_password))
 
@@ -127,7 +129,7 @@ def init_paircars_data(update=False, remote_link=None, remotelink_password=None,
         download_with_parfive(record_id, update=update, output_dir=datadir)
         timestr = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(f"P-AIRCARS data are updated in: {datadir} at time: {timestr}")
-    
+
     freqres_list = [40, 80, 160, 320, 640]
     mwapb_file = f"{datadir}/mwa_full_embedded_element_pattern.h5"
     for freqres in freqres_list:
@@ -157,7 +159,7 @@ def main(
     port : int, optional
         Prefect port
     do_kill_port : bool, optional
-        Try to kill port job if it is occupied 
+        Try to kill port job if it is occupied
     datadir : str, optional
         User provided custom data directory
     update : bool, optional
@@ -177,11 +179,11 @@ def main(
         if do_kill_port:
             try:
                 kill_port(port)
-                check_free_port=False
+                check_free_port = False
             except Exception:
-                check_free_port=True
+                check_free_port = True
         else:
-            check_free_port=True
+            check_free_port = True
         if scheduler_name != "local" and check_free_port:
             port = get_free_port(start_port=port, end_port=port + 990)
 
@@ -189,13 +191,15 @@ def main(
         if do_kill_port:
             try:
                 kill_port(postgres_port)
-                check_free_port=False
+                check_free_port = False
             except Exception:
-                check_free_port=True
+                check_free_port = True
         else:
-            check_free_port=True
+            check_free_port = True
         if scheduler_name != "local" and check_free_port:
-            postgres_port = get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
+            postgres_port = get_free_port(
+                start_port=postgres_port, end_port=postgres_port + 990
+            )
 
     if init:
         ######################################
@@ -209,7 +213,9 @@ def main(
                 f"Minimum {required_gb}GB disk space is required in data directory: {datadir}. Please check disk space."
             )
             return 1
-        init_paircars_data(update=update, remote_link=link, remotelink_password=password, emails=emails)
+        init_paircars_data(
+            update=update, remote_link=link, remotelink_password=password, emails=emails
+        )
         print("P-AIRCARS data are initiated.")
 
         #########################################
@@ -377,7 +383,12 @@ def cli():
     )
     parser.add_argument("--init", action="store_true", help="Initiate data")
     parser.add_argument("--port", type=int, default=4260, help="Prefect port")
-    parser.add_argument("--no_kill_port", action="store_false", dest="kill_port", help="Do not kill occupied port")
+    parser.add_argument(
+        "--no_kill_port",
+        action="store_false",
+        dest="kill_port",
+        help="Do not kill occupied port",
+    )
     parser.add_argument(
         "--datadir", type=str, default="", help="User provided data directory"
     )
@@ -386,7 +397,10 @@ def cli():
         "--remotelink", dest="link", default=None, help="Set remote log link"
     )
     parser.add_argument(
-        "--remote_password", dest="password", default=None, help="Set remote log password"
+        "--remote_password",
+        dest="password",
+        default=None,
+        help="Set remote log password",
     )
     parser.add_argument(
         "--emails",

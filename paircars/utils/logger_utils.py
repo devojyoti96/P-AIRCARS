@@ -121,7 +121,12 @@ class RemoteLogger(logging.Handler):
     """
 
     def __init__(
-        self, job_id="default", log_id="run_default", log_type="master", remote_link="", password=""
+        self,
+        job_id="default",
+        log_id="run_default",
+        log_type="master",
+        remote_link="",
+        password="",
     ):
         super().__init__()
         self.job_id = job_id
@@ -290,7 +295,9 @@ def get_logid(logfile):
         name = name.split("_selfcal_int.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("_")[-1]
-        return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
+        return (
+            f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
+        )
     elif name.endswith("_pol.log"):
         name = name.split("_selfcal_pol.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
@@ -344,14 +351,18 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
         logger.handlers.clear()
     formatter = logging.Formatter("%(message)s")
     remote_link = get_remote_logger_link()
-    if log_type not in ["master","subflow","task"]:
-        log_type="task"
+    if log_type not in ["master", "subflow", "task"]:
+        log_type = "task"
     if remote_link != "":
         if jobname:
             job_id = jobname
             log_id = get_logid(logfile)
             remote_handler = RemoteLogger(
-                job_id=job_id, log_id=log_id, log_type=log_type, remote_link=remote_link, password=password
+                job_id=job_id,
+                log_id=log_id,
+                log_type=log_type,
+                remote_link=remote_link,
+                password=password,
             )
             remote_handler.setFormatter(formatter)
             logger.addHandler(remote_handler)

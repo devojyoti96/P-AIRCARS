@@ -87,10 +87,10 @@ def get_timeranges(
         _, _, disk_timestamps = determine_disk_visibility(msname)
         if len(disk_timestamps) == 0:
             print(f"No timestamp with disk visibility for ms: {msname}.")
-            filtered_timestamps=times
+            filtered_timestamps = times
         elif len(disk_timestamps) >= len(times):
             print(f"All timestamps have disk visibilties for ms: {msname}.")
-            filtered_timestamps=times
+            filtered_timestamps = times
         else:
             filtered_timestamps = []
             for t in range(len(times)):
@@ -99,9 +99,9 @@ def get_timeranges(
             print(
                 f"{len(filtered_timestamps)} number of timestamps among {len(times)} have disk visibiltiies for ms: {msname}."
             )
-            if len(filtered_timestamps)==0:
-                filtered_timestamps=times
-            
+            if len(filtered_timestamps) == 0:
+                filtered_timestamps = times
+
     start_time = min(times)
     end_time = max(times)
     if only_disk is False:
@@ -125,14 +125,14 @@ def get_timeranges(
             else:
                 start_time = times[-1]
         if start_time not in filtered_timestamps:
-            nearpos = np.argmin(abs(start_time-filtered_timestamps))
+            nearpos = np.argmin(abs(start_time - filtered_timestamps))
             start_time = filtered_timestamps[nearpos]
         try:
             end_time = times[i + ntime]
         except Exception:
             end_time = times[-1]
         if end_time not in filtered_timestamps:
-            nearpos = np.argmin(abs(end_time-filtered_timestamps))
+            nearpos = np.argmin(abs(end_time - filtered_timestamps))
             end_time = filtered_timestamps[nearpos]
         if end_time > start_time:
             time_ranges.append(
