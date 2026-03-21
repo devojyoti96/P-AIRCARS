@@ -637,7 +637,6 @@ def master_control(
     ############################################
     # Determine number of threads of main worker
     ############################################
-    observer = None
     n_threads = os.environ.get("OMP_NUM_THREADS")
     if n_threads is None:
         n_threads = 1
@@ -654,8 +653,11 @@ def master_control(
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
     master_logfile = f"{logdir}/main_{jobid}.log"
-    if os.path.exists(master_logfile):
-        os.system(f"rm -rf {master_logfile}")
+    stop_event = Event()
+    log_thread_flow = start_flow_log_saver(
+        flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event
+    )
+    observer = None
     try:
         #####################################
         # Reading remotelink and emails
