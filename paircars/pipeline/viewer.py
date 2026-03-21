@@ -410,7 +410,9 @@ def cli():
             sys.exit(1)
         else:
             results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
+            print(results)
             workdir = str(results[3])
+            print (workdir)
             if not os.path.exists(workdir):
                 print(f"Work directory : {workdir} is not present.")
                 sys.exit(1)
