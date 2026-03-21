@@ -213,6 +213,10 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA"):
     tb = table()
     tb.open(outfile, nomodify=False)
     datacolumn = datacolumn.upper()
+    if datacolumn=="CORRECTED":
+        datacolumn="CORRECTED_DATA"
+    if datacolumn=="MODEL":
+        datacolumn="MODEL_DATA"
     if datacolumn not in tb.colnames():
         datacolumn = "DATA"
     data = tb.getcol(datacolumn)   # (npol, nchan, nrow)

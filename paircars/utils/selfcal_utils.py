@@ -17,6 +17,7 @@ from .calibration import (
     quartical_matrix_normalize,
     get_cal_flag_info,
 )
+from .casatasks import normalized_crosscorr_ms
 from .imaging import (
     calc_sun_dia,
     get_optimal_image_interval,
@@ -136,7 +137,6 @@ def determine_disk_visibility(msname):
         Timestamps where disk is detected at least in one channel
     """
     from casatools import ms as casamstool, table
-
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
@@ -152,21 +152,10 @@ def determine_disk_visibility(msname):
         datacolumn = "corrected"
     else:
         datacolumn = "data"
+    normed_msname = normalized_crosscorr_ms(msname, datacolumn = datacolumn.upper())
     mstool = casamstool()
-    mstool.open(msname)
-    mstool.select({"uvdist": [0.0, uvdist]})
-    if datacolumn == "corrected":
-        data_short = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]),
-            axis=2,
-        )
-    else:
-        data_short = np.nanmedian(
-            np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
-        )
-    mstool.close()
     uvdist = 150.0 * wavelength
-    mstool.open(msname)
+    mstool.open(normed_msname)
     mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
     if datacolumn == "corrected":
         data_first_lobe = np.nanmedian(
@@ -178,12 +167,11 @@ def determine_disk_visibility(msname):
             np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
         )
     mstool.close()
-    r = data_first_lobe / data_short
-    r_I = (r[0, ...] + r[-1, ...]) / 2.0
-    detected = r_I < 0.05
+    r_I = (data_first_lobe[0, ...] + data_first_lobe[-1, ...]) / 2.0
+    detected = r_I < 0.1
     n_detected_per_time = np.nansum(detected, axis=0)
     detected_timestamps = np.where(n_detected_per_time > 0)[0]
-    pos = np.where(r_I >= 0.05)
+    pos = np.where(r_I >= 0.1)
     if len(pos) == 0:
         return np.array([], dtype=int), np.array([], dtype=int), detected_timestamps
     elif len(pos) == 1:
