@@ -51,7 +51,7 @@ def freq_to_MWA_coarse(freq):
         MWA coarse channel number
     """
     all_mwa_coarse_freq = np.arange(255) * 1.28
-    diff = abs(freq - all_mwa_coarse_freq)
+    diff = np.round(abs(freq - all_mwa_coarse_freq),2)
     coarse_chan = np.where(diff==np.nanmin(diff))[0][-1]
     return coarse_chan
 
