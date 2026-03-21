@@ -20,6 +20,7 @@ from paircars.utils.flagging import get_chans_flag
 from paircars.utils.mwa_ploting_utils import (
     plot_caltable_diagnostics,
     plot_quartical_tables,
+    plot_hpc_collage,
 )
 from paircars.utils.mwa_utils import (
     freq_to_MWA_coarse,
@@ -2310,9 +2311,15 @@ def imaging_subflow(
         # Sending image collage and DR information
         ##################################################################
         if emails != "" and len(images)>0:
+            dyn_range_list=[]
+            for image in images:
+                dr=fits.getheader(image)["RMSDYN"]
+                dyn_range_list.append(dr)
+            max_DR = np.nanmax(dyn_range_list)
+            min_DR = np.nanmin(dyn_range_list)
             filtered_images = filter_images(images, min_time_sep=-1)
             outfile = plot_hpc_collage(filtered_images, outfile = f"{workdir}/{target_obsid}_collage.png")
-            email_msg = f"[{target_obsid}] Imaging is completed."
+            email_msg = f"[{target_obsid}] Imaging is completed.\nMaximum dynamic range: {max_DR}\nMinimum dynamic range: {min_DR}."
             send_task_notification(
                 emails,
                 email_msg,

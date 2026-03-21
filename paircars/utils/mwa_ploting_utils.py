@@ -24,7 +24,7 @@ from astropy.io.fits.verify import VerifyWarning
 from casatools import msmetadata
 from datetime import datetime as dt
 from PIL import Image
-from sunpy.coordinates import SphericalScreen
+from sunpy.coordinates import SphericalScreen, frames, sun
 from matplotlib.colors import ListedColormap
 from matplotlib import cm
 from sunpy.map import make_fitswcs_header
@@ -719,7 +719,6 @@ def get_mwamap(fits_image, do_sharpen=False):
     """
     from scipy.ndimage import gaussian_filter
     from sunpy.map import make_fitswcs_header
-    from sunpy.coordinates import frames, sun
     from astropy.coordinates import EarthLocation
 
     logging.getLogger("sunpy").setLevel(logging.ERROR)
@@ -909,7 +908,6 @@ def plot_in_hpc(
         MWA image in helioprojective co-ordinate
     """
     from matplotlib.patches import Ellipse, Rectangle
-    from sunpy.coordinates import sun
 
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     if showgui:
@@ -1103,6 +1101,7 @@ def plot_hpc_collage(
     str
         Output file name
     """
+    from matplotlib.patches import Ellipse
     if showgui:
         matplotlib.use("TkAgg")
     maps, datas = [], []

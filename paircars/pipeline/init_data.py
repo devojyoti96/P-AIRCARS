@@ -177,24 +177,24 @@ def main(
         if do_kill_port:
             try:
                 kill_port(port)
-                get_free_port=False
+                check_free_port=False
             except Exception:
-                get_free_port=True
+                check_free_port=True
         else:
-            get_free_port=True
-        if scheduler_name != "local" and get_free_port:
+            check_free_port=True
+        if scheduler_name != "local" and check_free_port:
             port = get_free_port(start_port=port, end_port=port + 990)
 
     if check_port_status(postgres_port) is False:
         if do_kill_port:
             try:
                 kill_port(postgres_port)
-                get_free_port=False
+                check_free_port=False
             except Exception:
-                get_free_port=True
+                check_free_port=True
         else:
-            get_free_port=True
-        if scheduler_name != "local" and get_free_port:
+            check_free_port=True
+        if scheduler_name != "local" and check_free_port:
             postgres_port = get_free_port(start_port=postgres_port, end_port=postgres_port + 990)
 
     if init:
