@@ -354,7 +354,8 @@ def master_control(
     ##############################################
     # Downloading target metafits if not exist
     ##############################################
-    if target_metafits == "" or target_metafits is None:
+    target_metafits=None
+    if target_metafits == "":# or target_metafits is None:
         if os.path.exists(f"{target_datadir}/{target_obsid}.metafits"):
             target_metafits = f"{target_datadir}/{target_obsid}.metafits"
             download_metafits=False
@@ -2111,7 +2112,7 @@ def cli():
             adaptive=adaptive,
         )
         if msg == 0:
-            print_bannr("P-AIRCARS execution is finished: Successful.")
+            print_banner("P-AIRCARS execution is finished: Successful.")
         else:
             print_banner("P-AIRCARS execution is finished: Unsuccessful.")
     except Exception:
