@@ -376,7 +376,7 @@ def cli():
     )
     parser.add_argument("--init", action="store_true", help="Initiate data")
     parser.add_argument("--port", type=int, default=4260, help="Prefect port")
-    parser.add_argument("--kill_port", action="store_true", help="Try to kill occupied port")
+    parser.add_argument("--no_kill_port", action="store_false", dest="kill_port", help="Do not kill occupied port")
     parser.add_argument(
         "--datadir", type=str, default="", help="User provided data directory"
     )
