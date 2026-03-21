@@ -405,6 +405,7 @@ def submit_local_master_flow(args, jobid):
             last_lines = deque(maxlen=500)
             only_run_print = False
             printing_traceback = False
+            traceback_done=False
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
                 while True:
