@@ -100,49 +100,101 @@ def get_logid(logfile):
     """
     name = os.path.basename(logfile)
     logmap = {
-        "apply_basiccal_target.log": "Applying basic calibration solutions on targets",
-        "apply_basiccal_selfcal.log": "Applying basic calibration solutions for self-calibration",
-        "apply_pbcor.log": "Applying primary beam corrections",
-        "apply_selfcal.log": "Applying self-calibration solutions",
-        "basic_cal.log": "Basic calibration",
-        "cor_phasecenter_target.log": "Moving phasecenter to solar center",
-        "cor_sidereal_selfcal.log": "Correction of sidereal motion before self-calibration",
-        "cor_sidereal_target.log": "Correction of sidereal motion for target scans",
-        "flagging_cal_calibrator.log": "Basic flagging of calibrators",
-        "flagging_target_target.log": "Basic flagging of targets",
-        "modeling.log": "Simulating visibilities of calibrators",
-        "split_calibrator.log": "Spliting calibrator scans",
-        "split_target.log": "Spliting target",
-        "split_selfcal.log": "Spliting for self-calibration",
-        "selfcal_target.log": "All self-calibrations",
-        "imaging_target.log": "All imaging",
-        "ds_target.log": "Making dynamic spectra",
-        "do_overlay.log": "Making overlay",
-        "main.log": "All master log",
-        "do_msplot.log": "Diagnistic plot of ms",
+        "apply_basiccal_target": "Applying basic calibration solutions on targets",
+        "apply_basiccal_selfcal": "Applying basic calibration solutions for self-calibration",
+        "apply_pbcor": "Applying primary beam corrections",
+        "apply_selfcal": "Applying self-calibration solutions",
+        "basic_cal": "Basic calibration",
+        "cor_phasecenter_target": "Moving phasecenter to solar center",
+        "cor_sidereal_selfcal": "Correction of sidereal motion before self-calibration",
+        "cor_sidereal_target": "Correction of sidereal motion for target scans",
+        "flagging_cal_calibrator": "Basic flagging of calibrators",
+        "flagging_target_target": "Basic flagging of targets",
+        "modeling": "Simulating visibilities of calibrators",
+        "split_calibrator": "Spliting calibrator scans",
+        "split_target": "Spliting target",
+        "split_selfcal": "Spliting for self-calibration",
+        "selfcal_target": "All self-calibrations",
+        "imaging_target": "All imaging",
+        "ds_target": "Making dynamic spectra",
+        "do_overlay": "Making overlays",
+        "main": "Master flow",
+        "do_msplot": "Diagnistic plot of ms",
     }
-    if name in logmap:
-        return logmap[name]
-    elif ".log.int" in name:
-        name = name.split("_selfcal.log.int")[0].split("selfcal_")[1]
+    logmap_keys = list(logmap.keys())
+    for logmap_key in logmap_keys:
+        if name.startswith(logmap_key):
+            log_name = logmap[logmap_key]
+            try:
+                obsid = int(name.split(".log")[0].split("_")[-1])
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+    if name.startswith("subflow"):
+        if name.startswith("subflow_preprocess"):
+            log_name = "Pre-processing"
+            try:
+                obsid = name.split(".log")[0].split("subflow_preprocess_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_basiccal"):
+            log_name = "Basic calibration"
+            try:
+                obsid = name.split(".log")[0].split("subflow_basiccal_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_selfcal"):
+            log_name = "Self-calibration"
+            try:
+                obsid = name.split(".log")[0].split("subflow_selfcal_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_applysol"):
+            log_name = "Apply calibration solutions"
+            try:
+                obsid = name.split(".log")[0].split("subflow_applysol_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        elif name.startswith("subflow_imaging"):
+            log_name = "Imaging"
+            try:
+                obsid = name.split(".log")[0].split("subflow_imaging_")[-1]
+                log_name = f"{log_name} [{obsid}]"
+            except Exception:
+                pass
+            return log_name
+        else:
+            log_name = f"Subflow: {name}"
+            return log_name
+    elif name.endswith("_int.log"):
+        name = name.split("_selfcal_int.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("ch")[1].split("_")[0]
-        spw = name.split("_")[-1]
-        return f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
-    elif ".log.pol" in name:
-        name = name.split("_selfcal.log.pol")[0].split("selfcal_")[1]
+        coarse_chan = name.split("_")[-1]
+        return (
+            f"Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
+        )
+    elif name.endswith("_pol.log"):
+        name = name.split("_selfcal_pol.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("ch")[1].split("_")[0]
-        spw = name.split("_")[-1]
-        return f"Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
+        coarse_chan = name.split("_")[-1]
+        return f"Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
     elif "imaging_target" in name:
         name = name.rstrip(".log").split("imaging_target_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("ch")[1].split("_")[0]
-        spw = name.split("_")[-1]
-        return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}, spectral window: {spw}"
+        coarse_chan = name.split("_")[-1]
+        return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
         return name
+
 
 
 class TailWatcher(FileSystemEventHandler, QObject):
