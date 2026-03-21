@@ -190,3 +190,88 @@ def single_mstransform(
         if os.path.exists(outputms):
             os.system("rm -rf " + outputms)
         return
+        
+        
+def normalized_crosscorr_ms(msname, datacolumn="DATA"):
+    """
+    Perform normalized cross-correlation of the measurement set
+    
+    Parameters
+    ----------
+    msname : str
+        Measurement set
+    datacolumn : str
+        Data column to normalize
+    
+    Returns
+    -------
+    str
+        Normalized measurement set
+    """
+    outfile = f"{msname}.norm"
+    os.system(f"cp -r {msname} {outfile}")
+    tb = table()
+    tb.open(outfile, nomodify=False)
+    datacolumn = datacolumn.upper()
+    if datacolumn not in tb.colnames():
+        datacolumn = "DATA"
+    data = tb.getcol(datacolumn)   # (npol, nchan, nrow)
+    flag = tb.getcol("FLAG")
+    ant1 = tb.getcol("ANTENNA1")
+    ant2 = tb.getcol("ANTENNA2")
+    time = tb.getcol("TIME")
+    nrow = data.shape[-1]
+    # Identify autocorrelation rows
+    auto_mask = (ant1 == ant2)
+    auto_rows = np.where(auto_mask)[0]
+    auto_ant = ant1[auto_mask]
+    auto_time = time[auto_mask]
+    # Build lookup (vectorized via sorting)
+    # Combine (time, antenna) into structured array
+    auto_keys = np.core.records.fromarrays(
+        [auto_time, auto_ant],
+        names='time,ant'
+    )
+    cross_keys_1 = np.core.records.fromarrays(
+        [time, ant1],
+        names='time,ant'
+    )
+    cross_keys_2 = np.core.records.fromarrays(
+        [time, ant2],
+        names='time,ant'
+    )
+    sort_idx = np.argsort(auto_keys)
+    auto_keys_sorted = auto_keys[sort_idx]
+    auto_rows_sorted = auto_rows[sort_idx]
+    # Find matching autos using searchsorted
+    def match_keys(query_keys):
+        idx = np.searchsorted(auto_keys_sorted, query_keys)
+        idx = np.clip(idx, 0, len(auto_keys_sorted) - 1)
+
+        matched = auto_keys_sorted[idx] == query_keys
+        out = np.full(nrow, -1, dtype=int)
+        out[matched] = auto_rows_sorted[idx][matched]
+        return out
+    idx1 = match_keys(cross_keys_1)
+    idx2 = match_keys(cross_keys_2)
+    # valid rows where both autos exist and not autocorr
+    valid = (idx1 >= 0) & (idx2 >= 0) & (ant1 != ant2)
+    # Vectorized normalization
+    norm = np.zeros_like(data, dtype=np.complex64)
+    auto1 = np.abs(data[..., idx1[valid]])
+    auto2 = np.abs(data[..., idx2[valid]])
+    denom = np.sqrt(auto1 * auto2)
+    # avoid zero
+    denom[denom < 1e-10] = np.nan
+    norm[..., valid] = data[..., valid] / denom
+    # Clean up
+    flag[np.isnan(norm)] = True
+    norm[np.isnan(norm)] = 0.0 + 0.0j
+    tb.putcol(datacolumn, norm)
+    tb.putcol("FLAG", flag)
+    tb.flush()
+    tb.close()
+    return outfile
+    
+    
+    
