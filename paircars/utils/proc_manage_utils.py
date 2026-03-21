@@ -404,8 +404,7 @@ def submit_local_master_flow(args, jobid):
             print("Streaming logs to terminal...\n")
             last_lines = deque(maxlen=500)
             only_run_print = False
-            error_detected = False
-            ERROR_KEYS = ["traceback", "error", "exception", "failed", "killed"]
+            printing_traceback = False
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
                 while True:
@@ -419,25 +418,24 @@ def submit_local_master_flow(args, jobid):
                         "task run" in lower or "flow run" in lower
                     ) and "p-aircars execution is finished" not in lower:
                         only_run_print = True
-                    if any(k in lower for k in ERROR_KEYS):
-                        if not error_detected:
-                            error_detected = True
-                            print("\n" + "#" * 60)
-                            print("ERROR DETECTED — Showing recent log context\n")
-                            for l in last_lines:
-                                sys.stdout.write(l)
-
-                            print("#" * 60 + "\n")
+                    if "traceback" in lower or "killed" in lower:
+                        printing_traceback = True
+                        
+                    if printing_traceback:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
+                        # stop after traceback ends (empty line or next INFO)
+                        if line.strip() == "":
+                            return 1
                     if (
-                        error_detected  
                         or not only_run_print
                         or ("task run" in lower or "flow run" in lower)
                         or "p-aircars execution is finished" in lower
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                    if "p-aircars execution is finished" in lower or "cluster closed" in lower or "killed" in lower:
-                        return 1 if error_detected else 0
+                    if "p-aircars execution is finished" in lower or "cluster closed" in lower:
+                        return 0
         except Exception:
             traceback.print_exc()
             return 1

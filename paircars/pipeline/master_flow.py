@@ -407,13 +407,13 @@ def master_control(
     target_freq_config = target_header["CHANNELS"]
     target_coarse_chans = [int(c) for c in target_freq_config.split(",")]
     target_coarse_chans = list(set(target_coarse_chans) & set(target_ms_coarse_chans))
-    print(f"Target observation ID: {target_obsid}")
+    print_banner(f"Target observation ID: {target_obsid}")
     print(f"Target coarse channels: {target_coarse_chans}")
 
     ################################################
     # Filtering calibrators
     ################################################
-    print("Sorting out calibrator data....")
+    print("Sorting out calibrator data.")
     cal_datadir_list = calibrator_datadir.split(",")
     cal_metafits_list = calibrator_metafits.split(",")
     final_cal_datadir_list = []
@@ -679,7 +679,7 @@ def master_control(
     #########################################
     # Setup remote loggger and email notifier
     #########################################
-    print("Setting up remote logger and email notifier...")
+    print("Setting up remote logger and email notifier.")
     try:
         #####################################
         # Reading remotelink and emails
@@ -2040,9 +2040,7 @@ def cli():
     ##########################################
     try:
         dask_addr = dask_client.scheduler.address
-        print("#########################################")
-        print("Starting P-AIRCARS Pipeline....")
-        print("#########################################")
+        print_banner("Starting P-AIRCARS Pipeline....")
         print(f"Total dask workers: {nworker}")
         msg = master_control.with_options(
             flow_run_name=f"paircars_{jobid}",
@@ -2112,14 +2110,13 @@ def cli():
             job_password=args.job_password,
             adaptive=adaptive,
         )
-        print("##########################################")
         if msg == 0:
-            print("P-AIRCARS execution is finished: Successful.")
+            print_banner("P-AIRCARS execution is finished: Successful.")
         else:
-            print("P-AIRCARS execution is finished: Unsuccessful.")
-        print("##########################################")
+            print_banner("P-AIRCARS execution is finished: Unsuccessful.")
     except Exception:
         traceback.print_exc()
+        print_banner("P-AIRCARS execution is finished: Unsuccessful.")
     finally:
         time.sleep(5)
         print("Closing clusters...")
