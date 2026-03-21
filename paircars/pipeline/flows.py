@@ -2227,22 +2227,6 @@ def imaging_subflow(
                         flow_name=f"subflow {flow_name}",
                     )
 
-        ##################################################################
-        # Sending image collage and DR information
-        ##################################################################
-        if emails != "" and len(images)>0:
-            filtered_images = filter_images(images, min_time_sep=-1)
-            email_msg = f"[{target_obsid}] Started making overlays."
-            send_task_notification(
-                emails,
-                email_msg,
-                jobid,
-                target_obsid,
-                timestamp,
-                flow_name=f"subflow {flow_name}",
-            )
-
-
         #################################################################
         # Filtering only coarse channel images for default overlay mode
         #################################################################    
@@ -2251,69 +2235,12 @@ def imaging_subflow(
         internet_on = internet_available()
         if not internet_on:
             print("Internet connection is not available. Can not make overlays")
-            return 0
-
-        #################################
-        # Start overlays
-        #################################
-        if emails != "":
-            email_msg = f"[{target_obsid}] Started making overlays."
-            send_task_notification(
-                emails,
-                email_msg,
-                jobid,
-                target_obsid,
-                timestamp,
-                flow_name=f"subflow {flow_name}",
-            )
-        print_banner("Starting task: Making overlay on EUV images.")
-        future_overlay = run_make_overlay.with_options(
-            task_run_name=f"making_overlay_{jobid}"
-        ).submit(
-            f"{imagedir}/images",
-            f"{imagedir}/overlay_pngs",
-            workdir=workdir,
-            all_overlay=make_overlay,
-            jobid=jobid,
-            cpu_frac=round(cpu_frac, 2),
-            remote_log=remote_logger,
-        )
-        try:
-            msg, succeed, failed = future_overlay.result()
-            if msg == 0:
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner("Finished task: Making overlays are done.")
-                print(f"Final image directory: {imagedir}/overlay_pngs")
-            else:
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Making overlays are not successful EUV images could not be download.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner("Finished task: Making overlays are not successful.")
-                if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
-                    os.system(f"rm -rf {imagedir}/overlay_pngs")
-                else:
-                    print(f"Final image directory: {imagedir}/overlay_pngs")
-        except Exception:
-            print_banner("!!!! WARNING: Overlay of the images are not successful. !!!!")
-            traceback.print_exc()
+        else:
+            #################################
+            # Start overlays
+            #################################
             if emails != "":
-                email_msg = f"[{target_obsid}] Error occured in making overlays."
+                email_msg = f"[{target_obsid}] Started making overlays."
                 send_task_notification(
                     emails,
                     email_msg,
@@ -2322,6 +2249,80 @@ def imaging_subflow(
                     timestamp,
                     flow_name=f"subflow {flow_name}",
                 )
+            print_banner("Starting task: Making overlay on EUV images.")
+            future_overlay = run_make_overlay.with_options(
+                task_run_name=f"making_overlay_{jobid}"
+            ).submit(
+                f"{imagedir}/images",
+                f"{imagedir}/overlay_pngs",
+                workdir=workdir,
+                all_overlay=make_overlay,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                remote_log=remote_logger,
+            )
+            try:
+                msg, succeed, failed = future_overlay.result()
+                if msg == 0:
+                    if emails != "":
+                        email_msg = f"[{target_obsid}] Making overlays are done.\nSucceeded: {succeed}, failed: {failed}."
+                        send_task_notification(
+                            emails,
+                            email_msg,
+                            jobid,
+                            target_obsid,
+                            timestamp,
+                            flow_name=f"subflow {flow_name}",
+                        )
+                    print_banner("Finished task: Making overlays are done.")
+                    print(f"Final image directory: {imagedir}/overlay_pngs")
+                else:
+                    if emails != "":
+                        email_msg = f"[{target_obsid}] Making overlays are not successful EUV images could not be download.\nSucceeded: {succeed}, failed: {failed}."
+                        send_task_notification(
+                            emails,
+                            email_msg,
+                            jobid,
+                            target_obsid,
+                            timestamp,
+                            flow_name=f"subflow {flow_name}",
+                        )
+                    print_banner("Finished task: Making overlays are not successful.")
+                    if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
+                        os.system(f"rm -rf {imagedir}/overlay_pngs")
+                    else:
+                        print(f"Final image directory: {imagedir}/overlay_pngs")
+            except Exception:
+                print_banner("!!!! WARNING: Overlay of the images are not successful. !!!!")
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Error occured in making overlays."
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
+                    )
+                                
+        ##################################################################
+        # Sending image collage and DR information
+        ##################################################################
+        if emails != "" and len(images)>0:
+            filtered_images = filter_images(images, min_time_sep=-1)
+            outfile = plot_hpc_collage(filtered_images, outfile = f"{workdir}/{target_obsid}_collage.png")
+            email_msg = f"[{target_obsid}] Imaging is completed."
+            send_task_notification(
+                emails,
+                email_msg,
+                jobid,
+                target_obsid,
+                timestamp,
+                flow_name=f"subflow {flow_name}",
+                attachments=[outfile]
+            )
+            os.system(f"rm -rf {outfile}")
         return 0
     except Exception:
         traceback.print_exc()
