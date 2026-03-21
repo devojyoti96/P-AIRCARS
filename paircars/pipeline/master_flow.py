@@ -2111,7 +2111,7 @@ def cli():
             adaptive=adaptive,
         )
         if msg == 0:
-            print_banner("P-AIRCARS execution is finished: Successful.")
+            print_bannr("P-AIRCARS execution is finished: Successful.")
         else:
             print_banner("P-AIRCARS execution is finished: Unsuccessful.")
     except Exception:

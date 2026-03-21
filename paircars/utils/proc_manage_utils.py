@@ -424,7 +424,6 @@ def submit_local_master_flow(args, jobid):
                     if printing_traceback:
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                        # stop after traceback ends (empty line or next INFO)
                         if line.strip() == "":
                             return 1
                     if (
