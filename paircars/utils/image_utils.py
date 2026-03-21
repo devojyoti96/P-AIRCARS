@@ -555,7 +555,7 @@ def filter_images(imagelist, min_time_sep=60.0):
             else:
                 info = group[int(len(group)/2)]
                 final_images.append(info["image"])
-        return final_images
+        return sorted(final_images)
     except Exception:
         print("Error in filtering out images.")
         traceback.print_exc()

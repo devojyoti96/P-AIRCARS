@@ -1069,6 +1069,140 @@ def plot_in_hpc(
     return output_image_list, cropped_map
 
 
+def plot_hpc_collage(
+    fits_images,
+    draw_limb=True,
+    power=0.5,
+    xlim=[-3200, 3200],
+    ylim=[-3200, 3200],
+    outfile="collage.png",
+    showgui=False,
+):
+    """
+    Plot a collage for spectral fits files
+    
+    Parameters
+    ----------
+    fits_images : list
+        Fits images list
+    draw_limb : bool, optionnal
+        Plot solar limb
+    power : float, optional
+        Power stretch
+    xlim : list
+        X-axis limit in arcseconds
+    ylim : list
+        Y-axis limit in arcseconds
+    outfile : str, optional
+        Output file name
+    showgui : bool, optional
+        Show GUI
+    
+    Returns
+    -------
+    str
+        Output file name
+    """
+    if showgui:
+        matplotlib.use("TkAgg")
+    maps, datas = [], []
+    # ---- Load & crop ----
+    fits_images = sorted(fits_images)
+    ncols = int(np.sqrt(len(fits_images)))
+    for fits_image in fits_images:
+        hdr = fits.getheader(fits_image)
+        obstime = Time(hdr["date-obs"])
+        mwa_map = get_mwamap(fits_image)
+        tr = SkyCoord(
+            xlim[1]*u.arcsec, ylim[1]*u.arcsec,
+            frame=mwa_map.coordinate_frame
+        )
+        bl = SkyCoord(
+            xlim[0]*u.arcsec, ylim[0]*u.arcsec,
+            frame=mwa_map.coordinate_frame
+        )
+        cropped = mwa_map.submap(bl, top_right=tr)
+        maps.append((cropped, hdr, obstime))
+        datas.append(cropped.data)
+    # ---- Global normalization ----
+    all_data = np.concatenate([d.flatten() for d in datas])
+    vmin = 0.03 * np.nanmax(all_data)
+    vmax = 0.99 * np.nanmax(all_data)
+    norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=PowerStretch(power))
+    # ---- Layout ----
+    n = len(maps)
+    nrows = int(np.ceil(n / ncols))
+    fig = plt.figure(figsize=(3.5*ncols, 3.5*nrows))
+    for i, (m, hdr, obstime) in enumerate(maps):
+        ax = plt.subplot(nrows, ncols, i+1, projection=m)
+        im = m.plot(axes=ax, cmap="inferno", norm=norm)
+        if draw_limb:
+            m.draw_limb(axes=ax)
+        # ---- Clean axes ----
+        ax.coords.grid(False)
+        ax.coords[0].set_ticks_visible(False)
+        ax.coords[1].set_ticks_visible(False)
+        ax.coords[0].set_ticklabel_visible(False)
+        ax.coords[1].set_ticklabel_visible(False)
+        # ---- Beam ----
+        try:
+            bmaj = hdr["BMAJ"] * u.deg.to(u.arcsec)
+            bmin = hdr["BMIN"] * u.deg.to(u.arcsec)
+            bpa = hdr["BPA"] - sun.P(obstime).deg
+            pixel_scale = abs(hdr["CDELT1"]) * 3600.0
+            x0, x1 = ax.get_xlim()
+            y0, y1 = ax.get_ylim()
+            x = x0 + 0.1*(x1-x0)
+            y = y0 + 0.1*(y1-y0)
+            beam = Ellipse(
+                (x, y),
+                width=bmin/pixel_scale,
+                height=bmaj/pixel_scale,
+                angle=bpa,
+                edgecolor="white",
+                facecolor="white",
+                lw=0.7,
+            )
+            ax.add_patch(beam)
+        except Exception:
+            pass
+        # ---- Frequency title ----
+        try:
+            if hdr.get("CTYPE3") == "FREQ":
+                freq = hdr["CRVAL3"] / 1e6
+            elif hdr.get("CTYPE4") == "FREQ":
+                freq = hdr["CRVAL4"] / 1e6
+            else:
+                freq = None
+            if freq is not None:
+                ax.set_title(f"{freq:.0f} MHz", fontsize=9)
+        except Exception:
+            pass
+    # ---- Layout (NO gaps, space for labels) ----
+    plt.subplots_adjust(
+        left=0.08,
+        right=0.88,
+        bottom=0.08,
+        top=0.95,
+        wspace=0.0,
+        hspace=0.0
+    )
+    # ---- Colorbar ----
+    cax = fig.add_axes([0.90, 0.15, 0.02, 0.7])
+    cbar = fig.colorbar(im, cax=cax)
+    cbar.set_label("Intensity", fontsize=10)
+    # ---- Global labels ----
+    fig.text(0.5, 0.03, "Solar-X (arcsec)", ha="center", fontsize=12)
+    fig.text(0.03, 0.5, "Solar-Y (arcsec)",
+             va="center", rotation="vertical", fontsize=12)
+    # ---- Save ----
+    fig.savefig(outfile, dpi=120)
+    if showgui:
+        plt.show()
+    plt.close(fig)
+    return outfile
+    
+    
 def get_aia_map(
     obs_date,
     obs_time,

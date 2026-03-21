@@ -2227,11 +2227,11 @@ def imaging_subflow(
                         flow_name=f"subflow {flow_name}",
                     )
 
-        filtered_images = filter_images(images, min_time_sep=60.0)
         ##################################################################
         # Sending image collage and DR information
         ##################################################################
-        if emails != "":
+        if emails != "" and len(images)>0:
+            filtered_images = filter_images(images, min_time_sep=-1)
             email_msg = f"[{target_obsid}] Started making overlays."
             send_task_notification(
                 emails,
