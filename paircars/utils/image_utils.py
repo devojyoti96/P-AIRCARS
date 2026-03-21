@@ -153,6 +153,8 @@ def calc_solar_image_stat(imagename, disc_size=50):
     float
         Min-max dynamic range
     """
+    import matplotlib
+    import matplotlib.pyplot as plt
     matplotlib.use("TkAgg")
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
