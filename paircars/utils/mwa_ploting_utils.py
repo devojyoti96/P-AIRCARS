@@ -1128,9 +1128,14 @@ def plot_hpc_collage(
     vmax = 0.99 * np.nanmax(all_data)
     norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=PowerStretch(power))
     # ---- Layout ----
-    ncols = 6
-    nrows = 4
-    fig = plt.figure(figsize=(4*ncols, 4*nrows))
+    n = len(maps)
+    temp_nrows = int(np.ceil(n / ncols))
+    if temp_nrows > ncols:
+        nrows = ncols
+        ncols = temp_nrows
+    else:
+        nrows = temp_nrows
+    fig = plt.figure(figsize=(4 * ncols, 4 * nrows))
     for i, (m, hdr, obstime) in enumerate(maps):
         ax = plt.subplot(nrows, ncols, i + 1, projection=m)
         im = m.plot(axes=ax, cmap="inferno", norm=norm)
@@ -1180,14 +1185,11 @@ def plot_hpc_collage(
     plt.subplots_adjust(
             left=0.08, right=0.84, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
     )
-    # ---- Colorbar ----
-    cax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
-    cbar = fig.colorbar(im, cax=cax)
-    cbar.set_label("Intensity", fontsize=10)
     # ---- Global labels ----
-    fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=12)
+    fontsize = (4*ncols)
+    fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=fontsize)
     fig.text(
-        0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=12
+        0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=fontsize
     )
     # ---- Save ----
     fig.savefig(outfile, dpi=120,  bbox_inches="tight")
