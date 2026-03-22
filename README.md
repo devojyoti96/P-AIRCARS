@@ -105,6 +105,11 @@ That's all. You started P-AIRCARS pipeline for analysing your MWA solar observat
 ## Sample dataset
 User can download and test entire P-AIRCARS pipeline using the sample dataset available in Zenodo: https://doi.org/10.5281/zenodo.18641232. Do not use this sample dataset for any publication without permission from the developer.
 
+## SolarViewer
+
+To view and analyse final image products, we recommend using  [SolarViewer].
+
+[SolarViewer]: https://pypi.org/project/solarviewer
 
 ## Acknowledgements
 
