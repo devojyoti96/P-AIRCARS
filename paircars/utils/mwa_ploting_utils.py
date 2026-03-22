@@ -1138,7 +1138,7 @@ def plot_hpc_collage(
     nrows = 4
     ncols = 6
     total = nrows * ncols
-    fig = plt.figure(figsize=(22, 20))
+    fig = plt.figure(figsize=(24, 16))
     if len(maps)==0:
         return 
     else:
@@ -1186,9 +1186,9 @@ def plot_hpc_collage(
                 else:
                     freq = None
                 if freq is not None:
-                    ax.set_title(f"{freq:.0f} MHz", fontsize=9)
+                    ax.set_title(f"{freq:.0f} MHz", fontsize=20)
                 else:
-                    ax.set_title("",fontsize=9)
+                    ax.set_title("",fontsize=20)
             except Exception:
                 pass
         else:
@@ -1213,19 +1213,19 @@ def plot_hpc_collage(
                 spine.set_linewidth(0.6)
             ax.text(
                 0.5, 0.5, "No Data",
-                color="gray", fontsize=9,
+                color="gray", fontsize=20,
                 ha="center", va="center",
                 transform=ax.transAxes
             )
-            ax.set_title("",fontsize=9)
+            ax.set_title("",fontsize=20)
     # ---- Layout (NO gaps, space for labels) ----
     plt.subplots_adjust(
-            left=0.08, right=0.87, bottom=0.08, top=0.95, wspace=0.09, hspace=0.09
+         left=0.04, right=0.87, bottom=0.03, top=0.95, wspace=0.1, hspace=0.0
     )
     # ---- Global labels ----
-    fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=12)
+    fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=24)
     fig.text(
-        0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=12
+        0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=24
     )
     # ---- Save ----
     fig.savefig(outfile, dpi=120,  bbox_inches="tight")
