@@ -146,7 +146,6 @@ class RemoteLogger(logging.Handler):
                     "log_type": self.log_type,
                     "message": f"{msg}\n",
                     "password": self.password,
-                    "first": False,
                 },
                 timeout=2,
             )
@@ -382,7 +381,6 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
                         "log_type": log_type,
                         "message": "",
                         "password": password,
-                        "first": True,
                     },
                     timeout=2,
                 )
