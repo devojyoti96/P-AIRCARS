@@ -1127,63 +1127,83 @@ def plot_hpc_collage(
     vmin = 0.03 * np.nanmax(all_data)
     vmax = 0.99 * np.nanmax(all_data)
     norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=PowerStretch(power))
+    try:
+        maps = sorted(maps, key=lambda x: x[1].get("CRVAL3", 0))
+    except Exception:
+        try:
+            maps = sorted(maps, key=lambda x: x[1].get("CRVAL3", 0))
+        except Exception:
+            pass
     # ---- Layout ----
-    n = len(maps)
-    temp_nrows = int(np.ceil(n / ncols))
-    if temp_nrows > ncols:
-        nrows = ncols
-        ncols = temp_nrows
-    else:
-        nrows = temp_nrows
-    fig = plt.figure(figsize=(4 * ncols, 4 * nrows))
-    for i, (m, hdr, obstime) in enumerate(maps):
-        ax = plt.subplot(nrows, ncols, i + 1, projection=m)
-        im = m.plot(axes=ax, cmap="inferno", norm=norm)
-        if draw_limb:
-            m.draw_limb(axes=ax)
-        # ---- Clean axes ----
-        ax.coords.grid(False)
-        ax.coords[0].set_ticks_visible(False)
-        ax.coords[1].set_ticks_visible(False)
-        ax.coords[0].set_ticklabel_visible(False)
-        ax.coords[1].set_ticklabel_visible(False)
-        # ---- Beam ----
-        try:
-            bmaj = hdr["BMAJ"] * u.deg.to(u.arcsec)
-            bmin = hdr["BMIN"] * u.deg.to(u.arcsec)
-            bpa = hdr["BPA"] - sun.P(obstime).deg
-            pixel_scale = abs(hdr["CDELT1"]) * 3600.0
-            x0, x1 = ax.get_xlim()
-            y0, y1 = ax.get_ylim()
-            x = x0 + 0.1 * (x1 - x0)
-            y = y0 + 0.1 * (y1 - y0)
-            beam = Ellipse(
-                (x, y),
-                width=bmin / pixel_scale,
-                height=bmaj / pixel_scale,
-                angle=bpa,
-                edgecolor="white",
-                facecolor="white",
-                lw=0.7,
+    nrows = 4
+    ncols = 6
+    total = nrows * ncols
+    fig = plt.figure(figsize=(24, 20))
+    for i in range(total):
+        ax = plt.subplot(nrows, ncols, i + 1)
+        if i < len(maps):
+            m, hdr, obstime = maps[i]
+            ax.remove()
+            ax = plt.subplot(nrows, ncols, i + 1, projection=m)
+            im = m.plot(axes=ax, cmap="inferno", norm=norm)
+            if draw_limb:
+                m.draw_limb(axes=ax)
+            ax.coords.grid(False)
+            ax.coords[0].set_ticks_visible(False)
+            ax.coords[1].set_ticks_visible(False)
+            ax.coords[0].set_ticklabel_visible(False)
+            ax.coords[1].set_ticklabel_visible(False)
+            try:
+                bmaj = hdr["BMAJ"] * u.deg.to(u.arcsec)
+                bmin = hdr["BMIN"] * u.deg.to(u.arcsec)
+                bpa = hdr["BPA"] - sun.P(obstime).deg
+                pixel_scale = abs(hdr["CDELT1"]) * 3600.0
+                x0, x1 = ax.get_xlim()
+                y0, y1 = ax.get_ylim()
+                x = x0 + 0.1 * (x1 - x0)
+                y = y0 + 0.1 * (y1 - y0)
+                beam = Ellipse(
+                    (x, y),
+                    width=bmin / pixel_scale,
+                    height=bmaj / pixel_scale,
+                    angle=bpa,
+                    edgecolor="white",
+                    facecolor="white",
+                    lw=0.7,
+                )
+                ax.add_patch(beam)
+            except Exception:
+                pass
+            try:
+                if hdr.get("CTYPE3") == "FREQ":
+                    freq = hdr["CRVAL3"] / 1e6
+                elif hdr.get("CTYPE4") == "FREQ":
+                    freq = hdr["CRVAL4"] / 1e6
+                else:
+                    freq = None
+                if freq is not None:
+                    ax.set_title(f"{freq:.0f} MHz", fontsize=9)
+            except Exception:
+                pass
+        else:
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_facecolor("black")  # nice for solar plots
+            # draw boundary box
+            for spine in ax.spines.values():
+                spine.set_visible(True)
+                spine.set_color("white")
+                spine.set_linewidth(0.6)
+            # optional label
+            ax.text(
+                0.5, 0.5, "No Data",
+                color="gray", fontsize=9,
+                ha="center", va="center",
+                transform=ax.transAxes
             )
-            ax.add_patch(beam)
-        except Exception:
-            pass
-        # ---- Frequency title ----
-        try:
-            if hdr.get("CTYPE3") == "FREQ":
-                freq = hdr["CRVAL3"] / 1e6
-            elif hdr.get("CTYPE4") == "FREQ":
-                freq = hdr["CRVAL4"] / 1e6
-            else:
-                freq = None
-            if freq is not None:
-                ax.set_title(f"{freq:.0f} MHz", fontsize=9)
-        except Exception:
-            pass
     # ---- Layout (NO gaps, space for labels) ----
     plt.subplots_adjust(
-            left=0.08, right=0.84, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
+            left=0.08, right=0.87, bottom=0.08, top=0.95, wspace=0.09, hspace=0.0
     )
     # ---- Global labels ----
     fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=12)
