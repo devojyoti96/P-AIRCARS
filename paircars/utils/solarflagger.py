@@ -3,7 +3,7 @@ import traceback
 from casatools import table, msmetadata
 from joblib import Parallel, delayed as jobdelayed
 from .flagging import do_flag_backup
-from .casatasks import 
+from .casatasks import normalized_crosscorr_ms
 
 #####################################################################################
 # This code is adapted from SIMPL pipeline for LOFAR: Dey et al., 2025, A&A, 704, A75
