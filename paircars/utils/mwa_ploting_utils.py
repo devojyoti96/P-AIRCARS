@@ -1135,7 +1135,7 @@ def plot_hpc_collage(
         ncols = temp_nrows
     else:
         nrows = temp_nrows
-    fig = plt.figure(figsize=4 * ncols, 4 * nrows))
+    fig = plt.figure(figsize=(4 * ncols, 4 * nrows))
     for i, (m, hdr, obstime) in enumerate(maps):
         ax = plt.subplot(nrows, ncols, i + 1, projection=m)
         im = m.plot(axes=ax, cmap="inferno", norm=norm)
@@ -1182,11 +1182,11 @@ def plot_hpc_collage(
         except Exception:
             pass
     # ---- Layout (NO gaps, space for labels) ----
-    '''plt.subplots_adjust(
-        left=0.08, right=0.88, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
-    )'''
+    plt.subplots_adjust(
+            left=0.08, right=0.86, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
+    )
     # ---- Colorbar ----
-    cax = fig.add_axes([0.90, 0.15, 0.02, 0.7])
+    cax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(im, cax=cax)
     cbar.set_label("Intensity", fontsize=10)
     # ---- Global labels ----
@@ -1194,9 +1194,8 @@ def plot_hpc_collage(
     fig.text(
         0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=12
     )
-    fig.tight_layout()
     # ---- Save ----
-    fig.savefig(outfile, dpi=120)
+    fig.savefig(outfile, dpi=120,  bbox_inches="tight")
     if showgui:
         plt.show()
     plt.close(fig)
