@@ -36,6 +36,7 @@ from paircars.utils.logger_utils import (
     get_remote_logger_password,
     get_emails,
     init_logger,
+    generate_password,
 )
 from paircars.utils.mwa_utils import (
     get_ncoarse,
@@ -699,6 +700,8 @@ def master_control(
                 password = get_remote_logger_password()
             else:
                 password = job_password
+            if password=="":
+                password = generate_password()
             np.save(
                 f"{workdir}/.jobname_password.npy",
                 np.array([jobname, password], dtype="object"),

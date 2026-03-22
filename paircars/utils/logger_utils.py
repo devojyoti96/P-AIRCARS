@@ -70,19 +70,13 @@ def get_remote_logger_password():
         if os.path.isfile(link_file):
             with open(link_file, "r") as f:
                 lines = [line.strip() for line in f if line.strip()]
-            remote_link = lines[0]
+            remote_password = lines[0]
+            return remote_password
         else:
             return ""
     except Exception:
         return ""
-    try:
-        req = urllib.request.Request(remote_link, method="GET")
-        with urllib.request.urlopen(req, timeout=60) as response:
-            if response.status == 200:
-                return remote_link
-    except (urllib.error.URLError, urllib.error.HTTPError):
-        return ""
-
+        
 
 def get_emails():
     cachedir = get_cachedir()
