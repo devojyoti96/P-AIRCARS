@@ -311,7 +311,9 @@ def flagger(
                 )
         else:
             flags = np.zeros(data.shape, dtype=bool)  # Use determined shape
-
+        
+        n_flagged = np.sum(flags) # Initial number of flags
+        
         if normalized:
             ant1 = ms.getcol("ANTENNA1")
             ant2 = ms.getcol("ANTENNA2")
@@ -342,7 +344,6 @@ def flagger(
 
         # --- Initial Flag Count ---
         # Number of unflagged data points initially
-        n_flagged = np.sum(flags)
         data[flags] = np.nan
 
         # Calculate UV distances in wavelengths

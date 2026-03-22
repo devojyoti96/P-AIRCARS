@@ -253,24 +253,25 @@ def calc_normzlized_crosscorr(data, flag, ant1, ant2, time):
     auto1_yy = np.abs(data[-1, :, idx1[valid]])
     auto2_yy = np.abs(data[-1, :, idx2[valid]])
     npol = data.shape[0]
-    if npol==2:
-        for p in range(npol):
-            if p==0:
-                denom = np.sqrt(auto1_xx * auto2_xx)
-            else:
-                denom = np.sqrt(auto1_yy * auto2_yy)
-            norm[p, : , valid] = data[p, : , valid] / denom
-    else:
-        for p in range(npol):
-            if p==0:
-                denom = np.sqrt(auto1_xx * auto2_xx)
-            elif p==1:
-                denom = np.sqrt(auto1_xx * auto2_yy)
-            elif p==2:
-                denom = np.sqrt(auto1_yy * auto2_xx)    
-            else:
-                denom = np.sqrt(auto1_yy * auto2_yy)
-            norm[p, :, valid] = data[p, :, valid] / denom
+    with suppress_output():
+        if npol==2:
+            for p in range(npol):
+                if p==0:
+                    denom = np.sqrt(auto1_xx * auto2_xx)
+                else:
+                    denom = np.sqrt(auto1_yy * auto2_yy)
+                norm[p, : , valid] = data[p, : , valid] / denom
+        else:
+            for p in range(npol):
+                if p==0:
+                    denom = np.sqrt(auto1_xx * auto2_xx)
+                elif p==1:
+                    denom = np.sqrt(auto1_xx * auto2_yy)
+                elif p==2:
+                    denom = np.sqrt(auto1_yy * auto2_xx)    
+                else:
+                    denom = np.sqrt(auto1_yy * auto2_yy)
+                norm[p, :, valid] = data[p, :, valid] / denom
     # Clean up
     flag[np.isnan(norm)] = True
     norm[np.isnan(norm)] = 0.0 + 0.0j
