@@ -502,28 +502,48 @@ def submit_slurm_master_flow(args, jobid):
                 return exit_code
             else:
                 print("Streaming logs to terminal...\n")
-                last_lines = deque(maxlen=50)
+                last_lines = deque(maxlen=500)
                 only_run_print = False
+                printing_traceback = False
+                traceback_waittime = None
+                last_write_time = time.time()
                 with open(log_file, "r") as log:
                     log.seek(0, os.SEEK_END)
                     while True:
                         line = log.readline()
+                        wait_time = time.time() - last_write_time
+                        if (
+                            traceback_waittime is not None
+                            and wait_time > traceback_waittime
+                        ):
+                            return 1
                         if not line:
                             time.sleep(0.5)
                             continue
                         last_lines.append(line)
-                        if "task run" in line.lower() or "flow run" in line.lower():
+                        lower = line.lower()
+                        if (
+                            "task run" in lower or "flow run" in lower
+                        ) and "p-aircars execution is finished" not in lower:
                             only_run_print = True
-                        if not only_run_print or (
-                            "task run" in line.lower() or "flow run" in line.lower()
+                        if (
+                            "traceback" in lower or "killed" in lower
+                        ) and not printing_traceback:
+                            printing_traceback = True
+                            traceback_waittime = 15
+                        if (
+                            printing_traceback
+                            or not only_run_print
+                            or ("task run" in lower or "flow run" in lower)
+                            or "p-aircars execution is finished" in lower
                         ):
                             sys.stdout.write(line)
                             sys.stdout.flush()
+                            last_write_time = time.time()
                         if (
-                            "flow run" in line.lower()
-                            and "finished in state completed" in line.lower()
+                            "p-aircars execution is finished" in lower
+                            or "cluster closed" in lower
                         ):
-                            break
                             return 0
         else:
             print(f"P-AIRCARS job with Job ID: {jobid} could not be submitted.")
