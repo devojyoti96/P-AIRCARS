@@ -301,7 +301,9 @@ def flagger(
         elif datacolumn == "CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
             data = ms.getcol("CORRECTED_DATA")
         else:
-            data = ms.getcol("DATA")  
+            data = ms.getcol("DATA") 
+        data_actual_shape = data.shape
+         
         # --- Get or Create FLAG Column ---
         if "FLAG" in ms.colnames():
             flags = ms.getcol("FLAG").T
@@ -322,7 +324,6 @@ def flagger(
         data = (
             data.T
         )  # Make transpose, because original code is written using casacore, which follows C convention
-        data_actual_shape = data.shape
         if len(data_actual_shape) == 3:
             n_rows, nchan, npol = data_actual_shape
         else:
