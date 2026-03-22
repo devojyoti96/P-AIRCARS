@@ -225,10 +225,10 @@ def flagger(
     msname,
     datacolumn,
     threshold=3.0,
+    normalized=False,
     num_processes=4,
     num_bins=30,
     binning_type="log",
-    normalized=False,
     flagbackup=True,
 ):
     """
@@ -248,8 +248,6 @@ def flagger(
         Number of UV bins for uvbin_flagger (default: 30)
     binning_type : str, optional
         Binning type (linear or log)
-    normalized : bool, optional
-        Do normalization
     flagbackup : bool, optional
         Take flag backup or not
 
@@ -301,28 +299,30 @@ def flagger(
         elif datacolumn == "CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
             data = ms.getcol("CORRECTED_DATA")
         else:
-            data = ms.getcol("DATA") 
-        data_actual_shape = data.shape
-         
+            data = ms.getcol("DATA")
+
         # --- Get or Create FLAG Column ---
         if "FLAG" in ms.colnames():
             flags = ms.getcol("FLAG")
             # Check if flag shape matches data shape
-            if flags.shape != data_actual_shape:
+            if flags.shape != data.shape:
                 raise ValueError(
-                    f"FLAG column shape {flags.shape} does not match data column shape {data_actual_shape}."
+                    f"FLAG column shape {flags.shape} does not match data column shape {data.shape}."
                 )
         else:
-            flags = np.zeros(data_actual_shape, dtype=bool)  # Use determined shape
-            
+            flags = np.zeros(data.shape, dtype=bool)  # Use determined shape
+
         if normalized:
             ant1 = ms.getcol("ANTENNA1")
             ant2 = ms.getcol("ANTENNA2")
             time = ms.getcolo("TIME")
             data, flags = calc_normzlized_crosscorr(data, flags, ant1, ant2, time)
-
-        data = data.T
+        
+        data = (
+            data.T
+        )  
         flags = flags.T # Make transpose, because original code is written using casacore, which follows C convention
+        data_actual_shape = data.shape
         if len(data_actual_shape) == 3:
             n_rows, nchan, npol = data_actual_shape
         else:
