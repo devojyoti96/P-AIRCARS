@@ -1213,6 +1213,7 @@ def plot_hpc_collage(
                 ha="center", va="center",
                 transform=ax.transAxes
             )
+            ax.set_title("",fontsize=9)
     # ---- Layout (NO gaps, space for labels) ----
     plt.subplots_adjust(
             left=0.08, right=0.87, bottom=0.08, top=0.95, wspace=0.09, hspace=0.0
