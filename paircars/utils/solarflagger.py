@@ -3,7 +3,7 @@ import traceback
 from casatools import table, msmetadata
 from joblib import Parallel, delayed as jobdelayed
 from .flagging import do_flag_backup
-from .casatasks import normalized_crosscorr_ms
+from .casatasks import calc_normzlized_crosscorr
 
 #####################################################################################
 # This code is adapted from SIMPL pipeline for LOFAR: Dey et al., 2025, A&A, 704, A75
@@ -228,6 +228,7 @@ def flagger(
     num_processes=4,
     num_bins=30,
     binning_type="log",
+    normalized=False,
     flagbackup=True,
 ):
     """
@@ -247,6 +248,8 @@ def flagger(
         Number of UV bins for uvbin_flagger (default: 30)
     binning_type : str, optional
         Binning type (linear or log)
+    normalized : bool, optional
+        Do normalization
     flagbackup : bool, optional
         Take flag backup or not
 
@@ -298,7 +301,23 @@ def flagger(
         elif datacolumn == "CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
             data = ms.getcol("CORRECTED_DATA")
         else:
-            data = ms.getcol("DATA")
+            data = ms.getcol("DATA")  
+        # --- Get or Create FLAG Column ---
+        if "FLAG" in ms.colnames():
+            flags = ms.getcol("FLAG").T
+            # Check if flag shape matches data shape
+            if flags.shape != data_actual_shape:
+                raise ValueError(
+                    f"FLAG column shape {flags.shape} does not match data column shape {data_actual_shape}."
+                )
+        else:
+            flags = np.zeros(data_actual_shape, dtype=bool)  # Use determined shape
+            
+        if normalized:
+            ant1 = ms.getcol("ANTENNA1")
+            ant2 = ms.getcol("ANTENNA2")
+            time = ms.getcolo("TIME")
+            data, flags = calc_normzlized_crosscorr(data, flags, ant1, ant2, time)
 
         data = (
             data.T
@@ -311,16 +330,7 @@ def flagger(
                 f"Unexpected data dimensions in column '{datacolumn}'. "
                 f"Expected 3 (rows, chans, pols), got {len(data_actual_shape)} with shape {data_actual_shape}."
             )
-        # --- Get or Create FLAG Column ---
-        if "FLAG" in ms.colnames():
-            flags = ms.getcol("FLAG").T
-            # Check if flag shape matches data shape
-            if flags.shape != data_actual_shape:
-                raise ValueError(
-                    f"FLAG column shape {flags.shape} does not match data column shape {data_actual_shape}."
-                )
-        else:
-            flags = np.zeros(data_actual_shape, dtype=bool)  # Use determined shape
+        
         # --- Get UVW Data ---
         uvw = ms.getcol("UVW").T  # Due to original casacore functions
         if uvw.shape[0] != n_rows:
