@@ -1219,9 +1219,7 @@ def plot_hpc_collage(
             )
             ax.set_title("",fontsize=20)
     # ---- Layout (NO gaps, space for labels) ----
-    plt.subplots_adjust(
-         left=0.04, right=0.87, bottom=0.03, top=0.95, wspace=0.1, hspace=0.0
-    )
+    plt.subplots_adjust(left=0.04, right=0.87, bottom=0.03, top=0.95, wspace=0.1, hspace=0.0)
     # ---- Global labels ----
     fig.text(0.5, 0.02, "Solar-X", ha="center", fontsize=24)
     fig.text(
