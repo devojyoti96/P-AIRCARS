@@ -1223,9 +1223,9 @@ def plot_hpc_collage(
          left=0.04, right=0.87, bottom=0.03, top=0.95, wspace=0.1, hspace=0.0
     )
     # ---- Global labels ----
-    fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=24)
+    fig.text(0.5, 0.02, "Solar-X", ha="center", fontsize=24)
     fig.text(
-        0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=24
+        0.02, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=24
     )
     # ---- Save ----
     fig.savefig(outfile, dpi=120,  bbox_inches="tight")
