@@ -1139,6 +1139,10 @@ def plot_hpc_collage(
     ncols = 6
     total = nrows * ncols
     fig = plt.figure(figsize=(24, 20))
+    if len(maps)==0:
+        return 
+    else:
+        ref_map = maps[0][0] 
     for i in range(total):
         ax = plt.subplot(nrows, ncols, i + 1)
         if i < len(maps):
@@ -1183,18 +1187,26 @@ def plot_hpc_collage(
                     freq = None
                 if freq is not None:
                     ax.set_title(f"{freq:.0f} MHz", fontsize=9)
+                else:
+                    ax.set_title("",fontsize=9)
             except Exception:
                 pass
         else:
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_facecolor("black")  # nice for solar plots
-            # draw boundary box
+            ax = plt.subplot(nrows, ncols, i + 1, projection=ref_map)
+            try:
+                ax.coords.grid(False)
+                ax.coords[0].set_ticks_visible(False)
+                ax.coords[1].set_ticks_visible(False)
+                ax.coords[0].set_ticklabel_visible(False)
+                ax.coords[1].set_ticklabel_visible(False)
+            except Exception:
+                ax.set_xticks([])
+                ax.set_yticks([])
+            ax.set_facecolor("black")
             for spine in ax.spines.values():
                 spine.set_visible(True)
                 spine.set_color("white")
                 spine.set_linewidth(0.6)
-            # optional label
             ax.text(
                 0.5, 0.5, "No Data",
                 color="gray", fontsize=9,
