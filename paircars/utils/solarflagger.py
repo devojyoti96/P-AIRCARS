@@ -315,7 +315,7 @@ def flagger(
         if normalized:
             ant1 = ms.getcol("ANTENNA1")
             ant2 = ms.getcol("ANTENNA2")
-            time = ms.getcolo("TIME")
+            time = ms.getcol("TIME")
             data, flags = calc_normzlized_crosscorr(data, flags, ant1, ant2, time)
         
         data = (
