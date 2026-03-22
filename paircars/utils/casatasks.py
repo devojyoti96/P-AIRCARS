@@ -192,7 +192,7 @@ def single_mstransform(
         return
 
 
-def normalized_crosscorr_ms(msname, datacolumn="DATA"):
+def normalized_crosscorr_ms(msname, datacolumn="DATA", writeto_file=True):
     """
     Perform normalized cross-correlation of the measurement set
 
@@ -200,23 +200,31 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA"):
     ----------
     msname : str
         Measurement set
-    datacolumn : str
+    datacolumn : str, optional
         Data column to normalize
+    writeto_file : bool, optional
+        Whether write to a new ms or not
 
     Returns
     -------
     str
         Normalized measurement set
+    numpy.array
+        Normalized data (only if writeto_file is False)
+    numpy.array 
+        New flag (only if writeto_file is False)
     """
     try:
-        with suppress_output():
+        if writeto_file:
             msname = msname.rstrip("/")
             outfile = f"{msname}.norm"
             if os.path.exists(outfile):
                 os.system(f"rm -rf {outfile}")
             os.system(f"cp -r {msname} {outfile}")
+            msname = outfile
+        with suppress_output():
             tb = table()
-            tb.open(outfile, nomodify=False)
+            tb.open(msname, nomodify=False)
             datacolumn = datacolumn.upper()
             if datacolumn == "CORRECTED":
                 datacolumn = "CORRECTED_DATA"
@@ -270,11 +278,15 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA"):
             # Clean up
             flag[np.isnan(norm)] = True
             norm[np.isnan(norm)] = 0.0 + 0.0j
-            tb.putcol(datacolumn, norm)
-            tb.putcol("FLAG", flag)
-            tb.flush()
+            if writeto_file:
+                tb.putcol(datacolumn, norm)
+                tb.putcol("FLAG", flag)
+                tb.flush()
             tb.close()
-        return outfile
+        if writeto_file:
+            return outfile, np.array([]), np.array([])
+        else:
+            return outfile, norm, flag
     except Exception:
         traceback.print_exc()
-        return msname
+        return msname, np.array([]), np.array([])

@@ -1182,18 +1182,19 @@ def plot_hpc_collage(
         except Exception:
             pass
     # ---- Layout (NO gaps, space for labels) ----
-    plt.subplots_adjust(
+    '''plt.subplots_adjust(
         left=0.08, right=0.88, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
-    )
+    )'''
     # ---- Colorbar ----
     cax = fig.add_axes([0.90, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(im, cax=cax)
     cbar.set_label("Intensity", fontsize=10)
     # ---- Global labels ----
-    fig.text(0.5, 0.03, "Solar-X (arcsec)", ha="center", fontsize=12)
+    fig.text(0.5, 0.03, "Solar-X", ha="center", fontsize=12)
     fig.text(
-        0.03, 0.5, "Solar-Y (arcsec)", va="center", rotation="vertical", fontsize=12
+        0.03, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=12
     )
+    fig.tight_layout()
     # ---- Save ----
     fig.savefig(outfile, dpi=120)
     if showgui:
