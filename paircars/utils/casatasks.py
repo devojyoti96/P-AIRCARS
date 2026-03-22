@@ -269,12 +269,31 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA", writeto_file=True):
             valid = (idx1 >= 0) & (idx2 >= 0) & (ant1 != ant2)
             # Vectorized normalization
             norm = np.zeros_like(data, dtype=np.complex64)
-            auto1 = np.abs(data[..., idx1[valid]])
-            auto2 = np.abs(data[..., idx2[valid]])
-            denom = np.sqrt(auto1 * auto2)
-            # avoid zero
-            denom[denom < 1e-10] = np.nan
-            norm[..., valid] = data[..., valid] / denom
+            auto1_xx = np.abs(data[0, :, idx1[valid]])
+            auto2_xx = np.abs(data[0, :, idx2[valid]])
+            auto1_yy = np.abs(data[-1, :, idx1[valid]])
+            auto2_yy = np.abs(data[-1, :, idx2[valid]])
+            npol = data.shape[0]
+            if npol==2:
+                for p in range(npol):
+                    if p==0:
+                        denom = np.sqrt(auto1_xx * auto2_xx)
+                    else:
+                        denom = np.sqrt(auto1_yy * auto2_yy)
+                    denom[denom < 1e-10] = np.nan
+                    norm[p, : , valid] = data[p, : , valid] / denom
+            else:
+                for p in range(npol):
+                    if p==0:
+                        denom = np.sqrt(auto1_xx * auto2_xx)
+                    elif p==1:
+                        denom = np.sqrt(auto1_xx * auto2_yy)
+                    elif p==2:
+                        denom = np.sqrt(auto1_yy * auto2_xx)    
+                    else:
+                        denom = np.sqrt(auto1_yy * auto2_yy)
+                    denom[denom < 1e-10] = np.nan
+                    norm[p, :, valid] = data[p, :, valid] / denom
             # Clean up
             flag[np.isnan(norm)] = True
             norm[np.isnan(norm)] = 0.0 + 0.0j
