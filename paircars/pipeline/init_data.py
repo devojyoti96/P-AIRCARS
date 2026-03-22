@@ -178,7 +178,7 @@ def main(
     if check_port_status(port) is False:
         if do_kill_port:
             try:
-                kill_port(port)
+                kill_port(int(port))
                 check_free_port = False
             except Exception:
                 check_free_port = True
@@ -190,7 +190,7 @@ def main(
     if check_port_status(postgres_port) is False:
         if do_kill_port:
             try:
-                kill_port(postgres_port)
+                kill_port(int(postgres_port))
                 check_free_port = False
             except Exception:
                 check_free_port = True

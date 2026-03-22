@@ -234,7 +234,7 @@ def start_prefect_server(
     str
         Server process ID file
     """
-    kill_port(port)
+    kill_port(int(port))
     trial = 0
     while trial < 5:
         running = run_postgres(
@@ -344,31 +344,47 @@ def stop_prefect_server(scheduler_name="local"):
         os.system(f"rm -rf {cachedir}")
         return 1
     config = np.load(config_file, allow_pickle=True).all()
+    config = np.load(config_file, allow_pickle=True).all()
+    load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
+    env = os.environ.copy()
+    print("Prefect config in current environment ...")
+    result = subprocess.run(["prefect", "server", "stop"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    exit_code = result.returncode
+    if exit_code==0:
+        print("Prefect server stopped.")
+    else:
+        print("Could not stop prefect server.")
     postgres_port = int(
         config["PREFECT_API_DATABASE_CONNECTION_URL"].split(":")[-1].split("/")[0]
     )
     pid_file = config["PID_FILE"]
     cachedir = config["CACHEDIR"]
     try:
-        if not os.path.exists(pid_file):
-            try:
-                kill_port(config["SERVER_PORT"])
-                msg = 0
-            except Exception:
-                msg = 1
-        else:
+        if os.path.exists(pid_file):
             with open(pid_file, "r") as f:
                 pid = int(f.read().strip())
             print(f"Stopping Prefect server with PID {pid} ...")
             os.kill(pid, signal.SIGTERM)
         try:
+            print(f"Closing prefect server port: {config['SERVER_PORT']}")
+            kill_port(int(config["SERVER_PORT"]))
+            msg = 0
+            print(f"Closed port: {config['SERVER_PORT']}")
+        except Exception:
+            traceback.print_exc()
+            msg = 1
+            print(f"Could not close prefect server port: {config['SERVER_PORT']}")
+        try:
+            print(f"Closing postgreSQL server port: {postgres_port}")
             killed = kill_postgres(
                 postgres_port=postgres_port,
             )
             if not killed:
-                kill_port(postgres_port)
+                kill_port(int(postgres_port))
+            print(f"Closed port: {postgres_port}")
         except Exception:
-            kill_port(postgres_port)
+            traceback.print_exc()
+            print(f"Could not close postgreSQL server port: {postgres_port}")
         print(f"Server stopped and {cachedir} removed.")
         msg = 0
     except ProcessLookupError:

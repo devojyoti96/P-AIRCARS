@@ -1000,7 +1000,7 @@ def run_postgres(
         for pid in pids:
             terminate_process_and_children(pid)
         os.system(f"rm -rf {pid_file}")
-    kill_port(postgres_port)
+    kill_port(int(postgres_port))
 
     env = os.environ.copy()
 
@@ -1119,7 +1119,7 @@ def kill_postgres(
         for pid in pids:
             terminate_process_and_children(pid)
         os.system(f"rm -rf {pid_file}")
-    kill_port(postgres_port)
+    kill_port(int(postgres_port))
     env = os.environ.copy()
     ########################################################
     # Deleting any running postgres container and reinitiate
