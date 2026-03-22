@@ -1183,7 +1183,7 @@ def plot_hpc_collage(
             pass
     # ---- Layout (NO gaps, space for labels) ----
     plt.subplots_adjust(
-            left=0.08, right=0.86, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
+            left=0.08, right=0.84, bottom=0.08, top=0.95, wspace=0.0, hspace=0.0
     )
     # ---- Colorbar ----
     cax = fig.add_axes([0.88, 0.15, 0.02, 0.7])
