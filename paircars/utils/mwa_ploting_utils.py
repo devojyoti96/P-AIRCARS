@@ -1135,7 +1135,7 @@ def plot_hpc_collage(
         ncols = temp_nrows
     else:
         nrows = temp_nrows
-    fig = plt.figure(figsize=(3.5 * ncols, 3.5 * nrows))
+    fig = plt.figure(figsize=4 * ncols, 4 * nrows))
     for i, (m, hdr, obstime) in enumerate(maps):
         ax = plt.subplot(nrows, ncols, i + 1, projection=m)
         im = m.plot(axes=ax, cmap="inferno", norm=norm)
