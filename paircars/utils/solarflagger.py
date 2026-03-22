@@ -306,7 +306,7 @@ def flagger(
          
         # --- Get or Create FLAG Column ---
         if "FLAG" in ms.colnames():
-            flags = ms.getcol("FLAG").T
+            flags = ms.getcol("FLAG")
             # Check if flag shape matches data shape
             if flags.shape != data_actual_shape:
                 raise ValueError(
@@ -321,9 +321,8 @@ def flagger(
             time = ms.getcolo("TIME")
             data, flags = calc_normzlized_crosscorr(data, flags, ant1, ant2, time)
 
-        data = (
-            data.T
-        )  # Make transpose, because original code is written using casacore, which follows C convention
+        data = data.T
+        flags = flags.T # Make transpose, because original code is written using casacore, which follows C convention
         if len(data_actual_shape) == 3:
             n_rows, nchan, npol = data_actual_shape
         else:
