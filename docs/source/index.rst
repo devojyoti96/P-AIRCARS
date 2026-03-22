@@ -45,6 +45,7 @@ Contents
    kill
    hpc
    cli
+   solarviewer
    paircars
    dev
    ack

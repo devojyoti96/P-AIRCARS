@@ -6,8 +6,7 @@ This is the guideline to setup the pipeline in any workstation or HPC environmen
     Required python version 3.10. Other versions may work, but not tested. Hence, recommend to use python 3.10.
     
 .. tip::
-   To make life easier, both the Python and other dependencies can be installed using conda.
-   First, ensure you have **conda** installed, or follow the steps below to install it.
+   To make life easier, both the Python and other dependencies can be installed using conda. First, ensure you have **conda** installed, or follow the steps below to install it.
     
 
 Load installed conda module in HPC cluster
