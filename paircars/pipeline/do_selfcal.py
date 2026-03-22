@@ -37,7 +37,7 @@ from paircars.utils.logger_utils import (
 from paircars.utils.ms_metadata import (
     check_datacolumn_valid,
 )
-from paircars.utils.mwa_utils import freq_to_MWA_coarse
+from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_MWA_OBSID, get_MWA_coarse_chan
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -1823,12 +1823,11 @@ def main(
             os.makedirs(f"{workdir}/logs", exist_ok=True)
             tasks = []
             for ms in mslist:
-                logfile_prefix = (
-                    workdir
-                    + "/logs/"
-                    + os.path.basename(ms).split(".ms")[0]
-                    + "_selfcal"
-                )
+                obsid = get_MWA_OBSID(ms)
+                coarse_chan = get_MWA_coarse_chan(ms)
+                if len(coarse_chan)>1:
+                    coarse_chan = f"{min(coarse_chan)}-{max(coarse_chan)}"
+                logfile_prefix = f"{workdir}/logs/selfcal_{obsid}_ch_{coarse_chan}" 
                 print(f"Measurement set name: {ms}.")
                 print(f"Self-cal log file: {logfile_prefix}_int.log")
                 if do_polcal:

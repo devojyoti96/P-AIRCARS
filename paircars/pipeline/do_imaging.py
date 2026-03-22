@@ -32,7 +32,7 @@ from paircars.utils.logger_utils import (
     init_logger,
 )
 from paircars.utils.ms_metadata import check_datacolumn_valid
-from paircars.utils.mwa_utils import get_ncoarse
+from paircars.utils.mwa_utils import get_ncoarse, get_MWA_OBSID, get_MWA_coarse_chan
 from paircars.utils.mwa_ploting_utils import rename_mwasolar_image
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -719,12 +719,11 @@ def run_all_imaging(
             imsize = int(fov / cellsize)
             imsize = get_fft_size(imsize)
             os.makedirs(workdir + "/logs", exist_ok=True)
-            logfile = (
-                workdir
-                + "/logs/imaging_"
-                + os.path.basename(ms).split(".ms")[0]
-                + ".log"
-            )
+            obsid = get_MWA_OBSID(ms)
+            coarse_chan = get_MWA_coarse_chan(ms)
+            if len(coarse_chan)>1:
+                coarse_chan = f"{min(coarse_chan)}-{max(coarse_chan)}"
+            logfile = f"{workdir}/logs/imaging_{obsid}_ch_{coarse_chan}.log"            
             tasks.append(
                 delayed(perform_imaging)(
                     msname=ms,

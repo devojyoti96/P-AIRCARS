@@ -183,6 +183,8 @@ def split_target_scans(
             for i in range(len(coarse_chlist)):
                 good_spw = good_spwlist[i]
                 coarse_chan = coarse_chlist[i]
+                if len(coarse_chan)>1:
+                    coarse_chan = f"{min(coarse_chan)}-{max(coarse_chan)}"
                 outputvis = f"{workdir}/{prefix}_{obsid}_ch_{coarse_chan}.ms"
                 if os.path.exists(f"{outputvis}/.splited") and force_split is False:
                     print(f"{outputvis} is already splited successfully.")

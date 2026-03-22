@@ -299,21 +299,21 @@ def get_logid(logfile):
             log_name = f"Subflow: {name}"
             return f"{int(time.time())}_time_{log_name}"
     elif name.endswith("_int.log"):
-        name = name.split("_selfcal_int.log")[0].split("selfcal_")[1]
+        name = name.split("_int.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("_")[-1]
+        coarse_chan = name.split("_ch_")[-1]
         return (
             f"{int(time.time())}_time_Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
         )
     elif name.endswith("_pol.log"):
-        name = name.split("_selfcal_pol.log")[0].split("selfcal_")[1]
+        name = name.split("_pol.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("_")[-1]
+        coarse_chan = name.split("_ch_")[-1]
         return f"{int(time.time())}_time_Polarisation self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
-    elif "imaging_target" in name:
-        name = name.rstrip(".log").split("imaging_target_")[1]
+    elif "imaging" in name:
+        name = name.rstrip(".log").split("imaging_")[1]
         obsid = name.split("_")[0]
-        coarse_chan = name.split("_")[-1]
+        coarse_chan = name.split("_ch_")[-1]
         return f"{int(time.time())}_time_Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
         return f"{int(time.time())}_time_{name}"
