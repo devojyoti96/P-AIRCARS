@@ -351,7 +351,12 @@ def run_flag(
     flag_calibrators=True,
     flag_bad_spw=False,
     flag_quack=True,
+    use_rflag=False,
+    use_tfcrop=False,
+    flagdimension="freqtime",
+    flagdata_type="target",
     run_solarflagger=False,
+    normalize=False,
     restore_flag=True,
     jobid=0,
     cpu_frac=0.8,
@@ -380,8 +385,18 @@ def run_flag(
         Flag bad spectral windows
     flag_quack : bool, optional
         Flag quack timestamps
+    use_rflag : bool, optional
+        Use rflag or not
+    use_tfcrop : bool, optional
+        Use tfcrop or not
+    flagdimension : str, optional
+        Flag dimension (freq, time freqtime) 
+    flagdata_type : str, optional
+        Flag data type (cal, selfcal, target)
     run_solarflagger : bool, optional
         Run solar flagger or not
+    normalize : bool, optional
+        Use normalization in solar flagger
     restore_flag : bool, optional
         Restore flags or not
     jobid : int, optional
@@ -401,21 +416,14 @@ def run_flag(
         Success message
     int
         Succeeded ms number
-    intrun_solarflagger
+    int
         Failed ms number
     """
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
     if flag_calibrators:
-        flagdimension = "freqtime"
-        flagfield_type = "cal"
-        use_tfcrop = True
-        flag_basename = f"flagging_{flagfield_type}_calibrator"
-    else:
-        flagdimension = "freq"
-        flagfield_type = "target"
-        use_tfcrop = False
-        flag_basename = f"flagging_{flagfield_type}_target"
+        flagdata_type = "cal"
+    flag_basename = f"flagging_{flagdata_type}_{datacolumn}"
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
     logfile = f"{logdir}/{flag_basename}_{obsid}.log"
@@ -449,6 +457,7 @@ def run_flag(
                 flagdimension=flagdimension,
                 restore_flag=restore_flag,
                 run_solarflagger=run_solarflagger,
+                normalize=normalize,
                 flagbackup=False,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),

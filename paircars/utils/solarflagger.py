@@ -225,7 +225,7 @@ def flagger(
     msname,
     datacolumn,
     threshold=3.0,
-    normalized=False,
+    normalize=False,
     num_processes=4,
     num_bins=30,
     binning_type="log",
@@ -242,6 +242,8 @@ def flagger(
         Name of the data column (e.g. 'DATA', 'CORRECTED_DATA', 'RESIDUAL').
     threshold: float, optional
         Multiplier for the MAD-based flagging threshold.
+    normalize : bool, optional
+        Do normalization
     num_processes: int, optional
         Number of processes for parallel processing.
     num_bins: int, optional
@@ -314,7 +316,7 @@ def flagger(
         
         n_flagged = np.sum(flags) # Initial number of flags
         
-        if normalized:
+        if normalize:
             ant1 = ms.getcol("ANTENNA1")
             ant2 = ms.getcol("ANTENNA2")
             time = ms.getcol("TIME")

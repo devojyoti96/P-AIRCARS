@@ -224,8 +224,9 @@ def get_logid(logfile):
         "cor_phasecenter_target": "Moving phasecenter to solar center",
         "cor_sidereal_selfcal": "Correction of sidereal motion before self-calibration",
         "cor_sidereal_target": "Correction of sidereal motion for target scans",
-        "flagging_cal_calibrator": "Basic flagging of calibrators",
-        "flagging_target_target": "Basic flagging of targets",
+        "flagging_cal": "Basic flagging of calibrators",
+        "flagging_target": "Basic flagging of targets",
+        "flagging_selfcal": "Basic flagging of target before self-calibration",
         "modeling": "Simulating visibilities of calibrators",
         "split_calibrator": "Spliting calibrator scans",
         "split_target": "Spliting target",
@@ -241,6 +242,12 @@ def get_logid(logfile):
     for logmap_key in logmap_keys:
         if name.startswith(logmap_key):
             log_name = logmap[logmap_key]
+            if name.startswith("flagging"):
+                try:
+                    datacolumn = str(name.split(".log")[0].split("_")[2])
+                    log_name = f"{log_name}, datacolumn: {datacolumn}"
+                except Exception:
+                    pass
             try:
                 obsid = int(name.split(".log")[0].split("_")[-1])
                 log_name = f"{log_name} [{obsid}]"

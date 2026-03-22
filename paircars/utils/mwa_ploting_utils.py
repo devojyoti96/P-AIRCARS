@@ -1149,7 +1149,7 @@ def plot_hpc_collage(
             m, hdr, obstime = maps[i]
             ax.remove()
             ax = plt.subplot(nrows, ncols, i + 1, projection=m)
-            im = m.plot(axes=ax, cmap="inferno", norm=norm)
+            m.plot(axes=ax, cmap="inferno", norm=norm)
             if draw_limb:
                 m.draw_limb(axes=ax)
             ax.coords.grid(False)
@@ -1196,7 +1196,7 @@ def plot_hpc_collage(
             efmap = Map(zero_data, ref_map.meta)
             ax.remove()
             ax = plt.subplot(nrows, ncols, i + 1, projection=efmap)
-            im = efmap.plot(axes=ax, cmap="inferno", norm=norm)
+            efmap.plot(axes=ax, cmap="inferno", norm=norm)
             try:
                 ax.coords.grid(False)
                 ax.coords[0].set_ticks_visible(False)

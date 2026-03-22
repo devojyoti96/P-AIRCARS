@@ -404,7 +404,6 @@ def submit_local_master_flow(args, jobid):
             last_lines = deque(maxlen=500)
             only_run_print = False
             printing_traceback = False
-            traceback_done = False
             traceback_waittime = None
             last_write_time=time.time()
             with open(log_file, "r") as log:

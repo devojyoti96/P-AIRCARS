@@ -512,15 +512,23 @@ def basic_cal_subflow(
             print_banner("Starting task: Flagging calibrators.")
             try:
                 future_flag = run_flag.with_options(
-                    task_run_name=f"flag_{cal_obsid}"
+                    task_run_name=f"flag_cal_data_{cal_obsid}"
                 ).submit(
                     ",".join(split_cal_mslist),
                     cal_metafits,
                     workdir,
                     cal_outdir,
+                    datacolumn="data",
                     flag_calibrators=True,
-                    jobid=jobid,
+                    flag_bad_spw=False,
                     flag_quack=False,
+                    use_rflag=False,
+                    use_tfcrop=True,
+                    flagdimension="freqtime",
+                    flagdata_type="cal",
+                    run_solarflagger=False,
+                    normalize=False,
+                    restore_flag=True,
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
@@ -1089,8 +1097,79 @@ def selfcal_subflow(
                 print(ms)
 
             #########################################################
-            # Flagging on targets for self-calibration
+            # Flagging on targets datacolumn beforr self-calibration
             #########################################################
+            if emails != "":
+                email_msg = f"[{target_obsid}] Started flagging for self-calibration measurment sets data columns."
+                send_task_notification(
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
+                )
+            try:
+                future_flag = run_flag.with_options(
+                    task_run_name=f"flag_selfcal_data_{target_obsid}"
+                ).submit(
+                    ",".join(selfcal_mslist),
+                    target_metafits,
+                    workdir,
+                    target_outdir,
+                    datacolumn="data",
+                    flag_calibrators=False,
+                    flag_bad_spw=False,
+                    flag_quack=False,
+                    use_rflag=False,
+                    use_tfcrop=False,
+                    flagdimension="freqtime",
+                    flagdata_type="selfcal",
+                    run_solarflagger=True,
+                    normalize=True,
+                    restore_flag=True,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                )
+                msg, succeed, failed = future_flag.result()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Flagging for self-calibration measurment sets data columns are done.\nSucceeded: {succeed}, failed: {failed}."
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
+                    )
+                for s_ms in selfcal_mslist:
+                    s_ms = s_ms.rstrip("/")
+                    if os.path.exists(f"{s_ms}/.flag_failed"):
+                        print(
+                            f"Issue in flagging: {s_ms}. Check calibration solutions carefully."
+                        )
+                print_banner(
+                    "Finished task: Flagging for self-calibration measurment sets data columns are done."
+                )
+            except Exception:
+                print_banner(
+                    "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
+                )
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Error occured in flagging self-calibration measurement sets data columns."
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
+                    )
+            
             cal_applied = False
             ###################################
             # Apply basic calibration
@@ -1257,11 +1336,11 @@ def selfcal_subflow(
                             flow_name=f"subflow {flow_name}",
                         )
 
-            ############################
-            # Basic flagging for selfcal
-            ############################
+            #########################################################
+            # Basic flagging beforr selfcal on corrected data column 
+            #########################################################
             if emails != "":
-                email_msg = f"[{target_obsid}] Started flagging for self-calibration measurment sets."
+                email_msg = f"[{target_obsid}] Started flagging for self-calibration measurment sets corrected data columns."
                 send_task_notification(
                     emails,
                     email_msg,
@@ -1270,19 +1349,26 @@ def selfcal_subflow(
                     timestamp,
                     flow_name=f"subflow {flow_name}",
                 )
-            print_banner("Starting task: Flagging selfcal targets.")
+            print_banner("Starting task: Flagging selfcal targets corrected data columns.")
             try:
                 future_flag = run_flag.with_options(
-                    task_run_name=f"flag_{target_obsid}"
+                    task_run_name=f"flag_selfcal_corrected_{target_obsid}"
                 ).submit(
                     ",".join(selfcal_mslist),
                     target_metafits,
                     workdir,
                     target_outdir,
-                    flag_calibrators=False,
-                    flag_quack=False,
                     datacolumn="corrected",
-                    run_solarflagger=use_solarflagger,
+                    flag_calibrators=False,
+                    flag_bad_spw=False,
+                    flag_quack=False,
+                    use_rflag=False,
+                    use_tfcrop=False,
+                    flagdimension="freqtime",
+                    flagdata_type="selfcal",
+                    run_solarflagger=True,
+                    normalize=True,
+                    restore_flag=False,
                     jobid=jobid,
                     cpu_frac=round(cpu_frac, 2),
                     mem_frac=round(mem_frac, 2),
@@ -1291,7 +1377,7 @@ def selfcal_subflow(
                 )
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
-                    email_msg = f"[{target_obsid}] Flagging for self-calibration measurment sets are done.\nSucceeded: {succeed}, failed: {failed}."
+                    email_msg = f"[{target_obsid}] Flagging for self-calibration measurment sets corrected data columns are done.\nSucceeded: {succeed}, failed: {failed}."
                     send_task_notification(
                         emails,
                         email_msg,
@@ -1307,7 +1393,7 @@ def selfcal_subflow(
                             f"Issue in flagging: {s_ms}. Check calibration solutions carefully."
                         )
                 print_banner(
-                    "Finished task: Flagging for self-calibration measurment sets are done."
+                    "Finished task: Flagging for self-calibration measurment sets corrected data columns are done."
                 )
             except Exception:
                 print_banner(
@@ -1315,7 +1401,7 @@ def selfcal_subflow(
                 )
                 traceback.print_exc()
                 if emails != "":
-                    email_msg = f"[{target_obsid}] Error occured in flagging self-calibration measurement sets."
+                    email_msg = f"[{target_obsid}] Error occured in flagging self-calibration measurement sets corrected data columns."
                     send_task_notification(
                         emails,
                         email_msg,
@@ -1557,7 +1643,6 @@ def applysol_subflow(
     has_cal,
     do_polcal,
     do_sidereal_cor,
-    use_solarflagger,
     # Applysol
     freqavg,
     timeavg,
@@ -1702,6 +1787,77 @@ def applysol_subflow(
                 )
             return 1, []
         print(f"Target mslist : {[os.path.basename(i) for i in split_target_mslist]}")
+        
+        ################################
+        # Basic flagging on data column
+        ################################
+        if emails != "":
+            email_msg = (
+                f"[{target_obsid}] Started flagging of final target measurement sets data column."
+            )
+            send_task_notification(
+                emails,
+                email_msg,
+                jobid,
+                target_obsid,
+                timestamp,
+                flow_name=f"subflow {flow_name}",
+            )
+        print_banner("Starting task: Flagging final target measurement sets data column.")
+        try:
+            future_flag = run_flag.with_options(
+                task_run_name=f"flag_target_data_{target_obsid}"
+            ).submit(
+                ",".join(split_target_mslist),
+                target_metafits,
+                workdir,
+                target_outdir,
+                datacolumn="data",
+                flag_calibrators=False,
+                flag_bad_spw=False,
+                flag_quack=False,
+                use_rflag=False,
+                use_tfcrop=False,
+                flagdimension="freqtime",
+                flagdata_type="target",
+                run_solarflagger=True,
+                normalize=True,
+                restore_flag=True,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+                obsid=target_obsid,
+            )
+            msg, succeed, failed = future_flag.result()
+            if emails != "":
+                email_msg = f"[{target_obsid}] Flagging of final target measurement sets data column are done.\nSucceeded: {succeed}, failed: {failed}."
+                send_task_notification(
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
+                )
+            print_banner(
+                "Finished task: Flagging of final target measurement sets data column are done."
+            )
+        except Exception:
+            print_banner(
+                "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
+            )
+            traceback.print_exc()
+            if emails != "":
+                email_msg = f"[{target_obsid}] Error occured in flagging of final target measurement sets data column."
+                send_task_notification(
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
+                )
 
         ####################################
         # Applying basic calibration
@@ -1899,12 +2055,12 @@ def applysol_subflow(
                         flow_name=f"subflow {flow_name}",
                     )
 
-        ############################
-        # Basic flagging
-        ############################
+        ###################################
+        # Basic flagging on corrected data 
+        ###################################
         if emails != "":
             email_msg = (
-                f"[{target_obsid}] Started flagging of final target measurement sets."
+                f"[{target_obsid}] Started flagging of final target measurement sets corrected data column."
             )
             send_task_notification(
                 emails,
@@ -1914,40 +2070,26 @@ def applysol_subflow(
                 timestamp,
                 flow_name=f"subflow {flow_name}",
             )
-        print_banner("Starting task: Flagging final target measurement sets.")
-        if not use_solarflagger:
-            dr_files = glob.glob(f"{selfcaldir}/selfcal_{target_obsid}*.DR")
-            if len(dr_files) > 0:
-                int_DR_list = []
-                pol_DR_list = []
-                for dr_file in dr_files:
-                    int_DR, pol_DR = np.load(dr_file, allow_pickle=True)
-                    int_DR_list.append(int_DR)
-                    pol_DR_list.append(pol_DR)
-                avg_int_DR = np.nanmedian(int_DR_list)
-                avg_pol_DR = np.nanmedian(pol_DR_list)
-                if avg_int_DR < 100 or avg_pol_DR < 100:
-                    print(
-                        f"Average intensity self-calibration dynamic range: {avg_int_DR} is smaller than 100."
-                    )
-                    print(
-                        f"Average polarisation self-calibration dynamic range: {avg_pol_DR} is smaller than 100."
-                    )
-                    print("Using solar flagger.")
-                    use_solarflagger = True
-
+        print_banner("Starting task: Flagging final target measurement sets corrected data column.")
         try:
             future_flag = run_flag.with_options(
-                task_run_name=f"flag_{target_obsid}"
+                task_run_name=f"flag_target_corrected_{target_obsid}"
             ).submit(
                 ",".join(split_target_mslist),
                 target_metafits,
                 workdir,
                 target_outdir,
-                flag_calibrators=False,
-                flag_quack=False,
                 datacolumn="corrected",
-                run_solarflagger=use_solarflagger,
+                flag_calibrators=False,
+                flag_bad_spw=False,
+                flag_quack=False,
+                use_rflag=False,
+                use_tfcrop=False,
+                flagdimension="freqtime",
+                flagdata_type="target",
+                run_solarflagger=True,
+                normalize=True,
+                restore_flag=False,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
@@ -1956,7 +2098,7 @@ def applysol_subflow(
             )
             msg, succeed, failed = future_flag.result()
             if emails != "":
-                email_msg = f"[{target_obsid}] Flagging of final target measurement sets are done.\nSucceeded: {succeed}, failed: {failed}."
+                email_msg = f"[{target_obsid}] Flagging of final target measurement sets corrected data columns are done.\nSucceeded: {succeed}, failed: {failed}."
                 send_task_notification(
                     emails,
                     email_msg,
@@ -1966,7 +2108,7 @@ def applysol_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner(
-                "Finished task: Flagging of final target measurement sets are done."
+                "Finished task: Flagging of final target measurement sets corrected data columns are done."
             )
         except Exception:
             print_banner(
@@ -1974,7 +2116,7 @@ def applysol_subflow(
             )
             traceback.print_exc()
             if emails != "":
-                email_msg = f"[{target_obsid}] Error occured in flagging of final target measurement sets."
+                email_msg = f"[{target_obsid}] Error occured in flagging of final target measurement sets corrected data columns."
                 send_task_notification(
                     emails,
                     email_msg,
