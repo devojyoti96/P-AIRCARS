@@ -1192,7 +1192,11 @@ def plot_hpc_collage(
             except Exception:
                 pass
         else:
-            ax = plt.subplot(nrows, ncols, i + 1, projection=ref_map)
+            zero_data = np.zeros_like(ref_map.data)
+            efmap = Map(zero_data, ref_map.meta)
+            ax.remove()
+            ax = plt.subplot(nrows, ncols, i + 1, projection=efmap)
+            im = efmap.plot(axes=ax, cmap="inferno", norm=norm)
             try:
                 ax.coords.grid(False)
                 ax.coords[0].set_ticks_visible(False)
