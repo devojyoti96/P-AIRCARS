@@ -70,6 +70,7 @@ dependencies = [
     "drms==0.8.0",
     "exceptiongroup==1.2.2",
     "executing==2.0.1",
+    "fastapi==0.131.0",
     "fasteners==0.19",
     "fonttools==4.53.1",
     "frozenlist==1.5.0",
