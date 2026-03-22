@@ -405,13 +405,16 @@ def submit_local_master_flow(args, jobid):
             only_run_print = False
             printing_traceback = False
             traceback_waittime = None
-            last_write_time=time.time()
+            last_write_time = time.time()
             with open(log_file, "r") as log:
                 log.seek(0, os.SEEK_END)
                 while True:
                     line = log.readline()
-                    wait_time = time.time()-last_write_time
-                    if traceback_waittime is not None and wait_time>traceback_waittime:
+                    wait_time = time.time() - last_write_time
+                    if (
+                        traceback_waittime is not None
+                        and wait_time > traceback_waittime
+                    ):
                         return 1
                     if not line:
                         time.sleep(0.5)
@@ -426,7 +429,7 @@ def submit_local_master_flow(args, jobid):
                         "traceback" in lower or "killed" in lower
                     ) and not printing_traceback:
                         printing_traceback = True
-                        traceback_waittime=15
+                        traceback_waittime = 15
                     if (
                         printing_traceback
                         or not only_run_print
@@ -435,7 +438,7 @@ def submit_local_master_flow(args, jobid):
                     ):
                         sys.stdout.write(line)
                         sys.stdout.flush()
-                        last_write_time=time.time()
+                        last_write_time = time.time()
                     if (
                         "p-aircars execution is finished" in lower
                         or "cluster closed" in lower

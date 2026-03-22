@@ -163,7 +163,7 @@ def test_run_all_imaging(
     workdir = "/tmp/mockwork"
     outdir = "/tmp/mockout"
 
-    result, succeed, failed, total_images  = run_all_imaging(
+    result, succeed, failed, total_images = run_all_imaging(
         mslist,
         client,
         workdir=workdir,
@@ -197,8 +197,8 @@ def test_run_all_imaging(
 @patch("paircars.pipeline.do_imaging.time.sleep", return_value=None)
 @patch("paircars.pipeline.do_imaging.traceback.print_exc", return_value=None)
 @patch("paircars.pipeline.do_imaging.run_all_imaging")
-@patch("paircars.pipeline.do_imaging.os.chdir",return_value=True)
-@patch("paircars.pipeline.do_imaging.get_ncoarse",return_value=1)
+@patch("paircars.pipeline.do_imaging.os.chdir", return_value=True)
+@patch("paircars.pipeline.do_imaging.get_ncoarse", return_value=1)
 def test_main(
     mock_ncoarse,
     mock_chdir,
@@ -240,7 +240,7 @@ def test_main(
         mock_run_all_imaging.return_value = (0, 1, 0, 1)
     else:
         mock_run_all_imaging.side_effect = Exception("Mock failure")
-        
+
     dask_client = MagicMock()
     msg, succeed, failed, total_images = main(
         mslist=mslist_str,
@@ -280,7 +280,7 @@ def test_main(
         ),
     ],
 )
-@patch("paircars.pipeline.do_imaging.main", return_value= (0, 1, 0, 1))
+@patch("paircars.pipeline.do_imaging.main", return_value=(0, 1, 0, 1))
 @patch("paircars.pipeline.do_imaging.sys.exit")
 @patch("paircars.pipeline.do_imaging.argparse.ArgumentParser.print_help")
 def test_cli_do_imaging(mock_print_help, mock_exit, mock_main, argv, should_exit):
@@ -289,4 +289,3 @@ def test_cli_do_imaging(mock_print_help, mock_exit, mock_main, argv, should_exit
 
         result = do_imaging.cli()
         assert result == should_exit
-        

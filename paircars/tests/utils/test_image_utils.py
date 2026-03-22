@@ -128,7 +128,8 @@ def test_make_stokes_wsclean_imagecube(dummy_image):
     result = make_stokes_wsclean_imagecube([dummy_image], outfile_name)
     assert result == outfile_name
     os.system(f"rm -rf {outfile_name}")
-    
+
+
 @pytest.mark.parametrize(
     "ctype_key",
     ["CTYPE3", "CTYPE4"],
@@ -156,8 +157,10 @@ def test_filter_images(mock_getheader, mock_mjdsec, ctype_key):
             "DATE-OBS": "2023-01-01T00:02:00.000",
         },
     }
+
     def header_side_effect(image):
         return headers[image]
+
     mock_getheader.side_effect = header_side_effect
     times = {
         "2023-01-01T00:00:00": 0,

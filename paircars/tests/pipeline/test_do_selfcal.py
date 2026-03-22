@@ -2,12 +2,14 @@ import pytest
 from unittest.mock import patch, MagicMock
 from itertools import cycle
 from paircars.pipeline.do_selfcal import *
+
 try:
     logfile = casalog.logfile()
     os.system(f"rm -rf {logfile}")
 except Exception:
     pass
-    
+
+
 @patch("paircars.pipeline.do_selfcal.drop_cache")
 @patch("paircars.pipeline.do_selfcal.clean_shutdown")
 @patch("paircars.pipeline.do_selfcal.time.sleep", return_value=None)
@@ -168,15 +170,15 @@ def test_do_selfcal_function(
 @patch("paircars.pipeline.do_selfcal.uvbin_flag", return_value=0)
 @patch("paircars.pipeline.do_selfcal.check_datacolumn_valid", return_value=True)
 @patch("paircars.pipeline.do_selfcal.msmetadata")
-@patch("casatasks.flagmanager",return_value=True)
+@patch("casatasks.flagmanager", return_value=True)
 @patch("casatasks.flagdata")
 @patch("casatasks.split")
 @patch("paircars.pipeline.do_selfcal.limit_threads")
 @patch("paircars.pipeline.do_selfcal.selfcal_round")
-@patch("paircars.pipeline.do_selfcal.do_flag_backup",return_value=True)
-@patch("paircars.pipeline.do_selfcal.flag_non_disk",return_value=0)
-@patch("paircars.pipeline.do_selfcal.get_chans_flag",return_value= ([0],[]))
-@patch("paircars.pipeline.do_selfcal.weighted_mean",return_value= (1,0.1))
+@patch("paircars.pipeline.do_selfcal.do_flag_backup", return_value=True)
+@patch("paircars.pipeline.do_selfcal.flag_non_disk", return_value=0)
+@patch("paircars.pipeline.do_selfcal.get_chans_flag", return_value=([0], []))
+@patch("paircars.pipeline.do_selfcal.weighted_mean", return_value=(1, 0.1))
 def test_do_polselfcal(
     mock_mean,
     mock_get_chans_flag,
@@ -376,8 +378,8 @@ def test_do_full_selfcal(
 @patch("paircars.pipeline.do_selfcal.get_quartical_table_metadata")
 @patch("paircars.pipeline.do_selfcal.freq_to_MWA_coarse", return_value=10)
 @patch("paircars.pipeline.do_selfcal.do_full_selfcal")
-@patch("paircars.pipeline.do_selfcal.os.chdir",return_value=True)
-@patch("paircars.pipeline.do_selfcal.get_ncoarse",return_value=1)
+@patch("paircars.pipeline.do_selfcal.os.chdir", return_value=True)
+@patch("paircars.pipeline.do_selfcal.get_ncoarse", return_value=1)
 def test_main_selfcal(
     mock_ncoarse,
     mock_chdir,
@@ -488,7 +490,7 @@ def test_main_selfcal(
         ),
     ],
 )
-@patch("paircars.pipeline.do_selfcal.main", return_value= (0, 0, 0, 0, 0))
+@patch("paircars.pipeline.do_selfcal.main", return_value=(0, 0, 0, 0, 0))
 @patch("paircars.pipeline.do_selfcal.sys.exit")
 @patch("paircars.pipeline.do_selfcal.argparse.ArgumentParser.print_help")
 def test_cli_selfcal(mock_print_help, mock_exit, mock_main, argv, should_exit):

@@ -512,14 +512,10 @@ def submit_slurm_master_flow(args, jobid):
                             time.sleep(0.5)
                             continue
                         last_lines.append(line)
-                        if (
-                            "task run" in line.lower()
-                            or "flow run" in line.lower()
-                        ):
+                        if "task run" in line.lower() or "flow run" in line.lower():
                             only_run_print = True
                         if not only_run_print or (
-                            "task run" in line.lower()
-                            or "flow run" in line.lower()
+                            "task run" in line.lower() or "flow run" in line.lower()
                         ):
                             sys.stdout.write(line)
                             sys.stdout.flush()

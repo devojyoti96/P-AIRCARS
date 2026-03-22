@@ -313,19 +313,19 @@ def flagger(
                 )
         else:
             flags = np.zeros(data.shape, dtype=bool)  # Use determined shape
-        
-        n_flagged = np.sum(flags) # Initial number of flags
-        
+
+        n_flagged = np.sum(flags)  # Initial number of flags
+
         if normalize:
             ant1 = ms.getcol("ANTENNA1")
             ant2 = ms.getcol("ANTENNA2")
             time = ms.getcol("TIME")
             data, flags = calc_normzlized_crosscorr(data, flags, ant1, ant2, time)
-        
-        data = (
-            data.T
-        )  
-        flags = flags.T # Make transpose, because original code is written using casacore, which follows C convention
+
+        data = data.T
+        flags = (
+            flags.T
+        )  # Make transpose, because original code is written using casacore, which follows C convention
         data_actual_shape = data.shape
         if len(data_actual_shape) == 3:
             n_rows, nchan, npol = data_actual_shape
@@ -334,7 +334,7 @@ def flagger(
                 f"Unexpected data dimensions in column '{datacolumn}'. "
                 f"Expected 3 (rows, chans, pols), got {len(data_actual_shape)} with shape {data_actual_shape}."
             )
-        
+
         # --- Get UVW Data ---
         uvw = ms.getcol("UVW").T  # Due to original casacore functions
         if uvw.shape[0] != n_rows:

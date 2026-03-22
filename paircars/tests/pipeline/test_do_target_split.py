@@ -113,8 +113,8 @@ def test_split_target_scans(
 @patch("paircars.pipeline.do_target_split.scale_worker_and_wait")
 @patch("paircars.pipeline.do_target_split.init_logger")
 @patch("paircars.pipeline.do_target_split.split_target_scans")
-@patch("paircars.pipeline.do_target_split.os.chdir",return_value=True)
-@patch("paircars.pipeline.do_target_split.get_ncoarse",return_value=1)
+@patch("paircars.pipeline.do_target_split.os.chdir", return_value=True)
+@patch("paircars.pipeline.do_target_split.get_ncoarse", return_value=1)
 def test_main_split_target_scans(
     mock_ncoarse,
     mock_chdir,
@@ -186,7 +186,7 @@ def test_main_split_target_scans(
         ),  # Normal CLI call
     ],
 )
-@patch("paircars.pipeline.do_target_split.main", return_value= (0, 1, 1))
+@patch("paircars.pipeline.do_target_split.main", return_value=(0, 1, 1))
 @patch("paircars.pipeline.do_target_split.sys.exit")
 @patch("paircars.pipeline.do_target_split.argparse.ArgumentParser.print_help")
 def test_cli_split_target_scans(

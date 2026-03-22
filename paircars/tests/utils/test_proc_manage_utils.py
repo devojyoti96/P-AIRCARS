@@ -107,5 +107,3 @@ def test_scale_worker_and_wait(
     assert result == expected_return
     # Ensure scale() was called correctly
     mock_cluster.scale.assert_called_once_with(target_workers)
-
-

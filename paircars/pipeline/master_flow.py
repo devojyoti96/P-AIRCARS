@@ -183,7 +183,7 @@ def master_control(
     redo_basic_cal : bool, optional
         Redo basic calibration
     use_solarflagger : bool, optional
-        Use solar flagger during self-calibration or not
+        Use solar flagger on corrected data or not
 
     freqrange : str, optional
         Frequency range to image in MHz (xx1~xx2,xx3~xx4,)
@@ -609,7 +609,7 @@ def master_control(
     # Change to workdir
     ##########################
     os.chdir(workdir)
-    
+
     #####################################
     # Setup dask client
     #####################################
@@ -1163,6 +1163,7 @@ def master_control(
                 has_cal=has_cal,
                 do_polcal=do_polcal,
                 do_sidereal_cor=do_sidereal_cor,
+                use_solarflagger=use_solarflagger,
                 freqavg=freqavg,
                 timeavg=timeavg,
                 quack_timestamps=quack_timestamps,
@@ -1560,7 +1561,7 @@ def cli():
     advanced_cal.add_argument(
         "--use_solarflagger",
         action="store_true",
-        help="Use solar flagger during self-calibration or not",
+        help="Use solar flagger on corrected data or not",
     )
 
     # === Advanced imaging parameters ===

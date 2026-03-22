@@ -8,7 +8,7 @@ def test_check_permission():
     cwd = os.getcwd()
     assert check_permission(cwd) is True
     assert check_permission("/") is False
-    
+
 
 def test_suppress_output_fd():
     with suppress_output():

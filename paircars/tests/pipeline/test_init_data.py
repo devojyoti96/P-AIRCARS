@@ -199,7 +199,17 @@ def test_init_paircars_data(
         (False, 1),
     ],
 )
-@patch("paircars.pipeline.init_data.start_prefect_server",return_value = (0, "config.npy", "profile.path", "prefect.env", "prefect.dashboard", "prefect.pid"))
+@patch(
+    "paircars.pipeline.init_data.start_prefect_server",
+    return_value=(
+        0,
+        "config.npy",
+        "profile.path",
+        "prefect.env",
+        "prefect.dashboard",
+        "prefect.pid",
+    ),
+)
 def test_main(mock_prefect, init_flag, expected_return, monkeypatch):
     from paircars.pipeline import init_data
 
@@ -228,19 +238,19 @@ def test_main(mock_prefect, init_flag, expected_return, monkeypatch):
         "initialize_shadems_container",
         Mock(return_value="paircarsshadems"),
     )
-    
+
     monkeypatch.setattr(
         init_data,
         "initialize_postgres_container",
         Mock(return_value="paircarspostgres"),
     )
-    
+
     monkeypatch.setattr(
         init_data,
         "initialize_hyperdrive_container",
         Mock(return_value="paircarshyperdrive"),
     )
-    
+
     monkeypatch.setattr(
         init_data,
         "initialize_hyperbeam_container",

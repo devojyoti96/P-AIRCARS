@@ -195,7 +195,7 @@ def single_mstransform(
 def calc_normzlized_crosscorr(data, flag, ant1, ant2, time):
     """
     Calculate normalized cross correlation
-    
+
     Parameters
     ----------
     data : numpy.array
@@ -208,12 +208,12 @@ def calc_normzlized_crosscorr(data, flag, ant1, ant2, time):
         Antenna 2 array
     time : numpy.array
         Time array
-        
+
     Returns
     -------
     numpy.array
         Normalized data (only if writeto_file is False)
-    numpy.array 
+    numpy.array
         New flag (only if writeto_file is False)
     """
     nrow = data.shape[-1]
@@ -224,9 +224,7 @@ def calc_normzlized_crosscorr(data, flag, ant1, ant2, time):
     auto_time = time[auto_mask]
     # Build lookup (vectorized via sorting)
     # Combine (time, antenna) into structured array
-    auto_keys = np.core.records.fromarrays(
-        [auto_time, auto_ant], names="time,ant"
-    )
+    auto_keys = np.core.records.fromarrays([auto_time, auto_ant], names="time,ant")
     cross_keys_1 = np.core.records.fromarrays([time, ant1], names="time,ant")
     cross_keys_2 = np.core.records.fromarrays([time, ant2], names="time,ant")
     sort_idx = np.argsort(auto_keys)
@@ -254,21 +252,21 @@ def calc_normzlized_crosscorr(data, flag, ant1, ant2, time):
     auto2_yy = np.abs(data[-1, :, idx2[valid]])
     npol = data.shape[0]
     with suppress_output():
-        if npol==2:
+        if npol == 2:
             for p in range(npol):
-                if p==0:
+                if p == 0:
                     denom = np.sqrt(auto1_xx * auto2_xx)
                 else:
                     denom = np.sqrt(auto1_yy * auto2_yy)
-                norm[p, : , valid] = data[p, : , valid] / denom
+                norm[p, :, valid] = data[p, :, valid] / denom
         else:
             for p in range(npol):
-                if p==0:
+                if p == 0:
                     denom = np.sqrt(auto1_xx * auto2_xx)
-                elif p==1:
+                elif p == 1:
                     denom = np.sqrt(auto1_xx * auto2_yy)
-                elif p==2:
-                    denom = np.sqrt(auto1_yy * auto2_xx)    
+                elif p == 2:
+                    denom = np.sqrt(auto1_yy * auto2_xx)
                 else:
                     denom = np.sqrt(auto1_yy * auto2_yy)
                 norm[p, :, valid] = data[p, :, valid] / denom
@@ -276,8 +274,8 @@ def calc_normzlized_crosscorr(data, flag, ant1, ant2, time):
     flag[np.isnan(norm)] = True
     norm[np.isnan(norm)] = 0.0 + 0.0j
     return norm, flag
-    
-    
+
+
 def normalized_crosscorr_ms(msname, datacolumn="DATA"):
     """
     Perform normalized cross-correlation of the measurement set

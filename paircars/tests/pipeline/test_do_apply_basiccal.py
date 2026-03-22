@@ -69,6 +69,7 @@ def test_applysol(
                 )
             },
         ):
+
             def exists_side_effect(path):
                 if raise_exc:
                     raise Exception("boom")
@@ -79,6 +80,7 @@ def test_applysol(
                 if path.endswith(".flagversions"):
                     return True
                 return True
+
             m_exists.side_effect = exists_side_effect
             result = applysol(
                 msname,
@@ -258,7 +260,7 @@ def test_main_applysol(
             if path == "/cal":
                 return caldir_exists
             return True
-           
+
         m_chdir.return_value = 0
         m_exists.side_effect = exists_side_effect
         m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir", 1)
@@ -300,7 +302,7 @@ def test_main_applysol(
                 logfile=None,
                 dask_client=None if not provide_dask else fake_client,
             )
-        assert result == run_result[0] 
+        assert result == run_result[0]
         assert succeed == run_result[1]
         assert failed == run_result[2]
         if not provide_dask:
@@ -327,7 +329,7 @@ def test_main_applysol(
         ),
     ],
 )
-@patch("paircars.pipeline.do_apply_basiccal.main", return_value=(0,1,0))
+@patch("paircars.pipeline.do_apply_basiccal.main", return_value=(0, 1, 0))
 @patch("paircars.pipeline.do_apply_basiccal.sys.exit")
 @patch("paircars.pipeline.do_apply_basiccal.argparse.ArgumentParser.print_help")
 def test_cli(mock_print_help, mock_exit, mock_main, argv, should_exit):

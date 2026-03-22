@@ -13,14 +13,15 @@ try:
 except BaseException:
     traceback.print_exc()
     pass
-    
-    
+
+
 def test_fill_nan_gains():
-    x = np.array([1,2,3,4,5])
+    x = np.array([1, 2, 3, 4, 5])
     data = np.array([1.0, np.nan, 3.0, np.nan, 5.0])
     result = fill_nan_gains(x, data)
-    expected = np.array([1,2,3,4,5], dtype=float)
+    expected = np.array([1, 2, 3, 4, 5], dtype=float)
     np.testing.assert_allclose(result, expected)
+
 
 def test_fluxcal_caltable(dummy_caltable):
     scaled_caltable = dummy_caltable.split(".bcal")[0] + "_scaled.bcal"
@@ -53,6 +54,7 @@ def test_merge_caltables(dummy_caltables, tmp_path):
     tb.close()
     assert merged_rows == 2 * single_rows
 
+
 @pytest.mark.parametrize("overwrite", [True, False])
 @patch("paircars.utils.calibration.os.system")
 @patch("paircars.utils.calibration.os.path.exists")
@@ -70,6 +72,7 @@ def test_interpolate_bpass(
     freqs = np.array([[100.0, 110.0, 120.0]])
     gains = np.ones((2, 3, 2), dtype=complex)
     flags = np.zeros((2, 3, 2), dtype=bool)
+
     def getcol_side_effect(name):
         if name == "CHAN_FREQ":
             return freqs
@@ -77,6 +80,7 @@ def test_interpolate_bpass(
             return gains.copy()
         if name == "FLAG":
             return flags.copy()
+
     tb.getcol.side_effect = getcol_side_effect
     mock_fill_nan.side_effect = lambda x, y: y
     mock_exists.return_value = False
@@ -90,8 +94,8 @@ def test_interpolate_bpass(
     assert tb.open.called
     assert tb.getcol.called
     assert tb.putcol.called
-    
-    
+
+
 @pytest.mark.parametrize("overwrite", [True, False])
 @patch("paircars.utils.calibration.os.system")
 @patch("paircars.utils.calibration.dask.compute")
@@ -136,7 +140,8 @@ def test_interpolate_quartical(
     assert mock_xds_from.called
     assert mock_xds_to.called
     assert mock_compute.called
-    
+
+
 @patch("paircars.utils.calibration.table")
 def test_get_cal_flag_info(mock_table):
     tb = MagicMock()
@@ -155,14 +160,18 @@ def test_get_cal_flag_info(mock_table):
     # Fully flag time index 1
     flags[:, :, 2:] = True
     times = np.array([1, 1, 2, 2])
+
     def getcol_side_effect(col):
         if col == "FLAG":
             return flags
         elif col == "TIME":
             return times
+
     tb.getcol.side_effect = getcol_side_effect
     result = get_cal_flag_info("fake_caltable")
-    flag_chans, flag_ants, flag_times, flag_frac, chan_frac, ant_frac, time_frac = result
+    flag_chans, flag_ants, flag_times, flag_frac, chan_frac, ant_frac, time_frac = (
+        result
+    )
     # ---- Assertions ----
     assert isinstance(flag_chans, list)
     assert isinstance(flag_ants, list)
@@ -175,7 +184,7 @@ def test_get_cal_flag_info(mock_table):
 
     assert tb.open.called
     assert tb.close.called
-    
+
 
 def test_get_psf_size(dummy_msname):
     assert get_psf_size(dummy_msname) == 214.43

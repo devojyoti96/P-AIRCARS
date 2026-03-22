@@ -109,8 +109,8 @@ def test_cor_sidereal_motion(
 @patch("paircars.pipeline.do_sidereal_cor.clean_shutdown")
 @patch("time.sleep", return_value=None)
 @patch("traceback.print_exc", return_value=None)
-@patch("paircars.pipeline.do_sidereal_cor.os.chdir",return_value=True)
-@patch("paircars.pipeline.do_sidereal_cor.get_ncoarse",return_value=1)
+@patch("paircars.pipeline.do_sidereal_cor.os.chdir", return_value=True)
+@patch("paircars.pipeline.do_sidereal_cor.get_ncoarse", return_value=1)
 def test_main_sidereal(
     mock_ncoarse,
     mock_chdir,
@@ -164,7 +164,7 @@ def test_main_sidereal(
         ),  # Normal
     ],
 )
-@patch("paircars.pipeline.do_sidereal_cor.main", return_value= (0, 1, 0))
+@patch("paircars.pipeline.do_sidereal_cor.main", return_value=(0, 1, 0))
 @patch("paircars.pipeline.do_sidereal_cor.sys.exit")
 @patch("paircars.pipeline.do_sidereal_cor.argparse.ArgumentParser.print_help")
 def test_cli_sidereal(

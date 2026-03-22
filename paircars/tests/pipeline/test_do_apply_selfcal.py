@@ -120,10 +120,13 @@ def test_main_apply_selfcal(
         patch("paircars.pipeline.do_apply_selfcal.os.chdir") as m_chdir,
         patch("paircars.pipeline.do_apply_selfcal.msmetadata") as m_msmd,
         patch("paircars.pipeline.do_apply_selfcal.get_ncoarse") as m_ncoarse,
-        patch("paircars.pipeline.do_apply_selfcal.freq_to_MWA_coarse") as m_freq_to_MWA_coarse,
+        patch(
+            "paircars.pipeline.do_apply_selfcal.freq_to_MWA_coarse"
+        ) as m_freq_to_MWA_coarse,
     ):
         m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir", 1)
         m_chdir.return_value = True
+
         def exists_side_effect(path):
             if "jobname_password.npy" in path:
                 return start_remote_log
@@ -132,10 +135,10 @@ def test_main_apply_selfcal(
             if path == "/tmp/log.txt":
                 return True
             return True
-            
+
         mock_msmd = MagicMock()
         m_msmd.return_value = mock_msmd
-        mock_msmd.chanfreqs.return_value = np.array([150.0,200.0])
+        mock_msmd.chanfreqs.return_value = np.array([150.0, 200.0])
         m_ncoarse.return_value = 1
         m_freq_to_MWA_coarse.return_value = 1
 
@@ -213,7 +216,7 @@ def test_main_apply_selfcal(
         ),
     ],
 )
-@patch("paircars.pipeline.do_apply_selfcal.main", return_value= (1, 0, 1, 0))
+@patch("paircars.pipeline.do_apply_selfcal.main", return_value=(1, 0, 1, 0))
 @patch("paircars.pipeline.do_apply_selfcal.sys.exit")
 @patch("paircars.pipeline.do_apply_selfcal.argparse.ArgumentParser.print_help")
 def test_cli_apply_selfcal(mock_print_help, mock_exit, mock_main, argv, should_exit):

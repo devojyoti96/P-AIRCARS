@@ -37,7 +37,7 @@ def test_single_ms_flag(dummy_msname):
 @patch("paircars.pipeline.flagging.suppress_output")
 @patch("paircars.pipeline.flagging.os.chdir")
 @patch("paircars.pipeline.flagging.delayed")
-@patch("casatasks.flagdata",return_value=0)
+@patch("casatasks.flagdata", return_value=0)
 def test_do_flagging(
     mock_flagdata,
     mock_delayed,
@@ -92,9 +92,9 @@ def test_do_flagging(
 @patch("paircars.pipeline.flagging.np.load", return_value=("job", "pass"))
 @patch("paircars.pipeline.flagging.init_logger")
 @patch("paircars.pipeline.flagging.do_flagging")
-@patch("paircars.pipeline.flagging.os.chdir",return_value=True)
-@patch("paircars.pipeline.flagging.get_ncoarse",return_value=1)
-@patch("casatasks.flagdata",return_value=1)
+@patch("paircars.pipeline.flagging.os.chdir", return_value=True)
+@patch("paircars.pipeline.flagging.get_ncoarse", return_value=1)
+@patch("casatasks.flagdata", return_value=1)
 def test_main_flagging(
     mock_flagdata,
     mock_ncoarse,
@@ -180,7 +180,7 @@ def test_main_flagging(
         ),
     ],
 )
-@patch("paircars.pipeline.flagging.main", return_value= (0, 1, 0))
+@patch("paircars.pipeline.flagging.main", return_value=(0, 1, 0))
 @patch("paircars.pipeline.flagging.sys.exit")
 @patch("paircars.pipeline.flagging.argparse.ArgumentParser.print_help")
 def test_cli_flagging(

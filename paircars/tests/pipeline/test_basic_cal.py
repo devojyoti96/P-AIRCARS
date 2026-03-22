@@ -253,6 +253,7 @@ def test_single_ms_cal_and_flag(
         else:
             assert len(result) == 0
 
+
 @pytest.mark.parametrize(
     "cpu_frac, mem_frac, mslist, results",
     [
@@ -302,8 +303,8 @@ def test_single_round_cal_and_flag(cpu_frac, mem_frac, mslist, results):
         patch("paircars.pipeline.basic_cal.single_ms_cal_and_flag") as m_single,
     ):
         m_single.side_effect = [
-            [["a.bcal", "a.kcal"],1],
-            [["b.bcal", "b.kcal"],1],
+            [["a.bcal", "a.kcal"], 1],
+            [["b.bcal", "b.kcal"], 1],
         ]
         fake_client.compute.side_effect = lambda x: x
         fake_client.gather.side_effect = lambda x: x
@@ -323,7 +324,7 @@ def test_single_round_cal_and_flag(cpu_frac, mem_frac, mslist, results):
             mem_frac=mem_frac,
         )
 
-        assert isinstance(output[0],dict)
+        assert isinstance(output[0], dict)
 
 
 @pytest.mark.parametrize(
@@ -365,7 +366,7 @@ def test_run_basic_cal_rounds(npol, keep_backup, raise_exc):
             if raise_exc:
                 m_single.side_effect = Exception("boom")
             else:
-                m_single.return_value = {"a.ms": ["a.bcal"]},1,0,True
+                m_single.return_value = {"a.ms": ["a.bcal"]}, 1, 0, True
             fake_client.compute.side_effect = lambda x: x
             fake_client.gather.side_effect = lambda x: x
             status, bpass, kcross, succeed, failed = run_basic_cal_rounds(
@@ -427,7 +428,9 @@ def test_main(
         patch("paircars.pipeline.basic_cal.os.system"),
         patch("paircars.pipeline.basic_cal.time.sleep"),
         patch("paircars.pipeline.basic_cal.traceback.print_exc"),
-        patch("paircars.pipeline.basic_cal.fits.getheader", return_value={"GPSTIME": 123}),
+        patch(
+            "paircars.pipeline.basic_cal.fits.getheader", return_value={"GPSTIME": 123}
+        ),
         patch("paircars.pipeline.basic_cal.get_ncoarse", return_value=1),
         patch("paircars.pipeline.basic_cal.get_ms_size", return_value=1),
     ):
@@ -477,6 +480,7 @@ def test_main(
             fake_client.close.assert_called()
             fake_cluster.close.assert_called()
 
+
 @pytest.mark.parametrize(
     "argv_args, expect_main_called, expected_exit",
     [
@@ -484,7 +488,7 @@ def test_main(
         (["prog"], False, 1),
     ],
 )
-@patch("paircars.pipeline.basic_cal.main", return_value=(0,0,0))
+@patch("paircars.pipeline.basic_cal.main", return_value=(0, 0, 0))
 @patch("paircars.pipeline.basic_cal.sys.exit")
 @patch("paircars.pipeline.basic_cal.argparse.ArgumentParser.print_help")
 def test_cli(
@@ -497,6 +501,7 @@ def test_cli(
 ):
     with patch("sys.argv", argv_args):
         from paircars.pipeline import basic_cal
+
         result = basic_cal.cli()
         if expect_main_called:
             mock_main.assert_called()

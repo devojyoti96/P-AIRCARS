@@ -1139,10 +1139,10 @@ def plot_hpc_collage(
     ncols = 6
     total = nrows * ncols
     fig = plt.figure(figsize=(24, 16))
-    if len(maps)==0:
-        return 
+    if len(maps) == 0:
+        return
     else:
-        ref_map = maps[0][0] 
+        ref_map = maps[0][0]
     for i in range(total):
         ax = plt.subplot(nrows, ncols, i + 1)
         if i < len(maps):
@@ -1188,7 +1188,7 @@ def plot_hpc_collage(
                 if freq is not None:
                     ax.set_title(f"{freq:.0f} MHz", fontsize=20)
                 else:
-                    ax.set_title("",fontsize=20)
+                    ax.set_title("", fontsize=20)
             except Exception:
                 pass
         else:
@@ -1212,21 +1212,25 @@ def plot_hpc_collage(
                 spine.set_color("white")
                 spine.set_linewidth(0.6)
             ax.text(
-                0.5, 0.5, "No Data",
-                color="gray", fontsize=20,
-                ha="center", va="center",
-                transform=ax.transAxes
+                0.5,
+                0.5,
+                "No Data",
+                color="gray",
+                fontsize=20,
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
             )
-            ax.set_title("",fontsize=20)
+            ax.set_title("", fontsize=20)
     # ---- Layout (NO gaps, space for labels) ----
-    plt.subplots_adjust(left=0.04, right=0.87, bottom=0.03, top=0.95, wspace=0.1, hspace=0.0)
+    plt.subplots_adjust(
+        left=0.04, right=0.87, bottom=0.03, top=0.95, wspace=0.1, hspace=0.0
+    )
     # ---- Global labels ----
     fig.text(0.5, 0.02, "Solar-X", ha="center", fontsize=24)
-    fig.text(
-        0.02, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=24
-    )
+    fig.text(0.02, 0.5, "Solar-Y", va="center", rotation="vertical", fontsize=24)
     # ---- Save ----
-    fig.savefig(outfile, dpi=120,  bbox_inches="tight")
+    fig.savefig(outfile, dpi=120, bbox_inches="tight")
     if showgui:
         plt.show()
     plt.close(fig)
@@ -2223,7 +2227,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
                 block_starts.append(i)
         block_starts = np.array(block_starts)
         # Set ticks at those positions
-        ngap = max(1,int(len(block_starts) / 12))
+        ngap = max(1, int(len(block_starts) / 12))
         block_starts = block_starts[::ngap]
         ax_spec.set_yticks(block_starts)
         ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])

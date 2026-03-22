@@ -204,7 +204,6 @@ def get_logid(logfile):
         return name
 
 
-
 class TailWatcher(FileSystemEventHandler, QObject):
     new_line = pyqtSignal(str)
 
@@ -444,14 +443,12 @@ def cli():
         app = QApplication(sys.argv)
         if LOG_DIR is None:
             selected_dir = QFileDialog.getExistingDirectory(
-                None,
-                "Select log directory",
-                workdir
+                None, "Select log directory", workdir
             )
             if not selected_dir:
                 print("No directory selected. Exiting.")
                 sys.exit(1)
-            LOG_DIR = f"{selected_dir}"  
+            LOG_DIR = f"{selected_dir}"
         app.setStyleSheet(
             """
             * {

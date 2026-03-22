@@ -20,11 +20,13 @@ def test_import_hyperdrive(mock_hyperdrive, tmp_path, monkeypatch, raise_error):
     monkeypatch.setattr("os.path.exists", lambda x: True)
     if raise_error:
         mock_hyperdrive.return_value = 1
+
         def fake_run(*args, **kwargs):
             raise RuntimeError("hyperdrive failed")
 
     else:
         mock_hyperdrive.return_value = 0
+
         def fake_run(*args, **kwargs):
             return None
 
@@ -70,9 +72,9 @@ def test_import_hyperdrive(mock_hyperdrive, tmp_path, monkeypatch, raise_error):
 @patch("paircars.pipeline.import_model.get_ms_size", return_value=1)
 @patch("paircars.pipeline.import_model.import_hyperdrive_model")
 @patch("paircars.pipeline.import_model.delayed")
-@patch("paircars.pipeline.import_model.os.chdir",return_value=True)
-@patch("paircars.pipeline.import_model.get_ncoarse",return_value=1)
-@patch("paircars.pipeline.import_model.run_hyperdrive",return_value=0)
+@patch("paircars.pipeline.import_model.os.chdir", return_value=True)
+@patch("paircars.pipeline.import_model.get_ncoarse", return_value=1)
+@patch("paircars.pipeline.import_model.run_hyperdrive", return_value=0)
 def test_main_import_model(
     mock_hyoerdrive,
     mock_ncoarse,
@@ -172,7 +174,7 @@ def test_main_import_model(
         (["prog.py", "mock.ms", "--workdir", "/mock/work"], False),  # Valid
     ],
 )
-@patch("paircars.pipeline.import_model.main", return_value=(0,1,0))
+@patch("paircars.pipeline.import_model.main", return_value=(0, 1, 0))
 @patch("paircars.pipeline.import_model.sys.exit")
 @patch("paircars.pipeline.import_model.argparse.ArgumentParser.print_help")
 def test_cli(

@@ -390,7 +390,7 @@ def run_flag(
     use_tfcrop : bool, optional
         Use tfcrop or not
     flagdimension : str, optional
-        Flag dimension (freq, time freqtime) 
+        Flag dimension (freq, time freqtime)
     flagdata_type : str, optional
         Flag data type (cal, selfcal, target)
     run_solarflagger : bool, optional
