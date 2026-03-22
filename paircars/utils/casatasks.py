@@ -280,7 +280,6 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA", writeto_file=True):
                         denom = np.sqrt(auto1_xx * auto2_xx)
                     else:
                         denom = np.sqrt(auto1_yy * auto2_yy)
-                    denom[denom < 1e-10] = np.nan
                     norm[p, : , valid] = data[p, : , valid] / denom
             else:
                 for p in range(npol):
@@ -292,7 +291,6 @@ def normalized_crosscorr_ms(msname, datacolumn="DATA", writeto_file=True):
                         denom = np.sqrt(auto1_yy * auto2_xx)    
                     else:
                         denom = np.sqrt(auto1_yy * auto2_yy)
-                    denom[denom < 1e-10] = np.nan
                     norm[p, :, valid] = data[p, :, valid] / denom
             # Clean up
             flag[np.isnan(norm)] = True
