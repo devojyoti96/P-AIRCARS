@@ -316,7 +316,7 @@ def get_logid(logfile):
         coarse_chan = name.split("_")[-1]
         return f"{int(time.time())}_time_Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
-        return return f"{int(time.time())}_time_{name}"
+        return f"{int(time.time())}_time_{name}"
 
 
 def init_logger(logname, logfile, log_type="task", jobname="", password=""):
