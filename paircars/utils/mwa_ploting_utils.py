@@ -1128,14 +1128,9 @@ def plot_hpc_collage(
     vmax = 0.99 * np.nanmax(all_data)
     norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=PowerStretch(power))
     # ---- Layout ----
-    n = len(maps)
-    temp_nrows = int(np.ceil(n / ncols))
-    if temp_nrows > ncols:
-        nrows = ncols
-        ncols = temp_nrows
-    else:
-        nrows = temp_nrows
-    fig = plt.figure(figsize=(4 * ncols, 4 * nrows))
+    ncols = 6
+    nrows = 4
+    fig = plt.figure(figsize=(4*ncols, 4*nrows))
     for i, (m, hdr, obstime) in enumerate(maps):
         ax = plt.subplot(nrows, ncols, i + 1, projection=m)
         im = m.plot(axes=ax, cmap="inferno", norm=norm)
