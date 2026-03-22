@@ -7,8 +7,7 @@ This is the guideline to setup the pipeline in any workstation or HPC environmen
     
 .. tip::
    To make life easier, both the Python and other dependencies can be installed using conda.
-
-    First, ensure you have `anaconda <https://www.anaconda.com/products/individual/>`_ or `miniconda <https://docs.conda.io/en/latest/miniconda.html/>`_ installed with python version 3.10.
+   First, ensure you have **conda** installed, or follow the steps below to install it.
     
 
 Load installed conda module in HPC cluster
@@ -17,15 +16,16 @@ In many HPC clusters, **conda** may be installed already. In that case, it is re
   
 .. code-block:: bash
   
-   module load anaconda3 
-   
+   module load anaconda3  
    module load miniconda3 
   
-     
+.. note::
+   Loading **conda** could be different in different HPC. We strongly suggest to check documentation and guideline from HPC system administrator how to load **conda**, if it is installed already.
+   
 Otherwise, install it following the steps below.
     
-Install Conda: Anaconda or Miniconda
-------------------------------------
+Install Conda
+-------------
 .. toctree::
    :maxdepth: 2
    

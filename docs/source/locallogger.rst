@@ -2,7 +2,7 @@ Local GUI Logger
 ================
 If P-AIRCARS is running in local environment, its logs can be seen using a local GUI logger.
 
-1. To start and view local GUI logger, run:
+1. To start and view local GUI logger, run the following command. It will open a pop-up window. Select the log directory ``<obsid>_<jobid>_target/logs`` to view the logs.  
 
    .. code-block :: bash
         
@@ -16,7 +16,7 @@ If P-AIRCARS is running in local environment, its logs can be seen using a local
     
 .. note ::
 
-    Log directory is generally at `<workdir>/<target_obsid>/logs`. 
+    Log directory is generally at `<workdir>/<target_obsid>_<jobid>_target/logs`. 
     
 
 This will open the local GUI logger as shown below:

@@ -1,38 +1,24 @@
 Install Conda: Mamba
-========================
-
+====================
 This guide provides instructions for installing **Mamba** into a **custom directory**, without conflicting with local site packages, creating a Python environment, and activating it.
 
-       
 Overview
 --------
-
 - **Mamba** is fast envrionment solver. We recommend using this.
 
-.. note::
+  .. note::
 
-   User can use standard **anaconda** or **miniconda** as well. 
+     User can use standard **anaconda** or **miniconda** as well. 
 
 Install Mamba in a Custom Directory
 ---------------------------------------
-
 1. **Download the Installer**
 
    .. code-block:: bash
 
-      wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-      
-2. **Setup environment variables**
-    
-   Setup these environment variables to avoid conflict with local site packages.
-   
-   .. code-block:: bash
-   
-      export PYTHONNOUSERSITE=1
-      unset PYTHONPATH 
-    
+      wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh    
 
-3. **Install into a Custom Directory**
+2. **Install into a Custom Directory**
 
    Replace `/path/to/conda3_custom` with your desired location:
 

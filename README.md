@@ -32,9 +32,17 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
 
 <!-- start quickstart -->
 
-**P-AIRCARS** is distributed on [PyPI]. To use it:
+**P-AIRCARS** is distributed on [PyPI]. To use it, install it in isolated conda environment. If **conda** is not installed in your system, see document for Conda installation instructions.
 
-1. Create conda environment with python 3.10 with compaitable C/C++ libraries
+1. Set some environment variable
+
+    ```text
+     export PYTHONNOUSERSITE=1
+      
+     unset PYTHONPATH  
+    ```
+
+2. Create conda environment with python 3.10 with compaitable C/C++ libraries
 
     ```text
     conda create -n paircars_env --override-channels -c conda-forge python=3.10 gcc_linux-64=14 gxx_linux-64=14 gfortran_linux-64=14 cmake pkg-config pip
@@ -44,42 +52,42 @@ P-AIRCARS documentation is available at: [p-aircars.readthedocs.io]
     
     We suggest using **Mamba** for fast conda installtion and environment creation.
 
-2. Install P-AIRCARS in conda environment
+3. Install P-AIRCARS in conda environment
 
    ```text
    pip install paircars
    ```
 
-3. Initiate necessary metadata 
+4. Initiate necessary metadata 
 
     ```text
     init-paircars-setup --init
     ```
     By default, the necessary data will be saved in home directory and requires about 20 GB of disk space. We suggest using any other location with larger disk space and specify that by ``--datadir </full/path/to/paircars_datadir>`` in the above command.
     
-4. Before running the pipeline, setup your data as following:
+5. Before running the pipeline, setup your data as following:
     
     -- Create a <target_datadir> and put all coarse channel measurement sets of solar scan of a single observation ID (OBSID) inside it.
     
     -- Create a <cal_datadir> and put all coarse channel measurement sets for calibrator observation of a single OBSID inside it.
     
-5. Run P-AIRCARS pipeline
+6. Run P-AIRCARS pipeline
 
     ```text
-    run-mwa-paircars <full path of target measurement set directory> <full path of target metafits file> --cal_datadir <full path of calibrator measurement set directory> --cal_metafits <full path of calibrator metafits> --workdir <full path of work directory> --outdir <full path of output products directory>
+    run-mwa-paircars <full path of target measurement set directory> --cal_datadir <full path of calibrator measurement set directory> --workdir <full path of work directory> --outdir <full path of output products directory>
     ```    
     
     N.B.: Always provide the entire direcotry path. Short path or only directory name may cause errors. Keep target measurement sets for a single OBSID and calibrator measurement sets for a single OBSID must be kept in seperate directories. If calibrator is not present, do not provide these information.
 
 That's all. You started P-AIRCARS pipeline for analysing your MWA solar observation 🎉.
 
-6. To see all running P-AIRCARS jobs
+7. To see all running P-AIRCARS jobs
 
     ```text
     show-paircars-status --show
     ```
     
-7. If P-AIRCARS is running in a local machine, see local log of any job using the <jobid>
+8. If P-AIRCARS is running in a local machine, see local log of any job using the <jobid>
 
    ```text
    run-mwa-mwalogger --jobid <jobid>
@@ -100,7 +108,7 @@ User can download and test entire P-AIRCARS pipeline using the sample dataset av
 
 ## Acknowledgements
 
-P-AIRCARS is developed by Devojyoti Kansabanik (NCRA-TIFR, Pune, India and CPAESS-UCAR, Boulder, USA) and an incarnation of [AIRCARS][aircars]. Other contributors are, Surajt Mondal (NCRA-TIFR, Pune, India) and and Puja Majee (NCRA-TIFR, Pune, India). If you use **P-AIRCARS** for analysing your MWA solar observations, include the following statement in your paper, and cite the following papers:
+P-AIRCARS is developed by Devojyoti Kansabanik (NCRA-TIFR, Pune, India and CPAESS-UCAR, Boulder, USA) and an incarnation of [AIRCARS][aircars]. Other contributors are, Surajt Mondal (NCRA-TIFR, Pune, India), Soham Dey (NCRA-TIFR, Pune, India), and Puja Majee (NCRA-TIFR, Pune, India). If you use **P-AIRCARS** for analysing your MWA solar observations, include the following statement in your paper, and cite the following papers:
 
 [aircars]: https://github.com/devojyoti96/AIRCARS 
 ```text

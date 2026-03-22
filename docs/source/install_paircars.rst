@@ -19,9 +19,7 @@ Install from ssource code: https://github.com/devojyoti96/P-AIRCARS
 .. code-block :: bash
 
     git clone https://github.com/devojyoti96/P-AIRCARS.git
-   
     cd P-AIRCARS
-    
     pip install .
     
 Install P-AIRCARS in developer mode
@@ -34,7 +32,5 @@ Install development version from https://github.com/devojyoti96/P-AIRCARS
 .. code-block :: bash
 
     git clone https://github.com/devojyoti96/P-AIRCARS.git
-   
     cd P-AIRCARS
-    
     pip install .[dev]

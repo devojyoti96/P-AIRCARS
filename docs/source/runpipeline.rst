@@ -7,7 +7,7 @@ To run P-AIRCARS pipeline, with default settings for full analysis, run the foll
 
 .. code-block :: bash
 
-    run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> 
+    run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> 
     
 .. note ::
 
@@ -30,35 +30,47 @@ Multiple options demonstrated below can be combined to have all of them together
    
 1. To view details of measurement set:
 
-.. code-block :: bash
+   .. code-block :: bash
 
-    show-paircars-ms </full/path/to/measurement_set>
+      show-paircars-ms </full/path/to/measurement_set>
     
 Runs with advanced calibration paramaters 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. If one do not have calibrator observations:
 
-.. code-block :: bash
+   .. code-block:: bash
 
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> 
     
-.. note ::
+   .. note ::
 
-   P-AIRCARS will self-calibrate and perform flux-density and polarisation calibration based on some assumptions. In these cases, absolute values of the quantities should be carefully considered.
+      P-AIRCARS will self-calibrate and perform flux-density and polarisation calibration based on some assumptions. In these cases, absolute values of the quantities should be carefully considered.
    
+2. If user wants to provide specific path to target and calibrator metafits file
 
-2. Do calibration with custom calibration parameters. There are two parameters: **cal_uvrange** and **solint** which can be changed. Example, run the following command to perform gain solutions at 10second interval and >200lambda data:
+   .. code-block:: bash
+      
+      run-mwa-paircars </full/path/to/data_directory> --target_metafits </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits>  
 
-.. code-block :: bash
+3. If user wants to run with multiple target and calibrator observations
+ 
+   .. code-block:: bash
+   
+      run-mwa-paircars </full/path/to/data_directory_1>,</full/path/to/data_directory_2> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory>  --cal_datadir </full/path/to/calibrator_data_directory_1>,</full/path/to/calibrator_data_directory_2>
+
+
+4. Do calibration with custom calibration parameters. There are two parameters: **cal_uvrange** and **solint** which can be changed. Example, run the following command to perform gain solutions at 10second interval and >200lambda data:
+
+   .. code-block :: bash
     
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --solint "10s" --uvrange ">200lambda" 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --solint "10s" --uvrange ">200lambda" 
     
-3. By default for full-polar data, polarization calibration will be performed. To disable it:
+5. By default for full-polar data, polarization calibration will be performed. To disable it:
 
-.. code-block :: bash 
+   .. code-block :: bash 
 
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --no_polcal 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --no_polcal 
     
     
 Runs with advanced imaging paramaters 
@@ -66,21 +78,21 @@ Runs with advanced imaging paramaters
     
 1. Run pipeline to image specific time and frequency range. Default is to use entire time and frequency range. Example for imaging two time ranges given in UTC and frequency ranges given in MHz: 
 
-.. code-block :: bash
+   .. code-block :: bash
 
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --timerange "2024/06/10/09:00:00~2024/06/10/09:30:00,2024/06/10/10:15:00~2024/06/10/10:45:00" --freqrange 100~150,200~230 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --timerange "2024/06/10/09:00:00~2024/06/10/09:30:00,2024/06/10/10:15:00~2024/06/10/10:45:00" --freqrange 100~150,200~230 
     
 2. Run imaging with custom time and frequency resolution. Default is to use each 1.28 MHz coarse bands and 10s of integration. Example run for imaging at 0.5 second time resolution and 160 kHz (0.16 MHz) frequency resolution:
 
-.. code-block :: bash 
+   .. code-block :: bash 
     
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --image_timeres 0.5 --image_freqres 0.16 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --image_timeres 0.5 --image_freqres 0.16 
     
 2. Default is to make only Stokes I images if `do_polcal=False` and Stokes IQUV, if `do_polcal=True`. To run only Stokes I imaging, even if `do_polcal=True`, run:
 
-.. code-block :: bash
+   .. code-block :: bash
     
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --pol I 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --pol I 
     
 Similarly, all other advanced imaging parameters can be used.
 
@@ -96,20 +108,20 @@ Take a look at the **Advanced pipeline parameters** in the help page of **run-mw
 
 1. To switch off self-calibration:
 
-.. code-block :: bash
+   .. code-block :: bash
     
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --no_selfcal 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --no_selfcal 
     
 2. To stop final imaging:
 
-.. code-block :: bash
+   .. code-block :: bash
     
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --no_imaging 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --no_imaging 
    
 3. To switch off self-calibration and final imaging
 
-.. code-block :: bash
+   .. code-block :: bash
 
-   run-mwa-paircars </full/path/to/data_directory> </full/path/to/data_metafits> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --cal_metafits </full/path/to/calibrator_metafits> --no_selfcal --no_imaging 
+      run-mwa-paircars </full/path/to/data_directory> --workdir </full/path/to/work_directory> --outdir </full/path/to/output_product_directory> --cal_datadir </full/path/to/calibrator_data_directory> --no_selfcal --no_imaging 
 
 

@@ -1,41 +1,42 @@
 Initial Setup
 =============
-
 After installation of **P-AIRCARS**, before running the pipeline, some initial setup is needed. These include downloading some required metadata for the pipeline. **P-AIRCARS** also provides multiple ways to monitor its progress -- local GUI logger (for local machine only), over email, web-based remote logger, and prefect dashboard.  
-
 
 Download P-AIRCARS metadata
 ------------------------------
 1. To download and save the required P-AIRCARS metadata in appropriate directory, run from command line:
 
-.. code-block :: bash
+   .. code-block :: bash
     
-    init-paircars-setup --init
+      init-paircars-setup --init
     
-.. admonition:: Click here to see parameters
-   :class: dropdown
-   
-   .. program-output:: init-paircars-setup -h
-   
+   .. admonition:: Click here to see parameters
+      :class: dropdown
+
+      .. program-output:: init-paircars-setup -h
     
 2. If data files are present, but needs to updated, run:
 
-.. code-block :: bash
+   .. code-block :: bash
 
-    init-paircars-setup --init --update
+       init-paircars-setup --init --update
    
-.. note::
+.. important::
 
-   ``prefect`` server will be automatically setup during this process. In local environment, if there is any issue in starting ``prefect`` server, ``prefect`` will automatically fall back to its ephemeral mode. For cluster environment, P-AIRCARS can not be run without ``prefect`` server. By default, ``prefect`` server uses the **port 4260** and its associated PostgreSQL database used **port 5260**. If these port are pre-occupied, the closest free port will be used. The instructions to access ``prefect`` dashboard will be displayed in the terminal with the steps to access it. 
+   ``prefect`` server will be automatically setup during this process. In local environment, if there is any issue in starting ``prefect`` server, ``prefect`` will automatically fall back to its ephemeral mode. For cluster environment, P-AIRCARS can not be run without ``prefect`` server. By default, ``prefect`` server uses the **port 4260** and its associated PostgreSQL database used **port 5260**. If these port are pre-occupied, P-AIRCARS will try to kill those port to avoid port overload. If not successful, the closest free port will be used. The instructions to access ``prefect`` dashboard will be displayed in the terminal with the steps to access it. If user do not want to close the port, use ``--no_kill_port`` parameter during initiation. 
    
 
-Custom data directory
-----------------------
+Custom P-AIRCARS metadata directory
+-----------------------------------
 By default, data directory will be at "~/.paircarspipe/paircarspipe_data". It requires 20 GB space. Sometimes home directory may not have sufficient space. In that case, one can setup data directory in a custom location as follows:
 
 .. code-block :: bash
 
     init-paircars-setup --init --datadir </full/path/to/custom/datadir>
+    
+.. note::
+   
+   This is not data directory for observations. We strongly suggest not to change anything in this directory after P-AIRCARS initiation. 
     
 Setup e-mail ids
 ----------------
@@ -49,60 +50,33 @@ If you setup a remote logger as described below, you will receive a unique Job I
     
 Setup remote logger link
 -------------------------
-If remote logger is intended to be used, setup the remote link in P-AIRCARS metadata.
+If remote logger is intended to be used, setup the remote link in P-AIRCARS metadata. By default, P-AIRCARS will set an auto-generated 6-character password for you.
 
 .. code-block :: bash
     
     init-paircars-setup --init --remotelink https://<remote-logger-name>.onrender.com
+ 
+Setup custom remote password
+----------------------------
+If user wants to set a custom password for them
+
+.. code-block :: bash
     
-Before doing this, create your own remote logger on free-tier cloud platform, https://render.com. One can use, same **remotelink** in multiple machines and users. However, free-tier link has some limitations on bandwidth. If you want to use **remotelink** for your institution, we suggest to purchase suitable paid version or setup seperate **remotelink** for different users.
+    init-paircars-setup --init --remotelink https://<remote-logger-name>.onrender.com --remote_password <your-custom-password>
 
 Update remote logger link and/or e-mail ids
 -------------------------------------------
 If user wants to update the already provided remote logger link or e-mail id(s), simply run the above commands with new values. P-AIRCARS will automatically update the database with these new values.
 
-Tutorial to setup remote lor link
----------------------------------
-1. Go to https://dashboard.render.com/. It will take you to the login page. If you do not have an account on https://render.com, create an account and login.
 
-2. After login, you will land up in the following page. Click on **Add new** and then **Web Service**.
+Setup remote logger
+-------------------
+Before using remote logger this, create your own remote logger on free-tier cloud platform, https://render.com. One can use, same **remotelink** in multiple machines and users. However, free-tier link has some limitations on bandwidth and concurrency. If you want to use **remotelink** for your institution, we suggest to purchase suitable paid version or setup seperate **remotelink** for different users.
 
-.. image :: _static/ss1.png
-
-3. Then the following page will open. Select **Exisiting image** table and put **docker.io/devojyoti96/paircarslogger:latest** in the **Image URL** box. If the image link is correct, a blue tock will appear the right corner of the box as hown in the image below. Then click on black **Connect-->** button at the bottom of the page.
-
-.. image :: _static/ss2.png
-
-4. Next, you will land up in the following page. In the name box, type your custom remote logger name, **<remote-logger-name>**. If the name is in use by anyone else and not available, a red text will appear below the box showing **Name is already in use**. Modify the name to have a unique available name. Once done, scroll down to the middle of the page.
-
-.. image :: _static/ss3.png
-
-5. In the middle of the page, select the user-plan. For individual user, you can choose **Free** as shown in the image below. If you want any paid version, choose the appropriate one. 
-
-.. image :: _static/ss5.png
-
-6. Then go down to the bottom of the page. Click of **Deploy** button.
-
-.. image :: _static/ss4.png
-
-7. In the next page, you will see web-service is being started. Once you see, **==> Your service is live 🎉** as shown in the image below, your remote logger is ready to use. Your remote logger link is also shown just above the black window, and it will be **https://<remote-logger-name>.onrender.com**.
-
-.. image :: _static/ss6.png
-
-8. Now use this link to setup as remote logger link as described above. This link is persistent and can be used in multiple machines. Your P-AIRCARS job logs will appear in **https://<remote-logger-name>.onrender.com**. How to access 
-
-
-
-
-
-
-
-
-
-
-
-
-
+.. toctree::
+   :maxdepth: 2
+   
+   create_remotelogger
 
 
 

@@ -34,7 +34,7 @@ Using remote logger
 
 .. image :: _static/rl2.png
 
-3. In the log page, different logs are shown. Logs names are self-explanatory. This list will be updating continuously as jobs are running in the host machine. 
+3. In the log page, different logs are shown. There will be three tabs, **Master flows**, **Subflows**, and **Tasks**. Click the appropriate tab to view the log lists of that category. Logs names are self-explanatory. This list will be updating continuously as jobs are running in the host machine. 
 
 .. image :: _static/rl3.png
 

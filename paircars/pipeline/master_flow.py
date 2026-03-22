@@ -749,9 +749,11 @@ def master_control(
         print_banner("Final product directory")
         print(f"{outdir}")
         if remote_logger:
-            print_banner(
-                f"{remote_link}\nRemote Job ID: {jobname}\nRemote access password: {password}"
-            )
+            print("####################################")
+            print(f"{remote_link}")
+            print(f"Remote Job ID: {jobname}")
+            print(f"Remote access password: {password}")
+            print("####################################")
 
         if not has_cal:
             print_banner(

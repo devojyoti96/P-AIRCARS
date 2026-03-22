@@ -11,16 +11,16 @@ The following output will appear in terminal:
     Starting P-AIRCARS Pipeline....
     #########################################
 
-    ###########################
+    #####################################
     P-AIRCARS Job ID: <YYYYMMDDHHMMSSmmm>
     Work directory: <workdir>
     Final product directory: <outputdir>
-    ###########################
+    #####################################
 
 Directory structure
 -------------------
 
-All intermediate data products will be saved in ``<workdir>/<target_obsid>_<jobid>``.
+All intermediate data products will be saved in ``<workdir>/<target_obsid>_<jobid>_target``.
     
 .. note::
    
@@ -29,7 +29,7 @@ All intermediate data products will be saved in ``<workdir>/<target_obsid>_<jobi
 
 All final data products will be saved in ``<outputdir>/<target_obsid>_target``.
 
-All calibrator data products will be saved in ``<outdir>/<calibrator_obsid>_cal``.
+All calibrator data products will be saved in ``<outdir>/calibrators``.
 
 .. note :: 
 
@@ -90,76 +90,74 @@ Pipeline produces calibrated visibilities as well as several imaging products.
 
 Dynamic spectrum
 ~~~~~~~~~~~~~~~~
-Dynamic spectra for all (or the ones selected) target scans are available in ``dynamic_spectra`` directory inside the output directory ``<outputdir>/<target_obsid>``.
+Dynamic spectra are available in ``dynamic_spectra`` directory inside the output directory ``<outputdir>/<target_obsid>_target``.
 
 Diagnostic plots
 ~~~~~~~~~~~~~~~~
-Diagnostic plots for all measurement sets and calibration tables in pdf format in ``diagnostic_plots`` directory inside the output directory ``<outputdir>/<target_obsid>``.
+Diagnostic plots for all measurement sets and calibration tables in pdf format in ``diagnostic_plots`` directory inside the output directory ``<outputdir>/<target_obsid>_target``.
 
 Flag summary
 ~~~~~~~~~~~~
-Flag summary files for each measurement sets
+Flag summary files for each measurement sets are available in ``flag_summary`` directory inside output directory, both for calibrators and targets.s
 
 Measurement set flags
 ~~~~~~~~~~~~~~~~~~~~~
-Flags of the final calibrated measurement sets are saved in ``ms_flags`` directory inside the ``<outputdir>/<target_obsid>``. These flags can be used later to restore and re-image calibrated measurement sets. s
+Flags of the final calibrated measurement sets are saved in ``ms_flags`` directory inside the ``<outputdir>/<target_obsid>_target``. These flags can be used later to restore and re-image calibrated measurement sets. 
 
 Calibrated visibilities
 ~~~~~~~~~~~~~~~~~~~~~~~
-By default calibrated measurement sets will kept in ``<outdir>/<target_obsid>/calibrated_ms`` directory after final imaging with the naming format ``target_<target_obsid>_ch<coarse_chan>_spw_<chanrange>.ms`. If ``no_calibrated_ms`` parameter is turned on during processing, they will not be kept.
+By default calibrated measurement sets will kept in ``<outdir>/<target_obsid>_target/calibrated_ms`` directory after final imaging with the naming format ``target_<target_obsid>_ch_<coarse_chan>.ms`. If ``no_calibrated_ms`` parameter is turned on during processing, they will not be kept.
 
 Imaging products 
 ~~~~~~~~~~~~~~~~
-Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>`` directory inside output directory ``<outputdir>/<target_obsid>``. If imaging is performed with different time and frequency resolutions or different weighting schemes, seperate image directories with corresponding parameters will have the corresponding images. 
+Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>`` directory inside output directory ``<outputdir>/<target_obsid>_target``. If imaging is performed with different time and frequency resolutions or different weighting schemes, seperate image directories with corresponding parameters will have the corresponding images. 
 
 1. **Image fits in RA/DEC** - Fits images in RA/DEC coordinate are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/images`` directory inside work directory. These are not primary beam corrected.
 
-.. note ::
+   .. note ::
     
-   All fits images have some P-AIRCARS specific metadata in the header and some image statistics.
+      All fits images have some P-AIRCARS specific metadata in the header and some image statistics.
    
-.. admonition:: Click here to see details of these metadata
-   :class: dropdown
+   .. admonition:: Click here to see details of these metadata
+      :class: dropdown
                        
-    PIPELINE= 'P-AIRCARS' # Pipeline name
-    
-    AUTHOR  = 'DevojyotiKansabanik' # Pipeline developer         
+      PIPELINE= 'P-AIRCARS' # Pipeline name
+      
+      AUTHOR  = 'DevojyotiKansabanik' # Pipeline developer 
+                                
+      MAX     =  ``<maxval>`` # Maximum value on the solar disc 
                                                            
-    MAX     =  ``<maxval>`` # Maximum value on the solar disc       
-                                               
-    MIN     =  ``<minval>`` # Minimum value on the solar disc      
-                                               
-    RMS     =  ``<rms>`` # RMS value outside solar disc       
-                                            
-    SUM     =  ``<sum>`` # Total sum on the solar disc  
-                                            
-    MEAN    =  ``<mean>`` # Mean value on the solar disc   
-                                                  
-    MEDIAN  =  ``<median>`` # Median value on the solar disc  
-                                                 
-    RMSDYN  =  ``<rmsdyn>`` # RMS based dynamic range, ``<maxval/rms>``
-                                                    
-    MIMADYN =  ``<minmaxdyn>`` # Min-max based dynamic range, ``<maxval/abs(minval)>``  
-    
-    CALAPP  =   ``TRUE/FALSE`` # Whether calibrator solutions were applied or not
-    
-    POLSELF =   ``TRUE/FALSE`` # Whether polarisation selfcal is performed or not
-    
-    LEAKCOR =   ``TRUE/FALSE`` # Whether polarisation leakage correction is made or not
-    
-    LEAKUNIT =   ``PERCENT`` # Residual leakage unit if LEAKCOR is TRUE
-    
-    QLEAK    =    ``<qleak>`` # Residual Stokes I to Stokes Q leakage if LEAKCOR is TRUE
-    
-    ULEAK    =    ``<uleak>`` # Residual Stokes I to Stokes U leakage if LEAKCOR is TRUE 
-    
-    VLEAK    =    ``<vleak>`` # Residual Stokes I to Stokes V leakage if LEAKCOR is TRUE 
+      MIN     =  ``<minval>`` # Minimum value on the solar disc  
+                                                        
+      RMS     =  ``<rms>`` # RMS value outside solar disc     
         
-.. note::
+      SUM     =  ``<sum>`` # Total sum on the solar disc  
+      
+      MEAN    =  ``<mean>`` # Mean value on the solar disc   
+      
+      MEDIAN  =  ``<median>`` # Median value on the solar disc  
+      
+      RMSDYN  =  ``<rmsdyn>`` # RMS based dynamic range, ``<maxval/rms>``
+      
+      MIMADYN =  ``<minmaxdyn>`` # Min-max based dynamic range, ``<maxval/abs(minval)>``  
+      
+      CALAPP  =   ``TRUE/FALSE`` # Whether calibrator solutions were applied or not
+      
+      POLSELF =   ``TRUE/FALSE`` # Whether polarisation selfcal is performed or not
+      
+      LEAKCOR =   ``TRUE/FALSE`` # Whether polarisation leakage correction is made or not
+      
+      LEAKUNIT =   ``PERCENT`` # Residual leakage unit if LEAKCOR is TRUE
+      
+      QLEAK    =    ``<qleak>`` # Residual Stokes I to Stokes Q leakage if LEAKCOR is TRUE
+      
+      ULEAK    =    ``<uleak>`` # Residual Stokes I to Stokes U leakage if LEAKCOR is TRUE 
+      
+      VLEAK    =    ``<vleak>`` # Residual Stokes I to Stokes V leakage if LEAKCOR is TRUE 
+        
+   .. note::
 
-    If CALAPP is False, flux calibration is performed using the method described in `Kansabanik et al., 2022, ApJ, v927:17 <https://doi.org/10.3847/1538-4357/ac4bba>`_. In this case, flux density and spectrum may not be very accurate. We generally expect observations before middle of 2014 have this issue. These observations may also have unreliable pol-rotation (Stokes Q, U, V mixing).
-    
-    If POLSELF is False, polarisation self-calibration could not be performed, and hence only image-based leakage correction is done. If this case, very low-level polarised sources should be not be considered as true source. 
+      If CALAPP is False, flux calibration is performed using the method described in `Kansabanik et al., 2022, ApJ, v927:17 <https://doi.org/10.3847/1538-4357/ac4bba>`_. In this case, flux density and spectrum may not be very accurate. We generally expect observations before middle of 2014 have this issue. These observations may also have unreliable pol-rotation (Stokes Q, U, V mixing). If POLSELF is False, polarisation self-calibration could not be performed, and hence only image-based leakage correction is done. If this case, very low-level polarised sources should be not be considered as true source. 
  
 2. **Primary beam corrected image fits** - Primary beam corrected fits images are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/pbcor_images`` directory inside work directory.
 
@@ -169,9 +167,9 @@ Imaging products are available in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_
 
 5. **Radio images in helioprojective coordinates** - Directory names ``hpcs`` inside directories like, ``images, pbcor_images, tb_images`` inside the image directory will have the FITS images in helioprojective coordinates. Images in PNG and PDF formats are also available in ``pngs`` and ``pdfs`` directories inside the parent directories.
 
-.. note ::
+   .. note ::
   
-   Header of helioprojective maps have wavelength information in unit of ``centimeter`` or ``meter``.  
+      Header of helioprojective maps have wavelength information in unit of ``centimeter`` or ``meter``.  
 
 6. **Overlays on EUV images** - Overlays on EUV images are saved in PNG formats in ``imagedir_f_<freqres>_t_<timeres>_w_<weight>_<robust>/overlays_pngs``. By default, images at 30s time interval per corase channel will be overlayed, unless requested to make overlays for all images. 
 
