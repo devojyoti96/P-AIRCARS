@@ -493,6 +493,12 @@ def cli():
         "--scan",
         type=int,
         default=1,
+        help="Coarse channels to split",
+    )
+    adv_args.add_argument(
+        "--coarse_chans",
+        type=str,
+        default="",
         help="Target scan to split",
     )
     adv_args.add_argument(
@@ -565,6 +571,8 @@ def cli():
 
     args = parser.parse_args()
 
+    split_coarse_chans = args.coarse_chans.split(",")
+    
     msg, _, _ = main(
         args.mslist,
         args.metafits,
@@ -575,6 +583,7 @@ def cli():
         time_interval=args.time_interval,
         quack_timestamps=args.quack_timestamps,
         force_split=args.force_split,
+        split_coarse_chans=split_coarse_chans,
         freqres=args.freqres,
         timeres=args.timeres,
         prefix=args.prefix,
