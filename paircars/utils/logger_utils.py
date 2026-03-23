@@ -10,7 +10,7 @@ import urllib.request
 import urllib.error
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-from .basic_utils import get_cachedir
+from .basic_utils import get_cachedir, suppress_output
 
 
 ##################################
@@ -320,15 +320,16 @@ def get_logger_safe():
     - Falls back to simple print-style logger otherwise
     """
     try:
-        from prefect import get_run_logger
-        return get_run_logger()
+        with suppress_output():
+            from prefect import get_run_logger
+            return get_run_logger()
     except Exception:
         name = f"task_{os.getpid()}"
         logger = logging.getLogger(name)
 
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter("[%(levelname)s] [%(asctime)s] %(message)s",datefmt="%H:%M:%S")
+            formatter = logging.Formatter("%(levelname)s %(asctime)s %(message)s",datefmt="%H:%M:%S")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.propagate = False

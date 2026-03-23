@@ -222,9 +222,7 @@ def split_target_scans(
         for r in result_wrapper:
             msname = r[0]
             result.append(r[1])
-            logger.info("=================")
-            logger.info(f"Worker log for: {msname}")
-            logger.info("=================")
+            logger.info(f"Worker log for: {os.path.basename(msname)}")
             for line in r[2].splitlines():
                 logger.info(line)
             for line in r[3].splitlines():
