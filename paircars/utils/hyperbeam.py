@@ -109,7 +109,6 @@ class FEEBeam:
                 f"{self.container_name}",
                 "python",
                 "/app/hyperbeam_array.py"]
-        print (full_command)
         proc = subprocess.run(
             full_command,
             env=self.env,
