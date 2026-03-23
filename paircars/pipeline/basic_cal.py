@@ -428,7 +428,7 @@ def single_round_cal_and_flag(
     do_postcal_flag=True,
     flag_threshold=5.0,
     cpu_frac=0.8,
-    mem_frac=0.8,
+    mem_limit=0.8,
 ):
     """
     Single round calibration and flagging for a set of measurement sets in parallel
@@ -494,10 +494,9 @@ def single_round_cal_and_flag(
     if n_threads is not None:
         n_threads = int(n_threads)
     else:
-        print("Could not determine threads. Using default.")
         n_threads = 1
 
-    print("#################################")
+    print("##################################")
     print(f"Total dask worker: {njobs}")
     print(f"CPU per worker: {n_threads}")
     print(f"Memory per worker: {mem_limit} GB")
@@ -849,10 +848,30 @@ def main(
             return 1, succeed, failed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
-    try:
-        print("###################################")
-        print("Starting initial calibration.")
-        print("###################################")
+        try:
+            print("###################################")
+            print("Starting initial calibration.")
+            print("###################################")
+            client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        if len(worker_mem_list) > 0:
+            mem_limit = round(min(worker_mem_list), 3)
+        else:
+            mem_limit = 1
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("##################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
         msg, bcals, kcrosscals, succeed, failed = run_basic_cal_rounds(
             mslist,
             dask_client,
