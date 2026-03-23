@@ -221,7 +221,9 @@ def split_target_scans(
         result = []
         for r in result_wrapper:
             result.append(r[0])
+            logger.info("================")
             logger.info(f"Worker log for: {os.path.basename(r[0])}")
+            logger.info("================")
             for line in r[1].splitlines():
                 logger.info(line)
             for line in r[2].splitlines():
@@ -378,7 +380,8 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        logger.info(print_banner("Starting spliting measurement sets."))
+        for banner in print_banner("Starting spliting measurement sets.").splitlines() 
+            logger.info(banner)
         ##################################
         # Parallel spliting
         ##################################
