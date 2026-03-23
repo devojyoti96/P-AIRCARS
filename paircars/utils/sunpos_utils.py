@@ -158,7 +158,7 @@ def radec_sun_at_time(timestamp):
     )
 
 
-def move_to_sun(msname, only_uvw=False):
+def move_to_sun(msname, ncpu=1, only_uvw=False):
     """
     Move the phasecenter of the measurement set at the center of the Sun (Assuming ms has one scan)
 
@@ -166,6 +166,8 @@ def move_to_sun(msname, only_uvw=False):
     ----------
     msname : str
         Name of the measurement set
+    ncpu : int, optional
+        Number of CPU threads to use
     only_uvw : bool, optional
         Note: This is required when visibilities are properly phase rotated in correlator to track the Sun,
         but while creating the MS, UVW values are estimated using a wrong phase center at the start of solar center at the start.
@@ -180,7 +182,7 @@ def move_to_sun(msname, only_uvw=False):
     print(f"Moving phasecenter to solar center for measurement set: {msname}")
     sun_radec_string, sunra, sundec, sunra_deg, sundec_deg = radec_sun(msname)
     msg = run_chgcenter(
-        msname, sunra, sundec, only_uvw=only_uvw, container_name="paircarswsclean"
+        msname, sunra, sundec, ncpu=ncpu, only_uvw=only_uvw, container_name="paircarswsclean"
     )
     if msg != 0:
         print("Phasecenter could not be shifted.")
@@ -433,7 +435,7 @@ def shift_solarcenter(
         return msg, outfile, shifted, r_offset
 
 
-def correct_solar_sidereal_motion(msname="", verbose=False):
+def correct_solar_sidereal_motion(msname="", ncpu=1, verbose=False):
     """
     Correct sodereal motion of the Sun
 
@@ -441,6 +443,8 @@ def correct_solar_sidereal_motion(msname="", verbose=False):
     ----------
     msname : str
         Name of the measurement set
+    ncpu : int, optional
+        Number of CPU threads to use
 
     Returns
     -------
@@ -450,7 +454,7 @@ def correct_solar_sidereal_motion(msname="", verbose=False):
     print(f"Correcting sidereal motion for ms: {msname}\n")
     if not os.path.exists(msname + "/.sidereal_cor"):
         msg = run_solar_sidereal_cor(
-            msname=msname, container_name="paircarswsclean", verbose=verbose
+            msname=msname, ncpu=ncpu, container_name="paircarswsclean", verbose=verbose
         )
         if msg != 0:
             print("Sidereal motion correction is not successful.")

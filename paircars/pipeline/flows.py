@@ -571,7 +571,6 @@ def basic_cal_subflow(
         #################################
         # Import model
         #################################
-        do_import_model=False
         if do_import_model:
             if emails != "":
                 email_msg = f"[{cal_obsid}] Started importing sky model."
@@ -2145,7 +2144,7 @@ def applysol_subflow(
 
 
 ############################
-# Apply solutions subflow
+# Imaging subflow
 ############################
 @flow(
     name="Imaging",

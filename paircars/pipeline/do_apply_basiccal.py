@@ -9,7 +9,7 @@ import os
 from casatools import table, msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output
+from paircars.utils.basic_utils import suppress_output, print_banner
 from paircars.utils.calibration import get_nearest_bandpass_table, get_quartical_soltype
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -248,8 +248,8 @@ def run_all_applysol(
     applymode="calflag",
     only_amplitude=False,
     force_apply=False,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=1,
+    mem_limit=1,
 ):
     """
     Apply basic-calibration solutions on all target scans
@@ -274,10 +274,10 @@ def run_all_applysol(
         Apply only amplitude
     force_apply : bool, optional
         Force to apply solutions even already applied
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
 
     Returns
     --------
@@ -288,9 +288,6 @@ def run_all_applysol(
     int
         Failed ms number
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
@@ -339,25 +336,6 @@ def run_all_applysol(
         # Applycal jobs
         ####################################
         print(f"Total ms list: {len(mslist)}")
-
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is not None:
-            n_threads = int(n_threads)
-        else:
-            n_threads = 1
-
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
-
         tasks = []
         failed = 0
         for ms in mslist:
@@ -407,26 +385,20 @@ def run_all_applysol(
         print(f"Total solution apply failed: {apply_failed}")
 
         if failed + apply_failed == len(mslist):
-            print("##################")
-            print(
+            print_banner(
                 "Applying basic calibration solutions for target scans are not done successfully."
             )
-            print("##################")
             return 1, succeed, failed + apply_failed
         else:
-            print("##################")
-            print(
+            print_banner(
                 "Applying basic calibration solutions for target are done successfully."
             )
-            print("##################")
             return 0, succeed, failed + apply_failed
     except Exception:
         traceback.print_exc()
-        print("##################")
-        print(
+        print_banner(
             "Applying basic calibration solutions for target scans are not done successfully."
         )
-        print("##################")
         return 1, succeed, failed
 
 
@@ -535,11 +507,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -552,9 +519,24 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print("###################################")
-        print("Starting applying solutions...")
-        print("###################################")
+        print_banner("Starting applying solutions.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
         if caldir == "" or not os.path.exists(caldir):
             print("Provide existing caltable directory.")
             msg = 1
@@ -569,8 +551,8 @@ def main(
                 applymode=applymode,
                 only_amplitude=only_amplitude,
                 force_apply=force_apply,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
+                n_threads=n_threads,
+                mem_limit=mem_limit,
             )
     except Exception:
         traceback.print_exc()

@@ -8,7 +8,7 @@ import glob
 import sys
 import os
 from dask import delayed
-from paircars.utils.basic_utils import get_datadir
+from paircars.utils.basic_utils import get_datadir, print_banner
 from paircars.utils.ds_utils import calc_dynamic_spectrum
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -38,8 +38,9 @@ def make_solar_DS(
     extension="png",
     showgui=False,
     overwrite=False,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=1,
+    mem_limit=1,
+    njobs=1,
 ):
     """
     Make solar dynamic spectrum and plots
@@ -64,10 +65,12 @@ def make_solar_DS(
         Show GUI
     overwrite : bool, optional
         Overwrite plot
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
+    njobs : int, optional
+        Number of parallel jobs
 
     Returns
     -------
@@ -80,33 +83,8 @@ def make_solar_DS(
     int
         Failed ms number
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     os.makedirs(f"{outdir}/dynamic_spectra", exist_ok=True)
-    print("##############################################")
-    print(f"Start making dynamic spectra for ms: {mslist}")
-    print("##############################################")
-
-    client_info = dask_client.scheduler_info()["workers"]
-    njobs = len(client_info)
-    worker_mem_list = []
-    for addr, w in client_info.items():
-        worker_mem_list.append(w["memory_limit"] / 1024**3)
-    mem_limit = round(min(worker_mem_list), 3)
-    n_threads = os.environ.get("OMP_NUM_THREADS")
-    if n_threads is not None:
-        n_threads = int(n_threads)
-    else:
-        n_threads = 1
-
-    print("#################################")
-    print(f"Total dask worker: {njobs}")
-    print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {mem_limit} GB")
-    print("#################################")
-
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, 0, 0
@@ -272,11 +250,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -289,6 +262,24 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
+        print_banner("Starting making dynamic spectra.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
         msg, ds_plot_file, succeed, failed = make_solar_DS(
             mslist,
             dask_client,
@@ -298,8 +289,9 @@ def main(
             overwrite=overwrite,
             plot_quantity=plot_quantity,
             extension=extension,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
+            n_threads=n_threads,
+            mem_limit=mem_limit,
+            njobs=njobs,
         )
     except Exception:
         traceback.print_exc()

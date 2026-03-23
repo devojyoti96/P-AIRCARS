@@ -8,11 +8,13 @@ import os
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
+from paircars.utils.basic_utils import print_banner, capture_all_output
 from paircars.utils.casatasks import single_mstransform
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.ms_metadata import get_timeranges
 from paircars.utils.mwa_utils import (
@@ -47,6 +49,12 @@ def chanlist_to_str(lst):
     return ";".join(ranges)
 
 
+def single_mstransform_wrapper(**kwargs):
+    with capture_all_output() as (out, err):
+        result =single_mstransform(**kwargs)
+        return kwargs.get("msname"), result, out.getvalue(), err.getvalue()
+
+
 def split_target_scans(
     mslist,
     metafits,
@@ -64,6 +72,7 @@ def split_target_scans(
     force_split=False,
     only_disk=False,
     n_threads=-1,
+    logger=None,
 ):
     """
     Split target scans
@@ -108,9 +117,11 @@ def split_target_scans(
     list
         Splited ms list
     """
+    if logger is None:
+        logger = get_logger_safe()
     n_threads = max(1, n_threads)
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.info("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         len(mslist)
@@ -185,7 +196,7 @@ def split_target_scans(
                 coarse_chan = coarse_chlist[i]
                 outputvis = f"{workdir}/{prefix}_{obsid}_ch_{coarse_chan}.ms"
                 if os.path.exists(f"{outputvis}/.splited") and force_split is False:
-                    print(f"{outputvis} is already splited successfully.")
+                    logger.info(f"{outputvis} is already splited successfully.")
                     splited_ms_list.append(outputvis)
                 else:
                     if os.path.exists(outputvis):
@@ -193,7 +204,7 @@ def split_target_scans(
                     if os.path.exists(f"{outputvis}.flagversions"):
                         os.system(f"rm -rf {outputvis}.flagversions")
                     tasks.append(
-                        delayed(single_mstransform)(
+                        delayed(single_mstransform_wrapper)(
                             msname=msname,
                             outputms=outputvis,
                             width=chanwidth,
@@ -205,21 +216,32 @@ def split_target_scans(
                             n_threads=n_threads,
                         )
                     )
-        print("Start spliting jobs...")
         future = dask_client.compute(tasks)
-        result = dask_client.gather(future)
+        result_wrapper = dask_client.gather(future)
+        result = []
+        for r in result_wrapper:
+            msname = r[0]
+            result.append(r[1])
+            logger.info("=================")
+            logger.info(f"Worker log for: {msname}")
+            logger.info("=================")
+            for line in r[2].splitlines():
+                logger.info(line)
+            for line in r[3].splitlines():
+                logger.error(line)
+            
         splited_ms_list = splited_ms_list + result
         if len(splited_ms_list) == 0:
-            print(f"Spliting of measurement set: {msname} is unsuccessful.")
+            logger.error(f"Spliting of measurement set: {msname} is unsuccessful.")
             return 1, []
         else:
-            print(f"Spliting of measurement set: {msname} is done successfully.")
+            logger.info(f"Spliting of measurement set: {msname} is done successfully.")
             for splited_ms in splited_ms_list:
                 drop_cache(splited_ms)
             return 0, splited_ms_list
     except Exception:
-        traceback.print_exc()
-        print(f"Spliting of measurement set: {msname} is unsuccessful.")
+        logger.exception(traceback.print_exc())
+        logger.error(f"Spliting of measurement set: {msname} is unsuccessful.")
         return 1, []
 
 
@@ -314,6 +336,7 @@ def main(
     # Logger
     ############
     observer = None
+    logger = get_logger_safe()
     if (
         start_remote_log
         and os.path.exists(f"{workdir}/.jobname_password.npy")
@@ -328,10 +351,10 @@ def main(
                 "do_target_split", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.error("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         total_ncoarse = 0
@@ -346,11 +369,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -358,14 +376,12 @@ def main(
             max_worker=total_ncoarse + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.error("Error occured in creating local cluster.")
             return 1, expected, succeed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print("###################################")
-        print("Start spliting measurement sets in coarse frequency bands.")
-        print("###################################")
+        print_banner("Starting spliting measurement sets.")
         ##################################
         # Parallel spliting
         ##################################
@@ -384,11 +400,11 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
 
         msg, splited_mslist = split_target_scans(
             mslist,
@@ -407,20 +423,18 @@ def main(
             prefix=prefix,
             only_disk=only_disk,
             n_threads=n_threads,
+            logger=logger,
         )
         succeed = len(splited_mslist)
-
-        print("########################################")
-        print(f"Total measurement sets: {len(mslist)}")
-        print(f"Total expected splited ms: {total_ncoarse}")
-        print(f"Total splited ms: {succeed}")
-        print("#########################################")
+        logger.info(f"Total measurement sets: {len(mslist)}")
+        logger.info(f"Total expected splited ms: {total_ncoarse}")
+        logger.info(f"Total splited ms: {succeed}")
         if len(splited_mslist) == 0:
             msg = 1
         else:
             msg = 0
     except Exception:
-        traceback.print_exc()
+        logger.exception(traceback.print_exc())
         msg = 1
     finally:
         time.sleep(5)
@@ -434,9 +448,9 @@ def main(
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
         if msg == 0:
-            print("All measurement sets are splited successfully.")
+            logger.info("All measurement sets are splited successfully.")
         else:
-            print("Error occured in spliting measurement sets.")
+            logger.error("Error occured in spliting measurement sets.")
         return msg, expected, succeed
 
 

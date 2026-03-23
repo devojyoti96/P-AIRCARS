@@ -4,7 +4,7 @@ from prefect import task
 from prefect.context import get_run_context
 from prefect_dask import get_dask_client
 from prefect.tasks import exponential_backoff
-from paircars.utils.basic_utils import internet_available, print_banner
+from paircars.utils.basic_utils import internet_available
 from paircars.data.sendmail import (
     send_paircars_notification as send_notification,
 )
@@ -88,8 +88,6 @@ def run_solar_phasecenter_jobs(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        #######################
-        print_banner("Moving phasecenter to the Sun .....")
         #######################
         # Moving phasecenter motion correction
         #######################
@@ -180,8 +178,6 @@ def run_ds_jobs(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ##################
-        print_banner("Making dynamic spectra of solar target .....")
         ##########################
         # Making dynamic spectrum
         ##########################
@@ -300,8 +296,6 @@ def run_target_split_jobs(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ############
-        print_banner(f"Spliting {prefix} .....")
         ##################
         # Spliting ms
         ##################
@@ -437,8 +431,6 @@ def run_flag(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ##############
-        print_banner("Flagging ....")
         ########################
         # Calibrator ms flagging
         ########################
@@ -536,8 +528,6 @@ def run_import_model(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ##############
-        print_banner("Importing model visibilities ....")
         ###################################
         # Calibrator ms visibility import
         ###################################
@@ -632,8 +622,6 @@ def run_basic_cal_jobs(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ##############
-        print_banner("Performing basic calibration .....")
         ########################
         # Basic calibration
         ########################
@@ -738,8 +726,6 @@ def run_apply_basiccal_sol(
     )
     try:
         ######################
-        print_banner("Applying basic calibration solutions on solar target .....")
-        ######################
         # Applying basic calibration
         ######################
         with get_dask_client() as dask_client:
@@ -828,8 +814,6 @@ def run_solar_siderealcor_jobs(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        #######################
-        print_banner("Correcting sidereal motion .....")
         #######################
         # Sidereal motion correction
         #######################
@@ -986,8 +970,6 @@ def run_selfcal_jobs(
     )
     try:
         ########################
-        print_banner("Performing self-calibration of solar targets .....")
-        ########################
         # Selfcal jobs
         ########################
         with get_dask_client() as dask_client:
@@ -1126,8 +1108,6 @@ def run_apply_selfcal_sol(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ##################
-        print_banner("Applying self-calibration solutions on targets .....")
         ########################
         # Applying self-calibration
         ########################
@@ -1262,8 +1242,6 @@ def run_imaging_jobs(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ######################
-        print_banner("Performing imaging of target scans .....")
         #######################
         # Performing imaging
         #######################
@@ -1364,8 +1342,6 @@ def run_apply_pbcor(
         task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
     )
     try:
-        ###################
-        print_banner("Applying primary beam corrections on all images .....")
         #####################
         # Applying primary beam correction
         #####################
@@ -1451,8 +1427,6 @@ def run_make_overlay(
     )
     os.makedirs(outdir, exist_ok=True)
     try:
-        ###################
-        print_banner("Making overlays of images .....")
         #####################
         # Making overlays
         #####################
@@ -1535,8 +1509,6 @@ def run_make_msplot(
     )
     os.makedirs(outdir, exist_ok=True)
     try:
-        ###################
-        print_banner("Making diagnostic plots of all measurement sets .....")
         #####################
         # Making plots
         #####################

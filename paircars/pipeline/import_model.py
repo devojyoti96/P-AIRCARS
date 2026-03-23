@@ -9,7 +9,7 @@ import argparse
 from dask import delayed
 from casatasks import setjy
 from casatools import table as casatable, msmetadata
-from paircars.utils.basic_utils import suppress_output, get_datadir
+from paircars.utils.basic_utils import suppress_output, get_datadir, print_banner
 from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
@@ -58,11 +58,7 @@ def import_hyperdrive_model(
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.modeling_*")
     msname = os.path.abspath(msname)
-    print(
-        "#######################\nImporting model for ms:"
-        + msname
-        + "\n###################\n"
-    )
+    print_banner(f"Importing model for ms: {msname}")
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -367,11 +363,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -383,28 +374,28 @@ def main(
             return 1
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
-    client_info = dask_client.scheduler_info()["workers"]
-    njobs = len(client_info)
-    worker_mem_list = []
-    for addr, w in client_info.items():
-        worker_mem_list.append(w["memory_limit"] / 1024**3)
-    if len(worker_mem_list) > 0:
-        mem_limit = round(min(worker_mem_list), 3)
-    else:
-        mem_limit = 1
-    n_threads = os.environ.get("OMP_NUM_THREADS")
-    if n_threads is not None:
-        n_threads = int(n_threads)
-    else:
-        n_threads = 1
-
-    print("#################################")
-    print(f"Total dask worker: {njobs}")
-    print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {mem_limit} GB")
-    print("#################################")
-
     try:
+        print_banner("Starting visibility modeling.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        if len(worker_mem_list) > 0:
+            mem_limit = round(min(worker_mem_list), 3)
+        else:
+            mem_limit = 1
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
         msg, succeed, failed = run_all_modeling(
             mslist, dask_client, metafits, beamfile, sourcelist, n_threads, False
         )

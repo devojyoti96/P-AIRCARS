@@ -14,6 +14,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
+from paircars.utils.basic_utils import print_banner
 from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse
 from paircars.utils.proc_manage_utils import (
@@ -36,8 +37,8 @@ def run_all_applysol(
     overwrite_datacolumn=False,
     applymode="calonly",
     force_apply=False,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=1,
+    mem_limit=1,
 ):
     """
     Apply self-calibrator solutions on all target scans
@@ -60,10 +61,10 @@ def run_all_applysol(
         Apply mode
     force_apply : bool, optional
         Force to apply solutions even already applied
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
 
     Returns
     --------
@@ -76,9 +77,6 @@ def run_all_applysol(
     int
         Failed polarisation solution ms number
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 0, 0, 0, 0
@@ -141,24 +139,6 @@ def run_all_applysol(
         # Applycal jobs
         ####################################
         print(f"Total ms list: {len(mslist)}")
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is not None:
-            n_threads = int(n_threads)
-        else:
-            n_threads = 1
-
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
-
         tasks = []
         msmd = msmetadata()
         for ms in mslist:
@@ -223,38 +203,32 @@ def run_all_applysol(
             pol_failed = sum(pol_msg)
             gain_succeed = len(mslist) - gain_failed
             pol_succeed = len(mslist) - pol_failed
-            print("##################")
             print(f"Total measurement sets: {len(mslist)}")
             print(f"Gain solution applied, Succeeded: {gain_succeed}")
             print(f"Gain solution applied, Failed: {gain_failed}")
             print(f"Polarisation solution applied, Succeeded: {pol_succeed}")
             print(f"Polarisation solution applied, Failed: {pol_failed}")
             if gain_failed == 0 and pol_failed == 0:
-                print(
+                print_banner(
                     "Applying gain and polarisation self-calibration solutions for targets are done successfully."
                 )
             elif pol_failed == 0:
-                print(
+                print_banner(
                     "Applying gain self-calibration solutions for targets are done successfully, but failed for polarisation solutions."
                 )
             else:
-                print(
+                print_banner(
                     "Applying self-calibration solutions for targets are not done successfully."
                 )
-            print("##################")
         else:
-            print("##################")
-            print(
+            print_banner(
                 "Applying self-calibration solutions for targets are not done successfully. No suitable calibration solutions are found."
             )
-            print("##################")
     except Exception as e:
         traceback.print_exc()
-        print("##################")
-        print(
+        print_banner(
             "Applying self-calibration solutions for targets are not done successfully."
         )
-        print("##################")
     finally:
         return gain_succeed, gain_failed, pol_succeed, pol_failed
 
@@ -365,11 +339,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -382,10 +351,24 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print("###################################")
-        print("Starting applying solutions...")
-        print("###################################")
+        print_banner("Starting applying solutions.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
 
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
         if caldir == "" or not os.path.exists(caldir):
             print("Provide existing caltable directory.")
         else:
@@ -398,8 +381,8 @@ def main(
                 overwrite_datacolumn=overwrite_datacolumn,
                 applymode=applymode,
                 force_apply=force_apply,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
+                n_threads=n_threads,
+                mem_limit=mem_limit,
             )
     except Exception:
         traceback.print_exc()

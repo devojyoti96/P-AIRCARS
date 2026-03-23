@@ -13,6 +13,7 @@ from paircars.utils.basic_utils import (
     suppress_output,
     get_datadir,
     weighted_mean,
+    print_banner,
 )
 from paircars.utils.calibration import (
     get_caltable_metadata,
@@ -1703,11 +1704,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -1748,6 +1744,7 @@ def main(
                 return 1, int_succeed, int_failed, pol_succeed, pol_failed, 0, 0, 0, 0
 
     try:
+        print_banner("Starting self-calibrations.")
         if len(mslist) == 0:
             print("Please provide at-least one measurement set.")
             msg = 1
@@ -1995,26 +1992,22 @@ def main(
                     os.system(f"rm -rf {pol_selfcaldir}")
 
             if len(gcal_list) > 0:
-                print("#####################################################")
-                print("Final gaincal selfcal caltables:")
+                print_banner("Final gaincal selfcal caltables:")
                 for gcal in gcal_list:
                     print(gcal)
                 msg = 0
-                print("#####################################################")
                 if len(bpass_list) > 0:
-                    print("Final bandpass selfcal caltables:")
+                    print_banner("Final bandpass selfcal caltables:")
                     for bpass in bpass_list:
                         print(bpass)
                 else:
                     print("No bandpass self-calibration is present.")
                 if len(dcal_list) > 0:
-                    print("#####################################################")
-                    print("Final polarisation selfcal caltables:")
+                    print_banner("Final polarisation selfcal caltables:")
                     for dcal in dcal_list:
                         print(dcal)
-                print("#####################################################")
             else:
-                print("No self-calibration is successful.")
+                print_banner("No self-calibration is successful.")
                 msg = 1
             print(f"Total self-calibration measurement sets: {len(mslist)}")
             print(f"Total successful intensity self-calibration: {succeed_intselfcal}")

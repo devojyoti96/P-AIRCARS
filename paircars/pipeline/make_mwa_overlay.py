@@ -9,6 +9,7 @@ import sys
 import os
 import contextlib
 from dask.distributed import as_completed
+from paircars.utils.basic_utils import print_banner
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -141,7 +142,7 @@ def main(
         ###########################
         # Overlay tasks
         ###########################
-        print("Start making overlays....")
+        print_banner("Starting overlays.")
         results = []
         batch_size = max(1, njobs - 1)
         for i in range(0, len(imagelist), batch_size):

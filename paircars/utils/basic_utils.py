@@ -5,7 +5,9 @@ import time
 import socket
 import stat
 import tempfile
+import sys
 import astropy.units as u
+from io import StringIO
 from astropy.time import Time
 from astropy.coordinates import Angle
 from contextlib import contextmanager
@@ -14,6 +16,21 @@ from contextlib import contextmanager
 ##########################
 # Basic utility funactions
 ##########################
+@contextmanager
+def capture_all_output():
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    stdout_buffer = StringIO()
+    stderr_buffer = StringIO()
+    sys.stdout = stdout_buffer
+    sys.stderr = stderr_buffer
+    try:
+        yield stdout_buffer, stderr_buffer
+    finally:
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+        
+
 def print_banner(msg, pad=0, max_width=40):
     width = min(len(msg) + pad, max_width)
     line = "#" * width

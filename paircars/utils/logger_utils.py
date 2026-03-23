@@ -313,6 +313,29 @@ def get_logid(logfile):
         return f"{int(time.time())}_time_{name}"
 
 
+def get_logger_safe():
+    """
+    Returns a logger that
+    - Uses Prefect logger if inside a task/flow
+    - Falls back to simple print-style logger otherwise
+    """
+    try:
+        from prefect import get_run_logger
+        return get_run_logger()
+    except Exception:
+        name = f"task_{os.getpid()}"
+        logger = logging.getLogger(name)
+
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter("[%(levelname)s] [%(asctime)s] %(message)s",datefmt="%H:%M:%S")
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.propagate = False
+            logger.setLevel(logging.INFO)
+        return logger
+        
+        
 def init_logger(logname, logfile, log_type="task", jobname="", password=""):
     """
     Initialize a remote logger with watchdog-based tailing.

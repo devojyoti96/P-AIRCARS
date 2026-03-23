@@ -6,6 +6,7 @@ import time
 import sys
 import os
 from dask import delayed
+from paircars.utils.basic_utils import print_banner
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -107,11 +108,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -124,6 +120,7 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
+        print_banner("Start making plots of measurement sets.")
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []

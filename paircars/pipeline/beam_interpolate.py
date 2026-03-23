@@ -161,10 +161,3 @@ def cli():
         msg = 1
     return msg
 
-
-if __name__ == "__main__":
-    result = cli()
-    print(
-        "\n###################\nMWA beam coefficient interpolation is finished finished.\n###################\n"
-    )
-    os._exit(result)

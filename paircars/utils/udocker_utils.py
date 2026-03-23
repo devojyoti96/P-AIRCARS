@@ -451,6 +451,7 @@ def run_wsclean(
 def run_solar_sidereal_cor(
     msname="",
     only_uvw=False,
+    ncpu=1,
     container_name="paircarswsclean",
     check_container=False,
     verbose=False,
@@ -466,6 +467,8 @@ def run_solar_sidereal_cor(
         Update only UVW values
         Note: This is required when visibilities are properly phase rotated in correlator to track the Sun,
         but while creating the MS, UVW values are estimated using the first phasecenter of the Sun.
+    ncpu : int, optional
+        Number of CPU threads to use
     check_container : bool, optional
         Check container
     container_name : str, optional
@@ -478,6 +481,16 @@ def run_solar_sidereal_cor(
     int
         Success message
     """
+    limit_threads(n_threads=ncpu)
+    env=os.environ.copy()
+    env_vars = [
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "RAYON_NUM_THREADS"
+    ]
     init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
@@ -515,7 +528,12 @@ def run_solar_sidereal_cor(
             "udocker",
             "--quiet",
             "run",
-            "--nobanner",
+            "--nobanner"]
+        env_keys = list(env.keys())
+        for var in env_vars:
+            if var in env_keys:
+                full_command.append(f"--env={var}={env[var]}")
+        full_command = full_command + [
             f"--volume={mspath}:{temp_docker_path}",
             "--workdir",
             f"{temp_docker_path}",
@@ -544,6 +562,7 @@ def run_chgcenter(
     ra,
     dec,
     only_uvw=False,
+    ncpu=1,
     container_name="paircarswsclean",
     check_container=False,
     verbose=False,
@@ -559,6 +578,8 @@ def run_chgcenter(
         RA can either be 00h00m00.0s or 00:00:00.0
     dec : str
         Dec can either be 00d00m00.0s or 00.00.00.0
+    ncpu : bool, optional
+        Number of CPU threads to use
     only_uvw : bool, optional
         Update only UVW values
         Note: This is required when visibilities are properly phase rotated in correlator,
@@ -575,6 +596,16 @@ def run_chgcenter(
     int
         Success message
     """
+    limit_threads(n_threads=ncpu)
+    env=os.environ.copy()
+    env_vars = [
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "RAYON_NUM_THREADS"
+    ]
     init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)
@@ -620,7 +651,12 @@ def run_chgcenter(
             "udocker",
             "--quiet",
             "run",
-            "--nobanner",
+            "--nobanner"]
+        env_keys = list(env.keys())
+        for var in env_vars:
+            if var in env_keys:
+                full_command.append(f"--env={var}={env[var]}")
+        full_command = full_command + [
             f"--volume={mspath}:{temp_docker_path}",
             "--workdir",
             f"{temp_docker_path}",

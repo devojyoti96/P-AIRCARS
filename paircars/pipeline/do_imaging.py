@@ -9,7 +9,11 @@ import sys
 import os
 from casatools import msmetadata
 from dask import delayed
-from paircars.utils.basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
+from paircars.utils.basic_utils import (
+    timestamp_to_mjdsec, 
+    mjdsec_to_timestamp, 
+    print_banner,
+)
 from paircars.utils.image_utils import (
     create_circular_mask,
     make_stokes_wsclean_imagecube,
@@ -569,8 +573,8 @@ def run_all_imaging(
     saveres=False,
     cutout_rsun=10.0,
     make_plots=True,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=1,
+    mem_limit=1,
     logfile="imaging.log",
 ):
     """
@@ -620,10 +624,10 @@ def run_all_imaging(
         Note: default FoV is 20 solar solar radii. If cutout_rsun is chosen larger than 20 solar radii, FoV will be increased accordingly.
     make_plots : bool, optional
         Make radio image helioprojective plots
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
 
     Returns
     -------
@@ -636,9 +640,6 @@ def run_all_imaging(
     int
         Total images
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     mslist = sorted(mslist)
 
     if len(mslist) == 0:
@@ -681,28 +682,6 @@ def run_all_imaging(
         if len(mslist) == 0:
             print("No valid measurement set is found.")
             return 1, succeed, failed, total_images
-
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        if len(worker_mem_list) > 0:
-            mem_limit = round(min(worker_mem_list), 3)
-        else:
-            mem_limit = 1
-
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is not None:
-            n_threads = int(n_threads)
-        else:
-            n_threads = 1
-
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
 
         cutout_rsun = max(
             5, cutout_rsun
@@ -955,11 +934,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -972,6 +946,28 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
+        print_banner("Starting imaging.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        if len(worker_mem_list) > 0:
+            mem_limit = round(min(worker_mem_list), 3)
+        else:
+            mem_limit = 1
+
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
         msg, succeed, failed, total_images = run_all_imaging(
             mslist,
             dask_client,
@@ -993,8 +989,8 @@ def main(
             cutout_rsun=cutout_rsun,
             savemodel=savemodel,
             saveres=saveres,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
+            n_threads=n_threads,
+            mem_limit=mem_limit,
         )
     except Exception:
         traceback.print_exc()

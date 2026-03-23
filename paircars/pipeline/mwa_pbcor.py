@@ -11,7 +11,7 @@ import subprocess
 from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
 from dask import delayed
-from paircars.utils.basic_utils import get_datadir
+from paircars.utils.basic_utils import get_datadir, print_banner
 from paircars.utils.image_utils import generate_tb_map
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -177,8 +177,9 @@ def pbcor_all_images(
     make_plots=True,
     restore=False,
     jobid=0,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=1,
+    mem_limit=1,
+    njobs=1,
 ):
     """
     Correct primary beam of MWA for images in a directory
@@ -201,10 +202,12 @@ def pbcor_all_images(
         Restore primary beam correction
     jobid : int, optional
         Job ID
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
+    njobs : int, optional
+        Number of parallel jobs
 
     Returns
     -------
@@ -215,9 +218,6 @@ def pbcor_all_images(
     int
         Failed image number
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     imagedir = imagedir.rstrip("/")
     pbdir = f"{os.path.dirname(imagedir)}/pbdir"
     pbcor_dir = f"{os.path.dirname(imagedir)}/pbcor_images"
@@ -248,24 +248,6 @@ def pbcor_all_images(
             else:
                 freqs.append(freq)
                 first_set.append(image)
-
-        client_info = dask_client.scheduler_info()["workers"]
-        njobs = len(client_info)
-        worker_mem_list = []
-        for addr, w in client_info.items():
-            worker_mem_list.append(w["memory_limit"] / 1024**3)
-        mem_limit = round(min(worker_mem_list), 3)
-        n_threads = os.environ.get("OMP_NUM_THREADS")
-        if n_threads is not None:
-            n_threads = int(n_threads)
-        else:
-            n_threads = 1
-
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
 
         if len(first_set) > 0:
             tasks = []
@@ -488,11 +470,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -506,6 +483,25 @@ def main(
     succeed = 0
     failed = 0
     try:
+        print_banner("Starting primary beam corrections.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        mem_limit = round(min(worker_mem_list), 3)
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
+        
         if os.path.exists(imagedir):
             msg, succeed, failed = pbcor_all_images(
                 imagedir,
@@ -516,8 +512,9 @@ def main(
                 make_plots=make_plots,
                 restore=restore,
                 jobid=jobid,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
+                n_threads=n_threads,
+                mem_limit=mem_limit,
+                njobs=njobs,
             )
         else:
             print("Please provide correct image directory path.")

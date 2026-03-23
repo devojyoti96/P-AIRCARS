@@ -6,7 +6,7 @@ import time
 import sys
 import os
 from dask import delayed
-from paircars.utils.basic_utils import get_datadir
+from paircars.utils.basic_utils import get_datadir, print_banner
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -33,6 +33,7 @@ def cor_sidereal_motion(
     mslist,
     dask_client,
     workdir,
+    n_threads=1,
 ):
     """
     Perform sidereal motion correction
@@ -45,6 +46,8 @@ def cor_sidereal_motion(
         Dask client
     workdir : str
         Work directory
+    n_threads : int, optional
+        Number of CPU threads to use
 
     Returns
     -------
@@ -79,8 +82,7 @@ def cor_sidereal_motion(
 
         tasks = []
         for ms in mslist:
-            tasks.append(delayed(correct_solar_sidereal_motion)(ms))
-        print("Starting sidereal motion correction jobs...")
+            tasks.append(delayed(correct_solar_sidereal_motion)(ms, ncpu=n_threads))
         results = list(dask_client.gather(dask_client.compute(tasks)))
 
         splited_ms_list_phaserotated = []
@@ -94,25 +96,19 @@ def cor_sidereal_motion(
         failed = len(mslist) - succeed
 
         if len(splited_ms_list_phaserotated) == 0:
-            print("##################")
-            print(
+            print_banner(
                 "Sidereal motion correction is not successful for any measurement set."
             )
-            print("##################")
             return 1, [], succeed, failed
         else:
             print(f"Total measurement sets: {len(mslist)}")
             print(f"Total success: {len(splited_ms_list_phaserotated)}")
             print(f"Total failure: {len(mslist)-len(splited_ms_list_phaserotated)}")
-            print("##################")
-            print("Sidereal motion corrections are done successfully.")
-            print("##################")
+            print_banner("Sidereal motion corrections are done successfully.")
             return 0, splited_ms_list_phaserotated, succeed, failed
     except Exception:
         traceback.print_exc()
-        print("##################")
-        print("Sidereal motion correction is not successful for any measurement set.")
-        print("##################")
+        print_banner("Sidereal motion correction is not successful for any measurement set.")
         return 1, [], succeed, failed
 
 
@@ -204,11 +200,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -221,10 +212,33 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
+        print_banner("Starting sidereal motion correction.")
+        client_info = dask_client.scheduler_info()["workers"]
+        njobs = len(client_info)
+        worker_mem_list = []
+        for addr, w in client_info.items():
+            worker_mem_list.append(w["memory_limit"] / 1024**3)
+        if len(worker_mem_list) > 0:
+            mem_limit = round(min(worker_mem_list), 3)
+        else:
+            mem_limit = 1
+        n_threads = os.environ.get("OMP_NUM_THREADS")
+        if n_threads is not None:
+            n_threads = int(n_threads)
+        else:
+            n_threads = 1
+
+        print("#################################")
+        print(f"Total dask worker: {njobs}")
+        print(f"CPU per worker: {n_threads}")
+        print(f"Memory per worker: {mem_limit} GB")
+        print("#################################")
+        
         msg, final_target_mslist, succeed, failed = cor_sidereal_motion(
             mslist,
             dask_client,
             workdir,
+            n_threads=n_threads,
         )
     except Exception:
         traceback.print_exc()

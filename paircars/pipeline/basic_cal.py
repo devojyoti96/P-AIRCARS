@@ -9,7 +9,7 @@ import glob
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output
+from paircars.utils.basic_utils import suppress_output, print_banner
 from paircars.utils.calibration import (
     get_caltable_metadata,
 )
@@ -302,9 +302,7 @@ def single_ms_cal_and_flag(
         #######################################
         # Calibration on calibrator fields
         #######################################
-        print("##############################")
-        print(f"Calibrating calibrator field ms: {msname}")
-        print("###############################")
+        print_banner(f"Calibrating calibrator field ms: {msname}")
         applycal_gaintable = []
         applycal_gainfield = []
         applycal_interp = []
@@ -427,8 +425,8 @@ def single_round_cal_and_flag(
     applysol=True,
     do_postcal_flag=True,
     flag_threshold=5.0,
-    cpu_frac=0.8,
-    mem_limit=0.8,
+    n_threads=1,
+    mem_limit=1,
 ):
     """
     Single round calibration and flagging for a set of measurement sets in parallel
@@ -455,10 +453,10 @@ def single_round_cal_and_flag(
         Perform post-calibration flagging for each measurement set
     flag_threashold : float, optional
         Flagging threshold
-    cpu_frac : float, optional
-        CPU fraction
-    mem_frac : float, optional
-        Memory fraction
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
 
     Returns
     -------
@@ -471,37 +469,13 @@ def single_round_cal_and_flag(
     list
         List whether postcal flag is successful or not
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return {}, 0, 0, []
     else:
         succeed = 0
         failed = len(mslist)
-
-    client_info = dask_client.scheduler_info()["workers"]
-    njobs = len(client_info)
-    worker_mem_list = []
-    for addr, w in client_info.items():
-        worker_mem_list.append(w["memory_limit"] / 1024**3)
-    if len(worker_mem_list) > 0:
-        mem_limit = round(min(worker_mem_list), 3)
-    else:
-        mem_limit = 1
-    n_threads = os.environ.get("OMP_NUM_THREADS")
-    if n_threads is not None:
-        n_threads = int(n_threads)
-    else:
-        n_threads = 1
-
-    print("##################################")
-    print(f"Total dask worker: {njobs}")
-    print(f"CPU per worker: {n_threads}")
-    print(f"Memory per worker: {mem_limit} GB")
-    print("#################################")
-
+        
     if isinstance(do_postcal_flag, bool):
         do_postcal_flag = [do_postcal_flag] * len(mslist)
     elif len(do_postcal_flag) < len(mslist):
@@ -555,8 +529,8 @@ def run_basic_cal_rounds(
     uvrange="",
     keep_backup=False,
     perform_polcal=False,
-    cpu_frac=0.8,
-    mem_frac=0.8,
+    n_threads=1,
+    mem_limit=1,
 ):
     """
     Perform basic calibration rounds
@@ -579,10 +553,10 @@ def run_basic_cal_rounds(
         Perform polarization calibration for fullpolar data
     keep_backup : bool, optional
         Keep backup of ms after each calibration rounds
-    cpu_frac : float, optional
-        CPU fraction to use
-    mem_frac : float, optional
-        Memory fraction to use
+    n_threads : int, optional
+        CPU threads to use
+    mem_limit : float, optional
+        Memory to use in GB
 
     Returns
     -------
@@ -597,9 +571,6 @@ def run_basic_cal_rounds(
     int
         Failed ms number
     """
-    cpu_frac = min(0.8, abs(cpu_frac))
-    mem_frac = min(0.8, abs(mem_frac))
-
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, [], [], 0, 0
@@ -654,9 +625,7 @@ def run_basic_cal_rounds(
                         pass
 
         for cal_round in range(1, n_rounds + 1):
-            print("#################################")
-            print(f"Calibration round: {cal_round}")
-            print("#################################")
+            print_banner(f"Calibration round: {cal_round}")
             if cal_round > 1:
                 if perform_polcal:
                     do_polcal = True
@@ -674,8 +643,8 @@ def run_basic_cal_rounds(
                 applysol=applysol,
                 do_postcal_flag=do_postcal_flag,
                 flag_threshold=flag_threshold,
-                cpu_frac=cpu_frac,
-                mem_frac=mem_frac,
+                n_threads=n_threads,
+                mem_limit=mem_limit,
             )
             do_postcal_flag = postcal_flags
             caltables = list(caltable_dic.values())
@@ -684,7 +653,6 @@ def run_basic_cal_rounds(
             ###################################
             # Backup
             ###################################
-            print(f"Backup directory: {workdir}/backup")
             os.makedirs(workdir + "/backup", exist_ok=True)
             for caltable in caltables:
                 if caltable is not None and os.path.exists(caltable):
@@ -715,9 +683,7 @@ def run_basic_cal_rounds(
         if keep_backup:
             os.system(f"mv {workdir}/backup/* {workdir}")
         os.system(f"rm -rf {workdir}/backup")
-        print("##################")
-        print("Basic calibration is done successfully.")
-        print("##################")
+        print_banner("Basic calibration is done successfully.")
         return 0, final_bcals, final_kcrosscals, succeed, failed
     except Exception:
         traceback.print_exc()
@@ -832,11 +798,6 @@ def main(
 
     dask_cluster = None
     if dask_client is None:
-        if mem_frac <= 0:
-            mem_frac = 0.8
-        if cpu_frac <= 0:
-            cpu_frac = 0.8
-
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             workdir,
             cpu_frac=cpu_frac,
@@ -849,9 +810,7 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print("###################################")
-        print("Starting initial calibration.")
-        print("###################################")
+        print_banner("Starting basic calibration.")
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -881,8 +840,8 @@ def main(
             uvrange=uvrange,
             perform_polcal=perform_polcal,
             keep_backup=keep_backup,
-            cpu_frac=float(cpu_frac),
-            mem_frac=float(mem_frac),
+            n_threads=int(n_threads),
+            mem_limit=float(mem_limit),
         )
         if len(bcals) == 0:
             print("No bandpass caltable is made.")
