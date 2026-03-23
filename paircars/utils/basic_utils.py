@@ -31,11 +31,12 @@ def capture_all_output():
         sys.stderr = old_stderr
         
 
-def print_banner(msg, pad=0, max_width=40):
+def print_banner(msg, pad=0, max_width=40, no_print=Falses):
     width = min(len(msg) + pad, max_width)
     line = "#" * width
     msg =  f"{line}\n{msg.center(width)}\n{line}"
-    print (msg)
+    if not no_print:
+        print (msg)
     return msg
 
 
