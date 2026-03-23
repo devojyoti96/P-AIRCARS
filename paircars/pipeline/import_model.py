@@ -95,7 +95,6 @@ def import_hyperdrive_model(
             nchan = msmd.nchan(0)
             mid_freq = msmd.meanfreq(0, unit="MHz")
             freqres = msmd.chanres(0, unit="kHz")[0]
-            #npol = msmd.ncorrforpol()[0]
             msmd.nantennas()
             times = msmd.timesforfield(0)
             ntime = len(times)
@@ -161,19 +160,11 @@ def import_hyperdrive_model(
                 data_table.open(msname, nomodify=False)
             model_table = casatable()
             model_table.open(model_msname, nomodify=False)
-            '''baselines = [
-                *zip(data_table.getcol("ANTENNA1"), data_table.getcol("ANTENNA2"))
-            ]'''
             m_array = model_table.getcol("DATA")
             model_table.close()
-            '''pos = np.array([i[0] != i[1] for i in baselines])
-            model_array = np.empty((npol, nchan, len(baselines)), dtype="complex")
-            model_array[..., pos] = m_array
-            model_array[..., ~pos] = 0.0'''
             data_table.putcol("MODEL_DATA", m_array)
             data_table.close()
-            #model_table.close()
-        del m_array#, model_array
+        del m_array
         print(f"Model import done in: {round(time.time()-starttime,2)}s")
         os.system(f"touch {msname}/.modeling_succeed")
         return 0
@@ -415,7 +406,7 @@ def main(
 
     try:
         msg, succeed, failed = run_all_modeling(
-            mslist, dask_client, metafits, beamfile, sourcelist, n_threads, True
+            mslist, dask_client, metafits, beamfile, sourcelist, n_threads, False
         )
     except Exception:
         traceback.print_exc()

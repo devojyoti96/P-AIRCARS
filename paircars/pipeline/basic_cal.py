@@ -494,6 +494,7 @@ def single_round_cal_and_flag(
     if n_threads is not None:
         n_threads = int(n_threads)
     else:
+        print("Could not determine threads. Using default.")
         n_threads = 1
 
     print("#################################")
@@ -882,22 +883,24 @@ def main(
                     freq_end = freq_start + bw
                     ch_start = freq_to_MWA_coarse(freq_start)
                     ch_end = freq_to_MWA_coarse(freq_end)
-                    if freq_end > freq_start and ch_end == ch_start:
-                        ch_end = ch_start + 1
+                    if ch_end>ch_start:
+                        coarse_chan = f"{ch_start}-{ch_end}"
+                    else:
+                        coarse_chan = f"{ch_start}"
                     if caltable.endswith(".bcal"):
                         final_caltable = (
                             caldir
-                            + f"/calibrator_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
+                            + f"/calibrator_{obsid}_ch_{coarse_chan}.bcal"
                         )
                     elif caltable.endswith(".kcrosscal"):
                         final_caltable = (
                             caldir
-                            + f"/calibrator_{obsid}_coarsechan_{ch_start}_{ch_end}.kcrosscal"
+                            + f"/calibrator_{obsid}_ch_{coarse_chan}.kcrosscal"
                         )
                     else:
                         final_caltable = (
                             caldir
-                            + f"/calibrator_{obsid}_coarsechan_{ch_start}_{ch_end}.cal"
+                            + f"/calibrator_{obsid}_ch_{coarse_chan}.cal"
                         )
                     os.system(f"rm -rf {final_caltable}")
                     os.system(f"cp -r {caltable} {final_caltable}")

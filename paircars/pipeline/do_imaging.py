@@ -723,6 +723,8 @@ def run_all_imaging(
             coarse_chan = get_MWA_coarse_chan(ms)
             if len(coarse_chan)>1:
                 coarse_chan = f"{min(coarse_chan)}-{max(coarse_chan)}"
+            else:
+                coarse_chan = f"{min(coarse_chan)}"
             logfile = f"{workdir}/logs/imaging_{obsid}_ch_{coarse_chan}.log"            
             tasks.append(
                 delayed(perform_imaging)(

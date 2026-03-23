@@ -873,12 +873,13 @@ def run_hyperdrive(
     limit_threads(n_threads=ncpu)
     env=os.environ.copy()
     env_vars = [
-    "OMP_NUM_THREADS",
-    "OPENBLAS_NUM_THREADS",
-    "MKL_NUM_THREADS",
-    "NUMEXPR_NUM_THREADS",
-    "VECLIB_MAXIMUM_THREADS",
-    "RAYON_NUM_THREADS"]
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "RAYON_NUM_THREADS"
+    ]
     init_udocker()
     if check_container:
         container_present = check_udocker_container(container_name)

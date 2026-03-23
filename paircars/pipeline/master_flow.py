@@ -86,7 +86,6 @@ def master_control(
     target_datadir,
     workdir,
     outdir,
-    dask_addr,
     # Metafits and calibrators
     target_metafits="",
     calibrator_datadir="",
@@ -628,6 +627,7 @@ def master_control(
         if dask_client is None:
             print("Error occured in creating local cluster.")
             return 1
+    dask_addr = dask_client.scheduler.address
 
     #####################################
     # Initiating paircars data
@@ -964,7 +964,8 @@ def master_control(
                         bandpass_tables,
                         crossphase_tables,
                     ) = basic_cal_subflow.with_options(
-                        flow_run_name=f"basiccal_subflow_{cal_obsid}"
+                        flow_run_name=f"basiccal_subflow_{cal_obsid}",
+                        task_runner=DaskTaskRunner(address=dask_addr),
                     )(
                         cal_obsid=cal_obsid,
                         cal_datadir=cal_datadir,
@@ -1049,7 +1050,8 @@ def master_control(
                 max(2, min(len(target_mslist) + 1, max_worker)),
             )
         preprocess_msg, target_mslist = pre_process_subflow.with_options(
-            flow_run_name=f"preprocess_subflow_{target_obsid}"
+            flow_run_name=f"preprocess_subflow_{target_obsid}",
+            task_runner=DaskTaskRunner(address=dask_addr),
         )(
             # Core observational inputs
             target_mslist=target_mslist,
@@ -1101,7 +1103,8 @@ def master_control(
             selfcal_bandpass,
             selfcal_leakage,
         ) = selfcal_subflow.with_options(
-            flow_run_name=f"selfcal_subflow_{target_obsid}"
+            flow_run_name=f"selfcal_subflow_{target_obsid}",
+            task_runner=DaskTaskRunner(address=dask_addr),
         )(
             target_mslist=target_mslist,
             target_metafits=target_metafits,
@@ -1154,7 +1157,8 @@ def master_control(
                     max(2, min(total_ncoarse + 1, max_worker)),
                 )
             applycal_msg, split_target_mslist = applysol_subflow.with_options(
-                flow_run_name=f"applysol_subflow_{target_obsid}"
+                flow_run_name=f"applysol_subflow_{target_obsid}",
+                task_runner=DaskTaskRunner(address=dask_addr),
             )(
                 target_mslist=target_mslist,
                 target_metafits=target_metafits,
@@ -1208,7 +1212,8 @@ def master_control(
                 max(2, min(len(split_target_mslist) + 1, max_worker)),
             )
         imaging_msg = imaging_subflow.with_options(
-            flow_run_name=f"imaging_subflow_{target_obsid}"
+            flow_run_name=f"imaging_subflow_{target_obsid}",
+            task_runner=DaskTaskRunner(address=dask_addr),
         )(
             split_target_mslist=split_target_mslist,
             target_metafits=target_metafits,
@@ -2028,7 +2033,6 @@ def cli():
             args.target_datadir,
             args.workdir,
             args.outdir,
-            dask_addr,
             target_metafits=args.target_metafits,
             calibrator_datadir=args.cal_datadir,
             calibrator_metafits=args.cal_metafits,

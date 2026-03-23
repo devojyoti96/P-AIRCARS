@@ -1827,6 +1827,8 @@ def main(
                 coarse_chan = get_MWA_coarse_chan(ms)
                 if len(coarse_chan)>1:
                     coarse_chan = f"{min(coarse_chan)}-{max(coarse_chan)}"
+                else:
+                    coarse_chan = f"{min(coarse_chan)}"
                 logfile_prefix = f"{workdir}/logs/selfcal_{obsid}_ch_{coarse_chan}" 
                 print(f"Measurement set name: {ms}.")
                 print(f"Self-cal log file: {logfile_prefix}_int.log")
@@ -1883,11 +1885,13 @@ def main(
                         freq_end = freq_start + bw
                         ch_start = freq_to_MWA_coarse(freq_start)
                         ch_end = freq_to_MWA_coarse(freq_end)
-                        if freq_end > freq_start and ch_end == ch_start:
-                            ch_end = ch_start + 1
+                        if ch_end>ch_start:
+                            coarse_chan = f"{ch_start}-{ch_end}"
+                        else:
+                            coarse_chan = f"{ch_start}" 
                         final_gain_caltable = (
                             caldir
-                            + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.gcal"
+                            + f"/selfcal_{obsid}_ch_{coarse_chan}.gcal"
                         )
                         os.system(f"rm -rf {final_gain_caltable}")
                         os.system(f"cp -r {gcal} {final_gain_caltable}")
@@ -1895,9 +1899,19 @@ def main(
 
                         if len(gaintables) > 1:
                             bpass = gaintables[1]
+                            cal_metadata = get_caltable_metadata(bpass)
+                            freq_start = cal_metadata["Channel 0 frequency (MHz)"]
+                            bw = cal_metadata["Bandwidth (MHz)"]
+                            freq_end = freq_start + bw
+                            ch_start = freq_to_MWA_coarse(freq_start)
+                            ch_end = freq_to_MWA_coarse(freq_end)
+                            if ch_end>ch_start:
+                                coarse_chan = f"{ch_start}-{ch_end}"
+                            else:
+                                coarse_chan = f"{ch_start}" 
                             final_bpass_caltable = (
                                 caldir
-                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.bcal"
+                                + f"/selfcal_{obsid}_ch_{coarse_chan}.bcal"
                             )
                             os.system(f"rm -rf {final_bpass_caltable}")
                             os.system(f"cp -r {bpass} {final_bpass_caltable}")
@@ -1935,18 +1949,20 @@ def main(
                             freq_end = freq_start + bw
                             ch_start = freq_to_MWA_coarse(freq_start)
                             ch_end = freq_to_MWA_coarse(freq_end)
-                            if freq_end > freq_start and ch_end == ch_start:
-                                ch_end = ch_start + 1
+                            if ch_end>ch_start:
+                                coarse_chan = f"{ch_start}-{ch_end}"
+                            else:
+                                coarse_chan = f"{ch_start}" 
                             final_leakage_caltable = (
                                 caldir
-                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.dcal"
+                                + f"/selfcal_{obsid}_ch_{coarse_chan}.dcal"
                             )
                             os.system(f"rm -rf {final_leakage_caltable}")
                             os.system(f"cp -r {dcal} {final_leakage_caltable}")
                             dcal_list.append(final_leakage_caltable)
                             final_leakage_info = (
                                 caldir
-                                + f"/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.leakage"
+                                + f"/selfcal_{obsid}_ch_{coarse_chan}.leakage"
                             )
                             os.system(f"rm -rf {final_leakage_info}")
                             os.system(f"cp -r {leakage_file} {final_leakage_info}")
@@ -1961,17 +1977,6 @@ def main(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(mslist[i])}"
                             )
                             failed_polselfcal += 1
-                try:
-                    np.save(
-                        f"{caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy",
-                        [int_DR, pol_DR],
-                    )
-                    os.system(
-                        f"mv {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR.npy {caldir}/selfcal_{obsid}_coarsechan_{ch_start}_{ch_end}.DR"
-                    )
-                except Exception:
-                    traceback.print_exc()
-
             if not keep_backup:
                 for ms in mslist:
                     int_selfcaldir = (
@@ -2026,14 +2031,14 @@ def main(
             if succeed_intselfcal == 0:
                 msg = 1
             if len(int_DR_list) > 0:
-                avg_int_DR = np.nanmedian(int_DR_list)
-                max_int_DR = np.nanmax(int_DR_list)
+                avg_int_DR = round(np.nanmedian(int_DR_list),2)
+                max_int_DR = round(np.nanmax(int_DR_list),2)
             else:
                 avg_int_DR = 0
                 max_int_DR = 0
             if len(pol_DR_list) > 0:
-                avg_pol_DR = np.nanmedian(pol_DR_list)
-                max_pol_DR = np.nanmax(pol_DR_list)
+                avg_pol_DR = round(np.nanmedian(pol_DR_list),2)
+                max_pol_DR = round(np.nanmax(pol_DR_list),2)
             else:
                 avg_pol_DR = 0
                 max_pol_DR = 0
