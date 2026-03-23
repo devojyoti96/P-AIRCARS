@@ -260,15 +260,7 @@ def get_local_dask_cluster(
         mem_limit = round(usable_mem / n_worker, 2)
         n_worker = max(1, int(usable_mem / mem_limit))
         ncpu = max(1, int(usable_cpu / n_worker))
-
-        cluster = LocalCluster(
-            n_workers=1,
-            threads_per_worker=1,
-            memory_limit=f"{mem_limit}GiB",
-            local_directory=dask_dir,
-            dashboard_address=":0",
-            processes=True,
-            env={
+        env={
                 "PYTHONUNBUFFERED": "1",
                 "OMP_NUM_THREADS": f"{ncpu}",
                 "MKL_NUM_THREADS": f"{ncpu}",
@@ -281,7 +273,15 @@ def get_local_dask_cluster(
                 "TEMP": f"{dask_dir_tmp}",
                 "DASK_TEMPORARY_DIRECTORY": f"{dask_dir_tmp}",
                 "PYTHONWARNINGS": "ignore::UserWarning:contextlib",
-            },
+            }
+        cluster = LocalCluster(
+            n_workers=1,
+            threads_per_worker=1,
+            memory_limit=f"{mem_limit}GiB",
+            local_directory=dask_dir,
+            dashboard_address=":0",
+            processes=True,
+            env=env
         )
         client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
@@ -294,6 +294,7 @@ def get_local_dask_cluster(
             print(f"Memory per worker: {mem_limit}GB")
             print(f"Maximum number of workers: {n_worker}")
             print("####################################################")
+        os.environ.update(env)
         return client, cluster, dask_dir, n_worker
     except Exception:
         print("Error occured in creating local cluster.")
