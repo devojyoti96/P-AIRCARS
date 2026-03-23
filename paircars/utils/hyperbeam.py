@@ -77,6 +77,13 @@ class FEEBeam:
         numpy.array
             Beam Jones (shape: coodinates, 4 components)
         """
+        env_vars = [
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "RAYON_NUM_THREADS"]
         pbdir = os.path.dirname(os.path.abspath(self.pbfile))
         temp_name = "mwapb_udocker_" + next(tempfile._get_candidate_names())
         temp_pbdir_path = os.path.join(pbdir, temp_name)
@@ -91,18 +98,20 @@ class FEEBeam:
             iau_order=iau_order,
             pbfile=f"{temp_pbdir_path}/{os.path.basename(self.pbfile)}",
         )
-        proc = subprocess.run(
-            [
-                "udocker",
-                "run",
-                "--nobanner",
-                f"--volume={pbdir}:{temp_pbdir_path}",
+        full_command = ["udocker", "--quiet", "run", "--nobanner"]
+        env_keys = list(self.env.keys())
+        for var in env_vars:
+            if var in env_keys:
+                full_command.append(f"--env={var}={self.env[var]}")
+        full_command = full_command + [f"--volume={pbdir}:{temp_pbdir_path}",
                 "--workdir",
                 f"{temp_pbdir_path}",
                 f"{self.container_name}",
                 "python",
-                "/app/hyperbeam_array.py",
-            ],
+                "/app/hyperbeam_array.py"]
+        print (full_command)
+        proc = subprocess.run(
+            full_command,
             env=self.env,
             input=pickle.dumps(data),
             capture_output=True,

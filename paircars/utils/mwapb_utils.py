@@ -12,6 +12,7 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation, SkyCoord, AltAz
 from .basic_utils import get_datadir
 from .udocker_utils import run_wsclean
+from .resource_utils import limit_threads
 
 warnings.filterwarnings("ignore")
 
@@ -210,14 +211,13 @@ def all_sky_beam_interpolator(
         All sky primary beam Jones array
     """
     ncpu = max(1, ncpu)
+    limit_threads(n_threads=ncpu)
     from scipy.interpolate import RectBivariateSpline
-
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)  # , check_container=True)
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
     az_scale = np.arange(0, 360, resolution)
     alt_scale = np.arange(0, 90, resolution)
     az, alt = np.meshgrid(az_scale, alt_scale)
@@ -329,8 +329,8 @@ def get_jones_array(
         Jones array (shape : coordinate_arr_shape, 2 ,2)
     """
     ncpu = max(1, ncpu)
+    limit_threads(n_threads=ncpu)
     from joblib import Parallel, delayed as jobdelayed
-
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -383,8 +383,7 @@ def get_jones_array(
         j11 = j11.reshape(az_arr.shape)
         jones_array = np.array([j00, j01, j10, j11]).T
     else:
-        os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-        beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)  # , check_container=True)
+        beam = mwa_hyperbeam.FEEBeam(MWA_PB_file) 
         sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
         delay = sweet_spots[int(gridpoint)][-1]
         za_arr = 90 - alt_arr
@@ -448,12 +447,12 @@ def get_pb_radec(
         YY power beam value
     """
     ncpu = max(1, ncpu)
+    limit_threads(n_threads=ncpu)
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)  # , check_container=True)
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
     metadata = fits.getheader(metafits)
     obstime = metadata["DATE-OBS"]
     gridpoint = metadata["GRIDNUM"]
@@ -901,13 +900,13 @@ def make_primarybeammap(
         Total beam area (YY)
     """
     n_threads = max(1, n_threads)
+    limit_threads(n_threads=n_threads)
     warnings.filterwarnings("ignore")
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    os.environ["RAYON_NUM_THREADS"] = str(n_threads)
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)  # , check_container=True)
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file) 
 
     ############################
     # Creating sky grid

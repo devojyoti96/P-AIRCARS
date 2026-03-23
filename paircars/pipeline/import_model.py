@@ -95,7 +95,7 @@ def import_hyperdrive_model(
             nchan = msmd.nchan(0)
             mid_freq = msmd.meanfreq(0, unit="MHz")
             freqres = msmd.chanres(0, unit="kHz")[0]
-            npol = msmd.ncorrforpol()[0]
+            #npol = msmd.ncorrforpol()[0]
             msmd.nantennas()
             times = msmd.timesforfield(0)
             ntime = len(times)
@@ -132,8 +132,10 @@ def import_hyperdrive_model(
             str(ntime),
             "--output-model-time-average",
             f"{timeres}s",
+            "--output-autos"
         ]
         hyperdrive_cmd = " ".join(hyperdrive_cmd_args)
+        print (hyperdrive_cmd)
         result = run_hyperdrive(hyperdrive_cmd, ncpu=ncpu, verbose=verbose)
         if result != 0:
             print("Error occured in hyperdrive.")
@@ -143,6 +145,7 @@ def import_hyperdrive_model(
         ########################
         # Importing model
         ########################
+        print ("Copy model data to ms...")
         with suppress_output():
             data_table = casatable()
             data_table.open(msname, nomodify=False)
@@ -158,18 +161,19 @@ def import_hyperdrive_model(
                 data_table.open(msname, nomodify=False)
             model_table = casatable()
             model_table.open(model_msname, nomodify=False)
-            baselines = [
+            '''baselines = [
                 *zip(data_table.getcol("ANTENNA1"), data_table.getcol("ANTENNA2"))
-            ]
+            ]'''
             m_array = model_table.getcol("DATA")
-            pos = np.array([i[0] != i[1] for i in baselines])
+            model_table.close()
+            '''pos = np.array([i[0] != i[1] for i in baselines])
             model_array = np.empty((npol, nchan, len(baselines)), dtype="complex")
             model_array[..., pos] = m_array
-            model_array[..., ~pos] = 0.0
-            data_table.putcol("MODEL_DATA", model_array)
+            model_array[..., ~pos] = 0.0'''
+            data_table.putcol("MODEL_DATA", m_array)
             data_table.close()
-            model_table.close()
-        del m_array, model_array
+            #model_table.close()
+        del m_array#, model_array
         print(f"Model import done in: {round(time.time()-starttime,2)}s")
         os.system(f"touch {msname}/.modeling_succeed")
         return 0
@@ -214,6 +218,7 @@ def run_all_modeling(
     int
         Failed ms number
     """
+    mslist = list(set(mslist))
     ncpu = max(1, ncpu)
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
@@ -410,7 +415,7 @@ def main(
 
     try:
         msg, succeed, failed = run_all_modeling(
-            mslist, dask_client, metafits, beamfile, sourcelist, n_threads, verbose
+            mslist, dask_client, metafits, beamfile, sourcelist, n_threads, True
         )
     except Exception:
         traceback.print_exc()

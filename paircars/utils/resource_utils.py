@@ -175,3 +175,4 @@ def limit_threads(n_threads=-1):
         os.environ["MKL_NUM_THREADS"] = str(n_threads)
         os.environ["VECLIB_MAXIMUM_THREADS"] = str(n_threads)
         os.environ["NUMEXPR_NUM_THREADS"] = str(n_threads)
+        os.environ["RAYON_NUM_THREADS"] = str(n_threads)

@@ -176,7 +176,7 @@ def get_local_dask_cluster(
     dask_dir,
     cpu_frac=0.8,
     mem_frac=0.8,
-    min_mem=1,
+    min_mem=2,
     max_worker=-1,
     spill_frac=0.7,
     wait_time=10.0,
@@ -242,28 +242,14 @@ def get_local_dask_cluster(
         )
         min_mem /= spill_frac  # Accounting for spill fraction
         usable_cpu = max(1, int(psutil.cpu_count() * cpu_frac))
-        total_time = 0
-        while True:
-            total_mem = psutil.virtual_memory().available / 1024**3  # In GB
-            usable_mem = round(total_mem * mem_frac, 2)
-            n_worker_mem = int(usable_mem / min_mem)
-            if n_worker_mem < 2:
-                if total_time > wait_time:
-                    total_mem = psutil.virtual_memory().total / 1024**3  # In GB
-                    usable_mem = round(total_mem * mem_frac, 2)
-                    n_worker_mem = int(usable_mem / min_mem)
-                    if n_worker_mem < 2:
-                        print(
-                            f"Minimum available memory: {usable_mem}GB is not sufficient for at-least 2 workers."
-                        )
-                        return None, None, dask_dir, n_worker_mem
-                    else:
-                        break
-                else:
-                    time.sleep(1)
-                    total_time += 1
-            else:
-                break
+        total_mem = psutil.virtual_memory().total / 1024**3  # In GB
+        usable_mem = round(total_mem * mem_frac, 2)
+        n_worker_mem = int(usable_mem / min_mem)
+        if n_worker_mem < 2:
+            print(
+                f"Minimum available memory: {usable_mem}GB is not sufficient for at-least 2 workers."
+            )
+            return None, None, dask_dir, n_worker_mem
 
         n_worker_cpu = usable_cpu
         n_worker = min(n_worker_cpu, n_worker_mem)
@@ -429,7 +415,7 @@ def submit_local_master_flow(args, jobid):
                         "traceback" in lower or "killed" in lower
                     ) and not printing_traceback:
                         printing_traceback = True
-                        traceback_waittime = 15
+                        traceback_waittime = 90
                     if (
                         printing_traceback
                         or not only_run_print

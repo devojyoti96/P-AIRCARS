@@ -6,6 +6,7 @@ import numpy as np
 import socket
 from .basic_utils import get_datadir, wait_for_port
 from .killjob_utils import terminate_process_and_children, kill_port
+from .resource_utils import limit_threads
 
 ####################
 # uDOCKER related
@@ -869,10 +870,16 @@ def run_hyperdrive(
     int
         Success message
     """
+    limit_threads(n_threads=ncpu)
+    env=os.environ.copy()
+    env_vars = [
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "RAYON_NUM_THREADS"]
     init_udocker()
-    if ncpu > 0:
-        os.environ["RAYON_NUM_THREADS"] = str(ncpu)
-    env = os.environ.copy()
     if check_container:
         container_present = check_udocker_container(container_name)
         if not container_present:
@@ -920,6 +927,10 @@ def run_hyperdrive(
             cmd_args[i + 1] = f"{temp_docker_sourcepath}/{os.path.basename(sourcefile)}"
     try:
         full_command = ["udocker", "--quiet", "run", "--nobanner"]
+        env_keys = list(env.keys())
+        for var in env_vars:
+            if var in env_keys:
+                full_command.append(f"--env={var}={env[var]}")
         if outpath is not None:
             full_command.append(f"--volume={outpath}:{temp_docker_outpath}")
         if beampath is not None:
