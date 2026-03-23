@@ -848,11 +848,11 @@ def main(
             return 1, succeed, failed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
-        try:
-            print("###################################")
-            print("Starting initial calibration.")
-            print("###################################")
-            client_info = dask_client.scheduler_info()["workers"]
+    try:
+        print("###################################")
+        print("Starting initial calibration.")
+        print("###################################")
+        client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
         for addr, w in client_info.items():
