@@ -52,7 +52,7 @@ def chanlist_to_str(lst):
 def single_mstransform_wrapper(**kwargs):
     with capture_all_output() as (out, err):
         result =single_mstransform(**kwargs)
-        return kwargs.get("msname"), result, out.getvalue(), err.getvalue()
+        return result, out.getvalue(), err.getvalue()
 
 
 def split_target_scans(
@@ -220,12 +220,11 @@ def split_target_scans(
         result_wrapper = dask_client.gather(future)
         result = []
         for r in result_wrapper:
-            msname = r[0]
-            result.append(r[1])
-            logger.info(f"Worker log for: {os.path.basename(msname)}")
-            for line in r[2].splitlines():
+            result.append(r[0])
+            logger.info(f"Worker log for: {os.path.basename(r[0])}")
+            for line in r[1].splitlines():
                 logger.info(line)
-            for line in r[3].splitlines():
+            for line in r[2].splitlines():
                 logger.error(line)
             
         splited_ms_list = splited_ms_list + result
@@ -493,12 +492,6 @@ def cli():
         "--scan",
         type=int,
         default=1,
-        help="Coarse channels to split",
-    )
-    adv_args.add_argument(
-        "--coarse_chans",
-        type=str,
-        default="",
         help="Target scan to split",
     )
     adv_args.add_argument(
@@ -571,8 +564,6 @@ def cli():
 
     args = parser.parse_args()
 
-    split_coarse_chans = args.coarse_chans.split(",")
-    
     msg, _, _ = main(
         args.mslist,
         args.metafits,
@@ -583,7 +574,6 @@ def cli():
         time_interval=args.time_interval,
         quack_timestamps=args.quack_timestamps,
         force_split=args.force_split,
-        split_coarse_chans=split_coarse_chans,
         freqres=args.freqres,
         timeres=args.timeres,
         prefix=args.prefix,
