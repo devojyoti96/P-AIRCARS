@@ -34,9 +34,9 @@ def capture_all_output():
 def print_banner(msg, pad=0, max_width=40):
     width = min(len(msg) + pad, max_width)
     line = "#" * width
-    print(line)
-    print(msg.center(width))
-    print(line)
+    msg =  f"{line}\n{msg.center(width)}\n{line}"
+    print (msg)
+    return msg
 
 
 def internet_available(timeout=10):

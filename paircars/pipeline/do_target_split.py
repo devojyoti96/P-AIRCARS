@@ -378,7 +378,7 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting spliting measurement sets.")
+        logger.info(print_banner("Starting spliting measurement sets."))
         ##################################
         # Parallel spliting
         ##################################
