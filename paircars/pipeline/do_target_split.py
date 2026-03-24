@@ -165,14 +165,16 @@ def split_target_scans(
             )
             coarse_chans = get_MWA_coarse_chan(msname)
             logger.debug(f"Coarse channels for {msname} are: {coarse_chans}")
-            if len(split_coarse_chans) > 0:
-                coarse_chans = list(set(coarse_chans) & set(split_coarse_chans))
+            if len(split_coarse_chans) == 0:
+                use_coarse_chans = coarse_chans
+            else:
+                use_coarse_chans = split_coarse_chans
             logger.debug(f"Using coarse channels for {msname} are: {coarse_chans}")
             coarse_chlist = []
             good_spwlist = []
             for c in range(len(coarse_channel_bands)):
                 coarse_chan = coarse_chans[c]
-                if coarse_chan in coarse_chans:
+                if coarse_chan in use_coarse_chans:
                     chan = coarse_channel_bands[c]
                     good_chans = chan[2]
                     good_chans = [f"{i}" for i in good_chans]
