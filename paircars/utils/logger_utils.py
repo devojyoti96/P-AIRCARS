@@ -131,6 +131,12 @@ class RemoteLogger(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
+        level = msg.split("|")[0].strip()
+        msg = "|".join(line.split("|")[1:])
+        # Fix numeric levels
+        if isinstance(level,int) or level.isdigit():
+            level = logging.getLevelName(int(level))
+            msg = f"{level} | {msg}"
         try:
             requests.post(
                 f"{self.remote_link}/api/log",
