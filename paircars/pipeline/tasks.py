@@ -330,7 +330,6 @@ def run_target_split_jobs(
                 logfile=logfile,
                 jobid=jobid,
                 start_remote_log=remote_log,
-                verbose=verbose,
                 dask_client=dask_client,
                 verbose=verbose,
             )
