@@ -273,7 +273,6 @@ def get_local_dask_cluster(
                 "TEMP": f"{dask_dir_tmp}",
                 "DASK_TEMPORARY_DIRECTORY": f"{dask_dir_tmp}",
                 "PYTHONWARNINGS": "ignore::UserWarning:contextlib",
-                "PREFECT_LOGGING_LEVEL":"INFO",
             }
         cluster = LocalCluster(
             n_workers=1,

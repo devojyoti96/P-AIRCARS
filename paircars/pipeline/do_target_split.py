@@ -204,7 +204,7 @@ def split_target_scans(
                         logger.debug(f"Deleteing pre-existing output ms flags: {outputvis}.flagversions")
                         os.system(f"rm -rf {outputvis}.flagversions")
                     logger.debug("Spliting parameters:")
-                    logger.debug("Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {spw}, time range: {timerange}")
+                    logger.debug(f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {spw}, time range: {timerange}")
                     tasks.append(
                         delayed(single_mstransform_wrapper)(
                             msname=msname,
@@ -265,6 +265,7 @@ def main(
     logfile=None,
     jobid=0,
     start_remote_log=False,
+    verbose=False,
     dask_client=None,
 ):
     """
@@ -310,6 +311,8 @@ def main(
         Job identifier for tracking and PID storage. Default is 0.
     start_remote_log : bool, optional
         If True, enables remote logging using credentials stored in workdir. Default is False.
+    verbose : bool, optional
+        Verbose logs
     dask_client : dask.client, optional
         Dask client
 
@@ -323,6 +326,9 @@ def main(
         Succeeded splited ms
     """
     logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+        
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -546,6 +552,9 @@ def cli():
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
+    adv_args.add_argument(
+        "--verbose", action="store_true", help="Verbose logs"
+    )
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
@@ -591,6 +600,7 @@ def cli():
         mem_frac=args.mem_frac,
         logfile=args.logfile,
         jobid=args.jobid,
+        verbose=args.verbose,
         start_remote_log=args.start_remote_log,
     )
     return msg

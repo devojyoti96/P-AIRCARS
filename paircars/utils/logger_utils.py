@@ -337,15 +337,15 @@ def get_logger_safe():
         with suppress_output():
             from prefect import get_run_logger
             logger = get_run_logger()
-            logger.setLevel(logging.DEBUG)
+            logger.setLevel(logging.INFO)
             return logger
     except Exception:
         name = f"task_{os.getpid()}"
         logger = logging.getLogger(name)
         if not logger.handlers:
             handler = logging.StreamHandler()
+            logger.setLevel(logging.INFO)
             formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",datefmt="%Y-%m-%d %H:%M:%S")
-            logger.setLevel(logging.DEBUG)
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.propagate = False
