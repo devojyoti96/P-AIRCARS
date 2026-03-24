@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 import argparse
-import traceback
 import time
 import sys
 import os
@@ -121,13 +120,12 @@ def split_target_scans(
         logger = get_logger_safe()
     n_threads = max(1, n_threads)
     if len(mslist) == 0:
-        logger.info("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
-    else:
-        len(mslist)
-
+        
     try:
         os.chdir(workdir)
+        logger.debug(f"Current working directory: {os.getcwd()}")
         #######################################
         # Extracting time frequency information
         #######################################
@@ -138,6 +136,7 @@ def split_target_scans(
             flag_central_chan = False
         else:
             flag_central_chan = True
+        logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
 
         tasks = []
         splited_ms_list = []
@@ -146,9 +145,6 @@ def split_target_scans(
             msmd = msmetadata()
             msmd.open(msname)
             chanres = msmd.chanres(0, unit="MHz")[0]
-            freqs = msmd.chanfreqs(0, unit="MHz")
-            max(freqs) - min(freqs)
-            msmd.nchan(0)
             msmd.close()
             if freqres > 0:  # Image resolution is in MHz
                 chanwidth = int(freqres / chanres)
@@ -160,7 +156,7 @@ def split_target_scans(
                 timebin = str(timeres) + "s"
             else:
                 timebin = ""
-
+                
             #############################
             # Making spectral chunks
             #############################
@@ -168,15 +164,15 @@ def split_target_scans(
                 msname, flag_central_chan=flag_central_chan
             )
             coarse_chans = get_MWA_coarse_chan(msname)
-            if len(split_coarse_chans) == 0:
-                use_coarse_chans = coarse_chans
-            else:
-                use_coarse_chans = split_coarse_chans
+            logger.debug(f"Coarse channels for {msname} are: {coarse_chans}")
+            if len(split_coarse_chans) > 0:
+                coarse_chans = list(set(coarse_chans) & set(split_coarse_chans))
+            logger.debug(f"Using coarse channels for {msname} are: {coarse_chans}")
             coarse_chlist = []
             good_spwlist = []
             for c in range(len(coarse_channel_bands)):
                 coarse_chan = coarse_chans[c]
-                if coarse_chan in use_coarse_chans:
+                if coarse_chan in coarse_chans:
                     chan = coarse_channel_bands[c]
                     good_chans = chan[2]
                     good_chans = [f"{i}" for i in good_chans]
@@ -200,9 +196,13 @@ def split_target_scans(
                     splited_ms_list.append(outputvis)
                 else:
                     if os.path.exists(outputvis):
+                        logger.debug(f"Deleteing pre-existing output ms: {outputvis}")
                         os.system(f"rm -rf {outputvis}")
                     if os.path.exists(f"{outputvis}.flagversions"):
+                        logger.debug(f"Deleteing pre-existing output ms flags: {outputvis}.flagversions")
                         os.system(f"rm -rf {outputvis}.flagversions")
+                    logger.debug("Spliting parameters:")
+                    logger.debug("Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {spw}, time range: {timerange}")
                     tasks.append(
                         delayed(single_mstransform_wrapper)(
                             msname=msname,
@@ -221,13 +221,13 @@ def split_target_scans(
         result = []
         for r in result_wrapper:
             result.append(r[0])
-            logger.info("================")
-            logger.info(f"Worker log for: {os.path.basename(r[0])}")
-            logger.info("================")
+            logger.debug("================")
+            logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+            logger.debug("================")
             for line in r[1].splitlines():
-                logger.info(line)
+                logger.debug(line)
             for line in r[2].splitlines():
-                logger.error(line)
+                logger.debug(line)
             
         splited_ms_list = splited_ms_list + result
         if len(splited_ms_list) == 0:
@@ -239,8 +239,7 @@ def split_target_scans(
                 drop_cache(splited_ms)
             return 0, splited_ms_list
     except Exception:
-        logger.exception(traceback.print_exc())
-        logger.error(f"Spliting of measurement set: {msname} is unsuccessful.")
+        logger.exception(f"Spliting of measurement set: {msname} is unsuccessful.",exc_info=True)
         return 1, []
 
 
@@ -321,6 +320,7 @@ def main(
     int
         Succeeded splited ms
     """
+    logger = get_logger_safe()
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -330,12 +330,12 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    logger.debug(f"Current working directory: {os.getcwd()}")
 
     ############
     # Logger
     ############
     observer = None
-    logger = get_logger_safe()
     if (
         start_remote_log
         and os.path.exists(f"{workdir}/.jobname_password.npy")
@@ -353,7 +353,7 @@ def main(
         logger.info("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
-        logger.error("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         total_ncoarse = 0
@@ -364,6 +364,7 @@ def main(
             ncoarse = len(ms_coarse_chans)
             total_ncoarse += ncoarse
         total_ncoarse = max(1, total_ncoarse)
+        logger.debug(f"Total usable coarse channels: {total_ncoarse}")
         expected = total_ncoarse
         succeed = 0
 
@@ -376,7 +377,7 @@ def main(
             max_worker=total_ncoarse + 1,
         )
         if dask_client is None:
-            logger.error("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 1, expected, succeed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
@@ -431,11 +432,14 @@ def main(
         logger.info(f"Total expected splited ms: {total_ncoarse}")
         logger.info(f"Total splited ms: {succeed}")
         if len(splited_mslist) == 0:
+            logger.debug("No splited measurement sets.")
             msg = 1
         else:
+            logger.debug("List of splited measurement sets:")
+            logger.debug(f"{splited_mslist}")
             msg = 0
     except Exception:
-        logger.exception(traceback.print_exc())
+        logger.exception("Exception",exc_info=True)
         msg = 1
     finally:
         time.sleep(5)

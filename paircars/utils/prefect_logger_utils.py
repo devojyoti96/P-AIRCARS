@@ -45,8 +45,9 @@ async def save_logs_by_task_id(
                         if log.id not in seen_ids:
                             seen_ids.add(log.id)
                             ts = log.timestamp.to_datetime_string()
+                            level = getattr(log, "INFO", str(log.level)) 
                             if str(log.task_run_id) == str(task_run_id):
-                                f.write(f"{ts} | {task_name} | {log.message}\n")
+                                f.write(f"{level} | {ts} | {task_name} | {log.message}\n")
         except Exception as e:
             with open(logfile, "a") as f:
                 f.write(f"Error fetching logs: {e}\n")
@@ -93,7 +94,8 @@ async def save_logs_by_flow_id(
                             # Only include logs without task_run_id = flow-level logs
                             if log.task_run_id is None:
                                 ts = log.timestamp.to_datetime_string()
-                                f.write(f"{ts} | {flow_name} | {log.message}\n")
+                                level = getattr(log, "INFO", str(log.level)) 
+                                f.write(f"{level} | {ts} | {flow_name} | {log.message}\n")
 
         except Exception as e:
             with open(logfile, "a") as f:

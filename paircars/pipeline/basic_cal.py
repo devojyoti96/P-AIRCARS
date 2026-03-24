@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 import argparse
-import traceback
 import time
 import sys
 import os
@@ -9,7 +8,11 @@ import glob
 from casatools import msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output, print_banner
+from paircars.utils.basic_utils import (
+    suppress_output, 
+    print_banner,
+    capture_all_output,
+)
 from paircars.utils.calibration import (
     get_caltable_metadata,
 )
@@ -24,6 +27,7 @@ from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.ms_metadata import get_uvrange_exclude
 from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_ncoarse, get_gleam_uvrange
@@ -38,7 +42,13 @@ logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
-def filtered_final_caltables(caltables, workdir):
+def single_ms_cal_and_flag_wrapper(*args, **kwargs):
+    with capture_all_output() as (out, err):
+        result = single_ms_cal_and_flag(**args, **kwargs)
+        return *args.get("msname"), result, out.getvalue(), err.getvalue()
+
+
+def filtered_final_caltables(caltables, workdir, logger=None):
     """
     Filter last round bandpass and crossphase caltables
 
@@ -57,6 +67,7 @@ def filtered_final_caltables(caltables, workdir):
         Crossphase list
     """
     groups = {}
+    logger and logger.debug(f"Filtering calibration tables: {caltables}")
     for f in caltables:
         name = os.path.basename(f)
         if name.endswith(".bcal"):
@@ -92,6 +103,8 @@ def filtered_final_caltables(caltables, workdir):
             )
             os.system(f"cp -r {kcrosscal} {out_kcrosscal}")
             final_kcrosscals.append(out_kcrosscal)
+    logger and logger.debug(f"Filtered bandpass tables: {final_bcals}")
+    logger and logger.debug(f"Filtered crosshand phase tables: {final_kcrosscals}")
     return final_bcals, final_kcrosscals
 
 
@@ -106,6 +119,7 @@ def run_bandpass(
     gainfield=[],
     interp=[],
     n_threads=1,
+    logger=None,
 ):
     """
     Perform bandpass calibration
@@ -113,8 +127,21 @@ def run_bandpass(
     n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
     from casatasks import bandpass
-
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
+    bpass_cmd = (
+        f"bandpass("
+        f"vis='{msname}', "
+        f"caltable='{caltable_prefix}.bcal', "
+        f"uvrange='{uvrange}', "
+        f"refant='{refant}', "
+        f"solint='{solint}', "
+        f"combine='{combine}', "
+        f"gaintable={gaintable}, "
+        f"gainfield={gainfield}, "
+        f"interp={interp},"
+        f")"
+    )
+    logger and logger.debug(f"{bpass_cmd}")
     with suppress_output():
         bandpass(
             vis=msname,
@@ -128,8 +155,10 @@ def run_bandpass(
             interp=interp,
         )
     if os.path.exists(caltable_prefix + ".bcal"):
+        logger and logger.debug(f"Bandpass table: {caltable_prefix}.bcal")
         return caltable_prefix + ".bcal"
     else:
+        logger and logger.debug("Bandpass table is not made.")
         return
 
 
@@ -139,6 +168,7 @@ def run_crossphasecal(
     uvrange="",
     gaintable=[],
     n_threads=1,
+    logger=None,
 ):
     """
     Perform crosshand phase calibration
@@ -146,6 +176,16 @@ def run_crossphasecal(
     n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
+    kcross_cmd = (
+        f"crossphasecal("
+        f"'{msname}', "
+        f"'{caltable_prefix}.kcrosscal', "
+        f"uvrange='{uvrange}', "
+        f"gaintable={gaintable}, "
+        f"n_threads={n_threads}," 
+        f")"
+    )
+    logger and logger.debug(f"{kcross_cmd}")
     with suppress_output():
         if len(gaintable) != 0:
             gaintable = gaintable[0]
@@ -159,8 +199,10 @@ def run_crossphasecal(
             n_threads=n_threads,
         )
     if os.path.exists(caltable_prefix + ".kcrosscal"):
+        logger and logger.debug(f"Crosshand phase table: {caltable_prefix}.kcrosscal")
         return caltable_prefix + ".kcrosscal"
     else:
+        logger and logger.debug("Crosshand phase table is not made.")
         return
 
 
@@ -237,6 +279,7 @@ def single_ms_cal_and_flag(
     flag_threshold=5.0,
     n_threads=1,
     mem_limit=1,
+    logger=None,
 ):
     """
     Single ms calibration and post-calibration flagging
@@ -273,6 +316,9 @@ def single_ms_cal_and_flag(
     bool
         Whether postcal flagging is successful or not
     """
+    if logger is None:
+        logger = get_logger_safe()
+        
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
     limit_threads(n_threads=n_threads)
@@ -410,7 +456,7 @@ def single_ms_cal_and_flag(
             crossphase_caltable,
         ], succeed_postcal_flag
     except Exception:
-        traceback.print_exc()
+        logger.exception(f"Calibration round {cal_round} failed.",exc_info=True)
         return [], False
 
 
@@ -427,6 +473,7 @@ def single_round_cal_and_flag(
     flag_threshold=5.0,
     n_threads=1,
     mem_limit=1,
+    logger=None,
 ):
     """
     Single round calibration and flagging for a set of measurement sets in parallel
@@ -469,8 +516,11 @@ def single_round_cal_and_flag(
     list
         List whether postcal flag is successful or not
     """
+    if logger is None:
+        logger = get_logger_safe()
+        
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.info("Please provide a valid measurement set list.")
         return {}, 0, 0, []
     else:
         succeed = 0
@@ -486,7 +536,7 @@ def single_round_cal_and_flag(
         msname = mslist[i]
         postcal_flag = do_postcal_flag[i]
         tasks.append(
-            delayed(single_ms_cal_and_flag)(
+            delayed(single_ms_cal_and_flag_wrapper)(
                 msname,
                 workdir,
                 cal_round,
@@ -500,7 +550,18 @@ def single_round_cal_and_flag(
                 mem_limit=mem_limit,
             )
         )
-    results = list(dask_client.gather(dask_client.compute(tasks)))
+    result_wrapper = list(dask_client.gather(dask_client.compute(tasks)))
+    results = []
+    for r in result_wrapper:
+            results.append(r[1])
+            logger.info("================")
+            logger.info(f"Worker log for: {os.path.basename(r[0])}")
+            logger.info("================")
+            for line in r[2].splitlines():
+                logger.info(line)
+            for line in r[3].splitlines():
+                logger.error(line)
+                 
     caltable_dic = {}
     postcal_flags = []
     succeed = 0
@@ -511,7 +572,7 @@ def single_round_cal_and_flag(
         postcal_flag = results[i][1]
         caltables_clean = [x for x in caltables if x is not None]
         if len(caltables_clean) == 0:
-            print(f"Basic calibration is not succssful for ms : {msname}")
+            logger.info(f"Basic calibration is not succssful for ms : {msname}")
             failed += 1
         else:
             succeed += 1
@@ -531,6 +592,7 @@ def run_basic_cal_rounds(
     perform_polcal=False,
     n_threads=1,
     mem_limit=1,
+    logger=None,
 ):
     """
     Perform basic calibration rounds
@@ -571,6 +633,9 @@ def run_basic_cal_rounds(
     int
         Failed ms number
     """
+    if logger is None:
+        logger = get_logger_safe()
+        
     if len(mslist) == 0:
         print("Please provide a valid measurement set list.")
         return 1, [], [], 0, 0
@@ -591,8 +656,8 @@ def run_basic_cal_rounds(
         else:
             n_rounds = 2
             perform_polcal = False
-        print(f"Calibration for ms list: {mslist}.")
-        print(f"Total calibration rounds: {n_rounds}")
+        logger.info(f"Calibration for ms list: {mslist}.")
+        logger.info(f"Total calibration rounds: {n_rounds}")
 
         #################
         # Initial values
@@ -683,10 +748,8 @@ def run_basic_cal_rounds(
         if keep_backup:
             os.system(f"mv {workdir}/backup/* {workdir}")
         os.system(f"rm -rf {workdir}/backup")
-        print_banner("Basic calibration is done successfully.")
         return 0, final_bcals, final_kcrosscals, succeed, failed
     except Exception:
-        traceback.print_exc()
         return 1, [], [], succeed, failed
 
 
@@ -767,6 +830,7 @@ def main(
     # Logger
     ############
     observer = None
+    logger = get_logger_safe()
     if (
         start_remote_log
         and os.path.exists(f"{workdir}/.jobname_password.npy")
@@ -781,10 +845,10 @@ def main(
                 "basic_cal", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info("Remote link or jobname is blank. Not transmiting to remote logger.")
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.error("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -805,12 +869,13 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.error("Error occured in creating local cluster.")
             return 1, succeed, failed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting basic calibration.")
+        for banner in print_banner("Starting basic calibration.", no_print=True).splitlines():
+            logger.info(banner) 
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -826,11 +891,11 @@ def main(
         else:
             n_threads = 1
 
-        print("##################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("##################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
         msg, bcals, kcrosscals, succeed, failed = run_basic_cal_rounds(
             mslist,
             dask_client,
@@ -844,12 +909,12 @@ def main(
             mem_limit=float(mem_limit),
         )
         if len(bcals) == 0:
-            print("No bandpass caltable is made.")
+            logger.error("No bandpass caltable is made.")
             msg = 1
         else:
-            print(f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}.")
+            logger.info(f"All bandpass caltables: {[os.path.basename(i) for i in bcals]}.")
             if len(kcrosscals) > 0:
-                print(
+                logger.info(
                     f"All cross-phase caltables: {[os.path.basename(i) for i in kcrosscals]}."
                 )
             caltables = bcals + kcrosscals
@@ -883,8 +948,9 @@ def main(
                     os.system(f"rm -rf {final_caltable}")
                     os.system(f"cp -r {caltable} {final_caltable}")
                     os.system("rm -rf " + caltable)
+        logger.info("Basic calibration runs are done successfully.")
     except Exception:
-        traceback.print_exc()
+        logger.exception("Basic calibration runs failed.",exc_info=True)
         msg = 1
     finally:
         time.sleep(5)

@@ -167,7 +167,21 @@ class LogTailHandler(FileSystemEventHandler):
                     self._position = f.tell()
                 for line in lines:
                     if line != "" and line != " " and line != "\n":
-                        self.logger.info(line.strip())
+                        level = line.split("|")[0]
+                        if level in ["INFO","DEBUG","ERROR","WARNING","CRITICAL"]:
+                            line = "|".join(line.split("|")[1:]) 
+                            if level == "DEBUG":
+                                self.logger.debug(line.strip())
+                            elif level == "ERROR":
+                                self.logger.error(line.strip())
+                            elif level == "WARNING":
+                                self.logger.warning(line.strip())
+                            elif level == "CRITICAL":
+                                self.logger.critical(line.strip()) 
+                            else:
+                                self.logger.info(line.strip())   
+                        else:
+                            self.logger.info(line.strip())
             except Exception:
                 pass
 
@@ -200,7 +214,7 @@ def create_logger(logname, logfile):
     filehandle.setFormatter(formatter)
     logger.addHandler(filehandle)
     logger.propagate = False
-    logger.info("Log file : " + logfile + "\n")
+    logger.info(f"Log file: {logfile}\n")
     return logger, logfile
 
 
@@ -322,18 +336,19 @@ def get_logger_safe():
     try:
         with suppress_output():
             from prefect import get_run_logger
-            return get_run_logger()
+            logger = get_run_logger()
+            logger.setLevel(logging.DEBUG)
+            return logger
     except Exception:
         name = f"task_{os.getpid()}"
         logger = logging.getLogger(name)
-
         if not logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",datefmt="%Y-%m-%d %H:%M:%S")
+            logger.setLevel(logging.DEBUG)
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.propagate = False
-            logger.setLevel(logging.INFO)
         return logger
         
         
@@ -370,7 +385,6 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
         else:
             break
     logger = logging.getLogger(logname)
-    logger.setLevel(logging.INFO)
     logger.propagate = False
     if logger.hasHandlers():
         logger.handlers.clear()
@@ -389,6 +403,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
                 remote_link=remote_link,
                 password=password,
             )
+            logger.setLevel(logging.DEBUG)
             remote_handler.setFormatter(formatter)
             logger.addHandler(remote_handler)
             try:
