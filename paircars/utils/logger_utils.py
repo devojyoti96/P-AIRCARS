@@ -138,18 +138,19 @@ class RemoteLogger(logging.Handler):
             level = logging.getLevelName(int(level))
             msg = f"{level} | {msg}"
         try:
-            requests.post(
-                f"{self.remote_link}/api/log",
-                json={
-                    "job_id": self.job_id,
-                    "log_id": self.log_id,
-                    "log_type": self.log_type,
-                    "message": f"{msg}\n",
-                    "password": self.password,
-                    "first": False,
-                },
-                timeout=2,
-            )
+            if msg != "" and msg != " " and msg != "\n":
+                requests.post(
+                    f"{self.remote_link}/api/log",
+                    json={
+                        "job_id": self.job_id,
+                        "log_id": self.log_id,
+                        "log_type": self.log_type,
+                        "message": f"{msg}\n",
+                        "password": self.password,
+                        "first": False,
+                    },
+                    timeout=2,
+                )
         except Exception:
             pass  # Fail silently to avoid interrupting the main app
 

@@ -93,6 +93,7 @@ def pre_process_subflow(
     list
         Filtered target measurement set list
     """
+    start_time = time.time()
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
     pre_process_logfile = f"{logdir}/subflow_preprocess_{target_obsid}.log"
@@ -251,10 +252,12 @@ def pre_process_subflow(
         traceback.print_exc()
         return 1, []
     finally:
-        stop_event.set()
-        log_thread_flow.join(timeout=5)
-        if observer is not None:
-            clean_shutdown(observer)
+        end_time = time.time()
+        if end_time-start_time>60:
+            stop_event.set()
+            log_thread_flow.join(timeout=5)
+            if observer is not None:
+                clean_shutdown(observer)
 
 
 ############################
