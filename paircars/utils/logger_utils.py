@@ -107,8 +107,8 @@ class StreamToLogger:
 
     def flush(self):
         pass  # Required for compatibility
-        
-        
+
+
 class RemoteLogger(logging.Handler):
     """
     Remote logging handler for posting log messages to a web endpoint.
@@ -131,11 +131,6 @@ class RemoteLogger(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        level = msg.split("|")[0]
-        if isinstance(level,int) or level.isdigit():
-            level = logging.getLevelName(int(level))
-        msg = f"{level} | {'|'.join(line.split('|')[1:])}"
-        print (msg)
         try:
             requests.post(
                 f"{self.remote_link}/api/log",
@@ -325,6 +320,7 @@ def get_logger_safe():
     try:
         with suppress_output():
             from prefect import get_run_logger
+
             logger = get_run_logger()
             logger.setLevel(logging.INFO)
             return logger
@@ -375,7 +371,6 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
             return
         else:
             break
-    print ("Started logging...")
     logger = logging.getLogger(logname)
     logger.propagate = False
     if logger.hasHandlers():
