@@ -160,4 +160,3 @@ def cli():
     else:
         msg = 1
     return msg
-

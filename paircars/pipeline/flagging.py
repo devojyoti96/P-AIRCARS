@@ -7,12 +7,17 @@ import sys
 import os
 from dask import delayed
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output, print_banner
+from paircars.utils.basic_utils import (
+    suppress_output,
+    print_banner,
+    capture_all_output,
+)
 from paircars.utils.flagging import flagsummary, do_flag_backup
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import get_bad_chans, get_mwa_bad_ants, get_ncoarse
@@ -25,6 +30,12 @@ from paircars.utils.resource_utils import drop_cache, limit_threads
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+
+
+def single_ms_flag_wrapper(**kwargs):
+    with capture_all_output() as (out, err):
+        result = single_ms_flag(**kwargs)
+        return kwargs.get("msname"), result, out.getvalue(), err.getvalue()
 
 
 def single_ms_flag(
@@ -97,6 +108,15 @@ def single_ms_flag(
         ##############################
         if badspw != "":
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='manual',"
+                    f"spw='{badspw}',"
+                    f"cmdreason='badchan',"
+                    f"flagbackup=False)"
+                )
+                print(flag_cmd)
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -114,6 +134,14 @@ def single_ms_flag(
         ##############################
         if bad_ants_str != "":
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='manual',"
+                    f"antenna='{bad_ants_str}',"
+                    f"cmdreason='badant',"
+                    f"flagbackup=False)"
+                )
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -131,6 +159,15 @@ def single_ms_flag(
         #################################
         if flag_quack:
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='quack',"
+                    f"quackmode='beg',"
+                    f"quackinterval=4.0,"
+                    f"flagbackup=False)"
+                )
+                print(flag_cmd)
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -139,6 +176,16 @@ def single_ms_flag(
                         quackinterval=4.0,
                         flagbackup=False,
                     )
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='quack',"
+                    f"quackmode='endb',"
+                    f"quackinterval=4.0,"
+                    f"flagbackup=False)"
+                )
+                print(flag_cmd)
+                with suppress_output():
                     flagdata(
                         vis=msname,
                         mode="quack",
@@ -160,15 +207,26 @@ def single_ms_flag(
             corcolumn_present = check_datacolumn_valid(
                 msname, datacolumn="CORRECTED_DATA"
             )
-            if not modelcolumn_present or not corcolumn_present:
+            if not modelcolumn_present and corcolumn_present:
+                print(
+                    "Residual column is requested, but model column is not present. Using corrected data instead"
+                )
                 datacolumn = "corrected"
+            elif not modelcolumn_present and not corcolumn_present:
+                print(
+                    "Residual column is requested, but model and corrected columns are not present. Using data instead"
+                )
+                datacolumn = "data"
         elif datacolumn == "RESIDUAL_DATA":
             modelcolumn_present = check_datacolumn_valid(
                 msname, datacolumn="MODEL_DATA"
             )
             datacolumn_present = check_datacolumn_valid(msname, datacolumn="DATA")
-            if not modelcolumn_present or not datacolumn_present:
-                datacolumn = "corrected"
+            if not modelcolumn_present:
+                print(
+                    "Residual column is requested, but model column is not present. Using data instead."
+                )
+                datacolumn = "data"
 
         #################################################
         # Whether corrected data column is present or not
@@ -201,6 +259,16 @@ def single_ms_flag(
         # Clip zero amplitude data points
         #################################
         try:
+            flag_cmd = (
+                f"flagdata("
+                f"vis='{msname}',"
+                f"mode='clip',"
+                f"clipzeros=True,"
+                f"datacolumn='{datacolumn},"
+                f"autocorr={flag_autocorr},"
+                f"flagbackup=False)"
+            )
+            print(flag_cmd)
             with suppress_output():
                 flagdata(
                     vis=msname,
@@ -219,6 +287,15 @@ def single_ms_flag(
         #################################
         if flag_autocorr:
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='manual',"
+                    f"autocorr=True,"
+                    f"datacolumn='{datacolumn}',"
+                    f"flagbackup=False)"
+                )
+                print(flag_cmd)
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -235,7 +312,26 @@ def single_ms_flag(
         # Tfcrop flag
         ##############
         if use_tfcrop:
+            print("Usinf tfcrop flagging.")
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='tfcrop',"
+                    f"timefit='line',"
+                    f"freqfit='poly',"
+                    f"extendflags=True,"
+                    f"flagdimension='{flagdimension}',"
+                    f"timecutoff={max(4.0, threshold)},"
+                    f"freqcutoff={max(3.0, threshold)},"
+                    f"growaround=False,"
+                    f"action='apply',"
+                    f"flagbackup=False,"
+                    f"overwrite=True,"
+                    f"writeflags=True,"
+                    f"datacolumn='{datacolumn}')"
+                )
+                print(flag_cmd)
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -261,7 +357,23 @@ def single_ms_flag(
         # Rflag flag
         #############
         if use_rflag:
+            print("Using rflag flagging.")
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='rflag',"
+                    f"extendflags=True,"
+                    f"timedevscale={max(5.0, threshold)},"
+                    f"freqdevscale={max(5.0, threshold)},"
+                    f"growaround=False,"
+                    f"action='apply',"
+                    f"flagbackup=False,"
+                    f"overwrite=True,"
+                    f"writeflags=True,"
+                    f"datacolumn='{datacolumn}')"
+                )
+                print(flag_cmd)
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -285,6 +397,25 @@ def single_ms_flag(
         ##############
         if use_tfcrop or use_rflag:
             try:
+                flag_cmd = (
+                    f"flagdata("
+                    f"vis='{msname}',"
+                    f"mode='extend',"
+                    f"datacolumn='{datacolumn}',"
+                    f"clipzeros=True,"
+                    f"extendflags=True,"
+                    f"extendpols=True,"
+                    f"growtime=80.0,"
+                    f"growfreq=80.0,"
+                    f"growaround=False,"
+                    f"flagneartime=False,"
+                    f"flagnearfreq=False,"
+                    f"action='apply',"
+                    f"flagbackup=False,"
+                    f"overwrite=True,"
+                    f"writeflags=True)"
+                )
+                print(flag_cmd)
                 with suppress_output():
                     flagdata(
                         vis=msname,
@@ -311,6 +442,7 @@ def single_ms_flag(
         # Solar flagger
         ######################
         if run_solarflagger:
+            print(f"Using solar flagger. Normalization used: {normalize}")
             do_flag_backup(msname, flagtype="solarflag")
             for th in range(10, int(threshold), 2):
                 count = 0
@@ -356,6 +488,7 @@ def do_flagging(
     restore_flag=True,
     n_threads=1,
     mem_limit=1,
+    logger=None,
 ):
     """
     Function to perform initial flagging
@@ -412,8 +545,11 @@ def do_flagging(
     int
         Failed ms number
     """
+    if logger is None:
+        logger = get_logger_safe()
+
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -422,43 +558,45 @@ def do_flagging(
     try:
         limit_threads(n_threads=n_threads)
         from casatasks import flagdata
+
         header = fits.getheader(metafits)
         mode = header["MODE"]
         if "MWAX" in mode:
             flag_central_chan = False
         else:
             flag_central_chan = True
+        logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
 
         tasks = []
         test_msname = os.path.abspath(mslist[0].rstrip("/"))
         if flag_bad_spw:
             badspw = get_bad_chans(test_msname, flag_central_chan=flag_central_chan)
             if badspw != "":
-                print(f"Bad spws: {badspw}.")
+                logger.info(f"Bad spws: {badspw}.")
             else:
-                print("No bad spectral window.")
+                logger.info("No bad spectral window.")
         else:
             badspw = ""
         if flag_bad_ants:
             bad_ants_str = get_mwa_bad_ants(metafits)
             if bad_ants_str != "":
-                print(f"Bad antennas: {bad_ants_str}.")
+                logger.info(f"Bad antennas: {bad_ants_str}.")
             else:
-                print("No bad antennas.")
+                logger.info("No bad antennas.")
         else:
             bad_ants_str = ""
 
         for msname in mslist:
             msname = os.path.abspath(msname.rstrip("/"))
             if restore_flag:
-                print(f"Restoring all previous flags for ms: {msname}")
+                logger.info(f"Restoring all previous flags for ms: {msname}")
                 with suppress_output():
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
             if flag_backup:
                 do_flag_backup(msname, flagtype="flagdata")
             tasks.append(
-                delayed(single_ms_flag)(
-                    msname,
+                delayed(single_ms_flag_wrapper)(
+                    msname=msname,
                     badspw=badspw,
                     bad_ants_str=bad_ants_str,
                     datacolumn=datacolumn,
@@ -474,9 +612,20 @@ def do_flagging(
                     mem_limit=mem_limit,
                 )
             )
-        print(f"Flagging mslist: {','.join(mslist)}")
+        logger.info(f"Flagging mslist: {','.join(mslist)}")
         futures = dask_client.compute(tasks)
-        results = list(dask_client.gather(futures))
+        result_wrapper = list(dask_client.gather(futures))
+        results = []
+        for r in result_wrapper:
+            results.append(r[1])
+            logger.debug("================")
+            logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+            logger.debug("================")
+            for line in r[2].splitlines():
+                logger.debug(line)
+            for line in r[3].splitlines():
+                logger.debug(line)
+
         for msname in mslist:
             ###############
             # Flag summary
@@ -484,19 +633,19 @@ def do_flagging(
             summary_file = (
                 f"{outdir}/{os.path.basename(msname).split('.ms')[0]}_basicflag.summary"
             )
-            print(f"Flag summary: {summary_file}")
+            logger.info(f"Flag summary: {summary_file}")
             flagsummary(msname, summary_file)
         failed = sum(results)
         succeed = len(mslist) - failed
-        print(f"Total measurement set: {len(mslist)}")
-        print(f"Total success: {succeed}")
-        print(f"Total failure: {failed}")
+        logger.info(f"Total measurement set: {len(mslist)}")
+        logger.info(f"Total success: {succeed}")
+        logger.info(f"Total failure: {failed}")
         if len(mslist) == failed:
             return 1, succeed, failed
         else:
             return 0, succeed, failed
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured during flagging", exc_info=True)
         return 1, 0, len(mslist)
 
 
@@ -522,6 +671,7 @@ def main(
     mem_frac=0.8,
     logfile=None,
     jobid=0,
+    verbose=False,
     start_remote_log=False,
     dask_client=None,
 ):
@@ -587,6 +737,10 @@ def main(
     int
         Failed ms number
     """
+    logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -596,12 +750,14 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    logger.debug(f"Current working directory: {os.getcwd()}")
 
     if outdir == "":
         outdir = workdir
     os.makedirs(outdir, exist_ok=True)
     flag_summary_dir = f"{outdir}/flag_summary"
     os.makedirs(flag_summary_dir, exist_ok=True)
+    logger.debug(f"Flag summary directory: {flag_summary_dir}")
 
     ############
     # Logger
@@ -621,10 +777,12 @@ def main(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -635,6 +793,7 @@ def main(
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
+    logger.debug(f"Total coarse channels: {total_ncoarse}")
 
     dask_cluster = None
     if dask_client is None:
@@ -645,12 +804,13 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 1, succeed, failed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting flagging.")
+        for banner in print_banner("Starting flagging.", no_print=True).splitlines():
+            logger.info(banner)
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -666,11 +826,11 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
 
         msg, succeed, failed = do_flagging(
             mslist,
@@ -693,9 +853,10 @@ def main(
             flag_backup=flagbackup,
             n_threads=n_threads,
             mem_limit=mem_limit,
+            logger=logger,
         )
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in flagging.", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)
@@ -792,6 +953,9 @@ def cli():
         help="Flag threshold",
     )
     adv_args.add_argument(
+        "--flagdimension", type=str, default="freqtime", help="Flag dimension"
+    )
+    adv_args.add_argument(
         "--no_restore",
         dest="restore_flag",
         action="store_false",
@@ -800,13 +964,13 @@ def cli():
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
+    adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
+    adv_args.add_argument("--logfile", type=str, default=None, help="Log file")
+    adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
         "###################\nHardware resource management parameters\n###################"
-    )
-    hard_args.add_argument(
-        "--flagdimension", type=str, default="freqtime", help="Flag dimension"
     )
     hard_args.add_argument(
         "--cpu_frac", type=float, default=0.8, help="CPU fraction to use"
@@ -814,8 +978,6 @@ def cli():
     hard_args.add_argument(
         "--mem_frac", type=float, default=0.8, help="Memory fraction to use"
     )
-    hard_args.add_argument("--logfile", type=str, default=None, help="Log file")
-    hard_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -845,6 +1007,7 @@ def cli():
         mem_frac=args.mem_frac,
         logfile=args.logfile,
         jobid=args.jobid,
+        verbose=args.verbose,
         start_remote_log=args.start_remote_log,
     )
     return msg

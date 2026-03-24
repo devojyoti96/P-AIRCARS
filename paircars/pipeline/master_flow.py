@@ -265,8 +265,8 @@ def master_control(
     adaptive : bool, optional
         Whether do adaptive scaling or not
     verbose : bool, optional
-        Verbose logs 
-        
+        Verbose logs
+
     Returns
     -------
     int
@@ -703,7 +703,7 @@ def master_control(
                 password = get_remote_logger_password()
             else:
                 password = job_password
-            if password=="":
+            if password == "":
                 password = generate_password()
             np.save(
                 f"{workdir}/.jobname_password.npy",
@@ -1072,6 +1072,7 @@ def master_control(
             timestamp=timestamp,
             emails=emails,
             remote_logger=remote_logger,
+            verbose=verbose,
         )
         if preprocess_msg != 0 or len(target_mslist) == 0:
             print("Error occured in pre-processing steps target data.")
@@ -1140,6 +1141,7 @@ def master_control(
             timestamp=timestamp,
             emails=emails,
             remote_logger=remote_logger,
+            verbose=verbose,
         )
         if selfcal_msg != 0 or len(selfcal_gaintable) == 0:
             print_banner("No self-calibration solutions are available to apply.")
@@ -1187,6 +1189,7 @@ def master_control(
                 timestamp=timestamp,
                 emails=emails,
                 remote_logger=remote_logger,
+                verbose=verbose,
             )
             if applycal_msg != 0 or len(split_target_mslist) == 0:
                 print("No calibrated target measurement set is available for imaging.")
@@ -1248,6 +1251,7 @@ def master_control(
             timestamp=timestamp,
             emails=emails,
             remote_logger=remote_logger,
+            verbose=verbose,
         )
         if imaging_msg != 0:
             print_banner("Error occured in imaging.")

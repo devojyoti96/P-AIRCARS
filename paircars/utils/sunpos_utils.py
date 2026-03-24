@@ -182,7 +182,12 @@ def move_to_sun(msname, ncpu=1, only_uvw=False):
     print(f"Moving phasecenter to solar center for measurement set: {msname}")
     sun_radec_string, sunra, sundec, sunra_deg, sundec_deg = radec_sun(msname)
     msg = run_chgcenter(
-        msname, sunra, sundec, ncpu=ncpu, only_uvw=only_uvw, container_name="paircarswsclean"
+        msname,
+        sunra,
+        sundec,
+        ncpu=ncpu,
+        only_uvw=only_uvw,
+        container_name="paircarswsclean",
     )
     if msg != 0:
         print("Phasecenter could not be shifted.")

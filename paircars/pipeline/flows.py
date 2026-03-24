@@ -81,6 +81,7 @@ def pre_process_subflow(
     timestamp,
     emails,
     remote_logger,
+    verbose,
 ):
     """
     Pre-processing of target measurement set subflow
@@ -147,6 +148,7 @@ def pre_process_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_movecenter.result()
                 if emails != "":
@@ -214,6 +216,7 @@ def pre_process_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_maskms.result()
                 if emails != "":
@@ -535,6 +538,7 @@ def basic_cal_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=cal_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
@@ -597,6 +601,7 @@ def basic_cal_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=cal_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_import_model.result()
                 if emails != "":
@@ -665,6 +670,7 @@ def basic_cal_subflow(
                     keep_backup=keep_backup,
                     remote_log=remote_logger,
                     obsid=cal_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_basical.result()
                 if emails != "":
@@ -836,6 +842,7 @@ def selfcal_subflow(
     timestamp,
     emails,
     remote_logger,
+    verbose,
 ):
     """
     Self-calibration subflow
@@ -1013,6 +1020,7 @@ def selfcal_subflow(
                     mem_frac=float(mem_frac),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, expected, succeed = future_selfcal_split.result()
                 if emails != "":
@@ -1135,6 +1143,7 @@ def selfcal_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
@@ -1207,6 +1216,7 @@ def selfcal_subflow(
                         mem_frac=round(mem_frac, 2),
                         remote_log=remote_logger,
                         obsid=target_obsid,
+                        verbose=verbose,
                     )
                     msg, succeed, failed = future_apply_basical_selfcal.result()
                     cal_applied = True
@@ -1308,6 +1318,7 @@ def selfcal_subflow(
                             mem_frac=round(mem_frac, 2),
                             remote_log=remote_logger,
                             obsid=target_obsid,
+                            verbose=verbose,
                         )
                     )
                     msg, succeed, failed = future_sidereal_cor_selfcal.result()
@@ -1381,6 +1392,7 @@ def selfcal_subflow(
                         mem_frac=round(mem_frac, 2),
                         remote_log=remote_logger,
                         obsid=target_obsid,
+                        verbose=verbose,
                     )
                     msg, succeed, failed = future_flag.result()
                     if emails != "":
@@ -1460,6 +1472,7 @@ def selfcal_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 (
                     msg,
@@ -1664,6 +1677,7 @@ def applysol_subflow(
     timestamp,
     emails,
     remote_logger,
+    verbose,
 ):
     """
     Apply solutions subflow
@@ -1737,6 +1751,7 @@ def applysol_subflow(
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
                 obsid=target_obsid,
+                verbose=verbose,
             )
             msg, expected, succeed = future_split.result()
             if emails != "":
@@ -1836,6 +1851,7 @@ def applysol_subflow(
                 mem_frac=round(mem_frac, 2),
                 remote_log=remote_logger,
                 obsid=target_obsid,
+                verbose=verbose,
             )
             msg, succeed, failed = future_flag.result()
             if emails != "":
@@ -1901,6 +1917,7 @@ def applysol_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_apply_basical.result()
                 if emails != "":
@@ -1962,6 +1979,7 @@ def applysol_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_sidereal_cor.result()
                 if emails != "":
@@ -2028,6 +2046,7 @@ def applysol_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, gain_succeed, gain_failed, pol_succeed, pol_failed = (
                     future_apply_selfcal.result()
@@ -2104,6 +2123,7 @@ def applysol_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
@@ -2189,6 +2209,7 @@ def imaging_subflow(
     timestamp,
     emails,
     remote_logger,
+    verbose,
 ):
     """
     Imaging subflow
@@ -2289,6 +2310,7 @@ def imaging_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed, total_images = future_imaging.result()
                 if emails != "":
@@ -2389,6 +2411,7 @@ def imaging_subflow(
                     mem_frac=round(mem_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_pbcor.result()
                 if emails != "":
@@ -2454,6 +2477,7 @@ def imaging_subflow(
                     cpu_frac=round(cpu_frac, 2),
                     remote_log=remote_logger,
                     obsid=target_obsid,
+                    verbose=verbose,
                 )
                 msg, succeed, failed = future_overlay.result()
                 if msg == 0:

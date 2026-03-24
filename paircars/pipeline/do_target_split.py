@@ -50,7 +50,7 @@ def chanlist_to_str(lst):
 
 def single_mstransform_wrapper(**kwargs):
     with capture_all_output() as (out, err):
-        result =single_mstransform(**kwargs)
+        result = single_mstransform(**kwargs)
         return result, out.getvalue(), err.getvalue()
 
 
@@ -113,6 +113,8 @@ def split_target_scans(
 
     Returns
     -------
+    int
+        Success message
     list
         Splited ms list
     """
@@ -121,8 +123,8 @@ def split_target_scans(
     n_threads = max(1, n_threads)
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
-        return 1, 0, 0
-        
+        return 1, []
+
     try:
         os.chdir(workdir)
         logger.debug(f"Current working directory: {os.getcwd()}")
@@ -156,7 +158,7 @@ def split_target_scans(
                 timebin = str(timeres) + "s"
             else:
                 timebin = ""
-                
+
             #############################
             # Making spectral chunks
             #############################
@@ -169,7 +171,7 @@ def split_target_scans(
                 use_coarse_chans = coarse_chans
             else:
                 use_coarse_chans = split_coarse_chans
-            logger.debug(f"Using coarse channels for {msname} are: {coarse_chans}")
+            logger.debug(f"Using coarse channels for {msname} are: {use_coarse_chans}")
             coarse_chlist = []
             good_spwlist = []
             for c in range(len(coarse_channel_bands)):
@@ -201,10 +203,14 @@ def split_target_scans(
                         logger.debug(f"Deleteing pre-existing output ms: {outputvis}")
                         os.system(f"rm -rf {outputvis}")
                     if os.path.exists(f"{outputvis}.flagversions"):
-                        logger.debug(f"Deleteing pre-existing output ms flags: {outputvis}.flagversions")
+                        logger.debug(
+                            f"Deleteing pre-existing output ms flags: {outputvis}.flagversions"
+                        )
                         os.system(f"rm -rf {outputvis}.flagversions")
                     logger.debug("Spliting parameters:")
-                    logger.debug(f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {good_spw}, time range: {timerange}")
+                    logger.debug(
+                        f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {good_spw}, time range: {timerange}"
+                    )
                     tasks.append(
                         delayed(single_mstransform_wrapper)(
                             msname=msname,
@@ -230,7 +236,7 @@ def split_target_scans(
                 logger.debug(line)
             for line in r[2].splitlines():
                 logger.debug(line)
-            
+
         splited_ms_list = splited_ms_list + result
         if len(splited_ms_list) == 0:
             logger.error(f"Spliting of measurement set: {msname} is unsuccessful.")
@@ -241,7 +247,9 @@ def split_target_scans(
                 drop_cache(splited_ms)
             return 0, splited_ms_list
     except Exception:
-        logger.exception(f"Spliting of measurement set: {msname} is unsuccessful.",exc_info=True)
+        logger.exception(
+            f"Spliting of measurement set: {msname} is unsuccessful.", exc_info=True
+        )
         return 1, []
 
 
@@ -328,7 +336,7 @@ def main(
     logger = get_logger_safe()
     if verbose:
         logger.setLevel(logging.DEBUG)
-        
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -358,7 +366,9 @@ def main(
                 "do_target_split", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        logger.info("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
 
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
@@ -367,7 +377,7 @@ def main(
         total_ncoarse = 0
         for msname in mslist:
             ms_coarse_chans = get_MWA_coarse_chan(msname)
-            if len(split_coarse_chans)>0:
+            if len(split_coarse_chans) > 0:
                 ms_coarse_chans = list(set(ms_coarse_chans) & set(split_coarse_chans))
             ncoarse = len(ms_coarse_chans)
             total_ncoarse += ncoarse
@@ -390,7 +400,9 @@ def main(
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        for banner in print_banner("Starting spliting measurement sets.", no_print=True).splitlines(): 
+        for banner in print_banner(
+            "Starting spliting measurement sets.", no_print=True
+        ).splitlines():
             logger.info(banner)
         ##################################
         # Parallel spliting
@@ -447,7 +459,7 @@ def main(
             logger.debug(f"{splited_mslist}")
             msg = 0
     except Exception:
-        logger.exception("Exception",exc_info=True)
+        logger.exception("Exception", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)
@@ -552,9 +564,9 @@ def cli():
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
-    adv_args.add_argument(
-        "--verbose", action="store_true", help="Verbose logs"
-    )
+    adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
+    adv_args.add_argument("--logfile", type=str, default=None, help="Log file")
+    adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
@@ -574,8 +586,6 @@ def cli():
         help="Memory fraction to use",
         metavar="Float",
     )
-    hard_args.add_argument("--logfile", type=str, default=None, help="Log file")
-    hard_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)

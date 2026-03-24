@@ -42,6 +42,7 @@ def run_solar_phasecenter_jobs(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Move phase center to the Sun
@@ -62,6 +63,8 @@ def run_solar_phasecenter_jobs(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -101,6 +104,7 @@ def run_solar_phasecenter_jobs(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -128,6 +132,7 @@ def run_ds_jobs(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Make dynamic spectra of the solar target
@@ -152,6 +157,8 @@ def run_ds_jobs(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -194,6 +201,7 @@ def run_ds_jobs(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -324,6 +332,7 @@ def run_target_split_jobs(
                 start_remote_log=remote_log,
                 verbose=verbose,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -361,6 +370,7 @@ def run_flag(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Run flagging jobs
@@ -407,6 +417,8 @@ def run_flag(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -461,6 +473,7 @@ def run_flag(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -486,6 +499,7 @@ def run_import_model(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Importing calibrator models
@@ -506,6 +520,8 @@ def run_import_model(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -546,6 +562,7 @@ def run_import_model(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -574,6 +591,7 @@ def run_basic_cal_jobs(
     keep_backup=False,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Perform basic calibration
@@ -600,6 +618,8 @@ def run_basic_cal_jobs(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -643,6 +663,7 @@ def run_basic_cal_jobs(
                 logfile=logfile,
                 jobid=jobid,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -673,6 +694,7 @@ def run_apply_basiccal_sol(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Apply basic calibration solutions on splited target scans
@@ -703,6 +725,8 @@ def run_apply_basiccal_sol(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -747,6 +771,7 @@ def run_apply_basiccal_sol(
                 logfile=logfile,
                 jobid=jobid,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -772,6 +797,7 @@ def run_solar_siderealcor_jobs(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Apply sidereal motion correction of the Sun
@@ -792,6 +818,8 @@ def run_solar_siderealcor_jobs(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -831,6 +859,7 @@ def run_solar_siderealcor_jobs(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -875,6 +904,7 @@ def run_selfcal_jobs(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Self-calibration on target scans
@@ -935,6 +965,8 @@ def run_selfcal_jobs(
         Start remote logger
     obsid : int, optional
         Observation IDs
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -1018,6 +1050,7 @@ def run_selfcal_jobs(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -1056,6 +1089,7 @@ def run_apply_selfcal_sol(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Apply self-calibration solutions on splited target scans
@@ -1082,6 +1116,8 @@ def run_apply_selfcal_sol(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -1129,6 +1165,7 @@ def run_apply_selfcal_sol(
                 logfile=logfile,
                 jobid=jobid,
                 dask_client=dask_client,
+                verbose=verbose,
             )
         if gain_failed == 0:
             msg = 0
@@ -1170,6 +1207,7 @@ def run_imaging_jobs(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Imaging on target scans
@@ -1218,6 +1256,8 @@ def run_imaging_jobs(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -1274,6 +1314,7 @@ def run_imaging_jobs(
                 jobid=jobid,
                 logfile=logfile,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -1298,6 +1339,7 @@ def run_apply_pbcor(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Apply primary beam corrections on all images
@@ -1320,6 +1362,8 @@ def run_apply_pbcor(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -1361,6 +1405,7 @@ def run_apply_pbcor(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -1384,6 +1429,7 @@ def run_make_overlay(
     cpu_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Making overlays of all images on EUV images
@@ -1404,6 +1450,8 @@ def run_make_overlay(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -1445,6 +1493,7 @@ def run_make_overlay(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()
@@ -1470,6 +1519,7 @@ def run_make_msplot(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Making diagnostic plots of measurement sets
@@ -1490,6 +1540,8 @@ def run_make_msplot(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -1527,6 +1579,7 @@ def run_make_msplot(
                 jobid=jobid,
                 start_remote_log=remote_log,
                 dask_client=dask_client,
+                verbose=verbose,
             )
     finally:
         stop_event.set()

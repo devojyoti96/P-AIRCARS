@@ -348,9 +348,14 @@ def stop_prefect_server(scheduler_name="local"):
     load_dotenv(dotenv_path=config["ENV_FILE"], override=True)
     env = os.environ.copy()
     print("Prefect config in current environment ...")
-    result = subprocess.run(["prefect", "server", "stop"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    result = subprocess.run(
+        ["prefect", "server", "stop"],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     exit_code = result.returncode
-    if exit_code==0:
+    if exit_code == 0:
         print("Prefect server stopped.")
     else:
         print("Could not stop prefect server.")

@@ -76,7 +76,7 @@ def get_remote_logger_password():
             return ""
     except Exception:
         return ""
-        
+
 
 def get_emails():
     cachedir = get_cachedir()
@@ -168,8 +168,8 @@ class LogTailHandler(FileSystemEventHandler):
                 for line in lines:
                     if line != "" and line != " " and line != "\n":
                         level = line.split("|")[0]
-                        if level in ["INFO","DEBUG","ERROR","WARNING","CRITICAL"]:
-                            line = "|".join(line.split("|")[1:]) 
+                        if level in ["INFO", "DEBUG", "ERROR", "WARNING", "CRITICAL"]:
+                            line = "|".join(line.split("|")[1:])
                             if level == "DEBUG":
                                 self.logger.debug(line.strip())
                             elif level == "ERROR":
@@ -177,9 +177,9 @@ class LogTailHandler(FileSystemEventHandler):
                             elif level == "WARNING":
                                 self.logger.warning(line.strip())
                             elif level == "CRITICAL":
-                                self.logger.critical(line.strip()) 
+                                self.logger.critical(line.strip())
                             else:
-                                self.logger.info(line.strip())   
+                                self.logger.info(line.strip())
                         else:
                             self.logger.info(line.strip())
             except Exception:
@@ -310,9 +310,7 @@ def get_logid(logfile):
         name = name.split("_int.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
         coarse_chan = name.split("_ch_")[-1]
-        return (
-            f"{int(time.time())}_time_Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
-        )
+        return f"{int(time.time())}_time_Intensity self-calibration, OBSID: {obsid}, coarse channel: {coarse_chan}"
     elif name.endswith("_pol.log"):
         name = name.split("_pol.log")[0].split("selfcal_")[1]
         obsid = name.split("_")[0]
@@ -336,6 +334,7 @@ def get_logger_safe():
     try:
         with suppress_output():
             from prefect import get_run_logger
+
             logger = get_run_logger()
             logger.setLevel(logging.INFO)
             return logger
@@ -345,13 +344,15 @@ def get_logger_safe():
         if not logger.handlers:
             handler = logging.StreamHandler()
             logger.setLevel(logging.INFO)
-            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",datefmt="%Y-%m-%d %H:%M:%S")
+            formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+            )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.propagate = False
         return logger
-        
-        
+
+
 def init_logger(logname, logfile, log_type="task", jobname="", password=""):
     """
     Initialize a remote logger with watchdog-based tailing.

@@ -482,14 +482,14 @@ def run_solar_sidereal_cor(
         Success message
     """
     limit_threads(n_threads=ncpu)
-    env=os.environ.copy()
+    env = os.environ.copy()
     env_vars = [
         "OMP_NUM_THREADS",
         "OPENBLAS_NUM_THREADS",
         "MKL_NUM_THREADS",
         "NUMEXPR_NUM_THREADS",
         "VECLIB_MAXIMUM_THREADS",
-        "RAYON_NUM_THREADS"
+        "RAYON_NUM_THREADS",
     ]
     init_udocker()
     if check_container:
@@ -524,21 +524,21 @@ def run_solar_sidereal_cor(
         )
     cmd_args = cmd.split(" ")
     try:
-        full_command = [
-            "udocker",
-            "--quiet",
-            "run",
-            "--nobanner"]
+        full_command = ["udocker", "--quiet", "run", "--nobanner"]
         env_keys = list(env.keys())
         for var in env_vars:
             if var in env_keys:
                 full_command.append(f"--env={var}={env[var]}")
-        full_command = full_command + [
-            f"--volume={mspath}:{temp_docker_path}",
-            "--workdir",
-            f"{temp_docker_path}",
-            "paircarswsclean",
-        ] + cmd_args
+        full_command = (
+            full_command
+            + [
+                f"--volume={mspath}:{temp_docker_path}",
+                "--workdir",
+                f"{temp_docker_path}",
+                "paircarswsclean",
+            ]
+            + cmd_args
+        )
         if verbose:
             print(f"{cmd}\n")
             result = subprocess.run(
@@ -597,14 +597,14 @@ def run_chgcenter(
         Success message
     """
     limit_threads(n_threads=ncpu)
-    env=os.environ.copy()
+    env = os.environ.copy()
     env_vars = [
         "OMP_NUM_THREADS",
         "OPENBLAS_NUM_THREADS",
         "MKL_NUM_THREADS",
         "NUMEXPR_NUM_THREADS",
         "VECLIB_MAXIMUM_THREADS",
-        "RAYON_NUM_THREADS"
+        "RAYON_NUM_THREADS",
     ]
     init_udocker()
     if check_container:
@@ -647,21 +647,21 @@ def run_chgcenter(
         )
     cmd_args = cmd.split(" ")
     try:
-        full_command = [
-            "udocker",
-            "--quiet",
-            "run",
-            "--nobanner"]
+        full_command = ["udocker", "--quiet", "run", "--nobanner"]
         env_keys = list(env.keys())
         for var in env_vars:
             if var in env_keys:
                 full_command.append(f"--env={var}={env[var]}")
-        full_command = full_command + [
-            f"--volume={mspath}:{temp_docker_path}",
-            "--workdir",
-            f"{temp_docker_path}",
-            f"{container_name}",
-        ] + cmd_args
+        full_command = (
+            full_command
+            + [
+                f"--volume={mspath}:{temp_docker_path}",
+                "--workdir",
+                f"{temp_docker_path}",
+                f"{container_name}",
+            ]
+            + cmd_args
+        )
         if verbose:
             print(f"{cmd}\n")
             result = subprocess.run(
@@ -907,14 +907,14 @@ def run_hyperdrive(
         Success message
     """
     limit_threads(n_threads=ncpu)
-    env=os.environ.copy()
+    env = os.environ.copy()
     env_vars = [
         "OMP_NUM_THREADS",
         "OPENBLAS_NUM_THREADS",
         "MKL_NUM_THREADS",
         "NUMEXPR_NUM_THREADS",
         "VECLIB_MAXIMUM_THREADS",
-        "RAYON_NUM_THREADS"
+        "RAYON_NUM_THREADS",
     ]
     init_udocker()
     if check_container:

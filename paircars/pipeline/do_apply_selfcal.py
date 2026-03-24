@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 import argparse
-import traceback
 import time
 import glob
 import sys
@@ -13,6 +12,7 @@ from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.basic_utils import print_banner
 from paircars.utils.ms_metadata import check_datacolumn_valid
@@ -22,7 +22,7 @@ from paircars.utils.proc_manage_utils import (
     get_local_dask_cluster,
 )
 from paircars.utils.resource_utils import drop_cache
-from paircars.pipeline.do_apply_basiccal import applysol
+from paircars.pipeline.do_apply_basiccal import applysol_wrapper
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -39,6 +39,7 @@ def run_all_applysol(
     force_apply=False,
     n_threads=1,
     mem_limit=1,
+    logger=None,
 ):
     """
     Apply self-calibrator solutions on all target scans
@@ -77,8 +78,11 @@ def run_all_applysol(
     int
         Failed polarisation solution ms number
     """
+    if logger is None:
+        logger = get_logger_safe()
+
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 0, 0, 0, 0
     else:
         gain_succeed = 0
@@ -88,37 +92,39 @@ def run_all_applysol(
 
     try:
         os.chdir(workdir)
+        logger.debug(f"Current working directory: {os.getcwd()}")
         mslist = np.unique(mslist).tolist()
         header = fits.getheader(metafits)
         obsid = header["GPSTIME"]
-        selfcal_tables = sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.gcal"))
-        sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.bcal"))
-        sorted(glob.glob(f"{caldir}/selfcal_{obsid}_coarsechan*.dcal"))
+        selfcal_tables = sorted(glob.glob(f"{caldir}/selfcal_{obsid}_ch_*.gcal"))
         if len(selfcal_tables) == 0:
-            print(f"No self-cal caltable is present in {caldir}.")
+            logger.error(f"No self-cal caltable is present in {caldir}.")
             return gain_succeed, gain_failed, pol_succeed, pol_failed
+        logger.debug(f"Self-calibration tables: {selfcal_tables}")
         selfcal_tables_start_chans = np.array(
             [
                 int(
                     os.path.basename(i)
                     .split(".gcal")[0]
-                    .split("coarsechan_")[-1]
-                    .split("_")[0]
+                    .split("_ch_")[-1]
+                    .split("-")[0]
                 )
                 for i in selfcal_tables
             ]
         )
+        logger.debug(f"Start coarse channels: {selfcal_tables_start_chans}")
         selfcal_tables_end_chans = np.array(
             [
                 int(
                     os.path.basename(i)
                     .split(".gcal")[0]
-                    .split("coarsechan_")[-1]
-                    .split("_")[-1]
+                    .split("_ch_")[-1]
+                    .split("-")[-1]
                 )
                 for i in selfcal_tables
             ]
         )
+        logger.debug(f"End coarse channels: {selfcal_tables_end_chans}")
         ####################################
         # Filtering any corrupted ms
         #####################################
@@ -128,17 +134,17 @@ def run_all_applysol(
             if checkcol:
                 filtered_mslist.append(ms)
             else:
-                print(f"Issue in : {ms}")
+                logger.warning(f"Issue in : {ms}")
 
         mslist = filtered_mslist
         if len(mslist) == 0:
-            print("No valid measurement set.")
+            logger.error("No valid measurement set.")
             return gain_succeed, gain_failed, pol_succeed, pol_failed
 
         ####################################
         # Applycal jobs
         ####################################
-        print(f"Total ms list: {len(mslist)}")
+        logger.info(f"Total ms list: {len(mslist)}")
         tasks = []
         msmd = msmetadata()
         for ms in mslist:
@@ -167,17 +173,17 @@ def run_all_applysol(
                         quartical_table.append(f"{gaintable_prefix}.dcal")
 
             if len(gaintable) == 0:
-                print(
+                logger.error(
                     f"Measurement set coarse channel : {start_coarse_chan} to {end_coarse_chan}. Corresponding self-calibration table is not present."
                 )
             else:
                 if len(quartical_table) == 0:
-                    print(
+                    logger.warning(
                         f"Measurement set coarse channel : {start_coarse_chan} to {end_coarse_chan}. Corresponding polarisation self-calibration table is not present."
                     )
                     os.system(f"touch {ms}/.nopolselfcal")
                 tasks.append(
-                    delayed(applysol)(
+                    delayed(applysol_wrapper)(
                         ms,
                         workdir,
                         gaintable=gaintable,
@@ -192,8 +198,18 @@ def run_all_applysol(
                     )
                 )
         if len(tasks) > 0:
-            print("Applying solutions...")
-            results = list(dask_client.gather(dask_client.compute(tasks)))
+            result_wrapper = list(dask_client.gather(dask_client.compute(tasks)))
+            results = []
+            for r in result_wrapper:
+                results.append(r[1])
+                logger.debug("================")
+                logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+                logger.debug("================")
+                for line in r[2].splitlines():
+                    logger.debug(line)
+                for line in r[3].splitlines():
+                    logger.debug(line)
+
             gain_msg = []
             pol_msg = []
             for r in results:
@@ -203,31 +219,31 @@ def run_all_applysol(
             pol_failed = sum(pol_msg)
             gain_succeed = len(mslist) - gain_failed
             pol_succeed = len(mslist) - pol_failed
-            print(f"Total measurement sets: {len(mslist)}")
-            print(f"Gain solution applied, Succeeded: {gain_succeed}")
-            print(f"Gain solution applied, Failed: {gain_failed}")
-            print(f"Polarisation solution applied, Succeeded: {pol_succeed}")
-            print(f"Polarisation solution applied, Failed: {pol_failed}")
+            logger.info(f"Total measurement sets: {len(mslist)}")
+            logger.info(f"Gain solution applied, Succeeded: {gain_succeed}")
+            logger.info(f"Gain solution applied, Failed: {gain_failed}")
+            logger.info(f"Polarisation solution applied, Succeeded: {pol_succeed}")
+            logger.info(f"Polarisation solution applied, Failed: {pol_failed}")
             if gain_failed == 0 and pol_failed == 0:
-                print_banner(
+                logger.error(
                     "Applying gain and polarisation self-calibration solutions for targets are done successfully."
                 )
             elif pol_failed == 0:
-                print_banner(
+                logger.warning(
                     "Applying gain self-calibration solutions for targets are done successfully, but failed for polarisation solutions."
                 )
             else:
-                print_banner(
+                logger.info(
                     "Applying self-calibration solutions for targets are not done successfully."
                 )
         else:
-            print_banner(
+            logger.error(
                 "Applying self-calibration solutions for targets are not done successfully. No suitable calibration solutions are found."
             )
     except Exception as e:
-        traceback.print_exc()
-        print_banner(
-            "Applying self-calibration solutions for targets are not done successfully."
+        logger.exception(
+            "Applying self-calibration solutions for targets are not done successfully.",
+            exc_info=True,
         )
     finally:
         return gain_succeed, gain_failed, pol_succeed, pol_failed
@@ -246,6 +262,7 @@ def main(
     mem_frac=0.8,
     logfile=None,
     jobid=0,
+    verbose=False,
     dask_client=None,
 ):
     """
@@ -277,6 +294,8 @@ def main(
         Path to the logfile for saving logs. If None, logging to file is disabled. Default is None.
     jobid : int, optional
         Job ID for PID tracking and logging. Default is 0.
+    verbose : bool, optional
+    Verbose logs
     dask_client : dask.client, optional
         Dask client address
 
@@ -291,6 +310,10 @@ def main(
     int
         Failed polarisation solution ms number
     """
+    logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -320,10 +343,12 @@ def main(
                 "apply_selfcal", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.crititcal("Please provide a valid measurement set list.")
         return 0, 0, 0, 0
     else:
         gain_succeed = 0
@@ -336,6 +361,7 @@ def main(
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
+    logger.debug(f"Total coarse channels: {total_ncoarse}.")
 
     dask_cluster = None
     if dask_client is None:
@@ -346,12 +372,15 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 0, 0, 0, 0
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting applying solutions.")
+        for banner in print_banner(
+            "Starting applying solutions.", no_print=True
+        ).splitlines():
+            logger.info(banner)
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -364,13 +393,13 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
         if caldir == "" or not os.path.exists(caldir):
-            print("Provide existing caltable directory.")
+            logger.error("Provide existing caltable directory.")
         else:
             gain_succeed, gain_failed, pol_succeed, pol_failed = run_all_applysol(
                 mslist,
@@ -383,9 +412,12 @@ def main(
                 force_apply=force_apply,
                 n_threads=n_threads,
                 mem_limit=mem_limit,
+                logger=logger,
             )
     except Exception:
-        traceback.print_exc()
+        logger.exception(
+            "Exception occured in applying self-calibration solutions.", exc_info=True
+        )
     finally:
         time.sleep(5)
         clean_shutdown(observer)
@@ -458,6 +490,13 @@ def cli():
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
+    adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
+    adv_args.add_argument(
+        "--logfile", type=str, default=None, help="Optional path to log file"
+    )
+    adv_args.add_argument(
+        "--jobid", type=str, default="0", help="Job ID for logging and PID tracking"
+    )
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
@@ -468,12 +507,6 @@ def cli():
     )
     hard_args.add_argument(
         "--mem_frac", type=float, default=0.8, help="Memory fraction to use"
-    )
-    hard_args.add_argument(
-        "--logfile", type=str, default=None, help="Optional path to log file"
-    )
-    hard_args.add_argument(
-        "--jobid", type=str, default="0", help="Job ID for logging and PID tracking"
     )
 
     if len(sys.argv) == 1:
@@ -494,6 +527,7 @@ def cli():
         cpu_frac=float(args.cpu_frac),
         mem_frac=float(args.mem_frac),
         logfile=args.logfile,
+        verbose=args.verbose,
         jobid=args.jobid,
     )
     if gain_failed == 0 and pol_failed == 0:

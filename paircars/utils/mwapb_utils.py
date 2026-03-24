@@ -213,6 +213,7 @@ def all_sky_beam_interpolator(
     ncpu = max(1, ncpu)
     limit_threads(n_threads=ncpu)
     from scipy.interpolate import RectBivariateSpline
+
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -331,6 +332,7 @@ def get_jones_array(
     ncpu = max(1, ncpu)
     limit_threads(n_threads=ncpu)
     from joblib import Parallel, delayed as jobdelayed
+
     if MWA_PB_file == "" or os.path.exists(MWA_PB_file) is False:
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
@@ -383,7 +385,7 @@ def get_jones_array(
         j11 = j11.reshape(az_arr.shape)
         jones_array = np.array([j00, j01, j10, j11]).T
     else:
-        beam = mwa_hyperbeam.FEEBeam(MWA_PB_file) 
+        beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
         sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
         delay = sweet_spots[int(gridpoint)][-1]
         za_arr = 90 - alt_arr
@@ -906,7 +908,7 @@ def make_primarybeammap(
         MWA_PB_file = MWA_PB_file_paircars
     if sweet_spot_file == "" or os.path.exists(sweet_spot_file) is False:
         sweet_spot_file = sweet_spot_file_paircars
-    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file) 
+    beam = mwa_hyperbeam.FEEBeam(MWA_PB_file)
 
     ############################
     # Creating sky grid

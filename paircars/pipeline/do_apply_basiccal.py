@@ -9,12 +9,17 @@ import os
 from casatools import table, msmetadata
 from dask import delayed
 from astropy.io import fits
-from paircars.utils.basic_utils import suppress_output, print_banner
+from paircars.utils.basic_utils import (
+    suppress_output,
+    print_banner,
+    capture_all_output,
+)
 from paircars.utils.calibration import get_nearest_bandpass_table, get_quartical_soltype
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.ms_metadata import check_datacolumn_valid
@@ -104,6 +109,7 @@ def applysol(
             return gain_msg, pol_msg
         else:
             if os.path.exists(msname + check_file) and force_apply:
+                print("Undo previous flagging.")
                 with suppress_output():
                     clearcal(vis=msname)
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
@@ -114,6 +120,7 @@ def applysol(
             for gtable in gaintable:
                 if os.path.exists(gtable):
                     if only_amplitude and gtable.endswith(".bcal"):
+                        print("Only amplitude part of the solution will be applied.")
                         os.system(f"cp -r {gtable} {gtable}.amp")
                         tb = table()
                         tb.open(f"{gtable}.amp", nomodify=False)
@@ -134,8 +141,20 @@ def applysol(
                 for g in gaintable:
                     if g.endswith("kcrosscal"):
                         has_kcross = True
-                if not has_kcross:
+                if not has_kcross and soltype == "basic":
+                    print("No crosshand phase solutions applied.")
                     os.system(f"touch {msname}/.nokcross")
+                applyal_cmd = (
+                    f"applycal("
+                    f"vis='{msname}',"
+                    f"gaintable={gaintable},"
+                    f"gainfield={gainfield},"
+                    f"applymode={applymode},"
+                    f"interp={interp},"
+                    f"calwt={[False] * len(gaintable)},"
+                    "flagbackup=False)"
+                )
+                print(applyal_cmd)
                 with suppress_output():
                     applycal(
                         vis=msname,
@@ -171,7 +190,9 @@ def applysol(
                             qc = qc.rstrip("/")
                             soltypes = get_quartical_soltype(qc)
                             if len(soltypes) == 0:
-                                print("No solution is present.")
+                                print(
+                                    f"No solution is present in quartical table {qc}."
+                                )
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
                             else:
@@ -206,6 +227,7 @@ def applysol(
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
                 if not qc_success:
+                    print("No quartical solutions applied.")
                     os.system(f"touch {msname}/.nopolselfcal")
                     pol_msg = 1
                 else:
@@ -238,6 +260,12 @@ def applysol(
         return 1, 1
 
 
+def applysol_wrapper(*args, **kwargs):
+    with capture_all_output() as (out, err):
+        result = applysol(*args, **kwargs)
+        return *args.get("msname"), result, out.getvalue(), err.getvalue()
+
+
 def run_all_applysol(
     mslist,
     target_metafits,
@@ -250,6 +278,7 @@ def run_all_applysol(
     force_apply=False,
     n_threads=1,
     mem_limit=1,
+    logger=None,
 ):
     """
     Apply basic-calibration solutions on all target scans
@@ -288,8 +317,11 @@ def run_all_applysol(
     int
         Failed ms number
     """
+    if logger is None:
+        logger = get_logger_safe()
+
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -297,6 +329,7 @@ def run_all_applysol(
 
     try:
         os.chdir(workdir)
+        logger.debug(f"Current working directory: {os.getcwd()}")
         mslist = np.unique(mslist).tolist()
         target_header = fits.getheader(target_metafits)
         target_attn = target_header["ATTEN_DB"]
@@ -309,10 +342,12 @@ def run_all_applysol(
         crossphase_table = glob.glob(caldir + "/calibrator*.kcrosscal")
 
         if len(bandpass_table) == 0:
-            print(f"No bandpass table is present in calibration directory : {caldir}.")
+            logger.error(
+                f"No bandpass table is present in calibration directory : {caldir}."
+            )
             return []
         if len(crossphase_table) == 0:
-            print(
+            logger.warning(
                 f"No crosshand phase solution is present in calibration directory : {caldir}. Applying only bandpass solutions."
             )
 
@@ -325,17 +360,17 @@ def run_all_applysol(
             if checkcol:
                 filtered_mslist.append(ms)
             else:
-                print(f"Issue in : {ms}")
+                logger.warning(f"Issue in : {ms}")
 
         mslist = filtered_mslist
         if len(mslist) == 0:
-            print("No valid measurement set.")
+            logger.error("No valid measurement set.")
             return 1, 0, 0
 
         ####################################
         # Applycal jobs
         ####################################
-        print(f"Total ms list: {len(mslist)}")
+        logger.info(f"Total ms list: {len(mslist)}")
         tasks = []
         failed = 0
         for ms in mslist:
@@ -358,7 +393,7 @@ def run_all_applysol(
                 interp.append("linear, linear")
             if len(final_gaintable) > 0:
                 tasks.append(
-                    delayed(applysol)(
+                    delayed(applysol_wrapper)(
                         ms,
                         workdir,
                         gaintable=final_gaintable,
@@ -373,31 +408,42 @@ def run_all_applysol(
                 )
             else:
                 failed += 1
-        results = list(dask_client.gather(dask_client.compute(tasks)))
+        result_wrapper = list(dask_client.gather(dask_client.compute(tasks)))
+        results = []
+        for r in result_wrapper:
+            results.append(r[1])
+            logger.debug("================")
+            logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+            logger.debug("================")
+            for line in r[2].splitlines():
+                logger.debug(line)
+            for line in r[3].splitlines():
+                logger.debug(line)
+
         gain_msg = []
         for r in results:
             gain_msg.append(r[0])
         apply_failed = sum(gain_msg)
         succeed = len(mslist) - apply_failed - failed
-        print(f"Total measurement sets: {len(mslist)}")
-        print(f"Total success: {succeed}")
-        print(f"No solutions available for: {failed}")
-        print(f"Total solution apply failed: {apply_failed}")
+        logger.info(f"Total measurement sets: {len(mslist)}")
+        logger.info(f"Total success: {succeed}")
+        logger.info(f"No solutions available for: {failed}")
+        logger.info(f"Total solution apply failed: {apply_failed}")
 
         if failed + apply_failed == len(mslist):
-            print_banner(
+            logger.error(
                 "Applying basic calibration solutions for target scans are not done successfully."
             )
             return 1, succeed, failed + apply_failed
         else:
-            print_banner(
+            logger.info(
                 "Applying basic calibration solutions for target are done successfully."
             )
             return 0, succeed, failed + apply_failed
     except Exception:
-        traceback.print_exc()
-        print_banner(
-            "Applying basic calibration solutions for target scans are not done successfully."
+        logger.exception(
+            "Applying basic calibration solutions for target scans are not done successfully.",
+            exc_info=True,
         )
         return 1, succeed, failed
 
@@ -417,6 +463,7 @@ def main(
     mem_frac=0.8,
     logfile=None,
     jobid=0,
+    verbose=False,
     dask_client=None,
 ):
     """
@@ -450,6 +497,8 @@ def main(
         Path to the logfile. If None, logging to file is disabled. Default is None.
     jobid : int, optional
         Identifier for tracking the job and saving PID. Default is 0.
+    verbose : bool, optional
+        Verbose logs
     dask_client : dask.client, optional
         Dask client
 
@@ -462,6 +511,10 @@ def main(
     int
         Failed ms number
     """
+    logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -471,6 +524,7 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    logger.debug(f"Current working directory: {os.getcwd()}")
 
     ############
     # Logger
@@ -490,10 +544,12 @@ def main(
                 "apply_basiccal", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -504,6 +560,7 @@ def main(
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
+    logger.debug(f"Total coarse channels: {total_ncoarse}")
 
     dask_cluster = None
     if dask_client is None:
@@ -514,12 +571,15 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 1, succeed, failed
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting applying solutions.")
+        for banner in print_banner(
+            "Starting applying solutions.", no_print=True
+        ).splitlines():
+            logger.info(banner)
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -532,13 +592,13 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
         if caldir == "" or not os.path.exists(caldir):
-            print("Provide existing caltable directory.")
+            logger.error("Provide existing caltable directory.")
             msg = 1
         else:
             msg, succeed, failed = run_all_applysol(
@@ -553,9 +613,10 @@ def main(
                 force_apply=force_apply,
                 n_threads=n_threads,
                 mem_limit=mem_limit,
+                logger=logger,
             )
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception in applying solutions.", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)
@@ -636,6 +697,13 @@ def cli():
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
+    adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
+    adv_args.add_argument(
+        "--logfile", type=str, default=None, help="Optional path to log file"
+    )
+    adv_args.add_argument(
+        "--jobid", type=str, default="0", help="Job ID for logging and process tracking"
+    )
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
@@ -646,12 +714,6 @@ def cli():
     )
     hard_args.add_argument(
         "--mem_frac", type=float, default=0.8, help="Memory fraction to use"
-    )
-    hard_args.add_argument(
-        "--logfile", type=str, default=None, help="Optional path to log file"
-    )
-    hard_args.add_argument(
-        "--jobid", type=str, default="0", help="Job ID for logging and process tracking"
     )
 
     if len(sys.argv) == 1:
@@ -673,6 +735,7 @@ def cli():
         cpu_frac=float(args.cpu_frac),
         mem_frac=float(args.mem_frac),
         logfile=args.logfile,
+        verbose=args.verbose,
         jobid=args.jobid,
     )
     return msg

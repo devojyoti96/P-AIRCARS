@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 import argparse
-import traceback
 import copy
 import time
 import glob
@@ -10,8 +9,8 @@ import os
 from casatools import msmetadata
 from dask import delayed
 from paircars.utils.basic_utils import (
-    timestamp_to_mjdsec, 
-    mjdsec_to_timestamp, 
+    timestamp_to_mjdsec,
+    mjdsec_to_timestamp,
     print_banner,
 )
 from paircars.utils.image_utils import (
@@ -34,6 +33,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     create_logger,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.mwa_utils import get_ncoarse, get_MWA_OBSID, get_MWA_coarse_chan
@@ -148,7 +148,7 @@ def perform_imaging(
 
     if os.path.exists(logfile):
         os.system(f"rm -rf {logfile}")
-    logger, logfile = create_logger(
+    img_logger, logfile = create_logger(
         os.path.basename(logfile).split(".log")[0],
         logfile,
     )
@@ -168,7 +168,7 @@ def perform_imaging(
     try:
         msname = msname.rstrip("/")
         msname = os.path.abspath(msname)
-        logger.info(f"{os.path.basename(msname)} --Perform imaging...\n")
+        img_logger.info(f"Perform imaging for {os.path.basename(msname)}")
 
         #########
         # Imaging
@@ -218,7 +218,9 @@ def perform_imaging(
             start_chans = [0]
             end_chans = [len(freqs)]
         if len(start_chans) == 0:
-            print(f"Please provide valid channel range between 0 and {len(freqs)}")
+            img_logger.critical(
+                f"Please provide valid channel range between 0 and {len(freqs)}"
+            )
             time.sleep(5)
             clean_shutdown(sub_observer)
             return 1, []
@@ -237,7 +239,7 @@ def perform_imaging(
             start_times = [0]
             end_times = [len(times)]
         if len(start_times) == 0:
-            print(
+            img_logger.critical(
                 f"Please provide valid time range between {mjdsec_to_timestamp(times[0])} and {mjdsec_to_timestamp(times[-1])}"
             )
             time.sleep(5)
@@ -297,8 +299,8 @@ def perform_imaging(
         if use_solar_mask:
             fits_mask = prefix + "_solar-mask.fits"
             if not os.path.exists(fits_mask):
-                logger.info(
-                    f"{os.path.basename(msname)} -- Creating solar mask of radius: {mask_radius} arcmin.\n",
+                img_logger.info(
+                    f"Creating solar mask of radius: {mask_radius} arcmin.\n",
                 )
                 fits_mask = create_circular_mask(
                     msname, cellsize, imsize, mask_radius=mask_radius
@@ -368,8 +370,8 @@ def perform_imaging(
                 # Running imaging
                 ######################################
                 wsclean_cmd = "wsclean " + " ".join(temp_wsclean_args) + " " + msname
-                logger.info(
-                    f"{os.path.basename(msname)} -- WSClean command: {wsclean_cmd}\n",
+                img_logger.info(
+                    f"WSClean command: {wsclean_cmd}\n",
                 )
                 msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
                 if msg == 0:
@@ -460,8 +462,8 @@ def perform_imaging(
                     # Renaming images
                     ######################
                     if len(imagelist) > 0:
-                        logger.info(f"Total {len(imagelist)} images are made.")
-                        logger.info("Renaming and making plots...")
+                        img_logger.info(f"Total {len(imagelist)} images are made.")
+                        img_logger.info("Renaming and making plots...")
                         os.makedirs(imagedir + "/images", exist_ok=True)
                         final_image_list = []
                         for imagename in imagelist:
@@ -516,15 +518,15 @@ def perform_imaging(
             if use_solar_mask and os.path.exists(fits_mask):
                 os.system("rm -rf " + fits_mask)
             if len(final_list_dic["image"]) == 0:
-                logger.info(
-                    f"{os.path.basename(msname)} -- No image is made.\n",
+                img_logger.error(
+                    "No image is made.",
                 )
                 time.sleep(5)
                 clean_shutdown(sub_observer)
                 return 1, final_list_dic
             else:
-                logger.info(
-                    f"{os.path.basename(msname)} -- Imaging is successfully done.\n",
+                img_logger.info(
+                    "Imaging is successfully done.",
                 )
                 time.sleep(5)
                 clean_shutdown(sub_observer)
@@ -532,17 +534,16 @@ def perform_imaging(
         else:
             if use_solar_mask and os.path.exists(fits_mask):
                 os.system("rm -rf " + fits_mask)
-            logger.info(
-                f"{os.path.basename(msname)} -- No image is made.\n",
+            img_logger.critical(
+                "No image is made.",
             )
             time.sleep(5)
             clean_shutdown(sub_observer)
             return 1, {}
     except Exception:
-        logger.info(
-            f"{os.path.basename(msname)} -- Error in imaging.\n",
+        img_logger.exception(
+            "Exception occured in imaging: {os.path.basename(msname)}", exc_info=True
         )
-        logger.exception(traceback.print_exc())
         time.sleep(5)
         clean_shutdown(sub_observer)
         return 1, {}
@@ -575,7 +576,7 @@ def run_all_imaging(
     make_plots=True,
     n_threads=1,
     mem_limit=1,
-    logfile="imaging.log",
+    logger=None,
 ):
     """
     Run spectropolarimetric snapshot imaging on a list of measurement sets
@@ -640,10 +641,13 @@ def run_all_imaging(
     int
         Total images
     """
+    if logger is None:
+        logger = get_logger_safe()
+
     mslist = sorted(mslist)
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -666,6 +670,7 @@ def run_all_imaging(
                 outdir + f"/imagedir_f_{freqres}_t_{timeres}_pol_{pol}_w_{weight_str}"
             )
         os.makedirs(imagedir, exist_ok=True)
+        logger.debug(f"Image directory: {imagedir}")
 
         ####################################
         # Filtering any corrupted ms
@@ -676,11 +681,11 @@ def run_all_imaging(
             if checkcol:
                 filtered_mslist.append(ms)
             else:
-                print(f"Issue in : {ms}")
+                logger.warning(f"Issue in : {ms}")
 
         mslist = filtered_mslist
         if len(mslist) == 0:
-            print("No valid measurement set is found.")
+            logger.critical("No valid measurement set is found.")
             return 1, succeed, failed, total_images
 
         cutout_rsun = max(
@@ -700,11 +705,11 @@ def run_all_imaging(
             os.makedirs(workdir + "/logs", exist_ok=True)
             obsid = get_MWA_OBSID(ms)
             coarse_chan = get_MWA_coarse_chan(ms)
-            if len(coarse_chan)>1:
+            if len(coarse_chan) > 1:
                 coarse_chan = f"{min(coarse_chan)}-{max(coarse_chan)}"
             else:
                 coarse_chan = f"{min(coarse_chan)}"
-            logfile = f"{workdir}/logs/imaging_{obsid}_ch_{coarse_chan}.log"            
+            logfile = f"{workdir}/logs/imaging_{obsid}_ch_{coarse_chan}.log"
             tasks.append(
                 delayed(perform_imaging)(
                     msname=ms,
@@ -733,22 +738,19 @@ def run_all_imaging(
                     logfile=logfile,
                 )
             )
-        print(
-            f"Starting imaging for ms : {ms}, Log file : {logfile}",
-        )
         results = list(dask_client.gather(dask_client.compute(tasks)))
         all_image_list = []
         all_imaged_ms_list = []
         for i in range(len(results)):
             r = results[i][1]
             if len(r) == 0:
-                print(
+                logger.error(
                     f"Imaging failed for ms : {mslist[i]}",
                 )
             else:
                 image_list = r["image"]
                 if len(image_list) == 0:
-                    print(
+                    logger.error(
                         f"No image is made for ms : {mslist[i]}",
                     )
                 else:
@@ -759,19 +761,19 @@ def run_all_imaging(
         succeed = len(all_imaged_ms_list)
         failed = len(mslist) - succeed
         total_images = len(all_image_list)
-        print(
+        logger.info(
             f"Numbers of input measurement sets : {len(mslist)}.",
         )
-        print(
+        logger.info(
             f"Imaging successfully done for: {succeed} measurement sets.",
         )
-        print(
+        logger.info(
             f"Imaging failed for: {failed} measurement sets.",
         )
-        print(f"Total images made: {total_images}.")
+        logger.info(f"Total images made: {total_images}.")
         return 0, succeed, failed, total_images
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in imaging.", exc_info=True)
         return 1, succeed, failed, total_images
 
 
@@ -800,6 +802,7 @@ def main(
     mem_frac=0.8,
     logfile=None,
     jobid=0,
+    verbose=False,
     dask_client=None,
 ):
     """
@@ -855,6 +858,8 @@ def main(
         Log file
     jobid : int, optional
         Unique job identifier for logging and PID tracking. Default is 0.
+    verbose : bool, optional
+        Verbose logs
     dask_client : dask.client, optional
         Dask client
 
@@ -869,6 +874,10 @@ def main(
     int
         Total images
     """
+    logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -878,14 +887,16 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    logger.debug(f"Current working directory: {os.getcwd()}")
 
     if outdir == "" or not os.path.exists(outdir):
         outdir = workdir
     outdir = outdir.rstrip("/")
     os.makedirs(outdir, exist_ok=True)
+    logger.debug(f"Output image directory: {outdir}")
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0, 0
     else:
         succeed = 0
@@ -898,10 +909,10 @@ def main(
     container_name = "paircarswsclean"
     container_present = check_udocker_container(container_name)
     if not container_present:
-        print(f"Initializing {container_name}...")
+        logger.debug(f"Initializing {container_name}.")
         container_name = initialize_wsclean_container(name=container_name, verbose=True)
         if container_name is None:
-            print(
+            logger.critical(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
             return 1, succeed, failed, total_images
@@ -924,13 +935,16 @@ def main(
                 "all_imaging", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
 
     total_ncoarse = 0
     for msname in mslist:
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
+    logger.debug(f"Total coarse channels: {total_ncoarse}.")
 
     dask_cluster = None
     if dask_client is None:
@@ -941,12 +955,13 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 1, succeed, failed, total_images
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting imaging.")
+        for banner in print_banner("Starting imaging.", no_print=True).splitlines():
+            logger.info(banner)
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -963,11 +978,11 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
         msg, succeed, failed, total_images = run_all_imaging(
             mslist,
             dask_client,
@@ -991,9 +1006,10 @@ def main(
             saveres=saveres,
             n_threads=n_threads,
             mem_limit=mem_limit,
+            logger=logger,
         )
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in imaging.", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)

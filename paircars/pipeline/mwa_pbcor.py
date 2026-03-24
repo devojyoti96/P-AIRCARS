@@ -2,7 +2,6 @@ import logging
 import numpy as np
 import argparse
 import warnings
-import traceback
 import time
 import glob
 import sys
@@ -11,12 +10,16 @@ import subprocess
 from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
 from dask import delayed
-from paircars.utils.basic_utils import get_datadir, print_banner
+from paircars.utils.basic_utils import (
+    print_banner,
+    capture_all_output,
+)
 from paircars.utils.image_utils import generate_tb_map
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.mwa_ploting_utils import save_in_hpc, plot_in_hpc
@@ -28,8 +31,13 @@ from paircars.utils.resource_utils import drop_cache
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
-datadir = get_datadir()
 warnings.simplefilter("ignore", FITSFixedWarning)
+
+
+def run_pbcor_wrapper(*args, **kwargs):
+    with capture_all_output() as (out, err):
+        result = run_pbcor(*args, **kwargs)
+        return args[0], result, out.getvalue(), err.getvalue()
 
 
 def get_fits_freq(image_file):
@@ -180,6 +188,7 @@ def pbcor_all_images(
     n_threads=1,
     mem_limit=1,
     njobs=1,
+    logger=None,
 ):
     """
     Correct primary beam of MWA for images in a directory
@@ -218,6 +227,9 @@ def pbcor_all_images(
     int
         Failed image number
     """
+    if logger is None:
+        logger = get_logger_safe()
+
     imagedir = imagedir.rstrip("/")
     pbdir = f"{os.path.dirname(imagedir)}/pbdir"
     pbcor_dir = f"{os.path.dirname(imagedir)}/pbcor_images"
@@ -232,7 +244,7 @@ def pbcor_all_images(
             tb_dir = f"{os.path.dirname(imagedir)}/tb_images"
             os.makedirs(tb_dir, exist_ok=True)
         if len(images) == 0:
-            print(f"No image is present in image directory: {imagedir}")
+            logger.critical(f"No image is present in image directory: {imagedir}")
             return 1, 0, 0
         else:
             succeed = 0
@@ -253,7 +265,7 @@ def pbcor_all_images(
             tasks = []
             for image in first_set:
                 leakage_file = get_leakage_file(image, leakage_dir=leakage_dir)
-                task = delayed(run_pbcor)(
+                task = delayed(run_pbcor_wrapper)(
                     image,
                     metafits,
                     pbdir,
@@ -264,13 +276,23 @@ def pbcor_all_images(
                     ncpu=n_threads,
                 )
                 tasks.append(task)
-            results = []
-            print("Start correcting first set of images...")
+            result_wrapper = []
+            logger.info("Start correcting first set of images.")
             for i in range(0, len(tasks), njobs):
                 batch = tasks[i : i + njobs]
                 futures = dask_client.compute(batch)
-                results.extend(dask_client.gather(futures))
-            results = list(results)
+                result_wrapper.extend(dask_client.gather(futures))
+            result_wrapper = list(result_wrapper)
+            results = []
+            for r in result_wrapper:
+                results.append(r[1])
+                logger.debug("================")
+                logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+                logger.debug("================")
+                for line in r[2].splitlines():
+                    logger.debug(line)
+                for line in r[3].splitlines():
+                    logger.debug(line)
 
             for r in results:
                 if r == 0:
@@ -280,7 +302,7 @@ def pbcor_all_images(
             tasks = []
             for image in remaining_set:
                 leakage_file = get_leakage_file(image, leakage_dir=leakage_dir)
-                task = delayed(run_pbcor)(
+                task = delayed(run_pbcor_wrapper)(
                     image,
                     metafits,
                     pbdir,
@@ -292,13 +314,23 @@ def pbcor_all_images(
                 )
                 tasks.append(task)
 
-            results = []
-            print("Correcting remaining images of different timestamps.")
+            result_wrapper = []
+            logger("Correcting remaining images of different timestamps.")
             for i in range(0, len(tasks), njobs):
                 batch = tasks[i : i + njobs]
                 futures = dask_client.compute(batch)
-                results.extend(dask_client.gather(futures))
-            results = list(results)
+                result_wrapper.extend(dask_client.gather(futures))
+            result_wrapper = list(result_wrapper)
+            results = []
+            for r in result_wrapper:
+                results.append(r[1])
+                logger.debug("================")
+                logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+                logger.debug("================")
+                for line in r[2].splitlines():
+                    logger.debug(line)
+                for line in r[3].splitlines():
+                    logger.debug(line)
 
             for r in results:
                 if r == 0:
@@ -311,11 +343,15 @@ def pbcor_all_images(
             hpcdir = f"{pbcor_dir}/hpcs"
             pbcor_images = glob.glob(f"{pbcor_dir}/*.fits")
             os.makedirs(hpcdir, exist_ok=True)
-            print("Saving primary beam corrected images helioprojective coordinates...")
+            logger.info(
+                "Saving primary beam corrected images helioprojective coordinates."
+            )
             for image in pbcor_images:
                 save_in_hpc(image, outdir=hpcdir)
             if make_plots:
-                print("Making plots of primary beam corrected images ...")
+                logger.info(
+                    "Making plots of primary beam corrected images in helioprojective coordinates."
+                )
                 pngdir = f"{pbcor_dir}/pngs"
                 os.makedirs(pngdir, exist_ok=True)
                 for image in pbcor_images:
@@ -334,6 +370,7 @@ def pbcor_all_images(
         # Making brightness temperature maps
         ####################################
         if successful_pbcor > 0 and make_TB:
+            logger.info("Making brightness temperature maps.")
             for pbcor_image in pbcor_images:
                 tb_image = (
                     tb_dir
@@ -349,12 +386,14 @@ def pbcor_all_images(
             hpcdir = f"{tb_dir}/hpcs"
             tb_images = glob.glob(f"{tb_dir}/*.fits")
             os.makedirs(hpcdir, exist_ok=True)
-            print("Saving brightness temperature maps helioprojective coordinates...")
+            logger.info(
+                "Saving brightness temperature maps helioprojective coordinates."
+            )
             for image in tb_images:
                 save_in_hpc(image, outdir=hpcdir)
 
             if make_plots:
-                print("Making plots of brightness temperature maps..")
+                logger.info("Making plots of brightness temperature maps.")
                 pngdir = f"{tb_dir}/pngs"
                 os.makedirs(pngdir, exist_ok=True)
                 for image in tb_images:
@@ -368,18 +407,18 @@ def pbcor_all_images(
         #########################################
         # Final calculations
         #########################################
-        print(f"Total input images: {len(images)}")
+        logger.info(f"Total input images: {len(images)}")
         succeed = successful_pbcor
         failed = len(images) - succeed
         if successful_pbcor > 0:
-            print(f"Total primary beam corrected images: {len(pbcor_images)}")
+            logger.info(f"Total primary beam corrected images: {len(pbcor_images)}")
             if make_TB:
-                print(f"Total brightness temperatures maps: {len(tb_images)}")
+                logger.info(f"Total brightness temperatures maps: {len(tb_images)}")
         else:
-            print("Total primary beam corrected images: 0")
+            logger.error("Total primary beam corrected images: 0")
         msg = 0
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in primary beam correction.", exc_info=True)
         msg = 1
     finally:
         os.system(f"rm -rf {pbdir}")
@@ -398,6 +437,7 @@ def main(
     mem_frac=0.8,
     logfile=None,
     jobid=0,
+    verbose=False,
     start_remote_log=False,
     dask_client=None,
 ):
@@ -428,6 +468,8 @@ def main(
         Log file
     jobid : str, optional
         Job ID
+    verbose : bool, optional
+        Verbose logs
     start_remote_log : bool, optional
         Start remote logger
     dask_client : dask.client, optional
@@ -442,6 +484,10 @@ def main(
     int
         Failed image number
     """
+    logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -449,6 +495,7 @@ def main(
         workdir = imagedir + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    logger.debug(f"Current working directory: {os.getcwd()}")
 
     ############
     # Logger
@@ -476,14 +523,17 @@ def main(
             mem_frac=mem_frac,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 1
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     succeed = 0
     failed = 0
     try:
-        print_banner("Starting primary beam corrections.")
+        for banner in print_banner(
+            "Starting primary beam corrections.", no_print=True
+        ).splitlines():
+            logger.info(banner)
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -496,12 +546,12 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
-        
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
+
         if os.path.exists(imagedir):
             msg, succeed, failed = pbcor_all_images(
                 imagedir,
@@ -515,12 +565,13 @@ def main(
                 n_threads=n_threads,
                 mem_limit=mem_limit,
                 njobs=njobs,
+                logger=logger,
             )
         else:
-            print("Please provide correct image directory path.")
+            logger.critical("Please provide correct image directory path.")
             msg = 1
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in primary beam correction.", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)
@@ -579,9 +630,17 @@ def cli():
     )
     adv_args.add_argument(
         "--start_remote_log",
-        action="store_false",
-        dest="start_remote_log",
+        action="store_true",
         help="Start remote logger",
+    )
+    adv_args.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Verbose logs",
+    )
+    adv_args.add_argument("--logfile", default=None, help="Path to log file")
+    adv_args.add_argument(
+        "--jobid", type=int, default=0, help="Job ID for logging and PID tracking"
     )
 
     # Resource management parameters
@@ -593,10 +652,6 @@ def cli():
     )
     hard_args.add_argument(
         "--mem_frac", type=float, default=0.8, help="Memory usage fraction"
-    )
-    hard_args.add_argument("--logfile", default=None, help="Path to log file")
-    hard_args.add_argument(
-        "--jobid", type=int, default=0, help="Job ID for logging and PID tracking"
     )
 
     if len(sys.argv) == 1:
@@ -617,6 +672,7 @@ def cli():
         mem_frac=args.mem_frac,
         logfile=args.logfile,
         jobid=args.jobid,
+        verbose=args.verbose,
         start_remote_log=args.start_remote_log,
     )
     return msg

@@ -9,10 +9,16 @@ import argparse
 from dask import delayed
 from casatasks import setjy
 from casatools import table as casatable, msmetadata
-from paircars.utils.basic_utils import suppress_output, get_datadir, print_banner
+from paircars.utils.basic_utils import (
+    suppress_output,
+    get_datadir,
+    print_banner,
+    capture_all_output,
+)
 from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
+    get_logger_safe,
 )
 from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.proc_manage_utils import (
@@ -30,6 +36,12 @@ from paircars.utils.udocker_utils import (
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 datadir = get_datadir()
+
+
+def import_hyperdrive_model_wrapper(*args, **kwargs):
+    with capture_all_output() as (out, err):
+        result = import_hyperdrive_model(*args, **kwargs)
+        return args[0], result, out.getvalue(), err.getvalue()
 
 
 def import_hyperdrive_model(
@@ -58,7 +70,7 @@ def import_hyperdrive_model(
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.modeling_*")
     msname = os.path.abspath(msname)
-    print_banner(f"Importing model for ms: {msname}")
+    print(f"Importing model for ms: {msname}")
     if beamfile == "" or os.path.exists(beamfile) is False:
         with suppress_output():
             msmd = msmetadata()
@@ -97,7 +109,8 @@ def import_hyperdrive_model(
             timeres = msmd.exposuretime(scan=1)["value"]
             msmd.nrows()
             msmd.close()
-
+        print(f"Beam file: {beamfile}")
+        print(f"Source model file: {sourcelist}")
         hyperdrive_cmd_args = [
             "hyperdrive",
             "vis-simulate",
@@ -127,10 +140,9 @@ def import_hyperdrive_model(
             str(ntime),
             "--output-model-time-average",
             f"{timeres}s",
-            "--output-autos"
+            "--output-autos",
         ]
         hyperdrive_cmd = " ".join(hyperdrive_cmd_args)
-        print (hyperdrive_cmd)
         result = run_hyperdrive(hyperdrive_cmd, ncpu=ncpu, verbose=verbose)
         if result != 0:
             print("Error occured in hyperdrive.")
@@ -140,7 +152,7 @@ def import_hyperdrive_model(
         ########################
         # Importing model
         ########################
-        print ("Copy model data to ms...")
+        print("Copy model data to ms.")
         with suppress_output():
             data_table = casatable()
             data_table.open(msname, nomodify=False)
@@ -174,7 +186,14 @@ def import_hyperdrive_model(
 
 
 def run_all_modeling(
-    mslist, dask_client, metafits, beamfile, sourcelist, ncpu, verbose
+    mslist,
+    dask_client,
+    metafits,
+    beamfile,
+    sourcelist,
+    ncpu,
+    verbose,
+    logger=None,
 ):
     """
     Run all modeling
@@ -205,10 +224,13 @@ def run_all_modeling(
     int
         Failed ms number
     """
+    if logger is None:
+        logger = get_logger_safe()
+
     mslist = list(set(mslist))
     ncpu = max(1, ncpu)
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -226,20 +248,29 @@ def run_all_modeling(
                     verbose=verbose,
                 )
             )
-        print("Start import modeling...")
-        futures = dask_client.compute(tasks)
-        results = dask_client.gather(futures)
+        logger.info("Start import modeling.")
+        result_wrapper = list(dask_client.gather(dask_client.compute(tasks)))
+        results = []
+        for r in result_wrapper:
+            results.append(r[1])
+            logger.debug("================")
+            logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+            logger.debug("================")
+            for line in r[2].splitlines():
+                logger.debug(line)
+            for line in r[3].splitlines():
+                logger.debug(line)
         failed = sum(results)
         succeed = len(mslist) - failed
-        print(f"Total measurement setds: {len(mslist)}")
-        print(f"Total failure: {failed}")
-        print(f"Total success: {succeed}")
+        logger.info(f"Total measurement setds: {len(mslist)}")
+        logger.info(f"Total failure: {failed}")
+        logger.info(f"Total success: {succeed}")
         if len(mslist) == failed:
             msg = 1
         else:
             msg = 0
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in importing model.", exc_info=True)
         msg = 1
     return msg, succeed, failed
 
@@ -250,11 +281,11 @@ def main(
     workdir,
     beamfile="",
     sourcelist="",
-    verbose=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
     jobid="0",
+    verbose=False,
     start_remote_log=False,
     dask_client=None,
 ):
@@ -273,8 +304,6 @@ def main(
         MWA beam file
     sourcelist : str, optional
         MWA global sky model (fits or ascii in wsclean format)
-    verbose : bool, optional
-        Verbose output or not
     cpu_frac : float, optional
         CPU fraction
     mem_frac : float, optional
@@ -285,6 +314,8 @@ def main(
         Job ID
     start_remote_log : bool, optional
         Start remote log
+    verbose : bool, optional
+        Verbose logs
     dask_client: dask.client, optional
         Dask client
 
@@ -297,6 +328,10 @@ def main(
     int
         Failed ms number
     """
+    logger = get_logger_safe()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
@@ -306,6 +341,7 @@ def main(
         workdir = os.path.dirname(os.path.abspath(mslist[0])) + "/workdir"
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
+    logger.debug(f"Current working directory: {os.getcwd()}")
 
     ###########################
     # Hyperdrive container
@@ -313,12 +349,12 @@ def main(
     container_name = "paircarshyperdrive"
     container_present = check_udocker_container(container_name)
     if not container_present:
-        print(f"Initializing {container_name}...")
+        logger.debug(f"Initializing {container_name}.")
         container_name = initialize_hyperdrive_container(
             name=container_name, verbose=True
         )
         if container_name is None:
-            print(
+            logger.critical(
                 f"Container {container_name} is not initiated. First initiate container and then run."
             )
             return 1
@@ -341,7 +377,9 @@ def main(
                 "ds_plot", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
+        logger.info(
+            "Remote link or jobname is blank. Not transmiting to remote logger."
+        )
 
     if dask_client is None:
         pass
@@ -349,7 +387,7 @@ def main(
         get_scheduler_name()
 
     if len(mslist) == 0:
-        print("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
     else:
         succeed = 0
@@ -360,6 +398,7 @@ def main(
         ncoarse = get_ncoarse(msname)
         total_ncoarse += ncoarse
     total_ncoarse = max(1, total_ncoarse)
+    logger.debug(f"Total coarse channels: {total_ncoarse}.")
 
     dask_cluster = None
     if dask_client is None:
@@ -370,12 +409,15 @@ def main(
             max_worker=len(mslist) + 1,
         )
         if dask_client is None:
-            print("Error occured in creating local cluster.")
+            logger.critical("Error occured in creating local cluster.")
             return 1
         scale_worker_and_wait(dask_cluster, dask_client, nworker)
 
     try:
-        print_banner("Starting visibility modeling.")
+        for banner in print_banner(
+            "Starting visibility modeling.", no_print=True
+        ).splitlines():
+            logger.info(banner)
         client_info = dask_client.scheduler_info()["workers"]
         njobs = len(client_info)
         worker_mem_list = []
@@ -391,16 +433,23 @@ def main(
         else:
             n_threads = 1
 
-        print("#################################")
-        print(f"Total dask worker: {njobs}")
-        print(f"CPU per worker: {n_threads}")
-        print(f"Memory per worker: {mem_limit} GB")
-        print("#################################")
+        logger.info("#################################")
+        logger.info(f"Total dask worker: {njobs}")
+        logger.info(f"CPU per worker: {n_threads}")
+        logger.info(f"Memory per worker: {mem_limit} GB")
+        logger.info("#################################")
         msg, succeed, failed = run_all_modeling(
-            mslist, dask_client, metafits, beamfile, sourcelist, n_threads, False
+            mslist,
+            dask_client,
+            metafits,
+            beamfile,
+            sourcelist,
+            n_threads,
+            False,
+            logger=logger,
         )
     except Exception:
-        traceback.print_exc()
+        logger.exception("Exception occured in importing model.", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)
@@ -459,10 +508,12 @@ def cli():
         default="",
         help="Source model file",
     )
-    adv_args.add_argument("--verbose", action="store_true", help="Verbose output")
     adv_args.add_argument(
         "--start_remote_log", action="store_true", help="Start remote logging"
     )
+    adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
+    adv_args.add_argument("--logfile", type=str, default=None, help="Log file")
+    adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
@@ -480,8 +531,6 @@ def cli():
         default=0.8,
         help="Memory fraction",
     )
-    hard_args.add_argument("--logfile", type=str, default=None, help="Log file")
-    hard_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
