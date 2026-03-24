@@ -315,7 +315,7 @@ def pbcor_all_images(
                 tasks.append(task)
 
             result_wrapper = []
-            logger("Correcting remaining images of different timestamps.")
+            logger.info("Correcting remaining images of different timestamps.")
             for i in range(0, len(tasks), njobs):
                 batch = tasks[i : i + njobs]
                 futures = dask_client.compute(batch)
