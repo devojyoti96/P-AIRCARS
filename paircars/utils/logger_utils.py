@@ -115,6 +115,11 @@ class RemoteLogger(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
+        level = msg.split("|")[0]
+        if isinstance(level,int) or level.isdigit():
+            level = logging.getLevelName(int(level))
+        msg = f"{level} | {'|'.join(line.split('|')[1:])}"
+        print (msg)
         try:
             requests.post(
                 f"{self.remote_link}/api/log",
@@ -151,17 +156,7 @@ class LogTailHandler(FileSystemEventHandler):
                     self._position = f.tell()
                 for line in lines:
                     if line != "" and line != " " and line != "\n":
-                        level = line.split("|")[0]
-                        if isinstance(level,int) or level.isdigit():
-                            level = logging.getLevelName(int(level))
-                            line = f"{level} | '|'.join(line.split('|')[1:])"
-                            print (line)
-                            self.logger.info(line)
-                        else:
-                            print(line)
-                            self.logger.info(line)
-                        
-                        
+                        self.logger.info(line)
             except Exception:
                 pass
 

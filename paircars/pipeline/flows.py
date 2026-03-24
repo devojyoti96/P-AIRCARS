@@ -3,7 +3,7 @@ import glob
 import os
 import time
 import numpy as np
-from prefect import flow, get_run_logger
+from prefect import flow
 from astropy.io import fits
 from casatools import msmetadata
 from paircars.utils.basic_utils import (
