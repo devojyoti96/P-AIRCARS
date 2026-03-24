@@ -34,6 +34,11 @@ logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
+def applysol_wrapper(*args, **kwargs):
+    with capture_all_output() as (out, err):
+        result = applysol(*args, **kwargs)
+        return args[0], result, out.getvalue(), err.getvalue()
+
 def applysol(
     msname,
     workdir,
@@ -258,12 +263,6 @@ def applysol(
     except Exception:
         traceback.print_exc()
         return 1, 1
-
-
-def applysol_wrapper(*args, **kwargs):
-    with capture_all_output() as (out, err):
-        result = applysol(*args, **kwargs)
-        return *args.get("msname"), result, out.getvalue(), err.getvalue()
 
 
 def run_all_applysol(
