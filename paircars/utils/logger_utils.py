@@ -154,20 +154,12 @@ class LogTailHandler(FileSystemEventHandler):
                         level = line.split("|")[0]
                         if isinstance(level,int) or level.isdigit():
                             level = logging.getLevelName(int(level))
-                        if level in ["INFO", "DEBUG", "ERROR", "WARNING", "CRITICAL"]:
-                            line = "|".join(line.split("|")[1:])
-                            if level == "DEBUG":
-                                self.logger.debug(line.strip())
-                            elif level == "ERROR":
-                                self.logger.error(line.strip())
-                            elif level == "WARNING":
-                                self.logger.warning(line.strip())
-                            elif level == "CRITICAL":
-                                self.logger.critical(line.strip())
-                            else:
-                                self.logger.info(line.strip())
+                            line = f"{level} | '|'.join(line.split('|')[1:])"
+                            self.logger.info(line)
                         else:
-                            self.logger.info(line.strip())
+                            self.logger.info(line)
+                        
+                        
             except Exception:
                 pass
 
