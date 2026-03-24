@@ -3,7 +3,8 @@ import glob
 import os
 import time
 import numpy as np
-from prefect import flow
+import logging
+from prefect import flow, get_run_logger
 from astropy.io import fits
 from casatools import msmetadata
 from paircars.utils.basic_utils import (
@@ -93,6 +94,8 @@ def pre_process_subflow(
     list
         Filtered target measurement set list
     """
+    basic_cal_logger = get_run_logger()
+    basic_cal_logger.setLevel(logging.INFO)
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
     pre_process_logfile = f"{logdir}/subflow_preprocess_{target_obsid}.log"
