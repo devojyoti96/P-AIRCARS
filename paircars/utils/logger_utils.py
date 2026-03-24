@@ -144,7 +144,7 @@ class RemoteLogger(logging.Handler):
                     "job_id": self.job_id,
                     "log_id": self.log_id,
                     "log_type": self.log_type,
-                    "message": f"Hi {msg}\n",
+                    "message": f"{msg}\n",
                     "password": self.password,
                     "first": False,
                 },
