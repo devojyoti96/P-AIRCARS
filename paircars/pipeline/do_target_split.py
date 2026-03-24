@@ -366,8 +366,13 @@ def main(
         )
         logger.debug(f"Remote job name: {jobname}, password: {password}")
         if not os.path.exists(logfile):
+            formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+            )
             filehandle = logging.FileHandler(logfile)
+            filehandle.setFormatter(formatter)
             logger.addHandler(filehandle)
+            logger.propagate = False
         observer = init_logger(
             "do_target_split", logfile, jobname=jobname, password=password
         )

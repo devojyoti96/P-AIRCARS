@@ -93,6 +93,22 @@ def get_emails():
         return lines[0]
 
 
+class StreamToLogger:
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self._buffer = ""
+
+    def write(self, message):
+        # Remove trailing newlines and skip empty messages
+        message = message.rstrip()
+        if message:
+            self.logger.log(self.log_level, message)
+
+    def flush(self):
+        pass  # Required for compatibility
+        
+        
 class RemoteLogger(logging.Handler):
     """
     Remote logging handler for posting log messages to a web endpoint.
@@ -156,7 +172,7 @@ class LogTailHandler(FileSystemEventHandler):
                     self._position = f.tell()
                 for line in lines:
                     if line != "" and line != " " and line != "\n":
-                        self.logger.info(line)
+                        self.logger.info(line.strip())
             except Exception:
                 pass
 
@@ -359,6 +375,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
             return
         else:
             break
+    print ("Started logging...")
     logger = logging.getLogger(logname)
     logger.propagate = False
     if logger.hasHandlers():
