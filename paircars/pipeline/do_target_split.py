@@ -351,9 +351,6 @@ def main(
     ############
     # Logger
     ############
-    from prefect.context import get_run_context
-    from multiprocessing import Event
-    from paircars.utils.prefect_logger_utils import start_log_task_saver
     observer = None
     if (
         start_remote_log
@@ -364,18 +361,10 @@ def main(
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
-        logger.debug(f"Remote job name: {jobname}, password: {password}")
-        if not os.path.exists(logfile):
-            formatter = logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        if os.path.exists(logfile):
+            observer = init_logger(
+                "do_target_split", logfile, jobname=jobname, password=password
             )
-            filehandle = logging.FileHandler(logfile)
-            filehandle.setFormatter(formatter)
-            logger.addHandler(filehandle)
-            logger.propagate = False
-        observer = init_logger(
-            "do_target_split", logfile, jobname=jobname, password=password
-        )
     if observer is None:
         logger.info(
             "Remote link or jobname is blank. Not transmiting to remote logger."
