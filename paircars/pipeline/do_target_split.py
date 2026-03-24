@@ -204,7 +204,7 @@ def split_target_scans(
                         logger.debug(f"Deleteing pre-existing output ms flags: {outputvis}.flagversions")
                         os.system(f"rm -rf {outputvis}.flagversions")
                     logger.debug("Spliting parameters:")
-                    logger.debug(f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {spw}, time range: {timerange}")
+                    logger.debug(f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {good_spw}, time range: {timerange}")
                     tasks.append(
                         delayed(single_mstransform_wrapper)(
                             msname=msname,

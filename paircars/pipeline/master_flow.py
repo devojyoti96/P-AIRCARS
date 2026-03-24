@@ -145,6 +145,7 @@ def master_control(
     jobid=None,
     job_password=None,
     adaptive=False,
+    verbose=False,
 ):
     """
     Master controller of the entire pipeline
@@ -263,7 +264,9 @@ def master_control(
         User specified job password for remote logger
     adaptive : bool, optional
         Whether do adaptive scaling or not
-
+    verbose : bool, optional
+        Verbose logs 
+        
     Returns
     -------
     int
@@ -989,6 +992,7 @@ def master_control(
                         timestamp=timestamp,
                         emails=emails,
                         remote_logger=remote_logger,
+                        verbose=verbose,
                     )
                     if basical_msg == 0:
                         succeed += 1
@@ -1755,6 +1759,11 @@ def cli():
         dest="do_imaging",
         help="Disable final imaging",
     )
+    advanced.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Verbose logs",
+    )
 
     # === Advanced local system/ per node hardware resource parameters ===
     advanced_resource = parser.add_argument_group(
@@ -2091,6 +2100,7 @@ def cli():
             jobid=jobid,
             job_password=args.job_password,
             adaptive=adaptive,
+            verbose=args.verbose,
         )
         if msg == 0:
             print_banner("P-AIRCARS execution is finished: Successful.")

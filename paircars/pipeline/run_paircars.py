@@ -293,6 +293,11 @@ def cli():
         dest="do_imaging",
         help="Disable final imaging",
     )
+    advanced.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Verbose logs",
+    )
 
     # === Advanced local system/ per node hardware resource parameters ===
     advanced_resource = parser.add_argument_group(

@@ -291,6 +291,7 @@ def basic_cal_subflow(
     timestamp,
     emails,
     remote_logger,
+    verbose,
 ):
     """
     Basic calibration sub flow
@@ -440,6 +441,7 @@ def basic_cal_subflow(
                     mem_frac=float(mem_frac),
                     remote_log=remote_logger,
                     obsid=cal_obsid,
+                    verbose=verbose,
                 )
                 msg, expected, succeed = future_cal_split.result()
                 if emails != "":

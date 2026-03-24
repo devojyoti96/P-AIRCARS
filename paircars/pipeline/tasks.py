@@ -230,6 +230,7 @@ def run_target_split_jobs(
     mem_frac=0.8,
     remote_log=False,
     obsid=0,
+    verbose=False,
 ):
     """
     Split measurement set
@@ -270,6 +271,8 @@ def run_target_split_jobs(
         Start remote logger
     obsid : int, optional
         Observation ID
+    verbose : bool, optional
+        Verbose logs
 
     Returns
     -------
@@ -319,6 +322,7 @@ def run_target_split_jobs(
                 logfile=logfile,
                 jobid=jobid,
                 start_remote_log=remote_log,
+                verbose=verbose,
                 dask_client=dask_client,
             )
     finally:
