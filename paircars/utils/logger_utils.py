@@ -130,9 +130,9 @@ class RemoteLogger(logging.Handler):
         self.remote_link = remote_link
 
     def emit(self, record):
-        msg = self.format(record)
+        msg = str(self.format(record))
         level = msg.split("|")[0].strip()
-        msg = "|".join(line.split("|")[1:])
+        msg = "|".join(msg.split("|")[1:])
         # Fix numeric levels
         if isinstance(level,int) or level.isdigit():
             level = logging.getLevelName(int(level))
@@ -144,7 +144,7 @@ class RemoteLogger(logging.Handler):
                     "job_id": self.job_id,
                     "log_id": self.log_id,
                     "log_type": self.log_type,
-                    "message": f"{msg}\n",
+                    "message": f"Hi {msg}\n",
                     "password": self.password,
                     "first": False,
                 },
