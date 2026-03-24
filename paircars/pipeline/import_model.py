@@ -239,7 +239,7 @@ def run_all_modeling(
         tasks = []
         for msname in mslist:
             tasks.append(
-                delayed(import_hyperdrive_model)(
+                delayed(import_hyperdrive_model_wrapper)(
                     msname,
                     metafits,
                     beamfile=beamfile,
