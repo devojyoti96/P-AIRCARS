@@ -366,13 +366,8 @@ def main(
         )
         logger.debug(f"Remote job name: {jobname}, password: {password}")
         if not os.path.exists(logfile):
-            ctx = get_run_context()
-            task_id = str(ctx.task_run.id)
-            task_name = ctx.task_run.name
-            stop_event = Event()
-            log_thread_split = start_log_task_saver(
-                task_id, task_name, logfile, poll_interval=3, stop_event=stop_event
-            )
+            filehandle = logging.FileHandler(logfile)
+            logger.addHandler(filehandle)
         observer = init_logger(
             "do_target_split", logfile, jobname=jobname, password=password
         )
