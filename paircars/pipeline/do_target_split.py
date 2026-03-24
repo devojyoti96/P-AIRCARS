@@ -361,6 +361,7 @@ def main(
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
+        logger.debug(f"Remote job name: {jobname}, password: {password}")
         if os.path.exists(logfile):
             observer = init_logger(
                 "do_target_split", logfile, jobname=jobname, password=password
