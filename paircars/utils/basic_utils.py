@@ -31,7 +31,7 @@ def capture_all_output():
         sys.stderr = old_stderr
         
 
-def print_banner(msg, pad=0, max_width=40, no_print=Falses):
+def print_banner(msg, pad=0, max_width=40, no_print=False):
     width = min(len(msg) + pad, max_width)
     line = "#" * width
     msg =  f"{line}\n{msg.center(width)}\n{line}"
