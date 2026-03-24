@@ -155,8 +155,10 @@ class LogTailHandler(FileSystemEventHandler):
                         if isinstance(level,int) or level.isdigit():
                             level = logging.getLevelName(int(level))
                             line = f"{level} | '|'.join(line.split('|')[1:])"
+                            print (line)
                             self.logger.info(line)
                         else:
+                            print(line)
                             self.logger.info(line)
                         
                         
@@ -312,7 +314,6 @@ def get_logger_safe():
     try:
         with suppress_output():
             from prefect import get_run_logger
-
             logger = get_run_logger()
             logger.setLevel(logging.INFO)
             return logger
