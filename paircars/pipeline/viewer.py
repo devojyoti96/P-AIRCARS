@@ -239,6 +239,15 @@ class TailWatcher(FileSystemEventHandler, QObject):
                             line for line in new_data.splitlines() if line.strip()
                         )
                         if filtered_lines:
+                            for k in range(len(filtered_lines)):
+                                msg = filtered_lines[k]
+                                level = msg.split("|")[0].strip()
+                                msg = "|".join(msg.split("|")[1:])
+                                # Fix numeric levels
+                                if isinstance(level, int) or level.isdigit():
+                                    level = logging.getLevelName(int(level))
+                                    msg = f"{level} | {msg}"
+                                    filtered_lines[k]=msg
                             self.new_line.emit(f"{filtered_lines}\n")
             except Exception as e:
                 self.new_line.emit(f"\n[watcher error] {e}\n")

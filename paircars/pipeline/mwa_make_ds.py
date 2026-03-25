@@ -397,13 +397,7 @@ def cli():
         action="store_true",
         help="Overwrite existing plot or not",
     )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
-    adv_args.add_argument(
-        "--logfile", type=str, default=None, help="Optional path to log file"
-    )
     adv_args.add_argument(
         "--jobid", type=str, default="0", help="Job ID for logging and PID tracking"
     )
@@ -441,9 +435,7 @@ def cli():
         overwrite=args.overwrite,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
-        logfile=args.logfile,
         jobid=args.jobid,
         verbose=args.verbose,
-        start_remote_log=args.start_remote_log,
     )
     return msg

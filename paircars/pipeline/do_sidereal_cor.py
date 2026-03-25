@@ -324,11 +324,7 @@ def cli():
     adv_args = parser.add_argument_group(
         "###################\nAdvanced calibration and imaging parameters\n###################"
     )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
-    adv_args.add_argument("--logfile", type=str, default=None, help="Log file")
     adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     # Resource management parameters
@@ -361,9 +357,7 @@ def cli():
         workdir=args.workdir,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
-        logfile=args.logfile,
         jobid=args.jobid,
         verbose=args.verbose,
-        start_remote_log=args.start_remote_log,
     )
     return msg

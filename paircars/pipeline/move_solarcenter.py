@@ -14,7 +14,6 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
     get_logger_safe,
-    add_logfile,
 )
 from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.proc_manage_utils import (
@@ -110,17 +109,13 @@ def main(
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
-        if not os.path.exists(logfile):
-            add_logfile(logger, logfile)
-            logger.info(f"Log file: {logfile}")
-            time.sleep(5)
         if os.path.exists(logfile):
             observer = init_logger(
-                logger, logfile, jobname=jobname, password=password
+                "do_flagging", logfile, jobname=jobname, password=password
             )
     if observer is None:
         logger.info(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
+            "Not transmiting to remote logger."
         )
 
     if len(mslist) == 0:
@@ -251,11 +246,7 @@ def cli():
     adv_args = parser.add_argument_group(
         "###################\nAdvanced parameters\n###################"
     )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
-    adv_args.add_argument("--logfile", type=str, default=None, help="Log file")
     adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
     # Resource management parameters
@@ -280,9 +271,7 @@ def cli():
         workdir=args.workdir,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
-        logfile=args.logfile,
         jobid=args.jobid,
         verbose=args.verbose,
-        start_remote_log=args.start_remote_log,
     )
     return msg

@@ -2261,12 +2261,6 @@ def cli():
         action="store_true",
         help="Keep backup of self-calibration rounds",
     )
-    adv_args.add_argument(
-        "--logfile", type=str, default=None, help="Optional path to log file"
-    )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
     adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
@@ -2320,11 +2314,9 @@ def cli():
         solar_selfcal=args.solar_selfcal,
         use_solarflagger=args.use_solarflagger,
         keep_backup=args.keep_backup,
-        logfile=args.logfile,
         verbose=args.verbose,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
         jobid=args.jobid,
-        start_remote_log=args.start_remote_log,
     )
     return msg

@@ -1156,10 +1156,7 @@ def cli():
         dest="make_plots",
         help="Do not generate helioprojective plots",
     )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
-
+    
     # Resource management parameters
     hard_args = parser.add_argument_group(
         "###################\nHardware resource management parameters\n###################"
@@ -1209,7 +1206,6 @@ def cli():
         savemodel=args.savemodel,
         saveres=args.saveres,
         make_plots=args.make_plots,
-        start_remote_log=args.start_remote_log,
         cpu_frac=float(args.cpu_frac),
         mem_frac=float(args.mem_frac),
         jobid=args.jobid,

@@ -545,7 +545,7 @@ def main(
             )
     if observer is None:
         logger.info(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
+            "Not transmiting to remote logger."
         )
 
     if len(mslist) == 0:
@@ -694,13 +694,7 @@ def cli():
         action="store_true",
         help="Force apply calibration even if already applied",
     )
-    adv_args.add_argument(
-        "--start_remote_log", action="store_true", help="Start remote logging"
-    )
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
-    adv_args.add_argument(
-        "--logfile", type=str, default=None, help="Optional path to log file"
-    )
     adv_args.add_argument(
         "--jobid", type=str, default="0", help="Job ID for logging and process tracking"
     )
@@ -731,10 +725,8 @@ def cli():
         overwrite_datacolumn=args.overwrite_datacolumn,
         only_amplitude=args.only_amplitude,
         force_apply=args.force_apply,
-        start_remote_log=args.start_remote_log,
         cpu_frac=float(args.cpu_frac),
         mem_frac=float(args.mem_frac),
-        logfile=args.logfile,
         verbose=args.verbose,
         jobid=args.jobid,
     )
