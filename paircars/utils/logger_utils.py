@@ -167,29 +167,6 @@ class RemoteLogger(logging.Handler):
             pass  # Fail silently to avoid interrupting the main app
 
 
-class LogTailHandler(FileSystemEventHandler):
-    """
-    Continuous logging
-    """
-    def __init__(self, logfile, logger):
-        self.logfile = logfile
-        self.logger = logger
-        self._position = os.path.getsize(logfile) if os.path.exists(logfile) else 0
-
-    def on_modified(self, event):
-        if event.src_path == self.logfile:
-            try:
-                with open(self.logfile, "r") as f:
-                    f.seek(self._position)
-                    lines = f.readlines()
-                    self._position = f.tell()
-                for line in lines:
-                    if line != "" and line != " " and line != "\n":
-                        self.logger.info(line.strip())
-            except Exception:
-                pass
-
-
 def create_logger(logname, logfile):
     """
     Create logger.
@@ -357,6 +334,29 @@ def get_logger_safe():
         return logger
 
 
+class LogTailHandler(FileSystemEventHandler):
+    """
+    Continuous logging
+    """
+    def __init__(self, logfile, logger):
+        self.logfile = logfile
+        self.logger = logger
+        self._position = os.path.getsize(logfile) if os.path.exists(logfile) else 0
+
+    def on_modified(self, event):
+        if event.src_path == self.logfile:
+            try:
+                with open(self.logfile, "r") as f:
+                    f.seek(self._position)
+                    lines = f.readlines()
+                    self._position = f.tell()
+                for line in lines:
+                    if line != "" and line != " " and line != "\n":
+                        self.logger.info(line.strip())
+            except Exception:
+                pass
+                
+                
 def init_logger(logname, logfile, log_type="task", jobname="", password=""):
     """
     Initialize a remote logger with watchdog-based tailing.
@@ -390,7 +390,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
         else:
             break
     logger = logging.getLogger(logname)
-    logger.propagate = False
+    logger.propagate = True
     if logger.hasHandlers():
         logger.handlers.clear()
     formatter = logging.Formatter("%(message)s")
@@ -429,6 +429,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
         if os.path.exists(logfile):
             if os.path.islink(logfile):
                 logfile = os.readlink(logfile)
+            print (logfile)
             event_handler = LogTailHandler(logfile, logger)
             observer = Observer()
             observer.schedule(
