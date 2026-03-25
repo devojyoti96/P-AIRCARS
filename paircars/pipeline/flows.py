@@ -256,17 +256,16 @@ def pre_process_subflow(
         traceback.print_exc()
         return 1, []
     finally:
-        while True:
-            end_time = time.time()
-            if end_time - start_time > 60:
-                print(f"Total run time: {end_time-start_time}")
-                stop_event.set()
-                log_thread_flow.join(timeout=5)
-                if observer is not None:
-                    clean_shutdown(observer)
-            else:
-                time.sleep(5)
-
+        end_time = time.time()
+        run_time = end_time-start_time
+        print(f"Total run time: {run_time}")
+        if run_time < 60:
+            time.sleep(60-run_time)
+        stop_event.set()
+        log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
+        
 
 ############################
 # Basic calibration subflow
@@ -812,16 +811,15 @@ def basic_cal_subflow(
         traceback.print_exc()
         return 1, [], []
     finally:
-        while True:
-            end_time = time.time()
-            if end_time - start_time > 60:
-                print(f"Total run time: {end_time-start_time}")
-                stop_event.set()
-                log_thread_flow.join(timeout=5)
-                if observer is not None:
-                    clean_shutdown(observer)
-            else:
-                time.sleep(5)
+        end_time = time.time()
+        run_time = end_time-start_time
+        print(f"Total run time: {run_time}")
+        if run_time < 60:
+            time.sleep(60-run_time)
+        stop_event.set()
+        log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 ########################################################
@@ -1671,16 +1669,15 @@ def selfcal_subflow(
         traceback.print_exc()
         return 1, [], [], []
     finally:
-        while True:
-            end_time = time.time()
-            if end_time - start_time > 60:
-                print(f"Total run time: {end_time-start_time}")
-                stop_event.set()
-                log_thread_flow.join(timeout=5)
-                if observer is not None:
-                    clean_shutdown(observer)
-            else:
-                time.sleep(5)
+        end_time = time.time()
+        run_time = end_time-start_time
+        print(f"Total run time: {run_time}")
+        if run_time < 60:
+            time.sleep(60-run_time)
+        stop_event.set()
+        log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 ############################
@@ -2204,16 +2201,15 @@ def applysol_subflow(
         traceback.print_exc()
         return 1, []
     finally:
-        while True:
-            end_time = time.time()
-            if end_time - start_time > 60:
-                print(f"Total run time: {end_time-start_time}")
-                stop_event.set()
-                log_thread_flow.join(timeout=5)
-                if observer is not None:
-                    clean_shutdown(observer)
-            else:
-                time.sleep(5)
+        end_time = time.time()
+        run_time = end_time-start_time
+        print(f"Total run time: {run_time}")
+        if run_time < 60:
+            time.sleep(60-run_time)
+        stop_event.set()
+        log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
 
 
 ############################
@@ -2607,13 +2603,13 @@ def imaging_subflow(
         traceback.print_exc()
         return 1
     finally:
-        while True:
-            end_time = time.time()
-            if end_time - start_time > 60:
-                print(f"Total run time: {end_time-start_time}")
-                stop_event.set()
-                log_thread_flow.join(timeout=5)
-                if observer is not None:
-                    clean_shutdown(observer)
-            else:
-                time.sleep(5)
+        end_time = time.time()
+        run_time = end_time-start_time
+        print(f"Total run time: {run_time}")
+        if run_time < 60:
+            time.sleep(60-run_time)
+        stop_event.set()
+        log_thread_flow.join(timeout=5)
+        if observer is not None:
+            clean_shutdown(observer)
+            
