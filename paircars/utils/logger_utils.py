@@ -177,17 +177,17 @@ class LogTailHandler(FileSystemEventHandler):
         self._position = os.path.getsize(logfile) if os.path.exists(logfile) else 0
 
     def on_modified(self, event):
-        #if event.src_path == self.logfile:
-        try:
-            with open(self.logfile, "r") as f:
-                f.seek(self._position)
-                lines = f.readlines()
-                self._position = f.tell()
-            for line in lines:
-                if line != "" and line != " " and line != "\n":
-                    self.logger.info(line.strip())
-        except Exception:
-            pass
+        if event.src_path == self.logfile:
+            try:
+                with open(self.logfile, "r") as f:
+                    f.seek(self._position)
+                    lines = f.readlines()
+                    self._position = f.tell()
+                for line in lines:
+                    if line != "" and line != " " and line != "\n":
+                        self.logger.info(line.strip())
+            except Exception:
+                pass
 
 
 def create_logger(logname, logfile):
