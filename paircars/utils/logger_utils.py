@@ -134,7 +134,7 @@ class RemoteLogger(logging.Handler):
         level = msg.split("|")[0].strip()
         msg = "|".join(msg.split("|")[1:])
         # Fix numeric levels
-        if isinstance(level,int) or level.isdigit():
+        if isinstance(level, int) or level.isdigit():
             level = logging.getLevelName(int(level))
             msg = f"{level} | {msg}"
         try:

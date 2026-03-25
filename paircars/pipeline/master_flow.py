@@ -750,10 +750,8 @@ def master_control(
         #####################################
         # Printing basic info of the pipeline
         #####################################
-        print_banner("Work directory")
-        print(f"{workdir}")
-        print_banner("Final product directory")
-        print(f"{outdir}")
+        print_banner("Work directory: {workdir}")
+        print_banner("Final product directory: {outdir}")
         if remote_logger:
             print("####################################")
             print(f"{remote_link}")
@@ -877,7 +875,7 @@ def master_control(
         ################################################
         # Determining maximum allowed temporal averaging
         ################################################
-        print("Estimating optimal temporal averaging....")
+        print("Estimating optimal temporal averaging.")
         max_timeres_list = []
         timeres_list = []
         for msname in target_mslist:
@@ -960,50 +958,53 @@ def master_control(
                         dask_client,
                         max(2, min(total_ncoarse + 1, max_worker)),
                     )
-                print(f"Calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}")
-                try:
-                    (
-                        basical_msg,
-                        bandpass_tables,
-                        crossphase_tables,
-                    ) = basic_cal_subflow.with_options(
-                        flow_run_name=f"basiccal_subflow_{cal_obsid}",
-                        task_runner=DaskTaskRunner(address=dask_addr),
-                    )(
-                        cal_obsid=cal_obsid,
-                        cal_datadir=cal_datadir,
-                        cal_metafits=cal_metafits,
-                        coarse_chans=coarse_chans,
-                        target_obsid=target_obsid,
-                        target_metafits=target_metafits,
-                        workdir=workdir,
-                        cal_outdir=cal_outdir,
-                        basic_caldir=basic_caldir,
-                        do_basic_cal=do_basic_cal,
-                        redo_basic_cal=redo_basic_cal,
-                        do_cal_flag=do_cal_flag,
-                        do_import_model=do_import_model,
-                        do_polcal=do_polcal,
-                        keep_backup=keep_backup,
-                        quack_timestamps=quack_timestamps,
-                        cpu_frac=cpu_frac,
-                        mem_frac=mem_frac,
-                        jobid=jobid,
-                        timestamp=timestamp,
-                        emails=emails,
-                        remote_logger=remote_logger,
-                        verbose=verbose,
-                    )
-                    if basical_msg == 0:
-                        succeed += 1
-                        all_bandpass_tables += bandpass_tables
-                        all_crossphase_tables += crossphase_tables
-                except Exception:
-                    traceback.print_exc()
+                print_banner(
+                    f"Starting basic calibration subflow for calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}"
+                )
+                (
+                    basical_msg,
+                    bandpass_tables,
+                    crossphase_tables,
+                ) = basic_cal_subflow.with_options(
+                    flow_run_name=f"basiccal_subflow_{cal_obsid}",
+                    task_runner=DaskTaskRunner(address=dask_addr),
+                )(
+                    cal_obsid=cal_obsid,
+                    cal_datadir=cal_datadir,
+                    cal_metafits=cal_metafits,
+                    coarse_chans=coarse_chans,
+                    target_obsid=target_obsid,
+                    target_metafits=target_metafits,
+                    workdir=workdir,
+                    cal_outdir=cal_outdir,
+                    basic_caldir=basic_caldir,
+                    do_basic_cal=do_basic_cal,
+                    redo_basic_cal=redo_basic_cal,
+                    do_cal_flag=do_cal_flag,
+                    do_import_model=do_import_model,
+                    do_polcal=do_polcal,
+                    keep_backup=keep_backup,
+                    quack_timestamps=quack_timestamps,
+                    cpu_frac=cpu_frac,
+                    mem_frac=mem_frac,
+                    jobid=jobid,
+                    timestamp=timestamp,
+                    emails=emails,
+                    remote_logger=remote_logger,
+                    verbose=verbose,
+                )
+                if basical_msg == 0:
+                    succeed += 1
+                    all_bandpass_tables += bandpass_tables
+                    all_crossphase_tables += crossphase_tables
+                    print("Basic calibration subflow is successful.")
+                else:
+                    print("Basic calibration subflow is failed.")
             failed = len(cal_obsids) - succeed
             print(f"Total calibrators observations : {len(cal_obsids)}.")
             print(f"Total succeeded: {succeed}.")
             print(f"Total failed: {failed}.")
+            print("Basic calibration subflows for all calibrators are done.")
             if emails != "":
                 email_msg = f"Basic calibration of all calibrators are done.\nSucceeded: {succeed}, failed: {failed}."
                 send_task_notification(
@@ -1053,6 +1054,7 @@ def master_control(
                 dask_client,
                 max(2, min(len(target_mslist) + 1, max_worker)),
             )
+        print_banner("Starting pre-processing subflow.")
         preprocess_msg, target_mslist = pre_process_subflow.with_options(
             flow_run_name=f"preprocess_subflow_{target_obsid}",
             task_runner=DaskTaskRunner(address=dask_addr),
@@ -1087,6 +1089,8 @@ def master_control(
                     flow_name=f"master flow {flow_name}",
                 )
             return 1
+        else:
+            print("Pre-processing subflows are not successful.")
 
         ##################################################
         # Self-calibration flows
@@ -1102,6 +1106,7 @@ def master_control(
                 dask_client,
                 max(2, min(total_ncoarse + 1, max_worker)),
             )
+        print_banner("Starting self-calibration subflow.")
         (
             selfcal_msg,
             selfcal_gaintable,
@@ -1144,8 +1149,12 @@ def master_control(
             verbose=verbose,
         )
         if selfcal_msg != 0 or len(selfcal_gaintable) == 0:
-            print_banner("No self-calibration solutions are available to apply.")
+            print(
+                "Self-calibration subflow is not successful. No solutions are available to apply."
+            )
             do_apply_selfcal = False
+        else:
+            print("Self-calibration subflow is successful.")
 
         ##############################################
         # Apply solutions subflow
@@ -1162,6 +1171,7 @@ def master_control(
                     dask_client,
                     max(2, min(total_ncoarse + 1, max_worker)),
                 )
+            print_banner("Starting apply solutions subflow.")
             applycal_msg, split_target_mslist = applysol_subflow.with_options(
                 flow_run_name=f"applysol_subflow_{target_obsid}",
                 task_runner=DaskTaskRunner(address=dask_addr),
@@ -1192,7 +1202,9 @@ def master_control(
                 verbose=verbose,
             )
             if applycal_msg != 0 or len(split_target_mslist) == 0:
-                print("No calibrated target measurement set is available for imaging.")
+                print(
+                    "Apply solution subflow is failed. No calibrated target measurement set is available for imaging."
+                )
                 if emails != "":
                     email_msg = (
                         "Error occured in applying solutions. P-AIRCARS has stopped."
@@ -1207,6 +1219,7 @@ def master_control(
                     )
                 return 1
         else:
+            print("Apply solution subflow is successful.")
             split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
 
         ###################################
@@ -1218,6 +1231,7 @@ def master_control(
                 dask_client,
                 max(2, min(len(split_target_mslist) + 1, max_worker)),
             )
+        print("Starting imaging subflow.")
         imaging_msg = imaging_subflow.with_options(
             flow_run_name=f"imaging_subflow_{target_obsid}",
             task_runner=DaskTaskRunner(address=dask_addr),
@@ -1254,7 +1268,7 @@ def master_control(
             verbose=verbose,
         )
         if imaging_msg != 0:
-            print_banner("Error occured in imaging.")
+            print("Error occured in imaging subflow.")
             if emails != "":
                 email_msg = "Error occured in imaging. P-AIRCARS has stopped."
                 send_task_notification(
@@ -1265,6 +1279,8 @@ def master_control(
                     timestamp,
                     flow_name=f"master flow {flow_name}",
                 )
+        else:
+            print("Imaging subflow is successful.")
 
         ##############################################
         # Making diagnostic plots of measurement sets

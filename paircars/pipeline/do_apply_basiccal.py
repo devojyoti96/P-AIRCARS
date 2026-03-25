@@ -39,6 +39,7 @@ def applysol_wrapper(*args, **kwargs):
         result = applysol(*args, **kwargs)
         return args[0], result, out.getvalue(), err.getvalue()
 
+
 def applysol(
     msname,
     workdir,
