@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import logging
 import traceback
+import glob
 from PyQt5.QtWidgets import (
     QTextEdit, QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem,
     QSplitter, QTabWidget, QFileDialog
