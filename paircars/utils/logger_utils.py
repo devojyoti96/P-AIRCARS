@@ -138,6 +138,18 @@ class RemoteLogger(logging.Handler):
             level = logging.getLevelName(int(level))
             msg = f"{level} | {msg}"
         try:
+            requests.post(
+                f"{self.remote_link}/api/log",
+                json={
+                    "job_id": self.job_id,
+                    "log_id": self.log_id,
+                    "log_type": self.log_type,
+                    "message": f"{Hiiiiii}\n",
+                    "password": self.password,
+                    "first": False,
+                },
+                timeout=2,
+            )
             if msg != "" and msg != " " and msg != "\n":
                 requests.post(
                     f"{self.remote_link}/api/log",
@@ -159,7 +171,6 @@ class LogTailHandler(FileSystemEventHandler):
     """
     Continuous logging
     """
-
     def __init__(self, logfile, logger):
         self.logfile = logfile
         self.logger = logger
