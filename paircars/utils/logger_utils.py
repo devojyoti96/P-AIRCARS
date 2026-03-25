@@ -390,9 +390,9 @@ def init_logger(logger, logfile, log_type="task", jobname="", password=""):
         else:
             break
     #logger = logging.getLogger(logname)
-    logger.propagate = False
-    if logger.hasHandlers():
-        logger.handlers.clear()
+    #logger.propagate = False
+    #if logger.hasHandlers():
+    #    logger.handlers.clear()
     formatter = logging.Formatter("%(message)s")
     remote_link = get_remote_logger_link()
     if log_type not in ["master", "subflow", "task"]:
