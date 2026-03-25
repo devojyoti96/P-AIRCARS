@@ -428,21 +428,11 @@ def cli():
 
             results = np.loadtxt(jobfile, dtype="str", unpack=True)
             workdir = str(results[4])
-
-            app = QApplication(sys.argv)
-
-            dialog = QFileDialog()
-            dialog.setWindowTitle("Select P-AIRCARS Log Directory")
-            dialog.setDirectory(workdir)
-
-            dialog.setOption(QFileDialog.DontUseNativeDialog, True)
-            dialog.setFileMode(QFileDialog.Directory)
-            dialog.setOption(QFileDialog.ShowDirsOnly, True)
-            dialog.resize(900, 600)   # adjust as you like
-            if dialog.exec_():
-                selected = dialog.selectedFiles()[0]
-                LOG_DIR = selected
+            log_dirs = glob.glob(f"{workdir}/*_{args.jobid}/logs")
+            if len(log_dirs)>0:
+                LOG_DIR = log_dirs[0]
             else:
+                print(f"No log directory has found at: {workdir}/*_{args.jobid}/logs")
                 sys.exit(1)
 
         else:
