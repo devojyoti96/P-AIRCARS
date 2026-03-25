@@ -433,7 +433,7 @@ def cli():
             if len(log_dirs)>0:
                 LOG_DIR = log_dirs[0]
             else:
-                print(f"No log directory has found at: {workdir}/*_{args.jobid}/logs")
+                print(f"No log directory has found at: {workdir}/*_{args.jobid}_target/logs")
                 sys.exit(1)
 
         else:
