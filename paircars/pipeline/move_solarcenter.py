@@ -111,7 +111,7 @@ def main(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
         if not os.path.exists(logfile):
-            add_logfile(loggger, logfile)
+            add_logfile(logger, logfile)
             logger.info(f"Log file: {logfile}")
             time.sleep(5)
         if os.path.exists(logfile):
