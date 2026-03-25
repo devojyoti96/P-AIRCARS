@@ -6,6 +6,7 @@ import requests
 import time
 import os
 import getpass
+import threading
 import urllib.request
 import urllib.error
 from watchdog.events import FileSystemEventHandler
@@ -334,113 +335,125 @@ def get_logger_safe():
         return logger
 
 
-class LogTailHandler(FileSystemEventHandler):
+class LogTailer(threading.Thread):
     """
-    Continuous logging
+    Continuously tail a logfile and send new lines to logger.
     """
-    def __init__(self, logfile, logger):
+
+    def __init__(self, logfile, logger, poll_interval=0.5):
+        super().__init__(daemon=True)
         self.logfile = logfile
         self.logger = logger
-        self._position = os.path.getsize(logfile) if os.path.exists(logfile) else 0
+        self.poll_interval = poll_interval
+        self._stop_flag = False
 
-    def on_modified(self, event):
-        if event.src_path == self.logfile:
-            try:
-                with open(self.logfile, "r") as f:
-                    f.seek(self._position)
-                    lines = f.readlines()
-                    self._position = f.tell()
-                for line in lines:
-                    if line != "" and line != " " and line != "\n":
-                        self.logger.info(line.strip())
-            except Exception:
-                pass
+    def stop(self):
+        self._stop_flag = True
+
+    def run(self):
+        # Wait until file exists
+        while not os.path.exists(self.logfile):
+            time.sleep(0.5)
+
+        with open(self.logfile, "r") as f:
+            # Go to end of file
+            f.seek(0, os.SEEK_END)
+
+            while not self._stop_flag:
+                line = f.readline()
+
+                if not line:
+                    time.sleep(self.poll_interval)
+                    continue
+
+                line = line.strip()
+
+                # Skip empty lines
+                if not line:
+                    continue
+
+                try:
+                    # Avoid recursive loops if same logger writes file
+                    if "[REMOTE]" not in line:
+                        self.logger.info(f"[REMOTE] {line}")
+                except Exception as e:
+                    print("LogTailer error:", e)
                 
                 
 def init_logger(logname, logfile, log_type="task", jobname="", password=""):
     """
-    Initialize a remote logger with watchdog-based tailing.
-
-    Parameters
-    ----------
-    logname : str
-        Logger name.
-    logfile : str
-        Path to the local logfile to also monitor.
-    logtype : str, optional
-        Log type (only allowed values: master | subflow | task)
-    jobname : str, optional
-        Remote logger job ID.
-    password : str
-        Password used for remote authentication.
-
-    Returns
-    -------
-    observer
-        Observer object
+    Initialize logger with:
+    - File logging
+    - Remote logging
+    - Tail-based forwarding
     """
-    timeout = 30
-    waited = 0
-    while True:
-        if not os.path.exists(logfile):
-            time.sleep(1)
-            waited += 1
-        elif waited >= timeout:
-            return
-        else:
-            break
+
     logger = logging.getLogger(logname)
-    logger.propagate = True
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    # Clear old handlers
     if logger.hasHandlers():
         logger.handlers.clear()
+
     formatter = logging.Formatter("%(message)s")
+
+    ##################################
+    # File handler (MANDATORY)
+    ##################################
+    os.makedirs(os.path.dirname(logfile), exist_ok=True)
+
+    file_handler = logging.FileHandler(logfile)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    ##################################
+    # Remote handler
+    ##################################
     remote_link = get_remote_logger_link()
+
     if log_type not in ["master", "subflow", "task"]:
         log_type = "task"
-    if remote_link != "":
-        if jobname:
-            job_id = jobname
-            log_id = get_logid(logfile)
-            remote_handler = RemoteLogger(
-                job_id=job_id,
-                log_id=log_id,
-                log_type=log_type,
-                remote_link=remote_link,
-                password=password,
+
+    if remote_link and jobname:
+        job_id = jobname
+        log_id = get_logid(logfile)
+
+        remote_handler = RemoteLogger(
+            job_id=job_id,
+            log_id=log_id,
+            log_type=log_type,
+            remote_link=remote_link,
+            password=password,
+        )
+
+        remote_handler.setFormatter(formatter)
+        logger.addHandler(remote_handler)
+
+        # Initial handshake
+        try:
+            requests.post(
+                f"{remote_link}/api/log",
+                json={
+                    "job_id": job_id,
+                    "log_id": log_id,
+                    "log_type": log_type,
+                    "message": "",
+                    "password": password,
+                    "first": True,
+                },
+                timeout=2,
             )
-            logger.setLevel(logging.DEBUG)
-            remote_handler.setFormatter(formatter)
-            logger.addHandler(remote_handler)
-            try:
-                requests.post(
-                    f"{remote_link}/api/log",
-                    json={
-                        "job_id": job_id,
-                        "log_id": log_id,
-                        "log_type": log_type,
-                        "message": "",
-                        "password": password,
-                        "first": True,
-                    },
-                    timeout=2,
-                )
-            except Exception:
-                pass
-        if os.path.exists(logfile):
-            if os.path.islink(logfile):
-                logfile = os.readlink(logfile)
-            print (logfile)
-            event_handler = LogTailHandler(logfile, logger)
-            observer = Observer()
-            observer.schedule(
-                event_handler, path=os.path.dirname(logfile), recursive=False
-            )
-            observer.start()
-            return observer
-        else:
-            return
-    else:
-        return
+        except Exception as e:
+            print("Remote logger handshake failed:", e)
+
+    ##################################
+    # Tailer thread (optional but useful)
+    ##################################
+    tailer = LogTailer(logfile, logger)
+    tailer.start()
+
+    return tailer
         
         
 def add_logfile(logger,logfile):
