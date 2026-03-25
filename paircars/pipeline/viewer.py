@@ -1,26 +1,16 @@
-import os
-import platform
 import ctypes
+import platform
+import os
 import sys
-import numpy as np
-import traceback
 import argparse
+import numpy as np
 import logging
+import traceback
 from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QListWidget,
-    QListWidgetItem,
-    QPlainTextEdit,
-    QSplitter,
-    QSizeGrip,
-    QGridLayout,
-    QFileDialog,
+    QTextEdit, QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem,
+    QSplitter, QTabWidget, QFileDialog
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
-from PyQt5.QtGui import QTextCursor
+from PyQt5.QtCore import Qt
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -94,6 +84,15 @@ class SmartDefaultsHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
         ):
             return action.help
         return super()._get_help_string(action)
+
+
+def classify_log(name):
+    if name.startswith("main"):
+        return "master"
+    elif name.startswith("subflow"):
+        return "subflow"
+    else:
+        return "task"
 
 
 def get_logid(logfile):
@@ -203,276 +202,266 @@ def get_logid(logfile):
         return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
         return name
+        
 
 
-class TailWatcher(FileSystemEventHandler, QObject):
-    new_line = pyqtSignal(str)
+def format_log_block(text):
+    """Convert numeric log levels + add spacing + color"""
+    formatted = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
 
-    def __init__(self, file_path):
-        super().__init__()
+        parts = line.split("|")
+        color = "#dddddd"
+
+        if len(parts) > 1:
+            level = parts[0].strip()
+            msg = "|".join(parts[1:]).strip()
+
+            if level.isdigit():
+                level = logging.getLevelName(int(level))
+
+            if "ERROR" in level:
+                color = "#ff5555"
+            elif "WARNING" in level:
+                color = "#f1fa8c"
+            elif "DEBUG" in level:
+                color = "#888888"
+            elif "INFO" in level:
+                color = "#8be9fd"
+
+            line = f"{level} | {msg}"
+
+        html_line = f'<span style="color:{color};">{line}</span><br><br>'
+        formatted.append(html_line)
+
+    return "".join(formatted)
+
+
+# -----------------------------
+# Tail watcher (LIVE)
+# -----------------------------
+class TailWatcher(FileSystemEventHandler):
+    def __init__(self, file_path, callback):
         self.file_path = file_path
-        self._running = True
+        self.callback = callback
         self._position = os.path.getsize(file_path) if os.path.exists(file_path) else 0
         self.observer = Observer()
 
     def start(self):
-        self.observer.schedule(
-            self, path=os.path.dirname(self.file_path), recursive=False
-        )
+        self.observer.schedule(self, path=os.path.dirname(self.file_path), recursive=False)
         self.observer.start()
-        # Do not emit initial content to avoid duplication
 
     def stop(self):
-        self._running = False
         self.observer.stop()
         self.observer.join()
 
     def on_modified(self, event):
-        if event.src_path == self.file_path and self._running:
+        if event.src_path == self.file_path:
             try:
                 with open(self.file_path, "r") as f:
                     f.seek(self._position)
-                    new_data = f.read()
+                    new = f.read()
                     self._position = f.tell()
-                    if new_data:
-                        # Remove blank/whitespace-only lines
-                        filtered_lines = "\n".join(
-                            line for line in new_data.splitlines() if line.strip()
-                        )
-                        if filtered_lines:
-                            self.new_line.emit(f"{filtered_lines}\n")
+                    if new:
+                        self.callback(format_log_block(new))
             except Exception as e:
-                self.new_line.emit(f"\n[watcher error] {e}\n")
+                self.callback(f"\n[watch error] {e}\n")
 
 
+# -----------------------------
+# UI
+# -----------------------------
 class LogViewer(QWidget):
-    def __init__(self, max_lines=10000):
+    def __init__(self):
         super().__init__()
-        self.setWindowTitle("P-AIRCARS (Live Log)")
-        screen = QApplication.primaryScreen().availableGeometry()
-        self.setGeometry(
-            screen.x() + screen.width() // 10,
-            screen.y() + screen.height() // 10,
-            int(screen.width() * 0.8),
-            int(screen.height() * 0.8),
-        )
+        self.setWindowTitle("P-AIRCARS Dashboard")
+        self.resize(1500, 950)
 
-        self.max_lines = max_lines
-        self.buffer = []
-        self.tail_watcher = None
-        self.current_log_path = None
+        self.layout = QVBoxLayout(self)
 
-        self.setup_ui()
-        self.refresh_logs()
+        # Tabs at TOP
+        self.tabs = QTabWidget()
 
-        self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.refresh_logs)
-        self.refresh_timer.start(2000)
+        self.master_list = QListWidget()
+        self.subflow_list = QListWidget()
+        self.task_list = QListWidget()
 
-    def calc_list_width(self):
-        fm = self.log_list.fontMetrics()
-        widths = [
-            fm.horizontalAdvance(self.log_list.item(i).text())
-            for i in range(self.log_list.count())
-        ]
-        return max(150, min(int(1.1 * max(widths, default=100)), 500))
+        self.tabs.addTab(self.master_list, "Master Flow")
+        self.tabs.addTab(self.subflow_list, "Subflows")
+        self.tabs.addTab(self.task_list, "Tasks")
 
-    def setup_ui(self):
-        outer_layout = QGridLayout(self)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(outer_layout)
-
-        inner_layout = QVBoxLayout()
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setChildrenCollapsible(False)
-
-        self.log_list = QListWidget()
-        self.log_list.itemClicked.connect(self.load_log_content)
-
-        self.log_view = QPlainTextEdit()
+        self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
 
-        self.splitter.addWidget(self.log_list)
-        self.splitter.addWidget(self.log_view)
-        inner_layout.addWidget(self.splitter)
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.addWidget(self.tabs)
+        splitter.addWidget(self.log_view)
+        splitter.setSizes([350, 1150])
 
-        grip_layout = QHBoxLayout()
-        grip_layout.addStretch()
-        grip_layout.addWidget(QSizeGrip(self))
-        inner_layout.addLayout(grip_layout)
+        self.layout.addWidget(splitter)
 
-        inner_container = QWidget()
-        inner_container.setObjectName("InnerContainer")
-        inner_container.setLayout(inner_layout)
-        inner_container.setStyleSheet(
-            """
-            QWidget#InnerContainer {
-                background-color: #f0f0f0;
-                border-bottom-left-radius: 12px;
-                border-bottom-right-radius: 12px;
-            }
-            """
-        )
+        self.tail = None
 
-        outer_layout.addWidget(inner_container, 0, 0)
+        # connections
+        self.master_list.itemClicked.connect(self.load_log)
+        self.subflow_list.itemClicked.connect(self.load_log)
+        self.task_list.itemClicked.connect(self.load_log)
 
-    def refresh_logs(self):
-        existing_paths = {
-            self.log_list.item(i).data(Qt.UserRole)
-            for i in range(self.log_list.count())
+        self.populate_logs()
+
+        self.setStyleSheet("""
+        QWidget {
+            background-color: #1e1e1e;
+            color: #dddddd;
+            font-size: 16px;
         }
-        new_items_added = False
+        QListWidget {
+            background-color: #252526;
+            border: none;
+            padding: 6px;
+        }
+        QTextEdit {
+            background-color: #1e1e1e;
+            border: none;
+            font-family: Consolas, monospace;
+            font-size: 15px;
+        }
+        QTabBar::tab {
+            background: #2d2d2d;
+            padding: 12px 18px;
+            margin: 2px;
+            border-radius: 6px;
+        }
+        QTabBar::tab:selected {
+            background: #007acc;
+        }
+        """)
 
-        if os.path.isdir(LOG_DIR):
-            log_files = [
-                fname
-                for fname in os.listdir(LOG_DIR)
-                if os.path.isfile(os.path.join(LOG_DIR, fname))
-                and fname.endswith(".log")
-            ]
-            log_files.sort(key=lambda f: os.path.getctime(os.path.join(LOG_DIR, f)))
+    # -----------------------------
+    # Auto-scroll logic (tail-like)
+    # -----------------------------
+    def is_at_bottom(self):
+        scrollbar = self.log_view.verticalScrollBar()
+        return scrollbar.value() >= scrollbar.maximum() - 5
 
-            for fname in log_files:
-                full_path = os.path.join(LOG_DIR, fname)
-                if full_path not in existing_paths:
-                    display_name = get_logid(fname)
-                    item = QListWidgetItem(display_name)
-                    item.setData(Qt.UserRole, full_path)
-                    self.log_list.addItem(item)
-                    new_items_added = True
+    def populate_logs(self):
+        if not os.path.isdir(LOG_DIR):
+            return
 
-        if new_items_added:
-            QTimer.singleShot(
-                100,
-                lambda: self.splitter.setSizes(
-                    [self.calc_list_width(), self.width() - self.calc_list_width()]
-                ),
-            )
+        for fname in sorted(os.listdir(LOG_DIR)):
+            if not fname.endswith(".log"):
+                continue
 
-    def load_log_content(self, item):
-        new_log_path = item.data(Qt.UserRole)
-        if self.tail_watcher:
-            self.tail_watcher.stop()
-        self.current_log_path = new_log_path
-        self.buffer.clear()
-        self.log_view.clear()
+            full = os.path.join(LOG_DIR, fname)
+            display = get_logid(fname)
+
+            item = QListWidgetItem(display)
+            item.setData(Qt.UserRole, full)
+
+            cat = classify_log(fname)
+            if cat == "master":
+                self.master_list.addItem(item)
+            elif cat == "subflow":
+                self.subflow_list.addItem(item)
+            else:
+                self.task_list.addItem(item)
+
+    def load_log(self, item):
+        path = item.data(Qt.UserRole)
+
+        if self.tail:
+            self.tail.stop()
 
         try:
-            with open(new_log_path, "r") as f:
-                full_data = f.read()
-                # Split, filter blank lines, and rejoin with original line
-                # endings
-                lines = [
-                    line for line in full_data.splitlines(keepends=True) if line.strip()
-                ]
-                for k in range(len(lines)):
-                    msg = lines[k]
-                    level = msg.split("|")[0].strip()
-                    msg = "|".join(msg.split("|")[1:])
-                    # Fix numeric levels
-                    if isinstance(level, int) or level.isdigit():
-                        level = logging.getLevelName(int(level))
-                        msg = f"{level} | {msg}"
-                        lines[k]=msg
-                self.buffer = lines
-                self.log_view.setPlainText("\n".join(lines))
-                self.log_view.moveCursor(QTextCursor.End)
+            with open(path, "r") as f:
+                content = f.read()
+                self.log_view.setHtml(format_log_block(content))
+                # force scroll to bottom (reliable)
+                scrollbar = self.log_view.verticalScrollBar()
+                scrollbar.setValue(scrollbar.maximum())
         except Exception as e:
-            self.buffer = [f"[Error reading file: {e}]\n"]
-            self.log_view.setPlainText(self.buffer[0])
+            self.log_view.setPlainText(str(e))
 
-        self.tail_watcher = TailWatcher(self.current_log_path)
-        self.tail_watcher.new_line.connect(self.append_log_line)
-        self.tail_watcher.start()
+        self.tail = TailWatcher(path, self.append_text)
+        self.tail.start()
 
-    def append_log_line(self, text):
-        lines = text.splitlines(keepends=True)
-        self.buffer.extend(lines)
-        if len(self.buffer) > self.max_lines:
-            self.buffer = self.buffer[-self.max_lines :]
-        self.log_view.setPlainText("".join(self.buffer))
-        self.log_view.moveCursor(QTextCursor.End)
+    def append_text(self, text):
+        at_bottom = self.is_at_bottom()
+
+        self.log_view.moveCursor(self.log_view.textCursor().End)
+        self.log_view.moveCursor(self.log_view.textCursor().End)
+        self.log_view.insertHtml(text)
+
+        if at_bottom:
+            scrollbar = self.log_view.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
 
     def closeEvent(self, event):
-        if self.tail_watcher:
-            self.tail_watcher.stop()
-        QApplication.quit()
+        if self.tail:
+            self.tail.stop()
+        event.accept()
 
 
 def cli():
     global LOG_DIR
-    parser = argparse.ArgumentParser(
-        description="P-AIRCARS Logger", formatter_class=SmartDefaultsHelpFormatter
-    )
-    parser.add_argument("--jobid", type=str, default=None, help="P-AIRCARS Job ID")
-    parser.add_argument(
-        "--logdir",
-        type=str,
-        default=None,
-        help="Name of log directory",
-    )
+
+    parser = argparse.ArgumentParser(description="P-AIRCARS Logger")
+    parser.add_argument("--jobid", type=str)
+    parser.add_argument("--logdir", type=str)
+
     args = parser.parse_args()
 
     cachedir = get_cachedir()
 
-    if args.jobid is None and args.logdir is None:
-        print("Please provide either job ID or log directory.")
-        sys.exit(1)
-
-    if args.jobid is not None:
-        jobfile_name = f"{cachedir}/main_pids_{args.jobid}.txt"
-        if not os.path.exists(jobfile_name):
-            print(f"Job ID: {args.jobid} is not available. Provide log directory name.")
-            sys.exit(1)
-        else:
-            results = np.loadtxt(jobfile_name, dtype="str", unpack=True)
-            workdir = str(results[4])
-            if not os.path.exists(workdir):
-                print(f"Work directory : {workdir} is not present.")
-                sys.exit(1)
-            LOG_DIR = None
-    else:
-        if not os.path.exists(args.logdir):
-            print(
-                f"Log directory: {args.logdir} is not present. Please provide a valid log directory."
-            )
-            sys.exit(1)
-        LOG_DIR = args.logdir
-
-    os.environ["QT_OPENGL"] = "software"
-    os.environ["QT_XCB_GL_INTEGRATION"] = "none"
-    os.environ["QT_STYLE_OVERRIDE"] = "Fusion"
-    os.environ["QT_LOGGING_RULES"] = "qt.qpa.*=false"
-    os.makedirs(f"{LOG_DIR}/xdgtmp", exist_ok=True)
-    os.chmod(f"{LOG_DIR}/xdgtmp", 0o700)
-    os.environ.setdefault("XDG_RUNTIME_DIR", f"{LOG_DIR}/xdgtmp")
-    os.environ["XDG_RUNTIME_DIR"] = f"{LOG_DIR}/xdgtmp"
-    os.environ["TMPDIR"] = f"{LOG_DIR}/xdgtmp"
-
     try:
-        app = QApplication(sys.argv)
-        if LOG_DIR is None:
-            selected_dir = QFileDialog.getExistingDirectory(
-                None, "Select log directory", workdir
-            )
-            if not selected_dir:
-                print("No directory selected. Exiting.")
+        if args.jobid is None and args.logdir is None:
+            print("Provide jobid or logdir")
+            sys.exit(1)
+
+        if args.jobid:
+            jobfile = f"{cachedir}/main_pids_{args.jobid}.txt"
+            if not os.path.exists(jobfile):
+                print("Invalid jobid")
                 sys.exit(1)
-            LOG_DIR = f"{selected_dir}"
-        app.setStyleSheet(
-            """
-            * {
-                font-family: \"Segoe UI\", \"Noto Sans\", \"Sans Serif\";
-                font-size: 15px;
-            }
-            QListWidget, QPlainTextEdit, QPushButton {
-                font-size: 15px;
-            }
-            QPushButton {
-                padding: 4px 14px;
-            }
-        """
-        )
+
+            results = np.loadtxt(jobfile, dtype="str", unpack=True)
+            workdir = str(results[4])
+
+            app = QApplication(sys.argv)
+
+            dialog = QFileDialog()
+            dialog.setWindowTitle("Select P-AIRCARS Log Directory")
+            dialog.setDirectory(workdir)
+
+            dialog.setOption(QFileDialog.DontUseNativeDialog, True)
+            dialog.setFileMode(QFileDialog.Directory)
+            dialog.setOption(QFileDialog.ShowDirsOnly, True)
+            dialog.resize(900, 600)   # adjust as you like
+            if dialog.exec_():
+                selected = dialog.selectedFiles()[0]
+                LOG_DIR = selected
+            else:
+                sys.exit(1)
+
+        else:
+            if not os.path.exists(args.logdir):
+                print("Invalid logdir")
+                sys.exit(1)
+            LOG_DIR = args.logdir
+        os.environ["QT_OPENGL"] = "software"
+        os.environ["QT_XCB_GL_INTEGRATION"] = "none"
+        os.environ["QT_STYLE_OVERRIDE"] = "Fusion"
+        os.environ["QT_LOGGING_RULES"] = "qt.qpa.*=false"
+        os.makedirs(f"{LOG_DIR}/xdgtmp", exist_ok=True)
+        os.chmod(f"{LOG_DIR}/xdgtmp", 0o700)
+        os.environ.setdefault("XDG_RUNTIME_DIR", f"{LOG_DIR}/xdgtmp")
+        os.environ["XDG_RUNTIME_DIR"] = f"{LOG_DIR}/xdgtmp"
+        os.environ["TMPDIR"] = f"{LOG_DIR}/xdgtmp"
+        os.environ["QT_OPENGL"] = "software"
+        os.environ["QT_STYLE_OVERRIDE"] = "Fusion"
+
         viewer = LogViewer()
         viewer.show()
         sys.exit(app.exec_())
@@ -482,3 +471,8 @@ def cli():
         if LOG_DIR is not None and os.path.exists(LOG_DIR):
             drop_cache(LOG_DIR)
         os.system(f"rm -rf {LOG_DIR}/xdgtmp")
+
+
+if __name__ == "__main__":
+    cli()
+

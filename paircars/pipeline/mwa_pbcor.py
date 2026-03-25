@@ -119,10 +119,7 @@ def run_pbcor(
     cmd.append(imagename)
     cmd.append(metafits)
     cmd.append(outfile)
-
-    if verbose:
-        print("Executing:", " ".join(cmd))
-
+    print(" ".join(cmd))
     try:
         result = subprocess.run(
             cmd,
@@ -189,6 +186,7 @@ def pbcor_all_images(
     mem_limit=1,
     njobs=1,
     logger=None,
+    verbose=False,
 ):
     """
     Correct primary beam of MWA for images in a directory
@@ -274,6 +272,7 @@ def pbcor_all_images(
                     restore=restore,
                     jobid=jobid,
                     ncpu=n_threads,
+                    verbose=verbose,
                 )
                 tasks.append(task)
             result_wrapper = []
@@ -564,6 +563,7 @@ def main(
                 jobid=jobid,
                 n_threads=n_threads,
                 mem_limit=mem_limit,
+                verbose=verbose,
                 njobs=njobs,
                 logger=logger,
             )

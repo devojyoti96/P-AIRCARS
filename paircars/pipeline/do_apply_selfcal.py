@@ -225,7 +225,7 @@ def run_all_applysol(
             logger.info(f"Polarisation solution applied, Succeeded: {pol_succeed}")
             logger.info(f"Polarisation solution applied, Failed: {pol_failed}")
             if gain_failed == 0 and pol_failed == 0:
-                logger.error(
+                logger.info(
                     "Applying gain and polarisation self-calibration solutions for targets are done successfully."
                 )
             elif pol_failed == 0:
@@ -233,7 +233,7 @@ def run_all_applysol(
                     "Applying gain self-calibration solutions for targets are done successfully, but failed for polarisation solutions."
                 )
             else:
-                logger.info(
+                logger.error(
                     "Applying self-calibration solutions for targets are not done successfully."
                 )
         else:
