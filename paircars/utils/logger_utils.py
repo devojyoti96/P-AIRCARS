@@ -453,7 +453,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
     tailer = LogTailer(logfile, logger)
     tailer.start()
 
-    return tailer
+    return logger, tailer
         
         
 def add_logfile(logger,logfile):

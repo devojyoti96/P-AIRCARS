@@ -115,7 +115,7 @@ def main(
             logger.info(f"Log file: {logfile}")
             time.sleep(5)
         if os.path.exists(logfile):
-            observer = init_logger(
+            newlogger, observer = init_logger(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
     if observer is None:
@@ -129,6 +129,7 @@ def main(
     else:
         succeed = 0
         failed = len(mslist)
+    newlogger.info("Test")
 
     ###########################
     # WSClean container
