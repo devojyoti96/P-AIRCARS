@@ -429,7 +429,7 @@ def cli():
 
             results = np.loadtxt(jobfile, dtype="str", unpack=True)
             workdir = str(results[4])
-            log_dirs = glob.glob(f"{workdir}/*_{args.jobid}/logs")
+            log_dirs = glob.glob(f"{workdir}/*_{args.jobid}_target/logs")
             if len(log_dirs)>0:
                 LOG_DIR = log_dirs[0]
             else:
