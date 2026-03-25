@@ -429,3 +429,29 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
             return
     else:
         return
+        
+        
+def add_logfile(logger,logfile):
+    """
+    Add logfile to an existing logger
+    
+    Parameters
+    ----------
+    logger : logging
+        Python logging object
+    logfile : str
+        Log file name
+    """
+    try:
+        os.makedirs(os.path.dirname(logfile), exist_ok=True)
+        fh = logging.FileHandler(logfile)
+        fh.setLevel(logger.level)
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+        return 0
+    except Exception:
+        return 1
+            
+    
+

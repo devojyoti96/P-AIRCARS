@@ -14,6 +14,7 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
     get_logger_safe,
+    add_logfile,
 )
 from paircars.utils.mwa_utils import get_ncoarse
 from paircars.utils.proc_manage_utils import (
@@ -109,6 +110,10 @@ def main(
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
+        if not os.path.exists(logfile):
+            add_logfile(loggger, logfile)
+            logger.info(f"Log file: {logfile}")
+            time.sleep(5)
         if os.path.exists(logfile):
             observer = init_logger(
                 "do_flagging", logfile, jobname=jobname, password=password
