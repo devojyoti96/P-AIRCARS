@@ -6,7 +6,6 @@ import argparse
 import numpy as np
 import logging
 import traceback
-import glob
 from PyQt5.QtWidgets import (
     QTextEdit, QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem,
     QSplitter, QTabWidget, QFileDialog
@@ -433,14 +432,14 @@ def cli():
             if len(log_dirs)>0:
                 LOG_DIR = log_dirs[0]
             else:
-                print(f"No log directory has found at: {workdir}/*_{args.jobid}_target/logs")
+                print(f"No log directory is present: {workdir}/*_{args.jobid}_target/logs")
                 sys.exit(1)
-
         else:
             if not os.path.exists(args.logdir):
                 print("Invalid logdir")
                 sys.exit(1)
             LOG_DIR = args.logdir
+            
         os.environ["QT_OPENGL"] = "software"
         os.environ["QT_XCB_GL_INTEGRATION"] = "none"
         os.environ["QT_STYLE_OVERRIDE"] = "Fusion"
@@ -453,6 +452,7 @@ def cli():
         os.environ["QT_OPENGL"] = "software"
         os.environ["QT_STYLE_OVERRIDE"] = "Fusion"
 
+        app = QApplication(sys.argv)
         viewer = LogViewer()
         viewer.show()
         sys.exit(app.exec_())
