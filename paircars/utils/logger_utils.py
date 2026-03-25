@@ -418,7 +418,7 @@ def init_logger(logname, logfile, log_type="task", jobname="", password=""):
                         "job_id": job_id,
                         "log_id": log_id,
                         "log_type": log_type,
-                        "message": "",
+                        "message": "Hello",
                         "password": password,
                         "first": True,
                     },
