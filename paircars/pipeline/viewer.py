@@ -8,10 +8,10 @@ import logging
 import traceback
 import glob
 from PyQt5.QtWidgets import (
-    QTextEdit, QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem,
-    QSplitter, QTabWidget, QFileDialog
+    QTextEdit, QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QSplitter, QTabWidget,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
+from PyQt5.QtGui import QTextCursor
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -276,7 +276,7 @@ class TailWatcher(FileSystemEventHandler, QObject):
                             line for line in new_data.splitlines() if line.strip()
                         )
                         if filtered_lines:
-                            self.new_line.emit(format_log_block(new))
+                            self.new_line.emit(format_log_block(filtered_lines))
             except Exception as e:
                 self.new_line.emit(f"\n[watcher error] {e}\n")
 
@@ -348,10 +348,22 @@ class LogViewer(QWidget):
             background: #007acc;
         }
         """)
+        
+        self.refresh_timer = QTimer()
+        self.refresh_timer.timeout.connect(self.refresh_logs)
+        self.refresh_timer.start(2000)
 
     # -----------------------------
     # Auto-scroll logic (tail-like)
     # -----------------------------
+    def calc_list_width(self):
+        fm = self.log_list.fontMetrics()
+        widths = [
+            fm.horizontalAdvance(self.log_list.item(i).text())
+            for i in range(self.log_list.count())
+        ]
+        return max(150, min(int(1.1 * max(widths, default=100)), 500))
+        
     def is_at_bottom(self):
         scrollbar = self.log_view.verticalScrollBar()
         return scrollbar.value() >= scrollbar.maximum() - 5
@@ -377,25 +389,33 @@ class LogViewer(QWidget):
                 self.subflow_list.addItem(item)
             else:
                 self.task_list.addItem(item)
-
+                
     def load_log(self, item):
-        path = item.data(Qt.UserRole)
-
-        if self.tail:
-            self.tail.stop()
+        new_log_path = item.data(Qt.UserRole)
+        if self.tail_watcher:
+            self.tail_watcher.stop()
+        self.current_log_path = new_log_path
+        self.buffer.clear()
+        self.log_view.clear()
 
         try:
-            with open(path, "r") as f:
-                content = f.read()
-                self.log_view.setHtml(format_log_block(content))
-                # force scroll to bottom (reliable)
-                scrollbar = self.log_view.verticalScrollBar()
-                scrollbar.setValue(scrollbar.maximum())
+            with open(new_log_path, "r") as f:
+                full_data = f.read()
+                # Split, filter blank lines, and rejoin with original line
+                # endings
+                lines = [
+                    line for line in full_data.splitlines(keepends=True) if line.strip()
+                ]
+                self.buffer = lines
+                self.log_view.setPlainText("".join(lines))
+                self.log_view.moveCursor(QTextCursor.End)
         except Exception as e:
-            self.log_view.setPlainText(str(e))
+            self.buffer = [f"[Error reading file: {e}]\n"]
+            self.log_view.setPlainText(self.buffer[0])
 
-        self.tail = TailWatcher(path, self.append_text)
-        self.tail.start()
+        self.tail_watcher = TailWatcher(self.current_log_path)
+        self.tail_watcher.new_line.connect(self.append_log_line)
+        self.tail_watcher.start()
 
     def append_text(self, text):
         at_bottom = self.is_at_bottom()
