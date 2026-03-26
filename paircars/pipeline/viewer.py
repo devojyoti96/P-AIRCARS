@@ -472,14 +472,15 @@ class LogViewer(QWidget):
     #############################################
     def append_log_line(self, text):
         scrollbar = self.log_view.verticalScrollBar()
-        at_bottom = scrollbar.value() >= scrollbar.maximum() - 2  # small tolerance
+        at_bottom = scrollbar.value() >= scrollbar.maximum() - 5  # tolerance
 
         cursor = self.log_view.textCursor()
         cursor.movePosition(QTextCursor.End)
         cursor.insertHtml(text)
 
+        # 🔥 FORCE scroll AFTER Qt updates layout
         if at_bottom:
-            self.log_view.moveCursor(QTextCursor.End)
+            QTimer.singleShot(0, lambda: scrollbar.setValue(scrollbar.maximum()))
 
     #############################################
     def closeEvent(self, event):
