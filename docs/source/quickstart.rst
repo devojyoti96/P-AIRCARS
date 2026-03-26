@@ -3,7 +3,7 @@ Quickstart
 P-AIRCARS is distributed on
 `PyPI <https://pypi.org/project/paircars/>`__. To use it, install it in isolated conda environment. If **conda** is not installed in your system, see :doc:`install_conda` for Conda installation instructions.
 
-1. Check if ``python -c "import sys; print('\n'.join(sys.path))"`` shows any local or system paths, examples, ``/usr/``,``usr/lib``,``~/.local``. If yes, set some environment variable to isolate conda environment from local and system packages:
+1. Set some environment variable to isolate conda environment from local and system packages:
 
    .. code-block:: bash
 

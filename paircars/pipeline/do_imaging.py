@@ -188,15 +188,19 @@ def perform_imaging(
         ###################################################
         if os.path.exists(f"{msname}/.nocal"):
             cal_sol = False
+            img_logger.warning("No calibrator solutions applied.")
         else:
             cal_sol = True
+            img_logger.debug("Calibration solutions applied")
 
         ####################################
         # Whether pol-selfcal is done or not
         ####################################
         if os.path.exists(f"{msname}/.nopolselfcal"):
             pol_selfcal = False
+            img_logger.warning("Polarisation self-calibration is not done.")
         else:
+            img_logger.warning("Polarisation self-calibration is done.")
             pol_selfcal = True
 
         ###################################
@@ -299,7 +303,7 @@ def perform_imaging(
         if use_solar_mask:
             fits_mask = prefix + "_solar-mask.fits"
             if not os.path.exists(fits_mask):
-                img_logger.info(
+                img_logger.debug(
                     f"Creating solar mask of radius: {mask_radius} arcmin.\n",
                 )
                 fits_mask = create_circular_mask(
@@ -371,7 +375,7 @@ def perform_imaging(
                 ######################################
                 wsclean_cmd = "wsclean " + " ".join(temp_wsclean_args) + " " + msname
                 img_logger.info(
-                    f"WSClean command: {wsclean_cmd}\n",
+                    f"{wsclean_cmd}",
                 )
                 msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
                 if msg == 0:
@@ -463,7 +467,7 @@ def perform_imaging(
                     ######################
                     if len(imagelist) > 0:
                         img_logger.info(f"Total {len(imagelist)} images are made.")
-                        img_logger.info("Renaming and making plots...")
+                        img_logger.info("Renaming and making plots.")
                         os.makedirs(imagedir + "/images", exist_ok=True)
                         final_image_list = []
                         for imagename in imagelist:

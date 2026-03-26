@@ -481,6 +481,8 @@ def submit_slurm_master_flow(args, jobid):
         if len(prefect_env_list) > 0:
             for i in prefect_env_list:
                 script_args.append(f"{i}")
+        script_args.append("unset PYTHONPATH\n")
+        script_args.append("export PYTHONNOUSERSITE=1\n")
         script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")

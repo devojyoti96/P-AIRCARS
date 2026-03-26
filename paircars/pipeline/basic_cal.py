@@ -260,6 +260,20 @@ def run_postcal_flag(
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
     limit_threads(n_threads=n_threads)
+    flag_cmd=(
+        f"single_ms_flag("
+        f"msname='{msname}',"
+        f"badspw='',"
+        f"bad_ants_str='',"
+        f"datacolumn='{datacolumn}',"
+        "use_tfcrop=True,"
+        "use_rflag=True,"
+        "flagdimension='freqtime',"
+        "flag_autocorr=False,"
+        f"threshold={threshold},"
+        f"n_threads={n_threads},"
+        f"mem_limit={mem_limit})"
+    )
     msg = single_ms_flag(
         msname=msname,
         badspw="",

@@ -116,8 +116,11 @@ def applysol(
         else:
             if os.path.exists(msname + check_file) and force_apply:
                 print("Undo previous flagging.")
+                print(f"clearcal(vis='{msname})")
                 with suppress_output():
                     clearcal(vis=msname)
+                print(f"flagdata(vis='{msname}', mode='unflag', spw='0', flagbackup=False)")
+                with suppress_output():
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
                 if os.path.exists(msname + ".flagversions"):
                     os.system(f"rm -rf {msname}.flagversions")
@@ -229,6 +232,7 @@ def applysol(
                                 if quartical_msg != 0:
                                     print("Quartical solutions did not apply.")
                                 else:
+                                    print("Quartical solutions applied successfully from: {qc}.")
                                     qc_success = True
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
@@ -253,6 +257,7 @@ def applysol(
             touch_file_names = glob.glob(f"{msname}/.*")
             if len(touch_file_names) > 0:
                 touch_file_names = [os.path.basename(f) for f in touch_file_names]
+            print(f"split(vis='{msname}', outputvis='{outputvis}', datacolumn='corrected')")
             with suppress_output():
                 split(vis=msname, outputvis=outputvis, datacolumn="corrected")
             if os.path.exists(outputvis):
@@ -333,9 +338,11 @@ def run_all_applysol(
         mslist = np.unique(mslist).tolist()
         target_header = fits.getheader(target_metafits)
         target_attn = target_header["ATTEN_DB"]
+        logger.debug(f"Target attenuation: {target_attn}dB")
         bandpass_table = glob.glob(caldir + f"/calibrator*.bcal.att{target_attn}")
         if len(bandpass_table) == 0:
             bandpass_table = glob.glob(caldir + "/calibrator*.bcal")
+            logger.warning("No bandpass solution with target attenuation is found.")
             att_scaled = False
         else:
             att_scaled = True
