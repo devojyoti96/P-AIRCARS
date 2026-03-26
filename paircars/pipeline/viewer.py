@@ -8,7 +8,8 @@ import logging
 import traceback
 import glob
 from PyQt5.QtWidgets import (
-    QTextEdit, QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QSplitter, QTabWidget,
+    QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QSplitter, QTabWidget, QSizeGrip, QHBoxLayout,
+    QPlainTextEdit, QGridLayout, QTextEdit, 
 )
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QTextCursor
@@ -293,10 +294,39 @@ class LogViewer(QWidget):
         self.buffer = []
         self.tail_watcher = None
         self.current_log_path = None
-        
-        self.layout = QVBoxLayout(self)
 
-        # Tabs at TOP
+        # ONLY call setup here (no UI creation here)
+        self.setup_ui()
+        self.refresh_logs()
+
+        self.refresh_timer = QTimer()
+        self.refresh_timer.timeout.connect(self.refresh_logs)
+        self.refresh_timer.start(2000)
+
+    #############################################
+    # Categorization
+    #############################################
+    def categorize_log(self, name):
+        if name.startswith("main"):
+            return "master"
+        elif name.startswith("subflow"):
+            return "subflow"
+        else:
+            return "task"
+
+    #############################################
+    # UI (ONLY place where layout is created)
+    #############################################
+    def setup_ui(self):
+        outer_layout = QGridLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        inner_layout = QVBoxLayout()
+
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.setChildrenCollapsible(False)
+
+        # ---- Tabs ----
         self.tabs = QTabWidget()
 
         self.master_list = QListWidget()
@@ -307,25 +337,35 @@ class LogViewer(QWidget):
         self.tabs.addTab(self.subflow_list, "Subflows")
         self.tabs.addTab(self.task_list, "Tasks")
 
-        self.log_view = QTextEdit()
-        self.log_view.setReadOnly(True)
-
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(self.tabs)
-        splitter.addWidget(self.log_view)
-        splitter.setSizes([350, 1150])
-
-        self.layout.addWidget(splitter)
-
-        self.tail = None
-
-        # connections
+        # connect
         self.master_list.itemClicked.connect(self.load_log)
         self.subflow_list.itemClicked.connect(self.load_log)
         self.task_list.itemClicked.connect(self.load_log)
 
-        self.populate_logs()
+        # ---- Log viewer (HTML capable) ----
+        self.log_view = QTextEdit()
+        self.log_view.setReadOnly(True)
 
+        self.splitter.addWidget(self.tabs)
+        self.splitter.addWidget(self.log_view)
+        self.splitter.setSizes([350, 1150])
+
+        inner_layout.addWidget(self.splitter)
+
+        # ---- resize grip ----
+        grip_layout = QHBoxLayout()
+        grip_layout.addStretch()
+        grip_layout.addWidget(QSizeGrip(self))
+        inner_layout.addLayout(grip_layout)
+
+        # ---- container ----
+        inner_container = QWidget()
+        inner_container.setObjectName("InnerContainer")
+        inner_container.setLayout(inner_layout)
+
+        outer_layout.addWidget(inner_container, 0, 0)
+
+        # ---- styling (your dark UI) ----
         self.setStyleSheet("""
         QWidget {
             background-color: #1e1e1e;
@@ -353,91 +393,89 @@ class LogViewer(QWidget):
             background: #007acc;
         }
         """)
-        
-        self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.populate_logs)
-        self.refresh_timer.start(2000)
 
-    # -----------------------------
-    # Auto-scroll logic (tail-like)
-    # -----------------------------
-    def calc_list_width(self):
-        fm = self.log_list.fontMetrics()
-        widths = [
-            fm.horizontalAdvance(self.log_list.item(i).text())
-            for i in range(self.log_list.count())
-        ]
-        return max(150, min(int(1.1 * max(widths, default=100)), 500))
-        
-    def is_at_bottom(self):
-        scrollbar = self.log_view.verticalScrollBar()
-        return scrollbar.value() >= scrollbar.maximum() - 5
+    #############################################
+    # Refresh logs
+    #############################################
+    def refresh_logs(self):
+        lists = {
+            "master": self.master_list,
+            "subflow": self.subflow_list,
+            "task": self.task_list,
+        }
 
-    def populate_logs(self):
-        if not os.path.isdir(LOG_DIR):
-            return
+        existing_paths = {
+            key: {
+                lists[key].item(i).data(Qt.UserRole)
+                for i in range(lists[key].count())
+            }
+            for key in lists
+        }
 
-        for fname in sorted(os.listdir(LOG_DIR)):
-            if not fname.endswith(".log"):
-                continue
+        if os.path.isdir(LOG_DIR):
+            log_files = [
+                fname for fname in os.listdir(LOG_DIR)
+                if fname.endswith(".log")
+            ]
 
-            full = os.path.join(LOG_DIR, fname)
-            display = get_logid(fname)
+            log_files.sort(key=lambda f: os.path.getctime(os.path.join(LOG_DIR, f)))
 
-            item = QListWidgetItem(display)
-            item.setData(Qt.UserRole, full)
+            for fname in log_files:
+                full_path = os.path.join(LOG_DIR, fname)
+                category = self.categorize_log(fname)
 
-            cat = classify_log(fname)
-            if cat == "master":
-                self.master_list.addItem(item)
-            elif cat == "subflow":
-                self.subflow_list.addItem(item)
-            else:
-                self.task_list.addItem(item)
-                
+                if full_path not in existing_paths[category]:
+                    item = QListWidgetItem(get_logid(fname))
+                    item.setData(Qt.UserRole, full_path)
+                    lists[category].addItem(item)
+
+    #############################################
+    # Load log
+    #############################################
     def load_log(self, item):
         new_log_path = item.data(Qt.UserRole)
+
         if self.tail_watcher:
             self.tail_watcher.stop()
+
         self.current_log_path = new_log_path
         self.buffer.clear()
         self.log_view.clear()
 
         try:
             with open(new_log_path, "r") as f:
-                full_data = f.read()
-                # Split, filter blank lines, and rejoin with original line
-                # endings
-                lines = [
-                    line for line in full_data.splitlines(keepends=True) if line.strip()
-                ]
-                self.buffer = lines
-                self.log_view.setPlainText("".join(lines))
+                data = f.read()
+                formatted = format_log_block(data)
+                self.buffer = [formatted]
+                self.log_view.setHtml(formatted)
                 self.log_view.moveCursor(QTextCursor.End)
         except Exception as e:
-            self.buffer = [f"[Error reading file: {e}]\n"]
-            self.log_view.setPlainText(self.buffer[0])
+            self.log_view.setPlainText(str(e))
 
         self.tail_watcher = TailWatcher(self.current_log_path)
         self.tail_watcher.new_line.connect(self.append_log_line)
         self.tail_watcher.start()
 
-    def append_text(self, text):
-        at_bottom = self.is_at_bottom()
+    #############################################
+    # Append log (live)
+    #############################################
+    def append_log_line(self, text):
+        scrollbar = self.log_view.verticalScrollBar()
+        at_bottom = scrollbar.value() == scrollbar.maximum()
 
-        self.log_view.moveCursor(self.log_view.textCursor().End)
-        self.log_view.moveCursor(self.log_view.textCursor().End)
-        self.log_view.insertHtml(text)
+        self.buffer.append(text)
+        self.buffer = self.buffer[-self.max_lines:]
+
+        self.log_view.setHtml("".join(self.buffer))
 
         if at_bottom:
-            scrollbar = self.log_view.verticalScrollBar()
-            scrollbar.setValue(scrollbar.maximum())
+            self.log_view.moveCursor(QTextCursor.End)
 
+    #############################################
     def closeEvent(self, event):
-        if self.tail:
-            self.tail.stop()
-        event.accept()
-
+        if self.tail_watcher:
+            self.tail_watcher.stop()
+        QApplication.quit()
 
 def cli():
     global LOG_DIR
