@@ -751,8 +751,8 @@ def master_control(
         #####################################
         # Printing basic info of the pipeline
         #####################################
-        print_banner("Work directory: {workdir}")
-        print_banner("Final product directory: {outdir}")
+        print_banner(f"Work directory: {workdir}")
+        print_banner(f"Final product directory: {outdir}")
         if remote_logger:
             print("####################################")
             print(f"{remote_link}")
