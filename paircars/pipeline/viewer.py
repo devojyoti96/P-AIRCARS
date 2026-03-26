@@ -350,7 +350,7 @@ class LogViewer(QWidget):
         """)
         
         self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.refresh_logs)
+        self.refresh_timer.timeout.connect(self.populate_logs)
         self.refresh_timer.start(2000)
 
     # -----------------------------
