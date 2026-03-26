@@ -1,3 +1,5 @@
+import sys
+print('\n'.join(sys.path))
 import traceback
 import time
 import glob

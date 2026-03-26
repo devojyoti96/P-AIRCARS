@@ -1,5 +1,6 @@
 import os
 import sys
+print('\n'.join(sys.path))
 import traceback
 import argparse
 from paircars.utils.basic_utils import (

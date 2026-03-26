@@ -357,6 +357,8 @@ def submit_local_master_flow(args, jobid):
 
     try:
         script_args = ["#!/bin/bash\n"]
+        script_args.append("unset PYTHONPATH\n")
+        script_args.append("export PYTHONNOUSERSITE=1\n")
         if len(prefect_env_list) > 0:
             for i in prefect_env_list:
                 script_args.append(f"{i}")
