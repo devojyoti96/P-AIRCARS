@@ -205,7 +205,6 @@ def get_logid(logfile):
         return name
         
 
-
 def format_log_block(text):
     """Convert numeric log levels + add spacing + color"""
     formatted = []
@@ -243,33 +242,43 @@ def format_log_block(text):
 # -----------------------------
 # Tail watcher (LIVE)
 # -----------------------------
-class TailWatcher(FileSystemEventHandler):
-    def __init__(self, file_path, callback):
+class TailWatcher(FileSystemEventHandler, QObject):
+    new_line = pyqtSignal(str)
+    def __init__(self, file_path):
+        super().__init__()
         self.file_path = file_path
-        self.callback = callback
+        self._running = True
         self._position = os.path.getsize(file_path) if os.path.exists(file_path) else 0
         self.observer = Observer()
 
     def start(self):
-        self.observer.schedule(self, path=os.path.dirname(self.file_path), recursive=False)
+        self.observer.schedule(
+            self, path=os.path.dirname(self.file_path), recursive=False
+        )
         self.observer.start()
+        # Do not emit initial content to avoid duplication
 
     def stop(self):
+        self._running = False
         self.observer.stop()
         self.observer.join()
 
     def on_modified(self, event):
-        if event.src_path == self.file_path:
+        if event.src_path == self.file_path and self._running:
             try:
                 with open(self.file_path, "r") as f:
                     f.seek(self._position)
-                    new = f.read()
+                    new_data = f.read()
                     self._position = f.tell()
-                    if new:
-                        self.callback(format_log_block(new))
+                    if new_data:
+                        # Remove blank/whitespace-only lines
+                        filtered_lines = "\n".join(
+                            line for line in new_data.splitlines() if line.strip()
+                        )
+                        if filtered_lines:
+                            self.new_line.emit(format_log_block(new))
             except Exception as e:
-                self.callback(f"\n[watch error] {e}\n")
-
+                self.new_line.emit(f"\n[watcher error] {e}\n")
 
 # -----------------------------
 # UI
