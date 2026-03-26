@@ -1156,7 +1156,7 @@ def cli():
         dest="make_plots",
         help="Do not generate helioprojective plots",
     )
-    
+
     # Resource management parameters
     hard_args = parser.add_argument_group(
         "###################\nHardware resource management parameters\n###################"

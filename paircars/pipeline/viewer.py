@@ -8,8 +8,17 @@ import logging
 import traceback
 import glob
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QSplitter, QTabWidget, QSizeGrip, QHBoxLayout,
-    QPlainTextEdit, QGridLayout, QTextEdit, 
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QListWidget,
+    QListWidgetItem,
+    QSplitter,
+    QTabWidget,
+    QSizeGrip,
+    QHBoxLayout,
+    QGridLayout,
+    QTextEdit,
 )
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QTextCursor
@@ -204,7 +213,7 @@ def get_logid(logfile):
         return f"Imaging, OBSID: {obsid}, coarse channel: {coarse_chan}"
     else:
         return name
-        
+
 
 def format_log_block(text):
     """Convert numeric log levels + add spacing + color"""
@@ -245,6 +254,7 @@ def format_log_block(text):
 # -----------------------------
 class TailWatcher(FileSystemEventHandler, QObject):
     new_line = pyqtSignal(str)
+
     def __init__(self, file_path):
         super().__init__()
         self.file_path = file_path
@@ -280,6 +290,7 @@ class TailWatcher(FileSystemEventHandler, QObject):
                             self.new_line.emit(format_log_block(filtered_lines))
             except Exception as e:
                 self.new_line.emit(f"\n[watcher error] {e}\n")
+
 
 # -----------------------------
 # UI
@@ -366,7 +377,8 @@ class LogViewer(QWidget):
         outer_layout.addWidget(inner_container, 0, 0)
 
         # ---- styling (your dark UI) ----
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
         QWidget {
             background-color: #1e1e1e;
             color: #dddddd;
@@ -392,7 +404,8 @@ class LogViewer(QWidget):
         QTabBar::tab:selected {
             background: #007acc;
         }
-        """)
+        """
+        )
 
     #############################################
     # Refresh logs
@@ -406,16 +419,14 @@ class LogViewer(QWidget):
 
         existing_paths = {
             key: {
-                lists[key].item(i).data(Qt.UserRole)
-                for i in range(lists[key].count())
+                lists[key].item(i).data(Qt.UserRole) for i in range(lists[key].count())
             }
             for key in lists
         }
 
         if os.path.isdir(LOG_DIR):
             log_files = [
-                fname for fname in os.listdir(LOG_DIR)
-                if fname.endswith(".log")
+                fname for fname in os.listdir(LOG_DIR) if fname.endswith(".log")
             ]
 
             log_files.sort(key=lambda f: os.path.getctime(os.path.join(LOG_DIR, f)))
@@ -464,7 +475,7 @@ class LogViewer(QWidget):
         at_bottom = scrollbar.value() == scrollbar.maximum()
 
         self.buffer.append(text)
-        self.buffer = self.buffer[-self.max_lines:]
+        self.buffer = self.buffer[-self.max_lines :]
 
         self.log_view.setHtml("".join(self.buffer))
 
@@ -476,6 +487,7 @@ class LogViewer(QWidget):
         if self.tail_watcher:
             self.tail_watcher.stop()
         QApplication.quit()
+
 
 def cli():
     global LOG_DIR
@@ -502,17 +514,19 @@ def cli():
             results = np.loadtxt(jobfile, dtype="str", unpack=True)
             workdir = str(results[4])
             log_dirs = glob.glob(f"{workdir}/*_{args.jobid}_target/logs")
-            if len(log_dirs)>0:
+            if len(log_dirs) > 0:
                 LOG_DIR = log_dirs[0]
             else:
-                print(f"No log directory is present: {workdir}/*_{args.jobid}_target/logs")
+                print(
+                    f"No log directory is present: {workdir}/*_{args.jobid}_target/logs"
+                )
                 sys.exit(1)
         else:
             if not os.path.exists(args.logdir):
                 print("Invalid logdir")
                 sys.exit(1)
             LOG_DIR = args.logdir
-            
+
         os.environ["QT_OPENGL"] = "software"
         os.environ["QT_XCB_GL_INTEGRATION"] = "none"
         os.environ["QT_STYLE_OVERRIDE"] = "Fusion"
@@ -539,4 +553,3 @@ def cli():
 
 if __name__ == "__main__":
     cli()
-

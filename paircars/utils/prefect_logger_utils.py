@@ -44,7 +44,7 @@ async def save_logs_by_task_id(
                     for log in logs:
                         if log.id not in seen_ids:
                             seen_ids.add(log.id)
-                            ts = log.timestamp.to_datetime_string()
+                            ts = log.timestamp.in_timezone().to_datetime_string()
                             level = getattr(log, "INFO", str(log.level))
                             if str(log.task_run_id) == str(task_run_id):
                                 f.write(
@@ -95,7 +95,7 @@ async def save_logs_by_flow_id(
                             seen_ids.add(log.id)
                             # Only include logs without task_run_id = flow-level logs
                             if log.task_run_id is None:
-                                ts = log.timestamp.to_datetime_string()
+                                ts = log.timestamp.in_timezone().to_datetime_string()
                                 level = getattr(log, "INFO", str(log.level))
                                 f.write(
                                     f"{level} | {ts} | {flow_name} | {log.message}\n"

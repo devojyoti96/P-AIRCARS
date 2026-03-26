@@ -873,9 +873,7 @@ def main(
                 "basic_cal", logfile, jobname=jobname, password=password
             )
     if observer is None:
-        logger.info(
-            "Not transmiting to remote logger."
-        )
+        logger.info("Not transmiting to remote logger.")
 
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
