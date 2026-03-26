@@ -284,11 +284,16 @@ class TailWatcher(FileSystemEventHandler, QObject):
 # UI
 # -----------------------------
 class LogViewer(QWidget):
-    def __init__(self):
+    def __init__(self, max_lines=10000):
         super().__init__()
         self.setWindowTitle("P-AIRCARS Dashboard")
         self.resize(1500, 950)
 
+        self.max_lines = max_lines
+        self.buffer = []
+        self.tail_watcher = None
+        self.current_log_path = None
+        
         self.layout = QVBoxLayout(self)
 
         # Tabs at TOP
