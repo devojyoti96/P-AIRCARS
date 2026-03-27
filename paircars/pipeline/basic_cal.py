@@ -708,16 +708,15 @@ def run_basic_cal_rounds(
                 logger.debug(f"Flagging outside uv-range: {flag_uvranges}")
                 for flag_uvrange in flag_uvranges:
                     try:
-                        flagdata(
-                            vis=msname,
-                            mode="manual",
-                            uvrange=flag_uvrange,
-                            flagbackup=False,
-                        )
+                        with suppress_output():
+                            flagdata(
+                                vis=msname,
+                                mode="manual",
+                                uvrange=flag_uvrange,
+                                flagbackup=False,
+                            )
                     except Exception:
-                        logger.exception(
-                            "Exception in flagging outside UV-ranges.", exc_info=True
-                        )
+                        logger.info(f"No data to flag outside UV-range: {flag_uvrange}.")
                         pass
 
         for cal_round in range(1, n_rounds + 1):

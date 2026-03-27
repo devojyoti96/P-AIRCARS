@@ -240,7 +240,7 @@ def run_all_applysol(
             logger.error(
                 "Applying self-calibration solutions for targets are not done successfully. No suitable calibration solutions are found."
             )
-    except Exception as e:
+    except Exception:
         logger.exception(
             "Applying self-calibration solutions for targets are not done successfully.",
             exc_info=True,

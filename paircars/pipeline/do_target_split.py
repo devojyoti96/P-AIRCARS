@@ -459,7 +459,7 @@ def main(
             logger.debug(f"{splited_mslist}")
             msg = 0
     except Exception:
-        logger.exception("Exception", exc_info=True)
+        logger.exception("Exception occured in spliting.", exc_info=True)
         msg = 1
     finally:
         time.sleep(5)

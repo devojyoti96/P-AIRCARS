@@ -1032,6 +1032,18 @@ def run_postgres(
     )
     hostname = socket.gethostname()
     postgrs_addr = socket.gethostbyname(hostname)
+    
+    postgres_url = f"postgresql+asyncpg://{postgres_user}:{postgres_pass}@{postgrs_addr}:{postgres_port}/{postgres_db}"
+    print("Waiting for PostgreSQL...")
+    if not wait_for_port("127.0.0.1", postgres_port, timeout=300):
+        print("PostgreSQL server is not running.")
+        postgres_running=False
+    else:
+        print("PostgreSQL running.")
+        with open(url_file, "w") as f:
+            f.write(postgres_url.strip())
+        postgres_running=True
+        return 0
 
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"

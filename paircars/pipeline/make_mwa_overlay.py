@@ -219,8 +219,9 @@ def main(
                 try:
                     r = f.result()
                     results.append(r)
-                except Exception as e:
-                    print("Overlay failed:", e)
+                except Exception :
+                    print("Overlay failed.")
+                    traceback.print_exc()
             # free worker memory
             dask_client.cancel(futures)
             time.sleep(2)

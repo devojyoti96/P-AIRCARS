@@ -645,7 +645,7 @@ def do_flagging(
         else:
             return 0, succeed, failed
     except Exception:
-        logger.exception("Exception occured during flagging", exc_info=True)
+        logger.exception("Exception occured during flagging.", exc_info=True)
         return 1, 0, len(mslist)
 
 

@@ -5,7 +5,7 @@ import glob
 import sys
 import os
 import subprocess
-from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.basic_utils import get_cachedir, print_banner
 from paircars.utils.logger_utils import SmartDefaultsHelpFormatter
 from paircars.utils.proc_manage_utils import get_scheduler_name
 
@@ -72,13 +72,11 @@ def show_local_job_status(clean_old_jobs=False):
                     msg += 1
                 else:
                     running = "Done/Stopped"
-                print(
+                print_banner(
                     f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
                 )
-                print(
-                    "#########################################################################################"
-                )
                 if clean_old_jobs and running == "Done/Stopped":
+                    print(f"Removed {jobid}")
                     os.system(f"rm -rf {pid_file}")
     except Exception:
         traceback.print_exc()
@@ -132,13 +130,11 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None, print_status=Tru
                 else:
                     running = "Done/Stopped"
                 if print_status:
-                    print(
+                    print_banner(
                         f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
                     )
-                    print(
-                        "#########################################################################################"
-                    )
                 if clean_old_jobs and running == "Done/Stopped":
+                    print(f"Removed {jobid}")
                     os.system(f"rm -rf {pid_file}")
     except Exception:
         traceback.print_exc()
