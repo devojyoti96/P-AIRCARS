@@ -1033,18 +1033,6 @@ def run_postgres(
     hostname = socket.gethostname()
     postgrs_addr = socket.gethostbyname(hostname)
 
-    postgres_url = f"postgresql+asyncpg://{postgres_user}:{postgres_pass}@{postgrs_addr}:{postgres_port}/{postgres_db}"
-    print("Waiting for PostgreSQL...")
-    if not wait_for_port("127.0.0.1", postgres_port, timeout=300):
-        print("PostgreSQL server is not running.")
-        postgres_running = False
-    else:
-        print("PostgreSQL running.")
-        with open(url_file, "w") as f:
-            f.write(postgres_url.strip())
-        postgres_running = True
-        return 0
-
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
     url_file = f"{datadir}/postgres.url"
@@ -1068,26 +1056,13 @@ def run_postgres(
     # Deleting any running postgres container and reinitiate
     ########################################################
     container_present = check_udocker_container(container_name)
-    if container_present:
-        if verbose:
-            subprocess.run(
-                ["udocker", "rm", f"{container_name}"],
-                env=env,
+    if not container_present:
+        container_name = initialize_postgres_container(name=container_name, verbose=verbose)
+        if container_name is None:
+            print(
+                f"Container {container_name} is not initiated. First initiate container and then run."
             )
-        else:
-            subprocess.run(
-                ["udocker", "rm", f"{container_name}"],
-                env=env,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        # os.system(f"rm -rf {pgdata_dir}")
-    container_name = initialize_postgres_container(name=container_name, verbose=verbose)
-    if container_name is None:
-        print(
-            f"Container {container_name} is not initiated. First initiate container and then run."
-        )
-        return 1
+            return 1
 
     ###########################################################################
     # Setup udocker execution mode. Execmode Pn is required for port publishing
