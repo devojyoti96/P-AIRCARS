@@ -1069,7 +1069,7 @@ def run_postgres(
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        os.system(f"rm -rf {pgdata_dir}")
+        #os.system(f"rm -rf {pgdata_dir}")
     container_name = initialize_postgres_container(name=container_name, verbose=verbose)
     if container_name is None:
         print(
@@ -1186,7 +1186,7 @@ def kill_postgres(
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        os.system(f"rm -rf {pgdata_dir}")
+        #os.system(f"rm -rf {pgdata_dir}")
 
     print("Checking for PostgreSQL status...")
     if wait_for_port("127.0.0.1", postgres_port, timeout=10):
