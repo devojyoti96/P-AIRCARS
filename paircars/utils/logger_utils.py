@@ -201,7 +201,9 @@ def create_logger(logname, logfile):
     # If logger already configured, return it
     if logger.hasHandlers():
         logger.handlers.clear()
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
     logger.setLevel(logging.DEBUG)
     filehandle = logging.FileHandler(logfile)
     filehandle.setFormatter(formatter)

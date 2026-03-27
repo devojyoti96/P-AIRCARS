@@ -219,7 +219,7 @@ def main(
                 try:
                     r = f.result()
                     results.append(r)
-                except Exception :
+                except Exception:
                     print("Overlay failed.")
                     traceback.print_exc()
             # free worker memory

@@ -378,7 +378,7 @@ def stop_prefect_server(scheduler_name="local"):
             traceback.print_exc()
             msg = 1
             print(f"Could not close prefect server port: {config['SERVER_PORT']}")
-        '''try:
+        """try:
             print(f"Closing postgreSQL server port: {postgres_port}")
             killed = kill_postgres(
                 postgres_port=postgres_port,
@@ -388,7 +388,7 @@ def stop_prefect_server(scheduler_name="local"):
             print(f"Closed port: {postgres_port}")
         except Exception:
             traceback.print_exc()
-            print(f"Could not close postgreSQL server port: {postgres_port}")'''
+            print(f"Could not close postgreSQL server port: {postgres_port}")"""
         print(f"Server stopped and {cachedir} removed.")
         msg = 0
     except ProcessLookupError:

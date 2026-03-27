@@ -492,7 +492,9 @@ class LogViewer(QWidget):
 def cli():
     global LOG_DIR
 
-    parser = argparse.ArgumentParser(description="P-AIRCARS Logger",formatter_class=SmartDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="P-AIRCARS Logger", formatter_class=SmartDefaultsHelpFormatter
+    )
     parser.add_argument("--jobid", type=str, help="P-AIRCARS Jobid")
     parser.add_argument("--logdir", type=str, help="Log direcotory")
 

@@ -260,7 +260,7 @@ def run_postcal_flag(
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
     limit_threads(n_threads=n_threads)
-    flag_cmd=(
+    flag_cmd = (
         f"single_ms_flag("
         f"msname='{msname}',"
         f"badspw='',"
@@ -716,7 +716,9 @@ def run_basic_cal_rounds(
                                 flagbackup=False,
                             )
                     except Exception:
-                        logger.info(f"No data to flag outside UV-range: {flag_uvrange}.")
+                        logger.info(
+                            f"No data to flag outside UV-range: {flag_uvrange}."
+                        )
                         pass
 
         for cal_round in range(1, n_rounds + 1):

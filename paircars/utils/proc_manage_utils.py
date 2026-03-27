@@ -415,8 +415,14 @@ def submit_local_master_flow(args, jobid):
                         "task run" in lower or "flow run" in lower
                     ) and "p-aircars execution is finished" not in lower:
                         only_run_print = True
-                    if ("killed" in lower or ("ERROR" in upper and "flow run" in lower and f"paircars_{jobid}" in lower))
-                     and not printing_traceback:
+                    if (
+                        "killed" in lower
+                        or (
+                            "ERROR" in upper
+                            and "flow run" in lower
+                            and f"paircars_{jobid}" in lower
+                        )
+                    ) and not printing_traceback:
                         printing_traceback = True
                         traceback_waittime = 300
                     if (

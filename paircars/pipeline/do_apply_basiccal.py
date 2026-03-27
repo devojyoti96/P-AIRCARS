@@ -119,7 +119,9 @@ def applysol(
                 print(f"clearcal(vis='{msname})")
                 with suppress_output():
                     clearcal(vis=msname)
-                print(f"flagdata(vis='{msname}', mode='unflag', spw='0', flagbackup=False)")
+                print(
+                    f"flagdata(vis='{msname}', mode='unflag', spw='0', flagbackup=False)"
+                )
                 with suppress_output():
                     flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
                 if os.path.exists(msname + ".flagversions"):
@@ -232,7 +234,9 @@ def applysol(
                                 if quartical_msg != 0:
                                     print("Quartical solutions did not apply.")
                                 else:
-                                    print("Quartical solutions applied successfully from: {qc}.")
+                                    print(
+                                        "Quartical solutions applied successfully from: {qc}."
+                                    )
                                     qc_success = True
                                 os.system(f"rm -rf {quartical_log}")
                                 os.system(f"rm -rf {temp_pol_caltable}")
@@ -257,7 +261,9 @@ def applysol(
             touch_file_names = glob.glob(f"{msname}/.*")
             if len(touch_file_names) > 0:
                 touch_file_names = [os.path.basename(f) for f in touch_file_names]
-            print(f"split(vis='{msname}', outputvis='{outputvis}', datacolumn='corrected')")
+            print(
+                f"split(vis='{msname}', outputvis='{outputvis}', datacolumn='corrected')"
+            )
             with suppress_output():
                 split(vis=msname, outputvis=outputvis, datacolumn="corrected")
             if os.path.exists(outputvis):
