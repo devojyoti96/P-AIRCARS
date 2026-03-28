@@ -79,26 +79,37 @@ async def save_logs_by_flow_id(
     stop_event : threading.Event
         Optional external signal to stop logging
     """
+    import os
+    import asyncio
+    from datetime import datetime, timezone, timedelta
+
     logdir = os.path.dirname(os.path.abspath(logfile))
     os.makedirs(logdir, exist_ok=True)
+
     seen_ids = set()
+
     # 🔥 start slightly in past
-    last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=1)
+    last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=5)
+
     async with get_client() as client:
         while True:
             if stop_event and stop_event.is_set():
                 break
+
             try:
                 log_filter = LogFilter(
                     flow_run_id={"any_": [flow_run_id]},
                     timestamp={"after_": last_timestamp},
                 )
+
                 logs = await client.read_logs(
                     log_filter=log_filter,
                     sort=LogSort.TIMESTAMP_ASC,
                 )
+
                 # DEBUG (keep this for now)
                 print(f"[LOG STREAM] fetched {len(logs)} logs")
+
                 with open(logfile, "a") as f:
                     for log in logs:
 
@@ -125,6 +136,7 @@ async def save_logs_by_flow_id(
                             f.write(
                                 f"{level} | {ts} | {flow_name} | {log.message}\n"
                             )
+
                         # 🔥 move cursor forward
                         if log.timestamp > last_timestamp:
                             last_timestamp = log.timestamp
