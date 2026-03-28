@@ -1583,10 +1583,8 @@ def master_control(
         end_time = time.time()
         run_time = end_time - start_time
         masterlogger.info(f"Total run time: {run_time}")
-        if run_time < 60:
-            time.sleep(60 - run_time)
         stop_event.set()
-        log_thread_flow.join(timeout=5)
+        log_thread_flow.join()
         if dask_dir is not None:
             os.system(f"rm -rf {dask_dir}")
         if observer is not None:

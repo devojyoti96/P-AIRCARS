@@ -6,6 +6,7 @@ import numpy as np
 from prefect import flow
 from astropy.io import fits
 from casatools import msmetadata
+from prefect.futures import wait
 from paircars.utils.basic_utils import (
     print_banner,
     internet_available,
@@ -152,6 +153,7 @@ def pre_process_subflow(
                     obsid=target_obsid,
                     verbose=verbose,
                 )
+                wait([future_movecenter])
                 msg, succeed, failed = future_movecenter.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Moving phasecenter to solar center is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -222,6 +224,7 @@ def pre_process_subflow(
                     obsid=target_obsid,
                     verbose=verbose,
                 )
+                wait([future_maskms])
                 msg, succeed, failed = future_maskms.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
@@ -259,10 +262,8 @@ def pre_process_subflow(
         end_time = time.time()
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
-        if run_time < 60:
-            time.sleep(60 - run_time)
         stop_event.set()
-        log_thread_flow.join(timeout=5)
+        log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
 
@@ -461,6 +462,7 @@ def basic_cal_subflow(
                     obsid=cal_obsid,
                     verbose=verbose,
                 )
+                wait([future_cal_split])
                 msg, expected, succeed = future_cal_split.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Spliting of calibrator measurement sets are done.\nExpected: {expected}, succeeded: {succeed}."
@@ -555,6 +557,7 @@ def basic_cal_subflow(
                     obsid=cal_obsid,
                     verbose=verbose,
                 )
+                wait([future_flag])
                 msg, succeed, failed = future_flag.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Flagging of calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -618,6 +621,7 @@ def basic_cal_subflow(
                     obsid=cal_obsid,
                     verbose=verbose,
                 )
+                wait([future_import_model])
                 msg, succeed, failed = future_import_model.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Model import for calibrator is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -688,6 +692,7 @@ def basic_cal_subflow(
                     obsid=cal_obsid,
                     verbose=verbose,
                 )
+                wait([future_basical])
                 msg, succeed, failed = future_basical.result()
                 if emails != "":
                     email_msg = f"[{cal_obsid}] Basic calibration is done.\nSucceeded: {succeed}, failed: {failed}."
@@ -814,10 +819,8 @@ def basic_cal_subflow(
         end_time = time.time()
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
-        if run_time < 60:
-            time.sleep(60 - run_time)
         stop_event.set()
-        log_thread_flow.join(timeout=5)
+        log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
 
