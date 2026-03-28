@@ -984,7 +984,7 @@ def master_control(
                 calibrator_mslist = glob.glob(f"{cal_datadir}/*.ms")
                 if len(calibrator_mslist) > 0:
                     for msname in calibrator_mslist:
-                        logger.debug(f"Resetting for tcalibrator ms: {msname}")
+                        logger.debug(f"Resetting for calibrator ms: {msname}")
                         reset_weights_and_flags(
                             msname,
                             n_threads=n_threads,
