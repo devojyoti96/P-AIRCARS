@@ -274,6 +274,7 @@ def run_postcal_flag(
         f"n_threads={n_threads},"
         f"mem_limit={mem_limit})"
     )
+    print(flag_cmd)
     msg = single_ms_flag(
         msname=msname,
         badspw="",

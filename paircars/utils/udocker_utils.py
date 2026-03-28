@@ -1057,7 +1057,9 @@ def run_postgres(
     ########################################################
     container_present = check_udocker_container(container_name)
     if not container_present:
-        container_name = initialize_postgres_container(name=container_name, verbose=verbose)
+        container_name = initialize_postgres_container(
+            name=container_name, verbose=verbose
+        )
         if container_name is None:
             print(
                 f"Container {container_name} is not initiated. First initiate container and then run."
@@ -1144,7 +1146,6 @@ def kill_postgres(
     """
     init_udocker()
     datadir = get_datadir()
-    pgdata_dir = f"{datadir}/pgdata"
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
     if os.path.exists(pid_file):
