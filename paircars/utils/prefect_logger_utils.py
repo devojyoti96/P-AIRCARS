@@ -83,10 +83,11 @@ async def save_logs_by_flow_id(
     os.makedirs(logdir, exist_ok=True)
     seen_ids = set()
     # 🔥 start slightly in past
-    last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=5)
+    last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=1)
     async with get_client() as client:
         while True:
-            should_stop = stop_event and stop_event.is_set()
+            if stop_event and stop_event.is_set():
+                break
             try:
                 log_filter = LogFilter(
                     flow_run_id={"any_": [flow_run_id]},
@@ -96,81 +97,48 @@ async def save_logs_by_flow_id(
                     log_filter=log_filter,
                     sort=LogSort.TIMESTAMP_ASC,
                 )
+                # DEBUG (keep this for now)
                 print(f"[LOG STREAM] fetched {len(logs)} logs")
                 with open(logfile, "a") as f:
                     for log in logs:
+
                         # avoid duplicates
                         if log.id in seen_ids:
                             continue
                         seen_ids.add(log.id)
-                        # strict filtering (keep this)
+
+                        # strict filtering
                         if str(log.flow_run_id) != str(flow_run_id):
                             continue
+
                         if log.task_run_id is None:
                             ts = log.timestamp.astimezone(local_tz).strftime(
                                 "%Y-%m-%d %H:%M:%S"
                             )
+
                             level = (
                                 log.level.name
                                 if hasattr(log.level, "name")
                                 else str(log.level)
                             )
+
                             f.write(
                                 f"{level} | {ts} | {flow_name} | {log.message}\n"
                             )
                         # 🔥 move cursor forward
                         if log.timestamp > last_timestamp:
                             last_timestamp = log.timestamp
+
             except Exception as e:
                 print("LOG ERROR:", e)
                 with open(logfile, "a") as f:
                     f.write(f"Error fetching flow logs: {e}\n")
-            # 🔥 EXIT ONLY AFTER FINAL FETCH
-            if should_stop:
-                break
-            # interruptible sleep
+
+            # interruptible sleep (better shutdown)
             for _ in range(poll_interval):
                 if stop_event and stop_event.is_set():
                     break
                 await asyncio.sleep(1)
-        # 🔥 FINAL DRAIN (VERY IMPORTANT)
-        try:
-            for _ in range(3):  # retry a few times to catch delayed logs
-                log_filter = LogFilter(
-                    flow_run_id={"any_": [flow_run_id]},
-                    timestamp={"after_": last_timestamp},
-                )
-                logs = await client.read_logs(
-                    log_filter=log_filter,
-                    sort=LogSort.TIMESTAMP_ASC,
-                )
-                if not logs:
-                    break
-                print(f"[FINAL DRAIN] fetched {len(logs)} logs")
-                with open(logfile, "a") as f:
-                    for log in logs:
-                        if log.id in seen_ids:
-                            continue
-                        seen_ids.add(log.id)
-                        if str(log.flow_run_id) != str(flow_run_id):
-                            continue
-                        if log.task_run_id is None:
-                            ts = log.timestamp.astimezone(local_tz).strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            )
-                            level = (
-                                log.level.name
-                                if hasattr(log.level, "name")
-                                else str(log.level)
-                            )
-                            f.write(
-                                f"{level} | {ts} | {flow_name} | {log.message}\n"
-                            )
-                        if log.timestamp > last_timestamp:
-                            last_timestamp = log.timestamp
-                await asyncio.sleep(1)
-        except Exception as e:
-            print("FINAL DRAIN ERROR:", e)
 
 
 def start_log_task_saver(
