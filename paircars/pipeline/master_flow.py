@@ -684,7 +684,7 @@ def master_control(
     ctx = get_run_context()
     flow_id = str(ctx.flow_run.id)
     flow_name = ctx.flow_run.name
-    master_logfile = f"{logdir}/main_{jobid}.log"
+    master_logfile = f"{logdir}/master_{jobid}.log"
     stop_event = Event()
     log_thread_flow = start_flow_log_saver(
         flow_id, flow_name, master_logfile, poll_interval=3, stop_event=stop_event

@@ -131,7 +131,7 @@ def get_logid(logfile):
         "imaging_target": "All imaging",
         "ds_target": "Making dynamic spectra",
         "do_overlay": "Making overlays",
-        "main": "Master flow",
+        "master": "Master flow",
         "do_msplot": "Diagnistic plot of ms",
     }
     logmap_keys = list(logmap.keys())
@@ -318,7 +318,7 @@ class LogViewer(QWidget):
     # Categorization
     #############################################
     def categorize_log(self, name):
-        if name.startswith("main"):
+        if name.startswith("master"):
             return "master"
         elif name.startswith("subflow"):
             return "subflow"
@@ -556,5 +556,3 @@ def cli():
         os.system(f"rm -rf {LOG_DIR}/xdgtmp")
 
 
-if __name__ == "__main__":
-    cli()
