@@ -4,7 +4,7 @@ import threading
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.sorting import LogSort
 from prefect.client.schemas.filters import LogFilter
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 local_tz = datetime.now().astimezone().tzinfo
 
@@ -79,24 +79,59 @@ async def save_logs_by_flow_id(
     stop_event : threading.Event
         Optional external signal to stop logging
     """
-    import os
-    import asyncio
-    from datetime import datetime, timezone, timedelta
-
     logdir = os.path.dirname(os.path.abspath(logfile))
     os.makedirs(logdir, exist_ok=True)
-
     seen_ids = set()
-
-    # 🔥 start slightly in past
     last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=5)
-
     async with get_client() as client:
         while True:
-            if stop_event and stop_event.is_set():
-                break
-
+            should_stop = stop_event and stop_event.is_set()
             try:
+                log_filter = LogFilter(
+                    flow_run_id={"any_": [flow_run_id]},
+                    timestamp={"after_": last_timestamp},
+                )
+                logs = await client.read_logs(
+                    log_filter=log_filter,
+                    sort=LogSort.TIMESTAMP_ASC,
+                )
+                print(f"[LOG STREAM] fetched {len(logs)} logs")
+                with open(logfile, "a") as f:
+                    for log in logs:
+                        # avoid duplicates
+                        if log.id in seen_ids:
+                            continue
+                        seen_ids.add(log.id)
+                        # strict filtering (keep this)
+                        if str(log.flow_run_id) != str(flow_run_id):
+                            continue
+                        if log.task_run_id is None:
+                            ts = log.timestamp.astimezone(local_tz).strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            level = (
+                                log.level.name
+                                if hasattr(log.level, "name")
+                                else str(log.level)
+                            )
+                            f.write(
+                                f"{level} | {ts} | {flow_name} | {log.message}\n"
+                            )
+                        if log.timestamp > last_timestamp:
+                            last_timestamp = log.timestamp
+            except Exception as e:
+                print("LOG ERROR:", e)
+                with open(logfile, "a") as f:
+                    f.write(f"Error fetching flow logs: {e}\n")
+            if should_stop:
+                break
+            # interruptible sleep
+            for _ in range(poll_interval):
+                if stop_event and stop_event.is_set():
+                    break
+                await asyncio.sleep(1)
+        try:
+            for _ in range(3):  # retry a few times to catch delayed logs
                 log_filter = LogFilter(
                     flow_run_id={"any_": [flow_run_id]},
                     timestamp={"after_": last_timestamp},
@@ -107,50 +142,33 @@ async def save_logs_by_flow_id(
                     sort=LogSort.TIMESTAMP_ASC,
                 )
 
-                # DEBUG (keep this for now)
-                print(f"[LOG STREAM] fetched {len(logs)} logs")
-
+                if not logs:
+                    break
+                print(f"[FINAL DRAIN] fetched {len(logs)} logs")
                 with open(logfile, "a") as f:
                     for log in logs:
-
-                        # avoid duplicates
                         if log.id in seen_ids:
                             continue
                         seen_ids.add(log.id)
-
-                        # strict filtering
                         if str(log.flow_run_id) != str(flow_run_id):
                             continue
-
                         if log.task_run_id is None:
                             ts = log.timestamp.astimezone(local_tz).strftime(
                                 "%Y-%m-%d %H:%M:%S"
                             )
-
                             level = (
                                 log.level.name
                                 if hasattr(log.level, "name")
                                 else str(log.level)
                             )
-
                             f.write(
                                 f"{level} | {ts} | {flow_name} | {log.message}\n"
                             )
-
-                        # 🔥 move cursor forward
                         if log.timestamp > last_timestamp:
                             last_timestamp = log.timestamp
-
-            except Exception as e:
-                print("LOG ERROR:", e)
-                with open(logfile, "a") as f:
-                    f.write(f"Error fetching flow logs: {e}\n")
-
-            # interruptible sleep (better shutdown)
-            for _ in range(poll_interval):
-                if stop_event and stop_event.is_set():
-                    break
                 await asyncio.sleep(1)
+        except Exception as e:
+            print("FINAL DRAIN ERROR:", e)
 
 
 def start_log_task_saver(
