@@ -274,39 +274,40 @@ def master_control(
     int
         Success message
     """
-    logger = get_logger_safe()
+    start_time=time.time()
+    masterlogger = get_logger_safe()
     if verbose:
-        logger.setLevel(logging.DEBUG)
+        masterlogger.setLevel(logging.DEBUG)
 
-    logger.info("P-AIRCARS workflow started.")
+    masterlogger.info("P-AIRCARS workflow started.")
     emails = get_emails()
 
     #######################################################
     # Checking validity of target directories and metafits
     #######################################################
     if target_datadir.startswith("~"):
-        logger.critical("Please provide full path of target directory.")
+        masterlogger.critical("Please provide full path of target directory.")
         return 1
     else:
         target_datadir = os.path.abspath(target_datadir)
         if os.path.exists(target_datadir) is False:
-            logger.critical(
+            masterlogger.critical(
                 f"Target data directory: {target_datadir} does not exist. Provide correct full path."
             )
             return 1
         else:
-            logger.debug(f"Target data directory: {target_datadir}")
+            masterlogger.debug(f"Target data directory: {target_datadir}")
 
     #################################################
     # Checking workdir and outdir paths
     #################################################
     if workdir.startswith("~"):
-        logger.critical("Please provide full path of work directory.")
+        masterlogger.critical("Please provide full path of work directory.")
         return 1
     else:
         workdir = os.path.abspath(workdir)
     if outdir.startswith("~"):
-        logger.critical("Please provide full path of output directory.")
+        masterlogger.critical("Please provide full path of output directory.")
         return 1
     else:
         outdir = os.path.abspath(outdir)
@@ -316,7 +317,7 @@ def master_control(
         for banner in print_banner(
             f"P-AIRCARS Job ID: {jobid}", no_print=True
         ).splitlines():
-            logger.info(banner)
+            masterlogger.info(banner)
 
     #########################################
     # Some validity checks for resources
@@ -325,13 +326,13 @@ def master_control(
     cpu_frac = min(0.8, abs(cpu_frac))
     mem_frac = min(0.8, abs(mem_frac))
 
-    logger.info("Sorting out target data.")
+    masterlogger.info("Sorting out target data.")
     #############################################
     # Listing target ms
     #############################################
     target_mslist = sorted(glob.glob(f"{target_datadir}/*.ms"))
     if len(target_mslist) == 0:
-        logger.critical(
+        masterlogger.critical(
             f"No measurement set is present in target data directory: {target_datadir}"
         )
         if emails != "":
@@ -339,9 +340,9 @@ def master_control(
             send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
         return 1
     else:
-        logger.debug("All measurement sets in target directory:")
+        masterlogger.debug("All measurement sets in target directory:")
         for ms in target_mslist:
-            logger.debug(ms)
+            masterlogger.debug(ms)
 
     #################################################
     # Verifying whether all target ms from same obsid
@@ -349,7 +350,7 @@ def master_control(
     target_ms_obsids = [get_MWA_OBSID(ms) for ms in target_mslist]
     all_same_obsids = all(x == target_ms_obsids[0] for x in target_ms_obsids)
     if not all_same_obsids:
-        logger.critical(
+        masterlogger.critical(
             "All target measurement sets are not belong to same OBSID. Keep only measurement sets with same OBSID inside the target directory. P-AIRCARS has stopped."
         )
         return 1
@@ -365,7 +366,7 @@ def master_control(
         for ch in coarse_chans:
             if ch not in target_ms_coarse_chans:
                 target_ms_coarse_chans.append(ch)
-    logger.debug(f"Target measurement set coarse channels: {target_ms_coarse_chans}")
+    masterlogger.debug(f"Target measurement set coarse channels: {target_ms_coarse_chans}")
 
     ##############################################
     # Downloading target metafits if not exist
@@ -381,14 +382,14 @@ def master_control(
     else:
         download_metafits = False
     if download_metafits:
-        logger.debug(f"Downloading metafits for OBSID: {target_obsid}")
+        masterlogger.debug(f"Downloading metafits for OBSID: {target_obsid}")
         try:
             target_metafits = download_MWA_metafits(target_obsid, outdir=target_datadir)
         except Exception:
             if emails != "":
                 email_msg = f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped."
                 send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
-            logger.exception(
+            masterlogger.exception(
                 f"Target metafits for OBSID: {target_obsid} is not provided and also could not be downloaded. P-AIRCARS has stopped.",
                 exc_info=True,
             )
@@ -399,17 +400,17 @@ def master_control(
     ##################################################
     metafits_obsid = fits.getheader(target_metafits)["GPSTIME"]
     if metafits_obsid != target_obsid:
-        logger.info(
+        masterlogger.info(
             f"Mismatch between target ms OBSID: {target_obsid} and metafits OBSID: {metafits_obsid}. Downloading metafits for OBSID: {target_obsid}."
         )
-        logger.debug(f"Downloading metafits for OBSID: {target_obsid}")
+        masterlogger.debug(f"Downloading metafits for OBSID: {target_obsid}")
         try:
             target_metafits = download_MWA_metafits(target_obsid, outdir=target_datadir)
         except Exception:
             if emails != "":
                 email_msg = f"Target metafits for OBSID: {target_obsid} could not be downloaded. P-AIRCARS has stopped."
                 send_task_notification(emails, email_msg, jobid, "N/A", "N/A")
-            logger.exception(
+            masterlogger.exception(
                 f"Target metafits for OBSID: {target_obsid} could not be downloaded. P-AIRCARS has stopped.",
                 exc_info=True,
             )
@@ -426,13 +427,13 @@ def master_control(
     for banner in print_banner(
         f"Target observation ID: {target_obsid}", no_print=True
     ).splitlines():
-        logger.info(banner)
-    logger.info(f"Target coarse channels: {target_coarse_chans}")
+        masterlogger.info(banner)
+    masterlogger.info(f"Target coarse channels: {target_coarse_chans}")
 
     ################################################
     # Filtering calibrators
     ################################################
-    logger.info("Sorting out calibrator data.")
+    masterlogger.info("Sorting out calibrator data.")
     cal_datadir_list = calibrator_datadir.split(",")
     cal_metafits_list = calibrator_metafits.split(",")
     final_cal_datadir_list = []
@@ -448,7 +449,7 @@ def master_control(
         if cal_datadir != "" and os.path.exists(cal_datadir):
             cal_mslist = sorted(glob.glob(f"{cal_datadir}/*.ms"))
             if len(cal_mslist) == 0:
-                logger.warning(
+                masterlogger.warning(
                     f"No measurement set is present in calibrator data directory: {cal_datadir}"
                 )
                 has_cal = False
@@ -463,7 +464,7 @@ def master_control(
             cal_ms_obsids = [get_MWA_OBSID(ms) for ms in cal_mslist]
             all_same_obsids = all(x == cal_ms_obsids[0] for x in cal_ms_obsids)
             if not all_same_obsids:
-                logger.warning(
+                masterlogger.warning(
                     "All calibrator measurement sets are not belong to same OBSID. Not using this calibrator."
                 )
                 has_cal = False
@@ -487,11 +488,11 @@ def master_control(
         # Downloading calibrator metafits if not match with ms
         ######################################################
         if has_cal and cal_metafits is None:
-            logger.debug(f"Downloading metafits for calibrator OBSID: {cal_obsid}")
+            masterlogger.debug(f"Downloading metafits for calibrator OBSID: {cal_obsid}")
             try:
                 cal_metafits = download_MWA_metafits(cal_obsid, outdir=cal_datadir)
             except Exception:
-                logger.warning(
+                masterlogger.warning(
                     f"Calibrator metafits for OBSID: {cal_obsid} could not be downloaded. Not using this calibrator."
                 )
                 has_cal = False
@@ -518,11 +519,11 @@ def master_control(
                 )
                 has_overlap = bool(set(cal_coarse_chans) & set(target_coarse_chans))
                 if not has_overlap:
-                    logger.warning(
+                    masterlogger.warning(
                         f"Calibrator with OBSID: {cal_obsid} do not have frequency overlap with target."
                     )
-                    logger.info(f"Target coarse channels: {target_coarse_chans}")
-                    logger.info(f"Calibrator coarse channels: {cal_coarse_chans}")
+                    masterlogger.info(f"Target coarse channels: {target_coarse_chans}")
+                    masterlogger.info(f"Calibrator coarse channels: {cal_coarse_chans}")
                 else:
                     final_cal_datadir_list.append(cal_datadir)
                     final_cal_obsid_list.append(cal_obsid)
@@ -569,10 +570,10 @@ def master_control(
 
     if len(calibrator_dic) == 0:
         has_cal = False
-        logger.warning("No calibrator data is found after filtering.")
+        masterlogger.warning("No calibrator data is found after filtering.")
     else:
         has_cal = True
-        logger.info(
+        masterlogger.info(
             f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are: {list(calibrator_dic.keys())}"
         )
 
@@ -584,7 +585,7 @@ def master_control(
         try:
             os.makedirs(cal_outdir, exist_ok=True)
         except Exception:
-            logger.warning(
+            masterlogger.warning(
                 f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
             )
             traceback.print_exc()
@@ -595,7 +596,7 @@ def master_control(
     #######################################
     # Preparing target working directories
     #######################################
-    logger.info("Preparing working directories.")
+    masterlogger.info("Preparing working directories.")
     if workdir == "":
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
 
@@ -607,7 +608,7 @@ def master_control(
     try:
         os.makedirs(workdir, exist_ok=True)
     except Exception:
-        logger.exception(
+        masterlogger.exception(
             f"Work directory: {workdir} can not be created. Please check the path carefully.",
             exc_info=True,
         )
@@ -621,7 +622,7 @@ def master_control(
     try:
         os.makedirs(target_outdir, exist_ok=True)
     except Exception:
-        logger.exception(
+        masterlogger.exception(
             f"Output directory: {target_outdir} can not created. Please check the path carefully.",
             exc_info=True,
         )
@@ -642,7 +643,7 @@ def master_control(
         dask_client = get_client()
         dask_cluster = dask_client.cluster
     except Exception:
-        logger.debug(
+        masterlogger.debug(
             f"Creating dask cluster. CPU fraction: {cpu_frac}, memory fraction: {mem_frac}, maxmim worker: {max_worker}"
         )
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
@@ -652,7 +653,7 @@ def master_control(
             max_worker=max_worker,
         )
         if dask_client is None:
-            logger.critical("Error occured in creating local cluster.")
+            masterlogger.critical("Error occured in creating local cluster.")
             return 1
     dask_addr = dask_client.scheduler.address
 
@@ -666,18 +667,18 @@ def master_control(
     ############################################
     n_threads = os.environ.get("OMP_NUM_THREADS")
     if n_threads is None:
-        logger.warning(
+        masterlogger.warning(
             "Number of threads is not available in environment. Using one thread."
         )
         n_threads = 1
     else:
         n_threads = max(1, int(n_threads))
-        logger.debug(f"Number of threads per worker to use: {n_threads}")
+        masterlogger.debug(f"Number of threads per worker to use: {n_threads}")
 
     #########################################
     # Setup remote loggger and email notifier
     #########################################
-    logger.info("Setting up remote logger and email notifier.")
+    masterlogger.info("Setting up remote logger and email notifier.")
     logdir = f"{workdir}/logs"
     os.makedirs(logdir, exist_ok=True)
     ctx = get_run_context()
@@ -696,7 +697,7 @@ def master_control(
         remote_link = ""
         internet_on = internet_available()
         if not internet_on:
-            logger.warning("Internet connection is not available for remote logging.")
+            masterlogger.warning("Internet connection is not available for remote logging.")
         else:
             if remote_logger:
                 try:
@@ -704,7 +705,7 @@ def master_control(
                 except Exception:
                     pass
                 if remote_link == "":
-                    logger.warning("Please provide a valid remote link.")
+                    masterlogger.warning("Please provide a valid remote link.")
                     remote_logger = False
 
         if not remote_logger:
@@ -754,8 +755,8 @@ def master_control(
                         password=password,
                     )
             if observer is None:
-                logger.warning(
-                    "Remote link or jobname is blank. Not transmiting to remote logger."
+                masterlogger.warning(
+                    "Remote link or jobname is blank. Not transmiting to remote masterlogger."
                 )
             #####################
             # Notify over email
@@ -781,24 +782,24 @@ def master_control(
         for banner in print_banner(
             f"Work directory: {workdir}", no_print=True
         ).splitlines():
-            logger.info(banner)
+            masterlogger.info(banner)
         for banner in print_banner(
             f"Final product directory: {outdir}", no_print=True
         ).splitlines():
-            logger.info(banner)
+            masterlogger.info(banner)
         if remote_logger:
-            logger.info("####################################")
-            logger.info(f"{remote_link}")
-            logger.info(f"Remote Job ID: {jobname}")
-            logger.info(f"Remote access password: {password}")
-            logger.info("####################################")
+            masterlogger.info("####################################")
+            masterlogger.info(f"{remote_link}")
+            masterlogger.info(f"Remote Job ID: {jobname}")
+            masterlogger.info(f"Remote access password: {password}")
+            masterlogger.info("####################################")
 
         if not has_cal:
             for banner in print_banner(
                 f"No suitable calibrators are available for target OBSID: {target_obsid}.",
                 no_print=True,
             ).splitlines():
-                logger.info(banner)
+                masterlogger.info(banner)
             if emails != "":
                 email_msg = f"No suitable calibrators are available for target OBSID: {target_obsid}."
                 send_task_notification(
@@ -816,7 +817,7 @@ def master_control(
         # Move solar center, if any of these conditions are met
         if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
             if not do_move_solarcenter:
-                logger.debug(
+                masterlogger.debug(
                     "Switching on solar center changing, because selfcal of imaging is requeted."
                 )
                 do_move_solarcenter = True
@@ -825,11 +826,11 @@ def master_control(
         if do_basic_cal:
             if not do_cal_flag:
                 do_cal_flag = True
-                logger.debug(
+                masterlogger.debug(
                     "Switching on calibrator flag because basic calibration is requested."
                 )
             if not do_import_model:
-                logger.debug(
+                masterlogger.debug(
                     "Switching on model import because basic calibration is requested."
                 )
                 do_import_model = True
@@ -837,7 +838,7 @@ def master_control(
         # Switch on applycal if selfcal is requested
         if do_selfcal:
             if not do_applycal:
-                logger.debug(
+                masterlogger.debug(
                     "Switching on apply basic calibrations, because self-calibration is requested."
                 )
                 do_applycal = True
@@ -846,11 +847,11 @@ def master_control(
         if do_imaging:
             if not do_applycal:
                 do_applycal = True
-                logger.debug(
+                masterlogger.debug(
                     "Switching on apply basic calibrations, because imaging is requested."
                 )
             if not do_apply_selfcal:
-                logger.debug(
+                masterlogger.debug(
                     "Switching on apply self-calibrations, because imaging is requested."
                 )
                 do_apply_selfcal = True
@@ -860,14 +861,14 @@ def master_control(
         #####################################
         if solar_data:
             if not use_solar_mask:
-                logger.info("Use solar mask during CLEANing.")
+                masterlogger.info("Use solar mask during CLEANing.")
                 use_solar_mask = True
             if not solar_selfcal:
                 solar_selfcal = True
             full_FoV = False
         else:
             if use_solar_mask:
-                logger.info("Stop using solar mask during CLEANing.")
+                masterlogger.info("Stop using solar mask during CLEANing.")
                 use_solar_mask = False
             if solar_selfcal:
                 solar_selfcal = False
@@ -877,7 +878,7 @@ def master_control(
         # Checking if ms is full pol for polarization calibration and imaging
         #####################################################################
         if do_polcal:
-            logger.info(
+            masterlogger.info(
                 "Checking measurement set suitability for polarization calibration...."
             )
             for msname in target_mslist:
@@ -886,7 +887,7 @@ def master_control(
                 npol = msmd.ncorrforpol()[0]
                 msmd.close()
                 if npol < 4:
-                    logger.warning(
+                    masterlogger.warning(
                         f"Measurement set: {msname} is not full-polar. Do not performing polarization analysis."
                     )
                     do_polcal = False
@@ -895,7 +896,7 @@ def master_control(
         #################################################
         # Determining maximum allowed frequency averaging
         #################################################
-        logger.info("Estimating optimal frequency averaging.")
+        masterlogger.info("Estimating optimal frequency averaging.")
         max_freqres_list = []
         freqres_list = []
         msmd = msmetadata()
@@ -908,7 +909,7 @@ def master_control(
             freqres_list.append(freqres)
         freqres = min(freqres_list)
         if freqres > 0.16:
-            logger.info(
+            masterlogger.info(
                 f"Frequency resolution: {round(freqres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing."
             )
         max_freqres = min(max_freqres_list)
@@ -925,12 +926,12 @@ def master_control(
             ncoarse = get_ncoarse(msname)
             total_ncoarse += ncoarse
         total_ncoarse = max(1, total_ncoarse)
-        logger.debug(f"Total number of coarse channels in target: {total_ncoarse}.")
+        masterlogger.debug(f"Total number of coarse channels in target: {total_ncoarse}.")
 
         ################################################
         # Determining maximum allowed temporal averaging
         ################################################
-        logger.debug("Estimating optimal temporal averaging.")
+        masterlogger.debug("Estimating optimal temporal averaging.")
         max_timeres_list = []
         timeres_list = []
         for msname in target_mslist:
@@ -951,7 +952,7 @@ def master_control(
         quack_timestamps = int(4.0 / timeres)
         max_timeres = min(max_timeres_list)
         if image_timeres > (2 * 3660):  # If more than 2 hours
-            logger.info(
+            masterlogger.info(
                 "Image time integration is more than 2 hours, which may cause smearing due to solar differential rotation."
             )
         if image_timeres > 0:
@@ -961,19 +962,19 @@ def master_control(
             timeavg = timeres
         timeavg = min(2.0, timeavg)
         image_timeres = round(image_timeres, 2)
-        logger.info(f"Frequency resolution: {freqres}MHz, time resolution: {timeres}s.")
-        logger.info(f"Frequency averaging: {freqavg}MHz, time averaging: {timeavg}s.")
-        logger.info(
+        masterlogger.info(f"Frequency resolution: {freqres}MHz, time resolution: {timeres}s.")
+        masterlogger.info(f"Frequency averaging: {freqavg}MHz, time averaging: {timeavg}s.")
+        masterlogger.info(
             f"Imaging frequency resolution: {image_freqres}MHz, time resolution: {image_timeres}s."
         )
 
         #############################
         # Reset any previous weights
         #############################
-        logger.info("Resetting previous flags and weights.")
+        masterlogger.info("Resetting previous flags and weights.")
         if len(target_mslist) > 0:
             for msname in target_mslist:
-                logger.debug(f"Resetting for target ms: {msname}")
+                masterlogger.debug(f"Resetting for target ms: {msname}")
                 reset_weights_and_flags(
                     msname, n_threads=n_threads, force_reset=do_forcereset_weightflag
                 )
@@ -984,13 +985,13 @@ def master_control(
                 calibrator_mslist = glob.glob(f"{cal_datadir}/*.ms")
                 if len(calibrator_mslist) > 0:
                     for msname in calibrator_mslist:
-                        logger.debug(f"Resetting for calibrator ms: {msname}")
+                        masterlogger.debug(f"Resetting for calibrator ms: {msname}")
                         reset_weights_and_flags(
                             msname,
                             n_threads=n_threads,
                             force_reset=do_forcereset_weightflag,
                         )
-        logger.info("Reset is done.")
+        masterlogger.info("Reset is done.")
 
         ##########################################
         # Basic calibration flows
@@ -1019,7 +1020,7 @@ def master_control(
                     f"Starting basic calibration subflow for calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}",
                     no_print=True,
                 ).splitlines():
-                    logger.info(banner)
+                    masterlogger.info(banner)
                 (
                     basical_msg,
                     bandpass_tables,
@@ -1056,14 +1057,14 @@ def master_control(
                     succeed += 1
                     all_bandpass_tables += bandpass_tables
                     all_crossphase_tables += crossphase_tables
-                    logger.info("Basic calibration subflow is successful.")
+                    masterlogger.info("Basic calibration subflow is successful.")
                 else:
-                    logger.warning("Basic calibration subflow is failed.")
+                    masterlogger.warning("Basic calibration subflow is failed.")
             failed = len(cal_obsids) - succeed
-            logger.info(f"Total calibrators observations : {len(cal_obsids)}.")
-            logger.info(f"Total succeeded: {succeed}.")
-            logger.info(f"Total failed: {failed}.")
-            logger.info("Basic calibration subflows for all calibrators are done.")
+            masterlogger.info(f"Total calibrators observations : {len(cal_obsids)}.")
+            masterlogger.info(f"Total succeeded: {succeed}.")
+            masterlogger.info(f"Total failed: {failed}.")
+            masterlogger.info("Basic calibration subflows for all calibrators are done.")
             if emails != "":
                 email_msg = f"Basic calibration of all calibrators are done.\nSucceeded: {succeed}, failed: {failed}."
                 send_task_notification(
@@ -1075,7 +1076,7 @@ def master_control(
                     flow_name=f"master flow {flow_name}",
                 )
             if len(all_bandpass_tables) == 0:
-                logger.warning(
+                masterlogger.warning(
                     "No bandpass solutions obtained from any calibrators. Calibrating solely using self-calibration."
                 )
                 has_cal = False
@@ -1090,7 +1091,7 @@ def master_control(
                         flow_name=f"master flow {flow_name}",
                     )
             elif len(all_crossphase_tables) == 0:
-                logger.warning(
+                masterlogger.warning(
                     "No crosshand phase solutions obtained from any calibrators. Image-based crosshand phase calibration will be attempted."
                 )
                 if emails != "":
@@ -1116,7 +1117,7 @@ def master_control(
         for banner in print_banner(
             "Starting pre-processing subflow.", no_print=True
         ).splitlines():
-            logger.info(banner)
+            masterlogger.info(banner)
         preprocess_msg, target_mslist = pre_process_subflow.with_options(
             flow_run_name=f"preprocess_subflow_{target_obsid}",
             task_runner=DaskTaskRunner(address=dask_addr),
@@ -1139,9 +1140,9 @@ def master_control(
             verbose=verbose,
         )
         if preprocess_msg == 0 and len(target_mslist) > 0:
-            logger.info("Pre-processing subflows is successful.")
+            masterlogger.info("Pre-processing subflows is successful.")
         else:
-            logger.critical("Error occured in pre-processing steps target data.")
+            masterlogger.critical("Error occured in pre-processing steps target data.")
             if emails != "":
                 email_msg = "Error occured in pre-processing steps target data. P-AIRCARS has stopped."
                 send_task_notification(
@@ -1163,7 +1164,7 @@ def master_control(
                 ms_coarse_chans = get_MWA_coarse_chan(targetms)
                 ncoarse = len(ms_coarse_chans)
                 total_ncoarse += ncoarse
-            logger.debug(
+            masterlogger.debug(
                 f"Total coarse channels for splited target measurement sets: {total_ncoarse}."
             )
             scale_worker_and_wait(
@@ -1174,7 +1175,7 @@ def master_control(
         for banner in print_banner(
             "Starting self-calibration subflow.", no_print=True
         ).splitlines():
-            logger.info(banner)
+            masterlogger.info(banner)
         (
             selfcal_msg,
             selfcal_gaintable,
@@ -1217,9 +1218,9 @@ def master_control(
             verbose=verbose,
         )
         if selfcal_msg == 0 and len(selfcal_gaintable) > 0:
-            logger.info("Self-calibration subflow is successful.")
+            masterlogger.info("Self-calibration subflow is successful.")
         else:
-            logger.warning(
+            masterlogger.warning(
                 "Self-calibration subflow is not successful. No solutions are available to apply."
             )
             do_apply_selfcal = False
@@ -1242,7 +1243,7 @@ def master_control(
             for banner in print_banner(
                 "Starting apply solutions subflow.", no_print=True
             ).splitlines():
-                logger.info(banner)
+                masterlogger.info(banner)
             applycal_msg, split_target_mslist = applysol_subflow.with_options(
                 flow_run_name=f"applysol_subflow_{target_obsid}",
                 task_runner=DaskTaskRunner(address=dask_addr),
@@ -1273,10 +1274,10 @@ def master_control(
                 verbose=verbose,
             )
             if applycal_msg == 0 and len(split_target_mslist) > 0:
-                logger.info("Apply solution subflow is successful.")
+                masterlogger.info("Apply solution subflow is successful.")
                 split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
             else:
-                logger.critical(
+                masterlogger.critical(
                     "Apply solution subflow is failed. No calibrated target measurement set is available for imaging."
                 )
                 if emails != "":
@@ -1302,7 +1303,7 @@ def master_control(
                 dask_client,
                 max(2, min(len(split_target_mslist) + 1, max_worker)),
             )
-        logger.info("Starting imaging subflow.")
+        masterlogger.info("Starting imaging subflow.")
         imaging_msg = imaging_subflow.with_options(
             flow_run_name=f"imaging_subflow_{target_obsid}",
             task_runner=DaskTaskRunner(address=dask_addr),
@@ -1339,7 +1340,7 @@ def master_control(
             verbose=verbose,
         )
         if imaging_msg != 0:
-            logger.critical("Error occured in imaging subflow.")
+            masterlogger.critical("Error occured in imaging subflow.")
             if emails != "":
                 email_msg = "Error occured in imaging. P-AIRCARS has stopped."
                 send_task_notification(
@@ -1352,7 +1353,7 @@ def master_control(
                 )
             return 1
         else:
-            logger.info("Imaging subflow is successful.")
+            masterlogger.info("Imaging subflow is successful.")
 
         ##############################################
         # Making diagnostic plots of measurement sets
@@ -1363,7 +1364,7 @@ def master_control(
             ###########################################
             split_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_ch_*.ms"))
             if len(split_cal_mslist) == 0:
-                logger.warning("No calibrator measurement set is present for ploting.")
+                masterlogger.warning("No calibrator measurement set is present for ploting.")
             else:
                 if adaptive:
                     scale_worker_and_wait(
@@ -1383,7 +1384,7 @@ def master_control(
                         "Starting task: Making diagnostic plots of calibrator measurement sets.",
                         no_print=True,
                     ).splitlines():
-                        logger.info(banner)
+                        masterlogger.info(banner)
                     try:
                         future_cal_plot = run_make_msplot.with_options(
                             task_run_name=f"msplot_cal_{jobid}"
@@ -1406,9 +1407,9 @@ def master_control(
                             "Finished task: Making diagnostic plots for calibrator measurment sets are done.",
                             no_print=True,
                         ).splitlines():
-                            logger.info(banner)
+                            masterlogger.info(banner)
                     except Exception:
-                        logger.exception(
+                        masterlogger.exception(
                             "!!!! WARNING: Diagnostic plot of calibrator measurment sets are not successful. !!!!",
                             exc_info=True,
                         )
@@ -1423,7 +1424,7 @@ def master_control(
             ###########################################
             split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
             if len(split_target_mslist) == 0:
-                logger.warning("No target measurment set is present for ploting.")
+                masterlogger.warning("No target measurment set is present for ploting.")
             else:
                 if adaptive:
                     scale_worker_and_wait(
@@ -1437,7 +1438,7 @@ def master_control(
                     "Starting task: Making diagnostic plots of target measurement sets.",
                     no_print=True,
                 ).splitlines():
-                    logger.info(banner)
+                    masterlogger.info(banner)
                 try:
                     future_target_plot = run_make_msplot.with_options(
                         task_run_name=f"msplot_target_{jobid}"
@@ -1461,9 +1462,9 @@ def master_control(
                             "Finished task: Making diagnostic plots for target measurment sets are done.",
                             no_print=True,
                         ).splitlines():
-                            logger.info(banner)
+                            masterlogger.info(banner)
                     else:
-                        logger.error(
+                        masterlogger.error(
                             "Finished task: Error occured in making diagnostic plots for target measurment sets."
                         )
                         if emails != "":
@@ -1472,7 +1473,7 @@ def master_control(
                                 emails, email_msg, jobid, target_obsid, timestamp
                             )
                 except Exception:
-                    logger.exception(
+                    masterlogger.exception(
                         "!!!! WARNING: Diagnostic plot of target measurment sets are not successful. !!!!",
                         exc_info=True,
                     )
@@ -1489,7 +1490,7 @@ def master_control(
             "P-AIRCARS calibration and imaging pipeline is successfully executed.",
             no_print=True,
         ).splitlines():
-            logger.info(banner)
+            masterlogger.info(banner)
         if emails != "":
             email_msg = "P-AIRCARS processing is done successfully."
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
@@ -1498,7 +1499,7 @@ def master_control(
         if emails != "":
             email_msg = f"Error in running P-AIRCARS.\n{e}"
             send_task_notification(emails, email_msg, jobid, target_obsid, timestamp)
-        logger.exception("Error occured in running P-AIRCARS.", exc_info=True)
+        masterlogger.exception("Error occured in running P-AIRCARS.", exc_info=True)
         return 1
     finally:
         time.sleep(5)
@@ -1518,7 +1519,7 @@ def master_control(
         final_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_ch_*.ms"))
         if len(final_cal_mslist) > 0:
             os.makedirs(f"{cal_outdir}/ms_flags", exist_ok=True)
-            logger.info(
+            masterlogger.info(
                 f"Doing flag backup for calibrator measurement sets in: {cal_outdir}/ms_flags"
             )
             for cal_ms in final_cal_mslist:
@@ -1538,7 +1539,7 @@ def master_control(
         final_selfcal_mslist = sorted(glob.glob(f"{workdir}/selfcal*_ch_*.ms"))
         if len(final_selfcal_mslist) > 0:
             os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
-            logger.info(
+            masterlogger.info(
                 f"Doing flag backup of self-calibration measurement sets in: {target_outdir}/ms_flags"
             )
             for selfcal_ms in final_selfcal_mslist:
@@ -1558,7 +1559,7 @@ def master_control(
         final_split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
         if len(final_split_target_mslist) > 0:
             os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
-            logger.info(
+            masterlogger.info(
                 f"Doing flag backup target measurement sets in: {target_outdir}/ms_flags"
             )
             for target_ms in final_split_target_mslist:
@@ -1579,6 +1580,11 @@ def master_control(
         time.sleep(5)
         drop_cache(workdir)
         drop_cache(outdir)
+        end_time = time.time()
+        run_time = end_time - start_time
+        masterlogger.info(f"Total run time: {run_time}")
+        if run_time < 60:
+            time.sleep(60 - run_time)
         stop_event.set()
         log_thread_flow.join(timeout=5)
         if dask_dir is not None:

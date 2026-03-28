@@ -81,37 +81,54 @@ async def save_logs_by_flow_id(
     """
     logdir = os.path.dirname(os.path.abspath(logfile))
     os.makedirs(logdir, exist_ok=True)
+
     seen_ids = set()
-    start_time = datetime.now(timezone.utc)
-    while not (stop_event and stop_event.is_set()):
-        try:
-            async with get_client() as client:
+    last_timestamp = datetime.now(timezone.utc)
+
+    async with get_client() as client:
+        while not (stop_event and stop_event.is_set()):
+            try:
                 log_filter = LogFilter(
-                    flow_run={"any_": [flow_run_id]}, timestamp={"after_": start_time}
+                    flow_run_id={"any_": [flow_run_id]},
+                    timestamp={"after_": last_timestamp},
                 )
+
                 logs = await client.read_logs(
-                    log_filter=log_filter, sort=LogSort.TIMESTAMP_ASC
+                    log_filter=log_filter,
+                    sort=LogSort.TIMESTAMP_ASC,
                 )
 
                 with open(logfile, "a") as f:
                     for log in logs:
-                        if log.id not in seen_ids:
-                            seen_ids.add(log.id)
-                            # Only include logs without task_run_id = flow-level logs
-                            if log.task_run_id is None:
-                                ts = log.timestamp.astimezone(local_tz).strftime(
-                                    "%Y-%m-%d %H:%M:%S"
-                                )
-                                level = getattr(log, "INFO", str(log.level))
-                                f.write(
-                                    f"{level} | {ts} | {flow_name} | {log.message}\n"
-                                )
+                        if log.id in seen_ids:
+                            continue
 
-        except Exception as e:
-            with open(logfile, "a") as f:
-                f.write(f"Error fetching flow logs: {e}\n")
+                        seen_ids.add(log.id)
 
-        await asyncio.sleep(poll_interval)
+                        # Only main flow logs
+                        if log.task_run_id is None and log.flow_run_id == flow_run_id:
+                            ts = log.timestamp.astimezone(local_tz).strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            level = (
+                                log.level.name
+                                if hasattr(log.level, "name")
+                                else str(log.level)
+                            )
+
+                            f.write(
+                                f"{level} | {ts} | {flow_name} | {log.message}\n"
+                            )
+
+                        # move cursor forward
+                        if log.timestamp > last_timestamp:
+                            last_timestamp = log.timestamp
+
+            except Exception as e:
+                with open(logfile, "a") as f:
+                    f.write(f"Error fetching flow logs: {e}\n")
+
+            await asyncio.sleep(poll_interval)
 
 
 def start_log_task_saver(

@@ -312,7 +312,7 @@ def single_ms_flag(
         # Tfcrop flag
         ##############
         if use_tfcrop:
-            print("Usinf tfcrop flagging.")
+            print("Using tfcrop flagging.")
             try:
                 flag_cmd = (
                     f"flagdata("
