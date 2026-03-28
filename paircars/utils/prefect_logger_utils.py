@@ -98,7 +98,7 @@ async def save_logs_by_flow_id(
                         if log.id not in seen_ids:
                             seen_ids.add(log.id)
                             # Only include logs without task_run_id = flow-level logs
-                            if log.task_run_id is None:
+                            if log.task_run_id is None and str(log.flow_run_id)==str(flow_run_id):
                                 ts = log.timestamp.astimezone(local_tz).strftime(
                                     "%Y-%m-%d %H:%M:%S"
                                 )
