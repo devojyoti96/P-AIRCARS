@@ -2180,7 +2180,6 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     temp_times = times[~np.isnan(times)]
     maxtimepos = np.argmax(temp_times)
     mintimepos = np.argmin(temp_times)
-    f"{timestamps[mintimepos].split('T')[0]}"
     tstart = f"{timestamps[mintimepos].split('T')[0]} {':'.join(timestamps[mintimepos].split('T')[-1].split(':')[:2])}"
     tend = f"{timestamps[maxtimepos].split('T')[0]} {':'.join(timestamps[maxtimepos].split('T')[-1].split(':')[:2])}"
     results = Fido.search(
