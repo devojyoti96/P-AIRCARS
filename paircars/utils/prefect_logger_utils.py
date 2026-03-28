@@ -60,7 +60,7 @@ async def save_logs_by_task_id(
         await asyncio.sleep(poll_interval)
 
 
-async def save_logs_by_flow_id(
+'''async def save_logs_by_flow_id(
     flow_run_id, flow_name, logfile, poll_interval=5, stop_event=None
 ):
     """
@@ -87,7 +87,7 @@ async def save_logs_by_flow_id(
         try:
             async with get_client() as client:
                 log_filter = LogFilter(
-                    flow_run={"any_": [flow_run_id]}, #timestamp={"after_": start_time}
+                    flow_run={"any_": [flow_run_id]}, timestamp={"after_": start_time}
                 )
                 logs = await client.read_logs(
                     log_filter=log_filter, sort=LogSort.TIMESTAMP_ASC
@@ -102,14 +102,91 @@ async def save_logs_by_flow_id(
                                 ts = log.timestamp.astimezone(local_tz).strftime(
                                     "%Y-%m-%d %H:%M:%S"
                                 )
-                                level = getattr(log, "INFO", str(log.level))
+                                level = log.level.name if hasattr(log.level, "name") else str(log.level)
                                 f.write(
                                     f"{level} | {ts} | {flow_name} | {log.message}\n"
                                 )
         except Exception as e:
             with open(logfile, "a") as f:
                 f.write(f"Error fetching flow logs: {e}\n")
-        await asyncio.sleep(poll_interval)
+        await asyncio.sleep(poll_interval)'''
+        
+        
+async def save_logs_by_flow_id(
+    flow_run_id, flow_name, logfile, poll_interval=5, stop_event=None
+):
+    import os
+    import asyncio
+    from datetime import datetime, timezone, timedelta
+
+    logdir = os.path.dirname(os.path.abspath(logfile))
+    os.makedirs(logdir, exist_ok=True)
+
+    seen_ids = set()
+
+    # 🔥 start slightly in past
+    last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=5)
+
+    async with get_client() as client:
+        while True:
+            if stop_event and stop_event.is_set():
+                break
+
+            try:
+                log_filter = LogFilter(
+                    flow_run_id={"any_": [flow_run_id]},
+                    timestamp={"after_": last_timestamp},
+                )
+
+                logs = await client.read_logs(
+                    log_filter=log_filter,
+                    sort=LogSort.TIMESTAMP_ASC,
+                )
+
+                # DEBUG (keep this for now)
+                print(f"[LOG STREAM] fetched {len(logs)} logs")
+
+                with open(logfile, "a") as f:
+                    for log in logs:
+
+                        # avoid duplicates
+                        if log.id in seen_ids:
+                            continue
+                        seen_ids.add(log.id)
+
+                        # strict filtering
+                        if str(log.flow_run_id) != str(flow_run_id):
+                            continue
+
+                        if log.task_run_id is None:
+                            ts = log.timestamp.astimezone(local_tz).strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+
+                            level = (
+                                log.level.name
+                                if hasattr(log.level, "name")
+                                else str(log.level)
+                            )
+
+                            f.write(
+                                f"{level} | {ts} | {flow_name} | {log.message}\n"
+                            )
+
+                        # 🔥 move cursor forward
+                        if log.timestamp > last_timestamp:
+                            last_timestamp = log.timestamp
+
+            except Exception as e:
+                print("LOG ERROR:", e)
+                with open(logfile, "a") as f:
+                    f.write(f"Error fetching flow logs: {e}\n")
+
+            # interruptible sleep (better shutdown)
+            for _ in range(poll_interval):
+                if stop_event and stop_event.is_set():
+                    break
+                await asyncio.sleep(1)
 
 
 def start_log_task_saver(
