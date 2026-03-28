@@ -87,7 +87,7 @@ async def save_logs_by_flow_id(
         try:
             async with get_client() as client:
                 log_filter = LogFilter(
-                    flow_run={"any_": [flow_run_id]}, timestamp={"after_": start_time}
+                    flow_run={"any_": [flow_run_id]}, #timestamp={"after_": start_time}
                 )
                 logs = await client.read_logs(
                     log_filter=log_filter, sort=LogSort.TIMESTAMP_ASC
