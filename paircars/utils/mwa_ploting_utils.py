@@ -831,6 +831,9 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
     """
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     fits_header = fits.getheader(fits_image)
+    org_data = fits.getdata(fits_image)
+    data_shape = org_data.shape
+    del org_data
     if fits_header["NAXIS4"]==4 or fits_header["NAXIS3"]==4:
         stokes="IQUV"
     else:
@@ -857,7 +860,7 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
             data = fits.getdata(outfile)
             data = data[np.newaxis,np.newaxis,...]
         if data.ndim==4:
-            if data.shape[0]==4:
+            if data_shape[0]==4:
                 if p==0:
                     data = np.repeat(data,4,axis=0)
                 data[p,0,...]=mwamap.data
