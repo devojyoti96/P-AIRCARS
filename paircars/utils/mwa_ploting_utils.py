@@ -831,23 +831,39 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
     """
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     fits_header = fits.getheader(fits_image)
-    mwamap = get_mwamap(fits_image)
-    if len(xlim) == 2 and len(ylim) == 2:
-        top_right = SkyCoord(
-            xlim[1] * u.arcsec, ylim[1] * u.arcsec, frame=mwamap.coordinate_frame
-        )
-        bottom_left = SkyCoord(
-            xlim[0] * u.arcsec, ylim[0] * u.arcsec, frame=mwamap.coordinate_frame
-        )
-        mwamap = mwamap.submap(bottom_left, top_right=top_right)
-    if outdir == "":
-        outdir = os.path.dirname(os.path.abspath(fits_image))
-    outfile = f"{outdir}/{os.path.basename(fits_image).split('.fits')[0]}_HPC.fits"
-    if os.path.exists(outfile):
-        os.system(f"rm -rf {outfile}")
-    mwamap.save(outfile, filetype="fits")
-    data = fits.getdata(outfile)
-    data = data[np.newaxis, np.newaxis, ...]
+    data = fits.getdata(fits_image)
+    if fits_header["NAXIS4"]==4 or fits_header["NAXIS3"]==4:
+        stokes="IQUV"
+    else:
+        stokes="I"
+    pol_list = list(stokes)
+    for p in range(len(pol_list)):
+        pol = pol_list[p]
+        mwamap = get_mwamap(fits_image, pol=pol)
+        if len(xlim) == 2 and len(ylim) == 2:
+            top_right = SkyCoord(
+                xlim[1] * u.arcsec, ylim[1] * u.arcsec, frame=mwamap.coordinate_frame
+            )
+            bottom_left = SkyCoord(
+                xlim[0] * u.arcsec, ylim[0] * u.arcsec, frame=mwamap.coordinate_frame
+            )
+            mwamap = mwamap.submap(bottom_left, top_right=top_right)
+        if outdir == "":
+            outdir = os.path.dirname(os.path.abspath(fits_image))
+        outfile = f"{outdir}/{os.path.basename(fits_image).split('.fits')[0]}_HPC.fits"
+        if os.path.exists(outfile):
+            os.system(f"rm -rf {outfile}")
+        if p==0:
+            mwamap.save(outfile, filetype="fits")
+        if data.ndim==4:
+            if data.shape[0]==4:
+                data[p,0,...]=mwamap.data
+            else:
+                data[0,p,...]=mwamap.data
+        elif data.ndim==3:
+            data[p,...]=mwamap.data
+        else:
+            data = mwamap.data
     hpc_header = fits.getheader(outfile)
     for key in [
         "NAXIS",
@@ -1779,7 +1795,7 @@ def make_mwa_overlay(
     mwa_header = mwamap.meta
     euv_header = euv_map.meta
 
-    euv_pix = max(1024, int(euv_header["naxis1"] * 1.0))
+    euv_pix = max(1024, int(euv_header["naxis1"] * euv_image_scaling))
     euv_header["naxis1"] * euv_header["cdelt1"]
     mwa_image_fov = mwa_header["naxis1"] * mwa_header["cdelt1"]
 
