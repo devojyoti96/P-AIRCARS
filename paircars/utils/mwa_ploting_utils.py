@@ -874,7 +874,6 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
             data[p,...]=mwamap.data
         else:
             data = mwamap.data
-    print (data.shape)
     hpc_header = fits.getheader(outfile)
     for key in [
         "NAXIS",
@@ -984,7 +983,7 @@ def plot_in_hpc(
         pass
     pixel_scale = abs(mwa_header["CDELT1"]) * 3600.0  # In arcsec
     obstime = Time(mwa_header["date-obs"])
-    mwa_map_rotate = get_mwamap(fits_image)
+    mwa_map_rotate = get_mwamap(fits_image, pol="I")
     top_right = SkyCoord(
         xlim[1] * u.arcsec, ylim[1] * u.arcsec, frame=mwa_map_rotate.coordinate_frame
     )
@@ -1101,15 +1100,15 @@ def plot_in_hpc(
                 output_image = (
                     outdir
                     + "/"
-                    + os.path.basename(fits_image).split(".fits")[0]
-                    + f"_contour.{ext}"
+                    + os.path.basename(fits_image).split(".fits")[0].split("_IQUV")[0]
+                    + f"_I_contour.{ext}"
                 )
             else:
                 output_image = (
                     outdir
                     + "/"
-                    + os.path.basename(fits_image).split(".fits")[0]
-                    + f".{ext}"
+                    + os.path.basename(fits_image).split(".fits")[0].split("_IQUV")[0]
+                    + f"_I.{ext}"
                 )
             output_image_list.append(output_image)
         for output_image in output_image_list:
