@@ -524,15 +524,21 @@ def submit_slurm_master_flow(args, jobid):
                             continue
                         last_lines.append(line)
                         lower = line.lower()
+                        upper = line.upper()
                         if (
                             "task run" in lower or "flow run" in lower
                         ) and "p-aircars execution is finished" not in lower:
                             only_run_print = True
                         if (
-                            "traceback" in lower or "killed" in lower
+                            "killed" in lower
+                            or (
+                                "ERROR" in upper
+                                and "flow run" in lower
+                                and f"paircars_{jobid}" in lower
+                            )
                         ) and not printing_traceback:
                             printing_traceback = True
-                            traceback_waittime = 15
+                            traceback_waittime = 300
                         if (
                             printing_traceback
                             or not only_run_print
