@@ -871,6 +871,7 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
             data[p,...]=mwamap.data
         else:
             data = mwamap.data
+    print (data.shape)
     hpc_header = fits.getheader(outfile)
     for key in [
         "NAXIS",
