@@ -116,7 +116,7 @@ def main(
             )
 
     if observer is None:
-        logger.ifno(
+        logger.info(
             "Remote link or jobname is blank. Not transmiting to remote logger."
         )
 
