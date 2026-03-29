@@ -836,6 +836,11 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
     else:
         stokes="I"
     pol_list = list(stokes)
+    if outdir == "":
+        outdir = os.path.dirname(os.path.abspath(fits_image))
+    outfile = f"{outdir}/{os.path.basename(fits_image).split('.fits')[0]}_HPC.fits"
+    if os.path.exists(outfile):
+        os.system(f"rm -rf {outfile}")
     for p in range(len(pol_list)):
         pol = pol_list[p]
         mwamap = get_mwamap(fits_image, pol=pol)
@@ -847,11 +852,6 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
                 xlim[0] * u.arcsec, ylim[0] * u.arcsec, frame=mwamap.coordinate_frame
             )
             mwamap = mwamap.submap(bottom_left, top_right=top_right)
-        if outdir == "":
-            outdir = os.path.dirname(os.path.abspath(fits_image))
-        outfile = f"{outdir}/{os.path.basename(fits_image).split('.fits')[0]}_HPC.fits"
-        if os.path.exists(outfile):
-            os.system(f"rm -rf {outfile}")
         if p==0:
             mwamap.save(outfile, filetype="fits")
             data = fits.getdata(outfile)
