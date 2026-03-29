@@ -13,7 +13,7 @@ async def save_logs_by_task_id(
     task_run_id, task_name, logfile, poll_interval=5, stop_event=None
 ):
     """
-    Fetch and save prefect flow logs to a file
+    Fetch and save prefect task logs to a file
 
     Parameters
     ----------
@@ -32,48 +32,61 @@ async def save_logs_by_task_id(
     os.makedirs(logdir, exist_ok=True)
     seen_ids = set()
     last_timestamp = datetime.now(timezone.utc) - timedelta(minutes=5)
-    while True:
-        should_stop = stop_event and stop_event.is_set()
-        try:
-            async with get_client() as client:
+    async with get_client() as client:
+        while True:
+            should_stop = stop_event and stop_event.is_set()
+            try:
                 log_filter = LogFilter(
-                    task_run={"any_": [task_run_id]}, timestamp={"after_": last_timestamp}
+                    task_run_id={"any_": [task_run_id]},
+                    timestamp={"after_": last_timestamp},
                 )
                 logs = await client.read_logs(
                     log_filter=log_filter,
                     sort=LogSort.TIMESTAMP_ASC,
                 )
+                print(f"[LOG STREAM] fetched {len(logs)} logs")
                 with open(logfile, "a") as f:
                     for log in logs:
-                        if log.id not in seen_ids:
-                            seen_ids.add(log.id)
+                        if log.id in seen_ids:
+                            continue
+                        seen_ids.add(log.id)
+                        if str(log.task_run_id) == str(task_run_id):
                             ts = log.timestamp.astimezone(local_tz).strftime(
                                 "%Y-%m-%d %H:%M:%S"
                             )
-                            level = log.level.name if hasattr(log.level, "name") else str(log.level)
-                            if str(log.task_run_id) == str(task_run_id) and log.flow_run_id is None:
-                                f.write(
-                                    f"{level} | {ts} | {task_name} | {log.message}\n"
-                                )
-        except Exception as e:
-            with open(logfile, "a") as f:
-                f.write(f"Error fetching logs: {e}\n")
-        if should_stop:
-            break
-        # interruptible sleep
-        for _ in range(poll_interval):
-            if stop_event and stop_event.is_set():
+                            level = (
+                                log.level.name
+                                if hasattr(log.level, "name")
+                                else str(log.level)
+                            )
+                            f.write(
+                                f"{level} | {ts} | {task_name} | {log.message}\n"
+                            )
+                        if log.timestamp > last_timestamp:
+                            last_timestamp = log.timestamp
+            except Exception as e:
+                print("LOG ERROR:", e)
+                with open(logfile, "a") as f:
+                    f.write(f"Error fetching task logs: {e}\n")
+            if should_stop:
                 break
-            await asyncio.sleep(1)
+            # interruptible sleep
+            for _ in range(poll_interval):
+                if stop_event and stop_event.is_set():
+                    break
+                await asyncio.sleep(1)
         try:
             for _ in range(3):  # retry a few times to catch delayed logs
                 log_filter = LogFilter(
-                    task_run={"any_": [task_run_id]}, timestamp={"after_": last_timestamp}
+                    task_run_id={"any_": [task_run_id]},
+                    timestamp={"after_": last_timestamp},
                 )
+
                 logs = await client.read_logs(
                     log_filter=log_filter,
                     sort=LogSort.TIMESTAMP_ASC,
                 )
+
                 if not logs:
                     break
                 print(f"[FINAL DRAIN] fetched {len(logs)} logs")
@@ -82,9 +95,7 @@ async def save_logs_by_task_id(
                         if log.id in seen_ids:
                             continue
                         seen_ids.add(log.id)
-                        if str(log.task_run_id) != str(task_run_id):
-                            continue
-                        if log.flow_run_id is None:
+                        if str(log.task_run_id) == str(task_run_id):
                             ts = log.timestamp.astimezone(local_tz).strftime(
                                 "%Y-%m-%d %H:%M:%S"
                             )
@@ -101,6 +112,7 @@ async def save_logs_by_task_id(
                 await asyncio.sleep(1)
         except Exception as e:
             print("FINAL DRAIN ERROR:", e)
+
 
         
 async def save_logs_by_flow_id(
