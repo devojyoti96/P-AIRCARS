@@ -7,10 +7,12 @@ import requests
 import os
 import traceback
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.dates as mdates
+from matplotlib.gridspec import GridSpec
+from datetime import datetime
 from sunpy.net import Fido, attrs as a
 from sunpy.map import Map
 from sunpy.timeseries import TimeSeries
@@ -701,7 +703,7 @@ def plot_caltable_diagnostics(
                 drop_cache(caltable)
 
 
-def get_mwamap(fits_image, do_sharpen=False):
+def get_mwamap(fits_image, pol="I", do_sharpen=False):
     """
     Make MWA sunpy map
 
@@ -709,6 +711,8 @@ def get_mwamap(fits_image, do_sharpen=False):
     ----------
     fits_image : str
         MWA fits image
+    pol : str, optional
+        Stokes plane
     do_sharpen : bool, optional
         Sharpen the image
 
@@ -729,8 +733,34 @@ def get_mwamap(fits_image, do_sharpen=False):
     mwa_hdu = fits.open(fits_image)  # Opening MWA fits file
     mwa_header = mwa_hdu[0].header  # mwa header
     mwa_data = mwa_hdu[0].data
-    if len(mwa_data.shape) > 2:
-        mwa_data = mwa_data[0, 0, :, :]  # mwa data
+    if mwa_data.ndim == 4:
+        if pol=="I":
+            mwa_data = mwa_data[0, 0, ...]  # mwa data
+        elif pol=="Q":
+            if mwa_data.shape[0]>1:
+                mwa_data = mwa_data[1, 0, ...]
+            else:
+                mwa_data = mwa_data[0, 1, ...]
+        elif pol=="U":
+            if mwa_data.shape[0]>1:
+                mwa_data = mwa_data[2, 0, ...]
+            else:
+                mwa_data = mwa_data[0, 2, ...]
+        elif pol=="V":
+            if mwa_data.shape[0]>1:
+                mwa_data = mwa_data[3, 0, ...]
+            else:
+                mwa_data = mwa_data[0, 3, ...]
+    elif mwa_data.ndim == 3:
+        if pol=="I":
+            mwa_data = mwa_data[0, ...]  # mwa data
+        elif pol=="Q":
+            mwa_data = mwa_data[1, ...]
+        elif pol=="U":
+            mwa_data = mwa_data[2, ...]
+        elif pol=="V":
+            mwa_data = mwa_data[3, ...]
+            
     if mwa_header["CTYPE3"] == "FREQ":
         frequency = mwa_header["CRVAL3"] * u.Hz
     elif mwa_header["CTYPE4"] == "FREQ":
@@ -1676,6 +1706,7 @@ def make_mwa_overlay(
     plot_file_prefix,
     plot_mwa_colormap=True,
     enhance_offdisk=False,
+    pol="I",
     contour_levels=[0.05, 0.1, 0.2, 0.4, 0.6, 0.8],
     euv_image_scaling=0.5,
     do_sharpen_euv=True,
@@ -1703,6 +1734,8 @@ def make_mwa_overlay(
         Plot MWA map colormap
     enhance_offdisk : bool, optional
         Enhance off-disk emission
+    pol : str, optional
+        Stokes plane of MWA image
     contour_levels : list, optional
         Contour levels in fraction of peak
     euv_image_scaling : float, optional
@@ -1731,7 +1764,7 @@ def make_mwa_overlay(
         print(f"Making overlay for image: {os.path.basename(mwa_image)}")
     euv_map = get_map_cached(euv_fits)
 
-    mwamap = get_mwamap(mwa_image)
+    mwamap = get_mwamap(mwa_image, pol=pol)
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)
 
@@ -1746,7 +1779,7 @@ def make_mwa_overlay(
     mwa_header = mwamap.meta
     euv_header = euv_map.meta
 
-    euv_pix = max(1024, int(euv_header["naxis1"] * euv_image_scaling))
+    euv_pix = max(1024, int(euv_header["naxis1"] * 1.0))
     euv_header["naxis1"] * euv_header["cdelt1"]
     mwa_image_fov = mwa_header["naxis1"] * mwa_header["cdelt1"]
 
@@ -1790,7 +1823,7 @@ def make_mwa_overlay(
             print("No overlay is plotting.")
             return
 
-        title = f"EUV time: {euvtime}\n MWA time: {mwatime}"
+        title = f"EUV time: {euvtime}\n MWA time: {mwatime}\n Stokes {pol}"
         if "transparent_inferno" not in plt.colormaps():
             cmap = cm.get_cmap("inferno", 256)
             colors = cmap(np.linspace(0, 1, 256))
@@ -2109,165 +2142,174 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
     str
         Plot name
     """
-    from matplotlib.gridspec import GridSpec
-
     if showgui:
         matplotlib.use("TkAgg")
     matplotlib.rcParams.update({"font.size": 18})
     if isinstance(dsfiles, str):
         dsfiles = [dsfiles]
-    start_freqs = []
     dsfiles = np.array(dsfiles)
-
+    start_freqs = []
     for dsfile in dsfiles:
         freqs, _, _, _, _, _ = np.load(dsfile, allow_pickle=True)
         start_freqs.append(freqs[0])
-
-    start_freqs = np.array(start_freqs)
     pos = np.argsort(start_freqs)
-    dsfiles = dsfiles[pos]
-    dsfiles = dsfiles.tolist()
-
+    dsfiles = dsfiles[pos].tolist()
     for i, dsfile in enumerate(dsfiles):
         freqs_i, times_i, timestamps_i, T_data_i, S_data_i, flags = np.load(
             dsfile, allow_pickle=True
         )
-        if plot_quantity == "TB":
-            data_i = T_data_i / 10**6
-        else:
-            data_i = S_data_i
+        data_i = T_data_i / 1e6 if plot_quantity == "TB" else S_data_i
         data_i[flags] = np.nan
-        total_timestamps = data_i.shape[1]
-        for t in range(total_timestamps):
+        # interpolate along freq axis
+        for t in range(data_i.shape[1]):
             t_data = data_i[:, t]
             t_data_interp = interpolate_nans(t_data)
             t_data_interp[t_data_interp == 0] = np.nan
             data_i[:, t] = t_data_interp
-
         if i == 0:
             freqs = freqs_i
-            times = times_i
             timestamps = timestamps_i
             data = data_i
         else:
             df = np.nanmedian(np.diff(freqs))
             gapsize = int(np.round((np.nanmin(freqs_i) - np.nanmax(freqs)) / df))
-            gapsize = 1  # max(gapsize, 0)
+            gapsize = 1
 
             if 0 < gapsize < 5:
-                last_freq_median = np.nanmedian(data[-1, :])
-                new_freq_median = np.nanmedian(data_i[0, :])
-                if np.isfinite(new_freq_median) and new_freq_median != 0:
-                    data_i = (data_i / new_freq_median) * last_freq_median
-
+                last_med = np.nanmedian(data[-1, :])
+                new_med = np.nanmedian(data_i[0, :])
+                if np.isfinite(new_med) and new_med != 0:
+                    data_i = (data_i / new_med) * last_med
             if gapsize > 0:
                 gap = np.full((gapsize, data.shape[1]), np.nan)
                 data = np.concatenate([data, gap, data_i], axis=0)
                 freqs = np.append(freqs, np.full(gapsize, np.nan))
             else:
                 data = np.concatenate([data, data_i], axis=0)
-
             freqs = np.append(freqs, freqs_i)
-
-    ########################################
-    # Time and frequency range
-    ########################################
+    # --------------------------------------------------
+    # Trim invalid freq rows
+    # --------------------------------------------------
     median_bandshape = np.nanmedian(data, axis=-1)
     pos = np.where(~np.isnan(median_bandshape))[0]
     if len(pos) > 0:
-        data = data[min(pos) : max(pos), :]
-        freqs = freqs[min(pos) : max(pos)]
-    temp_times = times[~np.isnan(times)]
-    maxtimepos = np.argmax(temp_times)
-    mintimepos = np.argmin(temp_times)
-    tstart = f"{timestamps[mintimepos].split('T')[0]} {':'.join(timestamps[mintimepos].split('T')[-1].split(':')[:2])}"
-    tend = f"{timestamps[maxtimepos].split('T')[0]} {':'.join(timestamps[maxtimepos].split('T')[-1].split(':')[:2])}"
-    results = Fido.search(
-        a.Time(tstart, tend), a.Instrument("XRS"), a.Resolution("avg1m")
-    )
-    files = Fido.fetch(results, path=os.path.dirname(dsfiles[0]), overwrite=False)
-    goes_tseries = TimeSeries(files, concatenate=True)
-    goes_tseries = goes_tseries.truncate(tstart, tend)
+        data = data[min(pos): max(pos), :]
+        freqs = freqs[min(pos): max(pos)]
+    # --------------------------------------------------
+    # Convert timestamps → datetime (MASTER AXIS)
+    # --------------------------------------------------
+    times_dt = np.array([
+        datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%f")
+        if "." in t else datetime.strptime(t, "%Y-%m-%dT%H:%M:%S")
+        for t in timestamps
+    ])
+    # --------------------------------------------------
+    # Fetch GOES (for overlay only)
+    # --------------------------------------------------
+    tstart = times_dt[0].strftime("%Y-%m-%d %H:%M")
+    tend = times_dt[-1].strftime("%Y-%m-%d %H:%M")
+    try:
+        results = Fido.search(
+            a.Time(tstart, tend),
+            a.Instrument("XRS"),
+            a.Resolution("avg1m")
+        )
+        files = Fido.fetch(results, path=os.path.dirname(dsfiles[0]), overwrite=False)
+        goes_tseries = TimeSeries(files, concatenate=True).truncate(tstart, tend)
+    except Exception:
+        goes_tseries = None
+    # --------------------------------------------------
+    # MWA time series
+    # --------------------------------------------------
     timeseries = np.nanmean(data, axis=0)
-    # Normalization
+    # --------------------------------------------------
+    # Normalize
+    # --------------------------------------------------
     norm = ImageNormalize(
         data,
         stretch=LogStretch(1),
         vmin=0.99 * np.nanmin(data),
         vmax=0.99 * np.nanmax(data),
     )
-    for goes_f in files:
-        os.system(f"rm -rf {goes_f}")
     try:
-        # Create figure and GridSpec layout
         fig = plt.figure(figsize=(18, 10))
-        gs = GridSpec(
-            nrows=3, ncols=2, width_ratios=[1, 0.03], height_ratios=[4, 1.5, 2]
-        )
-        # Axes
+        gs = GridSpec(3, 2, width_ratios=[1, 0.03], height_ratios=[4, 1.5, 2])
         ax_spec = fig.add_subplot(gs[0, 0])
         ax_ts = fig.add_subplot(gs[1, 0])
         ax_goes = fig.add_subplot(gs[2, 0])
-        cax = fig.add_subplot(gs[:, 1])  # colorbar spans both rows
-        # Plot dynamic spectrum
+        cax = fig.add_subplot(gs[:, 1])
+        # --------------------------------------------------
+        # Dynamic spectrum (FIXED AXIS)
+        # --------------------------------------------------
         im = ax_spec.imshow(
-            data, aspect="auto", origin="lower", norm=norm, cmap="magma"
+            data,
+            aspect="auto",
+            origin="lower",
+            norm=norm,
+            cmap="magma",
+            extent=[
+                mdates.date2num(times_dt[0]),
+                mdates.date2num(times_dt[-1]),
+                0,
+                data.shape[0],
+            ],
         )
         ax_spec.set_ylabel("Frequency (MHz)")
-        ax_spec.set_xticklabels([])  # Remove x-axis labels from top plot
-        # Y-ticks
+        ax_spec.set_xticklabels([])
+        # Frequency ticks
         freqs_arr = np.array(freqs)
-        # Identify valid frequency rows
         valid = ~np.isnan(freqs_arr)
-        # Find start index of each contiguous valid block
-        block_starts = []
-        for i in range(len(freqs_arr)):
-            if valid[i]:
-                block_starts.append(i)
-        block_starts = np.array(block_starts)
-        # Set ticks at those positions
-        ngap = max(1, int(len(block_starts) / 12))
-        block_starts = block_starts[::ngap]
-        ax_spec.set_yticks(block_starts)
-        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in block_starts])
-        # Plot time series
-        ax_ts.plot(timeseries)
-        ax_ts.set_xlim(0, len(timeseries) - 1)
-        if plot_quantity == "TB":
-            ax_ts.set_ylabel("TB (MK)")
-        else:
-            ax_ts.set_ylabel("S (SFU)")
-        goes_tseries.plot(axes=ax_goes)
-        goes_times = goes_tseries.time
-        times_dt = goes_times.to_datetime()
-        ax_goes.set_xlim(times_dt[0], times_dt[-1])
-        ax_goes.set_ylabel(r"Flux ($\frac{W}{m^2}$)")
-        ax_goes.legend(ncol=2, loc="upper right")
-        ax_goes.set_title("GOES light curve", fontsize=14)
-        ax_ts.set_title("MWA light curve", fontsize=14)
-        ax_spec.set_title("MWA dynamic spectrum", fontsize=14)
-        ax_goes.set_xlabel("Time (UTC)")
-        # Format x-ticks
-        ax_ts.set_xticks([])
+        idx = np.where(valid)[0]
+        idx = idx[:: max(1, len(idx)//12)]
+        ax_spec.set_yticks(idx)
+        ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in idx])
+        # --------------------------------------------------
+        # MWA time series
+        # --------------------------------------------------
+        ax_ts.plot(times_dt, timeseries)
+        ax_ts.set_xlim(times_dt[0], times_dt[-1])
+        ax_ts.set_ylabel("TB (MK)" if plot_quantity == "TB" else "S (SFU)")
         ax_ts.set_xticklabels([])
+        # --------------------------------------------------
+        # GOES plot (aligned, not controlling axis)
+        # --------------------------------------------------
+        if goes_tseries is not None:
+            goes_tseries.plot(axes=ax_goes)
+        ax_goes.set_xlim(times_dt[0], times_dt[-1])
+        ax_goes.set_ylabel(r"Flux ($W/m^2$)")
+        ax_goes.set_title("GOES light curve", fontsize=14)
+        # Titles
+        ax_spec.set_title("MWA dynamic spectrum", fontsize=14)
+        ax_ts.set_title("MWA light curve", fontsize=14)
+        ax_goes.set_xlabel(f"Time (UTC), {times_dt[0].strftime('%Y-%m-%d')}")
+        # --------------------------------------------------
+        # Shared time formatting
+        # --------------------------------------------------
+        locator = mdates.AutoDateLocator()
+        formatter = mdates.DateFormatter("%H:%M:%S")
+        for ax in [ax_spec, ax_ts, ax_goes]:
+            ax.xaxis.set_major_locator(locator)
+            ax.xaxis.set_major_formatter(formatter)
+
+        # --------------------------------------------------
         # Colorbar
+        # --------------------------------------------------
         cbar = fig.colorbar(im, cax=cax)
-        if plot_quantity == "TB":
-            cbar.set_label("Brightness temperature (MK)")
-        else:
-            cbar.set_label("Flux density (SFU)")
+        cbar.set_label(
+            "Brightness temperature (MK)"
+            if plot_quantity == "TB"
+            else "Flux density (SFU)"
+        )
         plt.tight_layout()
-        # Save or show
         if plot_file:
             plt.savefig(plot_file, bbox_inches="tight")
             print(f"Plot saved: {plot_file}")
         if showgui:
             plt.show()
-            plt.close(fig)
-        else:
-            plt.close(fig)
+        plt.close(fig)
     except Exception:
         traceback.print_exc()
     finally:
         plt.close("all")
     return plot_file
+    
