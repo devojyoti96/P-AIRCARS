@@ -234,7 +234,7 @@ def cli():
         "###################\nEssential parameters\n###################"
     )
     basic_args.add_argument(
-        "mslist", type=str, help="Measurement set list, comma seperated"
+        "mslist", type=str, help="Measurement set list, comma separated"
     )
     basic_args.add_argument(
         "--workdir", type=str, default="", help="Name of work directory"

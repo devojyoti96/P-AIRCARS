@@ -883,7 +883,7 @@ def cli():
         "###################\nEssential parameters\n###################"
     )
     basic_args.add_argument(
-        "mslist", type=str, help="Name of measurement sets (Comma seperated)"
+        "mslist", type=str, help="Name of measurement sets (Comma separated)"
     )
     basic_args.add_argument("metafits", type=str, help="Metafits file")
     basic_args.add_argument(

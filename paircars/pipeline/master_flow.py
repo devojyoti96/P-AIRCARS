@@ -1691,13 +1691,13 @@ def cli():
         "--freqrange",
         type=str,
         default="",
-        help="Frequency range in MHz to select during imaging (comma-seperate, e.g. '100~110,130~140')",
+        help="Frequency range in MHz to select during imaging (comma-separated, e.g. '100~110,130~140')",
     )
     advanced_image.add_argument(
         "--timerange",
         type=str,
         default="",
-        help="Time range to select during imaging (comma-seperated, e.g. '2014/09/06/09:30:00~2014/09/06/09:45:00,2014/09/06/10:30:00~2014/09/06/10:45:00')",
+        help="Time range to select during imaging (comma-separated, e.g. '2014/09/06/09:30:00~2014/09/06/09:45:00,2014/09/06/10:30:00~2014/09/06/10:45:00')",
     )
     advanced_image.add_argument(
         "--image_freqres",
@@ -1771,15 +1771,15 @@ def cli():
         dest="make_overlay",
         help="Make overlay plot on EUV images for all images (default is to make overlays only one image per coarse channels at 10s intervals)",
     )
-    advanced_image.add_argument(
-        "--make_msplot",
-        action="store_true",
-        help="Make diagnostic plots of measurement sets",
-    )
 
     # === Advanced options ===
     advanced = parser.add_argument_group(
         "###################\nAdvanced pipeline parameters\n###################"
+    )
+    advanced.add_argument(
+        "--make_msplot",
+        action="store_true",
+        help="Make diagnostic plots of measurement sets",
     )
     advanced.add_argument(
         "--non_solar_data",

@@ -193,7 +193,7 @@ def main(
     Parameters
     ----------
     mslist : str
-        Measurement set list (comma seperated)
+        Measurement set list (comma separated)
     metafits : str
         Metafits file
     workdir : str
@@ -358,7 +358,7 @@ def cli():
         "###################\nEssential parameters\n###################"
     )
     essential.add_argument(
-        "mslist", type=str, help="Measurement set list (comma seperated)"
+        "mslist", type=str, help="Measurement set list (comma separated)"
     )
     essential.add_argument("metafits", type=str, help="Metafits file")
     essential.add_argument(

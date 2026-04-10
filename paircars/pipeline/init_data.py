@@ -406,7 +406,7 @@ def cli():
         "--emails",
         dest="emails",
         default=None,
-        help="Email addresses (comma seperated) to send Job ID and password for remote logger",
+        help="Email addresses (comma separated) to send Job ID and password for remote logger",
     )
 
     if len(sys.argv) == 1:

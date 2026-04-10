@@ -598,7 +598,7 @@ def run_basic_cal_jobs(
     Parameters
     ----------
     mslist: str
-        Name of the measurement sets (comma seperated)
+        Name of the measurement sets (comma separated)
     metafits: str
         Metafits file
     workdir : str

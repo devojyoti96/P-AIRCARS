@@ -478,7 +478,7 @@ def cli():
     basic_args.add_argument(
         "mslist",
         type=str,
-        help="Name of the measurement sets (comma seperated)",
+        help="Name of the measurement sets (comma separated)",
     )
     basic_args.add_argument(
         "metafits",
