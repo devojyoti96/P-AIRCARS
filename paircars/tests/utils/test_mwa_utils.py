@@ -28,7 +28,7 @@ def test_freq_to_MWA_coarse():
 
 def test_get_MWA_coarse_chan(dummy_msname):
     coarse = get_MWA_coarse_chan(dummy_msname)
-    assert coarse == 104
+    assert coarse == [104]
 
 
 def test_get_MWA_coarse_bands(dummy_msname):

@@ -227,11 +227,6 @@ def test_get_nearest_gaincal_table(dummy_caltable):
     assert nearest_caltable == dummy_caltable
 
 
-def test_get_gleam_uvrange(dummy_msname):
-    uvrange = get_gleam_uvrange(dummy_msname)
-    assert uvrange == "49.5~1104.6lambda"
-
-
 def test_uvrange_casa_to_quartical(dummy_msname):
     minuv, maxuv = uvrange_casa_to_quartical(dummy_msname)
     assert minuv == 0.0

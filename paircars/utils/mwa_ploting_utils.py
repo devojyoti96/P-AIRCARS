@@ -2019,7 +2019,6 @@ def plot_goes_full_timeseries(
     times_dt = times.to_datetime()
     ax.axvspan(tstart, tend, alpha=0.2)
     ax.set_xlim(times_dt[0], times_dt[-1])
-    plt.tight_layout()
     # Save or show
     if plot_file_prefix:
         plot_file = f"{workdir}/{plot_file_prefix}.{extension}"

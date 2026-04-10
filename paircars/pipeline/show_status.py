@@ -73,7 +73,7 @@ def show_local_job_status(clean_old_jobs=False):
                 else:
                     running = "Done/Stopped"
                 print_banner(
-                    f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
+                    f"Job ID: {jobid}, Work directory: {workdir}, Output directory: {outdir}, Status: {running}"
                 )
                 if clean_old_jobs and running == "Done/Stopped":
                     print(f"Removed {jobid}")
@@ -131,7 +131,7 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None, print_status=Tru
                     running = "Done/Stopped"
                 if print_status:
                     print_banner(
-                        f"Job ID: {jobid}, Work direcory: {workdir}, Output directory: {outdir}, Status: {running}"
+                        f"Job ID: {jobid}, Work directory: {workdir}, Output directory: {outdir}, Status: {running}"
                     )
                 if clean_old_jobs and running == "Done/Stopped":
                     print(f"Removed {jobid}")

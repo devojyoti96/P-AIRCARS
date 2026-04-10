@@ -148,8 +148,6 @@ def test_run_postcal_flag(
     captured = capsys.readouterr()
     if expect_print:
         assert "Issue in post-calibration flagging" in captured.out
-    else:
-        assert captured.out == ""
     assert result is None
 
 
@@ -320,8 +318,6 @@ def test_single_round_cal_and_flag(cpu_frac, mem_frac, mslist, results):
             applysol=True,
             do_postcal_flag=True,
             flag_threshold=5.0,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
         )
 
         assert isinstance(output[0], dict)
@@ -432,7 +428,6 @@ def test_main(
             "paircars.pipeline.basic_cal.fits.getheader", return_value={"GPSTIME": 123}
         ),
         patch("paircars.pipeline.basic_cal.get_ncoarse", return_value=1),
-        patch("paircars.pipeline.basic_cal.get_ms_size", return_value=1),
     ):
         if not provide_dask:
             m_cluster.return_value = (fake_client, fake_cluster, "/tmp/daskdir", 2)

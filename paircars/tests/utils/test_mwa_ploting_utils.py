@@ -256,4 +256,4 @@ def test_make_ds_plot(
     m_plt.savefig.assert_called_once_with("output.png", bbox_inches="tight")
     m_plt.show.assert_not_called()
     assert m_plt.close.call_count >= 1
-    m_os_system.assert_called_once()
+

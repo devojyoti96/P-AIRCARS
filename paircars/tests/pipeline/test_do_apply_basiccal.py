@@ -3,21 +3,6 @@ from unittest.mock import patch, MagicMock
 from paircars.pipeline.do_apply_basiccal import *
 
 
-def test_scale_bandpass(dummy_caltable):
-    expected = f"{dummy_caltable}.att"
-    result = scale_bandpass(dummy_caltable, 10, 14)
-    assert result == expected
-    assert os.path.exists(result)
-    os.system(f"rm -rf {result}")
-    assert os.path.exists(result) == False
-    expected = f"{dummy_caltable}.att"
-    result = scale_bandpass(dummy_caltable, 10, 14)
-    assert result == expected
-    assert os.path.exists(result)
-    os.system(f"rm -rf {result}")
-    assert os.path.exists(result) == False
-
-
 @pytest.mark.parametrize(
     "exists_applied, force_apply, quartical_present, quartical_msg, overwrite, raise_exc",
     [
@@ -145,7 +130,7 @@ def test_run_all_applysol(
     raise_exc,
 ):
 
-    mslist = ["a.ms", "b.ms"]
+    mslist = np.array(["a.ms", "b.ms"])
     fake_client = MagicMock()
 
     with (
@@ -153,7 +138,6 @@ def test_run_all_applysol(
         patch("paircars.pipeline.do_apply_basiccal.np.unique", return_value=mslist),
         patch("paircars.pipeline.do_apply_basiccal.fits.getheader") as m_header,
         patch("paircars.pipeline.do_apply_basiccal.glob.glob") as m_glob,
-        patch("paircars.pipeline.do_apply_basiccal.scale_bandpass") as m_scale,
         patch(
             "paircars.pipeline.do_apply_basiccal.check_datacolumn_valid"
         ) as m_checkcol,
@@ -163,8 +147,9 @@ def test_run_all_applysol(
             return_value="nearest.bcal",
         ),
         patch("paircars.pipeline.do_apply_basiccal.delayed", side_effect=lambda f: f),
-        patch("paircars.pipeline.do_apply_basiccal.applysol") as m_apply,
+        patch("paircars.pipeline.do_apply_basiccal.applysol_wrapper") as m_apply,
         patch("paircars.pipeline.do_apply_basiccal.traceback.print_exc"),
+        patch("paircars.pipeline.do_apply_basiccal.os.system") as m_system,
     ):
 
         # ---- FITS headers ----
@@ -180,9 +165,6 @@ def test_run_all_applysol(
             bpass = ["123.bcal"]
             cross = ["123.kcrosscal"] if has_crossphase else []
             m_glob.side_effect = [bpass, cross]
-
-        # ---- scale bandpass ----
-        m_scale.return_value = "scaled.bcal"
 
         # ---- MS validity ----
         if valid_ms:
@@ -200,13 +182,15 @@ def test_run_all_applysol(
             fake_client.compute.side_effect = Exception("boom")
         else:
             fake_client.compute.side_effect = lambda x: x
-            fake_client.gather.side_effect = lambda x: (
-                [0] * len(mslist) if results_sum == 0 else [1]
-            )
+            patterns = [(0, 0), (0, 1), (1, 0), (1, 1)]
+            fake_client.gather.side_effect = lambda x: [
+                (ms, patterns[i % len(patterns)], f"out_{ms}", f"err_{ms}")
+                for i, ms in enumerate(mslist)
+            ]
+        m_system.return_value=True
         result = run_all_applysol(
             mslist=mslist,
             target_metafits="target.fits",
-            calibrator_metafits="cal.fits",
             dask_client=fake_client,
             workdir="/tmp",
             caldir="/cal",
@@ -278,7 +262,6 @@ def test_main_applysol(
                 m_run.return_value = run_result
                 result, succeed, failed = main(
                     mslist=mslist,
-                    calibrator_metafits="cal.fits",
                     target_metafits="tar.fits",
                     workdir="",
                     caldir="/cal",
@@ -294,7 +277,6 @@ def test_main_applysol(
 
             result, succeed, failed = main(
                 mslist=mslist,
-                calibrator_metafits="cal.fits",
                 target_metafits="tar.fits",
                 workdir="",
                 caldir="/cal",
@@ -302,6 +284,12 @@ def test_main_applysol(
                 logfile=None,
                 dask_client=None if not provide_dask else fake_client,
             )
+            fake_client.scheduler_info.return_value = {
+                "workers": {
+                    "tcp://worker-1": {"memory_limit": 8 * 1024**3},  # 8 GB
+                    "tcp://worker-2": {"memory_limit": 4 * 1024**3},  # 4 GB
+                }
+            }
         assert result == run_result[0]
         assert succeed == run_result[1]
         assert failed == run_result[2]
@@ -318,11 +306,12 @@ def test_main_applysol(
             [
                 "prog.py",
                 "ms1.ms,ms2.ms",
+                "--target_metafits",
+                "target.metafits",
                 "--workdir",
                 "/mock/work",
                 "--caldir",
                 "/mock/caltables",
-                "--use_only_bandpass",
                 "--force_apply",
             ],
             False,

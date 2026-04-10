@@ -28,6 +28,7 @@ async def save_logs_by_task_id(
     stop_event : threading.Event
         Optional external signal to stop logging
     """
+    poll_interval=int(poll_interval)
     logdir = os.path.dirname(os.path.abspath(logfile))
     os.makedirs(logdir, exist_ok=True)
     seen_ids = set()
@@ -134,6 +135,7 @@ async def save_logs_by_flow_id(
     stop_event : threading.Event
         Optional external signal to stop logging
     """
+    poll_interval=int(poll_interval)
     logdir = os.path.dirname(os.path.abspath(logfile))
     os.makedirs(logdir, exist_ok=True)
     seen_ids = set()

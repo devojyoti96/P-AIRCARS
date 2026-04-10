@@ -33,6 +33,7 @@ def test_move_to_sun(mock_radec_sun, mock_run_chgcenter):
         msname,
         "12h00m00s",
         "-20d00m00s",
+        ncpu=1,
         only_uvw=True,
         container_name="paircarswsclean",
     )
@@ -48,7 +49,7 @@ def test_correct_solar_sidereal_motion(mock_exists, mock_system, mock_run):
     result = correct_solar_sidereal_motion(msname, verbose=True)
     mock_exists.assert_called_once_with("mock.ms/.sidereal_cor")
     mock_run.assert_called_once_with(
-        msname="mock.ms", container_name="paircarswsclean", verbose=True
+        msname="mock.ms", ncpu=1, container_name="paircarswsclean", verbose=True
     )
     mock_system.assert_called_once_with("touch mock.ms/.sidereal_cor")
     assert result == 0
