@@ -215,7 +215,7 @@ def master_control(
 
     do_sidereal_cor : bool, optional
         Perform solar sidereal motion correction or not
-    do_move_solarcenter: boo, optional
+    do_move_solarcenter: bool, optional
         Move phasecenter to solar center
     make_ds : bool, optional
         Make dynamic spectra
