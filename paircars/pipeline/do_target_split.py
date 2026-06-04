@@ -560,6 +560,7 @@ def cli():
         default="targets",
         help="Splited ms prefix name",
     )
+    adv_args.add_argument("--only_disk", action="store_true", help="Split only disk timestamps")
     adv_args.add_argument("--force_split", action="store_true", help="Force to split")
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
     adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
@@ -602,6 +603,7 @@ def cli():
         freqres=args.freqres,
         timeres=args.timeres,
         prefix=args.prefix,
+        only_disk=args.only_disk,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
         jobid=args.jobid,

@@ -101,6 +101,8 @@ def get_timeranges(
             )
             if len(filtered_timestamps) == 0:
                 filtered_timestamps = times
+    else:
+        filtered_timestamps=times
 
     start_time = min(times)
     end_time = max(times)

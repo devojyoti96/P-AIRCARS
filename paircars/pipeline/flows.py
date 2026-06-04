@@ -1034,6 +1034,8 @@ def selfcal_subflow(
             timeres = np.nanmean(np.diff(times))
             msmd.close()
             time_window = min(10, round(ntime * timeres, 1))  # Maximum 10s
+            print(f"Time window: {min(time_window, time_interval)}")
+            print(f"Time interval: {time_interval}")
             try:
                 future_selfcal_split = run_target_split_jobs.with_options(
                     task_run_name=f"split_{target_obsid}"

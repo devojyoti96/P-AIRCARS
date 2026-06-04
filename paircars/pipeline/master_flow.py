@@ -592,6 +592,8 @@ def master_control(
             has_cal = False
         basic_caldir = f"{cal_outdir}/caltables"
         os.makedirs(basic_caldir, exist_ok=True)
+    else:
+        basic_caldir=""
 
     #######################################
     # Preparing target working directories
@@ -1826,7 +1828,7 @@ def cli():
         "--no_solarcenter_move",
         action="store_false",
         dest="do_move_solarcenter",
-        help="Disable moving phaseceneter to solar center",
+        help="Disable moving phasecenter to solar center",
     )
     advanced.add_argument(
         "--no_selfcal",
