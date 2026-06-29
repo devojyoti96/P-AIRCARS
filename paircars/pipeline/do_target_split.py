@@ -19,12 +19,13 @@ from paircars.utils.ms_metadata import get_timeranges
 from paircars.utils.mwa_utils import (
     get_MWA_coarse_bands,
     get_MWA_coarse_chan,
+    get_bad_chans,
 )
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
 )
-from paircars.utils.resource_utils import drop_cache
+from paircars.utils.resource_utils import drop_cache, limit_threads
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -121,6 +122,8 @@ def split_target_scans(
     if logger is None:
         logger = get_logger_safe()
     n_threads = max(1, n_threads)
+    limit_threads(n_threads=n_threads)
+    from casatasks import flagdata
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
         return 1, []
@@ -139,6 +142,11 @@ def split_target_scans(
         else:
             flag_central_chan = True
         logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
+        logger.debug("Flagging bad channels.")
+        for msname in mslist:
+            bad_spw = get_bad_chans(msname, flag_central_chan = flag_central_chan)
+            logger.debug(f"flagdata(vis=\'{msname}\',spw=\'{bad_spw}\',mode=\'manual\',flagbackup=False)")
+            flagdata(vis = msname, spw = bad_spw, mode="manual", flagbackup=False)
 
         tasks = []
         splited_ms_list = []
@@ -178,9 +186,10 @@ def split_target_scans(
                 coarse_chan = coarse_chans[c]
                 if coarse_chan in use_coarse_chans:
                     chan = coarse_channel_bands[c]
-                    good_chans = chan[2]
-                    good_chans = [f"{i}" for i in good_chans]
-                    good_spwlist.append(f"0:{';'.join(good_chans)}")
+                    start_chan = chan[0]
+                    end_chan = chan[1]
+                    #good_chans = [f"{i}" for i in good_chans]
+                    good_spwlist.append(f"0:{start_chan}~{end_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
             timerange_list = get_timeranges(
