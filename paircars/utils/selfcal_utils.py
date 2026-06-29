@@ -348,57 +348,55 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
     try:
         result = flag_non_disk(msname)
         if result != 0:
-            logger.info("Could not flag non-disk time properly.")
-            msg = 1
-        else:
-            ###################################
-            # Import simulated QS model
-            ###################################
-            qs_model = make_qs_model(
-                msname, clname=f"{os.path.basename(msname).split('.ms')[0]}_qs.cl"
-            )
-            delmod(vis=msname, otf=True, scr=True)
-            ft(vis=msname, complist=qs_model, usescratch=True)
-            os.system(f"rm -rf {qs_model}")
+            logger.warning("Could not flag non-disk time properly.")
+        ###################################
+        # Import simulated QS model
+        ###################################
+        qs_model = make_qs_model(
+            msname, clname=f"{os.path.basename(msname).split('.ms')[0]}_qs.cl"
+        )
+        delmod(vis=msname, otf=True, scr=True)
+        ft(vis=msname, complist=qs_model, usescratch=True)
+        os.system(f"rm -rf {qs_model}")
 
-            #####################
-            # Perform calibration
-            #####################
+        #####################
+        # Perform calibration
+        #####################
+        logger.info(
+            f"gaincal(vis='{msname}',caltable='{bpass_caltable}',uvrange='<100lambda',refant='{refant}',solint='{solint}',minsnr=3,calmode='p')\n"
+        )
+        with suppress_output():
+            gaincal(
+                vis=msname,
+                caltable=bpass_caltable,
+                uvrange="<100lambda",
+                refant=refant,
+                minsnr=3,
+                solint=f"{solint}",
+                solnorm=True,
+                calmode="p",
+            )
+        if not os.path.exists(bpass_caltable):
+            logger.info("No gain solutions are found.\n")
+            msg = 1
+            bpass_caltable = ""
+        else:
+            ########################
+            # Applying solutions
+            ########################
+
             logger.info(
-                f"gaincal(vis='{msname}',caltable='{bpass_caltable}',uvrange='<100lambda',refant='{refant}',solint='{solint}',minsnr=1,calmode='p')\n"
+                f"applycal(vis={msname},gaintable=[{bpass_caltable}],interp=['linear'],applymode='calonly',calwt=[False])\n"
             )
             with suppress_output():
-                gaincal(
+                applycal(
                     vis=msname,
-                    caltable=bpass_caltable,
-                    uvrange="<100lambda",
-                    refant=refant,
-                    minsnr=1,
-                    solint=f"{solint}",
-                    solnorm=True,
-                    calmode="p",
+                    gaintable=[bpass_caltable],
+                    interp=["linear"],
+                    applymode="calonly",
+                    calwt=[False],
                 )
-            if not os.path.exists(bpass_caltable):
-                logger.info("No gain solutions are found.\n")
-                msg = 2
-                bpass_caltable = ""
-            else:
-                ########################
-                # Applying solutions
-                ########################
-
-                logger.info(
-                    f"applycal(vis={msname},gaintable=[{bpass_caltable}],interp=['linear'],applymode='calonly',calwt=[False])\n"
-                )
-                with suppress_output():
-                    applycal(
-                        vis=msname,
-                        gaintable=[bpass_caltable],
-                        interp=["linear"],
-                        applymode="calonly",
-                        calwt=[False],
-                    )
-                msg = 0
+            msg = 0
     except Exception:
         logger.exception(traceback.print_exc())
         msg = 2
