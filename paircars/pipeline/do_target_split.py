@@ -230,7 +230,7 @@ def split_target_scans(
         for r in result_wrapper:
             result.append(r[0])
             logger.debug("================")
-            logger.debug(f"Worker log for: {os.path.basename(r[0])}")
+            logger.debug(f"Worker log for: {os.path.basename(r[0][1])}")
             logger.debug("================")
             for line in r[1].splitlines():
                 logger.debug(line)
