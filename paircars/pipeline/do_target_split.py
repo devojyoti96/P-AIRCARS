@@ -228,7 +228,7 @@ def split_target_scans(
         result_wrapper = dask_client.gather(future)
         result = []
         for r in result_wrapper:
-            result.append(r[0])
+            result.append(r[0][1])
             logger.debug("================")
             logger.debug(f"Worker log for: {os.path.basename(r[0][1])}")
             logger.debug("================")
