@@ -188,7 +188,6 @@ def split_target_scans(
                     chan = coarse_channel_bands[c]
                     start_chan = chan[0]
                     end_chan = chan[1]
-                    #good_chans = [f"{i}" for i in good_chans]
                     good_spwlist.append(f"0:{start_chan}~{end_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
@@ -481,10 +480,6 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-        if msg == 0:
-            logger.info("All measurement sets are splited successfully.")
-        else:
-            logger.error("Error occured in spliting measurement sets.")
         return msg, expected, succeed
 
 
