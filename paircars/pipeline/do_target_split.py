@@ -123,11 +123,9 @@ def split_target_scans(
     if logger is None:
         logger = get_logger_safe()
     n_threads = max(1, n_threads)
-    limit_threads(n_threads=n_threads)
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
         return 1, []
-
     try:
         os.chdir(workdir)
         logger.debug(f"Current working directory: {os.getcwd()}")
