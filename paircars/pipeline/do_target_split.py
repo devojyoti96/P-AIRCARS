@@ -5,6 +5,7 @@ import time
 import sys
 import os
 from casatools import msmetadata
+from casatasks import flagdata
 from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import print_banner, capture_all_output
@@ -123,7 +124,6 @@ def split_target_scans(
         logger = get_logger_safe()
     n_threads = max(1, n_threads)
     limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
         return 1, []
