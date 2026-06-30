@@ -169,7 +169,6 @@ def determine_disk_visibility(msname):
     mstool.close()
     data_first_lobe_flag = np.any(data_first_lobe_flag,axis=0)
     data_first_lobe[0,...][data_first_lobe_flag]=np.nan
-    print(data_first_lobe.shape)
     data_first_lobe = np.nanmedian(data_first_lobe,axis=2)
     mstool.open(msname)
     mstool.selectpolarization("I")
@@ -182,7 +181,6 @@ def determine_disk_visibility(msname):
     data_autocorr_flag = np.any(data_autocorr_flag,axis=0)
     mstool.close()
     data_autocorr[0,...][data_autocorr_flag]=np.nan
-    print(data_autocorr.shape)
     data_autocorr = np.nanmedian(data_autocorr,axis=2)
     r_I = data_first_lobe[0, ...]/data_autocorr[0,...]
     detected = r_I < 0.1
