@@ -156,27 +156,31 @@ def determine_disk_visibility(msname):
     mstool.open(msname)
     selection_ok = mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
     if not selection_ok:
-        selection_ok = mstool.select({"uvdist": [uvdist - 50.0, uvdist + 50.0]})
+        mstool.close()
+        mstool.open(msname)
+        mstool.select({"uvdist": [uvdist - 50.0, uvdist + 50.0]})
+    mstool.selectpolarization("I")
     if datacolumn == "corrected":
         data_first_lobe = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
     else:
         data_first_lobe = np.abs(mstool.getdata("DATA", ifraxis=True)["data"])
     data_first_lobe_flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
     mstool.close()
-    data_first_lobe[data_first_lobe_flag]=np.nan
-    data_first_lobe = (data_first_lobe[0,...]+data_first_lobe[-1,...])/2
-    data_first_lobe = np.nanmedian(data_first_lobe,axis=1)
+    data_first_lobe_flag = np.any(data_first_lobe_flag,axis=0)
+    data_first_lobe[0,...][data_first_lobe_flag]=np.nan
+    data_first_lobe = np.nanmedian(data_first_lobe,axis=2)
     mstool.open(msname)
+    mstool.selectpolarization("I")
     mstool.select({"uvdist": [0.0,0.0]})
     if datacolumn == "corrected":
         data_autocorr = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
     else:
         data_autocorr = np.abs(mstool.getdata("DATA", ifraxis=True)["data"])
     data_autocorr_flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
+    data_autocorr_flag = np.any(data_autocorr_flag,axis=0)
     mstool.close()
-    data_autocorr[data_autocorr_flag]=np.nan
-    data_autocorr = (data_autocorr[0,...]+data_autocorr[-1,...])/2
-    data_autocorr = np.nanmedian(data_autocorr,axis=1)
+    data_autocorr[0,...][data_autocorr_flag]=np.nan
+    data_autocorr = np.nanmedian(data_autocorr,axis=2)
     r_I = data_first_lobe[0, ...]/data_autocorr[0,...]
     detected = r_I < 0.1
     n_detected_per_time = np.nansum(detected, axis=0)
