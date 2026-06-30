@@ -664,6 +664,7 @@ def run_chgcenter(
         )
         if verbose:
             print(f"{cmd}\n")
+            print (" ".join(full_command))
             result = subprocess.run(
                 full_command,
             )
