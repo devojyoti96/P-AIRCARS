@@ -143,10 +143,20 @@ def split_target_scans(
             flag_central_chan = True
         logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
         logger.debug("Flagging bad channels.")
+        tasks = []
         for msname in mslist:
             bad_spw = get_bad_chans(msname, flag_central_chan = flag_central_chan)
+            tasks.append(
+                delayed(flagdata)(
+                    vis=msname,
+                    spw=bad_spw,
+                    mode="manual",
+                    flagbackup=False,
+                )
+            )            
             logger.debug(f"flagdata(vis=\'{msname}\',spw=\'{bad_spw}\',mode=\'manual\',flagbackup=False)")
-            flagdata(vis = msname, spw = bad_spw, mode="manual", flagbackup=False)
+        future = dask_client.compute(tasks)
+        dask_client.gather(future)
 
         tasks = []
         splited_ms_list = []
@@ -468,9 +478,11 @@ def main(
             logger.debug("List of splited measurement sets:")
             logger.debug(f"{splited_mslist}")
             msg = 0
+        return msg, expected, succeed
     except Exception:
         logger.exception("Exception occured in spliting.", exc_info=True)
-        msg = 1
+        msg=1
+        return msg, expected, succeed
     finally:
         time.sleep(5)
         clean_shutdown(observer)
@@ -482,7 +494,7 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-        return msg, expected, succeed
+        
 
 
 def cli():
