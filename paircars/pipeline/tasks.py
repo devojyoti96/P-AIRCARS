@@ -216,7 +216,6 @@ def run_ds_jobs(
 @task(
     name="split",
     retries=2,
-    timeout_seconds=1800,
     retry_delay_seconds=exponential_backoff(backoff_factor=60),
     log_prints=True,
 )
