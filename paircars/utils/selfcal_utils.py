@@ -117,7 +117,7 @@ def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1):
                 count += 1
 
 
-def determine_disk_visibility(msname):
+def determine_disk_visibility(msname,chan=-1):
     """
     Determine whether solar disk is visible or not
 
@@ -125,7 +125,9 @@ def determine_disk_visibility(msname):
     ----------
     msname : str
         Measurement set
-
+    chan : int, optional
+        Channel number to use
+        
     Returns
     -------
     numpy.array
@@ -155,10 +157,16 @@ def determine_disk_visibility(msname):
     mstool = casamstool()
     uvdist = 150.0 * wavelength
     mstool.open(msname)
+    if chan>0:
+        mstool.selectchannel(nchan=1,start=chan, width=1)
+        print(f"Using channel: {chan}")
+    print(f"UV range: {uvdist-10.0}, {uvdist+10.0}")
     selection_ok = mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
     if not selection_ok:
         mstool.close()
         mstool.open(msname)
+        if chan>0:
+            mstool.selectchannel(nchan=1,start=chan, width=1)
         mstool.select({"uvdist": [uvdist - 50.0, uvdist + 50.0]})
     mstool.selectpolarization("I")
     if datacolumn == "corrected":
@@ -172,6 +180,8 @@ def determine_disk_visibility(msname):
     data_first_lobe = np.nanmedian(data_first_lobe,axis=2)
     mstool.open(msname)
     mstool.selectpolarization("I")
+    if chan>0:
+        mstool.selectchannel(nchan=1,start=chan, width=1)
     mstool.select({"uvdist": [0.0,0.0]})
     if datacolumn == "corrected":
         data_autocorr = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
@@ -190,11 +200,17 @@ def determine_disk_visibility(msname):
     if len(pos) == 0:
         return np.array([], dtype=int), np.array([], dtype=int), detected_timestamps
     elif len(pos) == 1:
-        chans = pos[0]
+        if chan>1:
+            chans = np.array([chan])
+        else:
+            chans = pos[0]
         timestamps = np.zeros_like(chans)
         return chans, timestamps, detected_timestamps
     else:
-        chans = pos[0]
+        if chan>1:
+            chans = np.array([chan])
+        else:
+            chans = pos[0]
         timestamps = pos[1]
         return chans, timestamps, detected_timestamps
 

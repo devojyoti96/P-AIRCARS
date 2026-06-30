@@ -47,6 +47,7 @@ def get_timeranges(
     time_window,
     quack_timestamps=-1,
     only_disk=False,
+    disk_chan=-1,
 ):
     """
     Get time ranges for a scan with certain time intervals
@@ -63,6 +64,8 @@ def get_timeranges(
         Number of timestamps ignored at the start and end of each scan
     only_disk : bool, optional
         Whether select timestamps with disk visibilties
+    disk_chan : int, optional
+        Use this channel to search disk timings
 
     Returns
     -------
@@ -88,7 +91,7 @@ def get_timeranges(
         times = times[quack_timestamps:-quack_timestamps]
     if only_disk:
         try:
-            _, _, disk_timestamps = determine_disk_visibility(msname)
+            _, _, disk_timestamps = determine_disk_visibility(msname, chan=disk_chan)
             if len(disk_timestamps) == 0:
                 print(f"No timestamp with disk visibility for ms: {msname}.")
                 filtered_timestamps = times

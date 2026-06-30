@@ -21,12 +21,13 @@ from paircars.utils.mwa_utils import (
     get_MWA_coarse_bands,
     get_MWA_coarse_chan,
     get_bad_chans,
+    get_good_chans,
 )
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
 )
-from paircars.utils.resource_utils import drop_cache, limit_threads
+from paircars.utils.resource_utils import drop_cache
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -199,12 +200,15 @@ def split_target_scans(
                     good_spwlist.append(f"0:{start_chan}~{end_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
+            good_chans = get_good_chans(msname)
+            good_chan = int(good_chans.split("0:")[-1].split(";")[0].split("~")[0])
             only_disk_msg, timerange_list = get_timeranges(
                 msname,
                 time_interval,
                 time_window,
                 only_disk=only_disk,
                 quack_timestamps=quack_timestamps,
+                disk_chan=good_chan,
             )
             timerange = ",".join(timerange_list)
             if only_disk_msg!=0:
