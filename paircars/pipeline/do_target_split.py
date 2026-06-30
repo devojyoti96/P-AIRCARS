@@ -191,7 +191,7 @@ def split_target_scans(
                     good_spwlist.append(f"0:{start_chan}~{end_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
-            timerange_list = get_timeranges(
+            only_disk_msg, timerange_list = get_timeranges(
                 msname,
                 time_interval,
                 time_window,
@@ -199,6 +199,8 @@ def split_target_scans(
                 quack_timestamps=quack_timestamps,
             )
             timerange = ",".join(timerange_list)
+            if only_disk_msg!=0:
+                print (f"Disk timinings determination failed for ms: {msname}")
             for i in range(len(coarse_chlist)):
                 good_spw = good_spwlist[i]
                 coarse_chan = coarse_chlist[i]

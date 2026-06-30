@@ -136,14 +136,12 @@ def determine_disk_visibility(msname):
         Timestamps where disk is detected at least in one channel
     """
     from casatools import ms as casamstool, table
-
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
     msmd.nchan(0)
     msmd.close()
     wavelength = (3 * 10**8) / freq
-    uvdist = 10.0 * wavelength
     tb = table()
     tb.open(msname)
     colnames = tb.colnames()
@@ -154,32 +152,30 @@ def determine_disk_visibility(msname):
         datacolumn = "data"
     mstool = casamstool()
     uvdist = 150.0 * wavelength
+    print (f"Selecting uv ranges: {uvdist - 10.0}, {uvdist + 10.0}")
     mstool.open(msname)
     mstool.selectpolarization("I")
-    mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
+    selection_ok = mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
+    print(f"Error in data selection for ms : {msname}")
     if datacolumn == "corrected":
-        data_first_lobe = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]),
-            axis=2,
-        )
+        data_first_lobe = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
     else:
-        data_first_lobe = np.nanmedian(
-            np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
-        )
+        data_first_lobe = np.abs(mstool.getdata("DATA", ifraxis=True)["data"])
     mstool.close()
+    data_first_lobe_flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
+    data_first_lobe[data_first_lobe_flag]=np.nan
+    data_first_lobe = np.nanmedian(data_first_lobe,axis=2)
     mstool.open(msname)
     mstool.selectpolarization("I")
     mstool.select({"uvdist": [0.0,0.0]})
     if datacolumn == "corrected":
-        data_autocorr = np.nanmedian(
-            np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]),
-            axis=2,
-        )
+        data_autocorr = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
     else:
-        data_autocorr = np.nanmedian(
-            np.abs(mstool.getdata("DATA", ifraxis=True)["data"]), axis=2
-        )
+        data_autocorr = np.abs(mstool.getdata("DATA", ifraxis=True)["data"])
+    data_autocorr_flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
     mstool.close()
+    data_autocorr[data_autocorr_flag]=np.nan
+    data_autocorr = np.nanmedian(data_autocorr,axis=2)
     r_I = data_first_lobe[0, ...]/data_autocorr[0,...]
     detected = r_I < 0.1
     n_detected_per_time = np.nansum(detected, axis=0)
