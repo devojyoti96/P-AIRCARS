@@ -335,7 +335,7 @@ def get_selfcal_ntimes(msname):
         Number of time chunks
     """
     good_chans = get_good_chans(msname)
-    good_chan = int(good_chans.split("0:")[-1].split(";")[0])
+    good_chan = int(good_chans.split("0:")[-1].split(";")[0].split("~")[0])
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
