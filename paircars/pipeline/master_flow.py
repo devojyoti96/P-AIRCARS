@@ -898,6 +898,7 @@ def master_control(
         #################################################
         # Determining maximum allowed frequency averaging
         #################################################
+        # TODO: optimize using highest freq ms only
         masterlogger.info("Estimating optimal frequency averaging.")
         max_freqres_list = []
         freqres_list = []
