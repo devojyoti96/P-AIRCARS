@@ -140,7 +140,7 @@ def pre_process_subflow(
         target_freqres_metafits = float(fits.getheader(target_metafits)["FINECHAN"])
         msmd = msmetadata()
         msmd.open(target_mslist[0])
-        target_freqres_ms = float(round(msmd.chanres(0,unit="kHz")[0],0)
+        target_freqres_ms = float(round(msmd.chanres(0,unit="kHz")[0],0))
         print(f"Metafits frequency resolution: {target_freqres_metafits}kHz.")
         print(f"Measurement set frequency resolution: {target_freqres_ms}kHz.")
         if target_freqres_ms!=target_freqres_metafits:
@@ -622,7 +622,7 @@ def basic_cal_subflow(
             cal_freqres_metafits = float(fits.getheader(cal_metafits)["FINECHAN"])
             msmd = msmetadata()
             msmd.open(split_cal_mslist[0])
-            cal_freqres_ms = float(round(msmd.chanres(0,unit="kHz")[0],0)
+            cal_freqres_ms = float(round(msmd.chanres(0,unit="kHz")[0],0))
             print(f"Metafits frequency resolution: {cal_freqres_metafits}kHz.")
             print(f"Measurement set frequency resolution: {cal_freqres_ms}kHz.")
             if cal_freqres_ms!=cal_freqres_metafits:

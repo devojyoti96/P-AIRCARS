@@ -19,8 +19,6 @@ from paircars.utils.ms_metadata import get_timeranges
 from paircars.utils.mwa_utils import (
     get_MWA_coarse_bands,
     get_MWA_coarse_chan,
-    get_bad_chans,
-    get_good_chans,
 )
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
