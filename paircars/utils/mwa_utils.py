@@ -348,7 +348,7 @@ def get_selfcal_ntimes(msname):
     mstool.select({"uvdist": [0.01, uvmax]})
     flags = mstool.getdata("FLAG", ifraxis=True)["flag"]
     mstool.close()
-    flags = flags[:,0,...]
+    flags = flags[:,good_chan,...]
     flags = np.sum(flags, axis=0).astype("bool")
     shape = flags.shape
     if len(shape) == 1:

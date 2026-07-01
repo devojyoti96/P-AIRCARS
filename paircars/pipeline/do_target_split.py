@@ -5,7 +5,6 @@ import time
 import sys
 import os
 from casatools import msmetadata
-from casatasks import flagdata
 from dask import delayed
 from astropy.io import fits
 from paircars.utils.basic_utils import print_banner, capture_all_output
@@ -73,7 +72,6 @@ def split_target_scans(
     quack_timestamps=-1,
     force_split=False,
     only_disk=False,
-    flag_bad_chans=False,
     n_threads=-1,
     logger=None,
 ):
@@ -112,8 +110,6 @@ def split_target_scans(
         Force split
     only_disk : bool, optional
         Split only disk
-    flag_bad_chans : bool, optional
-        Flag bad channels or not
     n_threads : int, optional
         Number of threads to use
 
@@ -144,23 +140,7 @@ def split_target_scans(
         else:
             flag_central_chan = True
         logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
-        if flag_bad_chans:
-            logger.debug("Flagging bad channels.")
-            tasks = []
-            for msname in mslist:
-                bad_spw = get_bad_chans(msname, flag_central_chan = flag_central_chan)
-                tasks.append(
-                    delayed(flagdata)(
-                        vis=msname,
-                        spw=bad_spw,
-                        mode="manual",
-                        flagbackup=False,
-                    )
-                )            
-                logger.debug(f"flagdata(vis=\'{msname}\',spw=\'{bad_spw}\',mode=\'manual\',flagbackup=False)")
-            future = dask_client.compute(tasks)
-            dask_client.gather(future)
-
+        
         tasks = []
         splited_ms_list = []
 
@@ -204,15 +184,12 @@ def split_target_scans(
                     good_spwlist.append(f"0:{start_chan}~{end_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
-            good_chans = get_good_chans(msname)
-            good_chan = int(good_chans.split("0:")[-1].split(";")[0].split("~")[0])
             only_disk_msg, timerange_list = get_timeranges(
                 msname,
                 time_interval,
                 time_window,
                 only_disk=only_disk,
                 quack_timestamps=quack_timestamps,
-                disk_chan=good_chan,
             )
             timerange = ",".join(timerange_list)
             if only_disk_msg!=0:
@@ -473,7 +450,6 @@ def main(
             scan=scan,
             prefix=prefix,
             only_disk=only_disk,
-            flag_bad_chans=flag_bad_chans,
             n_threads=n_threads,
             logger=logger,
         )

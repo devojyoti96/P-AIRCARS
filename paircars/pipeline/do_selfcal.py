@@ -1910,11 +1910,7 @@ def main(
                     bw = cal_metadata["Bandwidth (MHz)"]
                     freq_end = freq_start + bw
                     ch_start = freq_to_MWA_coarse(freq_start)
-                    ch_end = freq_to_MWA_coarse(freq_end)
-                    if ch_end > ch_start:
-                        coarse_chan = f"{ch_start}-{ch_end}"
-                    else:
-                        coarse_chan = f"{ch_start}"
+                    coarse_chan = f"{ch_start}"
                     final_gain_caltable = (
                         caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.gcal"
                     )
@@ -1929,11 +1925,7 @@ def main(
                         bw = cal_metadata["Bandwidth (MHz)"]
                         freq_end = freq_start + bw
                         ch_start = freq_to_MWA_coarse(freq_start)
-                        ch_end = freq_to_MWA_coarse(freq_end)
-                        if ch_end > ch_start:
-                            coarse_chan = f"{ch_start}-{ch_end}"
-                        else:
-                            coarse_chan = f"{ch_start}"
+                        coarse_chan = f"{ch_start}"
                         final_bpass_caltable = (
                             caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.bcal"
                         )
@@ -1975,11 +1967,7 @@ def main(
                         bw = cal_metadata["Bandwidth (MHz)"]
                         freq_end = freq_start + bw
                         ch_start = freq_to_MWA_coarse(freq_start)
-                        ch_end = freq_to_MWA_coarse(freq_end)
-                        if ch_end > ch_start:
-                            coarse_chan = f"{ch_start}-{ch_end}"
-                        else:
-                            coarse_chan = f"{ch_start}"
+                        coarse_chan = f"{ch_start}"
                         final_leakage_caltable = (
                             caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.dcal"
                         )
