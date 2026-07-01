@@ -73,6 +73,7 @@ def split_target_scans(
     quack_timestamps=-1,
     force_split=False,
     only_disk=False,
+    flag_bad_chans=False,
     n_threads=-1,
     logger=None,
 ):
@@ -111,6 +112,8 @@ def split_target_scans(
         Force split
     only_disk : bool, optional
         Split only disk
+    flag_bad_chans : bool, optional
+        Flag bad channels or not
     n_threads : int, optional
         Number of threads to use
 
@@ -141,21 +144,22 @@ def split_target_scans(
         else:
             flag_central_chan = True
         logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
-        logger.debug("Flagging bad channels.")
-        tasks = []
-        for msname in mslist:
-            bad_spw = get_bad_chans(msname, flag_central_chan = flag_central_chan)
-            tasks.append(
-                delayed(flagdata)(
-                    vis=msname,
-                    spw=bad_spw,
-                    mode="manual",
-                    flagbackup=False,
-                )
-            )            
-            logger.debug(f"flagdata(vis=\'{msname}\',spw=\'{bad_spw}\',mode=\'manual\',flagbackup=False)")
-        future = dask_client.compute(tasks)
-        dask_client.gather(future)
+        if flag_bad_chans:
+            logger.debug("Flagging bad channels.")
+            tasks = []
+            for msname in mslist:
+                bad_spw = get_bad_chans(msname, flag_central_chan = flag_central_chan)
+                tasks.append(
+                    delayed(flagdata)(
+                        vis=msname,
+                        spw=bad_spw,
+                        mode="manual",
+                        flagbackup=False,
+                    )
+                )            
+                logger.debug(f"flagdata(vis=\'{msname}\',spw=\'{bad_spw}\',mode=\'manual\',flagbackup=False)")
+            future = dask_client.compute(tasks)
+            dask_client.gather(future)
 
         tasks = []
         splited_ms_list = []
@@ -290,6 +294,7 @@ def main(
     prefix="targets",
     force_split=False,
     only_disk=False,
+    flag_bad_chans=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
@@ -331,6 +336,8 @@ def main(
         Force to split
     only_disk : bool, optional
         Split only disk visible times
+    flag_bad_chans : bool, optional
+        Flag bad channels or not
     cpu_frac : float, optional
         Fraction of available CPUs to allocate per task. Default is 0.8.
     mem_frac : float, optional
@@ -466,6 +473,7 @@ def main(
             scan=scan,
             prefix=prefix,
             only_disk=only_disk,
+            flag_bad_chans=flag_bad_chans,
             n_threads=n_threads,
             logger=logger,
         )

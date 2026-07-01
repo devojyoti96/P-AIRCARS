@@ -1049,6 +1049,7 @@ def selfcal_subflow(
                     prefix=prefix,
                     force_split=True,
                     only_disk=True,
+                    flag_bad_chans=True,
                     time_window=min(time_window, time_interval),
                     time_interval=time_interval,
                     quack_timestamps=quack_timestamps,
