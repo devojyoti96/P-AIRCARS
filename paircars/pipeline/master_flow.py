@@ -899,23 +899,23 @@ def master_control(
         # Determining maximum allowed frequency averaging
         #################################################
         # TODO: optimize using highest freq ms only
-        masterlogger.info("Estimating optimal frequency averaging.")
-        max_freqres_list = []
-        freqres_list = []
-        msmd = msmetadata()
+        highest_freq_ms = target_mslist[0]
+        init_coarse_chan = max(get_MWA_coarse_chan(highest_freq_ms))
         for msname in target_mslist:
-            max_freqres = calc_bw_smearing_freqwidth(msname, full_FoV=full_FoV)
-            max_freqres_list.append(max_freqres)
-            msmd.open(msname)
-            freqres = msmd.chanres(0, unit="MHz")[0]
-            msmd.close()
-            freqres_list.append(freqres)
-        freqres = min(freqres_list)
+            coarse_chan = max(get_MWA_coarse_chan(msname))
+            if coarse_chan > init_coarse_chan:
+                init_coarse_chan = coarse_chan
+                highest_freq_ms = msname
+        
+        masterlogger.info(f"Estimating optimal frequency averaging using highest frequency measurement set: {highest_freq_ms}.")
+        max_freqres = calc_bw_smearing_freqwidth(highest_freq_ms, full_FoV=full_FoV)
+        msmd.open(msname)
+        freqres = msmd.chanres(0, unit="MHz")[0]
+        msmd.close()
         if freqres > 0.16:
             masterlogger.info(
                 f"Frequency resolution: {round(freqres*1000,1)}kHz is more than 160kHz. Assuming channel flagging is already done before averaing."
             )
-        max_freqres = min(max_freqres_list)
         if image_freqres > 0:
             image_freqres = max(image_freqres, freqres)
             freqavg = round(min(image_freqres, max_freqres), 2)
@@ -934,24 +934,18 @@ def master_control(
         ################################################
         # Determining maximum allowed temporal averaging
         ################################################
-        masterlogger.debug("Estimating optimal temporal averaging.")
-        max_timeres_list = []
-        timeres_list = []
-        for msname in target_mslist:
-            if solar_data:  # For solar data, it is assumed Sun is tracked.
-                max_timeres = calc_time_smearing_timewidth(msname)
-            else:
-                max_timeres = min(
-                    calc_time_smearing_timewidth(msname),
-                    max_time_solar_smearing(msname),
-                )
-            max_timeres_list.append(max_timeres)
-            msmd.open(msname)
-            times = msmd.timesforspws(0)
-            timeres = np.nanmean(np.diff(times))
-            msmd.close()
-            timeres_list.append(timeres)
-        timeres = min(timeres_list)
+        masterlogger.debug(f"Estimating optimal temporal averaging using highest frequency measurement set: {highest_freq_ms}.")
+        if solar_data:  # For solar data, it is assumed Sun is tracked.
+            max_timeres = calc_time_smearing_timewidth(highest_freq_ms)
+        else:
+            max_timeres = min(
+                calc_time_smearing_timewidth(highest_freq_ms),
+                max_time_solar_smearing(highest_freq_ms),
+            )
+        msmd.open(highest_freq_ms)
+        times = msmd.timesforspws(0)
+        timeres = np.nanmean(np.diff(times))
+        msmd.close() 
         quack_timestamps = int(4.0 / timeres)
         max_timeres = min(max_timeres_list)
         if image_timeres > (2 * 3660):  # If more than 2 hours
