@@ -159,7 +159,7 @@ def pre_process_subflow(
                 datacolumn="data",
                 flag_calibrators=False,
                 flag_bad_spw=flag_bad_spw,
-                flag_quack=True,
+                flag_quack=False,
                 use_rflag=False,
                 use_tfcrop=False,
                 flagdimension="freqtime",
