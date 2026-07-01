@@ -158,7 +158,6 @@ def pre_process_subflow(
                 target_outdir,
                 datacolumn="data",
                 flag_calibrators=False,
-                flag_bad_ants=True,
                 flag_bad_spw=flag_bad_spw,
                 flag_quack=True,
                 use_rflag=False,
