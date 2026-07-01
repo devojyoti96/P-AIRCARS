@@ -947,7 +947,6 @@ def master_control(
         timeres = np.nanmean(np.diff(times))
         msmd.close() 
         quack_timestamps = int(4.0 / timeres)
-        max_timeres = min(max_timeres_list)
         if image_timeres > (2 * 3660):  # If more than 2 hours
             masterlogger.info(
                 "Image time integration is more than 2 hours, which may cause smearing due to solar differential rotation."
