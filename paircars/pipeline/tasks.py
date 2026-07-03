@@ -459,7 +459,7 @@ def run_flag(
                 flag_bad_ants=True,
                 flag_bad_spw=flag_bad_spw,
                 use_tfcrop=use_tfcrop,
-                flag_autocorr=True,
+                flag_autocorr=False,
                 flag_quack=flag_quack,
                 flagdimension=flagdimension,
                 restore_flag=restore_flag,
