@@ -99,7 +99,7 @@ def flag_badchan(msname,spw=""):
     spw : str
        Spectral window
     """ 
-    if spw="":
+    if spw=="":
         return
     from casatools import table 
     tb=table()
