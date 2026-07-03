@@ -88,7 +88,7 @@ def do_flag_backup(msname, flagtype="flagdata"):
     af.done()
 
 
-def flag_badchan(msname,spw):
+def flag_badchan(msname,spw=""):
     """
     Flag bad channels
     
@@ -99,6 +99,8 @@ def flag_badchan(msname,spw):
     spw : str
        Spectral window
     """ 
+    if spw="":
+        return
     from casatools import table 
     tb=table()
     tb.open(msname,nomodify=False)
@@ -108,15 +110,58 @@ def flag_badchan(msname,spw):
         start_chan = int(s.split("~")[0])
         end_chan = int(s.split("~")[-1])
         if start_chan==end_chan:
+            print(f"Flagging: {start_chan}")
             flag[:,start_chan,:]=True
         else:
             for chan in range(start_chan,end_chan+1):
+                print(f"Flagging: {chan}")
                 flag[:,chan,:]=True
     tb.putcol("FLAG",flag)
     tb.flush()
     tb.close()
     return
 
+def flag_badants(msname,antlist=[]):
+    """
+    Flag bad antennas
+    
+    Parameters
+    ----------
+    msname : str
+        Measurement set name
+    antlist : list
+        Antenna list
+    """
+    if len(antlist)==0:
+        return
+    from casatools import table, msmetadata
+    ant_ids=[]
+    msmd = msmetadata()
+    msmd.open(msname)
+    antnames = msmd.antennanames()
+    msmd.close()
+    for ant in antlist:
+        if type(ant)==int:
+            ant_ids.append(ant)
+        else:
+            try:
+                pos=antnames.index(ant)
+                ant_ids.append(pos)
+            except Exception:
+                pass
+    tb=table()
+    tb.open(msname,nomodify=False)
+    ant1 = tb.getcol("ANTENNA1")
+    flag = tb.getcol("FLAG")
+    for ant in ant_ids:
+        pos=np.where(ant1==ant)
+        flag[...,pos]=True
+    tb.putcol("FLAG",flag)
+    tb.flush()
+    tb.close()
+    return 
+            
+    
 def uvbin_flag(
     msname,
     uvbin_size=10,
