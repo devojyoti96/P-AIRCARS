@@ -179,7 +179,8 @@ def split_target_scans(
                     chan = coarse_channel_bands[c]
                     start_chan = chan[0]
                     end_chan = chan[1]
-                    good_spwlist.append(f"0:{start_chan}~{end_chan}")
+                    good_chan_list = chan[2]
+                    good_spwlist.append(f"0:{min(good_chan_list)}~{max(good_chan_list)}")
                     coarse_chlist.append(f"{coarse_chan}")
 
             only_disk_msg, timerange_list = get_timeranges(

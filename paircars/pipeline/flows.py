@@ -1144,7 +1144,7 @@ def selfcal_subflow(
                     freqres=freqavg,
                     prefix=prefix,
                     force_split=True,
-                    only_disk=False,
+                    only_disk=True,
                     time_window=min(time_window, time_interval),
                     time_interval=time_interval,
                     quack_timestamps=quack_timestamps,
