@@ -12,7 +12,11 @@ from paircars.utils.basic_utils import (
     print_banner,
     capture_all_output,
 )
-from paircars.utils.flagging import flagsummary, do_flag_backup
+from paircars.utils.flagging import (
+    flagsummary, 
+    flag_badchan,
+    do_flag_backup,
+)
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -114,23 +118,10 @@ def single_ms_flag(
         ##############################
         if badspw != "":
             try:
-                flag_cmd = (
-                    f"flagdata("
-                    f"vis='{msname}',"
-                    f"mode='manual',"
-                    f"spw='{badspw}',"
-                    f"cmdreason='badchan',"
-                    f"flagbackup=False)"
-                )
+                flag_cmd = f"flag_badchan(\'{msname}\',\'{badspw}\')"
                 print(flag_cmd)
                 with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="manual",
-                        spw=badspw,
-                        cmdreason="badchan",
-                        flagbackup=False,
-                    )
+                    flag_badchan(msname,badspw)
             except Exception:
                 traceback.print_exc()
                 pass
