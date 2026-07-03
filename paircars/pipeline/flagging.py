@@ -15,6 +15,7 @@ from paircars.utils.basic_utils import (
 from paircars.utils.flagging import (
     flagsummary, 
     flag_badchan,
+    flag_badants,
     do_flag_backup,
 )
 from paircars.utils.logger_utils import (
@@ -131,22 +132,9 @@ def single_ms_flag(
         ##############################
         if bad_ants_str != "":
             try:
-                flag_cmd = (
-                    f"flagdata("
-                    f"vis='{msname}',"
-                    f"mode='manual',"
-                    f"antenna='{bad_ants_str}',"
-                    f"cmdreason='badant',"
-                    f"flagbackup=False)"
-                )
+                flag_cmd = f"flag_badants(\'{msname}\',antlist={bad_ants_str.split(',')})"
                 with suppress_output():
-                    flagdata(
-                        vis=msname,
-                        mode="manual",
-                        antenna=bad_ants_str,
-                        cmdreason="badant",
-                        flagbackup=False,
-                    )
+                    flag_badants(msname,antlist=bad_ants_str.split(","))
             except Exception:
                 traceback.print_exc()
                 pass

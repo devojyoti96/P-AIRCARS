@@ -155,6 +155,7 @@ def flag_badants(msname,antlist=[]):
     flag = tb.getcol("FLAG")
     for ant in ant_ids:
         pos=np.where(ant1==ant)
+        print(f"Flagging: {ant}")
         flag[...,pos]=True
     tb.putcol("FLAG",flag)
     tb.flush()
