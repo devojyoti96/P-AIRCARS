@@ -232,7 +232,7 @@ def run_target_split_jobs(
     time_interval=-1,
     quack_timestamps=-1,
     force_split=False,
-    only_disk=False,
+    single_chan_split=False,
     jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -269,8 +269,8 @@ def run_target_split_jobs(
         Number of timestamps to flag at the beginning and end of each scan ("quack").
     force_split : bool, optional
         Force to split
-    only_disk : bool, optional
-        Split only disk times
+    single_chan_split : bool, optional
+        Split only a single good channel
     cpu_frac : float, optional
         CPU fraction to use
     mem_frac : float, optional
@@ -323,7 +323,7 @@ def run_target_split_jobs(
                 timeres=timeres,
                 quack_timestamps=quack_timestamps,
                 force_split=force_split,
-                only_disk=only_disk,
+                single_chan_split=single_chan_split,
                 prefix=prefix,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
@@ -354,9 +354,9 @@ def run_flag(
     workdir,
     outdir,
     datacolumn="DATA",
-    flag_calibrators=True,
+    flag_calibrators=False,
     flag_bad_spw=False,
-    flag_quack=True,
+    flag_quack=False,
     use_rflag=False,
     use_tfcrop=False,
     flagdimension="freqtime",

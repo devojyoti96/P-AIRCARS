@@ -130,7 +130,7 @@ def get_pbcor_image(
                 return
             else:
                 sweet_spots = np.load(sweet_spot_file, allow_pickle=True).all()
-                sweet_spots[int(gridpoint)][-1]
+                gridpoint = sweet_spots[int(gridpoint)][-1]
         else:
             metadata = fits.getheader(metafits)
             gridpoint = metadata["GRIDNUM"]
@@ -167,6 +167,9 @@ def get_pbcor_image(
         else:
             stokesaxis = 1
             stokes = "I"
+        if imagedata.shape[0]==1 and imagedata.shape[1]==1:
+            stokesaxis=1
+            stokes="I"
 
         ####################################
         # Preparing data and data grid

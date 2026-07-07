@@ -545,19 +545,28 @@ def do_flagging(
 
     try:
         limit_threads(n_threads=n_threads)
+        from casatools import msmetadata
         from casatasks import flagdata
 
         header = fits.getheader(metafits)
         mode = header["MODE"]
-        if "MWAX" in mode:
-            flag_central_chan = False
-        else:
-            flag_central_chan = True
-        logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
-
+        meta_chanres = header["FINECHAN"]
+       
         tasks = []
         test_msname = os.path.abspath(mslist[0].rstrip("/"))
         if flag_bad_spw:
+            if "MWAX" in mode:
+                flag_central_chan = False
+            else:
+                msmd = msmetadata()
+                msmd.open(mslist[0])
+                chanres = msmd.chanres(0, unit="kHz")[0]
+                msmd.close()
+                if chanres>meta_chanres:
+                    flag_central_chan = False
+                else:
+                    flag_central_chan = True
+            logger.debug(f"Flag central channel: {flag_central_chan}")
             badspw = get_bad_chans(test_msname, flag_central_chan=flag_central_chan)
             if badspw != "":
                 logger.info(f"Bad spws: {badspw}.")
@@ -565,6 +574,7 @@ def do_flagging(
                 logger.info("No bad spectral window.")
         else:
             badspw = ""
+            
         if flag_bad_ants:
             bad_ants_str = get_mwa_bad_ants(metafits)
             if bad_ants_str != "":

@@ -124,91 +124,6 @@ def pre_process_subflow(
         print("Remote link or jobname is blank. Not transmiting to remote logger.")
     try:
         ########################################
-        # Flagging coarse channel edges
-        ########################################
-        if emails != "":
-            email_msg = f"[{target_obsid}] Started flagging of targets."
-            send_task_notification(
-                emails,
-                email_msg,
-                jobid,
-                target_obsid,
-                timestamp,
-                flow_name=f"subflow {flow_name}",
-            )
-        print_banner("Starting task: Flagging targets.")
-        target_freqres_metafits = float(fits.getheader(target_metafits)["FINECHAN"])
-        msmd = msmetadata()
-        msmd.open(target_mslist[0])
-        target_freqres_ms = float(round(msmd.chanres(0,unit="kHz")[0],0))
-        print(f"Metafits frequency resolution: {target_freqres_metafits}kHz.")
-        print(f"Measurement set frequency resolution: {target_freqres_ms}kHz.")
-        if target_freqres_ms!=target_freqres_metafits:
-            print("Measurement set is already frequency averaged. Not flagging coarse channel edges.")
-            flag_bad_spw=False
-        else:
-            flag_bad_spw=True
-        try:
-            future_flag = run_flag.with_options(
-                task_run_name=f"flag_target_initial_{target_obsid}"
-            ).submit(
-                ",".join(target_mslist),
-                target_metafits,
-                workdir,
-                target_outdir,
-                datacolumn="data",
-                flag_calibrators=False,
-                flag_bad_spw=flag_bad_spw,
-                flag_quack=False,
-                use_rflag=False,
-                use_tfcrop=False,
-                flagdimension="freqtime",
-                flagdata_type="target",
-                run_solarflagger=False,
-                normalize=False,
-                restore_flag=False,
-                cpu_frac=round(cpu_frac, 2),
-                mem_frac=round(mem_frac, 2),
-                remote_log=remote_logger,
-                obsid=target_obsid,
-                verbose=verbose,
-            )
-            wait([future_flag])
-            msg, succeed, failed = future_flag.result()
-            if emails != "":
-                email_msg = f"[{target_obsid}] Initial flagging of targets is done.\nSucceeded: {succeed}, failed: {failed}."
-                send_task_notification(
-                    emails,
-                    email_msg,
-                    jobid,
-                    target_obsid,
-                    timestamp,
-                    flow_name=f"subflow {flow_name}",
-                )
-            filtered_ms = []
-            for c_ms in target_mslist:
-                c_ms = c_ms.rstrip("/")
-                if os.path.exists(f"{c_ms}/.flag_succeed"):
-                    filtered_ms.append(c_ms)
-                else:
-                    print(f"Issue in flagging of measurement set: {c_ms}")
-            target_mslist = filtered_ms  # Filtered target mslist
-            print_banner("Finished task: Initial flagging of target is done.")
-        except Exception:
-            print_banner("!!!! WARNING: Initial flagging error for targets. !!!!")
-            traceback.print_exc()
-            if emails != "":
-                email_msg = f"[{target_obsid}] Error in initial flagging of targets."
-                send_task_notification(
-                    emails,
-                    email_msg,
-                    jobid,
-                    target_obsid,
-                    timestamp,
-                    flow_name=f"subflow {flow_name}",
-                )
-    
-        ########################################
         # Moving phasecenter to the solar center
         ########################################
         if solar_data and do_move_solarcenter:
@@ -1144,7 +1059,7 @@ def selfcal_subflow(
                     freqres=freqavg,
                     prefix=prefix,
                     force_split=True,
-                    only_disk=True,
+                    single_chan_split=False,
                     time_window=min(time_window, time_interval),
                     time_interval=time_interval,
                     quack_timestamps=quack_timestamps,

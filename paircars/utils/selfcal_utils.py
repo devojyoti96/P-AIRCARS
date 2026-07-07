@@ -7,7 +7,12 @@ import subprocess
 from casatools import msmetadata
 from astropy.io import fits
 from functools import partial
-from .basic_utils import suppress_output, ra_dec_to_hms_dms, mjdsec_to_timestamp
+from .basic_utils import (
+    suppress_output, 
+    ra_dec_to_hms_dms, 
+    mjdsec_to_timestamp,
+    weighted_mean,
+)
 from .resource_utils import limit_threads
 from .flagging import do_flag_backup, flag_quartical_table, get_chans_flag
 from .solarflagger import flagger
@@ -22,6 +27,9 @@ from .imaging import (
     get_optimal_image_interval,
     calc_multiscale_scales,
     get_multiscale_bias,
+    calc_field_of_view,
+    calc_cellsize,
+    get_fft_size,
 )
 from .image_utils import (
     create_circular_mask,
@@ -32,7 +40,11 @@ from .image_utils import (
     make_stokes_wsclean_imagecube,
 )
 from .udocker_utils import run_wsclean, run_quartical
-from .sunpos_utils import cal_solar_phaseshift, shift_solarcenter
+from .sunpos_utils import (
+    cal_solar_phaseshift, 
+    shift_solarcenter, 
+    determine_quiet_disk,
+)
 
 
 def cal_crossphase(imagename):
@@ -329,7 +341,7 @@ def make_qs_model(msname, clname="quiet_sun.cl"):
     return clname
 
 
-def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
+def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="int"):
     """
     Perform quiet Sun Gaussian model based self-calibration
 
@@ -364,9 +376,6 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="60s"):
     do_flag_backup(msname, flagtype="qs_selfcal")
 
     try:
-        result = flag_non_disk(msname)
-        if result != 0:
-            logger.warning("Could not flag non-disk time properly.")
         ###################################
         # Import simulated QS model
         ###################################
@@ -819,6 +828,7 @@ def correct_pbcor_leakage(
     pbcor=True,
     leakagecor=True,
     pbuncor=True,
+    leakage_info=[],
     ncpu=1,
 ):
     """
@@ -838,6 +848,8 @@ def correct_pbcor_leakage(
         Perform image based residual leakage correction
     pbuncor : bool, optional
         Undo primary beam correction
+    leakage_info : list, optional
+        User provided leakages (no leakage calculation will be done)
     ncpu : int, optional
         Number of CPU threads
 
@@ -913,22 +925,39 @@ def correct_pbcor_leakage(
         ########################################
         # Estimating and correcting leakage
         ########################################
-        (
+        if len(leakage_info)==0:
+            (
+                q_leakage,
+                u_leakage,
+                v_leakage,
+                q_leakage_err,
+                u_leakage_err,
+                v_leakage_err,
+            ) = calc_leakage(pbcor_image)
+            if np.isnan(q_leakage):
+                q_leakage=0.0
+                q_leakage_err=0.0
+            if np.isnan(u_leakage):
+                u_leakage=0.0
+                u_leakage_err=0.0
+            if np.isnan(v_leakage):
+                v_leakage=0.0
+                v_leakage_err=0.0
+            leakage_info = [
+                q_leakage,
+                u_leakage,
+                v_leakage,
+                q_leakage_err,
+                u_leakage_err,
+                v_leakage_err,
+            ]
+        else:
             q_leakage,
             u_leakage,
             v_leakage,
             q_leakage_err,
             u_leakage_err,
-            v_leakage_err,
-        ) = calc_leakage(pbcor_image)
-        leakage_info = [
-            q_leakage,
-            u_leakage,
-            v_leakage,
-            q_leakage_err,
-            u_leakage_err,
-            v_leakage_err,
-        ]
+            v_leakage_err = leakage_info
         leakagecor_image, leakagecor_model = correct_image_leakage(
             pbcor_image,
             modelname=pbcor_model,
@@ -1004,6 +1033,7 @@ def single_image_update_leakage(
     metafits,
     pbcor=True,
     leakagecor=True,
+    leakage_info=[],
     pbuncor=True,
     ncpu=-1,
 ):
@@ -1026,6 +1056,8 @@ def single_image_update_leakage(
         Perform primary beam correction or not
     leakagecor : bool, optional
         Perform leakage correction or not
+    leakage_info : list, optional
+        Use provided leakage info
     pbuncor : bool, optional
         Undo primary beam correction or not
     ncpu : int, optional
@@ -1046,6 +1078,7 @@ def single_image_update_leakage(
             pbcor=pbcor,
             leakagecor=leakagecor,
             pbuncor=pbuncor,
+            leakage_info=leakage_info,
             ncpu=ncpu,
         )
         image_data = fits.getdata(cor_imagename)
@@ -1119,32 +1152,82 @@ def correct_spectrosnap_pbleak(
     images = list(image_dic.keys())
     models = list(model_dic.keys())
     leakage_info_list = []
+    leakage_info_dic={}
+    no_disk_detected_images = []
     for i in range(len(images)):
         imagename = images[i]
         modelname = models[i]
         fits.getheader(imagename)
         if "MFS" not in imagename:
-            wsclean_images = image_dic[imagename]
-            wsclean_models = model_dic[modelname]
+            wsclean_images = sorted(image_dic[imagename])
+            wsclean_models = sorted(model_dic[modelname])
             valid_image = check_valid_image(imagename)
             if valid_image:
                 if logger is not None:
                     logger.info(f"Leakage correction for: {imagename}.")
                 else:
                     print(f"Leakage correction for: {imagename}.")
-                leakage_info = single_image_update_leakage(
-                    wsclean_images,
-                    wsclean_models,
-                    imagename,
-                    modelname,
-                    metafits,
-                    pbcor=pbcor,
-                    leakagecor=leakagecor,
-                    pbuncor=pbuncor,
-                    ncpu=ncpu,
-                )
-                if leakage_info is not None:
-                    leakage_info_list.append(leakage_info)
+                disk_detected, disk_size = determine_quiet_disk(wsclean_images[0])     
+                if disk_detected is False:
+                    logger.debug(f"Solar disk is not detected for: {wsclean_images[0]}")
+                    no_disk_detected_images.append([wsclean_images, wsclean_models])
+                else:           
+                    leakage_info = single_image_update_leakage(
+                        wsclean_images,
+                        wsclean_models,
+                        imagename,
+                        modelname,
+                        metafits,
+                        pbcor=pbcor,
+                        leakagecor=leakagecor,
+                        pbuncor=pbuncor,
+                        ncpu=ncpu,
+                    )
+                    if leakage_info is None:
+                        logger.debug(f"leakage can not be calculated for: {wsclean_images[0]}")
+                        no_disk_detected_images.append([wsclean_images, wsclean_models])
+                    else:
+                        leakage_info_list.append(leakage_info)
+                        freq = fits.getheader(wsclean_images[0])["CRVAL3"]
+                        freq_keys = leakage_info_dic.keys()
+                        if freq not in freq_leys:
+                            leakage_info_dic[freq]=leakage_info
+                        else:
+                            old_leakage_info = leakage_info_dic[freq]
+                            temp_leakage_info = [old_leakage_info, leakage_info]
+                            temp_leakage_info = np.array(temp_leakage_info)
+                            Q = temp_leakage_info[:, 0]
+                            U = temp_leakage_info[:, 1]
+                            V = temp_leakage_info[:, 2]
+                            Qe = temp_leakage_info[:, 3]
+                            Ue = temp_leakage_info[:, 4]
+                            Ve = temp_leakage_info[:, 5]
+                            q_leakage, q_err = weighted_mean(Q, Qe)
+                            u_leakage, u_err = weighted_mean(U, Ue)
+                            v_leakage, v_err = weighted_mean(V, Ve)
+                            leakage_info_dic[freq] = [q_leakage, u_leakage, v_leakage, q_err, u_err, v_err]
+    if len(no_disk_detected_images)>0:
+        freq_keys = np.array(leakage_info_dic.keys())
+        for non_disk in no_disk_detected_images:
+            wsclean_images = non_disk[0]
+            wsclean_models = non_disk[1]
+            freq = fits.getheader(wsclean_images[0])["CRVAL3"]
+            pos = np.argmin(np.abs(freq_keys-freq))
+            key = freq_keys[pos]
+            old_leakage_info = leakage_info_dic[key]
+            leakage_info = single_image_update_leakage(
+                                wsclean_images,
+                                wsclean_models,
+                                imagename,
+                                modelname,
+                                metafits,
+                                pbcor=pbcor,
+                                leakagecor=leakagecor,
+                                leakage_info=old_leakage_info,
+                                pbuncor=pbuncor,
+                                ncpu=ncpu,
+                            )
+            leakage_info_list.append(leakage_info)
     os.system("rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
     return leakage_info_list
 
@@ -1184,6 +1267,7 @@ def selfcal_round(
     pol_solnorm=False,
     do_flag=False,
     restore_flag=True,
+    shift_info=(),
     ncpu=-1,
     mem=-1,
 ):
@@ -1260,6 +1344,8 @@ def selfcal_round(
         Perform UVsub flagging
     restore_flag : bool, optional
         Restore last round flags or not
+    shift_info : tuple, optional
+        Phase shift information (output of calc_solar_phaseshift function)
     ncpu : int, optional
         Number of CPUs to use in WSClean
     mem : float, optional
@@ -1283,8 +1369,8 @@ def selfcal_round(
         Residual image name
     list
         Leakage informations [Q_leakage, U_leakage, V_leakage, Q_leakage_error, U_leakage_error, V_leakage_error]
-    int
-        Maximum pixel offset
+    bool
+        Whether solar disk is detected or not
     """
     ncpu = max(1, ncpu)
     mem = max(1, mem)
@@ -1297,7 +1383,8 @@ def selfcal_round(
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
     os.chdir(selfcaldir)
-
+    disk_detected=False
+    
     if minuv > 0:
         if uvrange == "" or uvrange.startswith(">"):
             uvrange = f">{minuv}lambda"
@@ -1315,7 +1402,7 @@ def selfcal_round(
     )
     applycal_gaintable = []
     interp = []
-    leakage_info_list = []
+    leakage_info_list = [0.0]*6
     try:
         ####################################
         # Determining ms metadata
@@ -1340,6 +1427,10 @@ def selfcal_round(
         ######################################
         # Determine spectro-temporal chunking
         ######################################
+        msmd = msmetadata()
+        msmd.open(msname)
+        times = msmd.timesforspws(0)
+        msmd.close()
         if calc_chunks:
             header = fits.getheader(metafits)
             mode = header["MODE"]
@@ -1353,10 +1444,7 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
-            msmd = msmetadata()
-            msmd.open(msname)
-            times = msmd.timesforspws(0)
-            msmd.close()
+            
             diff = np.diff(times)
             change_idx = np.where(np.diff(diff) != 0)[0]
             max_ntime = int(len(change_idx) / 2) + 1
@@ -1464,8 +1552,21 @@ def selfcal_round(
         msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         if msg != 0:
             logger.error("Imaging is not successful.\n")
-            return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
+            return 1, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
 
+        #######################################
+        # Disk detection
+        #######################################
+        if pol=="I":
+            stokesI_images = sorted(glob.glob(f"{prefix}*-image.fits"))
+        else:
+            stokesI_images = sorted(glob.glob(f"{prefix}*-I-image.fits"))
+        for imagename in stokesI_images:
+            detected, size = determine_quiet_disk(imagename)
+            if detected and disk_detected is False:
+                disk_detected=True
+                break
+                
         #######################################
         # Making stokes cube
         #######################################
@@ -1505,23 +1606,6 @@ def selfcal_round(
                 elif suffix == "residual":
                     wsclean_residuals_dic[image_cube] = wsclean_images
 
-        #########################################
-        # Shifting solar center to phase center
-        #########################################
-        logger.info("Shifting images...")
-        shifting_msg, shifted, max_pixel_offset = correct_spectrosnap_phaseshift(
-            wsclean_images_dic,
-            wsclean_models_dic,
-            cellsize,
-            imsize,
-            pol,
-            logger,
-        )
-        if shifting_msg != 0:
-            logger.warning("Error occured in phase shift correction.")
-        else:
-            logger.info("Image shift is done.")
-
         if do_polcal:
             ################################
             # Leakage correction
@@ -1537,11 +1621,43 @@ def selfcal_round(
                     pbuncor=pbuncor,
                     ncpu=ncpu,
                 )
+            else:
+                leakage_info_list = [0.0] * 6
+        
+        #########################################
+        # Shifting solar center to phase center
+        #########################################
+        shifted=False
+        if len(shift_info)>0:
+            shift_msg,ra,dec,sun_radeg,sun_decdeg,apparent_pix_ra,apparent_pix_dec,seperation_arcsec = shift_info
+            all_images = glob.glob(f"{prefix}*image.fits")
+            all_models = glob.glob(f"{prefix}*model.fits")
+            for image in all_images:
+                logger.debug(f"Shifting image: {image}")
+                shift_solarcenter(
+                    image,
+                    sun_radeg=sun_radeg,
+                    sun_decdeg=sun_decdeg,
+                    apparent_pix_ra=apparent_pix_ra,
+                    apparent_pix_dec=apparent_pix_dec,
+                    overwrite=True,
+                )
+            for model in all_models:
+                logger.debug(f"Shifting model image: {model}")
+                shift_solarcenter(
+                    model,
+                    sun_radeg=sun_radeg,
+                    sun_decdeg=sun_decdeg,
+                    apparent_pix_ra=apparent_pix_ra,
+                    apparent_pix_dec=apparent_pix_dec,
+                    overwrite=True,
+                )
+                shifted=True
 
-        ####################################
-        # Predict models
-        ####################################
         if do_polcal or shifted:
+            ####################################
+            # Predict models
+            ####################################
             prediction_failed = False
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
@@ -1604,7 +1720,7 @@ def selfcal_round(
 
         if len(wsclean_images) == 0:
             logger.error("No image is made.")
-            return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
+            return 1, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
         elif len(wsclean_images) == 1:
             os.system(f"cp -r {wsclean_images[0]} {final_image}")
         else:
@@ -1660,7 +1776,7 @@ def selfcal_round(
         )
         if model_flux == 0:
             logger.error("No model flux.\n")
-            return 1, applycal_gaintable, 0, 0, "", "", "", [], 0
+            return 1, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
 
         ############################
         # Flag backup before selfcal
@@ -1681,13 +1797,13 @@ def selfcal_round(
                 final_model,
                 final_residual,
                 [],
-                max_pixel_offset,
+                disk_detected,
             )
 
         #########################################
         # If model prediction failed in polcal
         #########################################
-        if (do_polcal or shifted) and prediction_failed:
+        if do_polcal and prediction_failed:
             logger.error("Error in predicting model.")
             return (
                 2,
@@ -1698,7 +1814,7 @@ def selfcal_round(
                 final_model,
                 final_residual,
                 [],
-                max_pixel_offset,
+                disk_detected,
             )
 
         ##############################
@@ -1731,7 +1847,7 @@ def selfcal_round(
 
             if not os.path.exists(gain_caltable):
                 logger.error("No gain solutions are found.\n")
-                return 3, applycal_gaintable, 0, 0, "", "", "", [], max_pixel_offset
+                return 3, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
             applycal_gaintable.append(gain_caltable)
             interp.append("linear")
 
@@ -1951,7 +2067,7 @@ def selfcal_round(
             os.system(f"rm -rf {quartical_log}")
             if quartical_msg != 0 or os.path.exists(pol_caltable) is False:
                 logger.error("Quartical calibration is not successful.\n")
-                return 3, [], 0, 0, "", "", "", [], max_pixel_offset
+                return 3, [], 0, 0, "", "", "", [], disk_detected
             applycal_gaintable.append(pol_caltable)
 
             ######################################
@@ -2000,7 +2116,7 @@ def selfcal_round(
                 logger.error(
                     "Quartical calibration applying solutions is not successful.\n"
                 )
-                return 3, [], 0, 0, "", "", "", [], max_pixel_offset
+                return 3, [], 0, 0, "", "", "", [], disk_detected
 
         #####################################
         # Flag zeros
@@ -2032,10 +2148,10 @@ def selfcal_round(
             final_model,
             final_residual,
             leakage_info_list,
-            max_pixel_offset,
+            disk_detected,
         )
     except Exception:
         logger.exception(traceback.print_exc())
-        return 4, applycal_gaintable, 0, 0, "", "", "", [], 0
+        return 4, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
     finally:
         os.chdir(cwd)

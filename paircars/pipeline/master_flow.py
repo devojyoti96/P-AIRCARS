@@ -909,6 +909,7 @@ def master_control(
         
         masterlogger.info(f"Estimating optimal frequency averaging using highest frequency measurement set: {highest_freq_ms}.")
         max_freqres = calc_bw_smearing_freqwidth(highest_freq_ms, full_FoV=full_FoV)
+        msmd=msmetadata()
         msmd.open(msname)
         freqres = msmd.chanres(0, unit="MHz")[0]
         msmd.close()

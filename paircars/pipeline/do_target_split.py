@@ -20,6 +20,7 @@ from paircars.utils.mwa_utils import (
     get_MWA_coarse_bands,
     get_MWA_coarse_chan,
 )
+from paircars.utils.flagging import flag_badchan
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -68,8 +69,8 @@ def split_target_scans(
     time_interval=-1,
     time_window=-1,
     quack_timestamps=-1,
+    single_chan_split=False,
     force_split=False,
-    only_disk=False,
     n_threads=-1,
     logger=None,
 ):
@@ -104,10 +105,10 @@ def split_target_scans(
         Time window in seconds
     quack_timestamps : int, optional
         Number of timestamps ignored at the start and end of each scan
+    single_chan_split: bool, optional
+        Split only a single good channel
     force_split : bool, optional
         Force split
-    only_disk : bool, optional
-        Split only disk
     n_threads : int, optional
         Number of threads to use
 
@@ -133,11 +134,11 @@ def split_target_scans(
         header = fits.getheader(metafits)
         obsid = header["GPSTIME"]
         mode = header["MODE"]
+        meta_chanres = header["FINECHAN"]
         if "MWAX" in mode:
             flag_central_chan = False
-        else:
+        else:            
             flag_central_chan = True
-        logger.debug(f"Flag central channel: {flag_central_chan} for {mode}")
         
         tasks = []
         splited_ms_list = []
@@ -145,10 +146,14 @@ def split_target_scans(
         for msname in mslist:
             msmd = msmetadata()
             msmd.open(msname)
-            chanres = msmd.chanres(0, unit="MHz")[0]
+            chanres_MHz = msmd.chanres(0, unit="MHz")[0]
+            if flag_central_chan:
+                chanres_kHz = msmd.chanres(0, unit="kHz")[0]
+                if chanres_kHz>meta_chanres:
+                    flag_central_chan=False    
             msmd.close()
             if freqres > 0:  # Image resolution is in MHz
-                chanwidth = int(freqres / chanres)
+                chanwidth = int(freqres / chanres_MHz)
                 if chanwidth < 1:
                     chanwidth = 1
             else:
@@ -157,13 +162,11 @@ def split_target_scans(
                 timebin = str(timeres) + "s"
             else:
                 timebin = ""
-
+                
             #############################
             # Making spectral chunks
             #############################
-            coarse_channel_bands = get_MWA_coarse_bands(
-                msname, flag_central_chan=flag_central_chan
-            )
+            coarse_channel_bands = get_MWA_coarse_bands(msname)
             coarse_chans = get_MWA_coarse_chan(msname)
             logger.debug(f"Coarse channels for {msname} are: {coarse_chans}")
             if len(split_coarse_chans) == 0:
@@ -180,19 +183,24 @@ def split_target_scans(
                     start_chan = chan[0]
                     end_chan = chan[1]
                     good_chan_list = chan[2]
-                    good_spwlist.append(f"0:{min(good_chan_list)}~{max(good_chan_list)}")
+                    if single_chan_split:
+                        good_spwlist.append(f"0:{min(good_chan_list)}")
+                    else:
+                        good_spwlist.append(f"0:{min(good_chan_list)}~{max(good_chan_list)}")
+                        if flag_central_chan:
+                            central_chan = int((start_chan+end_chan)/2)
+                            logger.debug(f"Flag central channel: {central_chan}.")
+                            logger.debug(f"flag_badchan(\'{msname}\', spw=\'0:{central_chan}\')")
+                            flag_badchan(msname, spw=f"0:{central_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
-            only_disk_msg, timerange_list = get_timeranges(
+            timerange_list = get_timeranges(
                 msname,
                 time_interval,
                 time_window,
-                only_disk=only_disk,
                 quack_timestamps=quack_timestamps,
             )
             timerange = ",".join(timerange_list)
-            if only_disk_msg!=0:
-                print (f"Disk timinings determination failed for ms: {msname}")
             for i in range(len(coarse_chlist)):
                 good_spw = good_spwlist[i]
                 coarse_chan = coarse_chlist[i]
@@ -268,9 +276,8 @@ def main(
     freqres=-1,
     timeres=-1,
     prefix="targets",
+    single_chan_split=False,
     force_split=False,
-    only_disk=False,
-    flag_bad_chans=False,
     cpu_frac=0.8,
     mem_frac=0.8,
     logfile=None,
@@ -308,12 +315,10 @@ def main(
         Time resolution in seconds for time averaging. Set -1 to disable. Default is -1.
     prefix : str, optional
         Prefix for the output split MS files. Default is "targets".
+    single_chan_split : bool, optional
+        Split only a songle good channel.
     force_split : bool, optional
         Force to split
-    only_disk : bool, optional
-        Split only disk visible times
-    flag_bad_chans : bool, optional
-        Flag bad channels or not
     cpu_frac : float, optional
         Fraction of available CPUs to allocate per task. Default is 0.8.
     mem_frac : float, optional
@@ -445,10 +450,10 @@ def main(
             time_window=float(time_window),
             time_interval=float(time_interval),
             quack_timestamps=int(quack_timestamps),
+            single_chan_split=single_chan_split,
             force_split=force_split,
             scan=scan,
             prefix=prefix,
-            only_disk=only_disk,
             n_threads=n_threads,
             logger=logger,
         )
@@ -563,8 +568,8 @@ def cli():
         default="targets",
         help="Splited ms prefix name",
     )
-    adv_args.add_argument("--only_disk", action="store_true", help="Split only disk timestamps")
     adv_args.add_argument("--force_split", action="store_true", help="Force to split")
+    adv_args.add_argument("--single_chan_split", action="store_true", help="Single channel to split")
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
     adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 
@@ -602,11 +607,11 @@ def cli():
         time_window=args.time_window,
         time_interval=args.time_interval,
         quack_timestamps=args.quack_timestamps,
+        single_chan_split=args.single_chan_split,
         force_split=args.force_split,
         freqres=args.freqres,
         timeres=args.timeres,
         prefix=args.prefix,
-        only_disk=args.only_disk,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
         jobid=args.jobid,
