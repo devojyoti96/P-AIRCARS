@@ -201,31 +201,30 @@ def move_to_sun(msname, ncpu=1, only_uvw=False):
 def determine_quiet_disk(imagename, sigma=10):
     """
     Determine whether disk is visible or not
-    
+
     Parameters
     ----------
     imagename : str
         Imagename
     sigma : float, optional
         Threshold
-    
+
     Returns
     -------
     bool
         Whether disk is detected or not
     float
-        Emission area diameter in arcmin 
-    """    
+        Emission area radius in arcmin
+    """
     if os.path.exists(imagename) is False:
         return False, 0.0
-    import matplotlib.pyplot as plt
-    from scipy.ndimage import gaussian_filter, center_of_mass
-    from scipy import ndimage
+    from scipy.ndimage import gaussian_filter
     from skimage.morphology import remove_small_objects, convex_hull_image
+
     data = fits.getdata(imagename)
     header = fits.getheader(imagename)
-    bmaj = header["BMAJ"]*3600.0
-    bmin = header["BMIN"]*3600.0
+    bmaj = header["BMAJ"] * 3600.0
+    bmin = header["BMIN"] * 3600.0
     if header["CTYPE3"] == "FREQ":
         freqMHz = float(header["CRVAL3"]) / 10**6  # In MHz
         sun_dia = calc_sun_dia(freqMHz)  # In arcmin
@@ -235,13 +234,13 @@ def determine_quiet_disk(imagename, sigma=10):
     else:
         sun_dia = 32  # In arcmin
     cellsize = float(abs(header["CDELT1"])) * 3600.0  # In arcsec
-    npix_psf = int(min(bmaj,bmin)/cellsize)
-    if npix_psf<=3:
-        gauss_filter_sigma=1
-    elif npix_psf>3 and npix_psf<=5:
-        gauss_filter_sigma=2
+    npix_psf = int(min(bmaj, bmin) / cellsize)
+    if npix_psf <= 3:
+        gauss_filter_sigma = 1
+    elif npix_psf > 3 and npix_psf <= 5:
+        gauss_filter_sigma = 2
     else:
-        gauss_filter_sigma=3
+        gauss_filter_sigma = 3
     if data.ndim == 4:
         data2d = data[0, 0, ...]
     elif data.ndim == 3:
@@ -251,26 +250,28 @@ def determine_quiet_disk(imagename, sigma=10):
     data2d = gaussian_filter(data2d, sigma=gauss_filter_sigma)
     max_pos = np.where(data2d == np.nanmax(data2d))
     center_x, center_y = max_pos[1][0], max_pos[0][0]
-    sun_rad_pix = 2*sun_dia*60/cellsize # 2 solar radii
-    masked_array=create_circular_mask_array(data2d,sun_rad_pix,center_x=center_x,center_y=center_y)
+    sun_rad_pix = 2 * sun_dia * 60 / cellsize  # 2 solar radii
+    masked_array = create_circular_mask_array(
+        data2d, sun_rad_pix, center_x=center_x, center_y=center_y
+    )
     masked_data2d = copy.deepcopy(data2d)
-    masked_data2d[masked_array]=np.nan
+    masked_data2d[masked_array] = np.nan
     rms = np.nanstd(masked_data2d)
-    mask = data2d<sigma*rms
-    min_size = int(min(bmaj,bmin)/cellsize)
+    mask = data2d < sigma * rms
+    min_size = int(min(bmaj, bmin) / cellsize)
     mask_clean = remove_small_objects(~mask, min_size=min_size)
     mask_clean = convex_hull_image(mask_clean)
-    data2d[~mask_clean]=False
-    data2d[mask_clean]=True
-    area = np.nansum(data2d)*cellsize**2
-    dia = np.sqrt(area/np.pi)/60.0
-    if dia>=16:
-        disk_detected=True
+    data2d[~mask_clean] = False
+    data2d[mask_clean] = True
+    area = np.nansum(data2d) * cellsize**2
+    radius = np.sqrt(area / np.pi) / 60.0
+    if radius >= 16:
+        disk_detected = True
     else:
-        disk_detected=False
-    return disk_detected, dia
-    
-   
+        disk_detected = False
+    return disk_detected, radius
+
+
 def cal_solar_phaseshift(imagename, sigma=10, use_gaussian=False):
     """
     Calculate the difference between solar center and phase center of the image
@@ -303,6 +304,7 @@ def cal_solar_phaseshift(imagename, sigma=10, use_gaussian=False):
     float
         Shift size in arcseconds
     """
+
     def gaussian_2d(xy, amplitude, x0, y0, sigma_x, sigma_y, offset):
         x, y = xy
         g = offset + amplitude * np.exp(
@@ -341,6 +343,7 @@ def cal_solar_phaseshift(imagename, sigma=10, use_gaussian=False):
     if use_gaussian:
         from scipy.optimize import curve_fit
         from scipy.ndimage import gaussian_filter
+
         data2d = gaussian_filter(data2d, sigma=3)
         max_pos = np.where(data2d == np.nanmax(data2d))
         y0, x0 = max_pos[0][0], max_pos[1][0]
@@ -360,19 +363,21 @@ def cal_solar_phaseshift(imagename, sigma=10, use_gaussian=False):
         apparent_pix_dec = int(popt[2])
     else:
         from scipy.ndimage import center_of_mass
-        from scipy import ndimage
         from skimage.morphology import remove_small_objects
+
         max_pos = np.where(data2d == np.nanmax(data2d))
         center_x, center_y = max_pos[1][0], max_pos[0][0]
-        sun_rad_pix = 2*sun_dia*60/cellsize # 2 solar radii
-        masked_array=create_circular_mask_array(data2d,sun_rad_pix,center_x=center_x,center_y=center_y)
+        sun_rad_pix = 2 * sun_dia * 60 / cellsize  # 2 solar radii
+        masked_array = create_circular_mask_array(
+            data2d, sun_rad_pix, center_x=center_x, center_y=center_y
+        )
         masked_data2d = copy.deepcopy(data2d)
-        masked_data2d[masked_array]=np.nan
+        masked_data2d[masked_array] = np.nan
         rms = np.nanstd(masked_data2d)
-        mask = data2d<sigma*rms
+        mask = data2d < sigma * rms
         mask_clean = remove_small_objects(~mask, min_size=100)
-        data2d[~mask_clean]=False
-        data2d[mask_clean]=True
+        data2d[~mask_clean] = False
+        data2d[mask_clean] = True
         apparent_pix_dec, apparent_pix_ra = center_of_mass(data2d)
     try:
         w = WCS(imagename).celestial

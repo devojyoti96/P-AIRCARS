@@ -3,7 +3,6 @@ import numpy as np
 import os
 from casatools import msmetadata, ms as casamstool, table, measures
 from .basic_utils import timestamp_to_mjdsec, mjdsec_to_timestamp
-from .selfcal_utils import determine_disk_visibility
 from .resource_utils import limit_threads
 
 ##########################

@@ -341,7 +341,7 @@ def run_all_applysol(
     try:
         os.chdir(workdir)
         logger.debug(f"Current working directory: {os.getcwd()}")
-        if isinstance(mslist,list):
+        if isinstance(mslist, list):
             mslist = np.array(mslist)
         mslist = np.unique(mslist).tolist()
         target_header = fits.getheader(target_metafits)
@@ -598,7 +598,7 @@ def main(
         worker_mem_list = []
         for addr, w in client_info.items():
             worker_mem_list.append(w["memory_limit"] / 1024**3)
-        if len(worker_mem_list)>0:
+        if len(worker_mem_list) > 0:
             mem_limit = round(min(worker_mem_list), 3)
         else:
             mem_limit = 1

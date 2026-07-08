@@ -8,8 +8,8 @@ from casatools import msmetadata
 from astropy.io import fits
 from functools import partial
 from .basic_utils import (
-    suppress_output, 
-    ra_dec_to_hms_dms, 
+    suppress_output,
+    ra_dec_to_hms_dms,
     mjdsec_to_timestamp,
     weighted_mean,
 )
@@ -27,9 +27,6 @@ from .imaging import (
     get_optimal_image_interval,
     calc_multiscale_scales,
     get_multiscale_bias,
-    calc_field_of_view,
-    calc_cellsize,
-    get_fft_size,
 )
 from .image_utils import (
     create_circular_mask,
@@ -41,8 +38,8 @@ from .image_utils import (
 )
 from .udocker_utils import run_wsclean, run_quartical
 from .sunpos_utils import (
-    cal_solar_phaseshift, 
-    shift_solarcenter, 
+    cal_solar_phaseshift,
+    shift_solarcenter,
     determine_quiet_disk,
 )
 
@@ -129,7 +126,7 @@ def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1):
                 count += 1
 
 
-def determine_disk_visibility(msname,chan=-1):
+def determine_disk_visibility(msname, chan=-1):
     """
     Determine whether solar disk is visible or not
 
@@ -139,7 +136,7 @@ def determine_disk_visibility(msname,chan=-1):
         Measurement set
     chan : int, optional
         Channel number to use
-        
+
     Returns
     -------
     numpy.array
@@ -150,8 +147,10 @@ def determine_disk_visibility(msname,chan=-1):
         Timestamps where disk is detected at least in one channel
     """
     import warnings
+
     warnings.simplefilter("ignore", RuntimeWarning)
     from casatools import ms as casamstool, table
+
     msmd = msmetadata()
     msmd.open(msname)
     freq = msmd.meanfreq(0)
@@ -169,42 +168,46 @@ def determine_disk_visibility(msname,chan=-1):
     mstool = casamstool()
     uvdist = 150.0 * wavelength
     mstool.open(msname)
-    if chan>0:
-        mstool.selectchannel(nchan=1,start=chan, width=1)
+    if chan > 0:
+        mstool.selectchannel(nchan=1, start=chan, width=1)
         print(f"Using channel: {chan}")
     print(f"UV range: {uvdist-10.0}, {uvdist+10.0}")
     selection_ok = mstool.select({"uvdist": [uvdist - 10.0, uvdist + 10.0]})
     if not selection_ok:
         mstool.close()
         mstool.open(msname)
-        if chan>0:
-            mstool.selectchannel(nchan=1,start=chan, width=1)
+        if chan > 0:
+            mstool.selectchannel(nchan=1, start=chan, width=1)
         mstool.select({"uvdist": [uvdist - 50.0, uvdist + 50.0]})
     mstool.selectpolarization("I")
     if datacolumn == "corrected":
-        data_first_lobe = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
+        data_first_lobe = np.abs(
+            mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]
+        )
     else:
         data_first_lobe = np.abs(mstool.getdata("DATA", ifraxis=True)["data"])
     data_first_lobe_flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
     mstool.close()
-    data_first_lobe_flag = np.any(data_first_lobe_flag,axis=0)
-    data_first_lobe[0,...][data_first_lobe_flag]=np.nan
-    data_first_lobe = np.nanmedian(data_first_lobe,axis=2)
+    data_first_lobe_flag = np.any(data_first_lobe_flag, axis=0)
+    data_first_lobe[0, ...][data_first_lobe_flag] = np.nan
+    data_first_lobe = np.nanmedian(data_first_lobe, axis=2)
     mstool.open(msname)
     mstool.selectpolarization("I")
-    if chan>0:
-        mstool.selectchannel(nchan=1,start=chan, width=1)
-    mstool.select({"uvdist": [0.0,0.0]})
+    if chan > 0:
+        mstool.selectchannel(nchan=1, start=chan, width=1)
+    mstool.select({"uvdist": [0.0, 0.0]})
     if datacolumn == "corrected":
-        data_autocorr = np.abs(mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"])
+        data_autocorr = np.abs(
+            mstool.getdata("CORRECTED_DATA", ifraxis=True)["corrected_data"]
+        )
     else:
         data_autocorr = np.abs(mstool.getdata("DATA", ifraxis=True)["data"])
     data_autocorr_flag = mstool.getdata("FLAG", ifraxis=True)["flag"]
-    data_autocorr_flag = np.any(data_autocorr_flag,axis=0)
+    data_autocorr_flag = np.any(data_autocorr_flag, axis=0)
     mstool.close()
-    data_autocorr[0,...][data_autocorr_flag]=np.nan
-    data_autocorr = np.nanmedian(data_autocorr,axis=2)
-    r_I = data_first_lobe[0, ...]/data_autocorr[0,...]
+    data_autocorr[0, ...][data_autocorr_flag] = np.nan
+    data_autocorr = np.nanmedian(data_autocorr, axis=2)
+    r_I = data_first_lobe[0, ...] / data_autocorr[0, ...]
     detected = r_I < 0.1
     n_detected_per_time = np.nansum(detected, axis=0)
     detected_timestamps = np.where(n_detected_per_time > 0)[0]
@@ -212,14 +215,14 @@ def determine_disk_visibility(msname,chan=-1):
     if len(pos) == 0:
         return np.array([], dtype=int), np.array([], dtype=int), detected_timestamps
     elif len(pos) == 1:
-        if chan>1:
+        if chan > 1:
             chans = np.array([chan])
         else:
             chans = pos[0]
         timestamps = np.zeros_like(chans)
         return chans, timestamps, detected_timestamps
     else:
-        if chan>1:
+        if chan > 1:
             chans = np.array([chan])
         else:
             chans = pos[0]
@@ -925,7 +928,7 @@ def correct_pbcor_leakage(
         ########################################
         # Estimating and correcting leakage
         ########################################
-        if len(leakage_info)==0:
+        if len(leakage_info) == 0:
             (
                 q_leakage,
                 u_leakage,
@@ -935,14 +938,14 @@ def correct_pbcor_leakage(
                 v_leakage_err,
             ) = calc_leakage(pbcor_image)
             if np.isnan(q_leakage):
-                q_leakage=0.0
-                q_leakage_err=0.0
+                q_leakage = 0.0
+                q_leakage_err = 0.0
             if np.isnan(u_leakage):
-                u_leakage=0.0
-                u_leakage_err=0.0
+                u_leakage = 0.0
+                u_leakage_err = 0.0
             if np.isnan(v_leakage):
-                v_leakage=0.0
-                v_leakage_err=0.0
+                v_leakage = 0.0
+                v_leakage_err = 0.0
             leakage_info = [
                 q_leakage,
                 u_leakage,
@@ -1152,7 +1155,7 @@ def correct_spectrosnap_pbleak(
     images = list(image_dic.keys())
     models = list(model_dic.keys())
     leakage_info_list = []
-    leakage_info_dic={}
+    leakage_info_dic = {}
     no_disk_detected_images = []
     for i in range(len(images)):
         imagename = images[i]
@@ -1167,11 +1170,11 @@ def correct_spectrosnap_pbleak(
                     logger.info(f"Leakage correction for: {imagename}.")
                 else:
                     print(f"Leakage correction for: {imagename}.")
-                disk_detected, disk_size = determine_quiet_disk(wsclean_images[0])     
+                disk_detected, disk_size = determine_quiet_disk(wsclean_images[0])
                 if disk_detected is False:
                     logger.debug(f"Solar disk is not detected for: {wsclean_images[0]}")
                     no_disk_detected_images.append([wsclean_images, wsclean_models])
-                else:           
+                else:
                     leakage_info = single_image_update_leakage(
                         wsclean_images,
                         wsclean_models,
@@ -1184,14 +1187,16 @@ def correct_spectrosnap_pbleak(
                         ncpu=ncpu,
                     )
                     if leakage_info is None:
-                        logger.debug(f"leakage can not be calculated for: {wsclean_images[0]}")
+                        logger.debug(
+                            f"leakage can not be calculated for: {wsclean_images[0]}"
+                        )
                         no_disk_detected_images.append([wsclean_images, wsclean_models])
                     else:
                         leakage_info_list.append(leakage_info)
                         freq = fits.getheader(wsclean_images[0])["CRVAL3"]
                         freq_keys = leakage_info_dic.keys()
-                        if freq not in freq_leys:
-                            leakage_info_dic[freq]=leakage_info
+                        if freq not in freq_keys:
+                            leakage_info_dic[freq] = leakage_info
                         else:
                             old_leakage_info = leakage_info_dic[freq]
                             temp_leakage_info = [old_leakage_info, leakage_info]
@@ -1205,28 +1210,35 @@ def correct_spectrosnap_pbleak(
                             q_leakage, q_err = weighted_mean(Q, Qe)
                             u_leakage, u_err = weighted_mean(U, Ue)
                             v_leakage, v_err = weighted_mean(V, Ve)
-                            leakage_info_dic[freq] = [q_leakage, u_leakage, v_leakage, q_err, u_err, v_err]
-    if len(no_disk_detected_images)>0:
+                            leakage_info_dic[freq] = [
+                                q_leakage,
+                                u_leakage,
+                                v_leakage,
+                                q_err,
+                                u_err,
+                                v_err,
+                            ]
+    if len(no_disk_detected_images) > 0:
         freq_keys = np.array(leakage_info_dic.keys())
         for non_disk in no_disk_detected_images:
             wsclean_images = non_disk[0]
             wsclean_models = non_disk[1]
             freq = fits.getheader(wsclean_images[0])["CRVAL3"]
-            pos = np.argmin(np.abs(freq_keys-freq))
+            pos = np.argmin(np.abs(freq_keys - freq))
             key = freq_keys[pos]
             old_leakage_info = leakage_info_dic[key]
             leakage_info = single_image_update_leakage(
-                                wsclean_images,
-                                wsclean_models,
-                                imagename,
-                                modelname,
-                                metafits,
-                                pbcor=pbcor,
-                                leakagecor=leakagecor,
-                                leakage_info=old_leakage_info,
-                                pbuncor=pbuncor,
-                                ncpu=ncpu,
-                            )
+                wsclean_images,
+                wsclean_models,
+                imagename,
+                modelname,
+                metafits,
+                pbcor=pbcor,
+                leakagecor=leakagecor,
+                leakage_info=old_leakage_info,
+                pbuncor=pbuncor,
+                ncpu=ncpu,
+            )
             leakage_info_list.append(leakage_info)
     os.system("rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
     return leakage_info_list
@@ -1265,9 +1277,10 @@ def selfcal_round(
     do_polcal=False,
     solve_array_leakage=False,
     pol_solnorm=False,
+    polcal_datacolumn="DATA",
     do_flag=False,
     restore_flag=True,
-    shift_info=(),
+    shift_info="",
     ncpu=-1,
     mem=-1,
 ):
@@ -1340,12 +1353,14 @@ def selfcal_round(
         Perform a single leakage correction over the entire array
     pol_solnorm : bool, optional
         Normalise quartical solutions or not
+    polcal_datacolumn : str, optional
+        Polcal data column
     do_flag : bool, optional
         Perform UVsub flagging
     restore_flag : bool, optional
         Restore last round flags or not
-    shift_info : tuple, optional
-        Phase shift information (output of calc_solar_phaseshift function)
+    shift_info : str, optional
+        Phase shift information, output of calc_solar_phaseshift function, in comma seperated string format
     ncpu : int, optional
         Number of CPUs to use in WSClean
     mem : float, optional
@@ -1383,8 +1398,12 @@ def selfcal_round(
     msname = msname.rstrip("/")
     msname = os.path.abspath(msname)
     os.chdir(selfcaldir)
-    disk_detected=False
-    
+    disk_detected = False
+    if shift_info!="":
+        shift_info = shift_info.split(",")
+    else:
+        shift_info = []
+
     if minuv > 0:
         if uvrange == "" or uvrange.startswith(">"):
             uvrange = f">{minuv}lambda"
@@ -1402,7 +1421,7 @@ def selfcal_round(
     )
     applycal_gaintable = []
     interp = []
-    leakage_info_list = [0.0]*6
+    leakage_info_list = [0.0] * 6
     try:
         ####################################
         # Determining ms metadata
@@ -1444,7 +1463,7 @@ def selfcal_round(
                 nchans = 1
             if min_tol_factor <= 0:
                 min_tol_factor = 1.0  # In percentage
-            
+
             diff = np.diff(times)
             change_idx = np.where(np.diff(diff) != 0)[0]
             max_ntime = int(len(change_idx) / 2) + 1
@@ -1557,16 +1576,16 @@ def selfcal_round(
         #######################################
         # Disk detection
         #######################################
-        if pol=="I":
+        if pol == "I":
             stokesI_images = sorted(glob.glob(f"{prefix}*-image.fits"))
         else:
             stokesI_images = sorted(glob.glob(f"{prefix}*-I-image.fits"))
         for imagename in stokesI_images:
             detected, size = determine_quiet_disk(imagename)
             if detected and disk_detected is False:
-                disk_detected=True
+                disk_detected = True
                 break
-                
+
         #######################################
         # Making stokes cube
         #######################################
@@ -1606,58 +1625,68 @@ def selfcal_round(
                 elif suffix == "residual":
                     wsclean_residuals_dic[image_cube] = wsclean_images
 
-        if do_polcal:
-            ################################
-            # Leakage correction
-            ################################
-            if pbcor is True or leakagecor is True or pbuncor is True:
-                leakage_info_list = correct_spectrosnap_pbleak(
-                    wsclean_images_dic,
-                    wsclean_models_dic,
-                    metafits,
-                    logger=logger,
-                    pbcor=pbcor,
-                    leakagecor=leakagecor,
-                    pbuncor=pbuncor,
-                    ncpu=ncpu,
-                )
-            else:
-                leakage_info_list = [0.0] * 6
-        
+        leakage_corrected = False
+        ################################
+        # Leakage correction
+        ################################
+        if do_polcal and (pbcor is True or leakagecor is True or pbuncor is True):
+            leakage_info_list = correct_spectrosnap_pbleak(
+                wsclean_images_dic,
+                wsclean_models_dic,
+                metafits,
+                logger=logger,
+                pbcor=pbcor,
+                leakagecor=leakagecor,
+                pbuncor=pbuncor,
+                ncpu=ncpu,
+            )
+            leakage_corrected = True
+
         #########################################
         # Shifting solar center to phase center
         #########################################
-        shifted=False
-        if len(shift_info)>0:
-            shift_msg,ra,dec,sun_radeg,sun_decdeg,apparent_pix_ra,apparent_pix_dec,seperation_arcsec = shift_info
+        shifted = False
+        if len(shift_info) == 8:
+            logger.info("Shifting image phase center.")
+            (
+                shift_msg,
+                ra,
+                dec,
+                sun_radeg,
+                sun_decdeg,
+                apparent_pix_ra,
+                apparent_pix_dec,
+                seperation_arcsec,
+            ) = shift_info
             all_images = glob.glob(f"{prefix}*image.fits")
             all_models = glob.glob(f"{prefix}*model.fits")
             for image in all_images:
                 logger.debug(f"Shifting image: {image}")
                 shift_solarcenter(
                     image,
-                    sun_radeg=sun_radeg,
-                    sun_decdeg=sun_decdeg,
-                    apparent_pix_ra=apparent_pix_ra,
-                    apparent_pix_dec=apparent_pix_dec,
+                    sun_radeg=float(sun_radeg),
+                    sun_decdeg=float(sun_decdeg),
+                    apparent_pix_ra=float(apparent_pix_ra),
+                    apparent_pix_dec=float(apparent_pix_dec),
                     overwrite=True,
                 )
             for model in all_models:
                 logger.debug(f"Shifting model image: {model}")
                 shift_solarcenter(
                     model,
-                    sun_radeg=sun_radeg,
-                    sun_decdeg=sun_decdeg,
-                    apparent_pix_ra=apparent_pix_ra,
-                    apparent_pix_dec=apparent_pix_dec,
+                    sun_radeg=float(sun_radeg),
+                    sun_decdeg=float(sun_decdeg),
+                    apparent_pix_ra=float(apparent_pix_ra),
+                    apparent_pix_dec=float(apparent_pix_dec),
                     overwrite=True,
                 )
-                shifted=True
+                shifted = True
 
-        if do_polcal or shifted:
-            ####################################
-            # Predict models
-            ####################################
+        if leakage_corrected or shifted:
+            ##########################################################
+            # Predict models if image is shifted or leakage corrected
+            ##########################################################
+            logger.debug("Re-predicting corrected models.")
             prediction_failed = False
             delmod(vis=msname, otf=True, scr=True)
             wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " -predict " + msname
@@ -2032,7 +2061,7 @@ def selfcal_round(
             quartical_args = [
                 "goquartical",
                 f"input_ms.path={msname}",
-                "input_ms.data_column=DATA",
+                "input_ms.data_column={polcal_datacolumn}",
                 f"input_ms.select_uv_range=[{minuv},{maxuv}]",
                 "input_model.recipe=MODEL_DATA",
                 f"output.gain_directory={pol_caltable}",
@@ -2090,7 +2119,7 @@ def selfcal_round(
             quartical_args = [
                 "goquartical",
                 f"input_ms.path={msname}",
-                "input_ms.data_column=DATA",
+                "input_ms.data_column={polcal_datacolumn}",
                 "output.log_to_terminal=True",
                 f"output.log_directory={quartical_log}",
                 f"output.gain_directory={temp_pol_caltable}",

@@ -536,14 +536,16 @@ def basic_cal_subflow(
             cal_freqres_metafits = float(fits.getheader(cal_metafits)["FINECHAN"])
             msmd = msmetadata()
             msmd.open(split_cal_mslist[0])
-            cal_freqres_ms = float(round(msmd.chanres(0,unit="kHz")[0],0))
+            cal_freqres_ms = float(round(msmd.chanres(0, unit="kHz")[0], 0))
             print(f"Metafits frequency resolution: {cal_freqres_metafits}kHz.")
             print(f"Measurement set frequency resolution: {cal_freqres_ms}kHz.")
-            if cal_freqres_ms!=cal_freqres_metafits:
-                print("Measurement set is already frequency averaged. Not flagging coarse channel edges.")
-                flag_bad_spw=False
+            if cal_freqres_ms != cal_freqres_metafits:
+                print(
+                    "Measurement set is already frequency averaged. Not flagging coarse channel edges."
+                )
+                flag_bad_spw = False
             else:
-                flag_bad_spw=True
+                flag_bad_spw = True
             try:
                 future_flag = run_flag.with_options(
                     task_run_name=f"flag_cal_data_{cal_obsid}"

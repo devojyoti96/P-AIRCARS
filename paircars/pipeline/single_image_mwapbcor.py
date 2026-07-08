@@ -167,9 +167,9 @@ def get_pbcor_image(
         else:
             stokesaxis = 1
             stokes = "I"
-        if imagedata.shape[0]==1 and imagedata.shape[1]==1:
-            stokesaxis=1
-            stokes="I"
+        if imagedata.shape[0] == 1 and imagedata.shape[1] == 1:
+            stokesaxis = 1
+            stokes = "I"
 
         ####################################
         # Preparing data and data grid

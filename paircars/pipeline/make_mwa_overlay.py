@@ -200,7 +200,7 @@ def main(
             futures = []
             for img, euv_fits in zip(batch_imgs, batch_euv):
                 name_prefix = os.path.basename(img).replace(".fits", "")
-                name_prefix = name_prefix.replace("IQUV","I")
+                name_prefix = name_prefix.replace("IQUV", "I")
                 futures.append(
                     dask_client.submit(
                         make_mwa_overlay,

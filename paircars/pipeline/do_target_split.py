@@ -137,9 +137,9 @@ def split_target_scans(
         meta_chanres = header["FINECHAN"]
         if "MWAX" in mode:
             flag_central_chan = False
-        else:            
+        else:
             flag_central_chan = True
-        
+
         tasks = []
         splited_ms_list = []
 
@@ -149,8 +149,8 @@ def split_target_scans(
             chanres_MHz = msmd.chanres(0, unit="MHz")[0]
             if flag_central_chan:
                 chanres_kHz = msmd.chanres(0, unit="kHz")[0]
-                if chanres_kHz>meta_chanres:
-                    flag_central_chan=False    
+                if chanres_kHz > meta_chanres:
+                    flag_central_chan = False
             msmd.close()
             if freqres > 0:  # Image resolution is in MHz
                 chanwidth = int(freqres / chanres_MHz)
@@ -162,7 +162,7 @@ def split_target_scans(
                 timebin = str(timeres) + "s"
             else:
                 timebin = ""
-                
+
             #############################
             # Making spectral chunks
             #############################
@@ -186,11 +186,15 @@ def split_target_scans(
                     if single_chan_split:
                         good_spwlist.append(f"0:{min(good_chan_list)}")
                     else:
-                        good_spwlist.append(f"0:{min(good_chan_list)}~{max(good_chan_list)}")
+                        good_spwlist.append(
+                            f"0:{min(good_chan_list)}~{max(good_chan_list)}"
+                        )
                         if flag_central_chan:
-                            central_chan = int((start_chan+end_chan)/2)
+                            central_chan = int((start_chan + end_chan) / 2)
                             logger.debug(f"Flag central channel: {central_chan}.")
-                            logger.debug(f"flag_badchan(\'{msname}\', spw=\'0:{central_chan}\')")
+                            logger.debug(
+                                f"flag_badchan('{msname}', spw='0:{central_chan}')"
+                            )
                             flag_badchan(msname, spw=f"0:{central_chan}")
                     coarse_chlist.append(f"{coarse_chan}")
 
@@ -471,7 +475,7 @@ def main(
         return msg, expected, succeed
     except Exception:
         logger.exception("Exception occured in spliting.", exc_info=True)
-        msg=1
+        msg = 1
         return msg, expected, succeed
     finally:
         time.sleep(5)
@@ -484,7 +488,6 @@ def main(
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")
-        
 
 
 def cli():
@@ -569,7 +572,9 @@ def cli():
         help="Splited ms prefix name",
     )
     adv_args.add_argument("--force_split", action="store_true", help="Force to split")
-    adv_args.add_argument("--single_chan_split", action="store_true", help="Single channel to split")
+    adv_args.add_argument(
+        "--single_chan_split", action="store_true", help="Single channel to split"
+    )
     adv_args.add_argument("--verbose", action="store_true", help="Verbose logs")
     adv_args.add_argument("--jobid", type=int, default=0, help="Job ID")
 

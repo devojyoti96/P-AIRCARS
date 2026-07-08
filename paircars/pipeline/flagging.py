@@ -13,7 +13,7 @@ from paircars.utils.basic_utils import (
     capture_all_output,
 )
 from paircars.utils.flagging import (
-    flagsummary, 
+    flagsummary,
     flag_badchan,
     flag_badants,
     do_flag_backup,
@@ -119,10 +119,10 @@ def single_ms_flag(
         ##############################
         if badspw != "":
             try:
-                flag_cmd = f"flag_badchan(\'{msname}\',\'{badspw}\')"
+                flag_cmd = f"flag_badchan('{msname}','{badspw}')"
                 print(flag_cmd)
                 with suppress_output():
-                    flag_badchan(msname,badspw)
+                    flag_badchan(msname, badspw)
             except Exception:
                 traceback.print_exc()
                 pass
@@ -132,9 +132,9 @@ def single_ms_flag(
         ##############################
         if bad_ants_str != "":
             try:
-                flag_cmd = f"flag_badants(\'{msname}\',antlist={bad_ants_str.split(',')})"
+                flag_cmd = f"flag_badants('{msname}',antlist={bad_ants_str.split(',')})"
                 with suppress_output():
-                    flag_badants(msname,antlist=bad_ants_str.split(","))
+                    flag_badants(msname, antlist=bad_ants_str.split(","))
             except Exception:
                 traceback.print_exc()
                 pass
@@ -551,7 +551,7 @@ def do_flagging(
         header = fits.getheader(metafits)
         mode = header["MODE"]
         meta_chanres = header["FINECHAN"]
-       
+
         tasks = []
         test_msname = os.path.abspath(mslist[0].rstrip("/"))
         if flag_bad_spw:
@@ -562,7 +562,7 @@ def do_flagging(
                 msmd.open(mslist[0])
                 chanres = msmd.chanres(0, unit="kHz")[0]
                 msmd.close()
-                if chanres>meta_chanres:
+                if chanres > meta_chanres:
                     flag_central_chan = False
                 else:
                     flag_central_chan = True
@@ -574,7 +574,7 @@ def do_flagging(
                 logger.info("No bad spectral window.")
         else:
             badspw = ""
-            
+
         if flag_bad_ants:
             bad_ants_str = get_mwa_bad_ants(metafits)
             if bad_ants_str != "":
