@@ -171,7 +171,6 @@ def split_target_scans(
             #############################
             coarse_channel_bands = get_MWA_coarse_bands(msname)
             coarse_chans = get_MWA_coarse_chan(msname)
-            logger.debug(f"Coarse channels for {msname} are: {coarse_chans}")
             if len(split_coarse_chans) == 0:
                 use_coarse_chans = coarse_chans
             else:
