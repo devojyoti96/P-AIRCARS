@@ -1354,7 +1354,7 @@ def selfcal_subflow(
                     target_metafits,
                     cal_applied,
                     int_solint=int_solint,
-                    pol_soint=pol_solint,
+                    pol_solint=pol_solint,
                     do_apcal=do_ap_selfcal,
                     do_polcal=do_polcal,
                     solar_selfcal=solar_selfcal,
