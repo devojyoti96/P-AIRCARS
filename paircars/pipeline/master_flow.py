@@ -115,7 +115,8 @@ def master_control(
     do_ap_selfcal=True,
     solar_selfcal=True,
     use_solar_mask=True,
-    solint="30s",
+    int_solint="60s",
+    pol_solint="240s",
     redo_selfcal=False,
     # Sidereal correction
     do_sidereal_cor=False,
@@ -204,8 +205,10 @@ def master_control(
         Apply self-calibration solutions
     do_ap_selfcal : bool, optional
         Perform amplitude-phase self-cal or not
-    solint : str, optional
-        Solution intervals in self-cal
+    int_solint : str, optional
+        Solution intervals in gain self-cal
+    pol_solint : str, optional
+        Solution intervals in polarisation self-cal
     solar_selfcal : bool, optional
         Solar selfcal
     use_solar_mask : bool, optional
@@ -1214,7 +1217,8 @@ def master_control(
             do_sidereal_cor=do_sidereal_cor,
             use_solarflagger=use_solarflagger,
             keep_backup=keep_backup,
-            solint=solint,
+            int_solint=int_solint,
+            pol_solint=pol_solint,
             timeavg=timeavg,
             freqavg=freqavg,
             image_timeres=image_timeres,
@@ -1662,10 +1666,16 @@ def cli():
         "###################\nAdvanced calibration parameters\n###################"
     )
     advanced_cal.add_argument(
-        "--solint",
+        "--int_solint",
         type=str,
-        default="30s",
-        help="Solution interval for calibration (e.g. 'int', '10s', '5min', 'inf')",
+        default="60s",
+        help="Solution interval for gain calibration (e.g. 'int', '10s', '5min', 'inf')",
+    )
+    advanced_cal.add_argument(
+        "--pol_solint",
+        type=str,
+        default="240s",
+        help="Solution interval for polarisation calibration (e.g. 'int', '10s', '5min', 'inf')",
     )
     advanced_cal.add_argument(
         "--cal_uvrange",
@@ -2189,7 +2199,8 @@ def cli():
             do_apply_selfcal=args.do_apply_selfcal,
             do_ap_selfcal=args.do_ap_selfcal,
             solar_selfcal=args.solar_selfcal,
-            solint=args.solint,
+            int_solint=args.int_solint,
+            pol_solint=args.pol_solint,
             redo_selfcal=args.redo_selfcal,
             # Sidereal correction
             do_sidereal_cor=args.do_sidereal_cor,

@@ -402,7 +402,7 @@ def cli():
         return 1
 
     target_datadir_permission = check_permission(args.target_datadir)
-    if target_datadir_permission is False:
+    if (args.target_datadir is not None or args.target_datadir!="") and target_datadir_permission is False:
         print(
             f"Do not have permission for target data directory: {args.target_datadir}"
         )
@@ -412,7 +412,7 @@ def cli():
     filtered_cal_datadir_list = []
     for cal_datadir in cal_datadir_list:
         cal_datadir_permission = check_permission(cal_datadir)
-        if cal_datadir_permission is False:
+        if (cal_datadir is not None or cal_datadir!="") and cal_datadir_permission is False:
             print(
                 f"Do not have permission for calibrator data directory: {cal_datadir}"
             )
@@ -468,6 +468,7 @@ def cli():
         ############################################
         args_list = [shlex.quote(arg) for arg in sys.argv[1:]]
         cli_cmd = "run-mwa-paircars " + " ".join(args_list)
+        os.makedirs(f"{args.workdir}",exist_ok=True)
         if os.path.exists(f"{args.workdir}/inputs.txt"):
             os.system(f"rm -rf {args.workdir}/inputs.txt")
         with open(f"{args.workdir}/inputs.txt","w") as f:

@@ -886,7 +886,8 @@ def run_selfcal_jobs(
     intselfcal_min_iter=3,
     polselfcal_min_iter=5,
     conv_frac=0.3,
-    solint="30s",
+    int_solint="60s",
+    pol_solint="240s",
     do_apcal=True,
     do_polcal=True,
     solar_selfcal=True,
@@ -946,8 +947,10 @@ def run_selfcal_jobs(
         Image weighitng scheme
     robust : float, optional
         Robustness parameter for briggs weighting
-    solint : str, optional
-        Solutions interval
+    int_solint : str, optional
+        Solutions interval for gain calibration
+    pol_solint : str, optional
+        Solutions interval for polarisation calibration
     do_apcal : bool, optional
         Perform ap-selfcal or not
     do_polcal : bool, optional
@@ -1037,7 +1040,8 @@ def run_selfcal_jobs(
                 intselfcal_min_iter=int(intselfcal_min_iter),
                 polselfcal_min_iter=int(polselfcal_min_iter),
                 conv_frac=float(conv_frac),
-                solint=solint,
+                int_solint=int_solint,
+                pol_solint=pol_solint,
                 uvrange=uvrange,
                 minuv=float(minuv),
                 weight=weight,

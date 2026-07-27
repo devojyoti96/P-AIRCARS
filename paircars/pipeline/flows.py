@@ -864,7 +864,8 @@ def selfcal_subflow(
     use_solarflagger,
     keep_backup,
     # Selfcal parameters
-    solint,
+    int_solint,
+    pol_solint,
     timeavg,
     freqavg,
     image_timeres,
@@ -1017,13 +1018,13 @@ def selfcal_subflow(
             )
             prefix = "selfcal"
             try:
-                time_interval = float(solint)
+                time_interval = float(int_solint)
             except BaseException:
-                if solint.endswith("s"):
-                    time_interval = float(solint.split("s")[0])
-                elif solint.endswith("min"):
-                    time_interval = float(solint.split("min")[0]) * 60
-                elif solint == "int":
+                if int_solint.endswith("s"):
+                    time_interval = float(int_solint.split("s")[0])
+                elif int_solint.endswith("min"):
+                    time_interval = float(int_solint.split("min")[0]) * 60
+                elif int_solint == "int":
                     time_interval = timeres
                 else:
                     time_interval = 30.0
@@ -1352,7 +1353,8 @@ def selfcal_subflow(
                     selfcaldir,
                     target_metafits,
                     cal_applied,
-                    solint=solint,
+                    int_solint=int_solint,
+                    pol_soint=pol_solint,
                     do_apcal=do_ap_selfcal,
                     do_polcal=do_polcal,
                     solar_selfcal=solar_selfcal,
