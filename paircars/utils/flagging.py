@@ -111,11 +111,9 @@ def flag_badchan(msname, spw=""):
         start_chan = int(s.split("~")[0])
         end_chan = int(s.split("~")[-1])
         if start_chan == end_chan:
-            print(f"Flagging: {start_chan}")
             flag[:, start_chan, :] = True
         else:
             for chan in range(start_chan, end_chan + 1):
-                print(f"Flagging: {chan}")
                 flag[:, chan, :] = True
     tb.putcol("FLAG", flag)
     tb.flush()
@@ -158,7 +156,6 @@ def flag_badants(msname, antlist=[]):
     flag = tb.getcol("FLAG")
     for ant in ant_ids:
         pos = np.where(ant1 == ant)
-        print(f"Flagging: {ant}")
         flag[..., pos] = True
     tb.putcol("FLAG", flag)
     tb.flush()

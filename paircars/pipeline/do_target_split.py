@@ -175,72 +175,76 @@ def split_target_scans(
             if len(split_coarse_chans) == 0:
                 use_coarse_chans = coarse_chans
             else:
-                use_coarse_chans = split_coarse_chans
-            logger.debug(f"Using coarse channels for {msname} are: {use_coarse_chans}")
-            coarse_chlist = []
-            good_spwlist = []
-            for c in range(len(coarse_channel_bands)):
-                coarse_chan = coarse_chans[c]
-                if coarse_chan in use_coarse_chans:
-                    chan = coarse_channel_bands[c]
-                    start_chan = chan[0]
-                    end_chan = chan[1]
-                    good_chan_list = chan[2]
-                    if single_chan_split:
-                        good_spwlist.append(f"0:{min(good_chan_list)}")
-                    else:
-                        good_spwlist.append(
-                            f"0:{min(good_chan_list)}~{max(good_chan_list)}"
-                        )
-                        if flag_central_chan:
-                            central_chan = int((start_chan + end_chan) / 2)
-                            logger.debug(f"Flag central channel: {central_chan}.")
-                            logger.debug(
-                                f"flag_badchan('{msname}', spw='0:{central_chan}')"
+                use_coarse_chans = []
+                for coarse_chan in coarse_chans:
+                    if coarse_chan in split_coarse_chans:
+                        use_coarse_chans.append(coarse_chan)    
+            if len(use_coarse_chans)>0:
+                logger.debug(f"Using coarse channels for {msname} are: {use_coarse_chans}")
+                coarse_chlist = []
+                good_spwlist = []
+                for c in range(len(coarse_channel_bands)):
+                    coarse_chan = coarse_chans[c]
+                    if coarse_chan in use_coarse_chans:
+                        chan = coarse_channel_bands[c]
+                        start_chan = chan[0]
+                        end_chan = chan[1]
+                        good_chan_list = chan[2]
+                        if single_chan_split:
+                            good_spwlist.append(f"0:{min(good_chan_list)}")
+                        else:
+                            good_spwlist.append(
+                                f"0:{min(good_chan_list)}~{max(good_chan_list)}"
                             )
-                            flag_badchan(msname, spw=f"0:{central_chan}")
-                    coarse_chlist.append(f"{coarse_chan}")
+                            if flag_central_chan:
+                                central_chan = int((start_chan + end_chan) / 2)
+                                logger.debug(f"Flag central channel: {central_chan}.")
+                                logger.debug(
+                                    f"flag_badchan('{msname}', spw='0:{central_chan}')"
+                                )
+                                flag_badchan(msname, spw=f"0:{central_chan}")
+                        coarse_chlist.append(f"{coarse_chan}")
 
-            timerange_list = get_timeranges(
-                msname,
-                time_interval,
-                time_window,
-                quack_timestamps=quack_timestamps,
-            )
-            timerange = ",".join(timerange_list)
-            for i in range(len(coarse_chlist)):
-                good_spw = good_spwlist[i]
-                coarse_chan = coarse_chlist[i]
-                outputvis = f"{workdir}/{prefix}_{obsid}_ch_{coarse_chan}.ms"
-                if os.path.exists(f"{outputvis}/.splited") and force_split is False:
-                    logger.info(f"{outputvis} is already splited successfully.")
-                    splited_ms_list.append(outputvis)
-                else:
-                    if os.path.exists(outputvis):
-                        logger.debug(f"Deleteing pre-existing output ms: {outputvis}")
-                        os.system(f"rm -rf {outputvis}")
-                    if os.path.exists(f"{outputvis}.flagversions"):
+                timerange_list = get_timeranges(
+                    msname,
+                    time_interval,
+                    time_window,
+                    quack_timestamps=quack_timestamps,
+                )
+                timerange = ",".join(timerange_list)
+                for i in range(len(coarse_chlist)):
+                    good_spw = good_spwlist[i]
+                    coarse_chan = coarse_chlist[i]
+                    outputvis = f"{workdir}/{prefix}_{obsid}_ch_{coarse_chan}.ms"
+                    if os.path.exists(f"{outputvis}/.splited") and force_split is False:
+                        logger.info(f"{outputvis} is already splited successfully.")
+                        splited_ms_list.append(outputvis)
+                    else:
+                        if os.path.exists(outputvis):
+                            logger.debug(f"Deleteing pre-existing output ms: {outputvis}")
+                            os.system(f"rm -rf {outputvis}")
+                        if os.path.exists(f"{outputvis}.flagversions"):
+                            logger.debug(
+                                f"Deleteing pre-existing output ms flags: {outputvis}.flagversions"
+                            )
+                            os.system(f"rm -rf {outputvis}.flagversions")
+                        logger.debug("Spliting parameters:")
                         logger.debug(
-                            f"Deleteing pre-existing output ms flags: {outputvis}.flagversions"
+                            f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {good_spw}, time range: {timerange}"
                         )
-                        os.system(f"rm -rf {outputvis}.flagversions")
-                    logger.debug("Spliting parameters:")
-                    logger.debug(
-                        f"Channel width: {chanwidth}, timebin: {timebin}, datacolumn: {datacolumn}, spectral window: {good_spw}, time range: {timerange}"
-                    )
-                    tasks.append(
-                        delayed(single_mstransform_wrapper)(
-                            msname=msname,
-                            outputms=outputvis,
-                            width=chanwidth,
-                            timebin=timebin,
-                            datacolumn=datacolumn,
-                            spw=good_spw,
-                            corr="",
-                            timerange=timerange,
-                            n_threads=n_threads,
+                        tasks.append(
+                            delayed(single_mstransform_wrapper)(
+                                msname=msname,
+                                outputms=outputvis,
+                                width=chanwidth,
+                                timebin=timebin,
+                                datacolumn=datacolumn,
+                                spw=good_spw,
+                                corr="",
+                                timerange=timerange,
+                                n_threads=n_threads,
+                            )
                         )
-                    )
         future = dask_client.compute(tasks)
         result_wrapper = dask_client.gather(future)
         result = []
