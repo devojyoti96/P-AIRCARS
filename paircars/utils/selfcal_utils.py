@@ -1180,9 +1180,9 @@ def selfcal_round(
     ncpu = max(1, ncpu)
     mem = max(1, mem)
 
-    limit_threads(n_threads=ncpu)
-    from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager
-    from casatools import table
+    with limit_threads(n_threads=ncpu):
+        from casatasks import gaincal, bandpass, applycal, flagdata, delmod, flagmanager
+        from casatools import table
 
     cwd = os.getcwd()
     msname = msname.rstrip("/")

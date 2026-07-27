@@ -298,8 +298,8 @@ def get_unflagged_antennas(
         Flag fraction list
     """
     n_threads = max(1, n_threads)
-    limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
+    with limit_threads(n_threads=n_threads):
+        from casatasks import flagdata
 
     msname = msname.rstrip("/")
     mspath = os.path.dirname(os.path.abspath(msname))
@@ -343,8 +343,8 @@ def get_chans_flag(
     """
     n_threads = max(1, n_threads)
 
-    limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
+    with limit_threads(n_threads=n_threads):
+        from casatasks import flagdata
 
     msname = msname.rstrip("/")
     mspath = os.path.dirname(os.path.abspath(msname))
@@ -388,8 +388,8 @@ def calc_flag_fraction(
         Fraction of the total data flagged
     """
     n_threads = max(1, n_threads)
-    limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
+    with limit_threads(n_threads=n_threads):
+        from casatasks import flagdata
 
     msname = msname.rstrip("/")
     mspath = os.path.dirname(os.path.abspath(msname))
@@ -420,8 +420,8 @@ def flag_outside_uvrange(
     """
     n_threads = max(1, n_threads)
 
-    limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
+    with limit_threads(n_threads=n_threads):
+        from casatasks import flagdata
 
     try:
         if "lambda" in uvrange:

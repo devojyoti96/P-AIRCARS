@@ -21,7 +21,6 @@ from paircars.utils.prefect_setup_utils import (
 )
 from paircars.clusterutils.slurm_cluster import submit_slurm_master_flow
 
-
 def cli():
     parser = argparse.ArgumentParser(
         description="Run P-AIRCARS for calibration and imaging of solar observations.",
@@ -487,10 +486,6 @@ def cli():
                 print(
                     "Some error may occured in batch script execution, while P-AIRCARS may be successully completed."
                 )
-            jobs_running = show_slurm_job_status(clean_old_jobs=False)
-            if jobs_running==0:
-                print("No jobs are running. Closing prefect server.")
-                stop_prefect_server(scheduler_name=scheduler_name)
             return msg
         else:
             print(

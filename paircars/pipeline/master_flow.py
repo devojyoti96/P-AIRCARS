@@ -2241,10 +2241,6 @@ def cli():
             dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
         print("Cluster closed.")
-        jobs_running = show_local_job_status(clean_old_jobs=False)
-            if jobs_running==0:
-                print("No jobs are running. Closing prefect server.")
-                stop_prefect_server(scheduler_name=scheduler_name)
         
         
         

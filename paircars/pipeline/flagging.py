@@ -104,8 +104,8 @@ def single_ms_flag(
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
 
-    limit_threads(n_threads=n_threads)
-    from casatasks import flagdata
+    with limit_threads(n_threads=n_threads):
+        from casatasks import flagdata
 
     msname = msname.rstrip("/")
     if os.path.exists(f"{msname}/.flag_succeed") and not force_flag:
@@ -538,9 +538,9 @@ def do_flagging(
         failed = len(mslist)
 
     try:
-        limit_threads(n_threads=n_threads)
-        from casatools import msmetadata
-        from casatasks import flagdata
+        with limit_threads(n_threads=n_threads):
+            from casatools import msmetadata
+            from casatasks import flagdata
 
         header = fits.getheader(metafits)
         mode = header["MODE"]

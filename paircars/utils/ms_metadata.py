@@ -355,8 +355,8 @@ def get_bad_ants(msname="", fieldnames=[], n_threads=-1):
     """
     n_threads = max(1, n_threads)
 
-    limit_threads(n_threads=n_threads)
-    from casatasks import visstat
+    with limit_threads(n_threads=n_threads):
+        from casatasks import visstat
 
     if len(fieldnames) == 0:
         print("Provide field names.")
@@ -538,8 +538,8 @@ def get_refant(
     """
     n_threads = max(1, n_threads)
 
-    limit_threads(n_threads=n_threads)
-    from casatasks import visstat, casalog
+    with limit_threads(n_threads=n_threads):
+        from casatasks import visstat, casalog
 
     msname = msname.rstrip("/")
     mspath = os.path.dirname(os.path.abspath(msname))

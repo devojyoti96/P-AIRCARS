@@ -81,7 +81,7 @@ def do_selfcal(
     DR_convergence_frac=0.1,
     uvrange="",
     minuv=0,
-    solint="30s",
+    solint="60s",
     weight="briggs",
     robust=0.0,
     do_apcal=True,
@@ -165,8 +165,8 @@ def do_selfcal(
     ncpu = max(1, ncpu)
     mem = abs(mem)
 
-    limit_threads(n_threads=ncpu)
-    from casatasks import split, flagmanager
+    with limit_threads(n_threads=ncpu):
+        from casatasks import split, flagmanager
 
     sub_observer = None
     intlogger, logfile = create_logger(
@@ -375,7 +375,7 @@ def do_selfcal(
         ###########################################
         intlogger.info("Starting self-calibration using Gaussian source model.")
         msg, _ = quiet_sun_selfcal(
-            msname, intlogger, selfcaldir, refant=str(refant), solint=solint
+            msname, intlogger, selfcaldir, refant=str(refant), solint="int"
         )
         if msg == 0:
             intlogger.info(
@@ -821,7 +821,7 @@ def do_polselfcal(
     max_DR=100000,
     min_iter=5,
     threshold=3.0,
-    solint="30s",
+    solint="240s",
     DR_convergence_frac=0.1,
     min_tol_factor=10.0,
     uvrange="",
@@ -901,8 +901,8 @@ def do_polselfcal(
     ncpu = max(1, ncpu)
     mem = abs(mem)
 
-    limit_threads(n_threads=ncpu)
-    from casatasks import split, flagdata
+    with limit_threads(n_threads=ncpu):
+        from casatasks import split, flagdata
 
     sub_observer = None
     pollogger, logfile = create_logger(
@@ -1534,7 +1534,8 @@ def main(
     intselfcal_min_iter=3,
     polselfcal_min_iter=3,
     conv_frac=0.1,
-    solint="30s",
+    int_solint="60s",
+    pol_solint="240s",
     uvrange="",
     minuv=0,
     weight="briggs",
@@ -1583,8 +1584,10 @@ def main(
         Minimum number of iterations before checking for convergence for polarisation selfcal. Default is 3.
     conv_frac : float, optional
         Convergence criterion: fractional change in dynamic range below which iteration stops. Default is 0.1.
-    solint : str, optional
-        Solution interval for gain calibration (e.g., "inf", "30s", "int"). Default is "30s".
+    int_solint : str, optional
+        Solution interval for gain calibration (e.g., "inf", "30s", "int"). Default is "60s".
+    pol_solint : str, optional
+        Solution interval for polarisation calibration (e.g., "inf", "30s", "int"). Default is "240s".
     uvrange : str, optional
         UV range to be used for imaging and calibration, in CASA format. Default is "" (all baselines).
     minuv : float, optional
@@ -1817,7 +1820,7 @@ def main(
             DR_convergence_frac=float(conv_frac),
             uvrange=str(uvrange),
             minuv=float(minuv),
-            solint=str(solint),
+            solint=str(int_solint),
             weight=str(weight),
             robust=float(robust),
             min_tol_factor=float(min_tol_factor),
@@ -1945,7 +1948,7 @@ def main(
                 minuv=float(minuv),
                 weight=str(weight),
                 robust=float(robust),
-                solint=str(solint),
+                solint=str(pol_solint),
                 solar_selfcal=bool(solar_selfcal),
                 use_solarflagger=bool(use_solarflagger),
             )
@@ -2350,7 +2353,8 @@ def cli():
         help="Fractional change in DR to determine convergence",
         metavar="Float",
     )
-    adv_args.add_argument("--solint", type=str, default="30s", help="Solution interval")
+    adv_args.add_argument("--int_solint", type=str, default="60s", help="Solution interval for gain calibration")
+    adv_args.add_argument("--pol_solint", type=str, default="240s", help="Solution interval for polarisation calibration")
     adv_args.add_argument(
         "--uvrange",
         type=str,
@@ -2443,7 +2447,8 @@ def cli():
         intselfcal_min_iter=args.intselfcal_min_iter,
         polselfcal_min_iter=args.polselfcal_min_iter,
         conv_frac=args.conv_frac,
-        solint=args.solint,
+        int_solint=args.int_solint,
+        pol_solint=args.pol_solint,
         uvrange=args.uvrange,
         minuv=args.minuv,
         weight=args.weight,

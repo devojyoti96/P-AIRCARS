@@ -42,27 +42,21 @@ def fill_nan_gains(x, data, x_new=None):
     """
     import numpy as np
     from scipy.interpolate import interp1d
-    
     x = np.asarray(x)
     data = np.asarray(data, dtype=float)
-
     if x_new is None:
         x_new = x
     else:
         x_new = np.asarray(x_new)
-
     # Remove NaNs
     valid = np.isfinite(data)
-
     # Need at least two points for linear interpolation
     if np.sum(valid) < 2:
         return np.full_like(x_new, np.nan, dtype=float)
-
     # Sort by frequency
     order = np.argsort(x[valid])
     x_valid = x[valid][order]
     data_valid = data[valid][order]
-
     interp_func = interp1d(
         x_valid,
         data_valid,
@@ -71,7 +65,6 @@ def fill_nan_gains(x, data, x_new=None):
         fill_value="extrapolate",
         assume_sorted=True,
     )
-
     return interp_func(x_new)
 
 

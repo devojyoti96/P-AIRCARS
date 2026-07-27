@@ -125,8 +125,8 @@ def run_bandpass(
     Perform bandpass calibration
     """
     n_threads = max(1, n_threads)
-    limit_threads(n_threads=n_threads)
-    from casatasks import bandpass
+    with limit_threads(n_threads=n_threads):
+        from casatasks import bandpass
 
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
     bpass_cmd = (
@@ -174,7 +174,6 @@ def run_crossphasecal(
     Perform crosshand phase calibration
     """
     n_threads = max(1, n_threads)
-    limit_threads(n_threads=n_threads)
     caltable_prefix = f"{workdir}/{os.path.basename(msname).split('.ms')[0]}"
     kcross_cmd = (
         f"crossphasecal("
@@ -220,8 +219,8 @@ def run_applycal(
     Perform apply calibration
     """
     n_threads = max(1, n_threads)
-    limit_threads(n_threads=n_threads)
-    from casatasks import applycal
+    with limit_threads(n_threads=n_threads):
+        from casatasks import applycal
 
     applycal_cmd = (
         f"applycal("
@@ -259,7 +258,6 @@ def run_postcal_flag(
     """
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
-    limit_threads(n_threads=n_threads)
     flag_cmd = (
         f"single_ms_flag("
         f"msname='{msname}',"
@@ -343,8 +341,8 @@ def single_ms_cal_and_flag(
     """
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
-    limit_threads(n_threads=n_threads)
-    from casatasks import flagmanager
+    with limit_threads(n_threads=n_threads):
+        from casatasks import flagmanager
 
     succeed_postcal_flag = True
     try:

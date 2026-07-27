@@ -97,8 +97,8 @@ def applysol(
     n_threads = max(1, n_threads)
     mem_limit = abs(mem_limit)
 
-    limit_threads(n_threads=n_threads)
-    from casatasks import applycal, flagdata, split, clearcal
+    with limit_threads(n_threads=n_threads):
+        from casatasks import applycal, flagdata, split, clearcal
 
     if soltype == "basic":
         check_file = "/.applied_sol"
