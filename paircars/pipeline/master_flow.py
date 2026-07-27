@@ -115,7 +115,7 @@ def master_control(
     do_ap_selfcal=True,
     solar_selfcal=True,
     use_solar_mask=True,
-    solint="60s",
+    solint="30s",
     redo_selfcal=False,
     # Sidereal correction
     do_sidereal_cor=False,
@@ -507,8 +507,8 @@ def master_control(
             cal_header = fits.getheader(cal_metafits)
             cal_obsid = int(cal_header["GPSTIME"])
             if (
-                abs(cal_obsid - target_obsid) < 12 * 3600
-            ):  # Only if calibrator is 12 hours apart
+                abs(cal_obsid - target_obsid) < 24 * 3600
+            ):  # Only if calibrator is 24 hours apart
                 cal_mslist = sorted(glob.glob(f"{cal_datadir}/*.ms"))
                 cal_ms_coarse_chans = []
                 for cal_ms in cal_mslist:
@@ -1664,7 +1664,7 @@ def cli():
     advanced_cal.add_argument(
         "--solint",
         type=str,
-        default="60s",
+        default="30s",
         help="Solution interval for calibration (e.g. 'int', '10s', '5min', 'inf')",
     )
     advanced_cal.add_argument(
@@ -2241,3 +2241,10 @@ def cli():
             dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
         print("Cluster closed.")
+        jobs_running = show_local_job_status(clean_old_jobs=False)
+            if jobs_running==0:
+                print("No jobs are running. Closing prefect server.")
+                stop_prefect_server(scheduler_name=scheduler_name)
+        
+        
+        

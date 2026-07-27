@@ -151,6 +151,9 @@ def split_target_scans(
                 chanres_kHz = msmd.chanres(0, unit="kHz")[0]
                 if chanres_kHz > meta_chanres:
                     flag_central_chan = False
+            times = msmd.timesforspws(0)
+            diff = np.diff(times)
+            ms_timeres = abs(np.nanmax(diff))
             msmd.close()
             if freqres > 0:  # Image resolution is in MHz
                 chanwidth = int(freqres / chanres_MHz)
@@ -159,7 +162,7 @@ def split_target_scans(
             else:
                 chanwidth = 1
             if timeres > 0:  # Image resolution is in seconds
-                timebin = str(timeres) + "s"
+                timebin = str(max(ms_timeres,timeres)) + "s"
             else:
                 timebin = ""
 
@@ -379,10 +382,6 @@ def main(
             observer = init_logger(
                 "do_target_split", logfile, jobname=jobname, password=password
             )
-    if observer is None:
-        logger.info(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
 
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
@@ -479,9 +478,11 @@ def main(
         return msg, expected, succeed
     finally:
         time.sleep(5)
-        clean_shutdown(observer)
+        if observer is not None:
+            clean_shutdown(observer)
         for msname in mslist:
-            drop_cache(msname)
+            if os.path.exists(msname):
+                drop_cache(msname)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()

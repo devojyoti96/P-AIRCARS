@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import argparse
+import shlex
 from paircars.utils.basic_utils import (
     check_port_status,
     get_free_port,
@@ -466,6 +467,13 @@ def cli():
         ############################################
         # Submitting batch script
         ############################################
+        args_list = [shlex.quote(arg) for arg in sys.argv[1:]]
+        cli_cmd = "run-mwa-paircars " + " ".join(args_list)
+        if os.path.exists(f"{args.workdir}/inputs.txt"):
+            os.system(f"rm -rf {args.workdir}/inputs.txt")
+        with open(f"{args.workdir}/inputs.txt","w") as f:
+            f.write(cli_cmd)
+        
         if not args.cluster or scheduler_name == "local":
             msg = submit_local_master_flow(args, jobid)
             if msg != 0:
@@ -479,6 +487,10 @@ def cli():
                 print(
                     "Some error may occured in batch script execution, while P-AIRCARS may be successully completed."
                 )
+            jobs_running = show_slurm_job_status(clean_old_jobs=False)
+            if jobs_running==0:
+                print("No jobs are running. Closing prefect server.")
+                stop_prefect_server(scheduler_name=scheduler_name)
             return msg
         else:
             print(

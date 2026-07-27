@@ -430,20 +430,14 @@ def single_ms_flag(
             print(f"Using solar flagger. Normalization used: {normalize}")
             do_flag_backup(msname, flagtype="solarflag")
             for th in range(10, int(threshold), 2):
-                count = 0
-                while count < 10:
-                    result, n_final_flagged, n_additional_flagged = flagger(
-                        msname,
-                        datacolumn,
-                        threshold=max(5.0, th),
-                        normalize=normalize,
-                        num_processes=n_threads,
-                        flagbackup=False,
-                    )
-                    if n_additional_flagged == 0:
-                        break
-                    else:
-                        count += 1
+                result, n_final_flagged, n_additional_flagged = flagger(
+                    msname,
+                    datacolumn,
+                    threshold=max(5.0, th),
+                    normalize=normalize,
+                    num_processes=n_threads,
+                    flagbackup=False,
+                )
         os.system(f"touch {msname}/.flag_succeed")
         return 0
     except Exception:
@@ -778,10 +772,6 @@ def main(
             observer = init_logger(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
-    if observer is None:
-        logger.info(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
 
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
@@ -863,7 +853,8 @@ def main(
         msg = 1
     finally:
         time.sleep(5)
-        clean_shutdown(observer)
+        if observer is not None:
+            clean_shutdown(observer)
         for msname in mslist:
             drop_cache(msname)
         if dask_cluster is not None:

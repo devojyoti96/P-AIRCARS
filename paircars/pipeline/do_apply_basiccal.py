@@ -558,8 +558,6 @@ def main(
             observer = init_logger(
                 "apply_basiccal", logfile, jobname=jobname, password=password
             )
-    if observer is None:
-        logger.info("Not transmiting to remote logger.")
 
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
@@ -636,7 +634,8 @@ def main(
         msg = 1
     finally:
         time.sleep(5)
-        clean_shutdown(observer)
+        if observer is not None:
+            clean_shutdown(observer)
         for msname in mslist:
             drop_cache(msname)
         if dask_cluster is not None:

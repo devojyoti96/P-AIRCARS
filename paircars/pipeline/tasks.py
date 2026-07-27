@@ -886,7 +886,7 @@ def run_selfcal_jobs(
     intselfcal_min_iter=3,
     polselfcal_min_iter=5,
     conv_frac=0.3,
-    solint="60s",
+    solint="30s",
     do_apcal=True,
     do_polcal=True,
     solar_selfcal=True,
@@ -987,6 +987,10 @@ def run_selfcal_jobs(
         Maximum intensity self-calibration dynamic range
     float
         Maximum polarisation self-calibration dynamic range
+    int
+        Total disk detected measurement sets
+    int
+        Total non-disk detected measurement sets
     """
     os.makedirs(workdir, exist_ok=True)
     os.chdir(workdir)
@@ -1018,6 +1022,8 @@ def run_selfcal_jobs(
                 pol_DR,
                 max_int_DR,
                 max_pol_DR,
+                total_disk_detected_ms,
+                total_non_disk_detected_ms,
             ) = do_selfcal.main(
                 mslist,
                 metafits,
@@ -1067,6 +1073,8 @@ def run_selfcal_jobs(
             pol_DR,
             max_int_DR,
             max_pol_DR,
+            total_disk_detected_ms,
+            total_non_disk_detected_ms,
         )
 
 

@@ -32,6 +32,7 @@ from paircars.utils.udocker_utils import (
     initialize_hyperdrive_container,
     check_udocker_container,
 )
+from paircars.utils.imaging import calc_field_of_view
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -111,6 +112,7 @@ def import_hyperdrive_model(
             msmd.close()
         print(f"Beam file: {beamfile}")
         print(f"Source model file: {sourcelist}")
+        instrument_fov = round(calc_field_of_view(msname, FWHM=False)/3600.0,2)
         hyperdrive_cmd_args = [
             "hyperdrive",
             "vis-simulate",
@@ -125,11 +127,11 @@ def import_hyperdrive_model(
             "--time-res",
             str(timeres),
             "--source-dist-cutoff",
-            "180",
+            f"{instrument_fov}",
             "-s",
             sourcelist,
             "-n",
-            "2000",
+            "1000",
             "--output-model-files",
             f"{model_msname}",
             "--output-model-freq-average",
@@ -376,10 +378,6 @@ def main(
             observer = init_logger(
                 "ds_plot", logfile, jobname=jobname, password=password
             )
-    if observer is None:
-        logger.info(
-            "Remote link or jobname is blank. Not transmiting to remote logger."
-        )
 
     if dask_client is None:
         pass
@@ -453,7 +451,8 @@ def main(
         msg = 1
     finally:
         time.sleep(5)
-        clean_shutdown(observer)
+        if observer is not None:
+            clean_shutdown(observer)
         for msname in mslist:
             drop_cache(msname)
         if dask_cluster is not None:

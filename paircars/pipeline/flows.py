@@ -23,10 +23,7 @@ from paircars.utils.mwa_ploting_utils import (
     plot_quartical_tables,
     plot_hpc_collage,
 )
-from paircars.utils.mwa_utils import (
-    freq_to_MWA_coarse,
-    get_selfcal_ntimes,
-)
+from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.image_utils import filter_images
 from paircars.pipeline.tasks import (
@@ -1009,6 +1006,11 @@ def selfcal_subflow(
             ###############################################
             # Removing previous self-calibration artificats
             ###############################################
+            msmd = msmetadata()
+            msmd.open(target_mslist[0])
+            times = msmd.timesforspws(0)
+            timeres = np.nanmean(np.diff(times))
+            msmd.close()
             print("Removing all previous self-calibration artificats.")
             os.system(
                 f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*"
@@ -1022,9 +1024,9 @@ def selfcal_subflow(
                 elif solint.endswith("min"):
                     time_interval = float(solint.split("min")[0]) * 60
                 elif solint == "int":
-                    time_interval = image_timeres
+                    time_interval = timeres
                 else:
-                    time_interval = 60.0
+                    time_interval = 30.0
 
             ######################
             # Spliting
@@ -1040,15 +1042,8 @@ def selfcal_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner(f"Starting task: Spliting {prefix}.")
-            ntime = get_selfcal_ntimes(target_mslist[0])
-            msmd = msmetadata()
-            msmd.open(target_mslist[0])
-            times = msmd.timesforspws(0)
-            timeres = np.nanmean(np.diff(times))
-            msmd.close()
-            time_window = min(10, round(ntime * timeres, 1))  # Maximum 10s
-            print(f"Time window: {min(time_window, time_interval)}")
-            print(f"Time interval: {time_interval}")
+            print(f"Time window: {timeres}s")
+            print(f"Time interval: {time_interval}s")
             try:
                 future_selfcal_split = run_target_split_jobs.with_options(
                     task_run_name=f"split_{target_obsid}"
@@ -1062,7 +1057,7 @@ def selfcal_subflow(
                     prefix=prefix,
                     force_split=True,
                     single_chan_split=False,
-                    time_window=min(time_window, time_interval),
+                    time_window=timeres,
                     time_interval=time_interval,
                     quack_timestamps=quack_timestamps,
                     jobid=jobid,
@@ -1330,85 +1325,6 @@ def selfcal_subflow(
                             flow_name=f"subflow {flow_name}",
                         )
 
-            #########################################################
-            # Basic flagging beforr selfcal on corrected data column
-            #########################################################
-            if use_solarflagger:
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Started flagging for self-calibration measurment sets corrected data columns."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner(
-                    "Starting task: Flagging selfcal targets corrected data columns."
-                )
-                try:
-                    future_flag = run_flag.with_options(
-                        task_run_name=f"flag_selfcal_corrected_{target_obsid}"
-                    ).submit(
-                        ",".join(selfcal_mslist),
-                        target_metafits,
-                        workdir,
-                        target_outdir,
-                        datacolumn="corrected",
-                        flag_calibrators=False,
-                        flag_bad_spw=False,
-                        flag_quack=False,
-                        use_rflag=False,
-                        use_tfcrop=False,
-                        flagdimension="freqtime",
-                        flagdata_type="selfcal",
-                        run_solarflagger=use_solarflagger,
-                        normalize=False,
-                        restore_flag=False,
-                        jobid=jobid,
-                        cpu_frac=round(cpu_frac, 2),
-                        mem_frac=round(mem_frac, 2),
-                        remote_log=remote_logger,
-                        obsid=target_obsid,
-                        verbose=verbose,
-                    )
-                    msg, succeed, failed = future_flag.result()
-                    if emails != "":
-                        email_msg = f"[{target_obsid}] Flagging for self-calibration measurment sets corrected data columns are done.\nSucceeded: {succeed}, failed: {failed}."
-                        send_task_notification(
-                            emails,
-                            email_msg,
-                            jobid,
-                            target_obsid,
-                            timestamp,
-                            flow_name=f"subflow {flow_name}",
-                        )
-                    for s_ms in selfcal_mslist:
-                        s_ms = s_ms.rstrip("/")
-                        if os.path.exists(f"{s_ms}/.flag_failed"):
-                            print(
-                                f"Issue in flagging: {s_ms}. Check calibration solutions carefully."
-                            )
-                    print_banner(
-                        "Finished task: Flagging for self-calibration measurment sets corrected data columns are done."
-                    )
-                except Exception:
-                    print_banner(
-                        "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
-                    )
-                    traceback.print_exc()
-                    if emails != "":
-                        email_msg = f"[{target_obsid}] Error occured in flagging self-calibration measurement sets corrected data columns."
-                        send_task_notification(
-                            emails,
-                            email_msg,
-                            jobid,
-                            target_obsid,
-                            timestamp,
-                            flow_name=f"subflow {flow_name}",
-                        )
-
             #############################
             # Self-calibration
             #############################
@@ -1463,6 +1379,8 @@ def selfcal_subflow(
                     pol_DR,
                     max_int_DR,
                     max_pol_DR,
+                    total_disk_detected_ms,
+                    total_non_disk_detected_ms,
                 ) = future_selfcal.result()
                 if emails != "":
                     email_msg = f"[{target_obsid}] Self-calibration is done.\nIntensity self-calibration, Succeeded: {int_succeed}, failed: {int_failed}\n"
@@ -1472,6 +1390,7 @@ def selfcal_subflow(
                     if do_polcal:
                         email_msg = f"{email_msg}\nPolarisation self-calibration, Succeeded: {pol_succeed}, failed: {pol_failed}\n"
                         email_msg = f"{email_msg}Average DR: {pol_DR}, maximum DR: {max_pol_DR}."
+                    email_msg = f"{email_msg}\nTotal disk detected ms: {total_disk_detected_ms}, non-disk detected ms: {total_non_disk_detected_ms}."
                     send_task_notification(
                         emails,
                         email_msg,
@@ -2360,7 +2279,7 @@ def imaging_subflow(
                         timestamp,
                         flow_name=f"subflow {flow_name}",
                     )
-
+                    
         #################################################################
         # Filtering only coarse channel images for default overlay mode
         #################################################################

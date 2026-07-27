@@ -9,6 +9,7 @@ from astropy.coordinates import (
     AltAz,
     get_sun,
     solar_system_ephemeris,
+    SkyCoord,
 )
 from astropy.io import fits
 from astropy.wcs import WCS
@@ -221,55 +222,59 @@ def determine_quiet_disk(imagename, sigma=10):
     from scipy.ndimage import gaussian_filter
     from skimage.morphology import remove_small_objects, convex_hull_image
 
-    data = fits.getdata(imagename)
-    header = fits.getheader(imagename)
-    bmaj = header["BMAJ"] * 3600.0
-    bmin = header["BMIN"] * 3600.0
-    if header["CTYPE3"] == "FREQ":
-        freqMHz = float(header["CRVAL3"]) / 10**6  # In MHz
-        sun_dia = calc_sun_dia(freqMHz)  # In arcmin
-    elif header["CTYPE4"] == "FREQ":
-        freqMHz = float(header["CRVAL4"]) / 10**6  # In MHz
-        sun_dia = calc_sun_dia(freqMHz)  # In arcmin
-    else:
-        sun_dia = 32  # In arcmin
-    cellsize = float(abs(header["CDELT1"])) * 3600.0  # In arcsec
-    npix_psf = int(min(bmaj, bmin) / cellsize)
-    if npix_psf <= 3:
-        gauss_filter_sigma = 1
-    elif npix_psf > 3 and npix_psf <= 5:
-        gauss_filter_sigma = 2
-    else:
-        gauss_filter_sigma = 3
-    if data.ndim == 4:
-        data2d = data[0, 0, ...]
-    elif data.ndim == 3:
-        data2d = data[0, ...]
-    else:
-        data2d = data
-    data2d = gaussian_filter(data2d, sigma=gauss_filter_sigma)
-    max_pos = np.where(data2d == np.nanmax(data2d))
-    center_x, center_y = max_pos[1][0], max_pos[0][0]
-    sun_rad_pix = 2 * sun_dia * 60 / cellsize  # 2 solar radii
-    masked_array = create_circular_mask_array(
-        data2d, sun_rad_pix, center_x=center_x, center_y=center_y
-    )
-    masked_data2d = copy.deepcopy(data2d)
-    masked_data2d[masked_array] = np.nan
-    rms = np.nanstd(masked_data2d)
-    mask = data2d < sigma * rms
-    min_size = int(min(bmaj, bmin) / cellsize)
-    mask_clean = remove_small_objects(~mask, min_size=min_size)
-    mask_clean = convex_hull_image(mask_clean)
-    data2d[~mask_clean] = False
-    data2d[mask_clean] = True
-    area = np.nansum(data2d) * cellsize**2
-    radius = np.sqrt(area / np.pi) / 60.0
-    if radius >= 16:
-        disk_detected = True
-    else:
-        disk_detected = False
-    return disk_detected, radius
+    try:
+        data = fits.getdata(imagename)
+        header = fits.getheader(imagename)
+        bmaj = header["BMAJ"] * 3600.0
+        bmin = header["BMIN"] * 3600.0
+        if header["CTYPE3"] == "FREQ":
+            freqMHz = float(header["CRVAL3"]) / 10**6  # In MHz
+            sun_dia = calc_sun_dia(freqMHz)  # In arcmin
+        elif header["CTYPE4"] == "FREQ":
+            freqMHz = float(header["CRVAL4"]) / 10**6  # In MHz
+            sun_dia = calc_sun_dia(freqMHz)  # In arcmin
+        else:
+            sun_dia = 32  # In arcmin
+        cellsize = float(abs(header["CDELT1"])) * 3600.0  # In arcsec
+        npix_psf = int(min(bmaj, bmin) / cellsize)
+        if npix_psf <= 3:
+            gauss_filter_sigma = 1
+        elif npix_psf > 3 and npix_psf <= 5:
+            gauss_filter_sigma = 2
+        else:
+            gauss_filter_sigma = 3
+        if data.ndim == 4:
+            data2d = data[0, 0, ...]
+        elif data.ndim == 3:
+            data2d = data[0, ...]
+        else:
+            data2d = data
+        data2d = gaussian_filter(data2d, sigma=gauss_filter_sigma)
+        max_pos = np.where(data2d == np.nanmax(data2d))
+        center_x, center_y = max_pos[1][0], max_pos[0][0]
+        sun_rad_pix = 2 * sun_dia * 60 / cellsize  # 2 solar radii
+        masked_array = create_circular_mask_array(
+            data2d, sun_rad_pix, center_x=center_x, center_y=center_y
+        )
+        masked_data2d = copy.deepcopy(data2d)
+        masked_data2d[masked_array] = np.nan
+        rms = np.nanstd(masked_data2d)
+        mask = data2d < sigma * rms
+        min_size = int(min(bmaj, bmin) / cellsize)
+        mask_clean = remove_small_objects(~mask, min_size=min_size)
+        mask_clean = convex_hull_image(mask_clean)
+        data2d[~mask_clean] = False
+        data2d[mask_clean] = True
+        area = np.nansum(data2d) * cellsize**2
+        radius = np.sqrt(area / np.pi) / 60.0
+        if radius >= 16:
+            disk_detected = True
+        else:
+            disk_detected = False
+        return disk_detected, radius
+    except Exception:
+        print("Disk detection is failed.")
+        return False, 0
 
 
 def cal_solar_phaseshift(imagename, sigma=10, use_gaussian=False):
@@ -406,10 +411,10 @@ def cal_solar_phaseshift(imagename, sigma=10, use_gaussian=False):
 def shift_solarcenter(
     imagename,
     sigma=10,
+    apparent_ra=None,
+    apparent_dec=None,
     sun_radeg=None,
     sun_decdeg=None,
-    apparent_pix_ra=None,
-    apparent_pix_dec=None,
     use_gaussian=False,
     overwrite=True,
 ):
@@ -422,14 +427,14 @@ def shift_solarcenter(
         Name of the image
     sigma : float, optional
         Sigma threshold for masking solar disk
+    apparent_ra : float, optional
+        Apparent solar disk RA in degree
+    apparent_dec : float, optional
+        Apparent solar disk dec in degree
     sun_radeg : float, optional
         Sun RA in degree
     sun_decdeg : float, optional
         Sun DEC in degree
-    apparent_pix_ra :int, optional
-        Apparent solar center pixel in RA
-    apparent_pix_dec : int, optional
-        Apparent solar center pixel in DEC
     use_gaussian : bool, optional
         Use gaussian fitting or not
     overwrite : bool, optional
@@ -449,19 +454,23 @@ def shift_solarcenter(
     if (
         sun_radeg is None
         or sun_decdeg is None
-        or apparent_pix_ra is None
-        or apparent_pix_dec is None
+        or apparent_ra is None
+        or apparent_dec is None
     ):
         (
             msg,
-            ra,
-            dec,
+            apparent_ra,
+            apparent_dec,
             sun_radeg,
             sun_decdeg,
             apparent_pix_ra,
             apparent_pix_dec,
             seperation_arcsec,
         ) = cal_solar_phaseshift(imagename, sigma=sigma, use_gaussian=use_gaussian)
+    else:
+        w = WCS(imagename).celestial
+        coord = SkyCoord(ra=apparent_ra * u.deg, dec=apparent_dec * u.deg, frame="icrs")
+        apparent_pix_dec, apparent_pix_ra = w.world_to_array_index(coord)
     shifted = False
     r_offset = 0
     try:
@@ -506,6 +515,88 @@ def shift_solarcenter(
         traceback.print_exc()
     finally:
         return msg, outfile, shifted, r_offset
+
+
+def calculate_apparent_solar_center(
+    sun_radeg,
+    sun_decdeg,
+    target_freq,
+    freqlist=[],
+    apparent_radeg_list=[],
+    apparent_decdeg_list=[],
+):
+    """
+    Estimate apparent solar center at a target frequency assuming
+    ionospheric refraction (shift ∝ ν^-2).
+
+    Parameters
+    ----------
+    sun_radeg : float
+        True solar RA (deg)
+    sun_decdeg : float
+        True solar DEC (deg)
+    target_freq : float
+        Target frequency (same units as freqlist)
+    freqlist : list
+        Frequencies
+    apparent_radeg_list : list
+        Apparent RA at each frequency (deg)
+    apparent_decdeg_list : list
+        Apparent DEC at each frequency (deg)
+
+    Returns
+    -------
+    float
+        Apparent RA at target frequency (deg)
+    float
+        Apparent DEC at target frequency (deg)
+    """
+
+    if (
+        len(freqlist) == 0
+        or len(apparent_radeg_list) == 0
+        or len(apparent_decdeg_list) == 0
+        or len(freqlist) != len(apparent_radeg_list)
+        or len(freqlist) != len(apparent_decdeg_list)
+    ):
+        print("Please provide matching frequency and apparent position lists.")
+        print("Returning true solar position.")
+        return sun_radeg, sun_decdeg
+
+    freqlist = np.asarray(freqlist, dtype=float)
+    apparent_radeg_list = np.asarray(apparent_radeg_list, dtype=float)
+    apparent_decdeg_list = np.asarray(apparent_decdeg_list, dtype=float)
+
+    # Measured shifts from true solar position
+    dra = apparent_radeg_list - sun_radeg
+    ddec = apparent_decdeg_list - sun_decdeg
+
+    # Fit A in shift = A / nu^2
+    A_ra = np.mean(dra * freqlist**2)
+    A_dec = np.mean(ddec * freqlist**2)
+
+    # Optional: reject obvious outliers if enough frequencies are available
+    if len(freqlist) >= 3:
+        sigma_ra = np.std(dra * freqlist**2)
+        sigma_dec = np.std(ddec * freqlist**2)
+
+        good = (
+            (np.abs(dra * freqlist**2 - A_ra) < 3 * sigma_ra)
+            & (np.abs(ddec * freqlist**2 - A_dec) < 3 * sigma_dec)
+        )
+
+        if np.sum(good) >= 2:
+            A_ra = np.mean((dra * freqlist**2)[good])
+            A_dec = np.mean((ddec * freqlist**2)[good])
+
+    # Predict shift at target frequency
+    dra_target = A_ra / target_freq**2
+    ddec_target = A_dec / target_freq**2
+
+    apparent_radeg_target = sun_radeg + dra_target
+    apparent_decdeg_target = sun_decdeg + ddec_target
+
+    return apparent_radeg_target, apparent_decdeg_target
 
 
 def correct_solar_sidereal_motion(msname="", ncpu=1, verbose=False):

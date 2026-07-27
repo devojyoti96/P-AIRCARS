@@ -2045,6 +2045,7 @@ def rename_mwasolar_image(
     make_plots=True,
     pol_selfcal=True,
     cal_sol=True,
+    paircars_input="",
 ):
     """
     Rename and move image to image directory
@@ -2067,6 +2068,9 @@ def rename_mwasolar_image(
         Whether polarisation self-calibration solutions are applied
     cal_sol : bool, optional
         Whether calibration solutions are applied or not
+    paircars_input : str, optional
+        P-AIRCARS input command line 
+        Note: If provided, it will be written in header
 
     Returns
     -------
@@ -2115,6 +2119,8 @@ def rename_mwasolar_image(
             hdr["CRVAL2"] = sun_coords.dec.deg
         except Exception:
             pass
+        if paircars_input!="":
+            hdr["RUNCMD"]=paircars_input
     freq = round(header["CRVAL3"] / 10**6, 2)
     t_str = "".join(time.split("T")[0].split("-")) + (
         "".join(time.split("T")[-1].split(":"))

@@ -13,8 +13,12 @@ from dask import delayed
 from paircars.utils.basic_utils import (
     print_banner,
     capture_all_output,
+    timestamp_to_mjdsec,
 )
-from paircars.utils.image_utils import generate_tb_map
+from paircars.utils.image_utils import (
+    generate_tb_map,
+    filter_images,
+)
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
     clean_shutdown,
@@ -28,6 +32,12 @@ from paircars.utils.proc_manage_utils import (
     get_local_dask_cluster,
 )
 from paircars.utils.resource_utils import drop_cache
+from paircars.utils.sunpos_utils import (
+    determine_quiet_disk,
+    cal_solar_phaseshift,
+    shift_solarcenter,
+    calculate_apparent_solar_center,
+)
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -173,6 +183,118 @@ def get_leakage_file(image, leakage_dir):
     return leakage_file
 
 
+def shiftcor_all_images(imagedir, solint=10.0):
+    """
+    Correct phase shift of all images in a directory
+    
+    Parameters
+    ----------
+    imagedir : str
+        Image directory name
+    solint : float, optional
+        Solution interval in seconds
+    
+    Returns
+    -------
+    """
+    pbcor_images = glob.glob(f"{imagedir}/*.fits")
+    total_images = len(pbcor_images)
+    if total_images==0:
+        print(f"No image is present in image directory: {imagedir} for shift correction.")
+        return 0, 0, 0
+    corrected_image=0
+    uncorrected_image=0
+    try:
+        freq_list = np.array([float(os.path.basename(i).split("freq_")[-1].split("_")[0]) for i in pbcor_images])
+        freq_list = np.unique(freq_list)
+        selected_freqs = [freq_list[0]]
+        for f in freq_list[1:]:
+            if round(f-selected_freqs[-1],2)>1.28:
+                selected_freqs.append(f)
+        selected_freqs=np.array(selected_freqs)
+        temporal_images = sorted(glob.glob(f"*{selected_freqs[0]}*.fits"))                
+        filtered_images = filter_images(temporal_images, min_time_sep=solint)
+        selected_times = []
+        selected_mjdsec = []
+        for fil_image in filtered_images:
+            header = fits.getheader(fil_image)
+            timeobs = header["DATE-OBS"]
+            selected_times.append(timeobs)
+            mjdsec = timestamp_to_mjdsec(timeobs.split(".")[0], date_format=1) 
+            selected_mjdsec.append(mjdsec)   
+        apparent_ra_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
+        apparent_dec_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
+        sun_ra_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
+        sun_dec_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
+        
+        ################################
+        # Creating shift array
+        ################################
+        for i in range(len(selected_freqs)):
+            for j in range(len(selected_times)):
+                freq = selected_freqs[i]
+                time = selected_times[j]
+                imagename = glob.glob(f"*{time}*{freq}*.fits")
+                disk_detected, radius = determine_quiet_disk(imagename)
+                if disk_detected:
+                    msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename)    
+                    apparent_ra_array[i, j] = ra
+                    apparent_dec_array[i, j] = dec
+                    sun_ra_array[i, j] = sun_radeg
+                    sun_dec_array[i, j] = sun_decdeg
+        
+        ###################################################
+        # Interpolation for non-disk detected time and freq
+        ###################################################
+        if np.nansum(np.isnan(apparent_ra_array))>0:
+            for j in range(len(selected_times)):
+                temp_ra_array = apparent_ra_array[:, j]
+                temp_dec_array = apparent_dec_array[:, j]
+                sun_radeg = np.nanmean(sun_ra_array[:, j])
+                sun_decdeg = np.nanmean(sun_dec_array[:, j])
+                if np.nansum(np.isnan(temp_ra_array))>0:
+                    non_detected_pos = np.where(np.isnan(temp_ra_array))
+                    detected_pos = np.where(not np.isnan(temp_ra_array))
+                    detected_freqs = selected_freqs[detected_pos]
+                    temp_ra_array = temp_ra_array[detected_pos]
+                    temp_dec_array = temp_dec_array[detected_pos] 
+                    for i in non_detected_pos:
+                        target_freq = selected_freqs[i]
+                        ra, dec = calculate_apparent_solar_center(sun_radeg,sun_decdeg,target_freq,
+                                    freqlist=detected_freqs,apparent_radeg_list=temp_ra_array,apparent_decdeg_list=temp_dec_array)
+                        apparent_ra_array[i, j] = ra
+                        apparent_dec_array[i, j] = dec
+                        sun_ra_array[i, j] = sun_radeg
+                        sun_dec_array[i, j] = sun_decdeg
+                        
+        ###################################################
+        # Shifting solar center
+        ###################################################
+        for pbcor_image in pbcor_images:
+            freq = float(os.path.basename(i).split("freq_")[-1].split("_")[0]) 
+            header = fits.getheader(pbcor_image)
+            timeobs = header["DATE-OBS"]
+            mjdsec = timestamp_to_mjdsec(timeobs.split(".")[0], date_format=1) 
+            pos_freq = np.argmin(np.abs(selected_freqs-freq))
+            pos_time = np.argmin(np.abs(selected_mjdsec-mjdsec))
+            sun_radeg = sun_ra_array[pos_freq, pos_time]
+            sun_decdeg = sun_dec_array[pos_freq, pos_time]
+            ra = apparent_ra_array[pos_freq, pos_time]
+            dec = apparent_dec_array[pos_freq, pos_time]
+            msg, _, _, _ = shift_solarcenter(pbcor_image,apparent_ra=ra,apparent_dec=dec,sun_radeg=sun_radeg,sun_decdeg=sun_decdeg,overwrite=True)
+            with fits.open(pbcor_image, mode="update") as hdul:
+                hdr = hdul[0].header
+                if msg==0:
+                    hdr["SHIFTED"]="TRUE"
+                    corrected_image+=1
+                else:
+                    hdr["SHIFTED"]="FALSE"
+        uncorrected_image = total_images-corrected_image
+        return 0, corrected_image, uncorrected_image
+    except Exception:
+        return 1, corrected_image, uncorrected_image
+            
+
 def pbcor_all_images(
     imagedir,
     metafits,
@@ -181,6 +303,7 @@ def pbcor_all_images(
     make_TB=True,
     make_plots=True,
     restore=False,
+    solint=30.0,
     jobid=0,
     n_threads=1,
     mem_limit=1,
@@ -207,6 +330,8 @@ def pbcor_all_images(
         Make plots
     restore : bool, optional
         Restore primary beam correction
+    solint : float, optional
+        Solution interval for ionospheric shift corrections
     jobid : int, optional
         Job ID
     n_threads : int, optional
@@ -334,7 +459,19 @@ def pbcor_all_images(
             for r in results:
                 if r == 0:
                     successful_pbcor += 1
-
+                    
+        ############################################
+        # Image alignment with solar center
+        ############################################
+        if successful_pbcor > 0:
+            logger.info("Correcting image phase shift.")
+            msg, corrected_image, uncorrected_image = shiftcor_all_images(pbcor_dir, solint=solint)
+            if msg!=0:
+                logger.warning("Error occured in correcting phase shift of images.")
+            else:
+                logger.info(f"Phase shift correction is successful for: {corrected_image} images")
+                logger.info(f"Phase shift correction is unsuccessful for: {uncorrected_image} images")
+                            
         ############################################
         # Saving fits in helioprojective coordinates
         ############################################
@@ -575,7 +712,8 @@ def main(
         msg = 1
     finally:
         time.sleep(5)
-        clean_shutdown(observer)
+        if observer is not None:
+            clean_shutdown(observer)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()
