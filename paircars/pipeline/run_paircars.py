@@ -402,7 +402,7 @@ def cli():
         return 1
 
     target_datadir_permission = check_permission(args.target_datadir)
-    if (args.target_datadir is not None or args.target_datadir!="") and target_datadir_permission is False:
+    if args.target_datadir is not None and args.target_datadir!="" and target_datadir_permission is False:
         print(
             f"Do not have permission for target data directory: {args.target_datadir}"
         )
@@ -412,7 +412,7 @@ def cli():
     filtered_cal_datadir_list = []
     for cal_datadir in cal_datadir_list:
         cal_datadir_permission = check_permission(cal_datadir)
-        if (cal_datadir is not None or cal_datadir!="") and cal_datadir_permission is False:
+        if cal_datadir is not None and cal_datadir!="" and cal_datadir_permission is False:
             print(
                 f"Do not have permission for calibrator data directory: {cal_datadir}"
             )
