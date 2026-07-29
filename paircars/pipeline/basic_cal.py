@@ -68,7 +68,6 @@ def filtered_final_caltables(caltables, workdir):
         Crossphase list
     """
     groups = {}
-    print(f"Filtering calibration tables: {caltables}")
     for f in caltables:
         name = os.path.basename(f)
         if name.endswith(".bcal"):

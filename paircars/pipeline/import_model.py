@@ -67,7 +67,7 @@ def import_hyperdrive_model(
         Verbose output or not
     """
     ncpu = max(1, ncpu)
-
+    starttime = time.time()
     msname = msname.rstrip("/")
     os.system(f"rm -rf {msname}/.modeling_*")
     msname = os.path.abspath(msname)
@@ -97,7 +97,6 @@ def import_hyperdrive_model(
         sourcelist = f"{datadir}/GGSM.txt"
     model_msname = msname.split(".ms")[0] + "_model.ms"
     try:
-        starttime = time.time()
         with suppress_output():
             msmd = msmetadata()
             msmd.open(msname)
@@ -112,7 +111,7 @@ def import_hyperdrive_model(
             msmd.close()
         print(f"Beam file: {beamfile}")
         print(f"Source model file: {sourcelist}")
-        instrument_fov = round(calc_field_of_view(msname, FWHM=False)/3600.0,2)
+        instrument_fov = round(calc_field_of_view(msname, FWHM=True)/3600.0,2)
         hyperdrive_cmd_args = [
             "hyperdrive",
             "vis-simulate",
@@ -145,6 +144,7 @@ def import_hyperdrive_model(
             "--output-autos",
         ]
         hyperdrive_cmd = " ".join(hyperdrive_cmd_args)
+        print(hyperdrive_cmd)
         result = run_hyperdrive(hyperdrive_cmd, ncpu=ncpu, verbose=verbose)
         if result != 0:
             print("Error occured in hyperdrive.")

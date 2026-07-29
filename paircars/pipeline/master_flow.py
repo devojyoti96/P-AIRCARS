@@ -722,11 +722,11 @@ def master_control(
         if not remote_logger:
             timestamp = dt.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             internet_on = internet_available()
+            hostname = socket.gethostname()
             if internet_on and emails != "":
                 email_subject = (
-                    f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
+                    f"P-AIRCARS Log: {timestamp}, OBSID: {target_obsid}, Hostname: {hostname}"
                 )
-
                 email_msg = f"P-AIRCARS Job ID: {jobid}"
                 success_msg, error_msg = send_notification(
                     emails, email_subject, email_msg
@@ -773,11 +773,11 @@ def master_control(
             # Notify over email
             #####################
             internet_on = internet_available()
+            hostname = socket.gethostname()
             if emails != "" and internet_on:
                 email_subject = (
-                    f"P-AIRCARS Logger Details: {timestamp}, OBSID: {target_obsid}"
+                    f"P-AIRCARS Log: {timestamp}, OBSID: {target_obsid}, Hostname: {hostname}"
                 )
-
                 email_msg = (
                     f"P-AIRCARS Job ID: {jobid}\n"
                     f"Remote logger Job ID: {jobname}\n"

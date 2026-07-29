@@ -7,6 +7,7 @@ import glob
 import sys
 import os
 import subprocess
+import traceback
 from astropy.io import fits
 from astropy.wcs import FITSFixedWarning
 from dask import delayed
@@ -34,9 +35,9 @@ from paircars.utils.proc_manage_utils import (
 from paircars.utils.resource_utils import drop_cache
 from paircars.utils.sunpos_utils import (
     determine_quiet_disk,
-    cal_solar_phaseshift,
-    shift_solarcenter,
-    calculate_apparent_solar_center,
+    cal_apparent_solarcenter,
+    shift_solarcenter_to_imagecenter,
+    interpolate_apparent_solar_center,
 )
 
 logging.getLogger("distributed").setLevel(logging.ERROR)
@@ -183,9 +184,10 @@ def get_leakage_file(image, leakage_dir):
     return leakage_file
 
 
-def shiftcor_all_images(imagedir, solint=10.0):
+def shiftcor_all_images(imagedir, solint=30.0, mean_shift=True):
     """
     Correct phase shift of all images in a directory
+    Note: This function assumes all images have same phase center in RA DEC, and shift solar center to image phase center
     
     Parameters
     ----------
@@ -193,9 +195,17 @@ def shiftcor_all_images(imagedir, solint=10.0):
         Image directory name
     solint : float, optional
         Solution interval in seconds
+    mean_shift : bool, optional
+        Use a mean shift or use shift per solution intervals
     
     Returns
     -------
+    int
+        Success message
+    int
+        Total phase shift corrected images
+    int
+        Total failed correction images
     """
     pbcor_images = glob.glob(f"{imagedir}/*.fits")
     total_images = len(pbcor_images)
@@ -204,8 +214,11 @@ def shiftcor_all_images(imagedir, solint=10.0):
         return 0, 0, 0
     corrected_image=0
     uncorrected_image=0
+    header = fits.getheader(pbcor_images[0])
+    sun_radeg = float(header["CRVAL1"])
+    sun_decdeg = float(header["CRVAL2"])
     try:
-        freq_list = np.array([float(os.path.basename(i).split("freq_")[-1].split("_")[0]) for i in pbcor_images])
+        freq_list = np.array([float(os.path.basename(i).split("_")[3]) for i in pbcor_images])
         freq_list = np.unique(freq_list)
         selected_freqs = [freq_list[0]]
         for f in freq_list[1:]:
@@ -217,15 +230,15 @@ def shiftcor_all_images(imagedir, solint=10.0):
         selected_times = []
         selected_mjdsec = []
         for fil_image in filtered_images:
-            header = fits.getheader(fil_image)
-            timeobs = header["DATE-OBS"]
+            timeobs = os.path.basename(fil_image).split("_")[1]
             selected_times.append(timeobs)
-            mjdsec = timestamp_to_mjdsec(timeobs.split(".")[0], date_format=1) 
-            selected_mjdsec.append(mjdsec)   
-        apparent_ra_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
-        apparent_dec_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
-        sun_ra_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
-        sun_dec_array = np.zeros((len(selected_freqs),len(selected_times)))*np.isnan
+            mjdsec = timestamp_to_mjdsec(timeobs, date_format=4) 
+            selected_mjdsec.append(mjdsec)  
+        apparent_ra_array = np.zeros((len(selected_freqs),len(selected_times)),dtype="float")*np.nan
+        apparent_dec_array = np.zeros((len(selected_freqs),len(selected_times)),dtype="float")*np.nan
+        selected_times = np.array(selected_times)
+        selected_mjdsec = np.array(selected_mjdsec)
+        selected_freqs = np.array(selected_freqs) 
         
         ################################
         # Creating shift array
@@ -235,14 +248,20 @@ def shiftcor_all_images(imagedir, solint=10.0):
                 freq = selected_freqs[i]
                 time = selected_times[j]
                 imagename = glob.glob(f"*{time}*{freq}*.fits")
-                disk_detected, radius = determine_quiet_disk(imagename)
-                if disk_detected:
-                    msg, ra, dec, sun_radeg, sun_decdeg, apparent_pix_ra, apparent_pix_dec, seperation_arcsec = cal_solar_phaseshift(imagename)    
-                    apparent_ra_array[i, j] = ra
-                    apparent_dec_array[i, j] = dec
-                    sun_ra_array[i, j] = sun_radeg
-                    sun_dec_array[i, j] = sun_decdeg
-        
+                if len(imagename)>0:
+                    imagename=imagename[0]
+                    disk_detected, radius = determine_quiet_disk(imagename)
+                    if disk_detected:   
+                        msg, ra, dec, _, _ = cal_apparent_solarcenter(imagename) 
+                        if msg==0:
+                            apparent_ra_array[i, j] = ra
+                            apparent_dec_array[i, j] = dec
+            if mean_shift:
+                apparent_ra = np.nanmedian(apparent_ra_array[i,...])
+                apparent_ra_array[i,...] = apparent_ra
+                apparent_dec = np.nanmedian(apparent_dec_array[i,...])
+                apparent_dec_array[i,...] = apparent_dec
+                    
         ###################################################
         # Interpolation for non-disk detected time and freq
         ###################################################
@@ -250,41 +269,34 @@ def shiftcor_all_images(imagedir, solint=10.0):
             for j in range(len(selected_times)):
                 temp_ra_array = apparent_ra_array[:, j]
                 temp_dec_array = apparent_dec_array[:, j]
-                sun_radeg = np.nanmean(sun_ra_array[:, j])
-                sun_decdeg = np.nanmean(sun_dec_array[:, j])
                 if np.nansum(np.isnan(temp_ra_array))>0:
                     non_detected_pos = np.where(np.isnan(temp_ra_array))
-                    detected_pos = np.where(not np.isnan(temp_ra_array))
+                    detected_pos = np.where(~np.isnan(temp_ra_array))
                     detected_freqs = selected_freqs[detected_pos]
                     temp_ra_array = temp_ra_array[detected_pos]
                     temp_dec_array = temp_dec_array[detected_pos] 
                     for i in non_detected_pos:
                         target_freq = selected_freqs[i]
-                        ra, dec = calculate_apparent_solar_center(sun_radeg,sun_decdeg,target_freq,
-                                    freqlist=detected_freqs,apparent_radeg_list=temp_ra_array,apparent_decdeg_list=temp_dec_array)
+                        ra, dec = interpolate_apparent_solar_center(sun_radeg, sun_decdeg,target_freq,freqlist=detected_freqs,
+                                        apparent_radeg_list=temp_ra_array,apparent_decdeg_list=temp_dec_array)
                         apparent_ra_array[i, j] = ra
                         apparent_dec_array[i, j] = dec
-                        sun_ra_array[i, j] = sun_radeg
-                        sun_dec_array[i, j] = sun_decdeg
                         
         ###################################################
         # Shifting solar center
         ###################################################
         for pbcor_image in pbcor_images:
-            freq = float(os.path.basename(i).split("freq_")[-1].split("_")[0]) 
-            header = fits.getheader(pbcor_image)
-            timeobs = header["DATE-OBS"]
-            mjdsec = timestamp_to_mjdsec(timeobs.split(".")[0], date_format=1) 
+            freq = float(os.path.basename(pbcor_image).split("_")[3]) 
+            timeobs = os.path.basename(pbcor_image).split("_")[1]
+            mjdsec = timestamp_to_mjdsec(timeobs, date_format=4) 
             pos_freq = np.argmin(np.abs(selected_freqs-freq))
             pos_time = np.argmin(np.abs(selected_mjdsec-mjdsec))
-            sun_radeg = sun_ra_array[pos_freq, pos_time]
-            sun_decdeg = sun_dec_array[pos_freq, pos_time]
             ra = apparent_ra_array[pos_freq, pos_time]
             dec = apparent_dec_array[pos_freq, pos_time]
-            msg, _, _, _ = shift_solarcenter(pbcor_image,apparent_ra=ra,apparent_dec=dec,sun_radeg=sun_radeg,sun_decdeg=sun_decdeg,overwrite=True)
+            msg, _ = shift_solarcenter_to_imagecenter(pbcor_image,apparent_ra=ra,apparent_dec=dec,overwrite=True)
             with fits.open(pbcor_image, mode="update") as hdul:
                 hdr = hdul[0].header
-                if msg==0:
+                if msg==0 or msg==1:
                     hdr["SHIFTED"]="TRUE"
                     corrected_image+=1
                 else:
@@ -292,6 +304,7 @@ def shiftcor_all_images(imagedir, solint=10.0):
         uncorrected_image = total_images-corrected_image
         return 0, corrected_image, uncorrected_image
     except Exception:
+        traceback.print_exc()
         return 1, corrected_image, uncorrected_image
             
 
@@ -304,6 +317,7 @@ def pbcor_all_images(
     make_plots=True,
     restore=False,
     solint=30.0,
+    mean_shift=True,
     jobid=0,
     n_threads=1,
     mem_limit=1,
@@ -332,6 +346,8 @@ def pbcor_all_images(
         Restore primary beam correction
     solint : float, optional
         Solution interval for ionospheric shift corrections
+    mean_shift : bool, optional
+        Use a mean shift or use shift per solution intervals
     jobid : int, optional
         Job ID
     n_threads : int, optional
@@ -465,7 +481,7 @@ def pbcor_all_images(
         ############################################
         if successful_pbcor > 0:
             logger.info("Correcting image phase shift.")
-            msg, corrected_image, uncorrected_image = shiftcor_all_images(pbcor_dir, solint=solint)
+            msg, corrected_image, uncorrected_image = shiftcor_all_images(pbcor_dir, solint=solint, mean_shift=mean_shift)
             if msg!=0:
                 logger.warning("Error occured in correcting phase shift of images.")
             else:

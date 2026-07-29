@@ -545,6 +545,8 @@ def timestamp_to_mjdsec(timestamp, date_format=0):
             2: 'YYYY-MM-DD hh:mm:ss'
 
             3: 'YYYY_MM_DD_hh_mm_ss'
+            
+            4: 'YYYYMMDDhhmmss'
 
     Returns
     -------
@@ -574,6 +576,11 @@ def timestamp_to_mjdsec(timestamp, date_format=0):
             timestamp_datetime = dt.strptime(timestamp, "%Y_%m_%d_%H_%M_%S.%f")
         except BaseException:
             timestamp_datetime = dt.strptime(timestamp, "%Y_%m_%d_%H_%M_%S")
+    elif date_format == 4:
+        try:
+            timestamp_datetime = dt.strptime(timestamp, "%Y%m%d%H%M%S.%f")
+        except BaseException:
+            timestamp_datetime = dt.strptime(timestamp, "%Y%m%d%H%M%S")
     else:
         print("No proper format of timestamp.\n")
         return

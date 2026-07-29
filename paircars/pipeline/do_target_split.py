@@ -181,6 +181,7 @@ def split_target_scans(
             if len(use_coarse_chans)>0:
                 logger.debug("##################################")
                 logger.debug(f"Using coarse channels for {msname} are: {use_coarse_chans}")
+                logger.debug("##################################")
                 coarse_chlist = []
                 good_spwlist = []
                 for c in range(len(coarse_channel_bands)):

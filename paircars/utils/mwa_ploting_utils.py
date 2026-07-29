@@ -21,7 +21,7 @@ from aiapy.calibrate import update_pointing, register, correct_degradation
 from astropy.visualization import ImageNormalize, PowerStretch, LogStretch
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, get_sun, solar_system_ephemeris
+from astropy.coordinates import SkyCoord, solar_system_ephemeris
 from astropy.wcs import FITSFixedWarning
 from astropy.io.fits.verify import VerifyWarning
 from casatools import msmetadata
@@ -2091,7 +2091,6 @@ def rename_mwasolar_image(
 
     header = fits.getheader(imagename)
     time = header["DATE-OBS"]
-    astro_time = Time(time, scale="utc")
     with fits.open(imagename, mode="update") as hdul:
         hdr = hdul[0].header
         hdr["AUTHOR"] = "DevojyotiKansabanik"
@@ -2113,12 +2112,6 @@ def rename_mwasolar_image(
             hdr["POLSELF"] = "TRUE"
         else:
             hdr["POLSELF"] = "FALSE"
-        try:
-            sun_coords = get_sun(astro_time)
-            hdr["CRVAL1"] = sun_coords.ra.deg
-            hdr["CRVAL2"] = sun_coords.dec.deg
-        except Exception:
-            pass
         if paircars_input!="":
             hdr["RUNCMD"]=paircars_input
     freq = round(header["CRVAL3"] / 10**6, 2)

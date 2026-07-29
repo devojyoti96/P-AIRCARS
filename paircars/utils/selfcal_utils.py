@@ -30,7 +30,7 @@ from .image_utils import (
     make_stokes_wsclean_imagecube,
 )
 from .udocker_utils import run_wsclean, run_quartical
-from .sunpos_utils import determine_quiet_disk, cal_solar_phaseshift
+from .sunpos_utils import determine_quiet_disk, cal_apparent_solarcenter
 
 
 def cal_crossphase(imagename):
@@ -401,8 +401,11 @@ def calc_leakage(imagename, threshold=5, disc_size=50):
     #############################
     # Calculating image rms
     #############################
-    _,_,_,_,_,center_x,center_y,_ = cal_solar_phaseshift(imagename)
-    mask = create_circular_mask_array(i_data, radius, center_x=center_x, center_y=center_y)
+    msg, _, _, center_x, center_y= cal_apparent_solarcenter(imagename)
+    if msg==0:
+        mask = create_circular_mask_array(i_data, radius, center_x=center_x, center_y=center_y)
+    else:
+        mask = create_circular_mask_array(i_data, radius)
     i_rms = np.nanstd(i_data[~mask])
     i_thresh = threshold * i_rms
     ##############################################

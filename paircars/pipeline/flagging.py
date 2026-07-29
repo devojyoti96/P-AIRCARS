@@ -57,6 +57,8 @@ def single_ms_flag(
     normalize=False,
     threshold=5.0,
     force_flag=False,
+    restore_flag=True,
+    flag_backup=True,
     n_threads=1,
     mem_limit=1,
 ):
@@ -91,6 +93,10 @@ def single_ms_flag(
         Flagging threshold
     force_flag : bool, optional
         Force flag
+    restore_flag : bool, optional
+        Restore previous flags
+    flag_backup : bool, optional
+        Flag backup
     n_threads : int, optional
         Number of OpenMP threads
     mem_limit : float, optional
@@ -114,6 +120,13 @@ def single_ms_flag(
     os.system(f"rm -rf {msname}/.flag_*")
     print(f"Flagging ms: {msname}")
     try:
+        if restore_flag:
+            print(f"Restoring all previous flags for ms: {msname}")
+            with suppress_output():
+                flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
+        if flag_backup:
+            print(f"Taking flag backup for ms: {msname}") 
+            do_flag_backup(msname, flagtype="flagdata")
         ##############################
         # Flagging bad channels
         ##############################
@@ -133,6 +146,7 @@ def single_ms_flag(
         if bad_ants_str != "":
             try:
                 flag_cmd = f"flag_badants('{msname}',antlist={bad_ants_str.split(',')})"
+                print(flag_cmd)
                 with suppress_output():
                     flag_badants(msname, antlist=bad_ants_str.split(","))
             except Exception:
@@ -601,6 +615,8 @@ def do_flagging(
                     run_solarflagger=run_solarflagger,
                     normalize=normalize,
                     force_flag=force_flag,
+                    restore_flag=restore_flag,
+                    flag_backup=flag_backup,
                     n_threads=n_threads,
                     mem_limit=mem_limit,
                 )

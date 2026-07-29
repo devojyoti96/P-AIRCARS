@@ -104,7 +104,7 @@ def pre_process_subflow(
     )
     observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -260,7 +260,7 @@ def pre_process_subflow(
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
         stop_event.set()
-        time.sleep(60)
+        time.sleep(0.5)
         log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
@@ -321,7 +321,7 @@ def basic_cal_subflow(
     )
     observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -534,6 +534,7 @@ def basic_cal_subflow(
             msmd = msmetadata()
             msmd.open(split_cal_mslist[0])
             cal_freqres_ms = float(round(msmd.chanres(0, unit="kHz")[0], 0))
+            msmd.close()
             print(f"Metafits frequency resolution: {cal_freqres_metafits}kHz.")
             print(f"Measurement set frequency resolution: {cal_freqres_ms}kHz.")
             if cal_freqres_ms != cal_freqres_metafits:
@@ -831,7 +832,7 @@ def basic_cal_subflow(
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
         stop_event.set()
-        time.sleep(60)
+        time.sleep(0.5)
         log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
@@ -916,7 +917,7 @@ def selfcal_subflow(
     )
     observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -1539,7 +1540,7 @@ def selfcal_subflow(
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
         stop_event.set()
-        time.sleep(60)
+        time.sleep(0.5)
         log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
@@ -1608,7 +1609,7 @@ def applysol_subflow(
     )
     observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -1998,7 +1999,7 @@ def applysol_subflow(
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
         stop_event.set()
-        time.sleep(60)
+        time.sleep(0.5)
         log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
@@ -2075,7 +2076,7 @@ def imaging_subflow(
     )
     observer = None
     if os.path.exists(f"{workdir}/.jobname_password.npy"):
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -2399,7 +2400,7 @@ def imaging_subflow(
         run_time = end_time - start_time
         print(f"Total run time: {run_time}")
         stop_event.set()
-        time.sleep(60)
+        time.sleep(0.5)
         log_thread_flow.join()
         if observer is not None:
             clean_shutdown(observer)
