@@ -897,7 +897,6 @@ def run_selfcal_jobs(
     weight="briggs",
     robust=0.0,
     applymode="calonly",
-    min_tol_factor=1.0,
     use_solarflagger=False,
     jobid=0,
     cpu_frac=0.8,
@@ -955,8 +954,6 @@ def run_selfcal_jobs(
         Perform ap-selfcal or not
     do_polcal : bool, optional
         Perform polarisation selfcal or not
-    min_tol_factor : float, optional
-        Minimum tolerance in temporal variation in imaging
     applymode : str, optional
         Solution apply mode
     solar_selfcal : bool, optional
@@ -1047,7 +1044,6 @@ def run_selfcal_jobs(
                 weight=weight,
                 robust=float(robust),
                 applymode=applymode,
-                min_tol_factor=float(min_tol_factor),
                 do_apcal=do_apcal,
                 do_polcal=do_polcal,
                 solar_selfcal=solar_selfcal,

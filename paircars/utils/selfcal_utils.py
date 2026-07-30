@@ -387,7 +387,7 @@ def calc_leakage(imagename, threshold=5, disc_size=50):
     valid_image = check_valid_image(imagename)
     disk_detected = determine_quiet_disk(imagename)
     if valid_image is False or disk_detected is False:
-        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+        return 0, 0, 0, 0, 0, 0
     tb_map = generate_tb_map(imagename)
     tb_data = fits.getdata(tb_map)[0, 0, ...] / 10**6  # in MK
     data = fits.getdata(imagename)
@@ -437,6 +437,16 @@ def calc_leakage(imagename, threshold=5, disc_size=50):
     u_leakage_err = round((3*np.nanstd(u_cor))/np.nanmax(i_data),6)
     v_leakage_err = round((3*np.nanstd(v_cor))/np.nanmax(i_data),6)
     os.system(f"rm -rf {tb_map}")
+    
+    if np.isnan(q_leakage):
+        q_leakage = 0.0
+        q_leakage_err = 0.0
+    if np.isnan(u_leakage):
+        u_leakage = 0.0
+        u_leakage_err = 0.0
+    if np.isnan(v_leakage):
+        v_leakage = 0.0
+        v_leakage_err = 0.0
     
     return q_leakage, u_leakage, v_leakage, q_leakage_err, u_leakage_err, v_leakage_err
 
@@ -945,6 +955,7 @@ def correct_spectrosnap_pbleak(
         # Leakage is estimated and corrected
         #####################################
         no_disk_detected_images = []
+        disk_detected_images = []
         for i in range(len(images)):
             imagename = images[i]
             modelname = models[i]
@@ -1004,7 +1015,12 @@ def correct_spectrosnap_pbleak(
                                     u_err,
                                     v_err,
                                 ]
+                            disk_detected_images.append([wsclean_images, wsclean_models])
                                 
+        if len(disk_detected_images)==0 or len(leakage_info_dic)==0:
+            logger.warning("Leakage could not be estimated in any images because no disk is detected.")
+            return leakage_info_list
+            
         ######################################################
         # Correcting images where solar disk were not detected
         ######################################################
@@ -1364,7 +1380,7 @@ def selfcal_round(
                     logger.info("Leakage correction is done using pre-determined leakage polynomial.")
                 else:
                     leakage_info_polynomial = []
-                leakage_info_list = correct_spectrosnap_pbleak(
+                result = correct_spectrosnap_pbleak(
                     wsclean_images_dic,
                     wsclean_models_dic,
                     metafits,
@@ -1375,6 +1391,8 @@ def selfcal_round(
                     leakage_info_polynomial=leakage_info_polynomial,
                     ncpu=ncpu,
                 )
+                if len(result)>0:
+                    leakage_info_list = result
                 
                 ##########################################################
                 # Predict models if image is leakage corrected

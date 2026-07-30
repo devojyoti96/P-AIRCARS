@@ -2042,7 +2042,6 @@ def rename_mwasolar_image(
     imagedir="",
     pol="",
     cutout_rsun=10.0,
-    make_plots=True,
     pol_selfcal=True,
     cal_sol=True,
     paircars_input="",
@@ -2062,8 +2061,6 @@ def rename_mwasolar_image(
         Stokes parameters
     cutout_rsun : float, optional
         Cutout in solar radii from center (default: 10.0 solar radii)
-    make_plots : bool, optional
-        Make radio map plot in helioprojective coordinates
     pol_selfcal : bool, optional
         Whether polarisation self-calibration solutions are applied
     cal_sol : bool, optional
@@ -2128,22 +2125,6 @@ def rename_mwasolar_image(
         imagedir = os.path.dirname(os.path.abspath(imagename))
     new_name = imagedir + "/" + new_name
     os.system("mv " + imagename + " " + new_name)
-    if imagetype == "image":
-        hpcdir = f"{os.path.dirname(imagedir)}/images/hpcs"
-        os.makedirs(hpcdir, exist_ok=True)
-        save_in_hpc(new_name, outdir=hpcdir)
-        if make_plots:
-            try:
-                pngdir = f"{os.path.dirname(imagedir)}/images/pngs"
-                os.makedirs(pngdir, exist_ok=True)
-                outimages, cropped_map = plot_in_hpc(
-                    new_name,
-                    draw_limb=True,
-                    extensions=["png"],
-                    outdirs=[pngdir],
-                )
-            except Exception:
-                pass
     return new_name
 
 

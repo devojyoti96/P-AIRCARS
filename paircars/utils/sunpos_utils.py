@@ -252,7 +252,7 @@ def determine_quiet_disk(imagename, sigma=10):
         data2d = gaussian_filter(data2d, sigma=gauss_filter_sigma)
         max_pos = np.where(data2d == np.nanmax(data2d))
         center_x, center_y = max_pos[1][0], max_pos[0][0]
-        sun_rad_pix = 2 * sun_dia * 60 / cellsize  # 2 solar radii
+        sun_rad_pix = 2* sun_dia * 60 / cellsize  # 4 solar radii
         masked_array = create_circular_mask_array(
             data2d, sun_rad_pix, center_x=center_x, center_y=center_y
         )
@@ -267,7 +267,7 @@ def determine_quiet_disk(imagename, sigma=10):
         data2d[mask_clean] = True
         area = np.nansum(data2d) * cellsize**2
         radius = np.sqrt(area / np.pi) / 60.0
-        if radius >= 16:
+        if radius >= (sun_dia/2.0):
             disk_detected = True
         else:
             disk_detected = False

@@ -75,7 +75,6 @@ def perform_imaging(
     savemodel=True,
     saveres=True,
     cutout_rsun=10.0,
-    make_plots=True,
     logfile="imaging.log",
     ncpu=1,
     mem=1,
@@ -127,8 +126,6 @@ def perform_imaging(
         Save residual images or not
     cutout_rsun : float, optional
         Cutout image size in solar radii from center (default: 10.0 solar radii)
-    make_plots : bool, optional
-        Make radio map helioprojective plots
     logfile : str, optional
         Log file name
     ncpu : int, optional
@@ -491,7 +488,6 @@ def perform_imaging(
                                 imagedir=imagedir + "/images",
                                 pol=pol,
                                 cutout_rsun=cutout_rsun,
-                                make_plots=make_plots,
                                 pol_selfcal=pol_selfcal,
                                 cal_sol=cal_sol,
                                 paircars_input=paircars_input,
@@ -509,7 +505,6 @@ def perform_imaging(
                                     imagedir=imagedir + "/models",
                                     pol=pol,
                                     cutout_rsun=cutout_rsun,
-                                    make_plots=False,
                                     pol_selfcal=pol_selfcal,
                                     cal_sol=cal_sol,
                                     paircars_input=paircars_input,
@@ -527,7 +522,6 @@ def perform_imaging(
                                     imagedir=imagedir + "/residuals",
                                     pol=pol,
                                     cutout_rsun=cutout_rsun,
-                                    make_plots=False,
                                     pol_selfcal=pol_selfcal,
                                     paircars_input=paircars_input,
                                 )
@@ -598,7 +592,6 @@ def run_all_imaging(
     savemodel=False,
     saveres=False,
     cutout_rsun=10.0,
-    make_plots=True,
     n_threads=1,
     mem_limit=1,
     logger=None,
@@ -648,8 +641,6 @@ def run_all_imaging(
         Cutout image size (width and height is : 2 times cutout_rsun)
         Default value: 10 solar radii
         Note: default FoV is 20 solar solar radii. If cutout_rsun is chosen larger than 20 solar radii, FoV will be increased accordingly.
-    make_plots : bool, optional
-        Make radio image helioprojective plots
     n_threads : int, optional
         CPU threads to use
     mem_limit : float, optional
@@ -757,7 +748,6 @@ def run_all_imaging(
                     savemodel=savemodel,
                     saveres=saveres,
                     cutout_rsun=cutout_rsun,
-                    make_plots=make_plots,
                     ncpu=n_threads,
                     mem=mem_limit,
                     logfile=logfile,
@@ -821,7 +811,6 @@ def main(
     use_solar_mask=True,
     savemodel=True,
     saveres=True,
-    make_plots=True,
     start_remote_log=False,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -871,8 +860,6 @@ def main(
         If True, saves the CLEAN model images. Default is True.
     saveres : bool, optional
         If True, saves the residual images. Default is True.
-    make_plots : bool, optional
-        If True, generates diagnostic plots for each image. Default is True.
     start_remote_log : bool, optional
         Whether to enable remote logging using credentials in the workdir. Default is False.
     cpu_frac : float, optional
@@ -1021,7 +1008,6 @@ def main(
             use_multiscale=use_multiscale,
             use_solar_mask=use_solar_mask,
             pol=pol,
-            make_plots=make_plots,
             cutout_rsun=cutout_rsun,
             savemodel=savemodel,
             saveres=saveres,
@@ -1172,12 +1158,6 @@ def cli():
         dest="saveres",
         help="Do not save residual images",
     )
-    adv_args.add_argument(
-        "--no_make_plots",
-        action="store_false",
-        dest="make_plots",
-        help="Do not generate helioprojective plots",
-    )
 
     # Resource management parameters
     hard_args = parser.add_argument_group(
@@ -1227,7 +1207,6 @@ def cli():
         use_solar_mask=args.use_solar_mask,
         savemodel=args.savemodel,
         saveres=args.saveres,
-        make_plots=args.make_plots,
         cpu_frac=float(args.cpu_frac),
         mem_frac=float(args.mem_frac),
         jobid=args.jobid,

@@ -830,6 +830,7 @@ def do_polselfcal(
     robust=0.0,
     solar_selfcal=True,
     use_solarflagger=False,
+    disk_present=True,
     leakage_info_polynomial=[],
     ncpu=1,
     mem=1,
@@ -876,6 +877,8 @@ def do_polselfcal(
         Whether is is solar selfcal or not
     use_solarflagger : bool, optional
         Use solar flagger or not
+    disk_present : bool, optional
+        Whether disk is present or not
     leakage_info_polynomial : list, optional
         Leakage info polynomial provided by use [q_leakage poly, u_leakage poly, v_leakage poly]
     ncpu : int, optional
@@ -1080,25 +1083,32 @@ def do_polselfcal(
             pollogger.info("######################################")
             pollogger.info("Selfcal iteration : " + str(num_iter))
             pollogger.info("######################################")
-            if num_iter == 0:
-                pbcor = True
-                leakagecor = True
-                pbuncor = False
-            elif num_iter < min_iter:
+            if not disk_present and len(leakage_info_polynomial)==0:
                 pbcor = False
-                leakagecor = True
+                leakagecor = False
                 pbuncor = False
-            elif num_iter == min_iter:
-                pbcor = False
-                leakagecor = True
-                pbuncor = True
             else:
-                pbcor = True
-                leakagecor = True
-                pbuncor = True
+                if num_iter == 0:
+                    pbcor = True
+                    leakagecor = True
+                    pbuncor = False
+                elif num_iter < min_iter:
+                    pbcor = False
+                    leakagecor = True
+                    pbuncor = False
+                elif num_iter == min_iter:
+                    pbcor = False
+                    leakagecor = True
+                    pbuncor = True
+                else:
+                    pbcor = True
+                    leakagecor = True
+                    pbuncor = True
                 
-            if num_iter>0: # Only corrected at the very first stage by user provided leakage informations, then reset
-                leakage_info_polynomial=[]
+            if num_iter==0: # Only corrected at the very first stage by user provided leakage informations, then reset
+                leakage_poly = leakage_info_polynomial
+            else:
+                leakage_poly = []
 
             if num_iter == min_iter:
                 solve_array_leakage = False  # This is to make sure if it failed, last round ms has same state of polcal
@@ -1155,7 +1165,7 @@ def do_polselfcal(
                 do_flag=do_flag,
                 restore_flag=restore_flag,
                 solve_array_leakage=solve_array_leakage,
-                leakage_info_polynomial=leakage_info_polynomial,
+                leakage_info_polynomial=leakage_poly,
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
