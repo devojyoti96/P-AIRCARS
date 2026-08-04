@@ -526,16 +526,11 @@ def flag_quartical_table(caltable, threshold=10.0):
         | (g2_real > threshold * g2_real_std)
         | (g2_imag > threshold * g2_imag_std)
     )
-
-    gain_data[np.isnan(gain_data)][..., 0] = 1.0
-    gain_data[np.isnan(gain_data)][..., 1] = 0.0
-    gain_data[np.isnan(gain_data)][..., 2] = 0.0
-    gain_data[np.isnan(gain_data)][..., 3] = 1.0
+    mask = np.isnan(gain_data).any(axis=-1)
+    gain_data[mask] = [1.0, 0.0, 0.0, 1.0]
     gain_flag[pos] = True
-    gain_data[gain_flag][..., 0] = 1.0
-    gain_data[gain_flag][..., 1] = 0.0
-    gain_data[gain_flag][..., 2] = 0.0
-    gain_data[gain_flag][..., 3] = 1.0
+    gain_flag |= mask
+    gain_data[gain_flag] = [1.0, 0.0, 0.0, 1.0]
 
     shape = gain_flag.shape
     ntime = shape[0]
