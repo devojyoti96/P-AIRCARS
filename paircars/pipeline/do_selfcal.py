@@ -1087,6 +1087,7 @@ def do_polselfcal(
                 pbcor = False
                 leakagecor = False
                 pbuncor = False
+                min_iter=1
             else:
                 if num_iter == 0:
                     pbcor = True
@@ -1986,6 +1987,7 @@ def main(
                             msname=ms,
                             workdir=workdir,
                             selfcaldir=selfcaldir,
+                            disk_present=False,
                             ncpu=n_threads,
                             mem=mem_limit,
                             logfile=f"{logfile_prefix}_pol.log",
@@ -2013,6 +2015,7 @@ def main(
                             msname=ms,
                             workdir=workdir,
                             selfcaldir=selfcaldir,
+                            disk_present=True,
                             ncpu=n_threads,
                             mem=mem_limit,
                             logfile=f"{logfile_prefix}_pol.log",
@@ -2024,99 +2027,14 @@ def main(
                 )
                 results = list(dask_client.gather(dask_client.compute(tasks)))
 
-            ##############################################
-            # Results of first set of polarisation selfcal
-            ##############################################
-            leakage_file_list = []
-            succeed_polselfcal = 0
-            failed_polselfcal = 0
-            pol_DR_list = []
-            dcal_list=[]
-            for i in range(len(results)):
-                r = results[i]
-                pol_msg = r[0]
-                gaintables = r[2]
-                leakage_file = r[3]
-                pol_DR = r[4]
-                pol_DR_list.append(pol_DR)
-                if pol_msg != 0:
-                    logger.error(
-                        f"Polarisation self-calibration was not successful for ms: {polcal_mslist[i]}."
-                    )
-                    os.system(
-                        f"touch {workdir}/.polselfcal_failed_{os.path.basename(polcal_mslist[i])}"
-                    )
-                    failed_polselfcal += 1
-                else:
-                    try:
-                        dcal = gaintables[0]
-                        cal_metadata = get_quartical_table_metadata(dcal)
-                        freq_start = cal_metadata["Channel 0 frequency (MHz)"]
-                        ch_start = freq_to_MWA_coarse(freq_start)
-                        coarse_chan = f"{ch_start}"
-                        final_leakage_caltable = (
-                            caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.dcal"
-                        )
-                        os.system(f"rm -rf {final_leakage_caltable}")
-                        os.system(f"cp -r {dcal} {final_leakage_caltable}")
-                        dcal_list.append(final_leakage_caltable)
-                        final_leakage_info = (
-                            caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.leakage"
-                        )
-                        os.system(f"rm -rf {final_leakage_info}")
-                        os.system(f"cp -r {leakage_file} {final_leakage_info}")
-                        leakage_file_list.append(final_leakage_info)
-                        os.system(
-                            f"touch {workdir}/.polselfcal_succeed_{os.path.basename(polcal_mslist[i])}"
-                        )
-                        succeed_polselfcal += 1
-                    except Exception:
-                        logger.exception(
-                            "Error occured in filtering polarisation self-calibration caltables.",
-                            exc_info=True,
-                        )
-                        os.system(
-                            f"touch {workdir}/.polselfcal_failed_{os.path.basename(polcal_mslist[i])}"
-                        )
-                        failed_polselfcal += 1
-
-            ######################################
-            # If there are non-disk detected ms
-            ######################################
-            if len(disk_non_detected_ms) > 0:
-                q_poly, u_poly, v_poly = leakage_fitting(leakage_file_list)
-                if len(q_poly)==0 or len(u_poly)==0 or len(v_poly)==0:
-                    leakage_info_polynomial=[]
-                else:
-                    leakage_info_polynomial = [q_poly, u_poly, v_poly]
-                tasks = []
-                polcal_mslist = []
-                for i in range(len(disk_non_detected_ms)):
-                    ms = disk_non_detected_ms[i]
-                    obsid = get_MWA_OBSID(ms)
-                    coarse_chan = get_MWA_coarse_chan(ms)
-                    coarse_chan = f"{min(coarse_chan)}"
-                    logfile_prefix = f"{workdir}/logs/selfcal_{obsid}_ch_{coarse_chan}"
-                    logger.info(f"Measurement set name: {ms}.")
-                    logger.info(f"Polarisation self-cal log file: {logfile_prefix}_pol.log")
-                    selfcaldir = disk_non_detected_selfcaldir[i].split("_int")[0] + "_pol"
-                    tasks.append(
-                        delayed(partial_do_polselfcal)(
-                            msname=ms,
-                            workdir=workdir,
-                            selfcaldir=selfcaldir,
-                            ncpu=n_threads,
-                            mem=mem_limit,
-                            leakage_info_polynomial=leakage_info_polynomial, 
-                            logfile=f"{logfile_prefix}_pol.log",
-                        )
-                    )
-                    polcal_mslist.append(ms)
-                logger.info(
-                    "Starting all polarisation self-calibration for non-disk detected measurement sets."
-                )
-                results = list(dask_client.gather(dask_client.compute(tasks)))
-
+                ##############################################
+                # Results of first set of polarisation selfcal
+                ##############################################
+                leakage_file_list = []
+                succeed_polselfcal = 0
+                failed_polselfcal = 0
+                pol_DR_list = []
+                dcal_list=[]
                 for i in range(len(results)):
                     r = results[i]
                     pol_msg = r[0]
@@ -2142,7 +2060,8 @@ def main(
                             final_leakage_caltable = (
                                 caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.dcal"
                             )
-                            os.system(f"cp -r {dcal} {final_leakage_caltable}") 
+                            os.system(f"rm -rf {final_leakage_caltable}")
+                            os.system(f"cp -r {dcal} {final_leakage_caltable}")
                             dcal_list.append(final_leakage_caltable)
                             final_leakage_info = (
                                 caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.leakage"
@@ -2163,6 +2082,91 @@ def main(
                                 f"touch {workdir}/.polselfcal_failed_{os.path.basename(polcal_mslist[i])}"
                             )
                             failed_polselfcal += 1
+
+                ######################################
+                # If there are non-disk detected ms
+                ######################################
+                if len(disk_non_detected_ms) > 0:
+                    q_poly, u_poly, v_poly = leakage_fitting(leakage_file_list)
+                    if len(q_poly)==0 or len(u_poly)==0 or len(v_poly)==0:
+                        leakage_info_polynomial=[]
+                    else:
+                        leakage_info_polynomial = [q_poly, u_poly, v_poly]
+                    tasks = []
+                    polcal_mslist = []
+                    for i in range(len(disk_non_detected_ms)):
+                        ms = disk_non_detected_ms[i]
+                        obsid = get_MWA_OBSID(ms)
+                        coarse_chan = get_MWA_coarse_chan(ms)
+                        coarse_chan = f"{min(coarse_chan)}"
+                        logfile_prefix = f"{workdir}/logs/selfcal_{obsid}_ch_{coarse_chan}"
+                        logger.info(f"Measurement set name: {ms}.")
+                        logger.info(f"Polarisation self-cal log file: {logfile_prefix}_pol.log")
+                        selfcaldir = disk_non_detected_selfcaldir[i].split("_int")[0] + "_pol"
+                        tasks.append(
+                            delayed(partial_do_polselfcal)(
+                                msname=ms,
+                                workdir=workdir,
+                                selfcaldir=selfcaldir,
+                                disk_present=False,
+                                ncpu=n_threads,
+                                mem=mem_limit,
+                                leakage_info_polynomial=leakage_info_polynomial, 
+                                logfile=f"{logfile_prefix}_pol.log",
+                            )
+                        )
+                        polcal_mslist.append(ms)
+                    logger.info(
+                        "Starting all polarisation self-calibration for non-disk detected measurement sets."
+                    )
+                    results = list(dask_client.gather(dask_client.compute(tasks)))
+
+                    for i in range(len(results)):
+                        r = results[i]
+                        pol_msg = r[0]
+                        gaintables = r[2]
+                        leakage_file = r[3]
+                        pol_DR = r[4]
+                        pol_DR_list.append(pol_DR)
+                        if pol_msg != 0:
+                            logger.error(
+                                f"Polarisation self-calibration was not successful for ms: {polcal_mslist[i]}."
+                            )
+                            os.system(
+                                f"touch {workdir}/.polselfcal_failed_{os.path.basename(polcal_mslist[i])}"
+                            )
+                            failed_polselfcal += 1
+                        else:
+                            try:
+                                dcal = gaintables[0]
+                                cal_metadata = get_quartical_table_metadata(dcal)
+                                freq_start = cal_metadata["Channel 0 frequency (MHz)"]
+                                ch_start = freq_to_MWA_coarse(freq_start)
+                                coarse_chan = f"{ch_start}"
+                                final_leakage_caltable = (
+                                    caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.dcal"
+                                )
+                                os.system(f"cp -r {dcal} {final_leakage_caltable}") 
+                                dcal_list.append(final_leakage_caltable)
+                                final_leakage_info = (
+                                    caldir + f"/selfcal_{obsid}_ch_{coarse_chan}.leakage"
+                                )
+                                os.system(f"rm -rf {final_leakage_info}")
+                                os.system(f"cp -r {leakage_file} {final_leakage_info}")
+                                leakage_file_list.append(final_leakage_info)
+                                os.system(
+                                    f"touch {workdir}/.polselfcal_succeed_{os.path.basename(polcal_mslist[i])}"
+                                )
+                                succeed_polselfcal += 1
+                            except Exception:
+                                logger.exception(
+                                    "Error occured in filtering polarisation self-calibration caltables.",
+                                    exc_info=True,
+                                )
+                                os.system(
+                                    f"touch {workdir}/.polselfcal_failed_{os.path.basename(polcal_mslist[i])}"
+                                )
+                                failed_polselfcal += 1
 
         ###################################
         # Deleteing if not keeping backup
