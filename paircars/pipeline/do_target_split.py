@@ -162,7 +162,7 @@ def split_target_scans(
             else:
                 chanwidth = 1
             if timeres > 0:  # Image resolution is in seconds
-                timebin = str(max(ms_timeres,timeres)) + "s"
+                timebin = str(max(ms_timeres, timeres)) + "s"
             else:
                 timebin = ""
 
@@ -177,10 +177,12 @@ def split_target_scans(
                 use_coarse_chans = []
                 for coarse_chan in coarse_chans:
                     if coarse_chan in split_coarse_chans:
-                        use_coarse_chans.append(coarse_chan)    
-            if len(use_coarse_chans)>0:
+                        use_coarse_chans.append(coarse_chan)
+            if len(use_coarse_chans) > 0:
                 logger.debug("##################################")
-                logger.debug(f"Using coarse channels for {msname} are: {use_coarse_chans}")
+                logger.debug(
+                    f"Using coarse channels for {msname} are: {use_coarse_chans}"
+                )
                 logger.debug("##################################")
                 coarse_chlist = []
                 good_spwlist = []
@@ -222,7 +224,9 @@ def split_target_scans(
                         splited_ms_list.append(outputvis)
                     else:
                         if os.path.exists(outputvis):
-                            logger.debug(f"Deleteing pre-existing output ms: {outputvis}")
+                            logger.debug(
+                                f"Deleteing pre-existing output ms: {outputvis}"
+                            )
                             os.system(f"rm -rf {outputvis}")
                         if os.path.exists(f"{outputvis}.flagversions"):
                             logger.debug(

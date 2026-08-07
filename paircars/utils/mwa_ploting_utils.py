@@ -2041,7 +2041,7 @@ def rename_mwasolar_image(
     imagetype="image",
     imagedir="",
     pol="",
-    cutout_rsun=10.0,
+    cutout_rsun=-1,
     pol_selfcal=True,
     cal_sol=True,
     paircars_input="",
@@ -2060,13 +2060,13 @@ def rename_mwasolar_image(
     pol : str, optional
         Stokes parameters
     cutout_rsun : float, optional
-        Cutout in solar radii from center (default: 10.0 solar radii)
+        Cutout in solar radii from center
     pol_selfcal : bool, optional
         Whether polarisation self-calibration solutions are applied
     cal_sol : bool, optional
         Whether calibration solutions are applied or not
     paircars_input : str, optional
-        P-AIRCARS input command line 
+        P-AIRCARS input command line
         Note: If provided, it will be written in header
 
     Returns
@@ -2079,9 +2079,10 @@ def rename_mwasolar_image(
         maxval, minval, rms, total_val, mean_val, median_val, rms_dyn, minmax_dyn = (
             calc_solar_image_stat(imagename, disc_size=50)
         )
-    imagename = cutout_image(
-        imagename, imagename, x_deg=(cutout_rsun * 2 * 16.0) / 60.0
-    )
+    if cutout_rsun > 0:
+        imagename = cutout_image(
+            imagename, imagename, x_deg=(cutout_rsun * 2 * 16.0) / 60.0
+        )
     if imagetype == "image" and (rms == 0 or np.isnan(rms_dyn)):
         os.system(f"rm -rf {imagename}")
         return
@@ -2109,8 +2110,8 @@ def rename_mwasolar_image(
             hdr["POLSELF"] = "TRUE"
         else:
             hdr["POLSELF"] = "FALSE"
-        if paircars_input!="":
-            hdr["RUNCMD"]=paircars_input
+        if paircars_input != "":
+            hdr["RUNCMD"] = paircars_input
     freq = round(header["CRVAL3"] / 10**6, 2)
     t_str = "".join(time.split("T")[0].split("-")) + (
         "".join(time.split("T")[-1].split(":"))

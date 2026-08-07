@@ -526,6 +526,7 @@ def flag_quartical_table(caltable, threshold=10.0):
         | (g2_real > threshold * g2_real_std)
         | (g2_imag > threshold * g2_imag_std)
     )
+
     mask = np.isnan(gain_data).any(axis=-1)
     gain_data[mask] = [1.0, 0.0, 0.0, 1.0]
     gain_flag[pos] = True
@@ -563,5 +564,5 @@ def flag_quartical_table(caltable, threshold=10.0):
     output_path = f"{caltable}::{soltype}"
     os.system(f"rm -rf {caltable}")
     write_xds_list = xds_to_zarr(gains, output_path)
-    dask.compute(write_xds_list)
+    dask.compute(write_xds_list,scheduler="single-threaded")
     return caltable

@@ -42,6 +42,7 @@ def fill_nan_gains(x, data, x_new=None):
     """
     import numpy as np
     from scipy.interpolate import interp1d
+
     x = np.asarray(x)
     data = np.asarray(data, dtype=float)
     if x_new is None:

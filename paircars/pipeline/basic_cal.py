@@ -727,7 +727,7 @@ def run_basic_cal_rounds(
             if cal_round > 1:
                 if perform_polcal:
                     do_polcal = True
-                    logger.debug("Performing polarisation calibration.")
+                    logger.debug("Performing cross-hand phase calibration.")
                 flag_threshold = 5.0
             if cal_round == n_rounds + 1:
                 do_postcal_flag = [False] * len(mslist)

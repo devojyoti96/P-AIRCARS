@@ -111,7 +111,7 @@ def import_hyperdrive_model(
             msmd.close()
         print(f"Beam file: {beamfile}")
         print(f"Source model file: {sourcelist}")
-        instrument_fov = round(calc_field_of_view(msname, FWHM=True)/3600.0,2)
+        instrument_fov = round(calc_field_of_view(msname, FWHM=True) / 3600.0, 2)
         hyperdrive_cmd_args = [
             "hyperdrive",
             "vis-simulate",

@@ -118,7 +118,7 @@ def main(
     imagelist = glob.glob(f"{imagedir}/*.fits")
 
     if len(imagelist) == 0:
-        logger.crititcal("No image in the image directory.")
+        logger.critical("No image in the image directory.")
         return 1, 0, 0
 
     succeed = 0

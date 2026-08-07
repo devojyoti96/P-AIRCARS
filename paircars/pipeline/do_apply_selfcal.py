@@ -344,7 +344,7 @@ def main(
             )
 
     if len(mslist) == 0:
-        logger.crititcal("Please provide a valid measurement set list.")
+        logger.critical("Please provide a valid measurement set list.")
         return 0, 0, 0, 0
     else:
         gain_succeed = 0

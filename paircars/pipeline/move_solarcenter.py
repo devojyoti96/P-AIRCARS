@@ -113,7 +113,7 @@ def main(
             observer = init_logger(
                 "do_flagging", logfile, jobname=jobname, password=password
             )
-            
+
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0

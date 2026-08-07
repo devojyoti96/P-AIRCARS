@@ -113,7 +113,7 @@ def get_slurm_dask_cluster(
     jobid=None,
     cpu_frac=0.8,
     mem_frac=0.8,
-    min_mem=1,
+    min_mem=2,
     max_worker=-1,
     partition=None,
     account=None,
@@ -189,6 +189,7 @@ def get_slurm_dask_cluster(
                 "distributed.worker.memory.spill": spill_frac + 0.1,
                 "distributed.worker.memory.pause": spill_frac + 0.2,
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
+                "distributed.worker.daemon": False,
             }
         )
         if python_path is None:

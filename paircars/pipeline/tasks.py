@@ -1254,7 +1254,7 @@ def run_imaging_jobs(
     use_solar_mask : bool, optional
         Use solar mask or not
     cutout_rsun : float, optional
-        Cutout image size from center in solar radii (default : 10.0 solar radii)
+        Cutout central region in solar radii
     savemodel : bool, optional
         Save model images or not
     saveres : bool, optional
@@ -1310,9 +1310,9 @@ def run_imaging_jobs(
                 robust=float(robust),
                 minuv=float(minuv),
                 threshold=float(threshold),
-                cutout_rsun=float(cutout_rsun),
                 use_multiscale=use_multiscale,
                 use_solar_mask=use_solar_mask,
+                cutout_rsun=float(cutout_rsun),
                 savemodel=savemodel,
                 saveres=saveres,
                 start_remote_log=remote_log,
@@ -1341,6 +1341,7 @@ def run_apply_pbcor(
     metafits,
     workdir,
     leakage_dir="",
+    phaseshift_solint=30.0,
     jobid=0,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -1361,6 +1362,8 @@ def run_apply_pbcor(
         Work directory
     leakage_dir : str, optional
         Leakage dile directory
+    phaseshift_solint : float, optional
+        Calculate phase shift at this interval in seconds
     cpu_frac : float, optional
         CPU fraction to use
     mem_frac : float, optional
@@ -1406,6 +1409,7 @@ def run_apply_pbcor(
                 metafits,
                 leakage_dir=leakage_dir,
                 workdir=workdir,
+                phaseshift_solint=phaseshift_solint,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
                 logfile=logfile,

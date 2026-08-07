@@ -238,6 +238,7 @@ def get_local_dask_cluster(
                 "distributed.worker.memory.spill": spill_frac + 0.1,
                 "distributed.worker.memory.pause": spill_frac + 0.2,
                 "distributed.worker.memory.terminate": spill_frac + 0.25,
+                "distributed.worker.daemon": False,
             }
         )
         min_mem /= spill_frac  # Accounting for spill fraction
@@ -245,9 +246,9 @@ def get_local_dask_cluster(
         total_mem = psutil.virtual_memory().total / 1024**3  # In GB
         usable_mem = round(total_mem * mem_frac, 2)
         n_worker_mem = int(usable_mem / min_mem)
-        if n_worker_mem < 2:
+        if n_worker_mem < 1:
             print(
-                f"Minimum available memory: {usable_mem}GB is not sufficient for at-least 2 workers."
+                f"Minimum available memory: {usable_mem}GB is not sufficient for at-least one workers."
             )
             return None, None, dask_dir, n_worker_mem
 
@@ -255,7 +256,7 @@ def get_local_dask_cluster(
         n_worker = min(n_worker_cpu, n_worker_mem)
         if max_worker > 0:
             n_worker = min(n_worker, max_worker)
-            n_worker = max(2, n_worker)
+            n_worker = max(1, n_worker)
 
         mem_limit = round(usable_mem / n_worker, 2)
         n_worker = max(1, int(usable_mem / mem_limit))

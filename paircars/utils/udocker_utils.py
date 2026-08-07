@@ -939,7 +939,9 @@ def run_hyperdrive(
             if cmd == "-m":
                 metafits_name = cmd_args[i + 1]
                 metapath = os.path.dirname(os.path.abspath(metafits_name))
-                temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+                temp_name = "hyperdrive_udocker_" + next(
+                    tempfile._get_candidate_names()
+                )
                 temp_docker_metapath = os.path.join(metapath, temp_name)
                 cmd_args[i + 1] = (
                     f"{temp_docker_metapath}/{os.path.basename(metafits_name)}"
@@ -947,21 +949,31 @@ def run_hyperdrive(
             if cmd == "--output-model-files":
                 outfile_name = cmd_args[i + 1]
                 outpath = os.path.dirname(os.path.abspath(outfile_name))
-                temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+                temp_name = "hyperdrive_udocker_" + next(
+                    tempfile._get_candidate_names()
+                )
                 temp_docker_outpath = os.path.join(outpath, temp_name)
-                cmd_args[i + 1] = f"{temp_docker_outpath}/{os.path.basename(outfile_name)}"
+                cmd_args[i + 1] = (
+                    f"{temp_docker_outpath}/{os.path.basename(outfile_name)}"
+                )
             if cmd == "--beam-file":
                 beamfile = cmd_args[i + 1]
                 beampath = os.path.dirname(os.path.abspath(beamfile))
-                temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+                temp_name = "hyperdrive_udocker_" + next(
+                    tempfile._get_candidate_names()
+                )
                 temp_docker_beampath = os.path.join(beampath, temp_name)
                 cmd_args[i + 1] = f"{temp_docker_beampath}/{os.path.basename(beamfile)}"
             if cmd == "-s":
                 sourcefile = cmd_args[i + 1]
                 sourcepath = os.path.dirname(os.path.abspath(sourcefile))
-                temp_name = "hyperdrive_udocker_" + next(tempfile._get_candidate_names())
+                temp_name = "hyperdrive_udocker_" + next(
+                    tempfile._get_candidate_names()
+                )
                 temp_docker_sourcepath = os.path.join(sourcepath, temp_name)
-                cmd_args[i + 1] = f"{temp_docker_sourcepath}/{os.path.basename(sourcefile)}"
+                cmd_args[i + 1] = (
+                    f"{temp_docker_sourcepath}/{os.path.basename(sourcefile)}"
+                )
         try:
             full_command = ["udocker", "--quiet", "run", "--nobanner"]
             env_keys = list(env.keys())

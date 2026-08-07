@@ -95,8 +95,6 @@ def master_control(
     solar_data=True,
     # Pre-calibration
     do_forcereset_weightflag=False,
-    do_cal_flag=True,
-    do_import_model=True,
     # Basic calibration
     do_basic_cal=True,
     do_applycal=True,
@@ -125,7 +123,6 @@ def master_control(
     make_ds=True,
     # Imaging
     do_imaging=True,
-    do_pbcor=True,
     weight="briggs",
     robust=0.0,
     minuv=0,
@@ -173,10 +170,6 @@ def master_control(
 
     do_forcereset_weightflag : bool, optional
         Reset weights and flags of the input ms
-    do_cal_flag : bool, optional
-        Perform flagging on calibrator
-    do_import_model : bool, optional
-        Import model visibilities of flux and polarization calibrators
 
     do_basic_cal : bool, optional
         Perform basic calibration
@@ -225,8 +218,6 @@ def master_control(
 
     do_imaging : bool, optional
         Perform final imaging
-    do_pbcor : bool, optional
-        Perform primary beam correction
     weight : str, optional
         Image weighting
     robust : float, optional
@@ -724,9 +715,7 @@ def master_control(
             internet_on = internet_available()
             hostname = socket.gethostname()
             if internet_on and emails != "":
-                email_subject = (
-                    f"P-AIRCARS Log: {timestamp}, OBSID: {target_obsid}, Hostname: {hostname}"
-                )
+                email_subject = f"P-AIRCARS Log: {timestamp}, OBSID: {target_obsid}, Hostname: {hostname}"
                 email_msg = f"P-AIRCARS Job ID: {jobid}"
                 success_msg, error_msg = send_notification(
                     emails, email_subject, email_msg
@@ -775,9 +764,7 @@ def master_control(
             internet_on = internet_available()
             hostname = socket.gethostname()
             if emails != "" and internet_on:
-                email_subject = (
-                    f"P-AIRCARS Log: {timestamp}, OBSID: {target_obsid}, Hostname: {hostname}"
-                )
+                email_subject = f"P-AIRCARS Log: {timestamp}, OBSID: {target_obsid}, Hostname: {hostname}"
                 email_msg = (
                     f"P-AIRCARS Job ID: {jobid}\n"
                     f"Remote logger Job ID: {jobname}\n"
@@ -832,19 +819,6 @@ def master_control(
                     "Switching on solar center changing, because selfcal of imaging is requeted."
                 )
                 do_move_solarcenter = True
-
-        # Switch on cal flag and import model, if basic cal is needed
-        if do_basic_cal:
-            if not do_cal_flag:
-                do_cal_flag = True
-                masterlogger.debug(
-                    "Switching on calibrator flag because basic calibration is requested."
-                )
-            if not do_import_model:
-                masterlogger.debug(
-                    "Switching on model import because basic calibration is requested."
-                )
-                do_import_model = True
 
         # Switch on applycal if selfcal is requested
         if do_selfcal:
@@ -907,7 +881,6 @@ def master_control(
         #################################################
         # Determining maximum allowed frequency averaging
         #################################################
-        # TODO: optimize using highest freq ms only
         highest_freq_ms = target_mslist[0]
         init_coarse_chan = max(get_MWA_coarse_chan(highest_freq_ms))
         for msname in target_mslist:
@@ -951,21 +924,19 @@ def master_control(
         masterlogger.debug(
             f"Estimating optimal temporal averaging using highest frequency measurement set: {highest_freq_ms}."
         )
-        if solar_data:  # For solar data, it is assumed Sun is tracked.
-            max_timeres = calc_time_smearing_timewidth(highest_freq_ms)
-        else:
-            max_timeres = min(
-                calc_time_smearing_timewidth(highest_freq_ms),
-                max_time_solar_smearing(highest_freq_ms),
-            )
+        solar_smearing = max_time_solar_smearing(highest_freq_ms)
+        max_timeres = min(
+            calc_time_smearing_timewidth(highest_freq_ms),
+            solar_smearing,
+        )
         msmd.open(highest_freq_ms)
         times = msmd.timesforspws(0)
         timeres = np.nanmean(np.diff(times))
         msmd.close()
         quack_timestamps = int(4.0 / timeres)
-        if image_timeres > (2 * 3660):  # If more than 2 hours
+        if image_timeres > solar_smearing: 
             masterlogger.info(
-                "Image time integration is more than 2 hours, which may cause smearing due to solar differential rotation."
+                f"Image time integration is more than {solar_smearing}ss, which may cause smearing due to solar differential rotation."
             )
         if image_timeres > 0:
             image_timeres = max(image_timeres, timeres)
@@ -975,7 +946,7 @@ def master_control(
         timeavg = min(2.0, timeavg)
         image_timeres = round(image_timeres, 2)
         masterlogger.info(
-            f"Frequency resolution: {freqres}MHz, time resolution: {timeres}s."
+            f"Measurement set frequency resolution: {freqres}MHz, time resolution: {timeres}s."
         )
         masterlogger.info(
             f"Frequency averaging: {freqavg}MHz, time averaging: {timeavg}s."
@@ -1012,7 +983,7 @@ def master_control(
         ##########################################
         # Basic calibration flows
         ##########################################
-        if has_cal:
+        if has_cal and do_basic_cal:
             cal_obsids = list(calibrator_dic.keys())
             succeed = 0
             all_bandpass_tables = []
@@ -1030,7 +1001,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(2, min(total_ncoarse + 1, max_worker)),
+                        max(1, min(total_ncoarse, max_worker))+1, # 1 worker for prefect task
                     )
                 for banner in print_banner(
                     f"Starting basic calibration subflow for calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}",
@@ -1054,10 +1025,7 @@ def master_control(
                     workdir=workdir,
                     cal_outdir=cal_outdir,
                     basic_caldir=basic_caldir,
-                    do_basic_cal=do_basic_cal,
                     redo_basic_cal=redo_basic_cal,
-                    do_cal_flag=do_cal_flag,
-                    do_import_model=do_import_model,
                     do_polcal=do_polcal,
                     keep_backup=keep_backup,
                     quack_timestamps=quack_timestamps,
@@ -1130,7 +1098,7 @@ def master_control(
             scale_worker_and_wait(
                 dask_cluster,
                 dask_client,
-                max(2, min(len(target_mslist) + 1, max_worker)),
+                max(1, min(len(target_mslist), max_worker))+1, # One worker for prefect task
             )
         for banner in print_banner(
             "Starting pre-processing subflow.", no_print=True
@@ -1176,78 +1144,78 @@ def master_control(
         ##################################################
         # Self-calibration flows
         ##################################################
-        if adaptive:
-            total_ncoarse = 0
-            for targetms in target_mslist:
-                ms_coarse_chans = get_MWA_coarse_chan(targetms)
-                ncoarse = len(ms_coarse_chans)
-                total_ncoarse += ncoarse
-            masterlogger.debug(
-                f"Total coarse channels for splited target measurement sets: {total_ncoarse}."
+        if do_selfcal:
+            if adaptive:
+                total_ncoarse = 0
+                for targetms in target_mslist:
+                    ms_coarse_chans = get_MWA_coarse_chan(targetms)
+                    ncoarse = len(ms_coarse_chans)
+                    total_ncoarse += ncoarse
+                masterlogger.debug(
+                    f"Total coarse channels for splited target measurement sets: {total_ncoarse}."
+                )
+                scale_worker_and_wait(
+                    dask_cluster,
+                    dask_client,
+                    max(1, min(total_ncoarse, max_worker))+1, # One worker for prefect task
+                )
+            for banner in print_banner(
+                "Starting self-calibration subflow.", no_print=True
+            ).splitlines():
+                masterlogger.info(banner)
+            (
+                selfcal_msg,
+                selfcal_gaintable,
+                selfcal_bandpass,
+                selfcal_leakage,
+            ) = selfcal_subflow.with_options(
+                flow_run_name=f"selfcal_subflow_{target_obsid}",
+                task_runner=DaskTaskRunner(address=dask_addr),
+            )(
+                target_mslist=target_mslist,
+                target_metafits=target_metafits,
+                target_obsid=target_obsid,
+                workdir=workdir,
+                basic_caldir=basic_caldir,
+                selfcaldir=selfcaldir,
+                target_outdir=target_outdir,
+                redo_selfcal=redo_selfcal,
+                has_cal=has_cal,
+                solar_selfcal=solar_selfcal,
+                do_sidereal_cor=do_sidereal_cor,
+                use_solarflagger=use_solarflagger,
+                keep_backup=keep_backup,
+                int_solint=int_solint,
+                pol_solint=pol_solint,
+                timeavg=timeavg,
+                freqavg=freqavg,
+                image_timeres=image_timeres,
+                image_freqres=image_freqres,
+                quack_timestamps=quack_timestamps,
+                only_amplitude=only_amplitude,
+                do_ap_selfcal=do_ap_selfcal,
+                do_polcal=do_polcal,
+                uvrange=uvrange,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
+                jobid=jobid,
+                timestamp=timestamp,
+                emails=emails,
+                remote_logger=remote_logger,
+                verbose=verbose,
             )
-            scale_worker_and_wait(
-                dask_cluster,
-                dask_client,
-                max(2, min(total_ncoarse + 1, max_worker)),
-            )
-        for banner in print_banner(
-            "Starting self-calibration subflow.", no_print=True
-        ).splitlines():
-            masterlogger.info(banner)
-        (
-            selfcal_msg,
-            selfcal_gaintable,
-            selfcal_bandpass,
-            selfcal_leakage,
-        ) = selfcal_subflow.with_options(
-            flow_run_name=f"selfcal_subflow_{target_obsid}",
-            task_runner=DaskTaskRunner(address=dask_addr),
-        )(
-            target_mslist=target_mslist,
-            target_metafits=target_metafits,
-            target_obsid=target_obsid,
-            workdir=workdir,
-            basic_caldir=basic_caldir,
-            selfcaldir=selfcaldir,
-            target_outdir=target_outdir,
-            redo_selfcal=redo_selfcal,
-            do_selfcal=do_selfcal,
-            has_cal=has_cal,
-            solar_selfcal=solar_selfcal,
-            do_sidereal_cor=do_sidereal_cor,
-            use_solarflagger=use_solarflagger,
-            keep_backup=keep_backup,
-            int_solint=int_solint,
-            pol_solint=pol_solint,
-            timeavg=timeavg,
-            freqavg=freqavg,
-            image_timeres=image_timeres,
-            image_freqres=image_freqres,
-            quack_timestamps=quack_timestamps,
-            only_amplitude=only_amplitude,
-            do_ap_selfcal=do_ap_selfcal,
-            do_polcal=do_polcal,
-            uvrange=uvrange,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
-            jobid=jobid,
-            timestamp=timestamp,
-            emails=emails,
-            remote_logger=remote_logger,
-            verbose=verbose,
-        )
-        if selfcal_msg == 0 and len(selfcal_gaintable) > 0:
-            masterlogger.info("Self-calibration subflow is successful.")
-        else:
-            masterlogger.warning(
-                "Self-calibration subflow is not successful. No solutions are available to apply."
-            )
-            do_apply_selfcal = False
+            if selfcal_msg == 0 and len(selfcal_gaintable) > 0:
+                masterlogger.info("Self-calibration subflow is successful.")
+            else:
+                masterlogger.warning(
+                    "Self-calibration subflow is not successful. No solutions are available to apply."
+                )
+                do_apply_selfcal = False
 
         ##############################################
         # Apply solutions subflow
         ##############################################
-        if do_applycal or do_apply_selfcal or do_imaging:
+        if do_applycal or do_apply_selfcal:
             if adaptive:
                 total_ncoarse = 0
                 for targetms in target_mslist:
@@ -1257,7 +1225,7 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(2, min(total_ncoarse + 1, max_worker)),
+                    max(1, min(total_ncoarse, max_worker))+1, # One worker for prefect task
                 )
             for banner in print_banner(
                 "Starting apply solutions subflow.", no_print=True
@@ -1316,63 +1284,63 @@ def master_control(
         ###################################
         # Imaging subflow
         ###################################
-        if adaptive:
-            scale_worker_and_wait(
-                dask_cluster,
-                dask_client,
-                max(2, min(len(split_target_mslist) + 1, max_worker)),
-            )
-        masterlogger.info("Starting imaging subflow.")
-        imaging_msg = imaging_subflow.with_options(
-            flow_run_name=f"imaging_subflow_{target_obsid}",
-            task_runner=DaskTaskRunner(address=dask_addr),
-        )(
-            split_target_mslist=split_target_mslist,
-            target_metafits=target_metafits,
-            target_obsid=target_obsid,
-            workdir=workdir,
-            selfcaldir=selfcaldir,
-            target_outdir=target_outdir,
-            do_imaging=do_imaging,
-            do_pbcor=do_pbcor,
-            do_polcal=do_polcal,
-            keep_backup=keep_backup,
-            make_overlay=make_overlay,
-            image_freqres=image_freqres,
-            image_timeres=image_timeres,
-            pol=pol,
-            freqrange=freqrange,
-            timerange=timerange,
-            minuv=minuv,
-            weight=weight,
-            robust=robust,
-            clean_threshold=clean_threshold,
-            use_multiscale=use_multiscale,
-            use_solar_mask=use_solar_mask,
-            cutout_rsun=cutout_rsun,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
-            jobid=jobid,
-            timestamp=timestamp,
-            emails=emails,
-            remote_logger=remote_logger,
-            verbose=verbose,
-        )
-        if imaging_msg != 0:
-            masterlogger.critical("Error occured in imaging subflow.")
-            if emails != "":
-                email_msg = "Error occured in imaging. P-AIRCARS has stopped."
-                send_task_notification(
-                    emails,
-                    email_msg,
-                    jobid,
-                    target_obsid,
-                    timestamp,
-                    flow_name=f"master flow {flow_name}",
+        if do_imaging:
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster,
+                    dask_client,
+                    max(1, min(len(split_target_mslist), max_worker))+1, # One worker for prefect task
                 )
-            return 1
-        else:
-            masterlogger.info("Imaging subflow is successful.")
+            masterlogger.info("Starting imaging subflow.")
+            imaging_msg = imaging_subflow.with_options(
+                flow_run_name=f"imaging_subflow_{target_obsid}",
+                task_runner=DaskTaskRunner(address=dask_addr),
+            )(
+                split_target_mslist=split_target_mslist,
+                target_metafits=target_metafits,
+                target_obsid=target_obsid,
+                workdir=workdir,
+                selfcaldir=selfcaldir,
+                target_outdir=target_outdir,
+                do_imaging=do_imaging,
+                do_polcal=do_polcal,
+                keep_backup=keep_backup,
+                make_overlay=make_overlay,
+                image_freqres=image_freqres,
+                image_timeres=image_timeres,
+                pol=pol,
+                freqrange=freqrange,
+                timerange=timerange,
+                minuv=minuv,
+                weight=weight,
+                robust=robust,
+                clean_threshold=clean_threshold,
+                use_multiscale=use_multiscale,
+                use_solar_mask=use_solar_mask,
+                cutout_rsun=cutout_rsun,
+                cpu_frac=cpu_frac,
+                mem_frac=mem_frac,
+                jobid=jobid,
+                timestamp=timestamp,
+                emails=emails,
+                remote_logger=remote_logger,
+                verbose=verbose,
+            )
+            if imaging_msg != 0:
+                masterlogger.critical("Error occured in imaging subflow.")
+                if emails != "":
+                    email_msg = "Error occured in imaging. P-AIRCARS has stopped."
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"master flow {flow_name}",
+                    )
+                return 1
+            else:
+                masterlogger.info("Imaging subflow is successful.")
 
         ##############################################
         # Making diagnostic plots of measurement sets
@@ -1391,7 +1359,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(2, min(len(split_cal_mslist) + 1, max_worker)),
+                        max(1, min(len(split_cal_mslist), max_worker))+1, # One worker for prefect task
                     )
                 msplot_outdir = f"{cal_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
@@ -1451,7 +1419,7 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(2, min(len(split_target_mslist) + 1, max_worker)),
+                        max(1, min(len(split_target_mslist), max_worker))+1, # One worker for prefect task
                     )
                 msplot_outdir = f"{target_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
@@ -1775,12 +1743,6 @@ def cli():
         help="Clean threshold in sigma for final deconvolution",
     )
     advanced_image.add_argument(
-        "--no_pbcor",
-        action="store_false",
-        dest="do_pbcor",
-        help="Do not apply primary beam correction after imaging",
-    )
-    advanced_image.add_argument(
         "--cutout_rsun",
         type=float,
         default=10.0,
@@ -1824,18 +1786,6 @@ def cli():
         "--do_forcereset_weightflag",
         action="store_true",
         help="Force reset of weights and flags (disabled by default)",
-    )
-    advanced.add_argument(
-        "--no_cal_flag",
-        action="store_false",
-        dest="do_cal_flag",
-        help="Disable initial flagging of calibrators",
-    )
-    advanced.add_argument(
-        "--no_import_model",
-        action="store_false",
-        dest="do_import_model",
-        help="Disable model import",
     )
     advanced.add_argument(
         "--no_basic_cal",
@@ -2079,10 +2029,10 @@ def cli():
         cpu_frac = args.cpu_frac
 
     if args.max_worker is None:
-        max_worker = total_ncoarse + 1
+        max_worker = total_ncoarse 
     else:
-        max_worker = max(int(args.max_worker), total_ncoarse + 1)
-    max_worker = max(2, max_worker)  # Minimum 2 workers are needed
+        max_worker = max(int(args.max_worker), total_ncoarse)
+    max_worker = max(1, max_worker)  # Minimum 1 worker is needed
 
     slurm_job = is_slurm_job()
     if not args.cluster or scheduler_name == "local" or slurm_job is False:
@@ -2152,8 +2102,8 @@ def cli():
             )
             adaptive = args.adaptive
             if not adaptive:
-                nworker = min(total_ncoarse + 1, nworker)
-                scale_worker_and_wait(dask_cluster, dask_client, max(2, nworker))
+                nworker = min(total_ncoarse, nworker)
+                scale_worker_and_wait(dask_cluster, dask_client, max(1, nworker) + 1) # One worker for prefect task
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
@@ -2180,8 +2130,6 @@ def cli():
             solar_data=args.solar_data,
             # Pre-calibration
             do_forcereset_weightflag=args.do_forcereset_weightflag,
-            do_cal_flag=args.do_cal_flag,
-            do_import_model=args.do_import_model,
             # Basic calibration
             do_basic_cal=args.do_basic_cal,
             do_applycal=args.do_applycal,
@@ -2209,7 +2157,6 @@ def cli():
             make_ds=args.make_ds,
             # Imaging
             do_imaging=args.do_imaging,
-            do_pbcor=args.do_pbcor,
             weight=args.weight,
             robust=args.robust,
             minuv=args.minuv,
@@ -2252,6 +2199,3 @@ def cli():
             dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
         print("Cluster closed.")
-        
-        
-        

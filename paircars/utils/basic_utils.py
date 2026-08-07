@@ -68,7 +68,7 @@ def check_permission(path):
     bool
         Whether hand permission or not
     """
-    if path is None or path=="" or not os.path.exists(path):
+    if path is None or path == "" or not os.path.exists(path):
         return False
     print(f"Checking permission for: {path}")
     ###########################
@@ -545,7 +545,7 @@ def timestamp_to_mjdsec(timestamp, date_format=0):
             2: 'YYYY-MM-DD hh:mm:ss'
 
             3: 'YYYY_MM_DD_hh_mm_ss'
-            
+
             4: 'YYYYMMDDhhmmss'
 
     Returns

@@ -125,7 +125,7 @@ def single_ms_flag(
             with suppress_output():
                 flagdata(vis=msname, mode="unflag", spw="0", flagbackup=False)
         if flag_backup:
-            print(f"Taking flag backup for ms: {msname}") 
+            print(f"Taking flag backup for ms: {msname}")
             do_flag_backup(msname, flagtype="flagdata")
         ##############################
         # Flagging bad channels

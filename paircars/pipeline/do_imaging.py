@@ -325,209 +325,214 @@ def perform_imaging(
         final_list_dic = {"image": [], "model": [], "residual": []}
         for i in range(len(start_chans)):
             for j in range(len(start_times)):
-                temp_wsclean_args = copy.deepcopy(wsclean_args)
-                temp_wsclean_args.append(
-                    f"-channel-range {start_chans[i]} {end_chans[i]}"
-                )
-                temp_wsclean_args.append(f"-interval {start_times[j]} {end_times[j]}")
-
-                #####################################
-                # Spectral imaging configuration
-                #####################################
-                if image_freqres > 0:
-                    nchan = max(1, int(image_freqres / freqres))
-                    chan_chunk = int((end_chans[i] - start_chans[i]) / nchan)
-                    if chan_chunk > 1:
-                        temp_wsclean_args.append(f"-channels-out {chan_chunk}")
-                        temp_wsclean_args.append("-no-mf-weighting")
-
-                #####################################
-                # Temporal imaging configuration
-                #####################################
-                if image_timeres > 0:
-                    ntime = max(1, int(image_timeres / timeres))
-                    time_chunk = int((end_times[j] - start_times[j]) / ntime)
-                    if time_chunk > 1:
-                        temp_wsclean_args.append(f"-intervals-out {time_chunk}")
-
-                ######################################
-                # Multiscale configuration
-                ######################################
-                if use_multiscale:
-                    num_pixel_in_psf = calc_npix_in_psf(weight, robust=robust)
-                    chan_number = int((start_chans[i] + end_chans[i]) / 2)
-                    freqMHz = freqs[chan_number]
-                    sun_dia = calc_sun_dia(freqMHz)  # Sun diameter in arcmin
-                    sun_rad = sun_dia / 2
-                    multiscale_scales = calc_multiscale_scales(
-                        msname,
-                        num_pixel_in_psf,
-                        chan_number=chan_number,
-                        max_scale=sun_rad,
-                    )
-                    temp_wsclean_args.append("-multiscale")
-                    temp_wsclean_args.append("-multiscale-gain 0.1")
+                touch_file = f"{workdir}/.{os.path.basename(msname)}_chunk_ch_{start_chans[i]}_{end_chans[i]}_time_{start_times[j]}_{end_times[j]}" 
+                if os.path.exists(touch_file):
+                    img_logger.info(f"Channel range: {start_chans[i]}~{end_chans[i]}, and time range: {start_times[j]}~{end_times[j]} are already imaged.")
+                else:
+                    temp_wsclean_args = copy.deepcopy(wsclean_args)
                     temp_wsclean_args.append(
-                        "-multiscale-scales "
-                        + ",".join([str(s) for s in multiscale_scales])
+                        f"-channel-range {start_chans[i]} {end_chans[i]}"
                     )
-                    mid_freq = np.nanmean(
-                        freqs[int(start_chans[i]) : int(end_chans[i])]
-                    )
-                    scale_bias = get_multiscale_bias(mid_freq)
-                    temp_wsclean_args.append(f"-multiscale-scale-bias {scale_bias}")
-                    if imsize >= 1024 and 4 * max(multiscale_scales) < 512:
+                    temp_wsclean_args.append(f"-interval {start_times[j]} {end_times[j]}")
+
+                    #####################################
+                    # Spectral imaging configuration
+                    #####################################
+                    if image_freqres > 0:
+                        nchan = max(1, int(image_freqres / freqres))
+                        chan_chunk = int((end_chans[i] - start_chans[i]) / nchan)
+                        if chan_chunk > 1:
+                            temp_wsclean_args.append(f"-channels-out {chan_chunk}")
+                            temp_wsclean_args.append("-no-mf-weighting")
+
+                    #####################################
+                    # Temporal imaging configuration
+                    #####################################
+                    if image_timeres > 0:
+                        ntime = max(1, int(image_timeres / timeres))
+                        time_chunk = int((end_times[j] - start_times[j]) / ntime)
+                        if time_chunk > 1:
+                            temp_wsclean_args.append(f"-intervals-out {time_chunk}")
+
+                    ######################################
+                    # Multiscale configuration
+                    ######################################
+                    if use_multiscale:
+                        num_pixel_in_psf = calc_npix_in_psf(weight, robust=robust)
+                        chan_number = int((start_chans[i] + end_chans[i]) / 2)
+                        freqMHz = freqs[chan_number]
+                        sun_dia = calc_sun_dia(freqMHz)  # Sun diameter in arcmin
+                        sun_rad = sun_dia / 2
+                        multiscale_scales = calc_multiscale_scales(
+                            msname,
+                            num_pixel_in_psf,
+                            chan_number=chan_number,
+                            max_scale=sun_rad,
+                        )
+                        temp_wsclean_args.append("-multiscale")
+                        temp_wsclean_args.append("-multiscale-gain 0.1")
+                        temp_wsclean_args.append(
+                            "-multiscale-scales "
+                            + ",".join([str(s) for s in multiscale_scales])
+                        )
+                        mid_freq = np.nanmean(
+                            freqs[int(start_chans[i]) : int(end_chans[i])]
+                        )
+                        scale_bias = get_multiscale_bias(mid_freq)
+                        temp_wsclean_args.append(f"-multiscale-scale-bias {scale_bias}")
+                        if imsize >= 1024 and 4 * max(multiscale_scales) < 512:
+                            temp_wsclean_args.append("-parallel-deconvolution 512")
+                    elif imsize >= 1024:
                         temp_wsclean_args.append("-parallel-deconvolution 512")
-                elif imsize >= 1024:
-                    temp_wsclean_args.append("-parallel-deconvolution 512")
 
-                ######################################
-                # Running imaging
-                ######################################
-                wsclean_cmd = "wsclean " + " ".join(temp_wsclean_args) + " " + msname
-                img_logger.info(
-                    f"{wsclean_cmd}",
-                )
-                msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
-                if msg == 0:
-                    os.system("rm -rf " + prefix + "*psf.fits")
-                    ######################
-                    # Making stokes cubes
-                    ######################
-                    pollist = [i.upper() for i in list(pol)]
-                    if len(pollist) == 1:
-                        imagelist = sorted(glob.glob(prefix + "*image.fits"))
-                        if not savemodel:
-                            os.system("rm -rf " + prefix + "*model.fits")
+                    ######################################
+                    # Running imaging
+                    ######################################
+                    wsclean_cmd = "wsclean " + " ".join(temp_wsclean_args) + " " + msname
+                    img_logger.info(
+                        f"{wsclean_cmd}",
+                    )
+                    msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
+                    if msg == 0:
+                        os.system("rm -rf " + prefix + "*psf.fits")
+                        ######################
+                        # Making stokes cubes
+                        ######################
+                        pollist = [i.upper() for i in list(pol)]
+                        if len(pollist) == 1:
+                            imagelist = sorted(glob.glob(prefix + "*image.fits"))
+                            if not savemodel:
+                                os.system("rm -rf " + prefix + "*model.fits")
+                            else:
+                                modellist = sorted(glob.glob(prefix + "*model.fits"))
+                            if not saveres:
+                                os.system("rm -rf " + prefix + "*residual.fits")
+                            else:
+                                reslist = sorted(glob.glob(prefix + "*residual.fits"))
                         else:
-                            modellist = sorted(glob.glob(prefix + "*model.fits"))
-                        if not saveres:
-                            os.system("rm -rf " + prefix + "*residual.fits")
-                        else:
-                            reslist = sorted(glob.glob(prefix + "*residual.fits"))
-                    else:
-                        imagelist = []
-                        stokeslist = []
-                        for p in pollist:
-                            stokeslist.append(
-                                sorted(glob.glob(prefix + "*" + p + "-image.fits"))
-                            )
-                        for i in range(len(stokeslist[0])):
-                            wsclean_images = sorted(
-                                [stokeslist[k][i] for k in range(len(pollist))]
-                            )
-                            image_prefix = os.path.basename(wsclean_images[0]).split(
-                                "-image"
-                            )[0]
-                            image_cube = make_stokes_wsclean_imagecube(
-                                wsclean_images,
-                                image_prefix + f"_{pol}_image.fits",
-                                keep_wsclean_images=False,
-                            )
-                            imagelist.append(image_cube)
-                        del stokeslist
-                        if not savemodel:
-                            os.system("rm -rf " + prefix + "*model.fits")
-                        else:
-                            modellist = []
+                            imagelist = []
                             stokeslist = []
                             for p in pollist:
                                 stokeslist.append(
-                                    sorted(glob.glob(prefix + f"*{p}*model.fits"))
+                                    sorted(glob.glob(prefix + "*" + p + "-image.fits"))
                                 )
                             for i in range(len(stokeslist[0])):
-                                wsclean_models = sorted(
+                                wsclean_images = sorted(
                                     [stokeslist[k][i] for k in range(len(pollist))]
                                 )
-                                model_prefix = os.path.basename(
-                                    wsclean_models[0]
-                                ).split("-model")[0]
-                                model_cube = make_stokes_wsclean_imagecube(
-                                    wsclean_models,
-                                    model_prefix + f"_{pol}_model.fits",
+                                image_prefix = os.path.basename(wsclean_images[0]).split(
+                                    "-image"
+                                )[0]
+                                image_cube = make_stokes_wsclean_imagecube(
+                                    wsclean_images,
+                                    image_prefix + f"_{pol}_image.fits",
                                     keep_wsclean_images=False,
                                 )
-                                modellist.append(model_cube)
+                                imagelist.append(image_cube)
                             del stokeslist
-                        if not saveres:
-                            os.system("rm -rf " + prefix + "*residual.fits")
-                        else:
-                            reslist = []
-                            stokeslist = []
-                            for p in pollist:
-                                stokeslist.append(
-                                    sorted(glob.glob(prefix + f"*{p}*residual.fits"))
-                                )
-                            for i in range(len(stokeslist[0])):
-                                wsclean_residuals = sorted(
-                                    [stokeslist[k][i] for k in range(len(pollist))]
-                                )
-                                res_prefix = os.path.basename(
-                                    wsclean_residuals[0]
-                                ).split("-residual")[0]
-                                residual_cube = make_stokes_wsclean_imagecube(
-                                    wsclean_residuals,
-                                    res_prefix + f"_{pol}_residual.fits",
-                                    keep_wsclean_images=False,
-                                )
-                                reslist.append(residual_cube)
-                            del stokeslist
+                            if not savemodel:
+                                os.system("rm -rf " + prefix + "*model.fits")
+                            else:
+                                modellist = []
+                                stokeslist = []
+                                for p in pollist:
+                                    stokeslist.append(
+                                        sorted(glob.glob(prefix + f"*{p}*model.fits"))
+                                    )
+                                for i in range(len(stokeslist[0])):
+                                    wsclean_models = sorted(
+                                        [stokeslist[k][i] for k in range(len(pollist))]
+                                    )
+                                    model_prefix = os.path.basename(
+                                        wsclean_models[0]
+                                    ).split("-model")[0]
+                                    model_cube = make_stokes_wsclean_imagecube(
+                                        wsclean_models,
+                                        model_prefix + f"_{pol}_model.fits",
+                                        keep_wsclean_images=False,
+                                    )
+                                    modellist.append(model_cube)
+                                del stokeslist
+                            if not saveres:
+                                os.system("rm -rf " + prefix + "*residual.fits")
+                            else:
+                                reslist = []
+                                stokeslist = []
+                                for p in pollist:
+                                    stokeslist.append(
+                                        sorted(glob.glob(prefix + f"*{p}*residual.fits"))
+                                    )
+                                for i in range(len(stokeslist[0])):
+                                    wsclean_residuals = sorted(
+                                        [stokeslist[k][i] for k in range(len(pollist))]
+                                    )
+                                    res_prefix = os.path.basename(
+                                        wsclean_residuals[0]
+                                    ).split("-residual")[0]
+                                    residual_cube = make_stokes_wsclean_imagecube(
+                                        wsclean_residuals,
+                                        res_prefix + f"_{pol}_residual.fits",
+                                        keep_wsclean_images=False,
+                                    )
+                                    reslist.append(residual_cube)
+                                del stokeslist
 
-                    ######################
-                    # Renaming images
-                    ######################
-                    if len(imagelist) > 0:
-                        img_logger.info(f"Total {len(imagelist)} images are made.")
-                        img_logger.info("Renaming and making plots.")
-                        os.makedirs(imagedir + "/images", exist_ok=True)
-                        final_image_list = []
-                        for imagename in imagelist:
-                            renamed_image = rename_mwasolar_image(
-                                imagename,
-                                imagetype="image",
-                                imagedir=imagedir + "/images",
-                                pol=pol,
-                                cutout_rsun=cutout_rsun,
-                                pol_selfcal=pol_selfcal,
-                                cal_sol=cal_sol,
-                                paircars_input=paircars_input,
-                            )
-                            if renamed_image is not None:
-                                final_image_list.append(renamed_image)
-                        final_list_dic["image"] = final_image_list
-                        if savemodel and len(modellist) > 0:
-                            final_model_list = []
-                            os.makedirs(imagedir + "/models", exist_ok=True)
-                            for modelname in modellist:
-                                renamed_model = rename_mwasolar_image(
-                                    modelname,
-                                    imagetype="model",
-                                    imagedir=imagedir + "/models",
+                        ######################
+                        # Renaming images
+                        ######################
+                        if len(imagelist) > 0:
+                            img_logger.info(f"Total {len(imagelist)} images are made.")
+                            img_logger.info("Renaming and making plots.")
+                            os.makedirs(imagedir + "/images", exist_ok=True)
+                            final_image_list = []
+                            for imagename in imagelist:
+                                renamed_image = rename_mwasolar_image(
+                                    imagename,
+                                    imagetype="image",
+                                    imagedir=imagedir + "/images",
                                     pol=pol,
                                     cutout_rsun=cutout_rsun,
                                     pol_selfcal=pol_selfcal,
                                     cal_sol=cal_sol,
                                     paircars_input=paircars_input,
                                 )
-                                if renamed_model is not None:
-                                    final_model_list.append(renamed_model)
-                            final_list_dic["model"] = final_model_list
-                        if saveres and len(reslist) > 0:
-                            final_res_list = []
-                            os.makedirs(imagedir + "/residuals", exist_ok=True)
-                            for resname in reslist:
-                                renamed_res = rename_mwasolar_image(
-                                    resname,
-                                    imagetype="residual",
-                                    imagedir=imagedir + "/residuals",
-                                    pol=pol,
-                                    cutout_rsun=cutout_rsun,
-                                    pol_selfcal=pol_selfcal,
-                                    paircars_input=paircars_input,
-                                )
-                                if renamed_res is not None:
-                                    final_res_list.append(renamed_res)
-                            final_list_dic["residual"] = final_res_list
+                                if renamed_image is not None:
+                                    final_image_list.append(renamed_image)
+                            final_list_dic["image"] = final_image_list
+                            if savemodel and len(modellist) > 0:
+                                final_model_list = []
+                                os.makedirs(imagedir + "/models", exist_ok=True)
+                                for modelname in modellist:
+                                    renamed_model = rename_mwasolar_image(
+                                        modelname,
+                                        imagetype="model",
+                                        imagedir=imagedir + "/models",
+                                        pol=pol,
+                                        cutout_rsun=cutout_rsun,
+                                        pol_selfcal=pol_selfcal,
+                                        cal_sol=cal_sol,
+                                        paircars_input=paircars_input,
+                                    )
+                                    if renamed_model is not None:
+                                        final_model_list.append(renamed_model)
+                                final_list_dic["model"] = final_model_list
+                            if saveres and len(reslist) > 0:
+                                final_res_list = []
+                                os.makedirs(imagedir + "/residuals", exist_ok=True)
+                                for resname in reslist:
+                                    renamed_res = rename_mwasolar_image(
+                                        resname,
+                                        imagetype="residual",
+                                        imagedir=imagedir + "/residuals",
+                                        pol=pol,
+                                        cutout_rsun=cutout_rsun,
+                                        pol_selfcal=pol_selfcal,
+                                        paircars_input=paircars_input,
+                                    )
+                                    if renamed_res is not None:
+                                        final_res_list.append(renamed_res)
+                                final_list_dic["residual"] = final_res_list
+                    os.system(f"touch {touch_file}")
             if os.path.exists(f"{imagedir}/images/dask-scratch-space"):
                 os.system(f"rm -rf {imagedir}/images/dask-scratch-space")
             if use_solar_mask and os.path.exists(fits_mask):

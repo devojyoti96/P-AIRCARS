@@ -111,7 +111,7 @@ def get_timeranges(
         if end_time not in times:
             nearpos = np.argmin(abs(end_time - times))
             end_time = times[nearpos]
-        if end_time > start_time+timeres:
+        if end_time > start_time + timeres:
             time_ranges.append(
                 f"{mjdsec_to_timestamp(start_time, str_format=1)}~{mjdsec_to_timestamp(end_time-timeres, str_format=1)}"
             )
