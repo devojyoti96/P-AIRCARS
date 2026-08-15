@@ -523,7 +523,7 @@ def do_selfcal(
             intlogger.info(f"RMS based dynamic ranges: {DR1}, {DR2}, {DR3}.")
             intlogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3}.\n")
             if DR3 >= DR2 and (
-                calmode == "p" or (calmode == "ap" and num_iter_after_ap > 0)
+                (calmode == "p" and num_iter>min_iter) or (calmode == "ap" and num_iter_after_ap > 1)
             ):
                 use_previous_model = True
             else:
