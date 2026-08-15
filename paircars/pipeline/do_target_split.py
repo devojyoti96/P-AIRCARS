@@ -242,7 +242,6 @@ def split_target_scans(
                     quack_timestamps=quack_timestamps,
                     max_time_chunk=max_time_chunk,
                 )
-                logger.debug(f"All timerange: {all_timerange_list}")
                 for timerange_list in all_timerange_list:
                     timerange = ",".join(timerange_list)
                     for i in range(len(coarse_chlist)):
