@@ -1711,7 +1711,6 @@ def main(
             solint=str(int_solint),
             weight=str(weight),
             robust=float(robust),
-            min_tol_factor=float(min_tol_factor),
             do_apcal=do_apcal,
             applymode=applymode,
         )
