@@ -109,7 +109,7 @@ def get_timeranges(
     start_time = min(all_times)
     end_time = max(all_times)
     if time_interval < 0 or time_window < 0 or time_interval <= time_window:
-        if max_time_chunk<0 or (end_time - start_time) <= max_time_chunk:
+        if max_time_chunk<=0 or (end_time - start_time) <= max_time_chunk:
             t = (
                 mjdsec_to_timestamp(start_time, str_format=1)
                 + "~"
@@ -134,7 +134,10 @@ def get_timeranges(
     timeres = all_times[1] - all_times[0]
     ntime_chunk = max(1, int(time_interval / timeres))
     ntime = int(time_window / timeres)
-    n_time_chunk = int(max_time_chunk/timeres)
+    if max_time_chunk>0:
+        n_time_chunk = int(max_time_chunk/timeres)
+    else:
+        n_time_chunk = len(all_times)
     for j in range(0,len(all_times),n_time_chunk):
         times = all_times[j:j+n_time_chunk]
         sub_list = []
