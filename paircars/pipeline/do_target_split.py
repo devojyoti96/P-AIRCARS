@@ -580,7 +580,6 @@ def main(
                 if os.path.exists(msname):
                     drop_cache(msname)
         if dask_cluster is not None:
-            dask_client.shutdown()
             dask_client.close()
             dask_cluster.close()
             drop_cache(workdir)
