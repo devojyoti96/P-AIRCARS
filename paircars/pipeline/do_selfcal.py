@@ -369,7 +369,7 @@ def do_selfcal(
         ###########################################
         # Starting using Gaussian model
         ###########################################
-        intlogger.info("Starting self-calibration using Gaussian source model.\n")
+        '''intlogger.info("Starting self-calibration using Gaussian source model.\n")
         msg, _ = quiet_sun_selfcal(
             msname, intlogger, selfcaldir, refant=str(refant), solint="int"
         )
@@ -380,7 +380,7 @@ def do_selfcal(
         else:
             intlogger.warning(
                 "Starting self-calibration using Gaussian model is not successful.\n"
-            )
+            )'''
 
         ##########################################
         # Starting selfcal loops
