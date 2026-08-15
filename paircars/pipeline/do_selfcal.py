@@ -85,7 +85,6 @@ def do_selfcal(
     weight="briggs",
     robust=0.0,
     do_apcal=True,
-    min_tol_factor=10.0,
     applymode="calonly",
     ncpu=1,
     mem=1,
@@ -132,8 +131,6 @@ def do_selfcal(
         Briggs weighting robust parameter (-1 to 1)
     do_apcal : bool, optional
         Perform ap-selfcal or not
-    min_tol_factor : float, optional
-         Minimum tolerable variation in temporal direction in percentage
     applymode : str, optional
         Solution apply mode
     ncpu : int, optional
@@ -320,19 +317,9 @@ def do_selfcal(
             do_bandpass = True
 
         ################################################################
-        # Calculating temporal chunks based on tolerance factor
+        # Calculating temporal chunks 
         ################################################################
-        if min_tol_factor <= 0:
-            min_tol_factor = 10.0  # In percentage
-        diff = np.diff(times)
-        change_idx = np.where(np.diff(diff) != 0)[0]
-        max_ntime = int(len(change_idx) / 2) + 1
-        nintervals, _ = get_optimal_image_interval(
-            msname,
-            temporal_tol_factor=float(min_tol_factor / 100.0),
-            spectral_tol_factor=float(min_tol_factor / 100.0),
-            max_ntime=max_ntime,
-        )
+        nintervals = len(times)
         intlogger.info(f"Temporal chunks: {nintervals}.\n")
 
         ############################################
@@ -369,18 +356,19 @@ def do_selfcal(
         ###########################################
         # Starting using Gaussian model
         ###########################################
-        '''intlogger.info("Starting self-calibration using Gaussian source model.\n")
-        msg, _ = quiet_sun_selfcal(
-            msname, intlogger, selfcaldir, refant=str(refant), solint="int"
-        )
-        if msg == 0:
-            intlogger.info(
-                "Starting self-calibration using Gaussian model is successful.\n"
+        if cal_applied is False:
+            intlogger.info("Starting self-calibration using Gaussian source model.\n")
+            msg, _ = quiet_sun_selfcal(
+                msname, intlogger, selfcaldir, refant=str(refant), solint="int"
             )
-        else:
-            intlogger.warning(
-                "Starting self-calibration using Gaussian model is not successful.\n"
-            )'''
+            if msg == 0:
+                intlogger.info(
+                    "Starting self-calibration using Gaussian model is successful.\n"
+                )
+            else:
+                intlogger.warning(
+                    "Starting self-calibration using Gaussian model is not successful.\n"
+                )
 
         ##########################################
         # Starting selfcal loops
@@ -775,7 +763,7 @@ def do_polselfcal(
     threshold=3.0,
     solint="240s",
     DR_convergence_frac=0.1,
-    min_tol_factor=10.0,
+    min_tol_factor=1.0,
     uvrange="",
     minuv_l=0,
     weight="briggs",
@@ -978,7 +966,7 @@ def do_polselfcal(
         # Calculating temporal chunks based on tolerance factor
         ################################################################
         if min_tol_factor <= 0:
-            min_tol_factor = 10.0  # In percentage
+            min_tol_factor = 1.0  # In percentage
         diff = np.diff(times)
         change_idx = np.where(np.diff(diff) != 0)[0]
         max_ntime = int(len(change_idx) / 2) + 1
@@ -1432,7 +1420,7 @@ def main(
     weight="briggs",
     robust=0.0,
     applymode="calonly",
-    min_tol_factor=10.0,
+    min_tol_factor=1.0,
     do_polcal=True,
     do_apcal=True,
     keep_backup=False,
@@ -1488,7 +1476,7 @@ def main(
     applymode : str, optional
         Apply mode for calibration tables ("calonly", "calflag", etc.). Default is "calonly".
     min_tol_factor : float, optional
-        Minimum factor for tolerance comparison during convergence checks. Default is 10.0.
+        Minimum factor for tolerance comparison during convergence checks. Default is 1.0.
     keep_backup : bool, optional
         If True, keeps backup MS before applying selfcal solutions. Default is False.
     cpu_frac : float, optional
@@ -2305,7 +2293,7 @@ def cli():
     adv_args.add_argument(
         "--min_tol_factor",
         type=float,
-        default=10.0,
+        default=1.0,
         help="Minimum tolerable variation in temporal direction in percentage",
         metavar="Float",
     )
