@@ -933,7 +933,6 @@ def do_polselfcal(
         unflag_chans, flag_chans = get_chans_flag(msname)
         if len(unflag_chans) > 0:
             temp_ms = f"{msname}.tempsplit"
-            unflag_chans = sorted(unflag_chans)
             unflag_chans = [f"{i}" for i in unflag_chans]
             unflag_spw = f"0:{';'.join(unflag_chans)}"
             pollogger.info(f"Spliting only unflagged spectral window: {unflag_spw}.\n")
