@@ -572,7 +572,6 @@ def main(
         msg = 1
         return msg, expected, succeed
     finally:
-        time.sleep(5)
         if observer is not None:
             clean_shutdown(observer)
         if len(mslist)>0:
@@ -580,7 +579,8 @@ def main(
                 if os.path.exists(msname):
                     drop_cache(msname)
         if dask_cluster is not None:
-            dask_client.close(timeout=10)
+            dask_client.shutdown()
+            dask_client.close()
             dask_cluster.close()
             drop_cache(workdir)
             os.system(f"rm -rf {dask_dir}")

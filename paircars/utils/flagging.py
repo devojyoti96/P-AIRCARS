@@ -360,7 +360,7 @@ def get_chans_flag(
             flag_chans.append(chan_number)
         else:
             unflag_chans.append(chan_number)
-    return unflag_chans, flag_chans
+    return sorted(unflag_chans), sorted(flag_chans)
 
 
 def calc_flag_fraction(
