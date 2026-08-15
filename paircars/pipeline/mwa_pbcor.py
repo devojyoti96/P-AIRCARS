@@ -19,6 +19,7 @@ from paircars.utils.basic_utils import (
 from paircars.utils.image_utils import (
     generate_tb_map,
     filter_images,
+    get_image_npol,
 )
 from paircars.utils.logger_utils import (
     SmartDefaultsHelpFormatter,
@@ -27,7 +28,11 @@ from paircars.utils.logger_utils import (
     get_logger_safe,
 )
 from paircars.utils.mwa_utils import freq_to_MWA_coarse
-from paircars.utils.mwa_ploting_utils import save_in_hpc, plot_in_hpc
+from paircars.utils.mwa_ploting_utils import (
+    save_in_hpc, 
+    plot_in_hpc,
+    plot_in_hpc_full_stokes,
+)
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
@@ -139,7 +144,7 @@ def run_pbcor(
             text=True,
             check=False,  # Set to True if you want to raise on error
         )
-        if verbose or result.returncode != 0:
+        if verbose and result.returncode != 0:
             print(result.stdout)
         return result.returncode
     except Exception as e:
@@ -335,11 +340,13 @@ def pbcor_all_images(
     metafits,
     dask_client,
     leakage_dir="",
-    make_TB=True,
+    make_TB=False,
+    save_hpc=True,
     make_plots=True,
     restore=False,
     phaseshift_solint=30.0,
     mean_shift=True,
+    keep_raw_images=False,
     jobid=0,
     n_threads=1,
     mem_limit=1,
@@ -362,6 +369,8 @@ def pbcor_all_images(
         Leakage file directory
     make_TB : bool, optional
         Make brightness temperature map
+    save_hpc : bool, optional
+        Save in helioprojective coordinates
     make_plots : bool, optional
         Make plots
     restore : bool, optional
@@ -370,6 +379,8 @@ def pbcor_all_images(
         Solution interval for ionospheric shift corrections
     mean_shift : bool, optional
         Use a mean shift or use shift per solution intervals
+    keep_raw_images : bool, optional
+        Keep raw images before primary beam correction or not
     jobid : int, optional
         Job ID
     n_threads : int, optional
@@ -400,10 +411,7 @@ def pbcor_all_images(
     succeed = 0
     failed = 0
     try:
-        images = glob.glob(f"{imagedir}/*.fits")
-        if make_TB:
-            tb_dir = f"{os.path.dirname(imagedir)}/tb_images"
-            os.makedirs(tb_dir, exist_ok=True)
+        images = glob.glob(f"{imagedir}/*.fits")            
         if len(images) == 0:
             logger.critical(f"No image is present in image directory: {imagedir}")
             return 1, 0, 0
@@ -522,28 +530,42 @@ def pbcor_all_images(
             ############################################
             # Saving fits in helioprojective coordinates
             ############################################
-            hpcdir = f"{pbcor_dir}/hpcs"
-            pbcor_images = glob.glob(f"{pbcor_dir}/*.fits")
-            os.makedirs(hpcdir, exist_ok=True)
-            logger.info(
-                "Saving primary beam corrected images helioprojective coordinates."
-            )
-            for image in pbcor_images:
-                save_in_hpc(image, outdir=hpcdir)
+            if save_hpc:
+                hpcdir = f"{os.path.dirname(pbcor_dir)}/hpcs"
+                pbcor_images = glob.glob(f"{pbcor_dir}/*.fits")
+                os.makedirs(hpcdir, exist_ok=True)
+                logger.info(
+                    "Saving primary beam corrected images helioprojective coordinates."
+                )
+                for image in pbcor_images:
+                    save_in_hpc(image, outdir=hpcdir)
+                    
+            ################
+            # Make png plots
+            ################
             if make_plots:
                 logger.info(
                     "Making plots of primary beam corrected images in helioprojective coordinates."
                 )
-                pngdir = f"{pbcor_dir}/pngs"
+                pngdir = f"{os.path.dirname(pbcor_dir)}/pngs"
                 os.makedirs(pngdir, exist_ok=True)
                 for image in pbcor_images:
                     try:
-                        plot_in_hpc(
-                            image,
-                            draw_limb=True,
-                            extensions=["png"],
-                            outdirs=[pngdir],
-                        )
+                        npol = get_image_npol(image)
+                        if npol==4:
+                            plot_in_hpc_full_stokes(
+                                image,
+                                draw_limb=True,
+                                extensions=["png"],
+                                outdirs=[pngdir],
+                            )
+                        else:
+                            plot_in_hpc(
+                                image,
+                                draw_limb=True,
+                                extensions=["png"],
+                                outdirs=[pngdir],
+                            )
                     except BaseException:
                         junkpng = f"{pngdir}/{os.path.basename(image).split('.fits')[0]}.png.junk"
                         os.system(f"touch {junkpng}")
@@ -552,6 +574,8 @@ def pbcor_all_images(
             # Making brightness temperature maps
             ####################################
             if make_TB:
+                tb_dir = f"{os.path.dirname(imagedir)}/tb_images"
+                os.makedirs(tb_dir, exist_ok=True)
                 logger.info("Making brightness temperature maps.")
                 for pbcor_image in pbcor_images:
                     tb_image = (
@@ -564,27 +588,41 @@ def pbcor_all_images(
 
                 ############################################
                 # Saving fits in helioprojective coordinates
-                ###########################################
-                hpcdir = f"{tb_dir}/hpcs"
-                tb_images = glob.glob(f"{tb_dir}/*.fits")
-                os.makedirs(hpcdir, exist_ok=True)
-                logger.info(
-                    "Saving brightness temperature maps helioprojective coordinates."
-                )
-                for image in tb_images:
-                    save_in_hpc(image, outdir=hpcdir)
+                ############################################
+                if save_hpc:
+                    hpcdir = f"{tb_dir}/hpcs"
+                    tb_images = glob.glob(f"{tb_dir}/*.fits")
+                    os.makedirs(hpcdir, exist_ok=True)
+                    logger.info(
+                        "Saving brightness temperature maps helioprojective coordinates."
+                    )
+                    for image in tb_images:
+                        save_in_hpc(image, outdir=hpcdir)
 
                 if make_plots:
                     logger.info("Making plots of brightness temperature maps.")
                     pngdir = f"{tb_dir}/pngs"
                     os.makedirs(pngdir, exist_ok=True)
                     for image in tb_images:
-                        plot_in_hpc(
-                            image,
-                            draw_limb=True,
-                            extensions=["png"],
-                            outdirs=[pngdir],
-                        )
+                        try:
+                            npol = get_image_npol(image)
+                            if npol==4:
+                                plot_in_hpc_full_stokes(
+                                    image,
+                                    draw_limb=True,
+                                    extensions=["png"],
+                                    outdirs=[pngdir],
+                                )
+                            else:
+                                plot_in_hpc(
+                                    image,
+                                    draw_limb=True,
+                                    extensions=["png"],
+                                    outdirs=[pngdir],
+                                )
+                        except BaseException:
+                            junkpng = f"{pngdir}/{os.path.basename(image).split('.fits')[0]}.png.junk"
+                            os.system(f"touch {junkpng}")
 
         #########################################
         # Final calculations
@@ -604,6 +642,8 @@ def pbcor_all_images(
         return 1, succeed, failed
     finally:
         os.system(f"rm -rf {pbdir}")
+        if not keep_raw_images:
+            os.system(f"rm -rf {imagedir}")
 
 
 def main(
@@ -611,10 +651,12 @@ def main(
     metafits,
     workdir="",
     leakage_dir="",
-    make_TB=True,
+    make_TB=False,
+    save_hpc=True,
     make_plots=True,
     phaseshift_solint=30.0,
     mean_shift=True,
+    keep_raw_images=False,
     restore=False,
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -639,12 +681,16 @@ def main(
         Leakage file directory
     make_TB : bool, optional
         Make brightness temperature map or not
+    save_hpc : bool, optional
+        Save in helioprojective coordinates
     make_plots : bool, optional
         Make png plots
     phaseshift_solint : float, optional
         Calculate phase shift at this interval in seconds
     mean_shift : bool, optinal
         Correct using mean phase shift or not
+    keep_raw_images : bool, optional
+        Keep raw images before primary beam correction or not
     restore : bool, optional
         Restore primary beam correction
     cpu_frac : float,optional
@@ -746,10 +792,12 @@ def main(
                 dask_client,
                 leakage_dir=leakage_dir,
                 make_TB=make_TB,
+                save_hpc=save_hpc,
                 make_plots=make_plots,
                 restore=restore,
                 phaseshift_solint=phaseshift_solint,
                 mean_shift=mean_shift,
+                keep_raw_images=keep_raw_images,
                 jobid=jobid,
                 n_threads=n_threads,
                 mem_limit=mem_limit,
@@ -802,10 +850,15 @@ def cli():
         help="Leakage file directory",
     )
     adv_args.add_argument(
-        "--no_make_TB",
+        "--make_TB",
+        action="store_true",
+        help="Generate brightness temperature map",
+    )
+    adv_args.add_argument(
+        "--no_save_hpc",
         action="store_false",
-        dest="make_TB",
-        help="Do not generate brightness temperature map",
+        dest="save_hpc",
+        help="Do not save helioprojective maps",
     )
     adv_args.add_argument(
         "--no_make_plots",
@@ -828,8 +881,12 @@ def cli():
     adv_args.add_argument(
         "--mean_shift",
         action="store_true",
-        dest="mean_shift",
         help="Correct using a mean phase shift",
+    )
+    adv_args.add_argument(
+        "--keep_raw_images",
+        action="store_true",
+        help="Keep raw images or not",
     )
     adv_args.add_argument(
         "--verbose",
@@ -863,10 +920,12 @@ def cli():
         workdir=args.workdir,
         leakage_dir=args.leakage_dir,
         make_TB=args.make_TB,
+        save_hpc=args.save_hpc,
         make_plots=args.make_plots,
         restore=args.restore,
         phaseshift_solint=args.phaseshift_solint,
         mean_shift=args.mean_shift,
+        keep_raw_images=args.keep_raw_images,
         cpu_frac=args.cpu_frac,
         mem_frac=args.mem_frac,
         jobid=args.jobid,

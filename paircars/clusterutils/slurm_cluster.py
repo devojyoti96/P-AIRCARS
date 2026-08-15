@@ -114,10 +114,11 @@ def get_slurm_dask_cluster(
     cpu_frac=0.8,
     mem_frac=0.8,
     min_mem=2,
-    max_worker=-1,
+    max_worker=1,
     partition=None,
     account=None,
     walltime=None,
+    num_node=-1,
     python_path=None,
     spill_frac=0.7,
     verbose=True,
@@ -132,13 +133,13 @@ def get_slurm_dask_cluster(
     jobid : int
         JobID of P-AIRCARS to avoid mixup of cluster configurration with other P-AIRCARS jobs.
     cpu_frac : float, optional
-        CPU fraction to use
+        CPU fraction to use per node
     mem_frac : float, optional
-        Memory fraction to use
+        Memory fraction to use per node
     min_mem : float, optional
         Minimum per job memory in GB
-    max_worker : float, optional
-        Maximum number of worker
+    max_worker : int, optional
+        Maximum number of parallel processes
     partition : str, optional
         SLURM partition name
         Note: If your cluster requires this, you should provide. Otherwise, error will occur.
@@ -147,6 +148,8 @@ def get_slurm_dask_cluster(
         Note: If your cluster requires this, you should provide. Otherwise, error will occur.
     walltime : str, optional
         Job walltime, maximum time the SLURM job can run (HH:MM:SS)
+    num_node : int, optional
+        Maximum number of nodes to use (default: -1, use all nodes available in the account)
     spill_frac : float
         Fraction of memory to spill to disk
     verbose : bool
@@ -196,21 +199,25 @@ def get_slurm_dask_cluster(
             python_path = sys.executable
         interface = detect_best_interface()
 
-        max_worker = max(2, max_worker)
+        max_worker = max(1, max_worker)
         per_node_cpu, per_node_mem = get_slurm_node_resources(
             partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
         total_nodes = get_total_nodes(partition=partition)
+        if num_node<0:
+            num_node=total_nodes
+        elif num_node>total_nodes:
+            num_node=total_nodes
 
         workers_per_node_mem = int(per_node_mem / min_mem)
         if workers_per_node_mem < 1:
             print(
-                "Minimum available memory per node is not sufficient for at-least one worker per node."
+                "Minimum available memory per node is not sufficient for at-least one worker on a node."
             )
             return
         workers_per_node_cpu = per_node_cpu
         workers_per_node = min(workers_per_node_mem, workers_per_node_cpu)
-        max_workers_cluster = workers_per_node * total_nodes
+        max_workers_cluster = workers_per_node * num_node
         if max_worker > 0:
             max_workers_cluster = min(max_workers_cluster, max_worker)
             max_workers_cluster = max(2, max_workers_cluster)

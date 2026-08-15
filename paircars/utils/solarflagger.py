@@ -3,7 +3,6 @@ import traceback
 from casatools import table, msmetadata
 from joblib import Parallel, delayed as jobdelayed
 from .flagging import do_flag_backup
-from .casatasks import calc_normzlized_crosscorr
 
 #####################################################################################
 # This code is adapted from SIMPL pipeline for LOFAR: Dey et al., 2025, A&A, 704, A75
@@ -65,10 +64,8 @@ def uvbin_flagger(
     # Ensure num_bins is at least 2 for logspace
     if current_num_bins < 2:
         current_num_bins = 2
-    # bins = np.logspace(np.log10(min_uv), np.log10(max_uv), current_num_bins)
     if binning_type == "log":
-        log_bins = np.linspace(np.log10(min_uv), np.log10(max_uv), current_num_bins)
-        bins = 10**log_bins
+        bins = np.logspace(np.log10(min_uv), np.log10(max_uv), current_num_bins)
     else:
         bins = np.linspace(min_uv, max_uv, current_num_bins)
     # Bin the data and compute statistics
@@ -100,16 +97,16 @@ def uvbin_flagger(
             if trim_size > 0:
                 trimmed_data = sorted_data[trim_size:-trim_size]
                 if trimmed_data.size == 0:  # Check if trimming resulted in empty array
-                    bin_median = np.median(bin_data)  # Fallback to full median
+                    bin_median = np.nanmedian(bin_data)  # Fallback to full median
                 else:
-                    bin_median = np.median(trimmed_data)
+                    bin_median = np.nanmedian(trimmed_data)
             else:
-                bin_median = np.median(bin_data)
+                bin_median = np.nanmedian(bin_data)
         else:
-            bin_median = np.median(bin_data)
+            bin_median = np.nanmedian(bin_data)
         # Use robust MAD calculation
         abs_diff = np.abs(bin_data - bin_median)
-        bin_mad = np.median(abs_diff)
+        bin_mad = np.nanmedian(abs_diff)
         # Avoid division by zero or very small MAD
         mad_threshold = 1e-9  # Adjusted threshold for comparison
         if bin_mad < mad_threshold:
@@ -184,8 +181,8 @@ def _process_timestamp(
     data_masked_full,
     nchan,
     npol,
-    threshold=3.0,
-    num_bins=25,
+    threshold=5.0,
+    num_bins=50,
     binning_type="log",
 ):
     """Processes a single timestamp's data to generate flags."""
@@ -203,14 +200,23 @@ def _process_timestamp(
                 continue
             # Apply UV-based flagging only on this timestamp's valid data
             # Pass only the valid subset to uvbin_flagger
-            current_flags = uvbin_flagger(
+            current_flags_real = uvbin_flagger(
                 timestamp_uv[valid_data_mask],
-                timestamp_data[valid_data_mask],
+                np.real(timestamp_data[valid_data_mask]),
                 threshold=threshold,
                 min_bin_samples=5,  # Keep min_bin_samples consistent
                 num_bins=num_bins,
                 binning_type=binning_type,
             )
+            current_flags_imag = uvbin_flagger(
+                timestamp_uv[valid_data_mask],
+                np.imag(timestamp_data[valid_data_mask]),
+                threshold=threshold,
+                min_bin_samples=5,  # Keep min_bin_samples consistent
+                num_bins=num_bins,
+                binning_type=binning_type,
+            )
+            current_flags = current_flags_real|current_flags_imag
             # Update flags for this timestamp, channel, and polarization
             if current_flags is not None and len(current_flags) > 0:
                 # Map flags back to the original size of the timestamp slice
@@ -224,10 +230,9 @@ def _process_timestamp(
 def flagger(
     msname,
     datacolumn,
-    threshold=3.0,
-    normalize=False,
+    threshold=5.0,
     num_processes=4,
-    num_bins=30,
+    num_bins=50,
     binning_type="log",
     flagbackup=True,
 ):
@@ -242,12 +247,10 @@ def flagger(
         Name of the data column (e.g. 'DATA', 'CORRECTED_DATA', 'RESIDUAL').
     threshold: float, optional
         Multiplier for the MAD-based flagging threshold.
-    normalize : bool, optional
-        Do normalization
     num_processes: int, optional
         Number of processes for parallel processing.
     num_bins: int, optional
-        Number of UV bins for uvbin_flagger (default: 30)
+        Number of UV bins for uvbin_flagger (default: 50)
     binning_type : str, optional
         Binning type (linear or log)
     flagbackup : bool, optional
@@ -262,8 +265,8 @@ def flagger(
     int
         Total new flag points
     """
-    print(f"Flagging : {msname}")
-    do_flag_backup(msname, flagtype="solar_flagger")
+    if flagbackup:
+        do_flag_backup(msname, flagtype="solarflag")
     ms = table()
     msmd = msmetadata()
     msmd.open(msname)
@@ -315,12 +318,6 @@ def flagger(
             flags = np.zeros(data.shape, dtype=bool)  # Use determined shape
 
         n_flagged = np.sum(flags)  # Initial number of flags
-
-        if normalize:
-            ant1 = ms.getcol("ANTENNA1")
-            ant2 = ms.getcol("ANTENNA2")
-            time = ms.getcol("TIME")
-            data, flags = calc_normzlized_crosscorr(data, flags, ant1, ant2, time)
 
         data = data.T
         flags = (

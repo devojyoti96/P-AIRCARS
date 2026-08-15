@@ -5,7 +5,6 @@ import copy
 import os
 from collections import defaultdict
 from astropy.io import fits
-from astropy.wcs import WCS
 from astropy.wcs import FITSFixedWarning
 from .basic_utils import average_timestamp, timestamp_to_mjdsec
 from .udocker_utils import run_wsclean
@@ -122,6 +121,30 @@ def create_circular_mask_array(data, radius, center_x=None, center_y=None):
     mask = dist_from_center <= radius**2
     return mask
 
+
+def get_image_npol(imagename):
+    """
+    Get image cube number of polarisation
+    
+    Parameters
+    ----------
+    imagename : str
+        Imagename
+        
+    Returns
+    -------
+    int
+        Number of polarisation planes
+    """
+    header = fits.getheader(imagename)
+    if header["CTYPE4"]=="STOKES":
+        npol = int(header["NAXIS4"])
+    elif header["CTYPE3"]=="STOKES":
+        npol = int(header["NAXIS3"])
+    else:
+        npol = 1
+    return npol
+    
 
 def calc_solar_image_stat(imagename, disc_size=50):
     """
@@ -326,7 +349,6 @@ def cutout_image(fits_file, output_file, x_deg=2):
     hdu = fits.open(fits_file)[0]
     data = hdu.data  # shape: (nfreq, nstokes, ny, nx)
     header = hdu.header
-    WCS(header)
     _, _, ny, nx = data.shape
     center_x, center_y = nx // 2, ny // 2
     # Get pixel scale (deg/pixel)

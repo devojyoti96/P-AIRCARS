@@ -19,6 +19,7 @@ from prefect import flow
 from prefect.context import get_run_context
 from prefect_dask.task_runners import DaskTaskRunner
 from prefect.settings import get_current_settings
+from prefect.futures import wait
 from paircars.utils.basic_utils import (
     internet_available,
     print_banner,
@@ -65,9 +66,9 @@ from paircars.utils.prefect_logger_utils import (
     start_flow_log_saver,
 )
 from paircars.pipeline.init_data import init_paircars_data
+from paircars.pipeline.tasks import run_ds_jobs
 from paircars.pipeline.flows import (
     basic_cal_subflow,
-    pre_process_subflow,
     selfcal_subflow,
     applysol_subflow,
     imaging_subflow,
@@ -92,40 +93,36 @@ def master_control(
     target_metafits="",
     calibrator_datadir="",
     calibrator_metafits="",
-    solar_data=True,
     # Pre-calibration
     do_forcereset_weightflag=False,
-    # Basic calibration
+    # Calibration
     do_basic_cal=True,
+    do_polcal=False,
     do_applycal=True,
     only_amplitude=False,
     redo_basic_cal=False,
-    use_solarflagger=False,
+    use_solarflagger=True,
     # Target data preparation
     freqrange="",
     timerange="",
     uvrange="",
-    # Polarization self-calibration
-    do_polcal=False,
     # Self-calibration
     do_selfcal=True,
     do_apply_selfcal=True,
     do_ap_selfcal=True,
-    solar_selfcal=True,
     use_solar_mask=True,
     int_solint="60s",
     pol_solint="240s",
     redo_selfcal=False,
     # Sidereal correction
     do_sidereal_cor=False,
-    do_move_solarcenter=True,
     # Dynamic spectra
     make_ds=True,
     # Imaging
     do_imaging=True,
     weight="briggs",
     robust=0.0,
-    minuv=0,
+    minuv_l=10,
     image_freqres=1.28,
     image_timeres=10.0,
     pol="IQUV",
@@ -133,6 +130,8 @@ def master_control(
     use_multiscale=True,
     cutout_rsun=10.0,
     make_overlay=False,
+    make_TB=False,
+    save_hpc=True,
     make_msplot=False,
     # Resource settings
     cpu_frac=0.8,
@@ -165,8 +164,6 @@ def master_control(
         Calibrator data directory
     calibrator_metafits : str, optional
         Calibrator metafits file
-    solar_data : bool, optional
-        Whether it is solar data or not
 
     do_forcereset_weightflag : bool, optional
         Reset weights and flags of the input ms
@@ -202,8 +199,6 @@ def master_control(
         Solution intervals in gain self-cal
     pol_solint : str, optional
         Solution intervals in polarisation self-cal
-    solar_selfcal : bool, optional
-        Solar selfcal
     use_solar_mask : bool, optional
         Use solar mask or not
     redo_selfcal : bool, optional
@@ -211,8 +206,6 @@ def master_control(
 
     do_sidereal_cor : bool, optional
         Perform solar sidereal motion correction or not
-    do_move_solarcenter: bool, optional
-        Move phasecenter to solar center
     make_ds : bool, optional
         Make dynamic spectra
 
@@ -222,7 +215,7 @@ def master_control(
         Image weighting
     robust : float, optional
         Robust parameter for briggs weighting (-1 to 1)
-    minuv : float, optional
+    minuv_l : float, optional
         Minimum UV-lambda for final imaging
     image_freqres : float, optional
         Image frequency resolution in MHz (-1 means full bandwidth)
@@ -238,6 +231,10 @@ def master_control(
         Cutout image size from center in solar radii (default : 10.0 solar radii)
     make_overlay : bool, optional
         Make EUV MWA overlay for all images or not (default : per coarse channel images will be overlaid at 60s intervals)
+    make_TB : bool, optional
+        Make brightness temperature maps or not
+    save_hpc : bool, optional
+        Save helioprojective fits or not
     make_msplot : bool, optional
         Make diagnostic plots of measurement sets
 
@@ -246,7 +243,7 @@ def master_control(
     mem_frac : float, optional
         Memory fraction to use
     max_worker: int, optional
-        Maximum workers
+        Maximum number of workers or parallel processes (default: number of coarse channels)
     keep_backup : bool, optional
         Keep backup of of all intermediate data poducts, calibrated ms, self-cal rounds and including images, models and residual images
     keep_calibrated_ms : bool, optional
@@ -604,12 +601,15 @@ def master_control(
     if outdir == "":
         outdir = workdir
 
-    workdir = f"{workdir}/{target_obsid}_{jobid}_target"
+    temp_workdir = f"{workdir}/{target_obsid}_{jobid}_target"
     try:
-        os.makedirs(workdir, exist_ok=True)
+        os.makedirs(temp_workdir, exist_ok=True)
+        if os.path.exists(f"{workdir}/inputs.txt"):
+            os.system(f"mv {workdir}/inputs.txt {temp_workdir}/inputs.txt")
+        workdir = temp_workdir
     except Exception:
         masterlogger.exception(
-            f"Work directory: {workdir} can not be created. Please check the path carefully.",
+            f"Work directory: {temp_workdir} can not be created. Please check the path carefully.",
             exc_info=True,
         )
         return 1
@@ -656,7 +656,7 @@ def master_control(
             masterlogger.critical("Error occured in creating local cluster.")
             return 1
     dask_addr = dask_client.scheduler.address
-
+    
     #####################################
     # Initiating paircars data
     #####################################
@@ -812,14 +812,6 @@ def master_control(
         ###########################################
         # Setting up mutual conditions
         ###########################################
-        # Move solar center, if any of these conditions are met
-        if do_selfcal or do_applycal or do_apply_selfcal or do_imaging:
-            if not do_move_solarcenter:
-                masterlogger.debug(
-                    "Switching on solar center changing, because selfcal of imaging is requeted."
-                )
-                do_move_solarcenter = True
-
         # Switch on applycal if selfcal is requested
         if do_selfcal:
             if not do_applycal:
@@ -840,24 +832,6 @@ def master_control(
                     "Switching on apply self-calibrations, because imaging is requested."
                 )
                 do_apply_selfcal = True
-
-        #####################################
-        # Settings for solar data
-        #####################################
-        if solar_data:
-            if not use_solar_mask:
-                masterlogger.info("Use solar mask during CLEANing.")
-                use_solar_mask = True
-            if not solar_selfcal:
-                solar_selfcal = True
-            full_FoV = False
-        else:
-            if use_solar_mask:
-                masterlogger.info("Stop using solar mask during CLEANing.")
-                use_solar_mask = False
-            if solar_selfcal:
-                solar_selfcal = False
-            full_FoV = True
 
         #####################################################################
         # Checking if ms is full pol for polarization calibration and imaging
@@ -892,7 +866,7 @@ def master_control(
         masterlogger.info(
             f"Estimating optimal frequency averaging using highest frequency measurement set: {highest_freq_ms}."
         )
-        max_freqres = calc_bw_smearing_freqwidth(highest_freq_ms, full_FoV=full_FoV)
+        max_freqres = calc_bw_smearing_freqwidth(highest_freq_ms, full_FoV=False)
         msmd = msmetadata()
         msmd.open(msname)
         freqres = msmd.chanres(0, unit="MHz")[0]
@@ -1091,56 +1065,6 @@ def master_control(
                         flow_name=f"master flow {flow_name}",
                     )
 
-        ###################################################
-        # Target measurement set pre-processing flows
-        ###################################################
-        if adaptive:
-            scale_worker_and_wait(
-                dask_cluster,
-                dask_client,
-                max(1, min(len(target_mslist), max_worker))+1, # One worker for prefect task
-            )
-        for banner in print_banner(
-            "Starting pre-processing subflow.", no_print=True
-        ).splitlines():
-            masterlogger.info(banner)
-        preprocess_msg, target_mslist = pre_process_subflow.with_options(
-            flow_run_name=f"preprocess_subflow_{target_obsid}",
-            task_runner=DaskTaskRunner(address=dask_addr),
-        )(
-            # Core observational inputs
-            target_mslist=target_mslist,
-            target_metafits=target_metafits,
-            target_obsid=target_obsid,
-            solar_data=solar_data,
-            workdir=workdir,
-            target_outdir=target_outdir,
-            do_move_solarcenter=do_move_solarcenter,
-            make_ds=make_ds,
-            cpu_frac=cpu_frac,
-            mem_frac=mem_frac,
-            jobid=jobid,
-            timestamp=timestamp,
-            emails=emails,
-            remote_logger=remote_logger,
-            verbose=verbose,
-        )
-        if preprocess_msg == 0 and len(target_mslist) > 0:
-            masterlogger.info("Pre-processing subflows is successful.")
-        else:
-            masterlogger.critical("Error occured in pre-processing steps target data.")
-            if emails != "":
-                email_msg = "Error occured in pre-processing steps target data. P-AIRCARS has stopped."
-                send_task_notification(
-                    emails,
-                    email_msg,
-                    jobid,
-                    target_obsid,
-                    timestamp,
-                    flow_name=f"master flow {flow_name}",
-                )
-            return 1
-
         ##################################################
         # Self-calibration flows
         ##################################################
@@ -1181,9 +1105,7 @@ def master_control(
                 target_outdir=target_outdir,
                 redo_selfcal=redo_selfcal,
                 has_cal=has_cal,
-                solar_selfcal=solar_selfcal,
                 do_sidereal_cor=do_sidereal_cor,
-                use_solarflagger=use_solarflagger,
                 keep_backup=keep_backup,
                 int_solint=int_solint,
                 pol_solint=pol_solint,
@@ -1281,6 +1203,71 @@ def master_control(
                     )
                 return 1
 
+        #######################################
+        # Run dynamic spectra making
+        #######################################
+        if make_ds:
+            if adaptive:
+                scale_worker_and_wait(
+                    dask_cluster,
+                    dask_client,
+                    max(1, min(len(split_target_mslist), max_worker))+1, # One worker for prefect task
+                )
+            if emails != "":
+                email_msg = f"[{target_obsid}] Started making solar dynamic spectra."
+                send_task_notification(
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"master flow {flow_name}",
+                )
+            print_banner("Starting task: Making dynamic spectra of solar target.")
+            try:
+                future_maskms = run_ds_jobs.with_options(
+                    task_run_name=f"make_ds_{target_obsid}",
+                ).submit(
+                    ",".join(split_target_mslist),
+                    target_metafits,
+                    workdir,
+                    target_outdir,
+                    jobid=jobid,
+                    cpu_frac=round(cpu_frac, 2),
+                    mem_frac=round(mem_frac, 2),
+                    remote_log=remote_logger,
+                    obsid=target_obsid,
+                    verbose=verbose,
+                )
+                wait([future_maskms])
+                msg, succeed, failed = future_maskms.result()
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"master flow {flow_name}",
+                    )
+                print_banner("Finished task: Making solar dynamic spectra are done.")
+            except Exception:
+                print_banner("!!! WARNING : Error in making dynamic spectra. !!!")
+                traceback.print_exc()
+                if emails != "":
+                    email_msg = (
+                        f"[{target_obsid}] Error occured in making dynamic spectra."
+                    )
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"master flow {flow_name}",
+                    )
+
         ###################################
         # Imaging subflow
         ###################################
@@ -1306,12 +1293,14 @@ def master_control(
                 do_polcal=do_polcal,
                 keep_backup=keep_backup,
                 make_overlay=make_overlay,
+                make_TB=make_TB,
+                save_hpc=save_hpc,
                 image_freqres=image_freqres,
                 image_timeres=image_timeres,
                 pol=pol,
                 freqrange=freqrange,
                 timerange=timerange,
-                minuv=minuv,
+                minuv_l=minuv_l,
                 weight=weight,
                 robust=robust,
                 clean_threshold=clean_threshold,
@@ -1658,11 +1647,6 @@ def cli():
         help="Disable polarization calibration",
     )
     advanced_cal.add_argument(
-        "--only_amplitude",
-        action="store_true",
-        help="Apply only amplitude part of gain solution from calibrator or not",
-    )
-    advanced_cal.add_argument(
         "--redo_basic_cal",
         action="store_true",
         help="Redo basic calibration or not",
@@ -1673,9 +1657,15 @@ def cli():
         help="Redo self-calibration",
     )
     advanced_cal.add_argument(
-        "--use_solarflagger",
-        action="store_true",
+        "--no_solarflagger",
+        action="store_false",
+        dest="use_solarflagger",
         help="Use solar flagger on corrected data or not",
+    )
+    advanced_cal.add_argument(
+        "--only_amplitude",
+        action="store_true",
+        help="Apply only amplitude part of gain solution from calibrator or not",
     )
 
     # === Advanced imaging parameters ===
@@ -1713,9 +1703,9 @@ def cli():
         help="Stokes parameter(s) to image ('I' or 'IQUV')",
     )
     advanced_image.add_argument(
-        "--minuv",
+        "--minuv_l",
         type=float,
-        default=0,
+        default=10,
         help="Minimum baseline length (in wavelengths) to include in imaging",
     )
     advanced_image.add_argument(
@@ -1760,6 +1750,18 @@ def cli():
         dest="make_overlay",
         help="Make overlay plot on EUV images for all images (default is to make overlays only one image per coarse channels at 10s intervals)",
     )
+    advanced_image.add_argument(
+        "--make_TB",
+        action="store_true",
+        help="Make brightness temperature maps or not",
+    )
+    advanced_image.add_argument(
+        "--no_save_hpc",
+        action="store_false",
+        dest="save_hpc",
+        help="Do not save helioprojective fits",
+    )
+
 
     # === Advanced options ===
     advanced = parser.add_argument_group(
@@ -1769,12 +1771,6 @@ def cli():
         "--make_msplot",
         action="store_true",
         help="Make diagnostic plots of measurement sets",
-    )
-    advanced.add_argument(
-        "--non_solar_data",
-        action="store_false",
-        dest="solar_data",
-        help="Disable solar data mode",
     )
     advanced.add_argument(
         "--no_ds",
@@ -1800,12 +1796,6 @@ def cli():
         help="Sidereal motion correction for Sun (disabled by default)",
     )
     advanced.add_argument(
-        "--no_solarcenter_move",
-        action="store_false",
-        dest="do_move_solarcenter",
-        help="Disable moving phasecenter to solar center",
-    )
-    advanced.add_argument(
         "--no_selfcal",
         action="store_false",
         dest="do_selfcal",
@@ -1816,12 +1806,6 @@ def cli():
         action="store_false",
         dest="do_ap_selfcal",
         help="Disable amplitude-phase self-calibration",
-    )
-    advanced.add_argument(
-        "--no_solar_selfcal",
-        action="store_false",
-        dest="solar_selfcal",
-        help="Disable solar-specific self-calibration parameters",
     )
     advanced.add_argument(
         "--no_applycal",
@@ -1840,6 +1824,28 @@ def cli():
         action="store_false",
         dest="do_imaging",
         help="Disable final imaging",
+    )
+    advanced.add_argument(
+        "--keep_backup",
+        action="store_true",
+        help="Keep backup of intermediate steps",
+    )
+    advanced.add_argument(
+        "--no_calibrated_ms",
+        action="store_false",
+        dest="keep_calibrated_ms",
+        help="Keep calibrated measurement sets or not",
+    )
+    advanced.add_argument(
+        "--no_remote_logger",
+        action="store_false",
+        dest="remote_logger",
+        help="Disable remote logger",
+    )
+    advanced.add_argument(
+        "--log2term",
+        action="store_true",
+        help="Show logs in terminal",
     )
     advanced.add_argument(
         "--verbose",
@@ -1866,25 +1872,8 @@ def cli():
     advanced_resource.add_argument(
         "--max_worker",
         type=int,
-        default=None,
-        help="Maximum number of workers",
-    )
-    advanced_resource.add_argument(
-        "--keep_backup",
-        action="store_true",
-        help="Keep backup of intermediate steps",
-    )
-    advanced_resource.add_argument(
-        "--no_calibrated_ms",
-        action="store_false",
-        dest="keep_calibrated_ms",
-        help="Keep calibrated measurement sets or not",
-    )
-    advanced_resource.add_argument(
-        "--no_remote_logger",
-        action="store_false",
-        dest="remote_logger",
-        help="Disable remote logger",
+        default=1,
+        help="Maximum number of parallel processes",
     )
     advanced_resource.add_argument(
         "--jobid",
@@ -1932,6 +1921,12 @@ def cli():
         type=str,
         default=None,
         help="Wall time, each slurm job can execute in maximum this time",
+    )
+    advanced_slurm.add_argument(
+        "--num_node",
+        type=str,
+        default=-1,
+        help="Maximum number of nodes to use (default: -1, use all nodes available in the account)",
     )
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -2040,7 +2035,6 @@ def cli():
         # Set up local cluster
         #######################################
         print("Setting up local cluster....")
-        print(f"Maximum allowed worker: {max_worker}")
         dask_client, dask_cluster, dask_dir, nworker = get_local_dask_cluster(
             args.workdir,
             cpu_frac=cpu_frac,
@@ -2072,7 +2066,6 @@ def cli():
             # Setting up slurm cluster
             ########################################
             print("Setting up slurm cluster....")
-            print(f"Maximum allowed worker: {max_worker}")
             cluster_result = get_slurm_dask_cluster(
                 args.workdir,
                 jobid=jobid,
@@ -2083,6 +2076,7 @@ def cli():
                 partition=args.partition,
                 account=args.account,
                 walltime=args.walltime,
+                num_node=args.num_node,
             )
             if cluster_result is None:
                 print("Error occured in creating slurm cluster.")
@@ -2127,7 +2121,6 @@ def cli():
             target_metafits=args.target_metafits,
             calibrator_datadir=args.cal_datadir,
             calibrator_metafits=args.cal_metafits,
-            solar_data=args.solar_data,
             # Pre-calibration
             do_forcereset_weightflag=args.do_forcereset_weightflag,
             # Basic calibration
@@ -2146,20 +2139,18 @@ def cli():
             do_selfcal=args.do_selfcal,
             do_apply_selfcal=args.do_apply_selfcal,
             do_ap_selfcal=args.do_ap_selfcal,
-            solar_selfcal=args.solar_selfcal,
             int_solint=args.int_solint,
             pol_solint=args.pol_solint,
             redo_selfcal=args.redo_selfcal,
             # Sidereal correction
             do_sidereal_cor=args.do_sidereal_cor,
-            do_move_solarcenter=args.do_move_solarcenter,
             # Dynamic spectra
             make_ds=args.make_ds,
             # Imaging
             do_imaging=args.do_imaging,
             weight=args.weight,
             robust=args.robust,
-            minuv=args.minuv,
+            minuv_l=args.minuv_l,
             image_freqres=args.image_freqres,
             image_timeres=args.image_timeres,
             pol=args.pol,
@@ -2168,6 +2159,8 @@ def cli():
             use_solar_mask=args.use_solar_mask,
             cutout_rsun=args.cutout_rsun,
             make_overlay=args.make_overlay,
+            make_TB=args.make_TB,
+            save_hpc=args.save_hpc,
             make_msplot=args.make_msplot,
             # Resource settings
             cpu_frac=args.cpu_frac,

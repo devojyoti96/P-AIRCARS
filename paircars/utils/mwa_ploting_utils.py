@@ -830,6 +830,7 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
     str
         FITS image in helioprojective coordinate
     """
+    warnings.filterwarnings("ignore")
     logging.getLogger("sunpy").setLevel(logging.ERROR)
     fits_header = fits.getheader(fits_image)
     org_data = fits.getdata(fits_image)
@@ -919,6 +920,405 @@ def save_in_hpc(fits_image, outdir="", xlim=[], ylim=[]):
     return outfile
 
 
+def plot_in_hpc_full_stokes(
+    fits_image,
+    draw_limb=False,
+    extensions=["png"],
+    outdirs=[],
+    plot_range=[],
+    power=0.5,
+    xlim=[-3200, 3200],
+    ylim=[-3200, 3200],
+    contour_levels=[],
+    showgui=False,
+):
+    """
+    Plot full-Stokes MWA image (I, Q, U, V) in Helioprojective
+    coordinates using a 2x2 subplot layout.
+
+    Parameters
+    ----------
+    fits_image : str
+        Name of the FITS image.
+    draw_limb : bool, optional
+        Draw the solar limb on all Stokes panels.
+    extensions : list, optional
+        Output file extensions.
+    outdirs : list, optional
+        Output directories corresponding to extensions.
+    plot_range : list, optional
+        Plot range. If supplied, it should contain [vmin, vmax]
+        and the same range will be used for all Stokes images.
+    power : float, optional
+        Power stretch.
+    xlim : list, optional
+        X-axis limits in arcsec.
+    ylim : list, optional
+        Y-axis limits in arcsec.
+    contour_levels : list, optional
+        Contour levels as fractions of the peak. Contours are
+        currently applied to each Stokes image.
+    showgui : bool, optional
+        Show GUI.
+
+    Returns
+    -------
+    output_image_list : list
+        Saved plot file names.
+    cropped_maps : dict
+        Dictionary containing the cropped SunPy maps for
+        I, Q, U and V.
+    """
+    from matplotlib.patches import Ellipse, Rectangle
+    warnings.filterwarnings("ignore")
+    logging.getLogger("sunpy").setLevel(logging.ERROR)
+    if showgui:
+        matplotlib.use("TkAgg")
+    matplotlib.rcParams.update({"font.size": 14})
+
+    fits_image = fits_image.rstrip("/")
+    mwa_header = fits.getheader(fits_image)
+
+    pixel_unit = mwa_header.get("BUNIT", "")
+    pixel_scale = abs(mwa_header["CDELT1"]) * 3600.0  # arcsec/pixel
+    obstime = Time(mwa_header["DATE-OBS"])
+
+    stokes_list = ["I", "Q", "U", "V"]
+    stokes_maps = {}
+    for pol in stokes_list:
+        try:
+            stokes_maps[pol] = get_mwamap(
+                fits_image,
+                pol=pol,
+            )
+        except Exception as exc:
+            logging.warning(
+                "Could not load Stokes %s from %s: %s",
+                pol,
+                fits_image,
+                exc,
+            )
+            stokes_maps[pol] = None
+            return 
+
+    # At minimum I should be available
+    if stokes_maps["I"] is None:
+        raise RuntimeError(
+            f"Could not load Stokes I from {fits_image}"
+        )
+        return 
+        
+    mwa_map = stokes_maps["I"]
+    top_right = SkyCoord(
+        xlim[1] * u.arcsec,
+        ylim[1] * u.arcsec,
+        frame=mwa_map.coordinate_frame,
+    )
+
+    bottom_left = SkyCoord(
+        xlim[0] * u.arcsec,
+        ylim[0] * u.arcsec,
+        frame=mwa_map.coordinate_frame,
+    )
+
+    cropped_maps = {}
+    for pol in stokes_list:
+        if stokes_maps[pol] is None:
+            cropped_maps[pol] = None
+            continue
+        try:
+            cropped_maps[pol] = stokes_maps[pol].submap(
+                bottom_left,
+                top_right=top_right,
+            )
+        except Exception as exc:
+            logging.warning(
+                "Could not crop Stokes %s: %s",
+                pol,
+                exc,
+            )
+            cropped_maps[pol] = None
+
+    fig = plt.figure(figsize=(15, 12))
+    # Use the I map as the WCS projection
+    projection_map = cropped_maps["I"]
+    freqstr = f"{projection_map.meta['wavelnth']} {projection_map.meta['waveunit']}"
+    timestr = " ".join(projection_map.meta['date-obs'].split('T')) 
+    title = f"{freqstr} {timestr}"
+    gs = fig.add_gridspec(
+        2,
+        2,
+        wspace=0.08,
+        hspace=0.12,
+    )
+
+    axes = [
+        fig.add_subplot(
+            gs[0, 0],
+            projection=projection_map,
+        ),
+        fig.add_subplot(
+            gs[0, 1],
+            projection=projection_map,
+        ),
+        fig.add_subplot(
+            gs[1, 0],
+            projection=projection_map,
+        ),
+        fig.add_subplot(
+            gs[1, 1],
+            projection=projection_map,
+        ),
+    ]
+
+    stokes_titles = {
+        "I": "Stokes I",
+        "Q": "Stokes Q",
+        "U": "Stokes U",
+        "V": "Stokes V",
+    }
+    
+    i_cmap = "inferno"
+    pol_cmap = "coolwarm"
+    
+    pos_color = "white"
+    neg_color = "cyan"
+
+    try:
+        bmaj = mwa_header["BMAJ"] * u.deg.to(u.arcsec)
+        bmin = mwa_header["BMIN"] * u.deg.to(u.arcsec)
+        bpa = mwa_header["BPA"] - sun.P(obstime).deg
+        have_beam = True
+    except KeyError:
+        bmaj = None
+        bmin = None
+        bpa = None
+        have_beam = False
+
+    for ax, pol in zip(axes, stokes_list):
+        cropped_map = cropped_maps[pol]
+        if cropped_map is None:
+            ax.text(
+                0.5,
+                0.5,
+                f"Stokes {pol}\nnot available",
+                transform=ax.transAxes,
+                ha="center",
+                va="center",
+                fontsize=14,
+            )
+            continue
+        mwa_data = cropped_map.data
+
+        if len(plot_range) < 2:
+            finite_data = mwa_data[np.isfinite(mwa_data)]
+            if finite_data.size == 0:
+                vmin = 0.0
+                vmax = 1.0
+            else:
+                peak = np.nanmax(np.abs(finite_data))
+                # Stokes I is normally positive.
+                # Q/U/V can have positive and negative values.
+                if pol == "I":
+                    vmin = 0.03 * np.nanmax(finite_data)
+                    vmax = 0.99 * np.nanmax(finite_data)
+                else:
+                    vmin = -0.99 * peak
+                    vmax = 0.99 * peak
+        else:
+            vmin = np.nanmin(plot_range)
+            vmax = np.nanmax(plot_range)
+
+        norm = ImageNormalize(
+            mwa_data,
+            vmin=vmin,
+            vmax=vmax,
+            stretch=PowerStretch(power),
+        )
+
+        if pol=="I":
+            cmap = i_cmap
+        else:
+            cmap = pol_cmap
+            
+        cropped_map.plot(
+            cmap=cmap,
+            axes=ax,
+            norm=norm,
+            title = f"{stokes_titles[pol]}",
+        )
+
+        if len(contour_levels) > 0:
+            contour_levels_array = np.asarray(
+                contour_levels,
+                dtype=float,
+            )
+            finite_data = mwa_data[np.isfinite(mwa_data)]
+            if finite_data.size > 0:
+                peak = np.nanmax(np.abs(finite_data))
+                pos_cont = contour_levels_array[
+                    contour_levels_array >= 0
+                ]
+                neg_cont = contour_levels_array[
+                    contour_levels_array < 0
+                ]
+                if len(pos_cont) > 0:
+                    cropped_map.draw_contours(
+                        np.sort(pos_cont) * peak,
+                        axes=ax,
+                        colors=pos_color,
+                    )
+                if len(neg_cont) > 0:
+                    cropped_map.draw_contours(
+                        np.sort(neg_cont) * peak,
+                        axes=ax,
+                        colors=neg_color,
+                    )
+
+        ax.coords.grid(False)
+        rgba_vmin = plt.get_cmap(cmap)(
+            norm(norm.vmin)
+        )
+        ax.set_facecolor(rgba_vmin)
+
+        if draw_limb:
+            cropped_map.draw_limb(
+                axes=ax,
+                color="green",
+                linewidth=2.0,
+            )
+
+        if have_beam:
+            x0, x1 = ax.get_xlim()
+            y0, y1 = ax.get_ylim()
+            beam_center = SkyCoord(
+                x0 + 0.08 * (x1 - x0),
+                y0 + 0.08 * (y1 - y0),
+                unit=u.arcsec,
+                frame=cropped_map.coordinate_frame,
+            )
+            # Beam ellipse dimensions in pixels
+            beam_ellipse = Ellipse(
+                (
+                    beam_center.Tx.value,
+                    beam_center.Ty.value,
+                ),
+                width=bmin / pixel_scale,
+                height=bmaj / pixel_scale,
+                angle=bpa,
+                edgecolor="white",
+                facecolor="white",
+                lw=1,
+            )
+            # Box around beam
+            box_size = (
+                max(
+                    0.5 * (x1 - x0),
+                    2 * max(bmin, bmaj),
+                )
+                / pixel_scale
+            )
+            rect = Rectangle(
+                (
+                    beam_center.Tx.value - box_size / 2,
+                    beam_center.Ty.value - box_size / 2,
+                ),
+                width=box_size,
+                height=box_size,
+                edgecolor="white",
+                facecolor="black",
+                lw=1.2,
+                linestyle="solid",
+            )
+            ax.add_patch(rect)
+            ax.add_patch(beam_ellipse)
+
+        formatter = ticker.FuncFormatter(
+            lambda x, _: f"{x:.0e}"
+        )
+        cbar = plt.colorbar(
+            ax.images[0],
+            ax=ax,
+            format=formatter,
+            pad=0.02,
+            fraction=0.046,
+        )
+        cbar.locator = ticker.MaxNLocator(
+            nbins=5
+        )
+        cbar.update_ticks()
+        if pixel_unit.upper() == "K":
+            cbar.set_label(
+                "Brightness temperature (K)"
+            )
+        elif pixel_unit.upper() == "JY/BEAM":
+            cbar.set_label(
+                "Flux density (Jy/beam)"
+            )
+            
+        if pol=="U" or pol=="V":
+            ax.set_xlabel(
+                "Helioprojective Longitude [arcsec]"
+            )
+        else:
+            ax.set_xlabel(" ")
+            ax.coords[0].set_ticks_visible(False)
+            ax.coords[0].set_ticklabel_visible(False)
+
+        if pol=="I" or pol=="U":
+            ax.set_ylabel(
+                "Helioprojective Latitude [arcsec]"
+            )
+        else:
+            ax.set_ylabel(" ")
+            ax.coords[1].set_ticks_visible(False)
+            ax.coords[1].set_ticklabel_visible(False)
+            
+    fig.suptitle(
+        title,
+        fontsize=15,
+        y=0.93,
+        x=0.55,
+    )
+
+    output_image_list = []
+    for i in range(len(extensions)):
+        ext = extensions[i]
+        try:
+            outdir = outdirs[i]
+        except (IndexError, TypeError):
+            outdir = os.path.dirname(
+                os.path.abspath(fits_image)
+            )
+        base_name = (
+            os.path.basename(fits_image)
+            .split(".fits")[0]
+            .split("_IQUV")[0]
+        )
+        if len(contour_levels) > 0:
+            output_image = os.path.join(
+                outdir,
+                f"{base_name}_IQUV_contour.{ext}",
+            )
+        else:
+            output_image = os.path.join(
+                outdir,
+                f"{base_name}_IQUV.{ext}",
+            )
+        output_image_list.append(output_image)
+        
+    for output_image in output_image_list:
+        fig.savefig(
+            output_image,
+            bbox_inches="tight",
+        )
+        
+    if showgui:
+        plt.show()
+    plt.close(fig)
+    return output_image_list, cropped_maps
+    
+    
 def plot_in_hpc(
     fits_image,
     draw_limb=False,
@@ -2129,7 +2529,7 @@ def rename_mwasolar_image(
     return new_name
 
 
-def make_ds_plot(dsfiles, plot_file=None, plot_quantity="TB", showgui=False):
+def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
     """
     Make dynamic spectrum plot
 

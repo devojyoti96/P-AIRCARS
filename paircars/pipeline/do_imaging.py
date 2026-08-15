@@ -18,7 +18,6 @@ from paircars.utils.image_utils import (
     make_stokes_wsclean_imagecube,
 )
 from paircars.utils.imaging import (
-    calc_sun_dia,
     calc_field_of_view,
     calc_npix_in_psf,
     calc_cellsize,
@@ -67,7 +66,7 @@ def perform_imaging(
     pol="I",
     weight="briggs",
     robust=0.0,
-    minuv=0,
+    minuv_l=0,
     threshold=1.0,
     use_multiscale=True,
     use_solar_mask=True,
@@ -110,7 +109,7 @@ def perform_imaging(
         Image weighting scheme
     robust : float, optional
         Briggs weighting robustness parameter
-    minuv : float, optional
+    minuv_l : float, optional
         Minimum UV-lambda to be used in imaging
     threshold : float, optional
         CLEAN threshold
@@ -177,7 +176,7 @@ def perform_imaging(
     try:
         msname = msname.rstrip("/")
         msname = os.path.abspath(msname)
-        img_logger.info(f"Perform imaging for {os.path.basename(msname)}")
+        img_logger.info(f"Perform imaging for {os.path.basename(msname)}.\n")
 
         #########
         # Imaging
@@ -197,19 +196,19 @@ def perform_imaging(
         ###################################################
         if os.path.exists(f"{msname}/.nocal"):
             cal_sol = False
-            img_logger.warning("No calibrator solutions applied.")
+            img_logger.warning("No calibrator solutions applied.\n")
         else:
             cal_sol = True
-            img_logger.debug("Calibration solutions applied")
+            img_logger.debug("Calibration solutions applied.\n")
 
         ####################################
         # Whether pol-selfcal is done or not
         ####################################
         if os.path.exists(f"{msname}/.nopolselfcal"):
             pol_selfcal = False
-            img_logger.warning("Polarisation self-calibration is not done.")
+            img_logger.warning("Polarisation self-calibration is not done.\n")
         else:
-            img_logger.warning("Polarisation self-calibration is done.")
+            img_logger.debug("Polarisation self-calibration is done.\n")
             pol_selfcal = True
 
         ###################################
@@ -232,7 +231,7 @@ def perform_imaging(
             end_chans = [len(freqs)]
         if len(start_chans) == 0:
             img_logger.critical(
-                f"Please provide valid channel range between 0 and {len(freqs)}"
+                f"Please provide valid channel range between 0 and {len(freqs)}.\n"
             )
             time.sleep(5)
             if sub_observer is not None:
@@ -254,7 +253,7 @@ def perform_imaging(
             end_times = [len(times)]
         if len(start_times) == 0:
             img_logger.critical(
-                f"Please provide valid time range between {mjdsec_to_timestamp(times[0])} and {mjdsec_to_timestamp(times[-1])}"
+                f"Please provide valid time range between {mjdsec_to_timestamp(times[0])} and {mjdsec_to_timestamp(times[-1])}.\n"
             )
             time.sleep(5)
             if sub_observer is not None:
@@ -272,9 +271,9 @@ def perform_imaging(
         if threshold <= 1:
             threshold = 1.1
         uvtaper = calc_uvtaper(msname)
-        _, maxuv = calc_maxuv(msname)
-        maxuv = round(maxuv, 1)
-        taper = round(max(0, maxuv - uvtaper), 1)
+        _, maxuv_l = calc_maxuv(msname)
+        maxuv_l = round(maxuv_l, 1)
+        taper = round(max(0, maxuv_l - uvtaper), 1)
 
         wsclean_args = [
             "-quiet",
@@ -289,8 +288,8 @@ def perform_imaging(
             "-mgain 0.85",
             "-nmiter 5",
             "-gain 0.1",
-            f"-minuv-l {minuv}",
-            f"-maxuv-l {maxuv}",
+            f"-minuv-l {minuv_l}",
+            f"-maxuv-l {maxuv_l}",
             f"-j {ncpu}",
             f"-abs-mem {round(mem, 2)}",
             f"-auto-threshold 1 -auto-mask {threshold}",
@@ -327,7 +326,7 @@ def perform_imaging(
             for j in range(len(start_times)):
                 touch_file = f"{workdir}/.{os.path.basename(msname)}_chunk_ch_{start_chans[i]}_{end_chans[i]}_time_{start_times[j]}_{end_times[j]}" 
                 if os.path.exists(touch_file):
-                    img_logger.info(f"Channel range: {start_chans[i]}~{end_chans[i]}, and time range: {start_times[j]}~{end_times[j]} are already imaged.")
+                    img_logger.info(f"Channel range: {start_chans[i]}~{end_chans[i]}, and time range: {start_times[j]}~{end_times[j]} are already imaged.\n")
                 else:
                     temp_wsclean_args = copy.deepcopy(wsclean_args)
                     temp_wsclean_args.append(
@@ -360,14 +359,10 @@ def perform_imaging(
                     if use_multiscale:
                         num_pixel_in_psf = calc_npix_in_psf(weight, robust=robust)
                         chan_number = int((start_chans[i] + end_chans[i]) / 2)
-                        freqMHz = freqs[chan_number]
-                        sun_dia = calc_sun_dia(freqMHz)  # Sun diameter in arcmin
-                        sun_rad = sun_dia / 2
                         multiscale_scales = calc_multiscale_scales(
                             msname,
                             num_pixel_in_psf,
                             chan_number=chan_number,
-                            max_scale=sun_rad,
                         )
                         temp_wsclean_args.append("-multiscale")
                         temp_wsclean_args.append("-multiscale-gain 0.1")
@@ -390,7 +385,7 @@ def perform_imaging(
                     ######################################
                     wsclean_cmd = "wsclean " + " ".join(temp_wsclean_args) + " " + msname
                     img_logger.info(
-                        f"{wsclean_cmd}",
+                        f"{wsclean_cmd}\n",
                     )
                     msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
                     if msg == 0:
@@ -481,8 +476,8 @@ def perform_imaging(
                         # Renaming images
                         ######################
                         if len(imagelist) > 0:
-                            img_logger.info(f"Total {len(imagelist)} images are made.")
-                            img_logger.info("Renaming and making plots.")
+                            img_logger.info(f"Total {len(imagelist)} images are made.\n")
+                            img_logger.info("Renaming and making plots.\n")
                             os.makedirs(imagedir + "/images", exist_ok=True)
                             final_image_list = []
                             for imagename in imagelist:
@@ -539,7 +534,7 @@ def perform_imaging(
                 os.system("rm -rf " + fits_mask)
             if len(final_list_dic["image"]) == 0:
                 img_logger.error(
-                    "No image is made.",
+                    "No image is made.\n",
                 )
                 time.sleep(5)
                 if sub_observer is not None:
@@ -547,7 +542,7 @@ def perform_imaging(
                 return 1, final_list_dic
             else:
                 img_logger.info(
-                    "Imaging is successfully done.",
+                    "Imaging is successfully done.\n",
                 )
                 time.sleep(5)
                 if sub_observer is not None:
@@ -557,7 +552,7 @@ def perform_imaging(
             if use_solar_mask and os.path.exists(fits_mask):
                 os.system("rm -rf " + fits_mask)
             img_logger.critical(
-                "No image is made.",
+                "No image is made.\n",
             )
             time.sleep(5)
             if sub_observer is not None:
@@ -588,7 +583,7 @@ def run_all_imaging(
     timeres=-1,
     weight="briggs",
     robust=0.0,
-    minuv=0,
+    minuv_l=0,
     pol="I",
     threshold=1.0,
     use_multiscale=True,
@@ -628,7 +623,7 @@ def run_all_imaging(
         Image weighting
     robust : float, optional
         Briggs weighting robust parameter
-    minuv : float, optional
+    minuv_l : float, optional
         Minimum UV-lambda to use in imaging
     pol : str, optional
         Stokes parameters to image
@@ -709,9 +704,11 @@ def run_all_imaging(
             logger.critical("No valid measurement set is found.")
             return 1, succeed, failed, total_images
 
+        if cutout_rsun<2:
+            logger.info("Minimum cutout is 2 solar radii.")
         cutout_rsun = max(
-            5, cutout_rsun
-        )  # Minimum 5 solar radii cutout, default is 10 solar radii
+            2, cutout_rsun
+        )  # Minimum 2 solar radii cutout, default is 10 solar radii
 
         tasks = []
         for i in range(len(mslist)):
@@ -719,7 +716,7 @@ def run_all_imaging(
             num_pixel_in_psf = calc_npix_in_psf(weight, robust=robust)
             cellsize = calc_cellsize(ms, num_pixel_in_psf)
             instrument_fov = calc_field_of_view(ms, FWHM=False)
-            cutout_rsun_arcsec = cutout_rsun * 16 * 60
+            cutout_rsun_arcsec = max(5, cutout_rsun) * 16 * 60
             fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
             imsize = int(fov / cellsize)
             imsize = get_fft_size(imsize)
@@ -746,7 +743,7 @@ def run_all_imaging(
                     pol=pol,
                     weight=weight,
                     robust=robust,
-                    minuv=minuv,
+                    minuv_l=minuv_l,
                     threshold=threshold,
                     use_multiscale=use_multiscale,
                     use_solar_mask=use_solar_mask,
@@ -809,7 +806,7 @@ def main(
     timeres=-1,
     weight="briggs",
     robust=0.0,
-    minuv=0,
+    minuv_l=0,
     threshold=1.0,
     cutout_rsun=10.0,
     use_multiscale=True,
@@ -851,7 +848,7 @@ def main(
         Weighting scheme for imaging ("natural", "uniform", "briggs"). Default is "briggs".
     robust : float, optional
         Robustness parameter for Briggs weighting. Default is 0.0.
-    minuv : float, optional
+    minuv_l : float, optional
         Minimum uv-distance (in wavelengths) to include in imaging. Default is 0.0.
     threshold : float, optional
         Cleaning threshold in sigma. Default is 1.0.
@@ -1008,7 +1005,7 @@ def main(
             timeres=timeres,
             weight=weight,
             robust=robust,
-            minuv=minuv,
+            minuv_l=minuv_l,
             threshold=threshold,
             use_multiscale=use_multiscale,
             use_solar_mask=use_solar_mask,
@@ -1121,8 +1118,8 @@ def cli():
         help="Briggs robust parameter",
     )
     adv_args.add_argument(
-        "--minuv_l",
-        dest="minuv",
+        "--minuv_l_l",
+        dest="minuv_l",
         type=float,
         default=0,
         help="Minimum UV distance in wavelengths",
@@ -1205,7 +1202,7 @@ def cli():
         timeres=args.timeres,
         weight=args.weight,
         robust=args.robust,
-        minuv=args.minuv,
+        minuv_l=args.minuv_l,
         threshold=args.threshold,
         cutout_rsun=args.cutout_rsun,
         use_multiscale=args.use_multiscale,

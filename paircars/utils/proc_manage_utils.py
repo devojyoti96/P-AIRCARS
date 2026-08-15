@@ -8,13 +8,15 @@ import time
 import glob
 import os
 import subprocess
+import threading
 import sys
+import re
 import shutil
 import socket
 import shlex
 import traceback
 from dotenv import load_dotenv
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client, LocalCluster, WorkerPlugin
 from datetime import datetime as dt, timedelta
 from pyfiglet import Figlet
 from collections import deque
@@ -159,6 +161,9 @@ def scale_worker_and_wait(
     timeout : float, optional
         Timeout, show a warning and move
     """
+    workers = get_total_worker(dask_client)
+    if workers==nworker:
+        return 0
     print(f"Start scaling to {nworker} workers")
     nworker = max(2, nworker)  # Safety, never scale to 1 worker
     dask_cluster.scale(nworker)
@@ -177,7 +182,7 @@ def get_local_dask_cluster(
     cpu_frac=0.8,
     mem_frac=0.8,
     min_mem=2,
-    max_worker=-1,
+    max_worker=1,
     spill_frac=0.7,
     wait_time=10.0,
     verbose=True,
@@ -196,7 +201,7 @@ def get_local_dask_cluster(
     min_mem : float, optional
         Minimum required per job memory in GB
     max_worker : int, optional
-        Maximum worker
+        Maximum number of parallel processes 
     spill_frac : float, optional
         Spill to disk at this fraction
     wait_time : float, optional
@@ -217,7 +222,7 @@ def get_local_dask_cluster(
     """
     cpu_frac = min(abs(cpu_frac), 0.8)
     mem_frac = min(abs(mem_frac), 0.8)
-    max_worker = max(2, max_worker)
+    max_worker = max(1, max_worker)
     logging.getLogger("distributed").setLevel(logging.ERROR)
     print("Creating local cluster on the current node.")
     # Set up Dask working directories
@@ -286,6 +291,7 @@ def get_local_dask_cluster(
         )
         client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
+        client.register_plugin(CPUAccountingPlugin(interval=1.0))
         if verbose:
             print("####################################################")
             print(f"Dask dashboard available at: {client.dashboard_link}")
@@ -302,6 +308,42 @@ def get_local_dask_cluster(
         traceback.print_exc()
         os.system(f"rm -rf {dask_dir_tmp}")
         return
+
+    
+def colorize_log(line):
+    """
+    Add terminal colors to log lines.
+
+    Colors are only added when stdout is an interactive terminal.
+    When stdout is redirected to a file/pipe, the original line is
+    returned unchanged.
+    """
+    RESET = "\033[0m"
+    LOG_COLORS = {
+        "DEBUG": "\033[1;96m",       # Bold bright cyan
+        "INFO": "\033[32;1m",        # Bright green
+        "WARNING": "\033[33;1m",     # Bright yellow
+        "ERROR": "\033[31;1m",       # Bright red
+        "CRITICAL": "\033[35;1m",    # Bright magenta
+    }
+    LOG_LEVEL_RE = re.compile(
+        r"\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\b"
+    )
+    if not sys.stdout.isatty():
+        return line
+    match = LOG_LEVEL_RE.search(line)
+    if match is None:
+        return line
+    level = match.group(1)
+    color = LOG_COLORS[level]
+    pos = line.find("' -")
+    if pos != -1:
+        return (
+            f"{color}{line[:pos + 1]}{RESET}"
+            f"{line[pos + 1:]}"
+        )
+
+    return f"{color}{line.rstrip()}{RESET}\n"
 
 
 def submit_local_master_flow(args, jobid):
@@ -438,7 +480,7 @@ def submit_local_master_flow(args, jobid):
                         or ("task run" in lower or "flow run" in lower)
                         or "p-aircars execution is finished" in lower
                     ):
-                        sys.stdout.write(line)
+                        sys.stdout.write(colorize_log(line))
                         sys.stdout.flush()
                         last_write_time = time.time()
                     if (
@@ -453,6 +495,92 @@ def submit_local_master_flow(args, jobid):
         traceback.print_exc()
         return 1
 
+
+##############################################
+# Resource utilisation monitor
+##############################################
+class WorkerCPUMonitor:
+    def __init__(self, interval=1.0):
+        self.pid = os.getpid()
+        self.interval = interval
+        self.running = False
+        self.thread = None
+        self.total_cpu = 0.0
+        self.last_cpu = None
+        
+    def get_process_tree_cpu(self):
+        try:
+            parent = psutil.Process(self.pid)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return 0.0
+        processes = [parent]
+        try:
+            processes.extend(
+                parent.children(recursive=True)
+            )
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+        total_cpu = 0.0
+        for proc in processes:
+            try:
+                cpu = proc.cpu_times()
+                total_cpu += cpu.user + cpu.system
+            except (
+                psutil.NoSuchProcess,
+                psutil.AccessDenied,
+            ):
+                continue
+        return total_cpu
+
+    def _monitor(self):
+        self.last_cpu = self.get_process_tree_cpu()
+        while self.running:
+            time.sleep(self.interval)
+            current_cpu = self.get_process_tree_cpu()
+            delta = current_cpu - self.last_cpu
+            if delta > 0:
+                self.total_cpu += delta
+            self.last_cpu = current_cpu
+
+    def start(self):
+        self.running = True
+        self.thread = threading.Thread(
+            target=self._monitor,
+            daemon=True,
+        )
+        self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread is not None:
+            self.thread.join()
+        # Capture final interval
+        current_cpu = self.get_process_tree_cpu()
+        if self.last_cpu is not None:
+            delta = current_cpu - self.last_cpu
+            if delta > 0:
+                self.total_cpu += delta
+
+    def get_cpu_hours(self):
+        return self.total_cpu / 3600.0
+
+
+class CPUAccountingPlugin(WorkerPlugin):
+    def __init__(self, interval=1.0):
+        self.interval = interval
+
+    def setup(self, worker):
+        worker.cpu_accounting_monitor = WorkerCPUMonitor(
+            interval=self.interval
+        )
+        worker.cpu_accounting_monitor.start()
+
+    def teardown(self, worker):
+        worker.cpu_accounting_monitor.stop()
+        
+
+def get_worker_cpu_time(dask_worker):
+    return dask_worker.cpu_accounting_monitor.total_cpu
 
 ##############################################
 # Scheduler and hardware architecture related

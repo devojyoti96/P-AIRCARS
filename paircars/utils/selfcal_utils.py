@@ -169,6 +169,7 @@ def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1):
             "residual",
             threshold=threshold,
             num_processes=ncpu,
+            num_bins=30,
             flagbackup=False,
         )
 
@@ -919,6 +920,10 @@ def correct_spectrosnap_pbleak(
     -------
     list
         Leakage information list
+    int
+        Disk detected image number
+    int
+        Disk non-detected image number
     """
     ncpu = max(1, ncpu)
     images = list(image_dic.keys())
@@ -958,7 +963,7 @@ def correct_spectrosnap_pbleak(
                         ncpu=ncpu,
                     )
                     leakage_info_list.append(leakage_info)
-        return leakage_info_list
+        return leakage_info_list, len(images), 0
     else:
         #####################################
         # Leakage is estimated and corrected
@@ -976,7 +981,7 @@ def correct_spectrosnap_pbleak(
                     disk_detected, disk_size = determine_quiet_disk(wsclean_images[0])
                     if disk_detected is False:
                         logger.warning(
-                            f"Solar disk is not detected for: {wsclean_images[0]}"
+                            f"Solar disk is not detected for: {wsclean_images[0]}.\n"
                         )
                         no_disk_detected_images.append([wsclean_images, wsclean_models])
                     else:
@@ -996,7 +1001,7 @@ def correct_spectrosnap_pbleak(
                         )
                         if leakage_info is None:
                             logger.warning(
-                                f"leakage can not be calculated for: {wsclean_images[0]}"
+                                f"leakage can not be calculated for: {wsclean_images[0]}.\n"
                             )
                             no_disk_detected_images.append(
                                 [wsclean_images, wsclean_models]
@@ -1034,15 +1039,15 @@ def correct_spectrosnap_pbleak(
 
         if len(disk_detected_images) == 0 or len(leakage_info_dic) == 0:
             logger.warning(
-                "Leakage could not be estimated in any images because no disk is detected."
+                "Leakage could not be estimated in any images because no disk is detected.\n"
             )
-            return leakage_info_list
+            return leakage_info_list, len(disk_detected_images), len(no_disk_detected_images)
 
         ######################################################
         # Correcting images where solar disk were not detected
         ######################################################
         if len(no_disk_detected_images) > 0:
-            freq_keys = np.array(leakage_info_dic.keys())
+            freq_keys = np.array(list(leakage_info_dic.keys()), dtype=float)
             for non_disk in no_disk_detected_images:
                 wsclean_images = non_disk[0]
                 wsclean_models = non_disk[1]
@@ -1064,7 +1069,7 @@ def correct_spectrosnap_pbleak(
                 )
                 leakage_info_list.append(leakage_info)
     os.system("rm -rf *_pbcor.fits *_leakagecor.fits *_pbuncor.fits *pb.npy")
-    return leakage_info_list
+    return leakage_info_list, len(disk_detected_images), len(no_disk_detected_images)
 
 
 def selfcal_round(
@@ -1076,7 +1081,7 @@ def selfcal_round(
     imsize,
     round_number=0,
     uvrange="",
-    minuv=0,
+    minuv_l=0,
     calmode="ap",
     solint="30s",
     solnorm=True,
@@ -1129,7 +1134,7 @@ def selfcal_round(
         Selfcal iteration number
     uvrange : float, optional
        UV range for calibration
-    minuv : float, optional
+    minuv_l : float, optional
         Minimum uv in lambda
     calmode : str, optional
         Calibration mode ('p' or 'ap')
@@ -1227,19 +1232,6 @@ def selfcal_round(
     disk_detected = False
     polcal_datacolumn = "DATA"
 
-    #########################
-    # UV range in casa format
-    #########################
-    if minuv > 0:
-        if uvrange == "" or uvrange.startswith(">"):
-            uvrange = f">{minuv}lambda"
-        elif uvrange.startswith("<"):
-            maxuv = uvrange.split("lambda")[0].split("<")[1]
-            uvrange = f"{minuv}~{maxuv}lambda"
-        elif "~" in uvrange:
-            maxuv = uvrange.split("lambda")[0].split("~")[-1]
-            uvrange = f"{minuv}~{maxuv}lambda"
-
     if not use_previous_model:
         delmod(vis=msname, otf=True, scr=True)
     prefix = (
@@ -1265,7 +1257,7 @@ def selfcal_round(
             "-mgain 0.85",
             "-nmiter 5",
             "-gain 0.1",
-            f"-minuv-l {minuv}",
+            f"-minuv-l {minuv_l}",
             f"-j {ncpu}",
             f"-abs-mem {mem}",
             f"-auto-mask {threshold + 0.1}",
@@ -1289,7 +1281,7 @@ def selfcal_round(
         ################################################
         fits_mask = msname.split(".ms")[0] + "_solar-mask.fits"
         if not os.path.exists(fits_mask):
-            logger.info(f"Creating solar mask of size: {mask_radius} arcmin.\n")
+            logger.info(f"Creating solar mask of radius: {mask_radius} arcmin.\n")
             fits_mask = create_circular_mask(
                 msname, cellsize, imsize, mask_radius=mask_radius
             )
@@ -1337,7 +1329,7 @@ def selfcal_round(
         # WSClean imaging
         ###################
         wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " " + msname
-        logger.info(f"\nWSClean command: {wsclean_cmd}\n")
+        logger.info(f"{wsclean_cmd}\n")
         msg = run_wsclean(wsclean_cmd, "paircarswsclean", verbose=False)
         if msg != 0:
             logger.error("Imaging is not successful.\n")
@@ -1394,14 +1386,17 @@ def selfcal_round(
             ################################
             # Leakage correction
             ################################
+            logger.info(f"Primary beam correction: {pbcor}")
+            logger.info(f"Leakage correction: {leakagecor}")
+            logger.info(f"Undo primary beam correction: {pbuncor}.\n")
             if pbcor is True or leakagecor is True or pbuncor is True:
                 if len(leakage_info_polynomial) == 3:
                     logger.info(
-                        "Leakage correction is done using pre-determined leakage polynomial."
+                        "Leakage correction is done using pre-determined leakage polynomial.\n"
                     )
                 else:
                     leakage_info_polynomial = []
-                result = correct_spectrosnap_pbleak(
+                result, disk_detected_images, disk_non_detected_images = correct_spectrosnap_pbleak(
                     wsclean_images_dic,
                     wsclean_models_dic,
                     metafits,
@@ -1418,18 +1413,18 @@ def selfcal_round(
                 ##########################################################
                 # Predict models if image is leakage corrected
                 ##########################################################
-                logger.debug("Re-predicting corrected models.")
+                logger.info("Re-predicting corrected models.\n")
                 delmod(vis=msname, otf=True, scr=True)
                 wsclean_cmd = (
                     "wsclean " + " ".join(wsclean_args) + " -predict " + msname
                 )
-                logger.info(f"\nWSClean command: {wsclean_cmd}\n")
+                logger.info(f"{wsclean_cmd}\n")
                 prediction_msg = run_wsclean(
                     wsclean_cmd, "paircarswsclean", verbose=False
                 )
                 if prediction_msg != 0:
                     prediction_failed = True
-                    logger.warning("Re-prediction is failed.")
+                    logger.warning("Re-prediction is failed.\n")
 
             #######################################
             # Remove chunk files
@@ -1496,7 +1491,7 @@ def selfcal_round(
         )
 
         if len(wsclean_images) == 0:
-            logger.error("No image is made.")
+            logger.error("No image is made.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
         elif len(wsclean_images) == 1:
             os.system(f"cp -r {wsclean_images[0]} {final_image}")
@@ -1530,14 +1525,16 @@ def selfcal_round(
             if k == "MS":
                 pass
             else:
-                version = flags[0]["name"]
+                version = flags[k]["name"]
                 if "selfcal" in version:
                     try:
-                        with suppress_output():
-                            if restore_flag:
+                        if restore_flag:
+                            logger.info("Restoring previous round flag.\n")
+                            with suppress_output():
                                 flagmanager(
                                     vis=msname, mode="restore", versionname=version
                                 )
+                        with suppress_output():
                             flagmanager(vis=msname, mode="delete", versionname=version)
                     except BaseException:
                         pass
@@ -1555,16 +1552,11 @@ def selfcal_round(
             logger.error("No model flux.\n")
             return 1, applycal_gaintable, 0, 0, "", "", "", [], disk_detected
 
-        ############################
-        # Flag backup before selfcal
-        ############################
-        do_flag_backup(msname, flagtype="selfcal")
-
         ########################################
         # Check if any calibration is requested
         ########################################
         if do_intensity_cal is False and do_polcal is False:
-            logger.info("No calibration is requested. Returing only previous state.")
+            logger.info("No calibration is requested. Returing only previous state.\n")
             return (
                 2,
                 applycal_gaintable,
@@ -1580,20 +1572,19 @@ def selfcal_round(
         #########################################
         # If model prediction failed in polcal
         #########################################
-        if do_polcal:
-            if prediction_failed:
-                logger.error("Error in predicting model.")
-                return (
-                    3,
-                    applycal_gaintable,
-                    rms_DR,
-                    rms,
-                    final_image,
-                    final_model,
-                    final_residual,
-                    [],
-                    disk_detected,
-                )
+        if do_polcal and prediction_failed:
+            logger.error("Error in predicting model.\n")
+            return (
+                3,
+                applycal_gaintable,
+                rms_DR,
+                rms,
+                final_image,
+                final_model,
+                final_residual,
+                [],
+                disk_detected,
+            )
 
         ##############################
         # Perform intensity selfcal
@@ -1665,7 +1656,7 @@ def selfcal_round(
                 or ant_flag_frac - pre_ant_flag_frac > 0.5
                 or time_flag_frac - pre_time_flag_frac > 0.5
             ):
-                logger.info("Restoring flags of gaincal solutions.")
+                logger.info("Restoring flags of gaincal solutions.\n")
                 flagmanager(
                     vis=gain_caltable,
                     mode="restore",
@@ -1690,7 +1681,7 @@ def selfcal_round(
             with suppress_output():
                 flagmanager(vis=gain_caltable, mode="delete", versionname="gainflag_1")
             if not do_bandpass and fluxscale_mwa:
-                logger.info("Flux scaled gain caltable using MWA reference bandpass.")
+                logger.info("Flux scaled gain caltable using MWA reference bandpass.\n")
                 fluxcal_caltable(gain_caltable, attn=solar_attn)
 
             ##################################
@@ -1720,7 +1711,7 @@ def selfcal_round(
                     logger.error("No bandpass solutions are found.\n")
                     if fluxscale_mwa:
                         logger.info(
-                            "Flux scaled gain caltable using MWA reference bandpass."
+                            "Flux scaled gain caltable using MWA reference bandpass.\n"
                         )
                         fluxcal_caltable(gain_caltable, attn=solar_attn)
                 else:
@@ -1754,7 +1745,7 @@ def selfcal_round(
                         or ant_flag_frac - pre_ant_flag_frac > 0.5
                         or chan_flag_frac - pre_chan_flag_frac > 0.5
                     ):
-                        logger.info("Restoring flags of bandpass solutions.")
+                        logger.info("Restoring flags of bandpass solutions.\n")
                         flagmanager(
                             vis=bpass_caltable,
                             mode="restore",
@@ -1782,7 +1773,7 @@ def selfcal_round(
                         )
                     if fluxscale_mwa:
                         logger.info(
-                            "Flux scaled bandpass caltable using MWA reference bandpass."
+                            "Flux scaled bandpass caltable using MWA reference bandpass.\n"
                         )
                         fluxcal_caltable(bpass_caltable, attn=solar_attn)
 
@@ -1808,7 +1799,7 @@ def selfcal_round(
             quartical_log = prefix.replace("present", f"{round_number}") + ".qclog"
             if os.path.exists(pol_caltable):
                 os.system(f"rm -rf {pol_caltable}")
-            minuv, maxuv = uvrange_casa_to_quartical(msname, uvrange)
+            qc_minuv, qc_maxuv = uvrange_casa_to_quartical(msname, uvrange)
             ##############################################################################
             # If intensity calibration is also requested, calibrating using corrected data
             ##############################################################################
@@ -1824,7 +1815,7 @@ def selfcal_round(
                 "goquartical",
                 f"input_ms.path={msname}",
                 f"input_ms.data_column={polcal_datacolumn}",
-                f"input_ms.select_uv_range=[{minuv},{maxuv}]",
+                f"input_ms.select_uv_range=[{qc_minuv},{qc_maxuv}]",
                 "input_model.recipe=MODEL_DATA",
                 f"output.gain_directory={pol_caltable}",
                 f"solver.reference_antenna={refant}",
@@ -1856,7 +1847,7 @@ def selfcal_round(
             if solve_array_leakage:
                 quartical_args.append("D.solve_per=array")
             quartical_cmd = " ".join(quartical_args)
-            logger.info(f"\nQuartical cmd: {quartical_cmd}\n")
+            logger.info(f"{quartical_cmd}\n")
             quartical_msg = run_quartical(quartical_cmd,"paircarsquartical",verbose=False)
             os.system(f"rm -rf {quartical_log}")
             if quartical_msg != 0 or os.path.exists(pol_caltable) is False:
@@ -1867,7 +1858,7 @@ def selfcal_round(
             ######################################
             # Flagging quartical table
             ######################################
-            logger.info(f"Flagging quartical table: {pol_caltable}")
+            logger.info(f"Flagging quartical table: {pol_caltable}.\n")
             ctx = mp.get_context("spawn")
             with ProcessPoolExecutor(max_workers=1, mp_context=ctx) as ex:
                 future = ex.submit(
@@ -1875,13 +1866,13 @@ def selfcal_round(
                     pol_caltable,
                 )
                 pol_caltable = future.result()
-            logger.debug(f"Flagging done for quartical table: {pol_caltable}.")
+            logger.info(f"Flagging done for quartical table: {pol_caltable}.\n")
 
             ######################################
             # Caltable normalisation
             ######################################
             if pol_solnorm:
-                logger.info(f"Normalizing quartical table: {pol_caltable}")
+                logger.info(f"Normalizing quartical table: {pol_caltable}.\n")
                 ctx = mp.get_context("spawn")
                 with ProcessPoolExecutor(max_workers=1, mp_context=ctx) as ex:
                     future = ex.submit(
@@ -1890,7 +1881,7 @@ def selfcal_round(
                         True,
                     )
                     pol_caltable = future.result()
-                logger.debug(f"Normalizing done for quartical table: {pol_caltable}")
+                logger.info(f"Normalizing done for quartical table: {pol_caltable}.\n")
 
             ######################################
             # Applying quartical solutions
@@ -1919,7 +1910,7 @@ def selfcal_round(
                 f"D.load_from={pol_caltable}/D",
             ]
             quartical_cmd = " ".join(quartical_args)
-            logger.info(f"\nQuartical cmd: {quartical_cmd}\n")
+            logger.info(f"{quartical_cmd}\n")
             quartical_msg = run_quartical(quartical_cmd,"paircarsquartical",verbose=False)
             os.system(f"rm -rf {quartical_log} {temp_pol_caltable}")
             if quartical_msg != 0:
@@ -1945,6 +1936,10 @@ def selfcal_round(
         ######################################
         try:
             if do_flag:
+                ############################
+                # Flag backup before selfcal
+                ############################
+                do_flag_backup(msname, flagtype="selfcal")
                 logger.info("Flagging in uv-domain data.\n")
                 do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu))
         except Exception:

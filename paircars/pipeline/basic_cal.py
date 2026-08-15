@@ -263,10 +263,11 @@ def run_postcal_flag(
         f"badspw='',"
         f"bad_ants_str='',"
         f"datacolumn='{datacolumn}',"
-        "use_tfcrop=True,"
+        "use_tfcrop=False,"
         "use_rflag=True,"
         "flagdimension='freqtime',"
         "flag_autocorr=False,"
+        "force_flag=True,"
         f"threshold={threshold},"
         f"n_threads={n_threads},"
         f"mem_limit={mem_limit})"
@@ -277,10 +278,11 @@ def run_postcal_flag(
         badspw="",
         bad_ants_str="",
         datacolumn=datacolumn,
-        use_tfcrop=True,
+        use_tfcrop=False,
         use_rflag=True,
         flagdimension="freqtime",
         flag_autocorr=False,
+        force_flag=True,
         threshold=threshold,
         n_threads=n_threads,
         mem_limit=mem_limit,
@@ -670,10 +672,8 @@ def run_basic_cal_rounds(
         msmd.open(trial_ms)
         npol = msmd.ncorrforpol()[0]
         msmd.close()
-        if npol == 4:
-            n_rounds = 3
-        else:
-            n_rounds = 2
+        n_rounds = 2
+        if npol < 4:
             perform_polcal = False
         logger.info(f"Calibration for ms list: {mslist}.")
         logger.info(f"Total calibration rounds: {n_rounds}")
@@ -693,7 +693,10 @@ def run_basic_cal_rounds(
             refant = unflagged_antenna_names[0]
             msmd = msmetadata()
             msmd.open(trial_ms)
-            refant = str(msmd.antennaids(refant)[0])
+            refant_ids = sorted(
+                [msmd.antennaids(antname)[0] for antname in unflagged_antenna_names]
+            )[0]
+            refant = str(refant_ids)
             msmd.close()
         logger.debug(f"Reference antenna: {refant}")
         for msname in mslist:
@@ -729,7 +732,7 @@ def run_basic_cal_rounds(
                     do_polcal = True
                     logger.debug("Performing cross-hand phase calibration.")
                 flag_threshold = 5.0
-            if cal_round == n_rounds + 1:
+            if cal_round == n_rounds:
                 do_postcal_flag = [False] * len(mslist)
             caltable_dic, succeed, failed, postcal_flags = single_round_cal_and_flag(
                 mslist,

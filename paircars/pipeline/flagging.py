@@ -54,7 +54,6 @@ def single_ms_flag(
     flag_autocorr=False,
     flag_quack=False,
     run_solarflagger=False,
-    normalize=False,
     threshold=5.0,
     force_flag=False,
     restore_flag=True,
@@ -87,8 +86,6 @@ def single_ms_flag(
         Flag quack timestamps
     run_solarflagger : bool, optional
         Run solar flagger or not
-    normalize : bool, optional
-        Use normalization in solar flagger
     threshold : float, optional
         Flagging threshold
     force_flag : bool, optional
@@ -441,15 +438,21 @@ def single_ms_flag(
         # Solar flagger
         ######################
         if run_solarflagger:
-            print(f"Using solar flagger. Normalization used: {normalize}")
             do_flag_backup(msname, flagtype="solarflag")
-            for th in range(10, int(threshold), 2):
+            if datacolumn.lower()=="residual":
+                threshold_list = [10, 7, 5]
+                num_bins=30
+            else:
+                threshold_list = [20, 15, 10]
+                num_bins=50
+            print(f"Using solar flagger. Threshold list: {threshold_list}.")
+            for th in threshold_list:
                 result, n_final_flagged, n_additional_flagged = flagger(
                     msname,
                     datacolumn,
                     threshold=max(5.0, th),
-                    normalize=normalize,
                     num_processes=n_threads,
+                    num_bins=num_bins,
                     flagbackup=False,
                 )
         os.system(f"touch {msname}/.flag_succeed")
@@ -476,7 +479,6 @@ def do_flagging(
     flag_quack=True,
     flag_backup=True,
     run_solarflagger=False,
-    normalize=False,
     threshold=5.0,
     restore_flag=False,
     force_flag=False,
@@ -519,8 +521,6 @@ def do_flagging(
         Flag backup
     run_solarflagger : bool, optional
         Run solar flagger or not
-    normalize : bool, optional
-        Use normalization in solar flagger
     threshold : float, optional
         Flag threshold
     restore_flag : bool, optional
@@ -613,7 +613,6 @@ def do_flagging(
                     flag_quack=flag_quack,
                     threshold=threshold,
                     run_solarflagger=run_solarflagger,
-                    normalize=normalize,
                     force_flag=force_flag,
                     restore_flag=restore_flag,
                     flag_backup=flag_backup,
@@ -673,7 +672,6 @@ def main(
     flagbackup=True,
     flagdimension="freqtime",
     run_solarflagger=False,
-    normalize=False,
     threshold=5.0,
     restore_flag=False,
     force_flag=False,
@@ -719,8 +717,6 @@ def main(
         Dimension over which to apply automated flagging (e.g., "freqtime"). Default is "freqtime".
     run_solarflagger : bool, optional
         Run solar flagger or not
-    normalize : bool, optional
-        Use normalization in solar flagger
     threshold : float, optional
         Flagging threshold
     restore_flag : bool, optional
@@ -855,7 +851,6 @@ def main(
             flag_autocorr=flag_autocorr,
             flag_quack=flag_quack,
             run_solarflagger=run_solarflagger,
-            normalize=normalize,
             threshold=threshold,
             restore_flag=restore_flag,
             force_flag=force_flag,
@@ -951,12 +946,6 @@ def cli():
         help="Run solar flagger or not",
     )
     adv_args.add_argument(
-        "--normalize",
-        dest="normalize",
-        action="store_true",
-        help="Use normalization in solar flagger or not",
-    )
-    adv_args.add_argument(
         "--threshold",
         type=float,
         default=5.0,
@@ -1012,7 +1001,6 @@ def cli():
         flagbackup=args.flagbackup,
         flagdimension=args.flagdimension,
         run_solarflagger=args.run_solarflagger,
-        normalize=args.normalize,
         threshold=args.threshold,
         restore_flag=args.restore_flag,
         force_flag=args.force_flag,

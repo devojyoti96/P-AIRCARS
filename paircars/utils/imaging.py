@@ -146,7 +146,7 @@ def calc_uvtaper(msname):
     msmd.close()
     sun_dia = np.deg2rad(calc_sun_dia(max_freq / 10**6) / 60.0)
     bin_size_lambda = 1.22 / sun_dia
-    bin_size = (bin_size_lambda * wavelength) / 2.0
+    bin_size = bin_size_lambda * wavelength
     r = np.sqrt(u**2 + v**2)
     n_bins = int(max(r) / bin_size)
     r_bins = np.linspace(r.min(), r.max(), n_bins)
@@ -398,7 +398,7 @@ def calc_cellsize(msname, num_pixel_in_psf):
     return pixel
 
 
-def calc_multiscale_scales(msname, num_pixel_in_psf, chan_number=-1, max_scale=16):
+def calc_multiscale_scales(msname, num_pixel_in_psf, chan_number=-1, max_scale=8):
     """
     Calculate multiscale scales
 
@@ -424,14 +424,13 @@ def calc_multiscale_scales(msname, num_pixel_in_psf, chan_number=-1, max_scale=1
     max_interferometric_scale = min(max_scale, max_interferometric_scale)
     max_scale_pixel = int((max_interferometric_scale * 60.0) / (psf / num_pixel_in_psf))
     current_scale = num_pixel_in_psf
-    multiscale_scales = [0, current_scale]
+    multiscale_scales = [0, int(current_scale)]
     while True:
-        current_scale = current_scale * 2
+        current_scale = current_scale * 3
         if current_scale >= max_scale_pixel:
-            current_scale = max_scale_pixel
-            multiscale_scales.append(current_scale)
+            multiscale_scales.append(int(max_scale_pixel))
             break
-        multiscale_scales.append(current_scale)
+        multiscale_scales.append(int(current_scale))
     return multiscale_scales
 
 

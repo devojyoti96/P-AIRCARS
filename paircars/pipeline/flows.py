@@ -28,8 +28,6 @@ from paircars.utils.mwa_utils import freq_to_MWA_coarse, get_MWA_coarse_chan
 from paircars.utils.ms_metadata import check_datacolumn_valid
 from paircars.utils.image_utils import filter_images
 from paircars.pipeline.tasks import (
-    run_solar_phasecenter_jobs,
-    run_ds_jobs,
     run_target_split_jobs,
     run_flag,
     run_import_model,
@@ -50,221 +48,6 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
-
-
-#########################
-# Pre-processing subflow
-#########################
-@flow(
-    name="Pre-processing target",
-    description="Perform pre-processing on target measurement sets",
-    log_prints=True,
-)
-def pre_process_subflow(
-    # Core observational inputs
-    target_mslist,
-    target_metafits,
-    target_obsid,
-    solar_data,
-    # I/O and workspace
-    workdir,
-    target_outdir,
-    # Processing controls
-    do_move_solarcenter,
-    make_ds,
-    # Resource management
-    cpu_frac,
-    mem_frac,
-    # Logging / metadata
-    jobid,
-    timestamp,
-    emails,
-    remote_logger,
-    verbose,
-):
-    """
-    Pre-processing of target measurement set subflow
-
-    Returns
-    -------
-    int
-        Flow success message
-    list
-        Filtered target measurement set list
-    """
-    start_time = time.time()
-    logdir = f"{workdir}/logs"
-    os.makedirs(logdir, exist_ok=True)
-    pre_process_logfile = f"{logdir}/subflow_preprocess_{target_obsid}.log"
-    ctx = get_run_context()
-    flow_id = str(ctx.flow_run.id)
-    flow_name = ctx.flow_run.name
-    stop_event = Event()
-    log_thread_flow = start_flow_log_saver(
-        flow_id, flow_name, pre_process_logfile, poll_interval=3, stop_event=stop_event
-    )
-    observer = None
-    if os.path.exists(f"{workdir}/.jobname_password.npy"):
-        time.sleep(0.5)
-        jobname, password = np.load(
-            f"{workdir}/.jobname_password.npy", allow_pickle=True
-        )
-        if pre_process_logfile is not None and os.path.exists(pre_process_logfile):
-            observer = init_logger(
-                "preprocess_subflow_log",
-                pre_process_logfile,
-                log_type="subflow",
-                jobname=jobname,
-                password=password,
-            )
-    print_banner("Starting pre-processing subflow.")
-    if observer is None:
-        print("Remote link or jobname is blank. Not transmiting to remote logger.")
-    try:
-        ########################################
-        # Moving phasecenter to the solar center
-        ########################################
-        if solar_data and do_move_solarcenter:
-            if emails != "":
-                email_msg = (
-                    f"[{target_obsid}] Started moving phasecenter to solar center."
-                )
-                send_task_notification(
-                    emails,
-                    email_msg,
-                    jobid,
-                    target_obsid,
-                    timestamp,
-                    flow_name=f"subflow {flow_name}",
-                )
-            print_banner("Starting task: Moving phasecenter to the Sun.")
-            try:
-                future_movecenter = run_solar_phasecenter_jobs.with_options(
-                    task_run_name=f"move_solarcenter_{target_obsid}",
-                ).submit(
-                    ",".join(target_mslist),
-                    workdir,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                    obsid=target_obsid,
-                    verbose=verbose,
-                )
-                wait([future_movecenter])
-                msg, succeed, failed = future_movecenter.result()
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Moving phasecenter to solar center is done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner(
-                    "Finished task: Moving phasecenter to solar center is done."
-                )
-                filtered_ms = []
-                for t_ms in target_mslist:
-                    t_ms = t_ms.rstrip("/")
-                    if os.path.exists(f"{t_ms}/.solarcenter_move_succeed"):
-                        filtered_ms.append(t_ms)
-                    else:
-                        print(f"Issue in moving phasecneter to solar center: {t_ms}")
-                target_mslist = filtered_ms  # Filtered target mslist
-            except Exception:
-                print_banner(
-                    "Error in moving phasecenter to solar center. P-AIRCARS has stopped."
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Error occured in moving phasecenter to solar center."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner("Pre-processing subflow failed.")
-                return 1, []
-
-        #######################################
-        # Run dynamic spectra making
-        #######################################
-        if solar_data and make_ds:
-            if emails != "":
-                email_msg = f"[{target_obsid}] Started making solar dynamic spectra."
-                send_task_notification(
-                    emails,
-                    email_msg,
-                    jobid,
-                    target_obsid,
-                    timestamp,
-                    flow_name=f"subflow {flow_name}",
-                )
-            print_banner("Starting task: Making dynamic spectra of solar target.")
-            try:
-                future_maskms = run_ds_jobs.with_options(
-                    task_run_name=f"make_ds_{target_obsid}",
-                ).submit(
-                    ",".join(target_mslist),
-                    target_metafits,
-                    workdir,
-                    target_outdir,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                    obsid=target_obsid,
-                    verbose=verbose,
-                )
-                wait([future_maskms])
-                msg, succeed, failed = future_maskms.result()
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Making solar dynamic spectra are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner("Finished task: Making solar dynamic spectra are done.")
-            except Exception:
-                print_banner("!!! WARNING : Error in making dynamic spectra. !!!")
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = (
-                        f"[{target_obsid}] Error occured in making dynamic spectra."
-                    )
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-        print_banner("Pre-processing subflow is successful.")
-        return 0, target_mslist
-    except Exception:
-        print_banner("Pre-processing subflow failed.")
-        traceback.print_exc()
-        return 1, []
-    finally:
-        end_time = time.time()
-        run_time = end_time - start_time
-        print(f"Total run time: {run_time}")
-        stop_event.set()
-        time.sleep(0.5)
-        log_thread_flow.join()
-        if observer is not None:
-            clean_shutdown(observer)
 
 
 ############################
@@ -469,8 +252,10 @@ def basic_cal_subflow(
                 freqres=0.16,
                 prefix=prefix,
                 force_split=False,
+                move_solarcenter=False,
                 time_window=-1,
                 time_interval=-1,
+                max_time_chunk=-1,
                 quack_timestamps=quack_timestamps,
                 jobid=jobid,
                 cpu_frac=float(cpu_frac),
@@ -573,7 +358,6 @@ def basic_cal_subflow(
                 flagdimension="freqtime",
                 flagdata_type="cal",
                 run_solarflagger=False,
-                normalize=False,
                 restore_flag=False,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
@@ -869,9 +653,7 @@ def selfcal_subflow(
     # Processing controls
     redo_selfcal,
     has_cal,
-    solar_selfcal,
     do_sidereal_cor,
-    use_solarflagger,
     keep_backup,
     # Selfcal parameters
     int_solint,
@@ -1068,10 +850,6 @@ def selfcal_subflow(
         times = msmd.timesforspws(0)
         timeres = np.nanmean(np.diff(times))
         msmd.close()
-        print("Removing all previous self-calibration artificats.")
-        os.system(
-            f"rm -rf {workdir}/selfcal* {workdir}/.intselfcal* {workdir}/.polselfcal*"
-        )
         prefix = "selfcal"
         try:
             time_interval = float(int_solint)
@@ -1118,6 +896,8 @@ def selfcal_subflow(
                 time_window=timeres,
                 time_interval=time_interval,
                 quack_timestamps=quack_timestamps,
+                max_time_chunk=240.0,
+                move_solarcenter=True,
                 jobid=jobid,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
@@ -1412,13 +1192,11 @@ def selfcal_subflow(
                 pol_solint=pol_solint,
                 do_apcal=do_ap_selfcal,
                 do_polcal=do_polcal,
-                solar_selfcal=solar_selfcal,
                 keep_backup=keep_backup,
                 uvrange=uvrange,
                 weight="briggs",
                 robust=0.0,
                 applymode=selfcal_applymode,
-                use_solarflagger=use_solarflagger,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
@@ -1707,6 +1485,8 @@ def applysol_subflow(
                 freqres=freqavg,
                 timeres=timeavg,
                 quack_timestamps=quack_timestamps,
+                max_time_chunk=240.0,
+                move_solarcenter=True,
                 prefix=prefix,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
@@ -1975,9 +1755,47 @@ def applysol_subflow(
         ###################################
         # Basic flagging on corrected data
         ###################################
-        if use_solarflagger:
+        if emails != "":
+            email_msg = f"[{target_obsid}] Started flagging of final target measurement sets corrected data column."
+            send_task_notification(
+                emails,
+                email_msg,
+                jobid,
+                target_obsid,
+                timestamp,
+                flow_name=f"subflow {flow_name}",
+            )
+        print_banner(
+            "Starting task: Flagging final target measurement sets corrected data column."
+        )
+        try:
+            future_flag = run_flag.with_options(
+                task_run_name=f"flag_target_corrected_{target_obsid}"
+            ).submit(
+                ",".join(split_target_mslist),
+                target_metafits,
+                workdir,
+                target_outdir,
+                datacolumn="corrected",
+                flag_calibrators=False,
+                flag_bad_spw=True,
+                flag_quack=True,
+                use_rflag=False,
+                use_tfcrop=False,
+                flagdimension="freqtime",
+                flagdata_type="target",
+                run_solarflagger=use_solarflagger,
+                restore_flag=False,
+                jobid=jobid,
+                cpu_frac=round(cpu_frac, 2),
+                mem_frac=round(mem_frac, 2),
+                remote_log=remote_logger,
+                obsid=target_obsid,
+                verbose=verbose,
+            )
+            msg, succeed, failed = future_flag.result()
             if emails != "":
-                email_msg = f"[{target_obsid}] Started flagging of final target measurement sets corrected data column."
+                email_msg = f"[{target_obsid}] Flagging of final target measurement sets corrected data columns are done.\nSucceeded: {succeed}, failed: {failed}."
                 send_task_notification(
                     emails,
                     email_msg,
@@ -1987,63 +1805,23 @@ def applysol_subflow(
                     flow_name=f"subflow {flow_name}",
                 )
             print_banner(
-                "Starting task: Flagging final target measurement sets corrected data column."
+                "Finished task: Flagging of final target measurement sets corrected data columns are done."
             )
-            try:
-                future_flag = run_flag.with_options(
-                    task_run_name=f"flag_target_corrected_{target_obsid}"
-                ).submit(
-                    ",".join(split_target_mslist),
-                    target_metafits,
-                    workdir,
-                    target_outdir,
-                    datacolumn="corrected",
-                    flag_calibrators=False,
-                    flag_bad_spw=False,
-                    flag_quack=False,
-                    use_rflag=False,
-                    use_tfcrop=False,
-                    flagdimension="freqtime",
-                    flagdata_type="target",
-                    run_solarflagger=use_solarflagger,
-                    normalize=False,
-                    restore_flag=False,
-                    jobid=jobid,
-                    cpu_frac=round(cpu_frac, 2),
-                    mem_frac=round(mem_frac, 2),
-                    remote_log=remote_logger,
-                    obsid=target_obsid,
-                    verbose=verbose,
+        except Exception:
+            print_banner(
+                "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
+            )
+            traceback.print_exc()
+            if emails != "":
+                email_msg = f"[{target_obsid}] Error occured in flagging of final target measurement sets corrected data columns."
+                send_task_notification(
+                    emails,
+                    email_msg,
+                    jobid,
+                    target_obsid,
+                    timestamp,
+                    flow_name=f"subflow {flow_name}",
                 )
-                msg, succeed, failed = future_flag.result()
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Flagging of final target measurement sets corrected data columns are done.\nSucceeded: {succeed}, failed: {failed}."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
-                print_banner(
-                    "Finished task: Flagging of final target measurement sets corrected data columns are done."
-                )
-            except Exception:
-                print_banner(
-                    "!!!! WARNING: Flagging error. Examine calibration solutions with caution. !!!!"
-                )
-                traceback.print_exc()
-                if emails != "":
-                    email_msg = f"[{target_obsid}] Error occured in flagging of final target measurement sets corrected data columns."
-                    send_task_notification(
-                        emails,
-                        email_msg,
-                        jobid,
-                        target_obsid,
-                        timestamp,
-                        flow_name=f"subflow {flow_name}",
-                    )
         return 0, split_target_mslist
     except Exception:
         traceback.print_exc()
@@ -2081,13 +1859,15 @@ def imaging_subflow(
     do_polcal,
     keep_backup,
     make_overlay,
+    make_TB,
+    save_hpc,
     # Imaging
     image_freqres,
     image_timeres,
     pol,
     freqrange,
     timerange,
-    minuv,
+    minuv_l,
     weight,
     robust,
     clean_threshold,
@@ -2187,7 +1967,7 @@ def imaging_subflow(
                     target_outdir,
                     freqrange=freqrange,
                     timerange=timerange,
-                    minuv=minuv,
+                    minuv_l=minuv_l,
                     weight=weight,
                     robust=float(robust),
                     pol=pol,
@@ -2299,6 +2079,9 @@ def imaging_subflow(
                 target_metafits,
                 workdir,
                 leakage_dir=selfcaldir,
+                keep_raw_images=keep_backup,
+                make_TB=make_TB,
+                save_hpc=save_hpc,
                 jobid=jobid,
                 cpu_frac=round(cpu_frac, 2),
                 mem_frac=round(mem_frac, 2),
