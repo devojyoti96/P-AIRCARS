@@ -327,6 +327,7 @@ def split_target_scans(
                         drop_cache(splited_ms)
             return 0, splited_ms_list
     except Exception:
+        traceback.print_exc()
         logger.exception(
             f"Spliting of measurement set: {msname} is unsuccessful.", exc_info=True
         )
@@ -571,9 +572,10 @@ def main(
         time.sleep(5)
         if observer is not None:
             clean_shutdown(observer)
-        for msname in mslist:
-            if os.path.exists(msname):
-                drop_cache(msname)
+        if len(mslist)>0:
+            for msname in mslist:
+                if os.path.exists(msname):
+                    drop_cache(msname)
         if dask_cluster is not None:
             dask_client.shutdown()
             dask_client.close()

@@ -289,7 +289,7 @@ def get_local_dask_cluster(
             processes=True,
             env=env,
         )
-        client = Client(cluster, heartbeat_interval="120s")
+        client = Client(cluster, heartbeat_interval="5s")
         client.run_on_scheduler(gc.collect)
         client.register_plugin(CPUAccountingPlugin(interval=1.0))
         if verbose:
