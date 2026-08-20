@@ -23,6 +23,7 @@ from prefect.futures import wait
 from paircars.utils.basic_utils import (
     internet_available,
     print_banner,
+    get_gpstime_to_date,
 )
 from paircars.utils.calibration import (
     calc_bw_smearing_freqwidth,
@@ -606,9 +607,14 @@ def master_control(
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
 
     workdir = workdir.rstrip("/")
+    target_obsdate, _ = get_gpstime_to_date(target_obsid)
+    workdir = f"{workdir}/{target_obsdate}"
+    os.makedirs(workdir,exist_ok=True)
+    
     if outdir == "":
         outdir = workdir
-
+    os.makedirs(outdir,exist_ok=True)
+       
     temp_workdir = f"{workdir}/{target_obsid}_{jobid}_target"
     try:
         os.makedirs(temp_workdir, exist_ok=True)

@@ -7,6 +7,7 @@ import numpy as np
 import logging
 import traceback
 import glob
+import getpass
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -29,6 +30,7 @@ LOG_DIR = None
 POSIX_FADV_DONTNEED = 4
 libc = ctypes.CDLL("libc.so.6")
 
+username = getpass.getuser()
 
 #####################################
 # Resource management
@@ -86,6 +88,15 @@ def get_cachedir():
     os.makedirs(cachedir, exist_ok=True)
     return cachedir
 
+
+def get_datadir():
+    cachedir = get_cachedir()
+    if not os.path.exists(f"{cachedir}/paircarspipe_data_dir.txt"):
+        return None
+    with open(f"{cachedir}/paircarspipe_data_dir.txt", "r") as f:
+        datadir = f.read().strip()
+    os.makedirs(datadir, exist_ok=True)
+    return datadir
 
 class SmartDefaultsHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def _get_help_string(self, action):
@@ -510,7 +521,8 @@ def cli():
         parser.print_help(sys.stderr)
         return 1
 
-    cachedir = get_cachedir()
+    cachedir = f"{get_datadir()}/{username}"
+    os.makedirs(cachedir,exist_ok=True)
 
     try:
         if args.jobid is None and args.logdir is None:

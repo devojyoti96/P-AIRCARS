@@ -4,6 +4,7 @@ import os
 import subprocess
 import numpy as np
 import socket
+import getpass
 from .basic_utils import get_datadir, wait_for_port
 from .killjob_utils import terminate_process_and_children, kill_port
 from .resource_utils import limit_threads
@@ -1035,8 +1036,11 @@ def run_postgres(
     """
     init_udocker()
 
-    datadir = get_datadir()
-    pg_credentials = f"{datadir}/postgres_credentials.npy"
+    username = getpass.getuser()
+    datadir = f"{get_datadir()}/{username}"
+    os.makedirs(datadir,exist_ok=True)
+    
+    pg_credentials = f"{get_datadir()}/postgres_credentials.npy"
     pgdata_dir = f"{datadir}/pgdata"
 
     postgres_user, postgres_pass, postgres_db = np.load(
@@ -1157,7 +1161,9 @@ def kill_postgres(
 
     """
     init_udocker()
-    datadir = get_datadir()
+    username = getpass.getuser()
+    datadir = f"{get_datadir()}/{username}"
+    os.makedirs(datadir,exist_ok=True)
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
     if os.path.exists(pid_file):

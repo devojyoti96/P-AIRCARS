@@ -15,13 +15,15 @@ import shutil
 import socket
 import shlex
 import traceback
+import getpass
 from dotenv import load_dotenv
 from dask.distributed import Client, LocalCluster, WorkerPlugin
 from datetime import datetime as dt, timedelta
 from pyfiglet import Figlet
 from collections import deque
-from .basic_utils import get_cachedir
+from .basic_utils import get_datadir
 
+username = getpass.getuser()
 
 #################################
 # Process management
@@ -35,7 +37,8 @@ def get_jobid():
     int
         Job ID in the format YYYYMMDDHHMMSSmmm (milliseconds)
     """
-    cachedir = get_cachedir()
+    cachedir = f"{get_datadir()}/{username}"
+    os.makedirs(cachedir,exist_ok=True)
     jobid_file = os.path.join(cachedir, "jobids.txt")
     if os.path.exists(jobid_file):
         prev_jobids = np.loadtxt(jobid_file, unpack=True, dtype="int64")
@@ -100,7 +103,8 @@ def save_main_process_info(
     str
         Job info file name
     """
-    cachedir = get_cachedir()
+    cachedir = f"{get_datadir()}/{username}"
+    os.makedirs(cachedir,exist_ok=True)
     prev_main_pids = glob.glob(f"{cachedir}/main_pids_*.txt")
     prev_jobids = [
         str(os.path.basename(i).rstrip(".txt").split("main_pids_")[-1])
@@ -386,8 +390,12 @@ def submit_local_master_flow(args, jobid):
     else:
         log2term = False
 
-    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
+    datadir = f"{get_datadir()}/{username}"
+    os.makedirs(datadir,exist_ok=True)
+    cachedir = f"{datadir}/prefect_{scheduler_name}"
+    os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
+    
     prefect_env_list = []
     if os.path.exists(config_file):
         config = np.load(config_file, allow_pickle=True).all()

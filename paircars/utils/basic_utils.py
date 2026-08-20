@@ -154,6 +154,7 @@ def create_datadir(datadir=""):
     else:
         datadir = f"{datadir}/paircarspipe_data"
     os.makedirs(datadir, exist_ok=True)
+    os.chmod(datadir, 0o755)
     with open(f"{cachedir}/paircarspipe_data_dir.txt", "w") as f:
         f.write(str(datadir) + "\n")
     return
@@ -640,3 +641,29 @@ def mjdsec_to_timestamp(mjdsec, str_format=0):
             hhmmss,
         )
     return utcstring
+    
+    
+def get_gpstime_to_date(gpstime):
+    """
+    Get date and time in YYYYMMDD and hhmmssff format from GPS time
+    
+    Parameters
+    ----------
+    gpstime : int
+        GPS time
+        
+    Returns
+    -------
+    str
+        Date
+    str
+        Time
+    """
+    try:
+        t = Time(gpstime, format="gps", scale="utc")
+        date = t.to_datetime().strftime("%Y%m%d")
+        time = t.to_datetime().strftime("%H%M%S%f")[:8]
+        return date, time
+    except Exception:
+        return None, None
+        

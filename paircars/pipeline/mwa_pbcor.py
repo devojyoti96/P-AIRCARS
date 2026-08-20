@@ -578,6 +578,7 @@ def pbcor_all_images(
                 all_pngs = glob.glob(f"{pngdir}/*.png")
                 png_freqs = np.unique([float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs])
                 gifdir = f"{os.path.dirname(pbcor_dir)}/pbcor_gifs"
+                os.makedirs(gifdir,exist_ok=True)
                 logger.info("Making GIFs per frequencies for rimary beam corrected maps.\n")
                 for png_freq in png_freqs:
                     sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))
@@ -648,6 +649,7 @@ def pbcor_all_images(
                 all_pngs = glob.glob(f"{pngdir}/*.png")
                 png_freqs = np.unique([float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs])
                 gifdir = f"{os.path.dirname(tb_dir)}/tb_gifs"
+                os.makedirs(gifdir,exist_ok=True)
                 logger.info("Making GIFs per frequencies for brightness temperature maps.\n")
                 for png_freq in png_freqs:
                     sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))

@@ -2086,7 +2086,7 @@ def imaging_subflow(
                 target_metafits,
                 workdir,
                 leakage_dir=selfcaldir,
-                keep_raw_images=keep_backup,
+                keep_raw_images=True,
                 make_TB=make_TB,
                 save_hpc=save_hpc,
                 jobid=jobid,
@@ -2212,7 +2212,7 @@ def imaging_subflow(
                         if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
                             os.system(f"rm -rf {imagedir}/overlay_pngs")
                         else:
-                            print(f"Final image directory: {imagedir}/overlay_pngs")
+                            print(f"Final overlay image directory: {imagedir}/overlay_pngs")
                 except Exception:
                     print_banner(
                         "!!!! WARNING: Overlay of the images are not successful. !!!!"

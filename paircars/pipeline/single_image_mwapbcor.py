@@ -269,7 +269,7 @@ def get_pbcor_image(
 
         if os.path.exists(outfile):
             os.system(f"rm -rf {outfile}")
-        imageheader["PBFILE"] = MWA_PB_file
+        imageheader["PBFILE"] = os.path.basename(MWA_PB_file)
         imageheader["HYPEBEAM"] = "0.10.4"
         fits.writeto(outfile, data=imagedata, header=imageheader, overwrite=True)
         if fullpol:
