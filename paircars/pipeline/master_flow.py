@@ -144,7 +144,7 @@ def master_control(
     mem_frac=0.8,
     max_worker=2,
     keep_backup=False,
-    keep_calibrated_ms=True,
+    keep_calibrated_ms=False,
     # Remote logging
     remote_logger=False,
     jobid=None,
@@ -1850,9 +1850,8 @@ def cli():
         help="Keep backup of intermediate steps",
     )
     advanced.add_argument(
-        "--no_calibrated_ms",
-        action="store_false",
-        dest="keep_calibrated_ms",
+        "--keep_calibrated_ms",
+        action="store_true",
         help="Keep calibrated measurement sets or not",
     )
     advanced.add_argument(

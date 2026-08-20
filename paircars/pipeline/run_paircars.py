@@ -275,9 +275,8 @@ def cli():
         help="Keep backup of intermediate steps",
     )
     advanced.add_argument(
-        "--no_calibrated_ms",
-        action="store_false",
-        dest="keep_calibrated_ms",
+        "--keep_calibrated_ms",
+        action="store_true",
         help="Keep calibrated measurement sets or not",
     )
     advanced.add_argument(
