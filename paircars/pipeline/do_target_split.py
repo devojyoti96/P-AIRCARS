@@ -32,7 +32,8 @@ from paircars.utils.udocker_utils import (
     initialize_wsclean_container,
 )
 
-logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
@@ -58,8 +59,12 @@ def get_timerange_str(timerange):
     timerange_list = timerange.split(",")
     s = timerange_list[0].split("~")[0]
     e = timerange_list[-1].split("~")[-1]
-    s_string = "".join(s.split(".")[0].split("/")[:-1])+"".join(s.split(".")[0].split("/")[-1].split(":"))
-    e_string = "".join(e.split(".")[0].split("/")[:-1])+"".join(e.split(".")[0].split("/")[-1].split(":"))
+    s_string = "".join(s.split(".")[0].split("/")[:-1]) + "".join(
+        s.split(".")[0].split("/")[-1].split(":")
+    )
+    e_string = "".join(e.split(".")[0].split("/")[:-1]) + "".join(
+        e.split(".")[0].split("/")[-1].split(":")
+    )
     return f"{s_string}_{e_string}"
 
 
@@ -68,10 +73,12 @@ def single_mstransform_wrapper(**kwargs):
         result = single_mstransform(**kwargs)
         return result, out.getvalue(), err.getvalue()
 
+
 def move_to_sun_wrapper(*args, **kwargs):
     with capture_all_output() as (out, err):
         result = move_to_sun(*args, **kwargs)
         return args[0], result, out.getvalue(), err.getvalue()
+
 
 def split_target_scans(
     mslist,
@@ -249,7 +256,10 @@ def split_target_scans(
                         coarse_chan = coarse_chlist[i]
                         t_range = get_timerange_str(timerange)
                         outputvis = f"{workdir}/{prefix}_{obsid}_ch_{coarse_chan}_t_{t_range}.ms"
-                        if os.path.exists(f"{outputvis}/.splited") and force_split is False:
+                        if (
+                            os.path.exists(f"{outputvis}/.splited")
+                            and force_split is False
+                        ):
                             logger.info(f"{outputvis} is already splited successfully.")
                             splited_ms_list.append(outputvis)
                         else:
@@ -280,7 +290,7 @@ def split_target_scans(
                                     n_threads=n_threads,
                                 )
                             )
-        if len(tasks)==0:
+        if len(tasks) == 0:
             logger.error("No task to split measurement sets.")
             return 1, []
         future = dask_client.compute(tasks)
@@ -304,9 +314,12 @@ def split_target_scans(
             if move_solarcenter:
                 try:
                     tasks = [
-                        delayed(move_to_sun_wrapper)(msname, ncpu=n_threads) for msname in splited_ms_list
+                        delayed(move_to_sun_wrapper)(msname, ncpu=n_threads)
+                        for msname in splited_ms_list
                     ]
-                    result_wrapper = list(dask_client.gather(dask_client.compute(tasks)))
+                    result_wrapper = list(
+                        dask_client.gather(dask_client.compute(tasks))
+                    )
                     results = []
                     for r in result_wrapper:
                         results.append(r[1])
@@ -320,7 +333,9 @@ def split_target_scans(
 
                     failed = sum(results)
                     succeed = len(mslist) - failed
-                    logger.info("Moving phasecenter to solarcenter has done successfully.")
+                    logger.info(
+                        "Moving phasecenter to solarcenter has done successfully."
+                    )
                     logger.info(f"Total success: {succeed}")
                     logger.info(f"Total failure: {failed}")
                 except Exception:
@@ -330,7 +345,6 @@ def split_target_scans(
                         drop_cache(splited_ms)
             return 0, splited_ms_list
     except Exception:
-        traceback.print_exc()
         logger.exception(
             f"Spliting of measurement set: {msname} is unsuccessful.", exc_info=True
         )
@@ -464,13 +478,15 @@ def main(
         container_present = check_udocker_container(container_name)
         if not container_present:
             logger.debug(f"Initializing {container_name}.")
-            container_name = initialize_wsclean_container(name=container_name, verbose=True)
+            container_name = initialize_wsclean_container(
+                name=container_name, verbose=True
+            )
             if container_name is None:
                 logger.critical(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
                 return 1, 0, 0
-                
+
     if len(mslist) == 0:
         logger.critical("Please provide a valid measurement set list.")
         return 1, 0, 0
@@ -481,10 +497,10 @@ def main(
             if len(split_coarse_chans) > 0:
                 ms_coarse_chans = list(set(ms_coarse_chans) & set(split_coarse_chans))
             ncoarse = len(ms_coarse_chans)
-            if max_time_chunk>0:
+            if max_time_chunk > 0:
                 total_time = get_total_time(msname)
-                t_chunks = int(total_time/max_time_chunk)+1
-                total_ncoarse += (ncoarse*t_chunks)
+                t_chunks = int(total_time / max_time_chunk) + 1
+                total_ncoarse += ncoarse * t_chunks
             else:
                 total_ncoarse += ncoarse
         total_ncoarse = max(1, total_ncoarse)
@@ -574,7 +590,7 @@ def main(
     finally:
         if observer is not None:
             clean_shutdown(observer)
-        if len(mslist)>0:
+        if len(mslist) > 0:
             for msname in mslist:
                 if os.path.exists(msname):
                     drop_cache(msname)
@@ -674,7 +690,11 @@ def cli():
         help="Splited ms prefix name",
     )
     adv_args.add_argument("--force_split", action="store_true", help="Force to split")
-    adv_args.add_argument("--move_solarcenter", action="store_true", help="Move phasecenter to solar center")
+    adv_args.add_argument(
+        "--move_solarcenter",
+        action="store_true",
+        help="Move phasecenter to solar center",
+    )
     adv_args.add_argument(
         "--single_chan_split", action="store_true", help="Single channel to split"
     )

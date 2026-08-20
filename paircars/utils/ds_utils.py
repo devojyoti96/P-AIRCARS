@@ -629,9 +629,9 @@ def calc_dynamic_spectrum(msname, metafits, outdir, n_threads=-1):
     timeres = times[1] - times[0]
     try:
         quack_time = fits.getheader(metafits)["QUACKTIM"]
-        quack_timestamp = int(quack_time / timeres)+1
+        quack_timestamp = int(quack_time / timeres) + 1
     except Exception:
-        quack_timestamp = int(2.0 / timeres)+1
+        quack_timestamp = int(2.0 / timeres) + 1
     timestamps = [mjdsec_to_timestamp(mjdsec, str_format=0) for mjdsec in times]
     t_string = "".join(timestamps[0].split("T")[0].split("-")) + "".join(
         timestamps[0].split("T")[-1].split(".")[0].split(":")

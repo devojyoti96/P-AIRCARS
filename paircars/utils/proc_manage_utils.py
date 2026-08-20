@@ -162,7 +162,7 @@ def scale_worker_and_wait(
         Timeout, show a warning and move
     """
     workers = get_total_worker(dask_client)
-    if workers==nworker:
+    if workers == nworker:
         return 0
     print(f"Start scaling to {nworker} workers")
     nworker = max(2, nworker)  # Safety, never scale to 1 worker
@@ -201,7 +201,7 @@ def get_local_dask_cluster(
     min_mem : float, optional
         Minimum required per job memory in GB
     max_worker : int, optional
-        Maximum number of parallel processes 
+        Maximum number of parallel processes
     spill_frac : float, optional
         Spill to disk at this fraction
     wait_time : float, optional
@@ -223,14 +223,15 @@ def get_local_dask_cluster(
     cpu_frac = min(abs(cpu_frac), 0.8)
     mem_frac = min(abs(mem_frac), 0.8)
     max_worker = max(1, max_worker)
-    logging.getLogger("distributed").setLevel(logging.ERROR)
+    logging.getLogger("distributed").setLevel(logging.CRITICAL)
+    logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
     print("Creating local cluster on the current node.")
     # Set up Dask working directories
     dask_dir = f"{dask_dir.rstrip('/')}/dask_{int(time.time())}"
     os.makedirs(dask_dir, exist_ok=True)
     dask_dir_tmp = f"{dask_dir}/tmp"
     os.makedirs(dask_dir_tmp, exist_ok=True)
-    min_mem = max(0.1, min_mem)
+    min_mem = max(0.0001, min_mem)
     try:
         # Raise file descriptor limit
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -309,7 +310,7 @@ def get_local_dask_cluster(
         os.system(f"rm -rf {dask_dir_tmp}")
         return
 
-    
+
 def colorize_log(line):
     """
     Add terminal colors to log lines.
@@ -320,15 +321,13 @@ def colorize_log(line):
     """
     RESET = "\033[0m"
     LOG_COLORS = {
-        "DEBUG": "\033[1;96m",       # Bold bright cyan
-        "INFO": "\033[32;1m",        # Bright green
-        "WARNING": "\033[33;1m",     # Bright yellow
-        "ERROR": "\033[31;1m",       # Bright red
-        "CRITICAL": "\033[35;1m",    # Bright magenta
+        "DEBUG": "\033[1;96m",  # Bold bright cyan
+        "INFO": "\033[32;1m",  # Bright green
+        "WARNING": "\033[33;1m",  # Bright yellow
+        "ERROR": "\033[31;1m",  # Bright red
+        "CRITICAL": "\033[35;1m",  # Bright magenta
     }
-    LOG_LEVEL_RE = re.compile(
-        r"\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\b"
-    )
+    LOG_LEVEL_RE = re.compile(r"\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\b")
     if not sys.stdout.isatty():
         return line
     match = LOG_LEVEL_RE.search(line)
@@ -338,10 +337,7 @@ def colorize_log(line):
     color = LOG_COLORS[level]
     pos = line.find("' -")
     if pos != -1:
-        return (
-            f"{color}{line[:pos + 1]}{RESET}"
-            f"{line[pos + 1:]}"
-        )
+        return f"{color}{line[:pos + 1]}{RESET}" f"{line[pos + 1:]}"
 
     return f"{color}{line.rstrip()}{RESET}\n"
 
@@ -507,7 +503,7 @@ class WorkerCPUMonitor:
         self.thread = None
         self.total_cpu = 0.0
         self.last_cpu = None
-        
+
     def get_process_tree_cpu(self):
         try:
             parent = psutil.Process(self.pid)
@@ -515,9 +511,7 @@ class WorkerCPUMonitor:
             return 0.0
         processes = [parent]
         try:
-            processes.extend(
-                parent.children(recursive=True)
-            )
+            processes.extend(parent.children(recursive=True))
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
         total_cpu = 0.0
@@ -570,17 +564,16 @@ class CPUAccountingPlugin(WorkerPlugin):
         self.interval = interval
 
     def setup(self, worker):
-        worker.cpu_accounting_monitor = WorkerCPUMonitor(
-            interval=self.interval
-        )
+        worker.cpu_accounting_monitor = WorkerCPUMonitor(interval=self.interval)
         worker.cpu_accounting_monitor.start()
 
     def teardown(self, worker):
         worker.cpu_accounting_monitor.stop()
-        
+
 
 def get_worker_cpu_time(dask_worker):
     return dask_worker.cpu_accounting_monitor.total_cpu
+
 
 ##############################################
 # Scheduler and hardware architecture related

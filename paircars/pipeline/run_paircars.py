@@ -191,16 +191,20 @@ def cli():
         help="Field of view cutout radius in solar radii",
     )
     advanced_image.add_argument(
-        "--no_solar_mask",
-        action="store_false",
-        dest="use_solar_mask",
-        help="Disable use solar disk mask during deconvolution",
-    )
-    advanced_image.add_argument(
         "--do_overlay",
         action="store_true",
         dest="make_overlay",
         help="Make overlay plot on EUV images for all images (default is to make overlays only one image per coarse channels at 10s intervals)",
+    )
+    advanced_image.add_argument(
+        "--compress_image",
+        action="store_true",
+        help="Compress final images",
+    )
+    advanced_image.add_argument(
+        "--keep_original",
+        action="store_true",
+        help="Keep original images in case of compress image is switched on",
     )
 
     # === Advanced options ===
@@ -292,7 +296,6 @@ def cli():
         action="store_true",
         help="Verbose logs",
     )
-    
 
     # === Advanced local system/ per node hardware resource parameters ===
     advanced_resource = parser.add_argument_group(

@@ -242,12 +242,12 @@ def format_log_block(text):
         # Color only up to the first " - "
         pos = line.rfind("|")
         if pos != -1:
-            colored_part = line[:pos + 1]
-            remaining_part = line[pos + 1:]
+            colored_part = line[: pos + 1]
+            remaining_part = line[pos + 1 :]
 
             html_line = (
                 f'<span style="color:{color};">{colored_part}</span>'
-                f'{remaining_part}<br><br>'
+                f"{remaining_part}<br><br>"
             )
         else:
             html_line = f'<span style="color:{color};">{line}</span><br><br>'

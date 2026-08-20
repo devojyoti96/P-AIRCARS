@@ -43,12 +43,12 @@ def get_phasecenter(msname, fieldID=0):
 def get_total_time(msname):
     """
     Get total time of the measurement set in seconds
-    
+
     Parameters
     ----------
     msname : str
         Measurement set name
-        
+
     Returns
     -------
     float
@@ -59,10 +59,10 @@ def get_total_time(msname):
     all_times = msmd.timesforspws(0)
     msmd.close()
     msmd.done()
-    total_time = max(all_times)-min(all_times)
+    total_time = max(all_times) - min(all_times)
     return total_time
-    
-    
+
+
 def get_timeranges(
     msname,
     time_interval,
@@ -109,7 +109,7 @@ def get_timeranges(
     start_time = min(all_times)
     end_time = max(all_times)
     if time_interval < 0 or time_window < 0 or time_interval <= time_window:
-        if max_time_chunk<=0 or (end_time - start_time) <= max_time_chunk:
+        if max_time_chunk <= 0 or (end_time - start_time) <= max_time_chunk:
             t = (
                 mjdsec_to_timestamp(start_time, str_format=1)
                 + "~"
@@ -124,22 +124,22 @@ def get_timeranges(
                     mjdsec_to_timestamp(s, str_format=1)
                     + "~"
                     + mjdsec_to_timestamp(min(end_time, e), str_format=1)
-                )    
-                time_ranges.append([t])      
+                )
+                time_ranges.append([t])
                 if e > end_time:
                     break
                 start_time = e
         return time_ranges
-                
+
     timeres = all_times[1] - all_times[0]
     ntime_chunk = max(1, int(time_interval / timeres))
     ntime = int(time_window / timeres)
-    if max_time_chunk>0:
-        n_time_chunk = int(max_time_chunk/timeres)
+    if max_time_chunk > 0:
+        n_time_chunk = int(max_time_chunk / timeres)
     else:
         n_time_chunk = len(all_times)
-    for j in range(0,len(all_times),n_time_chunk):
-        times = all_times[j:j+n_time_chunk]
+    for j in range(0, len(all_times), n_time_chunk):
+        times = all_times[j : j + n_time_chunk]
         sub_list = []
         for i in range(0, len(times), ntime_chunk):
             try:

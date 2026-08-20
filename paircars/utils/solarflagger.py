@@ -216,7 +216,7 @@ def _process_timestamp(
                 num_bins=num_bins,
                 binning_type=binning_type,
             )
-            current_flags = current_flags_real|current_flags_imag
+            current_flags = current_flags_real | current_flags_imag
             # Update flags for this timestamp, channel, and polarization
             if current_flags is not None and len(current_flags) > 0:
                 # Map flags back to the original size of the timestamp slice

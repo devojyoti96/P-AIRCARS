@@ -29,9 +29,10 @@ from paircars.utils.logger_utils import (
 )
 from paircars.utils.mwa_utils import freq_to_MWA_coarse
 from paircars.utils.mwa_ploting_utils import (
-    save_in_hpc, 
+    save_in_hpc,
     plot_in_hpc,
     plot_in_hpc_full_stokes,
+    make_gif_movie,
 )
 from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
@@ -45,7 +46,8 @@ from paircars.utils.sunpos_utils import (
     interpolate_apparent_solar_center,
 )
 
-logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 warnings.simplefilter("ignore", FITSFixedWarning)
 
@@ -177,9 +179,7 @@ def get_leakage_file(image, leakage_dir):
         image_freq = -1
     if image_freq > 0 and leakage_dir != 0 and os.path.exists(leakage_dir):
         image_coarse = freq_to_MWA_coarse(image_freq)
-        leakage_file_list = glob.glob(
-            f"{leakage_dir}/selfcal_*{image_coarse}_*.leakage"
-        )
+        leakage_file_list = glob.glob(f"{leakage_dir}/selfcal_*{image_coarse}.leakage")
         if len(leakage_file_list) > 0:
             leakage_file = leakage_file_list[0]
         else:
@@ -278,9 +278,9 @@ def shiftcor_all_images(imagedir, solint=30.0, mean_shift=True):
         ###################################################
         # If no disk detected image is present
         ###################################################
-        if np.nansum(~np.isnan(apparent_ra_array))==0:
+        if np.nansum(~np.isnan(apparent_ra_array)) == 0:
             return 1, corrected_image, uncorrected_image
-      
+
         ###################################################
         # Interpolation for non-disk detected time and freq
         ###################################################
@@ -411,7 +411,7 @@ def pbcor_all_images(
     succeed = 0
     failed = 0
     try:
-        images = glob.glob(f"{imagedir}/*.fits")            
+        images = glob.glob(f"{imagedir}/*.fits")
         if len(images) == 0:
             logger.critical(f"No image is present in image directory: {imagedir}")
             return 1, 0, 0
@@ -522,8 +522,10 @@ def pbcor_all_images(
                 logger.info(
                     f"Phase shift correction is unsuccessful for: {uncorrected_image} images"
                 )
-            elif msg==1:
-                logger.warning("No disk detected image is present to estimate phase shift.")
+            elif msg == 1:
+                logger.warning(
+                    "No disk detected image is present to estimate phase shift."
+                )
             else:
                 logger.warning("Error occured in correcting phase shift of images.")
 
@@ -531,7 +533,7 @@ def pbcor_all_images(
             # Saving fits in helioprojective coordinates
             ############################################
             if save_hpc:
-                hpcdir = f"{os.path.dirname(pbcor_dir)}/hpcs"
+                hpcdir = f"{os.path.dirname(pbcor_dir)}/pbcor_hpcs"
                 pbcor_images = glob.glob(f"{pbcor_dir}/*.fits")
                 os.makedirs(hpcdir, exist_ok=True)
                 logger.info(
@@ -539,7 +541,7 @@ def pbcor_all_images(
                 )
                 for image in pbcor_images:
                     save_in_hpc(image, outdir=hpcdir)
-                    
+
             ################
             # Make png plots
             ################
@@ -547,12 +549,12 @@ def pbcor_all_images(
                 logger.info(
                     "Making plots of primary beam corrected images in helioprojective coordinates."
                 )
-                pngdir = f"{os.path.dirname(pbcor_dir)}/pngs"
+                pngdir = f"{os.path.dirname(pbcor_dir)}/pbcor_pngs"
                 os.makedirs(pngdir, exist_ok=True)
                 for image in pbcor_images:
                     try:
                         npol = get_image_npol(image)
-                        if npol==4:
+                        if npol == 4:
                             plot_in_hpc_full_stokes(
                                 image,
                                 draw_limb=True,
@@ -569,7 +571,23 @@ def pbcor_all_images(
                     except BaseException:
                         junkpng = f"{pngdir}/{os.path.basename(image).split('.fits')[0]}.png.junk"
                         os.system(f"touch {junkpng}")
-
+                        
+                #########################
+                # Making GIF
+                #########################
+                all_pngs = glob.glob(f"{pngdir}/*.png")
+                png_freqs = np.unique([float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs])
+                gifdir = f"{os.path.dirname(pbcor_dir)}/pbcor_gifs"
+                logger.info("Making GIFs per frequencies for rimary beam corrected maps.\n")
+                for png_freq in png_freqs:
+                    sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))
+                    outfile = f"{gifdir}/freq_{png_freq}.gif"
+                    gif_file = make_gif_movie(sub_list,outfile)
+                    if os.path.exists(gif_file):
+                        logger.debug(f"GIF for frequency: {png_freq} is {gif_file}.\n")
+                    else:
+                        logger.warning(f"GIF for frequency: {png_freq} is failed.\n")
+                
             ####################################
             # Making brightness temperature maps
             ####################################
@@ -590,7 +608,7 @@ def pbcor_all_images(
                 # Saving fits in helioprojective coordinates
                 ############################################
                 if save_hpc:
-                    hpcdir = f"{tb_dir}/hpcs"
+                    hpcdir = f"{os.path.dirname(tb_dir)}/tb_hpcs"
                     tb_images = glob.glob(f"{tb_dir}/*.fits")
                     os.makedirs(hpcdir, exist_ok=True)
                     logger.info(
@@ -601,12 +619,12 @@ def pbcor_all_images(
 
                 if make_plots:
                     logger.info("Making plots of brightness temperature maps.")
-                    pngdir = f"{tb_dir}/pngs"
+                    pngdir = f"{os.path.dirname(tb_dir)}/tb_pngs"
                     os.makedirs(pngdir, exist_ok=True)
                     for image in tb_images:
                         try:
                             npol = get_image_npol(image)
-                            if npol==4:
+                            if npol == 4:
                                 plot_in_hpc_full_stokes(
                                     image,
                                     draw_limb=True,
@@ -623,6 +641,23 @@ def pbcor_all_images(
                         except BaseException:
                             junkpng = f"{pngdir}/{os.path.basename(image).split('.fits')[0]}.png.junk"
                             os.system(f"touch {junkpng}")
+                            
+                #########################
+                # Making GIF
+                #########################
+                all_pngs = glob.glob(f"{pngdir}/*.png")
+                png_freqs = np.unique([float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs])
+                gifdir = f"{os.path.dirname(tb_dir)}/tb_gifs"
+                logger.info("Making GIFs per frequencies for brightness temperature maps.\n")
+                for png_freq in png_freqs:
+                    sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))
+                    outfile = f"{gifdir}/freq_{png_freq}.gif"
+                    gif_file = make_gif_movie(sub_list,outfile)
+                    if os.path.exists(gif_file):
+                        logger.debug(f"GIF for frequency: {png_freq} is {gif_file}.\n")
+                    else:
+                        logger.warning(f"GIF for frequency: {png_freq} is failed.\n")
+                
 
         #########################################
         # Final calculations

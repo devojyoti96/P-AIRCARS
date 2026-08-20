@@ -204,10 +204,10 @@ def get_slurm_dask_cluster(
             partition=partition, cpu_frac=cpu_frac, mem_frac=mem_frac
         )
         total_nodes = get_total_nodes(partition=partition)
-        if num_node<0:
-            num_node=total_nodes
-        elif num_node>total_nodes:
-            num_node=total_nodes
+        if num_node < 0:
+            num_node = total_nodes
+        elif num_node > total_nodes:
+            num_node = total_nodes
 
         workers_per_node_mem = int(per_node_mem / min_mem)
         if workers_per_node_mem < 1:

@@ -34,8 +34,11 @@ from paircars.utils.udocker_utils import (
 )
 from paircars.utils.imaging import calc_field_of_view
 
-logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+
+
 datadir = get_datadir()
 
 

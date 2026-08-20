@@ -33,7 +33,8 @@ from paircars.utils.proc_manage_utils import (
 from paircars.utils.solarflagger import flagger
 from paircars.utils.resource_utils import drop_cache, limit_threads
 
-logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
@@ -439,12 +440,12 @@ def single_ms_flag(
         ######################
         if run_solarflagger:
             do_flag_backup(msname, flagtype="solarflag")
-            if datacolumn.lower()=="residual":
+            if datacolumn.lower() == "residual":
                 threshold_list = [10, 7, 5]
-                num_bins=30
+                num_bins = 30
             else:
                 threshold_list = [20, 15, 10]
-                num_bins=50
+                num_bins = 50
             print(f"Using solar flagger. Threshold list: {threshold_list}.")
             for th in threshold_list:
                 result, n_final_flagged, n_additional_flagged = flagger(

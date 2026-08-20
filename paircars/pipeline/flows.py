@@ -2,6 +2,7 @@ import traceback
 import glob
 import os
 import time
+import logging
 import numpy as np
 from prefect import flow
 from astropy.io import fits
@@ -39,6 +40,7 @@ from paircars.pipeline.tasks import (
     run_imaging_jobs,
     run_apply_pbcor,
     run_make_overlay,
+    run_image_compression,
     send_task_notification,
 )
 from prefect.context import get_run_context
@@ -48,6 +50,10 @@ from paircars.utils.logger_utils import (
     clean_shutdown,
     init_logger,
 )
+
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
+logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
 ############################
@@ -1067,7 +1073,7 @@ def selfcal_subflow(
             selfcal_applymode = "calonly"
             filtered_selfcalms_list = []
             for selfcalms in selfcal_mslist:
-                unflag_chans, flag_chans = get_chans_flag(msname=selfcalms, n_threads=1)
+                unflag_chans, flag_chans = get_chans_flag(msname=selfcalms)
                 if len(flag_chans) / (len(flag_chans) + len(unflag_chans)) <= 0.8:
                     filtered_selfcalms_list.append(selfcalms)
                 else:
@@ -1872,8 +1878,10 @@ def imaging_subflow(
     robust,
     clean_threshold,
     use_multiscale,
-    use_solar_mask,
     cutout_rsun,
+    # Image compression
+    compress_image,
+    keep_original,
     # Resource management
     cpu_frac,
     mem_frac,
@@ -1976,7 +1984,6 @@ def imaging_subflow(
                     threshold=float(clean_threshold),
                     cutout_rsun=float(cutout_rsun),
                     use_multiscale=use_multiscale,
-                    use_solar_mask=use_solar_mask,
                     savemodel=keep_backup,
                     saveres=keep_backup,
                     jobid=jobid,
@@ -2127,7 +2134,9 @@ def imaging_subflow(
                 "!!!! WARNING: No images are present for making overlays. !!!!"
             )
             if emails != "":
-                email_msg = f"[{target_obsid}] No images are present for making overlays."
+                email_msg = (
+                    f"[{target_obsid}] No images are present for making overlays."
+                )
                 send_task_notification(
                     emails,
                     email_msg,
@@ -2197,7 +2206,9 @@ def imaging_subflow(
                                 timestamp,
                                 flow_name=f"subflow {flow_name}",
                             )
-                        print_banner("Finished task: Making overlays are not successful.")
+                        print_banner(
+                            "Finished task: Making overlays are not successful."
+                        )
                         if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
                             os.system(f"rm -rf {imagedir}/overlay_pngs")
                         else:
@@ -2208,7 +2219,9 @@ def imaging_subflow(
                     )
                     traceback.print_exc()
                     if emails != "":
-                        email_msg = f"[{target_obsid}] Error occured in making overlays."
+                        email_msg = (
+                            f"[{target_obsid}] Error occured in making overlays."
+                        )
                         send_task_notification(
                             emails,
                             email_msg,
@@ -2245,7 +2258,81 @@ def imaging_subflow(
                 os.system(f"rm -rf {outfile}")
                 if not keep_backup:
                     print_banner(f"Removing raw images in: {imagedir}/images")
-                    os.system(f"rm -rf {imagedir}/images")  
+                    os.system(f"rm -rf {imagedir}/images")
+                    
+            #######################
+            # Image compression
+            #######################
+            if compress_image:
+                if emails != "":
+                    email_msg = f"[{target_obsid}] Started image compression."
+                    send_task_notification(
+                        emails,
+                        email_msg,
+                        jobid,
+                        target_obsid,
+                        timestamp,
+                        flow_name=f"subflow {flow_name}",
+                    )
+                print_banner("Starting task: Image compression.")
+                try:
+                    future_compression = run_image_compression.with_options(
+                        task_run_name=f"do_image_compression_{target_obsid}"
+                    ).submit(
+                        f"{imagedir}",
+                        workdir=workdir,
+                        keep_original=keep_original,
+                        jobid=jobid,
+                        cpu_frac=round(cpu_frac, 2),
+                        mem_frac=round(mem_frac, 2),
+                        remote_log=remote_logger,
+                        obsid=target_obsid,
+                        verbose=verbose,
+                    )
+                    msg, succeed, failed = future_compression.result()
+                    if msg == 0:
+                        if emails != "":
+                            email_msg = f"[{target_obsid}] Image compression are done.\nSucceeded: {succeed}, failed: {failed}."
+                            send_task_notification(
+                                emails,
+                                email_msg,
+                                jobid,
+                                target_obsid,
+                                timestamp,
+                                flow_name=f"subflow {flow_name}",
+                            )
+                        print_banner("Finished task: Image compression are done.")
+                    else:
+                        if emails != "":
+                            email_msg = f"[{target_obsid}] Image compression are not successful.\nSucceeded: {succeed}, failed: {failed}."
+                            send_task_notification(
+                                emails,
+                                email_msg,
+                                jobid,
+                                target_obsid,
+                                timestamp,
+                                flow_name=f"subflow {flow_name}",
+                            )
+                        print_banner(
+                            "Finished task: Image compression are not successful."
+                        )
+                except Exception:
+                    print_banner(
+                        "!!!! WARNING: Image compression are not successful. !!!!"
+                    )
+                    traceback.print_exc()
+                    if emails != "":
+                        email_msg = (
+                            f"[{target_obsid}] Error occured in image compression."
+                        )
+                        send_task_notification(
+                            emails,
+                            email_msg,
+                            jobid,
+                            target_obsid,
+                            timestamp,
+                            flow_name=f"subflow {flow_name}",
+                        )                  
         return 0
     except Exception:
         traceback.print_exc()

@@ -254,14 +254,18 @@ def get_optimal_image_interval(
                 return window  # Return the largest valid window
         return 1  # Minimum chunk size is 1 if nothing else is valid
 
+    temporal_tol_factor = max(
+        1, temporal_tol_factor
+    )  # Tolerance factor is maximum 100%
+    spectral_tol_factor = max(1, spectral_tol_factor)
+
     tb = table()
     mstool = casamstool()
     msmd = msmetadata()
     msmd.open(msname)
-    msmd.nchan(0)
+    max_nchan = min(max_nchan, msmd.nchan(0))
     times = msmd.timesforspws(0)
-    len(times)
-    del times
+    max_ntime = min(max_ntime, len(times))
     msmd.close()
     tb.open(msname)
     u, v, w = tb.getcol("UVW")

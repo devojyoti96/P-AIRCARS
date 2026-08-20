@@ -14,7 +14,6 @@ from paircars.utils.basic_utils import (
     print_banner,
 )
 from paircars.utils.image_utils import (
-    create_circular_mask,
     make_stokes_wsclean_imagecube,
 )
 from paircars.utils.imaging import (
@@ -48,7 +47,8 @@ from paircars.utils.udocker_utils import (
     run_wsclean,
 )
 
-logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
@@ -69,7 +69,6 @@ def perform_imaging(
     minuv_l=0,
     threshold=1.0,
     use_multiscale=True,
-    use_solar_mask=True,
     mask_radius=40,
     savemodel=True,
     saveres=True,
@@ -115,8 +114,6 @@ def perform_imaging(
         CLEAN threshold
     use_multiscale : bool, optional
         Use multiscale or not
-    use_solar_mask : bool, optional
-        Use solar mask
     mask_radius : float, optional
         Mask radius in arcminute
     savemodel : bool, optional
@@ -161,18 +158,18 @@ def perform_imaging(
                 jobname=jobname,
                 password=password,
             )
-            
+
     paircars_input_file = f"{workdir}/inputs.txt"
     if os.path.exists(paircars_input_file):
         try:
-            with open(paircars_input_file,"r") as f:
-                paircars_input=f.readline()
+            with open(paircars_input_file, "r") as f:
+                paircars_input = f.readline()
                 paircars_input = paircars_input.rstrip("\n")
         except Exception:
-            paircars_input=""
+            paircars_input = ""
     else:
-        paircars_input=""
-        
+        paircars_input = ""
+
     try:
         msname = msname.rstrip("/")
         msname = os.path.abspath(msname)
@@ -307,32 +304,22 @@ def perform_imaging(
         if pol == "I":
             wsclean_args.append("-no-negative")
 
-        ################################################
-        # Creating and using a solar mask
-        ################################################
-        if use_solar_mask:
-            fits_mask = prefix + "_solar-mask.fits"
-            if not os.path.exists(fits_mask):
-                img_logger.debug(
-                    f"Creating solar mask of radius: {mask_radius} arcmin.\n",
-                )
-                fits_mask = create_circular_mask(
-                    msname, cellsize, imsize, mask_radius=mask_radius
-                )
-            if fits_mask is not None and os.path.exists(fits_mask):
-                wsclean_args.append("-fits-mask " + fits_mask)
         final_list_dic = {"image": [], "model": [], "residual": []}
         for i in range(len(start_chans)):
             for j in range(len(start_times)):
-                touch_file = f"{workdir}/.{os.path.basename(msname)}_chunk_ch_{start_chans[i]}_{end_chans[i]}_time_{start_times[j]}_{end_times[j]}" 
+                touch_file = f"{workdir}/.{os.path.basename(msname)}_chunk_ch_{start_chans[i]}_{end_chans[i]}_time_{start_times[j]}_{end_times[j]}"
                 if os.path.exists(touch_file):
-                    img_logger.info(f"Channel range: {start_chans[i]}~{end_chans[i]}, and time range: {start_times[j]}~{end_times[j]} are already imaged.\n")
+                    img_logger.info(
+                        f"Channel range: {start_chans[i]}~{end_chans[i]}, and time range: {start_times[j]}~{end_times[j]} are already imaged.\n"
+                    )
                 else:
                     temp_wsclean_args = copy.deepcopy(wsclean_args)
                     temp_wsclean_args.append(
                         f"-channel-range {start_chans[i]} {end_chans[i]}"
                     )
-                    temp_wsclean_args.append(f"-interval {start_times[j]} {end_times[j]}")
+                    temp_wsclean_args.append(
+                        f"-interval {start_times[j]} {end_times[j]}"
+                    )
 
                     #####################################
                     # Spectral imaging configuration
@@ -383,7 +370,9 @@ def perform_imaging(
                     ######################################
                     # Running imaging
                     ######################################
-                    wsclean_cmd = "wsclean " + " ".join(temp_wsclean_args) + " " + msname
+                    wsclean_cmd = (
+                        "wsclean " + " ".join(temp_wsclean_args) + " " + msname
+                    )
                     img_logger.info(
                         f"{wsclean_cmd}\n",
                     )
@@ -415,9 +404,9 @@ def perform_imaging(
                                 wsclean_images = sorted(
                                     [stokeslist[k][i] for k in range(len(pollist))]
                                 )
-                                image_prefix = os.path.basename(wsclean_images[0]).split(
-                                    "-image"
-                                )[0]
+                                image_prefix = os.path.basename(
+                                    wsclean_images[0]
+                                ).split("-image")[0]
                                 image_cube = make_stokes_wsclean_imagecube(
                                     wsclean_images,
                                     image_prefix + f"_{pol}_image.fits",
@@ -455,7 +444,9 @@ def perform_imaging(
                                 stokeslist = []
                                 for p in pollist:
                                     stokeslist.append(
-                                        sorted(glob.glob(prefix + f"*{p}*residual.fits"))
+                                        sorted(
+                                            glob.glob(prefix + f"*{p}*residual.fits")
+                                        )
                                     )
                                 for i in range(len(stokeslist[0])):
                                     wsclean_residuals = sorted(
@@ -476,7 +467,9 @@ def perform_imaging(
                         # Renaming images
                         ######################
                         if len(imagelist) > 0:
-                            img_logger.info(f"Total {len(imagelist)} images are made.\n")
+                            img_logger.info(
+                                f"Total {len(imagelist)} images are made.\n"
+                            )
                             img_logger.info("Renaming and making plots.\n")
                             os.makedirs(imagedir + "/images", exist_ok=True)
                             final_image_list = []
@@ -530,8 +523,6 @@ def perform_imaging(
                     os.system(f"touch {touch_file}")
             if os.path.exists(f"{imagedir}/images/dask-scratch-space"):
                 os.system(f"rm -rf {imagedir}/images/dask-scratch-space")
-            if use_solar_mask and os.path.exists(fits_mask):
-                os.system("rm -rf " + fits_mask)
             if len(final_list_dic["image"]) == 0:
                 img_logger.error(
                     "No image is made.\n",
@@ -549,8 +540,6 @@ def perform_imaging(
                     clean_shutdown(sub_observer)
                 return 0, final_list_dic
         else:
-            if use_solar_mask and os.path.exists(fits_mask):
-                os.system("rm -rf " + fits_mask)
             img_logger.critical(
                 "No image is made.\n",
             )
@@ -587,7 +576,6 @@ def run_all_imaging(
     pol="I",
     threshold=1.0,
     use_multiscale=True,
-    use_solar_mask=True,
     imaging_params={},  # TODO
     savemodel=False,
     saveres=False,
@@ -631,8 +619,6 @@ def run_all_imaging(
         CLEAN threshold
     use_multiscale : bool, optional
         Use multiscale or not
-    use_solar_mask : bool, optional
-        Use solar mask
     savemodel : bool, optional
         Save model images or not
     saveres : bool, optional
@@ -704,11 +690,11 @@ def run_all_imaging(
             logger.critical("No valid measurement set is found.")
             return 1, succeed, failed, total_images
 
-        if cutout_rsun<2:
-            logger.info("Minimum cutout is 2 solar radii.")
+        if cutout_rsun < 5:
+            logger.info("Minimum cutout is 5 solar radii.")
         cutout_rsun = max(
-            2, cutout_rsun
-        )  # Minimum 2 solar radii cutout, default is 10 solar radii
+            5, cutout_rsun
+        )  # Minimum 5 solar radii cutout, default is 10 solar radii
 
         tasks = []
         for i in range(len(mslist)):
@@ -716,7 +702,9 @@ def run_all_imaging(
             num_pixel_in_psf = calc_npix_in_psf(weight, robust=robust)
             cellsize = calc_cellsize(ms, num_pixel_in_psf)
             instrument_fov = calc_field_of_view(ms, FWHM=False)
-            cutout_rsun_arcsec = max(5, cutout_rsun) * 16 * 60
+            cutout_rsun_arcsec = (
+                max(10, cutout_rsun) * 16 * 60
+            )  # Minimum 10 solar radii
             fov = min(instrument_fov, 2 * cutout_rsun_arcsec)
             imsize = int(fov / cellsize)
             imsize = get_fft_size(imsize)
@@ -746,7 +734,6 @@ def run_all_imaging(
                     minuv_l=minuv_l,
                     threshold=threshold,
                     use_multiscale=use_multiscale,
-                    use_solar_mask=use_solar_mask,
                     savemodel=savemodel,
                     saveres=saveres,
                     cutout_rsun=cutout_rsun,
@@ -810,7 +797,6 @@ def main(
     threshold=1.0,
     cutout_rsun=10.0,
     use_multiscale=True,
-    use_solar_mask=True,
     savemodel=True,
     saveres=True,
     start_remote_log=False,
@@ -856,8 +842,6 @@ def main(
         Radius in solar radii to cut out around solar center. Default is 10.0.
     use_multiscale : bool, optional
         If True, enables multiscale CLEAN deconvolution. Default is True.
-    use_solar_mask : bool, optional
-        If True, applies a solar disk mask during CLEAN to reduce sidelobe artifacts. Default is True.
     savemodel : bool, optional
         If True, saves the CLEAN model images. Default is True.
     saveres : bool, optional
@@ -1008,7 +992,6 @@ def main(
             minuv_l=minuv_l,
             threshold=threshold,
             use_multiscale=use_multiscale,
-            use_solar_mask=use_solar_mask,
             pol=pol,
             cutout_rsun=cutout_rsun,
             savemodel=savemodel,
@@ -1143,12 +1126,6 @@ def cli():
         help="Do not use multiscale CLEAN",
     )
     adv_args.add_argument(
-        "--no_solar_mask",
-        action="store_false",
-        dest="use_solar_mask",
-        help="Do not use solar disk mask for CLEANing",
-    )
-    adv_args.add_argument(
         "--no_savemodel",
         action="store_false",
         dest="savemodel",
@@ -1206,7 +1183,6 @@ def cli():
         threshold=args.threshold,
         cutout_rsun=args.cutout_rsun,
         use_multiscale=args.use_multiscale,
-        use_solar_mask=args.use_solar_mask,
         savemodel=args.savemodel,
         saveres=args.saveres,
         cpu_frac=float(args.cpu_frac),

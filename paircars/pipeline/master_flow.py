@@ -78,6 +78,10 @@ from paircars.pipeline.tasks import (
     run_make_msplot,
 )
 
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
+logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+
 
 @flow(
     name="P-AIRCARS Master control",
@@ -110,7 +114,6 @@ def master_control(
     do_selfcal=True,
     do_apply_selfcal=True,
     do_ap_selfcal=True,
-    use_solar_mask=True,
     int_solint="60s",
     pol_solint="240s",
     redo_selfcal=False,
@@ -133,6 +136,9 @@ def master_control(
     make_TB=False,
     save_hpc=True,
     make_msplot=False,
+    # Compress image
+    compress_image=False,
+    keep_original=False,
     # Resource settings
     cpu_frac=0.8,
     mem_frac=0.8,
@@ -199,8 +205,6 @@ def master_control(
         Solution intervals in gain self-cal
     pol_solint : str, optional
         Solution intervals in polarisation self-cal
-    use_solar_mask : bool, optional
-        Use solar mask or not
     redo_selfcal : bool, optional
         Redo self-calibration or not
 
@@ -235,6 +239,10 @@ def master_control(
         Make brightness temperature maps or not
     save_hpc : bool, optional
         Save helioprojective fits or not
+    compress_image : bool, optional
+        Save compressed image or not
+    keep_original : bool, optional
+        In case of compress image, whether keep original fits or not
     make_msplot : bool, optional
         Make diagnostic plots of measurement sets
 
@@ -656,7 +664,7 @@ def master_control(
             masterlogger.critical("Error occured in creating local cluster.")
             return 1
     dask_addr = dask_client.scheduler.address
-    
+
     #####################################
     # Initiating paircars data
     #####################################
@@ -908,7 +916,7 @@ def master_control(
         timeres = np.nanmean(np.diff(times))
         msmd.close()
         quack_timestamps = int(4.0 / timeres)
-        if image_timeres > solar_smearing: 
+        if image_timeres > solar_smearing:
             masterlogger.info(
                 f"Image time integration is more than {solar_smearing}ss, which may cause smearing due to solar differential rotation."
             )
@@ -975,7 +983,8 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(total_ncoarse, max_worker))+1, # 1 worker for prefect task
+                        max(1, min(total_ncoarse, max_worker))
+                        + 1,  # 1 worker for prefect task
                     )
                 for banner in print_banner(
                     f"Starting basic calibration subflow for calibrator OBSID: {cal_obsid}, coarse channels: {coarse_chans}",
@@ -1081,7 +1090,8 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(1, min(total_ncoarse, max_worker))+1, # One worker for prefect task
+                    max(1, min(total_ncoarse, max_worker))
+                    + 1,  # One worker for prefect task
                 )
             for banner in print_banner(
                 "Starting self-calibration subflow.", no_print=True
@@ -1147,7 +1157,8 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(1, min(total_ncoarse, max_worker))+1, # One worker for prefect task
+                    max(1, min(total_ncoarse, max_worker))
+                    + 1,  # One worker for prefect task
                 )
             for banner in print_banner(
                 "Starting apply solutions subflow.", no_print=True
@@ -1211,7 +1222,8 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(1, min(len(split_target_mslist), max_worker))+1, # One worker for prefect task
+                    max(1, min(len(split_target_mslist), max_worker))
+                    + 1,  # One worker for prefect task
                 )
             if emails != "":
                 email_msg = f"[{target_obsid}] Started making solar dynamic spectra."
@@ -1276,7 +1288,8 @@ def master_control(
                 scale_worker_and_wait(
                     dask_cluster,
                     dask_client,
-                    max(1, min(len(split_target_mslist), max_worker))+1, # One worker for prefect task
+                    max(1, min(len(split_target_mslist), max_worker))
+                    + 1,  # One worker for prefect task
                 )
             masterlogger.info("Starting imaging subflow.")
             imaging_msg = imaging_subflow.with_options(
@@ -1305,8 +1318,9 @@ def master_control(
                 robust=robust,
                 clean_threshold=clean_threshold,
                 use_multiscale=use_multiscale,
-                use_solar_mask=use_solar_mask,
                 cutout_rsun=cutout_rsun,
+                compress_image=compress_image,
+                keep_original=keep_original,
                 cpu_frac=cpu_frac,
                 mem_frac=mem_frac,
                 jobid=jobid,
@@ -1330,7 +1344,7 @@ def master_control(
                 return 1
             else:
                 masterlogger.info("Imaging subflow is successful.")
-
+                
         ##############################################
         # Making diagnostic plots of measurement sets
         ##############################################
@@ -1348,7 +1362,8 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_cal_mslist), max_worker))+1, # One worker for prefect task
+                        max(1, min(len(split_cal_mslist), max_worker))
+                        + 1,  # One worker for prefect task
                     )
                 msplot_outdir = f"{cal_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
@@ -1408,7 +1423,8 @@ def master_control(
                     scale_worker_and_wait(
                         dask_cluster,
                         dask_client,
-                        max(1, min(len(split_target_mslist), max_worker))+1, # One worker for prefect task
+                        max(1, min(len(split_target_mslist), max_worker))
+                        + 1,  # One worker for prefect task
                     )
                 msplot_outdir = f"{target_outdir}/ms_diagnostics_plots"
                 os.makedirs(msplot_outdir, exist_ok=True)
@@ -1739,12 +1755,6 @@ def cli():
         help="Field of view cutout radius in solar radii",
     )
     advanced_image.add_argument(
-        "--no_solar_mask",
-        action="store_false",
-        dest="use_solar_mask",
-        help="Disable use solar disk mask during deconvolution",
-    )
-    advanced_image.add_argument(
         "--do_overlay",
         action="store_true",
         dest="make_overlay",
@@ -1761,8 +1771,17 @@ def cli():
         dest="save_hpc",
         help="Do not save helioprojective fits",
     )
-
-
+    advanced_image.add_argument(
+        "--compress_image",
+        action="store_true",
+        help="Compress final images",
+    )
+    advanced_image.add_argument(
+        "--keep_original",
+        action="store_true",
+        help="Keep original images in case of compress image is switched on",
+    )
+    
     # === Advanced options ===
     advanced = parser.add_argument_group(
         "###################\nAdvanced pipeline parameters\n###################"
@@ -2024,7 +2043,7 @@ def cli():
         cpu_frac = args.cpu_frac
 
     if args.max_worker is None:
-        max_worker = total_ncoarse 
+        max_worker = total_ncoarse
     else:
         max_worker = max(int(args.max_worker), total_ncoarse)
     max_worker = max(1, max_worker)  # Minimum 1 worker is needed
@@ -2097,7 +2116,9 @@ def cli():
             adaptive = args.adaptive
             if not adaptive:
                 nworker = min(total_ncoarse, nworker)
-                scale_worker_and_wait(dask_cluster, dask_client, max(1, nworker) + 1) # One worker for prefect task
+                scale_worker_and_wait(
+                    dask_cluster, dask_client, max(1, nworker) + 1
+                )  # One worker for prefect task
         else:
             print(
                 f"P-AIRCARS is under development for job scheduler: {scheduler_name}. Stopping P-AIRCARS."
@@ -2156,12 +2177,14 @@ def cli():
             pol=args.pol,
             clean_threshold=args.clean_threshold,
             use_multiscale=args.use_multiscale,
-            use_solar_mask=args.use_solar_mask,
             cutout_rsun=args.cutout_rsun,
             make_overlay=args.make_overlay,
             make_TB=args.make_TB,
             save_hpc=args.save_hpc,
             make_msplot=args.make_msplot,
+            # Compress image
+            compress_image=args.compress_image,
+            keep_original=args.keep_original,
             # Resource settings
             cpu_frac=args.cpu_frac,
             mem_frac=args.mem_frac,

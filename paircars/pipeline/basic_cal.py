@@ -39,7 +39,8 @@ from paircars.utils.proc_manage_utils import (
 from paircars.utils.resource_utils import drop_cache, limit_threads
 from paircars.pipeline.flagging import single_ms_flag
 
-logging.getLogger("distributed").setLevel(logging.ERROR)
+logging.getLogger("distributed").setLevel(logging.CRITICAL)
+logging.getLogger("distributed.worker").setLevel(logging.CRITICAL)
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
 
 
@@ -447,7 +448,7 @@ def single_ms_cal_and_flag(
                     n_threads=n_threads,
                     mem_limit=mem_limit,
                 )
-                unflag_chans, flag_chans = get_chans_flag(msname, n_threads=n_threads)
+                unflag_chans, flag_chans = get_chans_flag(msname)
                 if len(flag_chans) / (len(unflag_chans) + len(flag_chans)) > 0.5:
                     print(
                         "Restoring flags because of large number of channels flagged."
