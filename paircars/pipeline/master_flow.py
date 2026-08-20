@@ -607,13 +607,12 @@ def master_control(
         workdir = os.path.dirname(os.path.abspath(target_mslist[0])) + "/workdir"
 
     workdir = workdir.rstrip("/")
+    if outdir == "":
+        outdir = workdir
+
     target_obsdate, _ = get_gpstime_to_date(target_obsid)
     workdir = f"{workdir}/{target_obsdate}"
     os.makedirs(workdir,exist_ok=True)
-    
-    if outdir == "":
-        outdir = workdir
-    os.makedirs(outdir,exist_ok=True)
        
     temp_workdir = f"{workdir}/{target_obsid}_{jobid}_target"
     try:
@@ -632,6 +631,9 @@ def master_control(
     # Preparing target output directories
     ####################################
     outdir = outdir.rstrip("/")
+    outdir = f"{outdir}/{target_obsdate}"
+    os.makedirs(outdir,exist_ok=True)
+    
     target_outdir = f"{outdir}/{target_obsid}_target"
     try:
         os.makedirs(target_outdir, exist_ok=True)
