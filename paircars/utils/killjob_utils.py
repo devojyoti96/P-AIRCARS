@@ -102,6 +102,7 @@ def kill_localscheduler(jobid):
         drop_cache(outdir)
         drop_cache(cachedir)
         print("Cleanup complete.")
+        os.system(f"rm -rf {jobfile_name}")
         return
     except Exception:
         print(f"Error in killing P-AIRCARS job: {jobid}")
@@ -155,6 +156,7 @@ def kill_slurmscheduler(jobid):
         drop_cache(outdir)
         drop_cache(cachedir)
         print("Cleanup complete.")
+        os.system(f"rm -rf {jobfile_name}")
         return
     except Exception:
         print(f"Error in killing P-AIRCARS job: {jobid}")

@@ -581,24 +581,6 @@ def master_control(
             f"Total {len(calibrator_dic)} calibrator observations are sorted. Observation ID(s) are: {list(calibrator_dic.keys())}"
         )
 
-    ######################################################
-    # Making calibrator output directories
-    ######################################################
-    if has_cal:
-        cal_outdir = f"{outdir}/calibrators"
-        try:
-            os.makedirs(cal_outdir, exist_ok=True)
-        except Exception:
-            masterlogger.warning(
-                f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully."
-            )
-            traceback.print_exc()
-            has_cal = False
-        basic_caldir = f"{cal_outdir}/caltables"
-        os.makedirs(basic_caldir, exist_ok=True)
-    else:
-        basic_caldir = ""
-
     #######################################
     # Preparing target working directories
     #######################################
@@ -645,6 +627,23 @@ def master_control(
         return 1
     selfcaldir = f"{target_outdir}/caltables"
     os.makedirs(selfcaldir, exist_ok=True)
+    
+    ######################################################
+    # Making calibrator output directories
+    ######################################################
+    if has_cal:
+        cal_outdir = f"{outdir}/calibrators"
+        try:
+            os.makedirs(cal_outdir, exist_ok=True)
+        except Exception:
+            masterlogger.exception(
+                f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully.",exc_info=True
+            )
+            has_cal = False
+        basic_caldir = f"{cal_outdir}/caltables"
+        os.makedirs(basic_caldir, exist_ok=True)
+    else:
+        basic_caldir = ""
 
     ##########################
     # Change to workdir
@@ -1273,8 +1272,7 @@ def master_control(
                     )
                 print_banner("Finished task: Making solar dynamic spectra are done.")
             except Exception:
-                print_banner("!!! WARNING : Error in making dynamic spectra. !!!")
-                traceback.print_exc()
+                masterlogger.exception("Error in making dynamic spectra.",exc_info=True)
                 if emails != "":
                     email_msg = (
                         f"[{target_obsid}] Error occured in making dynamic spectra."
@@ -1505,80 +1503,72 @@ def master_control(
         return 1
     finally:
         time.sleep(5)
-        datalist = sorted(glob.glob(f"{target_datadir}/*"))
-        for data in datalist:
-            drop_cache(data)
-        cal_datadir_list = calibrator_datadir.split(",")
-        for cal_datadir in cal_datadir_list:
-            callist = sorted(glob.glob(f"{cal_datadir}/*"))
-            for cal in callist:
-                drop_cache(cal)
-        ######################################
-        # Keeping flag backups
-        ######################################
-        # Flag backups of calibrator measurement sets
-        ######################################
-        final_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_ch_*.ms"))
-        if len(final_cal_mslist) > 0:
-            os.makedirs(f"{cal_outdir}/ms_flags", exist_ok=True)
-            masterlogger.info(
-                f"Doing flag backup for calibrator measurement sets in: {cal_outdir}/ms_flags"
-            )
-            for cal_ms in final_cal_mslist:
-                do_flag_backup(cal_ms, flagtype="finalflag")
-                if os.path.exists(
-                    f"{cal_outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
-                ):
-                    os.system(
-                        f"rm -rf {cal_outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
-                    )
-                os.system(f"mv {cal_ms}.flagversions {cal_outdir}/ms_flags/")
-                if keep_backup is False:
-                    os.system(f"rm -rf {cal_ms}")
-        ######################################
-        # Flag backups of selfcal measurement sets
-        ######################################
-        final_selfcal_mslist = sorted(glob.glob(f"{workdir}/selfcal*_ch_*.ms"))
-        if len(final_selfcal_mslist) > 0:
-            os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
-            masterlogger.info(
-                f"Doing flag backup of self-calibration measurement sets in: {target_outdir}/ms_flags"
-            )
-            for selfcal_ms in final_selfcal_mslist:
-                do_flag_backup(selfcal_ms, flagtype="finalflag")
-                if os.path.exists(
-                    f"{target_outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
-                ):
-                    os.system(
-                        f"rm -rf {target_outdir}/ms_flags/{os.path.basename(selfcal_ms)}.flagversions"
-                    )
-                os.system(f"mv {selfcal_ms}.flagversions {target_outdir}/ms_flags/")
-                if keep_backup is False:
-                    os.system(f"rm -rf {selfcal_ms}")
-        ######################################
-        # Flag backups of target measurement sets
-        ######################################
-        final_split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
-        if len(final_split_target_mslist) > 0:
-            os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
-            masterlogger.info(
-                f"Doing flag backup target measurement sets in: {target_outdir}/ms_flags"
-            )
-            for target_ms in final_split_target_mslist:
-                do_flag_backup(target_ms, flagtype="finalflag")
-                if os.path.exists(
-                    f"{target_outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
-                ):
-                    os.system(
-                        f"rm -rf {target_outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
-                    )
-                os.system(f"mv {target_ms}.flagversions {target_outdir}/ms_flags/")
-                if keep_calibrated_ms:
-                    calibrated_msdir = f"{target_outdir}/calibrated_ms"
-                    os.makedirs(calibrated_msdir, exist_ok=True)
-                    os.system(f"mv {target_ms} {calibrated_msdir}")
-                elif keep_backup is False:
-                    os.system(f"rm -rf {target_ms}")
+        try:
+            datalist = sorted(glob.glob(f"{target_datadir}/*"))
+            for data in datalist:
+                drop_cache(data)
+            cal_datadir_list = calibrator_datadir.split(",")
+            for cal_datadir in cal_datadir_list:
+                callist = sorted(glob.glob(f"{cal_datadir}/*"))
+                for cal in callist:
+                    drop_cache(cal)
+            ######################################
+            # Keeping flag backups
+            ######################################
+            # Flag backups of calibrator measurement sets
+            ######################################
+            final_cal_mslist = sorted(glob.glob(f"{workdir}/calibrator*_ch_*.ms"))
+            if len(final_cal_mslist) > 0:
+                os.makedirs(f"{cal_outdir}/ms_flags", exist_ok=True)
+                masterlogger.info(
+                    f"Doing flag backup for calibrator measurement sets in: {cal_outdir}/ms_flags"
+                )
+                for cal_ms in final_cal_mslist:
+                    do_flag_backup(cal_ms, flagtype="finalflag")
+                    if os.path.exists(
+                        f"{cal_outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                    ):
+                        os.system(
+                            f"rm -rf {cal_outdir}/ms_flags/{os.path.basename(cal_ms)}.flagversions"
+                        )
+                    os.system(f"mv {cal_ms}.flagversions {cal_outdir}/ms_flags/")
+                    if not keep_backup:
+                        os.system(f"rm -rf {cal_ms}*")
+            ######################################
+            # Removing selfcal measurement sets
+            ######################################
+            final_selfcal_mslist = sorted(glob.glob(f"{workdir}/selfcal*_ch_*.ms"))
+            if len(final_selfcal_mslist) > 0:
+                for selfcal_ms in final_selfcal_mslist:
+                    if not keep_backup:
+                        os.system(f"rm -rf {selfcal_ms}*")
+            ######################################
+            # Flag backups of target measurement sets
+            ######################################
+            final_split_target_mslist = sorted(glob.glob(f"{workdir}/target*_ch_*.ms"))
+            if len(final_split_target_mslist) > 0:
+                os.makedirs(f"{target_outdir}/ms_flags", exist_ok=True)
+                masterlogger.info(
+                    f"Doing flag backup target measurement sets in: {target_outdir}/ms_flags"
+                )
+                for target_ms in final_split_target_mslist:
+                    do_flag_backup(target_ms, flagtype="finalflag")
+                    if os.path.exists(
+                        f"{target_outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                    ):
+                        os.system(
+                            f"rm -rf {target_outdir}/ms_flags/{os.path.basename(target_ms)}.flagversions"
+                        )
+                    os.system(f"mv {target_ms}.flagversions {target_outdir}/ms_flags/")
+                    if keep_calibrated_ms:
+                        calibrated_msdir = f"{target_outdir}/calibrated_ms"
+                        os.makedirs(calibrated_msdir, exist_ok=True)
+                        os.system(f"mv {target_ms} {calibrated_msdir}")
+                    elif not keep_backup:
+                        os.system(f"rm -rf {target_ms}*")
+        except Exception:
+            masterlogger.warning("Minor issues in final flag backup.")
+            traceback.print_exc()
         time.sleep(5)
         drop_cache(workdir)
         drop_cache(outdir)
@@ -2056,6 +2046,8 @@ def cli():
     max_worker = max(1, max_worker)  # Minimum 1 worker is needed
 
     slurm_job = is_slurm_job()
+    jobfile_name = "" 
+    
     if not args.cluster or scheduler_name == "local" or slurm_job is False:
         #######################################
         # Set up local cluster
@@ -2072,7 +2064,7 @@ def cli():
             return 1
 
         scheduler_address = dask_client.scheduler.address
-        save_main_process_info(
+        jobfile_name = save_main_process_info(
             pid,
             jobid,
             scheduler_address,
@@ -2110,7 +2102,7 @@ def cli():
             else:
                 dask_client, dask_cluster, dask_dir, nworker = cluster_result
             scheduler_address = dask_client.scheduler.address
-            save_main_process_info(
+            jobfile_name = save_main_process_info(
                 pid,
                 jobid,
                 scheduler_address,
@@ -2222,3 +2214,5 @@ def cli():
             dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
         print("Cluster closed.")
+        if jobfile_name!="" and os.path.exists(jobfile_name):
+            os.system(f"rm -rf {jobfile_name}")
