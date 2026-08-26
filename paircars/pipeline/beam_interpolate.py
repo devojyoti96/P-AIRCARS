@@ -34,7 +34,7 @@ def do_beam_interpolate(original_pb_file, new_freq_res=160, expected_file_size=N
         time.time()
         new_freq_res = int(new_freq_res)
         new_pb_file = original_pb_file.split(".h5")[0] + f"_{new_freq_res}.h5"
-        
+
         if os.path.exists(new_pb_file):
             file_size = os.stat(new_pb_file).st_size
             if file_size == expected_file_size:

@@ -91,7 +91,7 @@ def cli():
     else:
         username = getpass.getuser()
         datadir = f"{get_datadir()}/{username}"
-        os.makedirs(datadir,exist_ok=True)
+        os.makedirs(datadir, exist_ok=True)
         cachedir = f"{datadir}/prefect_{scheduler_name}"
         os.makedirs(cachedir, exist_ok=True)
         config_file = f"{cachedir}/prefect.config.npy"

@@ -75,16 +75,18 @@ def download_with_parfive(record_id, update=False, output_dir="zenodo_download")
                     os.system(f"rm -rf {output_dir}/{filename}")
                 dl.enqueue_file(file_url, path=output_dir, filename=filename)
     results = dl.download()
-    retry_count=0
+    retry_count = 0
     while True:
-        if len(results.errors)>0:
+        if len(results.errors) > 0:
             dl.retry(results)
-            retry_count+=1
+            retry_count += 1
             time.sleep(10)
         else:
             break
-        if retry_count>10:
-            print("Maximum 10 times retied to download. Check your internet connection.")
+        if retry_count > 10:
+            print(
+                "Maximum 10 times retied to download. Check your internet connection."
+            )
             break
     for f in results:
         os.chmod(f, 0o755)
@@ -151,7 +153,9 @@ def init_paircars_data(
         outfile = mwapb_file.split(".h5")[0] + f"_{freqres}.h5"
         if os.path.exists(outfile) is False or update:
             print(f"Making interpolated beam at frequency resolution: {freqres} kHz")
-            do_beam_interpolate(mwapb_file, new_freq_res=int(freqres), expected_file_size = file_size)
+            do_beam_interpolate(
+                mwapb_file, new_freq_res=int(freqres), expected_file_size=file_size
+            )
 
 
 def main(
@@ -405,7 +409,10 @@ def cli():
         help="Do not kill occupied port",
     )
     parser.add_argument(
-        "--configdir", type=str, default="", help="User provided custom configuration data directory"
+        "--configdir",
+        type=str,
+        default="",
+        help="User provided custom configuration data directory",
     )
     parser.add_argument("--update", action="store_true", help="Update existing data")
     parser.add_argument(

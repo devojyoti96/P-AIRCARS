@@ -641,17 +641,17 @@ def mjdsec_to_timestamp(mjdsec, str_format=0):
             hhmmss,
         )
     return utcstring
-    
-    
+
+
 def get_gpstime_to_date(gpstime):
     """
     Get date and time in YYYYMMDD and hhmmssff format from GPS time
-    
+
     Parameters
     ----------
     gpstime : int
         GPS time
-        
+
     Returns
     -------
     str
@@ -666,4 +666,3 @@ def get_gpstime_to_date(gpstime):
         return date, time
     except Exception:
         return None, None
-        

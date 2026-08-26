@@ -16,6 +16,7 @@ from .udocker_utils import run_postgres, kill_postgres
 # === CONFIG ===
 username = getpass.getuser()
 
+
 def prefect_config(port, postgres_port, scheduler_name="local"):
     """
     Configure prefect
@@ -40,7 +41,7 @@ def prefect_config(port, postgres_port, scheduler_name="local"):
     # Postgres information
     ##################################
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     postgres_url_file = f"{datadir}/postgres.url"
     if os.path.exists(postgres_url_file) is False:
         print("Start postgres server first.")
@@ -125,7 +126,7 @@ def write_prefect_profile(scheduler_name="local"):
         Profile file
     """
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     cachedir = f"{datadir}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
@@ -177,7 +178,7 @@ def save_prefect_env_to_file(scheduler_name="local"):
         Dashboard file
     """
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     cachedir = f"{datadir}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
@@ -344,7 +345,7 @@ def stop_prefect_server(scheduler_name="local"):
         Success message
     """
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     cachedir = f"{datadir}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
@@ -426,7 +427,7 @@ def prefect_server_status(scheduler_name="local"):
         Scheduler name
     """
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     cachedir = f"{datadir}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
@@ -458,7 +459,7 @@ def get_prefect_env(scheduler_name="local"):
         Environment dictionary
     """
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     cachedir = f"{datadir}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"
@@ -492,7 +493,7 @@ def show_prefect_config(scheduler_name="local"):
         Scheduler name
     """
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     cachedir = f"{datadir}/prefect_{scheduler_name}"
     os.makedirs(cachedir, exist_ok=True)
     config_file = f"{cachedir}/prefect.config.npy"

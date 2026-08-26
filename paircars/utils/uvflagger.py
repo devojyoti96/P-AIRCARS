@@ -288,23 +288,23 @@ def flagger(
         unique_times = np.unique(time_col)
         nrows = ms.nrows()
         # --- Memory mapped data in disk if required memory is more
-        if absmem>0:
-            per_row_datasize = (npol*nchan*16) / 1024**3
-            per_row_flagsize = (npol*nchan) / 1024**3
-            datasize_perpol_perchan = per_row_datasize/ (npol*nchan)
-            flagsize_perpol_perchan = per_row_flagsize/ (npol*nchan)
+        if absmem > 0:
+            per_row_datasize = (npol * nchan * 16) / 1024**3
+            per_row_flagsize = (npol * nchan) / 1024**3
+            datasize_perpol_perchan = per_row_datasize / (npol * nchan)
+            flagsize_perpol_perchan = per_row_flagsize / (npol * nchan)
             per_row_size = per_row_datasize + per_row_flagsize
             size_perpol_perchan = datasize_perpol_perchan + flagsize_perpol_perchan
-            chunk_size = min(nrows, max(1, int(absmem/per_row_size)))
+            chunk_size = min(nrows, max(1, int(absmem / per_row_size)))
             if chunk_size < nrows:
-                nchunk = max(1,int(nrows/chunk_size))
+                nchunk = max(1, int(nrows / chunk_size))
             else:
                 nchunk = 1
-            n_threads = min(n_threads, max(1, int(absmem/size_perpol_perchan)))
+            n_threads = min(n_threads, max(1, int(absmem / size_perpol_perchan)))
         else:
             nchunk = 1
         if verbose:
-            print (f"Number of parallel processes: {n_threads}")
+            print(f"Number of parallel processes: {n_threads}")
             print(f"Number of chunks: {nchunk}")
         # --- Determine Data Shape ---
         datacolumn = datacolumn.upper()
@@ -313,31 +313,49 @@ def flagger(
         if verbose:
             print(f"Reading datacolumn: {datacolumn}")
         if datacolumn == "RESIDUAL":
-            nchunk*=2
+            nchunk *= 2
             if "MODEL_DATA" in colnames:
                 if "CORRECTED_DATA" in colnames:
-                    if absmem>0 and nchunk>1:
+                    if absmem > 0 and nchunk > 1:
                         os.system(f"rm -rf {msname}/data.dat")
-                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                        for i in range(0,nrows,chunk_size):
+                        mm_data = np.memmap(
+                            f"{msname}/data.dat",
+                            dtype="complex128",
+                            mode="w+",
+                            shape=(nrows, nchan, npol),
+                        )
+                        for i in range(0, nrows, chunk_size):
                             start = i
-                            end = min(nrows, i+chunk_size)
-                            data = ms.getcol("CORRECTED_DATA",startrow=start,nrow=end-start) - ms.getcol("MODEL_DATA",startrow=start,nrow=end-start)
-                            mm_data[start:end]=data.T
+                            end = min(nrows, i + chunk_size)
+                            data = ms.getcol(
+                                "CORRECTED_DATA", startrow=start, nrow=end - start
+                            ) - ms.getcol(
+                                "MODEL_DATA", startrow=start, nrow=end - start
+                            )
+                            mm_data[start:end] = data.T
                             mm_data.flush()
                             del data
                     else:
                         mm_data = ms.getcol("CORRECTED_DATA") - ms.getcol("MODEL_DATA")
                         mm_data = mm_data.T
                 else:
-                    if absmem>0 and nchunk>1:
+                    if absmem > 0 and nchunk > 1:
                         os.system(f"rm -rf {msname}/data.dat")
-                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                        for i in range(0,nrows,chunk_size):
+                        mm_data = np.memmap(
+                            f"{msname}/data.dat",
+                            dtype="complex128",
+                            mode="w+",
+                            shape=(nrows, nchan, npol),
+                        )
+                        for i in range(0, nrows, chunk_size):
                             start = i
-                            end = min(nrows, i+chunk_size)
-                            data = ms.getcol("DATA",startrow=start,nrow=end-start) - ms.getcol("MODEL_DATA",startrow=start,nrow=end-start)
-                            mm_data[start:end]=data.T
+                            end = min(nrows, i + chunk_size)
+                            data = ms.getcol(
+                                "DATA", startrow=start, nrow=end - start
+                            ) - ms.getcol(
+                                "MODEL_DATA", startrow=start, nrow=end - start
+                            )
+                            mm_data[start:end] = data.T
                             mm_data.flush()
                             del data
                     else:
@@ -348,41 +366,60 @@ def flagger(
                     "Requested residual datacolumn, but model data is not present. Using corrected or datacolumn whichever is available."
                 )
                 if "CORRECTED_DATA" in colnames:
-                    if absmem>0 and nchunk>1:
+                    if absmem > 0 and nchunk > 1:
                         os.system(f"rm -rf {msname}/data.dat")
-                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                        for i in range(0,nrows,chunk_size):
+                        mm_data = np.memmap(
+                            f"{msname}/data.dat",
+                            dtype="complex128",
+                            mode="w+",
+                            shape=(nrows, nchan, npol),
+                        )
+                        for i in range(0, nrows, chunk_size):
                             start = i
-                            end = min(nrows, i+chunk_size)
-                            data = ms.getcol("CORRECTED_DATA",startrow=start,nrow=end-start)
-                            mm_data[start:end]=data.T
+                            end = min(nrows, i + chunk_size)
+                            data = ms.getcol(
+                                "CORRECTED_DATA", startrow=start, nrow=end - start
+                            )
+                            mm_data[start:end] = data.T
                             mm_data.flush()
                             del data
                     else:
                         mm_data = ms.getcol("CORRECTED_DATA").T
                 else:
-                    if absmem>0 and nchunk>1:
+                    if absmem > 0 and nchunk > 1:
                         os.system(f"rm -rf {msname}/data.dat")
-                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                        for i in range(0,nrows,chunk_size):
+                        mm_data = np.memmap(
+                            f"{msname}/data.dat",
+                            dtype="complex128",
+                            mode="w+",
+                            shape=(nrows, nchan, npol),
+                        )
+                        for i in range(0, nrows, chunk_size):
                             start = i
-                            end = min(nrows, i+chunk_size)
-                            data = ms.getcol("DATA",startrow=start,nrow=end-start)
-                            mm_data[start:end]=data.T
+                            end = min(nrows, i + chunk_size)
+                            data = ms.getcol("DATA", startrow=start, nrow=end - start)
+                            mm_data[start:end] = data.T
                             mm_data.flush()
                             del data
                     else:
                         mm_data = ms.getcol("DATA").T
         elif datacolumn == "RESIDUAL_DATA":
             if "MODEL_DATA" in colnames:
-                if absmem>0 and nchunk>1:
+                if absmem > 0 and nchunk > 1:
                     os.system(f"rm -rf {msname}/data.dat")
-                    mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                    for i in range(0,nrows,chunk_size):
+                    mm_data = np.memmap(
+                        f"{msname}/data.dat",
+                        dtype="complex128",
+                        mode="w+",
+                        shape=(nrows, nchan, npol),
+                    )
+                    for i in range(0, nrows, chunk_size):
                         start = i
-                        end = min(nrows, i+chunk_size)
-                        data = ms.getcol("DATA",startrow=start,nrow=end-start) - ms.getcol("MODEL_DATA",startrow=start,nrow=end-start)
-                        mm_data[start:end]=data.T
+                        end = min(nrows, i + chunk_size)
+                        data = ms.getcol(
+                            "DATA", startrow=start, nrow=end - start
+                        ) - ms.getcol("MODEL_DATA", startrow=start, nrow=end - start)
+                        mm_data[start:end] = data.T
                         mm_data.flush()
                         del data
                 else:
@@ -390,40 +427,55 @@ def flagger(
                     mm_data = mm_data.T
             else:
                 print("Model data is not present. Using data column instead.")
-                if absmem>0 and nchunk>1:
+                if absmem > 0 and nchunk > 1:
                     os.system(f"rm -rf {msname}/data.dat")
-                    mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                    for i in range(0,nrows,chunk_size):
+                    mm_data = np.memmap(
+                        f"{msname}/data.dat",
+                        dtype="complex128",
+                        mode="w+",
+                        shape=(nrows, nchan, npol),
+                    )
+                    for i in range(0, nrows, chunk_size):
                         start = i
-                        end = min(nrows, i+chunk_size)
-                        data = ms.getcol("DATA",startrow=start,nrow=end-start) 
-                        mm_data[start:end]=data.T
+                        end = min(nrows, i + chunk_size)
+                        data = ms.getcol("DATA", startrow=start, nrow=end - start)
+                        mm_data[start:end] = data.T
                         mm_data.flush()
                         del data
                 else:
                     mm_data = ms.getcol("DATA").T
         elif datacolumn == "CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
-            if absmem>0 and nchunk>1:
+            if absmem > 0 and nchunk > 1:
                 os.system(f"rm -rf {msname}/data.dat")
-                mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                for i in range(0,nrows,chunk_size):
+                mm_data = np.memmap(
+                    f"{msname}/data.dat",
+                    dtype="complex128",
+                    mode="w+",
+                    shape=(nrows, nchan, npol),
+                )
+                for i in range(0, nrows, chunk_size):
                     start = i
-                    end = min(nrows, i+chunk_size)
-                    data = ms.getcol("CORRECTED_DATA",startrow=start,nrow=end-start)
-                    mm_data[start:end]=data.T
+                    end = min(nrows, i + chunk_size)
+                    data = ms.getcol("CORRECTED_DATA", startrow=start, nrow=end - start)
+                    mm_data[start:end] = data.T
                     mm_data.flush()
                     del data
             else:
                 mm_data = ms.getcol("CORRECTED_DATA").T
         else:
-            if absmem>0 and nchunk>1:
+            if absmem > 0 and nchunk > 1:
                 os.system(f"rm -rf {msname}/data.dat")
-                mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
-                for i in range(0,nrows,chunk_size):
+                mm_data = np.memmap(
+                    f"{msname}/data.dat",
+                    dtype="complex128",
+                    mode="w+",
+                    shape=(nrows, nchan, npol),
+                )
+                for i in range(0, nrows, chunk_size):
                     start = i
-                    end = min(nrows, i+chunk_size)
-                    data = ms.getcol("DATA",startrow=start,nrow=end-start)
-                    mm_data[start:end]=data.T
+                    end = min(nrows, i + chunk_size)
+                    data = ms.getcol("DATA", startrow=start, nrow=end - start)
+                    mm_data[start:end] = data.T
                     mm_data.flush()
                     del data
             else:
@@ -433,17 +485,22 @@ def flagger(
 
         # --- Get or Create FLAG Column ---
         if "FLAG" in ms.colnames():
-            if absmem>0 and nchunk>1:
+            if absmem > 0 and nchunk > 1:
                 os.system(f"rm -rf {msname}/flag.dat")
-                mm_flags = np.memmap(f"{msname}/flag.dat",dtype="bool",mode="w+",shape=(nrows,nchan,npol))
-                for i in range(0,nrows,chunk_size):
+                mm_flags = np.memmap(
+                    f"{msname}/flag.dat",
+                    dtype="bool",
+                    mode="w+",
+                    shape=(nrows, nchan, npol),
+                )
+                for i in range(0, nrows, chunk_size):
                     start = i
-                    end = min(nrows, i+chunk_size)
-                    flags = ms.getcol("FLAG",startrow=start,nrow=end-start)
-                    mm_flags[start:end]=flags.T
+                    end = min(nrows, i + chunk_size)
+                    flags = ms.getcol("FLAG", startrow=start, nrow=end - start)
+                    mm_flags[start:end] = flags.T
                     mm_flags.flush()
                     del flags
-            else:     
+            else:
                 mm_flags = ms.getcol("FLAG").T
             # Check if flag shape matches data shape
             if mm_flags.shape != mm_data.shape:
@@ -451,9 +508,11 @@ def flagger(
                     f"FLAG column shape {mm_flags.shape} does not match data column shape {mm_data.shape}."
                 )
         else:
-            if absmem>0 and nchunk>1:
+            if absmem > 0 and nchunk > 1:
                 os.system(f"rm -rf {msname}/flag.dat")
-                mm_flags = np.memmap(f"{msname}/flag.dat",dtype="bool",mode="w+",shape=mm_data.shape)
+                mm_flags = np.memmap(
+                    f"{msname}/flag.dat", dtype="bool", mode="w+", shape=mm_data.shape
+                )
             else:
                 mm_flags = np.zeros(mm_data.shape, dtype=bool)  # Use determined shape
 
@@ -478,7 +537,7 @@ def flagger(
         uvw_wavelength = uvw / wavelength
 
         # --- Initial Flag Count ---
-      
+
         # Calculate UV distances in wavelengths
         uv_distances = np.sqrt(uvw_wavelength[:, 0] ** 2 + uvw_wavelength[:, 1] ** 2)
         # Get indices that would sort the time column
@@ -542,7 +601,7 @@ def flagger(
                 mm_flags[time_indices, :, :] = np.logical_or(
                     mm_flags[time_indices, :, :], timestamp_flags
                 )
-                if absmem>0 and nchunk>1:
+                if absmem > 0 and nchunk > 1:
                     mm_flags.flush()
                 del timestamp_flags
             else:
@@ -556,18 +615,18 @@ def flagger(
         # Number of additional flagged data points
         n_final_flagged = np.sum(mm_flags)
         n_additional_flagged = n_final_flagged - n_flagged
-        
+
         ################################
         # Putting flags
         ################################
         if verbose:
             print("Writing final flags...")
-        if absmem>0 and nchunk>1:
-            for i in range(0,nrows,chunk_size):
+        if absmem > 0 and nchunk > 1:
+            for i in range(0, nrows, chunk_size):
                 start = i
-                end = min(nrows, i+chunk_size)
+                end = min(nrows, i + chunk_size)
                 flags = mm_flags[start:end].T
-                ms.putcol("FLAG",flags,startrow=start,nrow=end-start)
+                ms.putcol("FLAG", flags, startrow=start, nrow=end - start)
                 ms.flush()
                 mm_flags.flush()
                 del flags

@@ -1913,7 +1913,9 @@ def selfcal_round(
                 ############################
                 do_flag_backup(msname, flagtype="selfcal")
                 logger.info("Flagging in uv-domain data.\n")
-                do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu), mem = mem)
+                do_uvsub_flag(
+                    msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu), mem=mem
+                )
         except Exception:
             logger.exception(traceback.print_exc())
         return (

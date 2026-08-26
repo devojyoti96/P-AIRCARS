@@ -12,6 +12,7 @@ from paircars.utils.proc_manage_utils import get_scheduler_name
 
 username = getpass.getuser()
 
+
 def is_slurm_job_running(job_id, node_name=None):
     """
     Returns True if job_id is RUNNING on node.
@@ -56,7 +57,7 @@ def show_local_job_status(clean_old_jobs=False):
         Number of jobs running
     """
     cachedir = f"{get_datadir()}/{username}"
-    os.makedirs(cachedir,exist_ok=True)
+    os.makedirs(cachedir, exist_ok=True)
     msg = 0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")
@@ -106,7 +107,7 @@ def show_slurm_job_status(clean_old_jobs=False, node_name=None, print_status=Tru
         Number of jobs running
     """
     cachedir = f"{get_datadir()}/{username}"
-    os.makedirs(cachedir,exist_ok=True)
+    os.makedirs(cachedir, exist_ok=True)
     msg = 0
     try:
         main_pid_files = glob.glob(f"{cachedir}/main_pids_*.txt")

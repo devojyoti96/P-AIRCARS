@@ -571,24 +571,28 @@ def pbcor_all_images(
                     except BaseException:
                         junkpng = f"{pngdir}/{os.path.basename(image).split('.fits')[0]}.png.junk"
                         os.system(f"touch {junkpng}")
-                        
+
                 #########################
                 # Making GIF
                 #########################
                 all_pngs = glob.glob(f"{pngdir}/*.png")
-                png_freqs = np.unique([float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs])
+                png_freqs = np.unique(
+                    [float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs]
+                )
                 gifdir = f"{os.path.dirname(pbcor_dir)}/pbcor_gifs"
-                os.makedirs(gifdir,exist_ok=True)
-                logger.info("Making GIFs per frequencies for rimary beam corrected maps.\n")
+                os.makedirs(gifdir, exist_ok=True)
+                logger.info(
+                    "Making GIFs per frequencies for rimary beam corrected maps.\n"
+                )
                 for png_freq in png_freqs:
                     sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))
                     outfile = f"{gifdir}/freq_{png_freq}.gif"
-                    gif_file = make_gif_movie(sub_list,outfile)
+                    gif_file = make_gif_movie(sub_list, outfile)
                     if os.path.exists(gif_file):
                         logger.debug(f"GIF for frequency: {png_freq} is {gif_file}.\n")
                     else:
                         logger.warning(f"GIF for frequency: {png_freq} is failed.\n")
-                
+
             ####################################
             # Making brightness temperature maps
             ####################################
@@ -642,24 +646,27 @@ def pbcor_all_images(
                         except BaseException:
                             junkpng = f"{pngdir}/{os.path.basename(image).split('.fits')[0]}.png.junk"
                             os.system(f"touch {junkpng}")
-                            
+
                 #########################
                 # Making GIF
                 #########################
                 all_pngs = glob.glob(f"{pngdir}/*.png")
-                png_freqs = np.unique([float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs])
+                png_freqs = np.unique(
+                    [float(a.split("freq_")[-1].split("_")[0]) for a in all_pngs]
+                )
                 gifdir = f"{os.path.dirname(tb_dir)}/tb_gifs"
-                os.makedirs(gifdir,exist_ok=True)
-                logger.info("Making GIFs per frequencies for brightness temperature maps.\n")
+                os.makedirs(gifdir, exist_ok=True)
+                logger.info(
+                    "Making GIFs per frequencies for brightness temperature maps.\n"
+                )
                 for png_freq in png_freqs:
                     sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))
                     outfile = f"{gifdir}/freq_{png_freq}.gif"
-                    gif_file = make_gif_movie(sub_list,outfile)
+                    gif_file = make_gif_movie(sub_list, outfile)
                     if os.path.exists(gif_file):
                         logger.debug(f"GIF for frequency: {png_freq} is {gif_file}.\n")
                     else:
                         logger.warning(f"GIF for frequency: {png_freq} is failed.\n")
-                
 
         #########################################
         # Final calculations

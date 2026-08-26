@@ -594,8 +594,8 @@ def master_control(
 
     target_obsdate, _ = get_gpstime_to_date(target_obsid)
     workdir = f"{workdir}/{target_obsdate}"
-    os.makedirs(workdir,exist_ok=True)
-       
+    os.makedirs(workdir, exist_ok=True)
+
     temp_workdir = f"{workdir}/{target_obsid}_{jobid}_target"
     try:
         os.makedirs(temp_workdir, exist_ok=True)
@@ -614,8 +614,8 @@ def master_control(
     ####################################
     outdir = outdir.rstrip("/")
     outdir = f"{outdir}/{target_obsdate}"
-    os.makedirs(outdir,exist_ok=True)
-    
+    os.makedirs(outdir, exist_ok=True)
+
     target_outdir = f"{outdir}/{target_obsid}_target"
     try:
         os.makedirs(target_outdir, exist_ok=True)
@@ -627,7 +627,7 @@ def master_control(
         return 1
     selfcaldir = f"{target_outdir}/caltables"
     os.makedirs(selfcaldir, exist_ok=True)
-    
+
     ######################################################
     # Making calibrator output directories
     ######################################################
@@ -637,7 +637,8 @@ def master_control(
             os.makedirs(cal_outdir, exist_ok=True)
         except Exception:
             masterlogger.exception(
-                f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully.",exc_info=True
+                f"Calibrator output directory: {cal_outdir} can not created. Please check the path carefully.",
+                exc_info=True,
             )
             has_cal = False
         basic_caldir = f"{cal_outdir}/caltables"
@@ -1272,7 +1273,9 @@ def master_control(
                     )
                 print_banner("Finished task: Making solar dynamic spectra are done.")
             except Exception:
-                masterlogger.exception("Error in making dynamic spectra.",exc_info=True)
+                masterlogger.exception(
+                    "Error in making dynamic spectra.", exc_info=True
+                )
                 if emails != "":
                     email_msg = (
                         f"[{target_obsid}] Error occured in making dynamic spectra."
@@ -1350,7 +1353,7 @@ def master_control(
                 return 1
             else:
                 masterlogger.info("Imaging subflow is successful.")
-                
+
         ##############################################
         # Making diagnostic plots of measurement sets
         ##############################################
@@ -1779,7 +1782,7 @@ def cli():
         action="store_true",
         help="Keep original images in case of compress image is switched on",
     )
-    
+
     # === Advanced options ===
     advanced = parser.add_argument_group(
         "###################\nAdvanced pipeline parameters\n###################"
@@ -2046,8 +2049,8 @@ def cli():
     max_worker = max(1, max_worker)  # Minimum 1 worker is needed
 
     slurm_job = is_slurm_job()
-    jobfile_name = "" 
-    
+    jobfile_name = ""
+
     if not args.cluster or scheduler_name == "local" or slurm_job is False:
         #######################################
         # Set up local cluster
@@ -2214,5 +2217,5 @@ def cli():
             dask_cluster.close()
         os.system(f"rm -rf {dask_dir}")
         print("Cluster closed.")
-        if jobfile_name!="" and os.path.exists(jobfile_name):
+        if jobfile_name != "" and os.path.exists(jobfile_name):
             os.system(f"rm -rf {jobfile_name}")

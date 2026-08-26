@@ -8,6 +8,7 @@ import os
 import traceback
 import matplotlib
 import imageio.v2 as imageio
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -2169,7 +2170,7 @@ def make_mwa_overlay(
     mwamap = get_mwamap(mwa_image, pol=pol)
     freq = mwamap.meta["wavelnth"]
     frequnit = mwamap.meta["waveunit"]
-    
+
     if enhance_offdisk:
         euv_map = enhance_offlimb(euv_map, do_sharpen=do_sharpen_euv)
 
@@ -2511,10 +2512,10 @@ def rename_mwasolar_image(
     return new_name
 
 
-def make_gif_movie(images,outfile,per_frame_dur=0.15):
+def make_gif_movie(images, outfile, per_frame_dur=0.15):
     """
     Make GIF movie
-    
+
     Parameters
     ----------
     images : list
@@ -2523,7 +2524,7 @@ def make_gif_movie(images,outfile,per_frame_dur=0.15):
         GIF file name
     per_frame_dur : float, optional
         Per frame duration in seconds
-        
+
     Returns
     -------
     str
@@ -2534,14 +2535,14 @@ def make_gif_movie(images,outfile,per_frame_dur=0.15):
         imageio.mimsave(
             outfile,
             frames,
-            duration=per_frame_dur*1000,   # milliseconds per frame
-            loop=0
-        ) 
+            duration=per_frame_dur * 1000,  # milliseconds per frame
+            loop=0,
+        )
         return outfile
     except Exception:
         traceback.print_exc()
-        return 
-        
+        return
+
 
 def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
     """

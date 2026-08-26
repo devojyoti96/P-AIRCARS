@@ -2212,7 +2212,9 @@ def imaging_subflow(
                         if len(glob.glob(f"{imagedir}/overlay_pngs/*.png")) == 0:
                             os.system(f"rm -rf {imagedir}/overlay_pngs")
                         else:
-                            print(f"Final overlay image directory: {imagedir}/overlay_pngs")
+                            print(
+                                f"Final overlay image directory: {imagedir}/overlay_pngs"
+                            )
                 except Exception:
                     print_banner(
                         "!!!! WARNING: Overlay of the images are not successful. !!!!"
@@ -2259,7 +2261,7 @@ def imaging_subflow(
                 if not keep_backup:
                     print_banner(f"Removing raw images in: {imagedir}/images")
                     os.system(f"rm -rf {imagedir}/images")
-                    
+
             #######################
             # Image compression
             #######################
@@ -2332,7 +2334,7 @@ def imaging_subflow(
                             target_obsid,
                             timestamp,
                             flow_name=f"subflow {flow_name}",
-                        )                  
+                        )
         return 0
     except Exception:
         traceback.print_exc()

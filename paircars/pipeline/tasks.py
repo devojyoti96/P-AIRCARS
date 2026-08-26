@@ -1987,7 +1987,7 @@ def run_image_compression(
                     pass
                 else:
                     imagelist = glob.glob(f"{image_dir}/*.fits")
-                    if len(imagelist)==0:
+                    if len(imagelist) == 0:
                         pass
                     else:
                         if keep_original:
@@ -2009,11 +2009,13 @@ def run_image_compression(
                             start_remote_log=remote_log,
                             dask_client=dask_client,
                         )
-                        if submsg==0:
-                            total_succeed+=1
-                            print(f"Image compression is successful for: {image_dir}.\n")
+                        if submsg == 0:
+                            total_succeed += 1
+                            print(
+                                f"Image compression is successful for: {image_dir}.\n"
+                            )
                         else:
-                            total_failed+=1
+                            total_failed += 1
                             print(f"Image compression is failed for: {image_dir}.\n")
             end_time = time.time()
             run_time = round(end_time - start_time, 2)
@@ -2036,7 +2038,7 @@ def run_image_compression(
                 )
         msg = 0
     except Exception:
-        msg=1
+        msg = 1
     finally:
         stop_event.set()
         log_thread_overlay.join(timeout=5)

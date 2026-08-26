@@ -1038,8 +1038,8 @@ def run_postgres(
 
     username = getpass.getuser()
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
-    
+    os.makedirs(datadir, exist_ok=True)
+
     pg_credentials = f"{get_datadir()}/postgres_credentials.npy"
     pgdata_dir = f"{datadir}/pgdata"
 
@@ -1163,7 +1163,7 @@ def kill_postgres(
     init_udocker()
     username = getpass.getuser()
     datadir = f"{get_datadir()}/{username}"
-    os.makedirs(datadir,exist_ok=True)
+    os.makedirs(datadir, exist_ok=True)
     pid_file = f"{datadir}/postgres.pid"
     log_file = f"{datadir}/postgres.log"
     if os.path.exists(pid_file):

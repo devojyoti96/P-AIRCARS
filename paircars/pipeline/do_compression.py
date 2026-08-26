@@ -158,7 +158,7 @@ def main(
     logger.info("#################################\n")
 
     os.makedirs(f"{workdir}/logs", exist_ok=True)
-    if outputdir!="":
+    if outputdir != "":
         os.makedirs(f"{outputdir}", exist_ok=True)
     else:
         outputdir = imagedir

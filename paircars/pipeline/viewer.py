@@ -32,6 +32,7 @@ libc = ctypes.CDLL("libc.so.6")
 
 username = getpass.getuser()
 
+
 #####################################
 # Resource management
 #####################################
@@ -97,6 +98,7 @@ def get_datadir():
         datadir = f.read().strip()
     os.makedirs(datadir, exist_ok=True)
     return datadir
+
 
 class SmartDefaultsHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def _get_help_string(self, action):
@@ -522,7 +524,7 @@ def cli():
         return 1
 
     cachedir = f"{get_datadir()}/{username}"
-    os.makedirs(cachedir,exist_ok=True)
+    os.makedirs(cachedir, exist_ok=True)
 
     try:
         if args.jobid is None and args.logdir is None:

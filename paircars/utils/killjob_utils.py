@@ -13,6 +13,7 @@ from .resource_utils import drop_cache
 
 username = getpass.getuser()
 
+
 def kill_port(port):
     """
     Kill a running port
@@ -67,7 +68,7 @@ def kill_localscheduler(jobid):
     """
     try:
         cachedir = f"{get_datadir()}/{username}"
-        os.makedirs(cachedir,exist_ok=True)
+        os.makedirs(cachedir, exist_ok=True)
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
         if os.path.exists(jobfile_name) is False:
             print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
@@ -121,7 +122,7 @@ def kill_slurmscheduler(jobid):
     """
     try:
         cachedir = f"{get_datadir()}/{username}"
-        os.makedirs(cachedir,exist_ok=True)
+        os.makedirs(cachedir, exist_ok=True)
         jobfile_name = f"{cachedir}/main_pids_{jobid}.txt"
         if os.path.exists(jobfile_name) is False:
             print(f"No P-AIRCARS job information available for job ID; {jobfile_name}")
