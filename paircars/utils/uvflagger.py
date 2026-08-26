@@ -632,7 +632,6 @@ def flagger(
                 del flags
         else:
             ms.putcol("FLAG", mm_flags.T)
-        ms.close()
         os.system(f"rm -rf {msname}/data.dat {msname}/flag.dat")
         return 0, n_final_flagged, n_additional_flagged
     except Exception:
