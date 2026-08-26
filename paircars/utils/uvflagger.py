@@ -1,5 +1,6 @@
 import numpy as np
 import traceback
+import os
 from casatools import table, msmetadata
 from joblib import Parallel, delayed as jobdelayed
 from .flagging import do_flag_backup
@@ -178,7 +179,8 @@ def uvbin_flagger(
 def _process_timestamp(
     time_indices,
     uv_distances_full,
-    data_masked_full,
+    data_full,
+    flags,
     nchan,
     npol,
     threshold=5.0,
@@ -192,7 +194,9 @@ def _process_timestamp(
         for pol in range(npol):
             # Get data for this timestamp, channel, and polarization
             # Extract data only for the relevant indices
-            timestamp_data = np.abs(data_masked_full[time_indices, chan, pol])
+            timestamp_data = data_full[time_indices, chan, pol]
+            timestamp_flag = flags[time_indices, chan, pol]
+            timestamp_data[timestamp_flag] = np.nan
             # Skip if too many NaNs or too few points
             valid_data_mask = ~np.isnan(timestamp_data)
             n_valid = np.sum(valid_data_mask)
@@ -224,6 +228,7 @@ def _process_timestamp(
                 timestamp_flags[
                     valid_indices_in_timestamp[current_flags], chan, pol
                 ] = True
+            del timestamp_data
     return time_indices, timestamp_flags
 
 
@@ -231,10 +236,12 @@ def flagger(
     msname,
     datacolumn,
     threshold=5.0,
-    num_processes=4,
+    n_threads=4,
+    absmem=-1,
     num_bins=50,
     binning_type="log",
     flagbackup=True,
+    verbose=False,
 ):
     """
     Flagger optimized for solar observations
@@ -247,7 +254,7 @@ def flagger(
         Name of the data column (e.g. 'DATA', 'CORRECTED_DATA', 'RESIDUAL').
     threshold: float, optional
         Multiplier for the MAD-based flagging threshold.
-    num_processes: int, optional
+    n_threads: int, optional
         Number of processes for parallel processing.
     num_bins: int, optional
         Number of UV bins for uvbin_flagger (default: 50)
@@ -266,64 +273,193 @@ def flagger(
         Total new flag points
     """
     if flagbackup:
-        do_flag_backup(msname, flagtype="solarflag")
+        do_flag_backup(msname, flagtype="uvflag")
     ms = table()
     msmd = msmetadata()
     msmd.open(msname)
     freq_Hz = msmd.meanfreq(0)
+    npol = msmd.ncorrforpol()[0]
+    nchan = msmd.nchan(0)
     msmd.close()
     ms.open(msname, nomodify=False)
     try:
         time_col = ms.getcol("TIME")
         colnames = ms.colnames()
         unique_times = np.unique(time_col)
+        nrows = ms.nrows()
+        # --- Memory mapped data in disk if required memory is more
+        if absmem>0:
+            per_row_datasize = (npol*nchan*16) / 1024**3
+            per_row_flagsize = (npol*nchan) / 1024**3
+            datasize_perpol_perchan = per_row_datasize/ (npol*nchan)
+            flagsize_perpol_perchan = per_row_flagsize/ (npol*nchan)
+            per_row_size = per_row_datasize + per_row_flagsize
+            size_perpol_perchan = datasize_perpol_perchan + flagsize_perpol_perchan
+            chunk_size = min(nrows, max(1, int(absmem/per_row_size)))
+            if chunk_size < nrows:
+                nchunk = max(1,int(nrows/chunk_size))
+            else:
+                nchunk = 1
+            n_threads = min(n_threads, max(1, int(absmem/size_perpol_perchan)))
+        else:
+            nchunk = 1
+        if verbose:
+            print (f"Number of parallel processes: {n_threads}")
+            print(f"Number of chunks: {nchunk}")
         # --- Determine Data Shape ---
         datacolumn = datacolumn.upper()
         if datacolumn == "CORRECTED":
             datacolumn = "CORRECTED_DATA"
+        if verbose:
+            print(f"Reading datacolumn: {datacolumn}")
         if datacolumn == "RESIDUAL":
+            nchunk*=2
             if "MODEL_DATA" in colnames:
                 if "CORRECTED_DATA" in colnames:
-                    data = ms.getcol("CORRECTED_DATA") - ms.getcol("MODEL_DATA")
+                    if absmem>0 and nchunk>1:
+                        os.system(f"rm -rf {msname}/data.dat")
+                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                        for i in range(0,nrows,chunk_size):
+                            start = i
+                            end = min(nrows, i+chunk_size)
+                            data = ms.getcol("CORRECTED_DATA",startrow=start,nrow=end-start) - ms.getcol("MODEL_DATA",startrow=start,nrow=end-start)
+                            mm_data[start:end]=data.T
+                            mm_data.flush()
+                            del data
+                    else:
+                        mm_data = ms.getcol("CORRECTED_DATA") - ms.getcol("MODEL_DATA")
+                        mm_data = mm_data.T
                 else:
-                    data = ms.getcol("DATA") - ms.getcol("MODEL_DATA")
+                    if absmem>0 and nchunk>1:
+                        os.system(f"rm -rf {msname}/data.dat")
+                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                        for i in range(0,nrows,chunk_size):
+                            start = i
+                            end = min(nrows, i+chunk_size)
+                            data = ms.getcol("DATA",startrow=start,nrow=end-start) - ms.getcol("MODEL_DATA",startrow=start,nrow=end-start)
+                            mm_data[start:end]=data.T
+                            mm_data.flush()
+                            del data
+                    else:
+                        mm_data = ms.getcol("DATA") - ms.getcol("MODEL_DATA")
+                        mm_data = mm_data.T
             else:
                 print(
                     "Requested residual datacolumn, but model data is not present. Using corrected or datacolumn whichever is available."
                 )
                 if "CORRECTED_DATA" in colnames:
-                    data = ms.getcol("CORRECTED_DATA")
+                    if absmem>0 and nchunk>1:
+                        os.system(f"rm -rf {msname}/data.dat")
+                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                        for i in range(0,nrows,chunk_size):
+                            start = i
+                            end = min(nrows, i+chunk_size)
+                            data = ms.getcol("CORRECTED_DATA",startrow=start,nrow=end-start)
+                            mm_data[start:end]=data.T
+                            mm_data.flush()
+                            del data
+                    else:
+                        mm_data = ms.getcol("CORRECTED_DATA").T
                 else:
-                    data = ms.getcol("DATA")
+                    if absmem>0 and nchunk>1:
+                        os.system(f"rm -rf {msname}/data.dat")
+                        mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                        for i in range(0,nrows,chunk_size):
+                            start = i
+                            end = min(nrows, i+chunk_size)
+                            data = ms.getcol("DATA",startrow=start,nrow=end-start)
+                            mm_data[start:end]=data.T
+                            mm_data.flush()
+                            del data
+                    else:
+                        mm_data = ms.getcol("DATA").T
         elif datacolumn == "RESIDUAL_DATA":
             if "MODEL_DATA" in colnames:
-                data = ms.getcol("DATA") - ms.getcol("MODEL_DATA")
+                if absmem>0 and nchunk>1:
+                    os.system(f"rm -rf {msname}/data.dat")
+                    mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                    for i in range(0,nrows,chunk_size):
+                        start = i
+                        end = min(nrows, i+chunk_size)
+                        data = ms.getcol("DATA",startrow=start,nrow=end-start) - ms.getcol("MODEL_DATA",startrow=start,nrow=end-start)
+                        mm_data[start:end]=data.T
+                        mm_data.flush()
+                        del data
+                else:
+                    mm_data = ms.getcol("DATA") - ms.getcol("MODEL_DATA")
+                    mm_data = mm_data.T
             else:
                 print("Model data is not present. Using data column instead.")
-                data = ms.getcol("DATA")
+                if absmem>0 and nchunk>1:
+                    os.system(f"rm -rf {msname}/data.dat")
+                    mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                    for i in range(0,nrows,chunk_size):
+                        start = i
+                        end = min(nrows, i+chunk_size)
+                        data = ms.getcol("DATA",startrow=start,nrow=end-start) 
+                        mm_data[start:end]=data.T
+                        mm_data.flush()
+                        del data
+                else:
+                    mm_data = ms.getcol("DATA").T
         elif datacolumn == "CORRECTED_DATA" and "CORRECTED_DATA" in colnames:
-            data = ms.getcol("CORRECTED_DATA")
+            if absmem>0 and nchunk>1:
+                os.system(f"rm -rf {msname}/data.dat")
+                mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                for i in range(0,nrows,chunk_size):
+                    start = i
+                    end = min(nrows, i+chunk_size)
+                    data = ms.getcol("CORRECTED_DATA",startrow=start,nrow=end-start)
+                    mm_data[start:end]=data.T
+                    mm_data.flush()
+                    del data
+            else:
+                mm_data = ms.getcol("CORRECTED_DATA").T
         else:
-            data = ms.getcol("DATA")
+            if absmem>0 and nchunk>1:
+                os.system(f"rm -rf {msname}/data.dat")
+                mm_data = np.memmap(f"{msname}/data.dat",dtype="complex128",mode="w+",shape=(nrows,nchan,npol))
+                for i in range(0,nrows,chunk_size):
+                    start = i
+                    end = min(nrows, i+chunk_size)
+                    data = ms.getcol("DATA",startrow=start,nrow=end-start)
+                    mm_data[start:end]=data.T
+                    mm_data.flush()
+                    del data
+            else:
+                mm_data = ms.getcol("DATA").T
+        if verbose:
+            print(f"Reading datacolumn: {datacolumn} is done.")
 
         # --- Get or Create FLAG Column ---
         if "FLAG" in ms.colnames():
-            flags = ms.getcol("FLAG")
+            if absmem>0 and nchunk>1:
+                os.system(f"rm -rf {msname}/flag.dat")
+                mm_flags = np.memmap(f"{msname}/flag.dat",dtype="bool",mode="w+",shape=(nrows,nchan,npol))
+                for i in range(0,nrows,chunk_size):
+                    start = i
+                    end = min(nrows, i+chunk_size)
+                    flags = ms.getcol("FLAG",startrow=start,nrow=end-start)
+                    mm_flags[start:end]=flags.T
+                    mm_flags.flush()
+                    del flags
+            else:     
+                mm_flags = ms.getcol("FLAG").T
             # Check if flag shape matches data shape
-            if flags.shape != data.shape:
+            if mm_flags.shape != mm_data.shape:
                 raise ValueError(
-                    f"FLAG column shape {flags.shape} does not match data column shape {data.shape}."
+                    f"FLAG column shape {mm_flags.shape} does not match data column shape {mm_data.shape}."
                 )
         else:
-            flags = np.zeros(data.shape, dtype=bool)  # Use determined shape
+            if absmem>0 and nchunk>1:
+                os.system(f"rm -rf {msname}/flag.dat")
+                mm_flags = np.memmap(f"{msname}/flag.dat",dtype="bool",mode="w+",shape=mm_data.shape)
+            else:
+                mm_flags = np.zeros(mm_data.shape, dtype=bool)  # Use determined shape
 
-        n_flagged = np.sum(flags)  # Initial number of flags
+        n_flagged = np.sum(mm_flags)  # Initial number of flags
 
-        data = data.T
-        flags = (
-            flags.T
-        )  # Make transpose, because original code is written using casacore, which follows C convention
-        data_actual_shape = data.shape
+        data_actual_shape = mm_data.shape
         if len(data_actual_shape) == 3:
             n_rows, nchan, npol = data_actual_shape
         else:
@@ -342,9 +478,7 @@ def flagger(
         uvw_wavelength = uvw / wavelength
 
         # --- Initial Flag Count ---
-        # Number of unflagged data points initially
-        data[flags] = np.nan
-
+      
         # Calculate UV distances in wavelengths
         uv_distances = np.sqrt(uvw_wavelength[:, 0] ** 2 + uvw_wavelength[:, 1] ** 2)
         # Get indices that would sort the time column
@@ -371,7 +505,8 @@ def flagger(
             (
                 time_indices_map[timestamp],
                 uv_distances,
-                data,
+                mm_data,
+                mm_flags,
                 nchan,
                 npol,
                 threshold,
@@ -387,41 +522,59 @@ def flagger(
                 "Warning: No timestamps met the minimum data requirement for parallel processing."
             )
             results = []
-        elif len(job_args) < num_processes:
+        elif len(job_args) < n_threads:
             print(
-                f"Warning: Number of jobs ({len(job_args)}) is less than requested processes ({num_processes}). Effective parallelism will be limited."
+                f"Warning: Number of jobs ({len(job_args)}) is less than requested processes ({n_threads}). Effective parallelism will be limited."
             )
 
         if job_args:  # Only run if there are jobs
-            results = Parallel(n_jobs=num_processes, backend="loky")(
+            if verbose:
+                print(f"Starting {n_threads} parallel flagging jobs.")
+            results = Parallel(n_jobs=n_threads, backend="loky")(
                 jobdelayed(_process_timestamp)(*args) for args in job_args
             )
         # --- Combine Results ---
         # Create a copy of flags to update, or update in place if acceptable
-        new_flags = flags.copy()
         for time_indices, timestamp_flags in results:
             # Update the main flags array using the indices and the returned flags
             # Ensure shapes match before assignment
-            if new_flags[time_indices, :, :].shape == timestamp_flags.shape:
-                new_flags[time_indices, :, :] = np.logical_or(
-                    new_flags[time_indices, :, :], timestamp_flags
+            if mm_flags[time_indices, :, :].shape == timestamp_flags.shape:
+                mm_flags[time_indices, :, :] = np.logical_or(
+                    mm_flags[time_indices, :, :], timestamp_flags
                 )
+                if absmem>0 and nchunk>1:
+                    mm_flags.flush()
+                del timestamp_flags
             else:
                 print(
                     f"Warning: Shape mismatch when combining flags for indices {time_indices}. Skipping update."
                 )
                 print(
-                    f"Expected shape: {new_flags[time_indices, :, :].shape}, Got shape: {timestamp_flags.shape}"
+                    f"Expected shape: {mm_flags[time_indices, :, :].shape}, Got shape: {timestamp_flags.shape}"
                 )
 
         # Number of additional flagged data points
-        n_final_flagged = np.sum(new_flags)
+        n_final_flagged = np.sum(mm_flags)
         n_additional_flagged = n_final_flagged - n_flagged
-
+        
         ################################
         # Putting flags
         ################################
-        ms.putcol("FLAG", new_flags.T)
+        if verbose:
+            print("Writing final flags...")
+        if absmem>0 and nchunk>1:
+            for i in range(0,nrows,chunk_size):
+                start = i
+                end = min(nrows, i+chunk_size)
+                flags = mm_flags[start:end].T
+                ms.putcol("FLAG",flags,startrow=start,nrow=end-start)
+                ms.flush()
+                mm_flags.flush()
+                del flags
+        else:
+            ms.putcol("FLAG", mm_flags.T)
+        ms.close()
+        os.system(f"rm -rf {msname}/data.dat {msname}/flag.dat")
         return 0, n_final_flagged, n_additional_flagged
     except Exception:
         traceback.print_exc()

@@ -15,7 +15,7 @@ from .basic_utils import (
 )
 from .resource_utils import limit_threads
 from .flagging import do_flag_backup, flag_quartical_table
-from .solarflagger import flagger
+from .uvflagger import flagger
 from .calibration import (
     fluxcal_caltable,
     uvrange_casa_to_quartical,
@@ -149,7 +149,7 @@ def leakage_fitting(leakage_file_list):
     return q_poly, u_poly, v_poly
 
 
-def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1):
+def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1, mem=-1):
     """
     Perform uv-sub flags
 
@@ -167,7 +167,8 @@ def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1):
             msname,
             "residual",
             threshold=threshold,
-            num_processes=ncpu,
+            n_threads=ncpu,
+            absmem=mem,
             num_bins=30,
             flagbackup=False,
         )
@@ -1912,7 +1913,7 @@ def selfcal_round(
                 ############################
                 do_flag_backup(msname, flagtype="selfcal")
                 logger.info("Flagging in uv-domain data.\n")
-                do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu))
+                do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu), mem = mem)
         except Exception:
             logger.exception(traceback.print_exc())
         return (

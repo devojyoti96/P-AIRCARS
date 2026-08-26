@@ -106,7 +106,7 @@ def master_control(
     do_applycal=True,
     only_amplitude=False,
     redo_basic_cal=False,
-    use_solarflagger=True,
+    use_uvbinflagger=True,
     # Target data preparation
     freqrange="",
     timerange="",
@@ -183,8 +183,8 @@ def master_control(
         Apply only amplitude part of gain solution from calibrator
     redo_basic_cal : bool, optional
         Redo basic calibration
-    use_solarflagger : bool, optional
-        Use solar flagger on corrected data or not
+    use_uvbinflagger : bool, optional
+        Use uvbin flagger on corrected data or not
 
     freqrange : str, optional
         Frequency range to image in MHz (xx1~xx2,xx3~xx4,)
@@ -1187,7 +1187,7 @@ def master_control(
                 has_cal=has_cal,
                 do_polcal=do_polcal,
                 do_sidereal_cor=do_sidereal_cor,
-                use_solarflagger=use_solarflagger,
+                use_uvbinflagger=use_uvbinflagger,
                 freqavg=freqavg,
                 timeavg=timeavg,
                 quack_timestamps=quack_timestamps,
@@ -1671,10 +1671,10 @@ def cli():
         help="Redo self-calibration",
     )
     advanced_cal.add_argument(
-        "--no_solarflagger",
+        "--no_uvbinflagger",
         action="store_false",
-        dest="use_solarflagger",
-        help="Use solar flagger on corrected data or not",
+        dest="use_uvbinflagger",
+        help="Use uvbin flagger on corrected data or not",
     )
     advanced_cal.add_argument(
         "--only_amplitude",
@@ -2148,7 +2148,7 @@ def cli():
             do_applycal=args.do_applycal,
             only_amplitude=args.only_amplitude,
             redo_basic_cal=args.redo_basic_cal,
-            use_solarflagger=args.use_solarflagger,
+            use_uvbinflagger=args.use_uvbinflagger,
             # Target data preparation
             freqrange=args.freqrange,
             timerange=args.timerange,

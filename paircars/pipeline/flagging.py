@@ -30,7 +30,7 @@ from paircars.utils.proc_manage_utils import (
     scale_worker_and_wait,
     get_local_dask_cluster,
 )
-from paircars.utils.solarflagger import flagger
+from paircars.utils.uvflagger import flagger
 from paircars.utils.resource_utils import drop_cache, limit_threads
 
 logging.getLogger("distributed").setLevel(logging.CRITICAL)
@@ -54,7 +54,7 @@ def single_ms_flag(
     flagdimension="freqtime",
     flag_autocorr=False,
     flag_quack=False,
-    run_solarflagger=False,
+    run_uvbinflagger=False,
     threshold=5.0,
     force_flag=False,
     restore_flag=True,
@@ -85,8 +85,8 @@ def single_ms_flag(
         Flag autocorrelations or not
     flag_quack : bool, optional
         Flag quack timestamps
-    run_solarflagger : bool, optional
-        Run solar flagger or not
+    run_uvbinflagger : bool, optional
+        Run uvbin flagger or not
     threshold : float, optional
         Flagging threshold
     force_flag : bool, optional
@@ -436,17 +436,17 @@ def single_ms_flag(
                 pass
 
         ######################
-        # Solar flagger
+        # UVbin flagger
         ######################
-        if run_solarflagger:
-            do_flag_backup(msname, flagtype="solarflag")
+        if run_uvbinflagger:
+            do_flag_backup(msname, flagtype="uvflag")
             if datacolumn.lower() == "residual":
                 threshold_list = [10, 7, 5]
                 num_bins = 30
             else:
                 threshold_list = [20, 15, 10]
                 num_bins = 50
-            print(f"Using solar flagger. Threshold list: {threshold_list}.")
+            print(f"Using uvbin flagger. Threshold list: {threshold_list}.")
             for th in threshold_list:
                 result, n_final_flagged, n_additional_flagged = flagger(
                     msname,
@@ -479,7 +479,7 @@ def do_flagging(
     flag_autocorr=False,
     flag_quack=True,
     flag_backup=True,
-    run_solarflagger=False,
+    run_uvbinflagger=False,
     threshold=5.0,
     restore_flag=False,
     force_flag=False,
@@ -520,8 +520,8 @@ def do_flagging(
         Flag quack timestamps
     flag_backup : bool, optional
         Flag backup
-    run_solarflagger : bool, optional
-        Run solar flagger or not
+    run_uvbinflagger : bool, optional
+        Run uvbin flagger or not
     threshold : float, optional
         Flag threshold
     restore_flag : bool, optional
@@ -613,7 +613,7 @@ def do_flagging(
                     flag_autocorr=flag_autocorr,
                     flag_quack=flag_quack,
                     threshold=threshold,
-                    run_solarflagger=run_solarflagger,
+                    run_uvbinflagger=run_uvbinflagger,
                     force_flag=force_flag,
                     restore_flag=restore_flag,
                     flag_backup=flag_backup,
@@ -672,7 +672,7 @@ def main(
     flag_quack=True,
     flagbackup=True,
     flagdimension="freqtime",
-    run_solarflagger=False,
+    run_uvbinflagger=False,
     threshold=5.0,
     restore_flag=False,
     force_flag=False,
@@ -716,8 +716,8 @@ def main(
         If True, saves a flag backup before applying new flags. Default is True.
     flagdimension : str, optional
         Dimension over which to apply automated flagging (e.g., "freqtime"). Default is "freqtime".
-    run_solarflagger : bool, optional
-        Run solar flagger or not
+    run_uvbinflagger : bool, optional
+        Run uvbin flagger or not
     threshold : float, optional
         Flagging threshold
     restore_flag : bool, optional
@@ -851,7 +851,7 @@ def main(
             flagdimension=flagdimension,
             flag_autocorr=flag_autocorr,
             flag_quack=flag_quack,
-            run_solarflagger=run_solarflagger,
+            run_uvbinflagger=run_uvbinflagger,
             threshold=threshold,
             restore_flag=restore_flag,
             force_flag=force_flag,
@@ -941,10 +941,10 @@ def cli():
         help="Do not backup flags",
     )
     adv_args.add_argument(
-        "--run_solarflagger",
-        dest="run_solarflagger",
+        "--run_uvbinflagger",
+        dest="run_uvbinflagger",
         action="store_true",
-        help="Run solar flagger or not",
+        help="Run uvbin flagger or not",
     )
     adv_args.add_argument(
         "--threshold",
@@ -1001,7 +1001,7 @@ def cli():
         flag_quack=args.flag_quack,
         flagbackup=args.flagbackup,
         flagdimension=args.flagdimension,
-        run_solarflagger=args.run_solarflagger,
+        run_uvbinflagger=args.run_uvbinflagger,
         threshold=args.threshold,
         restore_flag=args.restore_flag,
         force_flag=args.force_flag,

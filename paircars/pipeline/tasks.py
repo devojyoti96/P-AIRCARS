@@ -348,7 +348,7 @@ def run_flag(
     use_tfcrop=False,
     flagdimension="freqtime",
     flagdata_type="target",
-    run_solarflagger=False,
+    run_uvbinflagger=False,
     restore_flag=True,
     jobid=0,
     cpu_frac=0.8,
@@ -386,8 +386,8 @@ def run_flag(
         Flag dimension (freq, time freqtime)
     flagdata_type : str, optional
         Flag data type (cal, selfcal, target)
-    run_solarflagger : bool, optional
-        Run solar flagger or not
+    run_uvbinflagger : bool, optional
+        Run uvbin flagger or not
     restore_flag : bool, optional
         Restore flags or not
     jobid : int, optional
@@ -457,7 +457,7 @@ def run_flag(
                 flag_quack=flag_quack,
                 flagdimension=flagdimension,
                 restore_flag=restore_flag,
-                run_solarflagger=run_solarflagger,
+                run_uvbinflagger=run_uvbinflagger,
                 flagbackup=False,
                 cpu_frac=float(cpu_frac),
                 mem_frac=float(mem_frac),
