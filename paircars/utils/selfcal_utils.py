@@ -170,7 +170,6 @@ def do_uvsub_flag(msname, threshold_list=[10, 7, 5],mem=-1):
             absmem=mem,
             num_bins=30,
             flagbackup=False,
-            verbose=True,
         )
         if result!=0:
             break
