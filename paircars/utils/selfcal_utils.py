@@ -149,7 +149,7 @@ def leakage_fitting(leakage_file_list):
     return q_poly, u_poly, v_poly
 
 
-def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1, mem=-1):
+def do_uvsub_flag(msname, threshold_list=[10, 7, 5],mem=-1):
     """
     Perform uv-sub flags
 
@@ -159,19 +159,21 @@ def do_uvsub_flag(msname, threshold_list=[10, 7, 5], ncpu=1, mem=-1):
         Measurement set
     threshold_list: list, optional
         Threshold list
-    ncpu: int, optional
-        Number of CPU threads to use
+    mem: float, optional
+        Memory to use in GB
     """
     for threshold in threshold_list:
         result, n_final_flagged, n_additional_flagged = flagger(
             msname,
             "residual",
             threshold=threshold,
-            n_threads=ncpu,
             absmem=mem,
             num_bins=30,
             flagbackup=False,
+            verbose=True,
         )
+        if result!=0:
+            break
 
 
 def get_quiet_sun_flux(freq):
@@ -1914,7 +1916,7 @@ def selfcal_round(
                 do_flag_backup(msname, flagtype="selfcal")
                 logger.info("Flagging in uv-domain data.\n")
                 do_uvsub_flag(
-                    msname, threshold_list=[10, 7, 5], ncpu=max(1, ncpu), mem=mem
+                    msname, threshold_list=[10, 7, 5], mem=mem
                 )
         except Exception:
             logger.exception(traceback.print_exc())
