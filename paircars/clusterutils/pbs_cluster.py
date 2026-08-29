@@ -155,4 +155,88 @@ def get_pbs_node_resources(queue=None, cpu_frac=0.8, mem_frac=0.8):
     mem = round(total_mem * mem_frac, 1)
     return ncpu, mem
     
+
+def pbs_time_to_seconds(time_str):
+    """
+    Convert PBS walltime to seconds.
+
+    Parameters
+    ----------
+    time_str : str
+        PBS time string
+        Supported formats:
+            HH:MM:SS
+            MM:SS
+            DD:HH:MM:SS
+            
+    Returns
+    -------
+    float
+        Time in seconds
+    """
+    parts = list(map(int, time_str.split(":")))
+    if len(parts) == 2:
+        minutes, seconds = parts
+        return minutes * 60 + seconds
+    elif len(parts) == 3:
+        hours, minutes, seconds = parts
+        return hours * 3600 + minutes * 60 + seconds
+    elif len(parts) == 4:
+        days, hours, minutes, seconds = parts
+        return (
+            days * 86400
+            + hours * 3600
+            + minutes * 60
+            + seconds
+        )
+    else:
+        print(f"Invalid PBS walltime: {time_str}")
+        return 
+
+
+def get_max_walltime(queue):
+    """
+    Get maximum wall time for a PBS queue.
+
+    Parameters
+    ----------
+    queue : str
+        PBS queue name.
+
+    Returns
+    -------
+    max_time : str
+        Maximum wall time in PBS format.
+    max_time_seconds : int
+        Maximum wall time in seconds.
+    """
+    result = subprocess.run(
+        ["qstat", "-Q", "-f", queue],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(
+            f"Failed to query PBS queue '{queue}': "
+            f"{result.stderr.strip()}"
+        )
+        return None, None
+    output = result.stdout
+    # Look for:
+    # resources_max.walltime = 48:00:00
+    match = re.search(
+        r"resources_max\.walltime\s*=\s*(\S+)",
+        output
+    )
+    if not match:
+        print(
+            f"Maximum walltime not defined for PBS queue '{queue}'."
+        )
+        return "UNLIMITED", np.inf
+    max_time = match.group(1)
+    return max_time, pbs_time_to_seconds(max_time)
+    
+    
+
+    
     
