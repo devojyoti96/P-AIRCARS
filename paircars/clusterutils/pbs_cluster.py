@@ -50,27 +50,24 @@ def get_available_nodes(queue=None):
         Available node names.
     """
     cmd = ["pbsnodes", "-a", "-S"]
-
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
         check=True,
     )
-
     available = []
-
     for line in result.stdout.splitlines():
         fields = line.split()
-
         # Skip header/empty lines
+        print (field)
         if not fields or fields[0].lower() in ["vnode", "node"]:
             continue
-
         name = fields[0]
         state = fields[2] if len(fields) > 2 else ""
-
+        print(name,state)
         if state in ["free", "job-busy"]:
             available.append(name)
-
     return available
+    
+    s
