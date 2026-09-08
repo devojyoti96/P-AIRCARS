@@ -49,23 +49,36 @@ def get_available_nodes(partition=None):
     Returns
     -------
     list
-        Available node names
+        Available node names in the partition
+    list
+        All available node names
     """
     cmd = ["sinfo", "-h", "-N", "-o", "%N %t"]
-    if partition:
-        cmd.extend(["-p", partition])
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
         check=True,
     )
-    available = []
+    all_available = []
     for line in result.stdout.splitlines():
         name, state = line.split()
         if state.startswith("idl") or state.startswith("mix"):
-            available.append(name)
-    return available
+            all_available.append(name)
+    available = []
+    if partition:
+        cmd.extend(["-p", partition])
+            result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        for line in result.stdout.splitlines():
+            name, state = line.split()
+            if state.startswith("idl") or state.startswith("mix"):
+                available.append(name)
+    return available, all_available
 
 
 def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
@@ -106,6 +119,68 @@ def get_slurm_node_resources(partition=None, cpu_frac=0.8, mem_frac=0.8):
     ncpu = max(1, int(total_cpu * cpu_frac))
     mem = round(total_mem * mem_frac, 1)
     return ncpu, mem
+
+
+def slurm_time_to_seconds(timestr):
+    """
+    Convert SLURM time format (D-HH:MM:SS or HH:MM:SS) to seconds.
+
+    Parameters
+    ----------
+    timestr : str
+        Time string in SLURM format
+
+    Returns
+    -------
+    float
+        Time in seconds
+    """
+    if timestr.lower() in ["infinite", "unlimited"]:
+        return float("inf")
+    if "-" in timestr:
+        days, hms = timestr.split("-")
+        h, m, s = map(int, hms.split(":"))
+        return int(days) * 86400 + h * 3600 + m * 60 + s
+    else:
+        h, m, s = map(int, timestr.split(":"))
+        return h * 3600 + m * 60 + s
+
+
+def get_max_walltime(partition):
+    """
+    Get maximum wall time for the partition
+
+    Parameters
+    ----------
+    partition : str
+        Partition name
+
+    Returns
+    -------
+    str
+        Maximum wall time
+    """
+    result = subprocess.run(
+        ["scontrol", "show", "partition"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("Failed to query SLURM partitions.")
+    output = result.stdout
+    partitions = {}
+    blocks = output.split("\n\n")
+    for block in blocks:
+        name_match = re.search(r"PartitionName=(\S+)", block)
+        time_match = re.search(r"MaxTime=(\S+)", block)
+        if name_match and time_match:
+            part_name = name_match.group(1)
+            max_time = time_match.group(1)
+            partitions[part_name] = max_time
+    if partition not in partitions:
+        raise ValueError(f"Partition {partition} not found.")
+    max_time = partitions[partition]
+    return max_time, slurm_time_to_seconds(max_time)
 
 
 def get_slurm_dask_cluster(
@@ -316,69 +391,7 @@ def get_slurm_dask_cluster(
         traceback.print_exc()
         os.system(f"rm -rf {log_dir} {dask_dir}")
         return
-
-
-def slurm_time_to_seconds(timestr):
-    """
-    Convert SLURM time format (D-HH:MM:SS or HH:MM:SS) to seconds.
-
-    Parameters
-    ----------
-    timestr : str
-        Time string in SLURM format
-
-    Returns
-    -------
-    float
-        Time in seconds
-    """
-    if timestr.lower() in ["infinite", "unlimited"]:
-        return float("inf")
-    if "-" in timestr:
-        days, hms = timestr.split("-")
-        h, m, s = map(int, hms.split(":"))
-        return int(days) * 86400 + h * 3600 + m * 60 + s
-    else:
-        h, m, s = map(int, timestr.split(":"))
-        return h * 3600 + m * 60 + s
-
-
-def get_max_walltime(partition):
-    """
-    Get maximum wall time for the partition
-
-    Parameters
-    ----------
-    partition : str
-        Partition name
-
-    Returns
-    -------
-    str
-        Maximum wall time
-    """
-    result = subprocess.run(
-        ["scontrol", "show", "partition"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError("Failed to query SLURM partitions.")
-    output = result.stdout
-    partitions = {}
-    blocks = output.split("\n\n")
-    for block in blocks:
-        name_match = re.search(r"PartitionName=(\S+)", block)
-        time_match = re.search(r"MaxTime=(\S+)", block)
-        if name_match and time_match:
-            part_name = name_match.group(1)
-            max_time = time_match.group(1)
-            partitions[part_name] = max_time
-    if partition not in partitions:
-        raise ValueError(f"Partition {partition} not found.")
-    max_time = partitions[partition]
-    return max_time, slurm_time_to_seconds(max_time)
-
+        
 
 def submit_slurm_master_flow(args, jobid):
     """

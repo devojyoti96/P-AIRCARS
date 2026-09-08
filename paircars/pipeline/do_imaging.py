@@ -15,6 +15,7 @@ from paircars.utils.basic_utils import (
 )
 from paircars.utils.image_utils import (
     make_stokes_wsclean_imagecube,
+    check_valid_image,
 )
 from paircars.utils.imaging import (
     calc_field_of_view,
@@ -470,6 +471,47 @@ def perform_imaging(
                             img_logger.info(
                                 f"Total {len(imagelist)} images are made.\n"
                             )
+                            ##################################
+                            # Filtering invalid images
+                            ##################################
+                            imagelist = sorted(imagelist)
+                            valid_images = []
+                            if savemodel:
+                                modellist = sorted(modellist)
+                                valid_models = []
+                            if saveres:
+                                reslist = sorted(reslist)
+                                valid_residuals = []
+                       
+                            for i in range(len(imagelist)):
+                                image = imagelist[i]
+                                if savemodel:
+                                    model = modellist[i]
+                                if saveres:
+                                    res = reslist[i]
+                                if check_valid_image(image):
+                                    valid_images.append(image)
+                                    if savemodel:
+                                        valid_models.append(model)
+                                    if saveres:
+                                        valid_residuals.append(res)
+                                else:
+                                    os.system(f"rm -rf {image}")
+                                    if savemodel:
+                                        os.system(f"rm -rf {model}")
+                                    if saveres:
+                                        os.system(f"rm -rf {res}")
+
+                            imagelist = sorted(valid_images)
+                            if savemodel:
+                                modellist = sorted(valid_models)
+                            if saveres:
+                                reslist = sorted(valid_residuals)
+                            
+                            img_logger.info(
+                                f"Total {len(imagelist)} valid images are made.\n"
+                            )
+                            
                             img_logger.info("Renaming and making plots.\n")
                             os.makedirs(imagedir + "/images", exist_ok=True)
                             final_image_list = []
@@ -549,7 +591,7 @@ def perform_imaging(
             return 1, {}
     except Exception:
         img_logger.exception(
-            "Exception occured in imaging: {os.path.basename(msname)}", exc_info=True
+            f"Exception occured in imaging: {os.path.basename(msname)}", exc_info=True
         )
         time.sleep(5)
         if sub_observer is not None:

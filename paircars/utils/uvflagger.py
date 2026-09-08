@@ -304,7 +304,6 @@ def flagger(
     msmd.open(msname)
     npol = msmd.ncorrforpol()[0]
     nchan = msmd.nchan(0)
-    ntime = msmd.timesforspws(0).size
     nrows = int(msmd.nrows())
     msmd.close()
     pol_list = get_pol_names(msname)

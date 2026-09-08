@@ -146,6 +146,27 @@ def get_image_npol(imagename):
     return npol
 
 
+def check_valid_image(imagename):
+    """
+    Check whether the image is valid or not
+
+    Parameters
+    ----------
+    imagename : str
+        Image name
+
+    Returns
+    -------
+    bool
+        Whether valid image or not
+    """
+    data = fits.getdata(imagename)
+    if np.nansum(data) == 0:
+        return False
+    else:
+        return True
+        
+        
 def calc_solar_image_stat(imagename, modelname="", disc_radius=50):
     """
     Calculate solar image dynamic range

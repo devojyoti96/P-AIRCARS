@@ -29,6 +29,7 @@ from .image_utils import (
     generate_tb_map,
     make_timeavg_image,
     make_stokes_wsclean_imagecube,
+    check_valid_image,
 )
 from .udocker_utils import run_wsclean, run_quartical
 from .sunpos_utils import determine_quiet_disk, cal_apparent_solarcenter
@@ -337,27 +338,6 @@ def quiet_sun_selfcal(msname, logger, selfcaldir, refant="1", solint="inf"):
             flagmanager(vis=msname, mode="restore", versionname="qs_selfcal_1")
             flagmanager(vis=msname, mode="delete", versionname="qs_selfcal_1")
         return msg, bpass_caltable
-
-
-def check_valid_image(imagename):
-    """
-    Check whether the image is valid or not
-
-    Parameters
-    ----------
-    imagename : str
-        Image name
-
-    Returns
-    -------
-    bool
-        Whether valid image or not
-    """
-    data = fits.getdata(imagename)
-    if np.nansum(data) == 0:
-        return False
-    else:
-        return True
 
 
 def calc_leakage(imagename, threshold=5, disc_size=50):

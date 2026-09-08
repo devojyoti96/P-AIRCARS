@@ -910,12 +910,12 @@ def main(
             workdir,
             cpu_frac=cpu_frac,
             mem_frac=mem_frac,
-            max_worker=len(mslist) + 1,
+            max_worker=len(mslist),
         )
         if dask_client is None:
             logger.critical("Error occured in creating local cluster.")
             return 1, succeed, failed
-        scale_worker_and_wait(dask_cluster, dask_client, nworker)
+        scale_worker_and_wait(dask_cluster, dask_client, nworker+1)
 
     try:
         for banner in print_banner(
