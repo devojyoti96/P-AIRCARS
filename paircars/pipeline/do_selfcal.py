@@ -367,11 +367,11 @@ def do_selfcal(
         issue_occured = False
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
-        '''selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
+        selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
         if uvrange == "":
             uvrange = selfcal_uvrange
         if minuv_l == 0:
-            minuv_l = selfcal_minuv_l'''
+            minuv_l = selfcal_minuv_l
 
         ##########################################################################
         # Starting using Gaussian model, if calibrator soutions were not applied
@@ -1047,11 +1047,11 @@ def do_polselfcal(
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         leakage_info_dic = {}
         os.system("rm -rf *_selfcal_present*")
-        '''selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
+        selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
         if uvrange == "":
             uvrange = selfcal_uvrange
         if minuv_l == 0:
-            minuv_l = selfcal_minuv_l'''
+            minuv_l = selfcal_minuv_l
 
         ##########################################
         # Starting selfcal loops

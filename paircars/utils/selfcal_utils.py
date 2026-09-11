@@ -552,10 +552,6 @@ def correct_leakage(
     posq = (abs(image_Q) < threshold*q_rms) | (image_I < threshold*i_rms) | (abs(image_Q/image_I) < abs(q_err))
     posu = (abs(image_U) < threshold*u_rms) | (image_I < threshold*i_rms) | (abs(image_U/image_I) < abs(q_err))
     posv = (abs(image_V) < threshold*v_rms) | (image_I < threshold*i_rms) | (abs(image_V/image_I) < abs(q_err))
-    tb_map = generate_tb_map(imagename)
-    tb_data = fits.getdata(tb_map)[0, 0, ...] / 10**6  # in MK
-    tb_pos = tb_data<1.0
-    os.system(f"rm -rf {tb_map}")
     imagedata[1, 0, ...] = image_Q
     imagedata[2, 0, ...] = image_U
     imagedata[3, 0, ...] = image_V
@@ -576,8 +572,6 @@ def correct_leakage(
         model_Q[posq] = 0.0
         model_U[posu] = 0.0
         model_V[posv] = 0.0
-        model_Q[tb_pos] = 0.0
-        model_U[tb_pos] = 0.0
         modeldata[1, 0, ...] = model_Q
         modeldata[2, 0, ...] = model_U
         modeldata[3, 0, ...] = model_V
@@ -1300,7 +1294,7 @@ def selfcal_round(
         if do_polcal:
             wsclean_args.append("-pol IQUV")
             pol = "IQUV"
-        else:
+        else: # Do not choose IQ during intensity self-cal, it can produce artificial direction dependent Stokes Q due to wrong modeling and differential phase shift 
             wsclean_args.append("-pol I")
             pol = "I"
             if calmode=="p":
