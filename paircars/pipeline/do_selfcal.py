@@ -329,7 +329,7 @@ def do_selfcal(
             do_bandpass = False
         else:
             do_bandpass = True
-
+        
         ################################################################
         # Calculating temporal chunks based on tolerance factor
         ################################################################
@@ -367,11 +367,11 @@ def do_selfcal(
         issue_occured = False
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
-        selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
+        '''selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
         if uvrange == "":
             uvrange = selfcal_uvrange
         if minuv_l == 0:
-            minuv_l = selfcal_minuv_l
+            minuv_l = selfcal_minuv_l'''
 
         ##########################################################################
         # Starting using Gaussian model, if calibrator soutions were not applied
@@ -417,7 +417,8 @@ def do_selfcal(
             else:
                 do_flag = False
                 restore_flag = False
-
+                
+  
             ##################################
             # Mask option
             ##################################
@@ -543,8 +544,8 @@ def do_selfcal(
             intlogger.info(f"RMS based dynamic ranges: {DR1}, {DR2}, {DR3}.")
             intlogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3}.\n")
             if DR3 >= DR2 and (
-                (calmode == "p" and num_iter != 0)
-                or (calmode == "ap" and num_iter_after_ap != 1)
+                (calmode == "p" and num_iter > min_iter)
+                or (calmode == "ap" and num_iter_after_ap > 1)
             ):
                 use_previous_model = True
             else:
@@ -619,7 +620,7 @@ def do_selfcal(
                 if do_apcal and calmode == "p":
                     intlogger.info("Changed calmode to 'ap'.\n")
                     calmode = "ap"
-                    use_previous_model = True
+                    use_previous_model = False
                     threshold -= 1
                     intlogger.info(f"Reducing threshold to : {threshold}.\n")
                     sigma_reduced_count += 1
@@ -718,7 +719,7 @@ def do_selfcal(
                             "Dynamic range converged. Changing calmode to 'ap'.\n"
                         )
                         calmode = "ap"
-                        use_previous_model = True
+                        use_previous_model = False
                         threshold -= 1
                         intlogger.info(f"Reducing threshold to : {threshold}.\n")
                         sigma_reduced_count += 1
@@ -1042,14 +1043,15 @@ def do_polselfcal(
         solve_array_leakage = True
         issue_occured = False
         num_iter_after_reset = 0
+        leakage_threshold = 10.0
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         leakage_info_dic = {}
         os.system("rm -rf *_selfcal_present*")
-        selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
+        '''selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
         if uvrange == "":
             uvrange = selfcal_uvrange
         if minuv_l == 0:
-            minuv_l = selfcal_minuv_l
+            minuv_l = selfcal_minuv_l'''
 
         ##########################################
         # Starting selfcal loops
@@ -1081,10 +1083,7 @@ def do_polselfcal(
                     pbcor = False
                     leakagecor = True
                     pbuncor = False
-                    if num_iter > 1 and DR3 > DR2:
-                        use_previous_model = True
-                    else:
-                        use_previous_model = False
+                    use_previous_model = False
                 elif num_iter == min_iter:
                     pbcor = False
                     leakagecor = True
@@ -1108,6 +1107,9 @@ def do_polselfcal(
 
             if num_iter == min_iter:
                 solve_array_leakage = False  # This is to make sure if it failed, last round ms has same state of polcal
+
+            if num_iter>min_iter+1:
+                leakage_threshold = max(5.0,leakage_threshold-0.5)
 
             (
                 msg,
@@ -1147,6 +1149,7 @@ def do_polselfcal(
                 restore_flag=True,
                 solve_array_leakage=solve_array_leakage,
                 leakage_info_polynomial=leakage_poly,
+                leakage_threshold=leakage_threshold,
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
