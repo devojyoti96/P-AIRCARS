@@ -274,7 +274,7 @@ def do_selfcal(
         intlogger.info("Checking initial flagging.\n")
         unflag_chans, flag_chans = get_chans_flag(msname)
         unflag_times, flag_times = get_times_flag(msname)
-        if len(unflag_chans) > 0:
+        if len(unflag_chans) > 0 and len(unflag_times)>0:
             temp_ms = f"{msname}.tempsplit"
             unflag_chans = [f"{i}" for i in unflag_chans]
             unflag_spw = f"0:{';'.join(unflag_chans)}"
@@ -291,6 +291,9 @@ def do_selfcal(
             )
             os.system(f"rm -rf {msname} {msname}.flagversions")
             os.system(f"mv {temp_ms} {msname}")
+        else:
+            intlogger.error("No unflagged channel or timestamp present.\n")
+            return 1, msname, [], False, 0
 
         ############################################
         # Imaging and calibration parameters
@@ -962,7 +965,7 @@ def do_polselfcal(
             )
         unflag_chans, flag_chans = get_chans_flag(msname)
         unflag_times, flag_times = get_times_flag(msname)
-        if len(unflag_chans) > 0:
+        if len(unflag_chans) > 0 and len(unflag_times) > 0:
             temp_ms = f"{msname}.tempsplit"
             unflag_chans = [f"{i}" for i in unflag_chans]
             unflag_spw = f"0:{';'.join(unflag_chans)}"
@@ -979,6 +982,9 @@ def do_polselfcal(
             )
             os.system(f"rm -rf {msname} {msname}.flagversions")
             os.system(f"mv {temp_ms} {msname}")
+        else:
+            pollogger.error("No unflagged channel or time is present.\n")
+            return 1, msname, "", "", 0
 
         ############################################
         # Imaging and calibration parameters
