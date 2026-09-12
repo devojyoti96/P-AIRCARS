@@ -1041,6 +1041,7 @@ def do_polselfcal(
         last_leakage_file = ""
         last_round_ms = ""
         solve_over_array = False
+        pol_solnorm=False
         num_iter_after_arraysol = 0  # Number of iteration after solve over array
         last_ant_dependent_caltable = None
         leakage_threshold = 10.0
@@ -1128,6 +1129,7 @@ def do_polselfcal(
                 pbuncor=pbuncor,
                 do_flag=True,
                 restore_flag=True,
+                pol_solnorm=pol_solnorm,
                 solve_over_array=solve_over_array,
                 leakage_info_polynomial=leakage_poly,
                 leakage_threshold=leakage_threshold,
@@ -1270,6 +1272,7 @@ def do_polselfcal(
                     if not solve_over_array:
                         solve_over_array = True
                         issue_occured=True
+                        pol_solnorm=True
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1306,6 +1309,7 @@ def do_polselfcal(
                     if not solve_over_array:
                         solve_over_array = True
                         issue_occured=True
+                        pol_solnorm=True
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1413,6 +1417,7 @@ def do_polselfcal(
                     pollogger.info("Maximum dynamic range is reached.\n")
                     if not solve_over_array:
                         solve_over_array=True
+                        pol_solnorm=True
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1444,6 +1449,7 @@ def do_polselfcal(
                     pollogger.info("Self-calibration has converged.\n")
                     if not solve_over_array:
                         solve_over_array=True
+                        pol_solnorm=True
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1472,6 +1478,7 @@ def do_polselfcal(
                         pollogger.warning("Leakage did not converge.\n")
                     if not solve_over_array:
                         solve_over_array=True
+                        pol_solnorm=True
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
