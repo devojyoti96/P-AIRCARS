@@ -1130,7 +1130,7 @@ def selfcal_round(
     pbuncor=True,
     do_intensity_cal=False,
     do_polcal=False,
-    solve_array_leakage=False,
+    solve_over_array=False,
     leakage_info_polynomial=[],
     leakage_threshold=10.0,
     polcal_datacolumn="DATA",
@@ -1207,7 +1207,7 @@ def selfcal_round(
         Perform intensity self-calibration
     do_polcal : bool, optional
         Perform polarisation calibration or not
-    solve_array_leakage : bool, optional
+    solve_over_array : bool, optional
         Perform a single leakage correction over the entire array
     leakage_info_polynomial : list, optional
         User provided leaakage info polynomial [q_leakage poly, u_leakage poly, v_leakage poly]
@@ -1855,7 +1855,7 @@ def selfcal_round(
                 quartical_args.append(f"D.freq_interval={freqres}kHz")
             else:
                 quartical_args.append("D.freq_interval=1")
-            if solve_array_leakage:
+            if solve_over_array:
                 quartical_args.append("D.solve_per=array")
             quartical_cmd = " ".join(quartical_args)
             logger.info(f"{quartical_cmd}\n")

@@ -13,9 +13,11 @@ from paircars.utils.basic_utils import (
     weighted_mean,
     print_banner,
 )
+from paircars.utils.casatasks import transfer_cor_to_data
 from paircars.utils.calibration import (
     get_caltable_metadata,
     get_quartical_table_metadata,
+    multiply_quartical_tables,
 )
 from paircars.utils.flagging import (
     get_unflagged_antennas,
@@ -151,8 +153,8 @@ def do_selfcal(
         Success message
     str
         Self-calibrated measurement set
-    str
-        Final caltable
+    list
+        Final caltables
     bool
         Whether disk detected or not
     float
@@ -170,7 +172,7 @@ def do_selfcal(
         logfile,
     )
     if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -329,7 +331,7 @@ def do_selfcal(
             do_bandpass = False
         else:
             do_bandpass = True
-        
+
         ################################################################
         # Calculating temporal chunks based on tolerance factor
         ################################################################
@@ -364,7 +366,6 @@ def do_selfcal(
         use_previous_model = False
         disk_detected = False
         min_DR = 0
-        issue_occured = False
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         os.system("rm -rf *_selfcal_present*")
         selfcal_minuv_l, selfcal_maxuv_l, selfcal_uvrange = get_selfcal_uvrange(msname)
@@ -417,8 +418,7 @@ def do_selfcal(
             else:
                 do_flag = False
                 restore_flag = False
-                
-  
+
             ##################################
             # Mask option
             ##################################
@@ -511,7 +511,7 @@ def do_selfcal(
                     )
                     if msg == 1:
                         os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
+                        time.sleep(0.5)
                         if sub_observer is not None:
                             clean_shutdown(sub_observer)
                         return msg, msname, [], disk_detected, 0
@@ -523,7 +523,7 @@ def do_selfcal(
             elif msg > 1:
                 intlogger.error("Self-calibration failed.\n")
                 os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
+                time.sleep(0.5)
                 if sub_observer is not None:
                     clean_shutdown(sub_observer)
                 return msg, msname, [], disk_detected, 0
@@ -643,7 +643,7 @@ def do_selfcal(
                         "Stopping self-calibration. Using last round caltable as final.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
+                    time.sleep(0.5)
                     if sub_observer is not None:
                         clean_shutdown(sub_observer)
                     return (
@@ -660,7 +660,7 @@ def do_selfcal(
             if DR3 > max_DR and num_iter_after_ap > 1:
                 intlogger.info("Maximum dynamic range is reached.\n")
                 os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
+                time.sleep(0.5)
                 if sub_observer is not None:
                     clean_shutdown(sub_observer)
                 return 0, msname, gaintable, disk_detected, DR3
@@ -695,7 +695,7 @@ def do_selfcal(
                 else:
                     intlogger.info("Selfcal calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
+                    time.sleep(0.5)
                     if sub_observer is not None:
                         clean_shutdown(sub_observer)
                     return 0, msname, gaintable, disk_detected, DR3
@@ -706,7 +706,7 @@ def do_selfcal(
                 # If threshold not reached to end threshold, reducing threshold
                 ################################################################
                 if (
-                    abs(DR1 - DR2) / DR2 < DR_convergence_frac
+                    abs(DR3 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
                     and num_iter_fixed_sigma > min_iter
                     and threshold > end_threshold
@@ -745,14 +745,14 @@ def do_selfcal(
                 # If threshold reached, converged
                 ######################################
                 elif (
-                    abs(DR1 - DR2) / DR2 < DR_convergence_frac
+                    abs(DR3 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
                     and num_iter_fixed_sigma > min_iter
                     and threshold == end_threshold
                 ):
                     intlogger.info("Self-calibration has converged.\n")
                     os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
+                    time.sleep(0.5)
                     if sub_observer is not None:
                         clean_shutdown(sub_observer)
                     return 0, msname, gaintable, disk_detected, DR3
@@ -767,7 +767,7 @@ def do_selfcal(
                         "Self-calibration is finished. Maximum iteration is reached.\n"
                     )
                     os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
+                    time.sleep(0.5)
                     if sub_observer is not None:
                         clean_shutdown(sub_observer)
                     return 0, msname, gaintable, disk_detected, DR3
@@ -787,7 +787,7 @@ def do_selfcal(
             "Exception occured in intensity self-calibration", exc_info=True
         )
         os.system("rm -rf *_selfcal_present*")
-        time.sleep(5)
+        time.sleep(0.5)
         if sub_observer is not None:
             clean_shutdown(sub_observer)
         return 1, msname, [], False, 0
@@ -889,7 +889,7 @@ def do_polselfcal(
         logfile,
     )
     if os.path.exists(f"{workdir}/.jobname_password.npy") and logfile is not None:
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -1037,12 +1037,12 @@ def do_polselfcal(
         UL1 = UL2 = UL3 = 1.0
         VL1 = VL2 = VL3 = 1.0
         num_iter = 0
-        last_round_gaintable = []
+        last_round_gaintable = None
         last_leakage_file = ""
         last_round_ms = ""
-        solve_array_leakage = True
-        issue_occured = False
-        num_iter_after_reset = 0
+        solve_over_array = False
+        num_iter_after_arraysol = 0  # Number of iteration after solve over array
+        last_ant_dependent_caltable = None
         leakage_threshold = 10.0
         min_iter = max(3, min_iter)  # Minimum 3 iterations
         leakage_info_dic = {}
@@ -1064,39 +1064,23 @@ def do_polselfcal(
             pollogger.info("######################################")
             pollogger.info(f"Selfcal iteration : {num_iter}")
             pollogger.info("######################################")
+            if DR3 > DR2:
+                use_previous_model = True
+            else:
+                use_previous_model = False
+
+            ###################################################################################
+            # If disk present or not case
+            # If disk is not present, polarisation selfcal is just aligning antenna Jones terms
+            ###################################################################################
             if not disk_present and len(leakage_info_polynomial) == 0:
                 pbcor = False
                 leakagecor = False
                 pbuncor = False
-                min_iter = 1
-                if num_iter > 1 and DR3 > DR2:
-                    use_previous_model = True
-                else:
-                    use_previous_model = False
             else:
-                if num_iter == 0:
-                    pbcor = True
-                    leakagecor = True
-                    pbuncor = False
-                    use_previous_model = False
-                elif num_iter < min_iter:
-                    pbcor = False
-                    leakagecor = True
-                    pbuncor = False
-                    use_previous_model = False
-                elif num_iter == min_iter:
-                    pbcor = False
-                    leakagecor = True
-                    pbuncor = True
-                    use_previous_model = False
-                else:
-                    pbcor = True
-                    leakagecor = True
-                    pbuncor = True
-                    if num_iter > min_iter + 1 and DR3 > DR2:
-                        use_previous_model = True
-                    else:
-                        use_previous_model = False
+                pbcor = True
+                leakagecor = True
+                pbuncor = True                
 
             if (
                 num_iter == 0
@@ -1105,11 +1089,8 @@ def do_polselfcal(
             else:
                 leakage_poly = []
 
-            if num_iter == min_iter:
-                solve_array_leakage = False  # This is to make sure if it failed, last round ms has same state of polcal
-
-            if num_iter>min_iter+1:
-                leakage_threshold = max(5.0,leakage_threshold-0.5)
+            if num_iter > min_iter:
+                leakage_threshold = max(5.0, leakage_threshold - 0.5)
 
             (
                 msg,
@@ -1147,12 +1128,13 @@ def do_polselfcal(
                 pbuncor=pbuncor,
                 do_flag=True,
                 restore_flag=True,
-                solve_array_leakage=solve_array_leakage,
+                solve_over_array=solve_over_array,
                 leakage_info_polynomial=leakage_poly,
                 leakage_threshold=leakage_threshold,
                 ncpu=ncpu,
                 mem=round(mem, 2),
             )
+            gaintable = gaintable[0] # It is always return a list, but for only polcal always a single caltable
             if msg == 1:
                 pollogger.error("No model flux is picked up.\n")
                 os.system("rm -rf *_selfcal_present*")
@@ -1160,38 +1142,37 @@ def do_polselfcal(
             elif msg > 2:
                 pollogger.error("Polarisation self-calibration failed.\n")
                 os.system("rm -rf *_selfcal_present*")
-                time.sleep(5)
+                time.sleep(0.5)
                 if sub_observer is not None:
                     clean_shutdown(sub_observer)
-                return msg, msname, [], "", 0
+                return msg, msname, "", "", 0
             elif msg == 2:
                 if nintervals > 1:
                     if num_iter > min_iter:
                         pollogger.warning(
-                            "Minor issues in polarisation self-calibration model prediction. Stopped at previous round.\n"
+                            "Issues in polarisation self-calibration model prediction. Stopped at previous round.\n"
                         )
                         if os.path.exists(last_round_ms):
                             os.system(f"rm -rf {msname}")
                             os.system(f"cp -r {last_round_ms} {msname}")
                         os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
+                        time.sleep(0.5)
                         if sub_observer is not None:
                             clean_shutdown(sub_observer)
                         return 0, msname, last_round_gaintable, last_leakage_file, DR2
                     else:
-                        issue_occured = True
                         pollogger.error(
-                            "Minor issues in polarisation self-calibration model prediction. Minimum iteration has not covered.\n"
+                            "Issues in polarisation self-calibration model prediction. Minimum iteration has not covered.\n"
                         )
                         os.system("rm -rf *_selfcal_present*")
-                        time.sleep(5)
+                        time.sleep(0.5)
                         if sub_observer is not None:
                             clean_shutdown(sub_observer)
-                        return msg, msname, [], "", 0
+                        return msg, msname, "", "", 0
                 else:
                     issue_occured = True
                     pollogger.warning(
-                        "Minor issues in polarisation self-calibration model prediction. Retrying with entire spectro-temporal chunks.\n"
+                        "Issues in polarisation self-calibration model prediction. Retrying with entire spectro-temporal chunks.\n"
                     )
                     nintervals = 1
             else:
@@ -1216,7 +1197,7 @@ def do_polselfcal(
                     u_err,
                     v_err,
                 ]
-                leakage_file = f"{gaintable[0].split('.dcal')[0]}.leakage.npy"
+                leakage_file = f"{gaintable.split('.dcal')[0]}.leakage.npy"
                 np.save(leakage_file, [freq, leakage_info_dic])
                 if num_iter == 0:
                     DR1 = DR3 = DR2 = dyn
@@ -1271,57 +1252,91 @@ def do_polselfcal(
                     )
                     or (abs(QL3) >= q_err and abs(UL3) >= u_err and abs(VL3) >= v_err)
                 )
+                pollogger.info(f"Leakage converged: {leakage_converged}.\n")
 
                 ########################################
                 # Leakage or big DR related issues
                 #########################################
                 ###################################################################
-                # Condition 1: If solving per antenna decrease DR, solve per array
+                # Condition 1: If decrease DR but leakage converged
                 ###################################################################
-                if not solve_array_leakage and DR3 < 0.9 * DR2:
-                    if num_iter > min_iter and leakage_converged:
-                        pollogger.info(
-                            "DR decreasing, but has leakage converged. Self-calibration is finished.\n"
-                        )
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"cp -r {last_round_ms} {msname}")
-                        return 0, msname, last_round_gaintable, last_leakage_file, DR2
+                if (
+                    DR3 < 0.9 * DR2
+                    and leakage_converged
+                    and num_iter > min_iter
+                    and (not solve_over_array or (num_iter_after_arraysol > 1 and solve_over_array))
+                ):
+                    pollogger.info("DR decreasing, but has leakage converged.\n")
+                    if not solve_over_array:
+                        solve_over_array = True
+                        issue_occured=True
+                        transfer_cor_to_data(msname)
+                        pollogger.info("Changing mode to solve over array.\n")
                     else:
-                        pollogger.warning(
-                            "Solving over array instead of antenna, as DR decreases.\n"
+                        pollogger.info("Self-calibration is finished.\n")
+                        last_round_gaintable = multiply_quartical_tables(
+                            last_ant_dependent_caltable,
+                            last_round_gaintable,
+                            output=last_round_gaintable,
                         )
-                        solve_array_leakage = True
-                        issue_occured = True
-                        num_iter_after_reset = 0
                         if os.path.exists(last_round_ms):
-                            pollogger.info("Replacing with previous measurement set.\n")
                             os.system(f"rm -rf {msname}")
                             os.system(f"cp -r {last_round_ms} {msname}")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(0.5)
+                        if sub_observer is not None:
+                            clean_shutdown(sub_observer)
+                        return (
+                            0,
+                            msname,
+                            last_round_gaintable,
+                            last_leakage_file,
+                            DR2,
+                        )
 
                 ##########################################
                 # Condition 2: If leakage increased
                 ##########################################
-                if (num_iter == 2 or num_iter > min_iter) and (
-                    abs(QL3 - QL2) > 0.1 or abs(UL3 - UL2) > 0.1 or abs(VL3 - VL2) > 0.1
+                if (
+                    (abs(QL3 - QL2) > 0.1 or abs(UL3 - UL2) > 0.1 or abs(VL3 - VL2) > 0.1)
+                    and num_iter > min_iter
+                    and (not solve_over_array or (num_iter_after_arraysol > 1 and solve_over_array))
                 ):
-                    issue_occured = True
                     pollogger.warning("Leakage increased by 10%.\n")
-                    if os.path.exists(last_round_ms):
-                        pollogger.info("Replacing with previous measurement set.\n")
-                        os.system(f"rm -rf {msname}")
-                        os.system(f"cp -r {last_round_ms} {msname}")
-                        return 0, msname, last_round_gaintable, last_leakage_file, DR2
+                    if not solve_over_array:
+                        solve_over_array = True
+                        issue_occured=True
+                        transfer_cor_to_data(msname)
+                        pollogger.info("Changing mode to solve over array.\n")
                     else:
-                        return 1, msname, [], "", 0
+                        last_round_gaintable = multiply_quartical_tables(
+                            last_ant_dependent_caltable,
+                            last_round_gaintable,
+                            output=last_round_gaintable,
+                        )
+                        if os.path.exists(last_round_ms):
+                            os.system(f"rm -rf {msname}")
+                            os.system(f"cp -r {last_round_ms} {msname}")
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(0.5)
+                        if sub_observer is not None:
+                            clean_shutdown(sub_observer)
+                        return (
+                            0,
+                            msname,
+                            last_round_gaintable,
+                            last_leakage_file,
+                            DR2,
+                        )
 
                 #########################################
                 # Condition 3: If leakage becomes nan
                 #########################################
                 if np.isnan(QL3) or np.isnan(UL3) or np.isnan(VL3):
                     pollogger.error(
-                        "Leakages become nan. Serious calibration issue occured at the first round.\n"
+                        "Leakages become nan. Serious calibration issue occured.\n"
                     )
-                    return 1, msname, [], "", 0
+                    return 1, msname, "", "", 0
 
                 ################################
                 # DR decraeses
@@ -1330,17 +1345,15 @@ def do_polselfcal(
                 # Condition 2: If DR is decreasing (DR decrease in pol selfcal)
                 # Condition 3: If DR suddenly decreased
                 ###############################################################
-                cond1 = DR3 < 0.9 * min_DR and num_iter_after_reset > 1
+                cond1 = DR3 < 0.9 * min_DR
                 cond2 = (
                     (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
                     and num_iter > min_iter
-                    and num_iter_after_reset > 1
                     and leakage_converged
                 )
                 cond3 = (
                     DR3 < 0.7 * DR2
                     and num_iter > min_iter
-                    and num_iter_after_reset > 1
                     and leakage_converged
                 )
                 if cond1 or cond2 or cond3:
@@ -1359,39 +1372,34 @@ def do_polselfcal(
                         pollogger.warning(
                             "Dynamic range dropped suddenly. Using last round caltable as final.\n"
                         )
+                        
                     ###################################
                     # Replacing previous ms
                     ###################################
                     issue_occured = True
                     if os.path.exists(last_round_ms):
-                        pollogger.info("Replacing with previous measurement set.\n")
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                    if not solve_array_leakage:
-                        num_iter_after_reset = 0
-                        pollogger.info("Solving over array instead of antenna.\n")
-                        solve_array_leakage = True
+                    if num_iter > min_iter:
+                        pollogger.warning(
+                            "Stopping self-calibration. Using last round caltables.\n"
+                        )
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(0.5)
+                        if sub_observer is not None:
+                            clean_shutdown(sub_observer)
+                        return (
+                            0,
+                            msname,
+                            last_round_gaintable,
+                            last_leakage_file,
+                            DR2,
+                        )
                     else:
-                        if num_iter > min_iter:
-                            pollogger.warning(
-                                "Stopping self-calibration. Using last round caltables.\n"
-                            )
-                            os.system("rm -rf *_selfcal_present*")
-                            time.sleep(5)
-                            if sub_observer is not None:
-                                clean_shutdown(sub_observer)
-                            return (
-                                0,
-                                msname,
-                                last_round_gaintable,
-                                last_leakage_file,
-                                DR2,
-                            )
-                        else:
-                            pollogger.error(
-                                "Encountered this error before minimum number of rounds.\n"
-                            )
-                            return 1, msname, [], "", 0
+                        pollogger.error(
+                            "Encountered this error before minimum number of rounds.\n"
+                        )
+                        return 1, msname, "", "", 0
 
                 ###########################
                 # If maximum DR has reached
@@ -1399,15 +1407,25 @@ def do_polselfcal(
                 if (
                     DR3 > max_DR
                     and num_iter > min_iter
-                    and num_iter_after_reset > 1
+                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1))
                     and leakage_converged
                 ):
                     pollogger.info("Maximum dynamic range is reached.\n")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    if sub_observer is not None:
-                        clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file, DR3
+                    if not solve_over_array:
+                        solve_over_array=True
+                        transfer_cor_to_data(msname)
+                        pollogger.info("Changing mode to solve over array.\n")
+                    else:
+                        gaintable = multiply_quartical_tables(
+                            last_ant_dependent_caltable,
+                            gaintable,
+                            output=gaintable,
+                        )
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(0.5)
+                        if sub_observer is not None:
+                            clean_shutdown(sub_observer)
+                        return 0, msname, gaintable, leakage_file, DR3
 
                 ###########################
                 # Checking DR convergence
@@ -1418,23 +1436,33 @@ def do_polselfcal(
                 # Leakage becomes zero or did not reduce
                 ########################################
                 if (
-                    abs(DR1 - DR2) / DR2 < DR_convergence_frac
+                    abs(DR3 - DR2) / DR2 < DR_convergence_frac
                     and num_iter > min_iter
-                    and num_iter_after_reset > 1
+                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1))
                     and leakage_converged
                 ):
                     pollogger.info("Self-calibration has converged.\n")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    if sub_observer is not None:
-                        clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file, DR3
+                    if not solve_over_array:
+                        solve_over_array=True
+                        transfer_cor_to_data(msname)
+                        pollogger.info("Changing mode to solve over array.\n")
+                    else:
+                        gaintable = multiply_quartical_tables(
+                            last_ant_dependent_caltable,
+                            gaintable,
+                            output=gaintable,
+                        )
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(0.5)
+                        if sub_observer is not None:
+                            clean_shutdown(sub_observer)
+                        return 0, msname, gaintable, leakage_file, DR3
                 #########################################
                 # If maximum iteration has reached
                 #########################################
                 elif (
                     num_iter > min_iter
-                    and num_iter_after_reset > 1
+                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1))
                     and num_iter == max_iter
                 ):
                     pollogger.info(
@@ -1442,13 +1470,26 @@ def do_polselfcal(
                     )
                     if leakage_converged is False:
                         pollogger.warning("Leakage did not converge.\n")
-                    os.system("rm -rf *_selfcal_present*")
-                    time.sleep(5)
-                    if sub_observer is not None:
-                        clean_shutdown(sub_observer)
-                    return 0, msname, gaintable, leakage_file, DR3
+                    if not solve_over_array:
+                        solve_over_array=True
+                        transfer_cor_to_data(msname)
+                        pollogger.info("Changing mode to solve over array.\n")
+                    else:
+                        gaintable = multiply_quartical_tables(
+                                last_ant_dependent_caltable,
+                                gaintable,
+                                output=gaintable,
+                            )
+                        os.system("rm -rf *_selfcal_present*")
+                        time.sleep(0.5)
+                        if sub_observer is not None:
+                            clean_shutdown(sub_observer)
+                        return 0, msname, gaintable, leakage_file, DR3
+                        
+                ###################################################
+                # Updating parameters
+                ###################################################
                 num_iter += 1
-                num_iter_after_reset += 1
                 os.system(f"cp -r {msname} {msname}.round{num_iter}")
                 if not issue_occured:
                     last_round_gaintable = gaintable
@@ -1457,15 +1498,19 @@ def do_polselfcal(
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {last_round_ms}")
                     os.system(f"cp -r {msname} {last_round_ms}")
+                if solve_over_array:
+                    num_iter_after_arraysol+=1
+                else:
+                    last_ant_dependent_caltable = last_round_gaintable
     except Exception:
         pollogger.exception(
             "Exception occured in polarisation self-calibration.", exc_info=True
         )
         os.system("rm -rf *_selfcal_present*")
-        time.sleep(5)
+        time.sleep(0.5)
         if sub_observer is not None:
             clean_shutdown(sub_observer)
-        return 1, msname, [], "", 0
+        return 1, msname, "", "", 0
 
 
 def main(
@@ -1616,7 +1661,7 @@ def main(
         and os.path.exists(f"{workdir}/.jobname_password.npy")
         and logfile is not None
     ):
-        time.sleep(5)
+        time.sleep(0.5)
         jobname, password = np.load(
             f"{workdir}/.jobname_password.npy", allow_pickle=True
         )
@@ -1977,7 +2022,7 @@ def main(
                 for i in range(len(results)):
                     r = results[i]
                     pol_msg = r[0]
-                    gaintables = r[2]
+                    dcal = r[2]
                     leakage_file = r[3]
                     pol_DR = r[4]
                     pol_DR_list.append(pol_DR)
@@ -1994,7 +2039,6 @@ def main(
                         failed_polselfcal += 1
                     else:
                         try:
-                            dcal = gaintables[0]
                             cal_metadata = get_quartical_table_metadata(dcal)
                             freq_start = cal_metadata["Channel 0 frequency (MHz)"]
                             ch_start = freq_to_MWA_coarse(freq_start)
@@ -2080,7 +2124,7 @@ def main(
                     for i in range(len(results)):
                         r = results[i]
                         pol_msg = r[0]
-                        gaintables = r[2]
+                        dcal = r[2]
                         leakage_file = r[3]
                         pol_DR = r[4]
                         pol_DR_list.append(pol_DR)
@@ -2097,7 +2141,6 @@ def main(
                             failed_polselfcal += 1
                         else:
                             try:
-                                dcal = gaintables[0]
                                 cal_metadata = get_quartical_table_metadata(dcal)
                                 freq_start = cal_metadata["Channel 0 frequency (MHz)"]
                                 ch_start = freq_to_MWA_coarse(freq_start)
@@ -2216,7 +2259,7 @@ def main(
         max_pol_DR = 0
         print_banner("Self-calibration is failed.")
     finally:
-        time.sleep(5)
+        time.sleep(0.5)
         clean_shutdown(observer)
         for msname in mslist:
             if os.path.exists(msname):
