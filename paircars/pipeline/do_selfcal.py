@@ -415,7 +415,7 @@ def do_selfcal(
             #################################
             # Flagging operators
             #################################
-            if num_iter_after_ap > 1 and threshold < start_threshold:
+            if num_iter_after_ap >= 1 and threshold < start_threshold:
                 do_flag = True
                 restore_flag = True
             else:
@@ -545,10 +545,10 @@ def do_selfcal(
                 RMS2 = RMS3
                 RMS3 = rms
             intlogger.info(f"RMS based dynamic ranges: {DR1}, {DR2}, {DR3}.")
-            intlogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3}.\n")
+            intlogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3} Jy/beam.\n")
             if DR3 >= DR2 and (
-                (calmode == "p" and num_iter > min_iter)
-                or (calmode == "ap" and num_iter_after_ap > 1)
+                (calmode == "p" and num_iter >= min_iter)
+                or (calmode == "ap" and num_iter_after_ap >= 1)
             ):
                 use_previous_model = True
             else:
@@ -559,7 +559,7 @@ def do_selfcal(
             #################################
             # Major condition: If DR suddenly drops below starting DR
             #################################
-            cond0 = DR3 < 0.9 * min_DR and num_iter > min_iter
+            cond0 = DR3 < 0.9 * min_DR and num_iter >= min_iter
             if cond0:
                 intlogger.warning(
                     "Dynamic range dropped suddenly below starting dynamic range.\n"
@@ -585,14 +585,14 @@ def do_selfcal(
             cond1 = (
                 (DR3 < 0.85 * DR2 and DR3 < 0.9 * DR1 and DR2 > DR1)
                 and calmode == "p"
-                and num_iter > min_iter
+                and num_iter >= min_iter
             )
-            cond2 = DR3 < 0.7 * DR2 and calmode == "ap" and num_iter_after_ap > 1
+            cond2 = DR3 < 0.7 * DR2 and calmode == "ap" and num_iter_after_ap >= 1
             cond3 = (
                 DR3 < 0.9 * DR2
                 and DR2 > 1.1 * DR1
                 and calmode == "ap"
-                and num_iter_after_ap > min_iter
+                and num_iter_after_ap >= min_iter
             )
             if cond1 or cond2 or cond3:
                 issue_occured = True
@@ -660,7 +660,7 @@ def do_selfcal(
             ###########################
             # If maximum DR has reached
             ###########################
-            if DR3 > max_DR and num_iter_after_ap > 1:
+            if DR3 > max_DR and num_iter_after_ap >= 1:
                 intlogger.info("Maximum dynamic range is reached.\n")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(0.5)
@@ -676,7 +676,7 @@ def do_selfcal(
             ###########################
             if (
                 ((do_apcal and calmode == "ap") or not do_apcal)
-                and num_iter_fixed_sigma > min_iter
+                and num_iter_fixed_sigma >= min_iter
                 and (
                     last_sigma_DR1 > 0
                     and abs(round(np.nanmedian([DR1, DR2, DR3]), 0) - last_sigma_DR1)
@@ -710,8 +710,8 @@ def do_selfcal(
                 ################################################################
                 if (
                     abs(DR3 - DR2) / DR2 < DR_convergence_frac
-                    and num_iter > min_iter
-                    and num_iter_fixed_sigma > min_iter
+                    and num_iter >= min_iter
+                    and num_iter_fixed_sigma >= min_iter
                     and threshold > end_threshold
                 ):
                     #####################################
@@ -734,7 +734,7 @@ def do_selfcal(
                     ######################################
                     # Reducing threshold if already in apcal
                     ######################################
-                    elif (do_apcal and num_iter_after_ap > min_iter) or not do_apcal:
+                    elif (do_apcal and num_iter_after_ap >= min_iter) or not do_apcal:
                         threshold -= 1
                         intlogger.info(f"Reducing threshold to : {threshold}.\n")
                         sigma_reduced_count += 1
@@ -749,8 +749,8 @@ def do_selfcal(
                 ######################################
                 elif (
                     abs(DR3 - DR2) / DR2 < DR_convergence_frac
-                    and num_iter > min_iter
-                    and num_iter_fixed_sigma > min_iter
+                    and num_iter >= min_iter
+                    and num_iter_fixed_sigma >= min_iter
                     and threshold == end_threshold
                 ):
                     intlogger.info("Self-calibration has converged.\n")
@@ -762,7 +762,7 @@ def do_selfcal(
                 #########################################
                 # In apcal and maximum iteration has reached
                 #########################################
-                elif num_iter > min_iter and (
+                elif num_iter >= min_iter and (
                     (not do_apcal and num_iter == max_iter)
                     or (do_apcal and calmode == "ap" and num_iter_after_ap == max_iter)
                 ):
@@ -1047,7 +1047,7 @@ def do_polselfcal(
         last_leakage_file = ""
         last_round_ms = ""
         solve_over_array = False
-        pol_solnorm=False
+        pol_solnorm = True
         num_iter_after_arraysol = 0  # Number of iteration after solve over array
         last_ant_dependent_caltable = None
         leakage_threshold = 10.0
@@ -1071,7 +1071,7 @@ def do_polselfcal(
             pollogger.info("######################################")
             pollogger.info(f"Selfcal iteration : {num_iter}")
             pollogger.info("######################################")
-            if DR3 > DR2:
+            if DR3 >= DR2 and num_iter > 1:
                 use_previous_model = True
             else:
                 use_previous_model = False
@@ -1096,7 +1096,7 @@ def do_polselfcal(
             else:
                 leakage_poly = []
 
-            if num_iter > min_iter:
+            if num_iter >= min_iter:
                 leakage_threshold = max(5.0, leakage_threshold - 0.5)
 
             (
@@ -1156,7 +1156,7 @@ def do_polselfcal(
                 return msg, msname, "", "", 0
             elif msg == 2:
                 if nintervals > 1:
-                    if num_iter > min_iter:
+                    if num_iter >= min_iter:
                         pollogger.warning(
                             "Issues in polarisation self-calibration model prediction. Stopped at previous round.\n"
                         )
@@ -1237,7 +1237,7 @@ def do_polselfcal(
                     UL3 = u_leakage
                     VL3 = v_leakage
                 pollogger.info(f"RMS based dynamic ranges: {DR1}, {DR2}, {DR3}")
-                pollogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3}")
+                pollogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3} Jy/beam.")
                 pollogger.info(
                     f"Stokes I to Q leakage: {round(QL1*100.0,3)}, {round(QL2*100.0,3)}, {round(QL3*100.0,3)}%."
                 )
@@ -1260,7 +1260,8 @@ def do_polselfcal(
                     )
                     or (abs(QL3) >= q_err and abs(UL3) >= u_err and abs(VL3) >= v_err)
                 )
-                pollogger.info(f"Leakage converged: {leakage_converged}.\n")
+                if num_iter>0:
+                    pollogger.info(f"Leakage converged: {leakage_converged}.\n")
 
                 ########################################
                 # Leakage or big DR related issues
@@ -1271,14 +1272,14 @@ def do_polselfcal(
                 if (
                     DR3 < 0.9 * DR2
                     and leakage_converged
-                    and num_iter > min_iter
-                    and (not solve_over_array or (num_iter_after_arraysol > 1 and solve_over_array))
+                    and num_iter >= min_iter
+                    and (not solve_over_array or (num_iter_after_arraysol >= 1 and solve_over_array))
                 ):
                     pollogger.info("DR decreasing, but has leakage converged.\n")
                     if not solve_over_array:
                         solve_over_array = True
                         issue_occured=True
-                        pol_solnorm=True
+                        pol_solnorm=False
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1308,14 +1309,14 @@ def do_polselfcal(
                 ##########################################
                 if (
                     (abs(QL3 - QL2) > 0.1 or abs(UL3 - UL2) > 0.1 or abs(VL3 - VL2) > 0.1)
-                    and num_iter > min_iter
-                    and (not solve_over_array or (num_iter_after_arraysol > 1 and solve_over_array))
+                    and num_iter >= min_iter
+                    and (not solve_over_array or (num_iter_after_arraysol >= 1 and solve_over_array))
                 ):
                     pollogger.warning("Leakage increased by 10%.\n")
                     if not solve_over_array:
                         solve_over_array = True
                         issue_occured=True
-                        pol_solnorm=True
+                        pol_solnorm=False
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1358,12 +1359,12 @@ def do_polselfcal(
                 cond1 = DR3 < 0.9 * min_DR
                 cond2 = (
                     (DR3 < 0.9 * DR2 and DR2 > 1.5 * DR1)
-                    and num_iter > min_iter
+                    and num_iter >= min_iter
                     and leakage_converged
                 )
                 cond3 = (
                     DR3 < 0.7 * DR2
-                    and num_iter > min_iter
+                    and num_iter >= min_iter
                     and leakage_converged
                 )
                 if cond1 or cond2 or cond3:
@@ -1390,7 +1391,7 @@ def do_polselfcal(
                     if os.path.exists(last_round_ms):
                         os.system(f"rm -rf {msname}")
                         os.system(f"cp -r {last_round_ms} {msname}")
-                    if num_iter > min_iter:
+                    if num_iter >= min_iter:
                         pollogger.warning(
                             "Stopping self-calibration. Using last round caltables.\n"
                         )
@@ -1416,14 +1417,14 @@ def do_polselfcal(
                 ###########################
                 if (
                     DR3 > max_DR
-                    and num_iter > min_iter
-                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1))
+                    and num_iter >= min_iter
+                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol >= 1))
                     and leakage_converged
                 ):
                     pollogger.info("Maximum dynamic range is reached.\n")
                     if not solve_over_array:
                         solve_over_array=True
-                        pol_solnorm=True
+                        pol_solnorm=False
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1446,16 +1447,19 @@ def do_polselfcal(
                 # If DR does not increase a certain percentage
                 # Leakage becomes zero or did not reduce
                 ########################################
+                #print (num_iter, min_iter, DR3, DR2, solve_over_array, leakage_converged, num_iter_after_arraysol)
+                #print(abs(DR3 - DR2) / DR2 < DR_convergence_frac, num_iter >= min_iter, 
+                #     (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1)), leakage_converged)
                 if (
                     abs(DR3 - DR2) / DR2 < DR_convergence_frac
-                    and num_iter > min_iter
-                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1))
+                    and num_iter >= min_iter
+                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>=1))
                     and leakage_converged
                 ):
                     pollogger.info("Self-calibration has converged.\n")
                     if not solve_over_array:
                         solve_over_array=True
-                        pol_solnorm=True
+                        pol_solnorm=False
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:
@@ -1473,8 +1477,8 @@ def do_polselfcal(
                 # If maximum iteration has reached
                 #########################################
                 elif (
-                    num_iter > min_iter
-                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol>1))
+                    num_iter >= min_iter
+                    and (not solve_over_array or (solve_over_array and num_iter_after_arraysol >= 1))
                     and num_iter == max_iter
                 ):
                     pollogger.info(
@@ -1484,7 +1488,7 @@ def do_polselfcal(
                         pollogger.warning("Leakage did not converge.\n")
                     if not solve_over_array:
                         solve_over_array=True
-                        pol_solnorm=True
+                        pol_solnorm=False
                         transfer_cor_to_data(msname)
                         pollogger.info("Changing mode to solve over array.\n")
                     else:

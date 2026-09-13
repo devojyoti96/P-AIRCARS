@@ -1346,8 +1346,11 @@ def selfcal_round(
         #####################################
         wsclean_args.append(f"-name {prefix}")
         pollist = list(pol)
-        if use_previous_model and do_polcal is False:
-            previous_models = glob.glob(f"{prefix}*model.fits")
+        if use_previous_model:
+            previous_models = []
+            for p in pollist:
+                models = glob.glob(f"{prefix}*-{p}-model.fits")
+                previous_models+=models
             total_models_expected = nintervals * nchans * len(pollist)
             if len(previous_models) == total_models_expected:
                 wsclean_args.append("-continue")
@@ -1443,6 +1446,8 @@ def selfcal_round(
                 ##########################################################
                 logger.info("Re-predicting corrected models.\n")
                 delmod(vis=msname, otf=True, scr=True)
+                if "-continue" in wsclean_args:
+                    wsclean_args.remove("-continue")
                 wsclean_cmd = (
                     "wsclean " + " ".join(wsclean_args) + " -predict " + msname
                 )
@@ -1481,10 +1486,10 @@ def selfcal_round(
         #######################################################################
         # Final frequency averaged images for backup or calculating dynamic ranges
         #######################################################################
-        if do_polcal:
+        '''if do_polcal:
             keep_wsclean_images = False
         else:
-            keep_wsclean_images = True
+            keep_wsclean_images = True'''
         final_image = (
             prefix.replace("present", f"{round_number}") + f"_{pol}_image.fits"
         )
@@ -1502,13 +1507,13 @@ def selfcal_round(
             os.system(f"cp -r {wsclean_images[0]} {final_image}")
         else:
             final_image = make_timeavg_image(
-                wsclean_images, final_image, keep_wsclean_images=keep_wsclean_images
+                wsclean_images, final_image, keep_wsclean_images=True
             )
         if len(wsclean_models) == 1:
             os.system(f"cp -r {wsclean_models[0]} {final_model}")
         else:
             final_model = make_timeavg_image(
-                wsclean_models, final_model, keep_wsclean_images=keep_wsclean_images
+                wsclean_models, final_model, keep_wsclean_images=True
             )
         if len(wsclean_residuals) == 1:
             os.system(f"cp -r {wsclean_residuals[0]} {final_residual}")
@@ -1516,7 +1521,7 @@ def selfcal_round(
             final_residual = make_timeavg_image(
                 wsclean_residuals,
                 final_residual,
-                keep_wsclean_images=keep_wsclean_images,
+                keep_wsclean_images=True,
             )
         os.system("rm -rf *psf.fits")
 
