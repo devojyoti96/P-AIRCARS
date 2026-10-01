@@ -360,7 +360,7 @@ def do_selfcal(
         num_iter = 0
         num_iter_after_ap = 0
         num_iter_fixed_sigma = 0
-        last_sigma_DR1 = 0
+        last_sigma_DR = 0
         sigma_reduced_count = 0
         calmode = "p"
         threshold = start_threshold
@@ -548,7 +548,7 @@ def do_selfcal(
             intlogger.info(f"RMS of the images: {RMS1}, {RMS2}, {RMS3} Jy/beam.\n")
             if DR3 >= DR2 and (
                 (calmode == "p" and num_iter >= min_iter)
-                or (calmode == "ap" and num_iter_after_ap >= 1)
+                or (calmode == "ap" and num_iter_after_ap > 1)
             ):
                 use_previous_model = True
             else:
@@ -623,24 +623,17 @@ def do_selfcal(
                 if do_apcal and calmode == "p":
                     intlogger.info("Changed calmode to 'ap'.\n")
                     calmode = "ap"
-                    use_previous_model = False
                     threshold -= 1
                     intlogger.info(f"Reducing threshold to : {threshold}.\n")
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
-                    if last_sigma_DR1 > 0:
-                        last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                    else:
-                        last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                    last_sigma_DR = round(np.nanmean([DR1, DR2, DR3]), 0)
                 elif calmode == "ap" and threshold > end_threshold:
                     threshold -= 1
                     intlogger.info(f"Reducing threshold to: {threshold}.\n")
                     sigma_reduced_count += 1
                     num_iter_fixed_sigma = 0
-                    if last_sigma_DR1 > 0:
-                        last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                    else:
-                        last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                    last_sigma_DR = round(np.nanmean([DR1, DR2, DR3]), 0)
                 else:
                     intlogger.warning(
                         "Stopping self-calibration. Using last round caltable as final.\n"
@@ -660,7 +653,7 @@ def do_selfcal(
             ###########################
             # If maximum DR has reached
             ###########################
-            if DR3 > max_DR and num_iter_after_ap >= 1:
+            if DR3 > max_DR and ((do_apcal and num_iter_after_ap >= 1) or (not do_apcal and num_iter>min_iter)):
                 intlogger.info("Maximum dynamic range is reached.\n")
                 os.system("rm -rf *_selfcal_present*")
                 time.sleep(0.5)
@@ -678,9 +671,9 @@ def do_selfcal(
                 ((do_apcal and calmode == "ap") or not do_apcal)
                 and num_iter_fixed_sigma >= min_iter
                 and (
-                    last_sigma_DR1 > 0
-                    and abs(round(np.nanmedian([DR1, DR2, DR3]), 0) - last_sigma_DR1)
-                    / last_sigma_DR1
+                    last_sigma_DR > 0
+                    and abs(round(np.nanmedian([DR1, DR2, DR3]), 0) - last_sigma_DR)
+                    / last_sigma_DR
                     < DR_convergence_frac
                 )
                 and sigma_reduced_count > 1
@@ -722,15 +715,11 @@ def do_selfcal(
                             "Dynamic range converged. Changing calmode to 'ap'.\n"
                         )
                         calmode = "ap"
-                        use_previous_model = False
                         threshold -= 1
                         intlogger.info(f"Reducing threshold to : {threshold}.\n")
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
-                        if last_sigma_DR1 > 0:
-                            last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                        else:
-                            last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                        last_sigma_DR = round(np.nanmean([DR1, DR2, DR3]), 0)
                     ######################################
                     # Reducing threshold if already in apcal
                     ######################################
@@ -739,10 +728,7 @@ def do_selfcal(
                         intlogger.info(f"Reducing threshold to : {threshold}.\n")
                         sigma_reduced_count += 1
                         num_iter_fixed_sigma = 0
-                        if last_sigma_DR1 > 0:
-                            last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
-                        else:
-                            last_sigma_DR1 = round(np.nanmean([DR1, DR2, DR3]), 0)
+                        last_sigma_DR = round(np.nanmean([DR1, DR2, DR3]), 0)
                 ######################################
                 # Condition 3
                 # If threshold reached, converged

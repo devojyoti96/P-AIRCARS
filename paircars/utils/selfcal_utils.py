@@ -91,7 +91,7 @@ def cal_crossphase(imagename):
 
 def leakage_fitting(leakage_file_list):
     """
-    Fit a 1D polynomial to Stokes I to Stokes Q leakage spectral variation
+    Fit a 1D polynomial to Stokes I to other Stokes leakage spectral variation
 
     Parameters
     ----------
@@ -1098,6 +1098,122 @@ def correct_spectrosnap_pbleak(
     return leakage_info_list, len(disk_detected_images), len(no_disk_detected_images)
 
 
+def make_initial_mask(
+    msname,
+    logger,
+    selfcaldir,
+    cellsize,
+    imsize,
+    uvrange="",
+    threshold=10,
+    minuv=0,
+    weight="briggs",
+    robust=0.0,
+    ncpu=-1,
+    mem=-1,
+):
+    """
+    Make shallow clean image and initial mask
+
+    Parameters
+    ----------
+    msname : str
+        Name of the measurement set
+    logger : logger
+        Python logger
+    selfcaldir : str
+        Self-calibration directory
+    cellsize : float
+        Cellsize in arcsec
+    imsize :  int
+        Image pixel size
+    uvrange : float, optional
+       UV range for calibration
+    minuv : float, optional
+        Minimum uv in lambda
+    weight : str, optional
+        Image weighting
+    robust : float, optional
+        Robust parameter for briggs weighting
+    ncpu : int, optional
+        Number of CPUs to use in WSClean
+    mem : float, optional
+        Memory usage limit in WSClean
+
+    Returns
+    -------
+    int
+        Success message
+    str
+        Mask name
+    """
+    ncpu = max(1, ncpu)
+    cwd = os.getcwd()
+    msname = msname.rstrip("/")
+    msname = os.path.abspath(msname)
+    os.chdir(selfcaldir)
+    prefix = (
+        selfcaldir + "/" + os.path.basename(msname).split(".ms")[0] + "_selfcal_dirty"
+    )
+    logger.info("Making shallow clean image and initial mask.")
+    try:
+        os.system(f"rm -rf {prefix}*image.fits {prefix}*residual.fits")
+        if weight == "briggs":
+            weight += " " + str(robust)
+        wsclean_args = [
+            "-quiet",
+            "-scale " + str(cellsize) + "asec",
+            "-size " + str(imsize) + " " + str(imsize),
+            "-gridder wgridder",
+            "-weight " + weight,
+            "-niter 10000",
+            "-mgain 0.85",
+            "-nmiter 5",
+            "-gain 0.1",
+            "-minuv-l " + str(minuv),
+            "-j " + str(ncpu),
+            "-abs-mem " + str(mem),
+            f"-auto-mask {threshold}",
+            "-auto-threshold 1",
+            "-pol I",
+            f"-name {prefix}",
+        ]
+        ngrid = max(1, int(ncpu / 2))
+        if ngrid > 1:
+            wsclean_args.append("-parallel-gridding " + str(ngrid))
+        if imsize >= 1024:
+            wsclean_args.append("-parallel-deconvolution 512")
+        wsclean_cmd = "wsclean " + " ".join(wsclean_args) + " " + msname
+        logger.info(f"\nWSClean command: {wsclean_cmd}\n")
+        msg = run_wsclean(wsclean_cmd, "aurorawsclean", verbose=False)
+        if msg != 0:
+            logger.error("Imaging is not successful.\n")
+            return 1, ""
+        else:
+            #############
+            # make mask
+            #############
+            mask_file =  prefix+"-mask.fits"
+            final_image = f"{prefix}-image.fits"
+            mask_cmd = [
+                "breizorro",
+                "-t", f"{threshold}",
+                "-b", "50",
+                "-r", final_image,
+                "--fill-holes",
+                "--dilate", "3",
+                "--outfile", mask_file,
+            ]
+            logger.info("Making mask: "+" ".join(mask_cmd))
+            subprocess.run(mask_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) 
+            return 0, mask_file
+    except Exception:
+        traceback.print_exc()
+        return 1, ""
+    finally:
+        os.chdir(cwd)
+        
+        
 def selfcal_round(
     msname,
     metafits,

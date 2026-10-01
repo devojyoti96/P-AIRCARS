@@ -27,6 +27,7 @@ from paircars.utils.udocker_utils import (
     initialize_hyperdrive_container,
     initialize_hyperbeam_container,
     initialize_postgres_container,
+    initialize_breizorro_container,
 )
 from paircars.utils.killjob_utils import kill_port
 from paircars.pipeline.beam_interpolate import do_beam_interpolate
@@ -366,6 +367,26 @@ def main(
                 trial += 1
                 if trial == 2:
                     print("Shadems container is not initialized.")
+                    print("Check you internet connectivity.")
+                    
+        ##############################
+        # Breizorro
+        ##############################
+        trial = 0
+        while trial < 2:
+            breizorro_container_name = initialize_breizorro_container(
+                update=update, verbose=True
+            )
+            if (
+                breizorro_container_name is not None
+                and breizorro_container_name == "paircarsbreizorro"
+            ):
+                print("Breizorro container is initialized")
+                break
+            else:
+                trial += 1
+                if trial == 2:
+                    print("Breizorro container is not initialized.")
                     print("Check you internet connectivity.")
 
         #########################################

@@ -275,6 +275,10 @@ def shiftcor_all_images(imagedir, solint=30.0, mean_shift=True):
                 apparent_dec = np.nanmedian(apparent_dec_array[i, ...])
                 apparent_dec_array[i, ...] = apparent_dec
 
+        print(selected_freqs)
+        print(selected_times)
+        print(apparent_ra_array)
+        print(apparent_dec_array)
         ###################################################
         # If no disk detected image is present
         ###################################################
