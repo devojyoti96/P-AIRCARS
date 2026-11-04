@@ -1286,7 +1286,7 @@ def plot_in_hpc_full_stokes(
     for output_image in output_image_list:
         fig.savefig(
             output_image,
-            bbox_inches="tight",
+            dpi=200,
         )
 
     if showgui:
@@ -1387,7 +1387,7 @@ def plot_in_hpc(
     pos_color = "white"
     neg_color = "cyan"
     try:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10, 8))
         ax = plt.subplot(projection=cropped_map)
         cropped_map.plot(cmap=cmap, axes=ax)
         if len(contour_levels) > 0:
@@ -1489,7 +1489,7 @@ def plot_in_hpc(
                 )
             output_image_list.append(output_image)
         for output_image in output_image_list:
-            fig.savefig(output_image)
+            fig.savefig(output_image,dpi=200)
         if showgui:
             plt.show()
         plt.close(fig)
@@ -2514,7 +2514,9 @@ def rename_mwasolar_image(
 
 def make_gif_movie(images, outfile, per_frame_dur=0.15):
     """
-    Make GIF movie
+    Make GIF movie from PNG images of potentially different sizes.
+
+    Images are centered on a common canvas without resizing.
 
     Parameters
     ----------
@@ -2527,21 +2529,43 @@ def make_gif_movie(images, outfile, per_frame_dur=0.15):
 
     Returns
     -------
-    str
-        Output GIF file
+    str or None
+        Output GIF file, or None on failure.
     """
     try:
         frames = [imageio.imread(f) for f in images]
+        # Convert all frames to RGB
+        frames = [frame[:, :, :3] for frame in frames]
+        # Find maximum dimensions
+        max_height = max(frame.shape[0] for frame in frames)
+        max_width = max(frame.shape[1] for frame in frames)
+        padded_frames = []
+        for frame in frames:
+            height, width = frame.shape[:2]
+            # White background
+            canvas = np.full(
+                (max_height, max_width, 3),
+                255,
+                dtype=np.uint8,
+            )
+            # Center the image
+            y_offset = (max_height - height) // 2
+            x_offset = (max_width - width) // 2
+            canvas[
+                y_offset:y_offset + height,
+                x_offset:x_offset + width,
+            ] = frame
+            padded_frames.append(canvas)
         imageio.mimsave(
             outfile,
-            frames,
-            duration=per_frame_dur * 1000,  # milliseconds per frame
+            padded_frames,
+            duration=per_frame_dur*1000,
             loop=0,
         )
         return outfile
     except Exception:
         traceback.print_exc()
-        return
+        return None
 
 
 def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):

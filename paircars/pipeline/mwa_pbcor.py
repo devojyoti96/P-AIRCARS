@@ -275,10 +275,6 @@ def shiftcor_all_images(imagedir, solint=30.0, mean_shift=True):
                 apparent_dec = np.nanmedian(apparent_dec_array[i, ...])
                 apparent_dec_array[i, ...] = apparent_dec
 
-        print(selected_freqs)
-        print(selected_times)
-        print(apparent_ra_array)
-        print(apparent_dec_array)
         ###################################################
         # If no disk detected image is present
         ###################################################
@@ -586,7 +582,7 @@ def pbcor_all_images(
                 gifdir = f"{os.path.dirname(pbcor_dir)}/pbcor_gifs"
                 os.makedirs(gifdir, exist_ok=True)
                 logger.info(
-                    "Making GIFs per frequencies for rimary beam corrected maps.\n"
+                    "Making GIFs per frequencies for primary beam corrected maps.\n"
                 )
                 for png_freq in png_freqs:
                     sub_list = sorted(glob.glob(f"{pngdir}/*freq_{png_freq}*.png"))
