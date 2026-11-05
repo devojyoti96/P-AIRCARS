@@ -2211,6 +2211,8 @@ def make_mwa_overlay(
 
     mwatime = mwamap.meta["date-obs"].split(".")[0]
     euvtime = euv_map.meta["date-obs"].split(".")[0]
+    plot_file_list = []
+    
     try:
         if plot_mwa_colormap and len(contour_levels) > 0:
             matplotlib.rcParams.update({"font.size": 18})
@@ -2322,7 +2324,6 @@ def make_mwa_overlay(
             wspace=0.27,  # horizontal space between panels
             hspace=0.05,  # vertical space between panels
         )
-        plot_file_list = []
         for i in range(len(extensions)):
             ext = extensions[i]
             try:
