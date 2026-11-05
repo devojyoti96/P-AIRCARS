@@ -184,6 +184,22 @@ def get_max_walltime(partition):
     return max_time, slurm_time_to_seconds(max_time)
 
 
+class CPUAccountingPlugin(WorkerPlugin):
+    def __init__(self, interval=1.0):
+        self.interval = interval
+
+    def setup(self, worker):
+        worker.cpu_accounting_monitor = WorkerCPUMonitor(interval=self.interval)
+        worker.cpu_accounting_monitor.start()
+
+    def teardown(self, worker):
+        worker.cpu_accounting_monitor.stop()
+
+
+def get_worker_cpu_time(dask_worker):
+    return dask_worker.cpu_accounting_monitor.total_cpu
+    
+    
 def get_slurm_dask_cluster(
     dask_dir,
     jobid=None,
@@ -353,6 +369,7 @@ def get_slurm_dask_cluster(
             )
             client = Client(cluster, heartbeat_interval="5s")
             client.run_on_scheduler(gc.collect)
+            client.register_plugin(CPUAccountingPlugin(interval=1.0))
             print("Using interface: auto-detected")
         except Exception:
             cluster = SLURMCluster(
@@ -375,6 +392,7 @@ def get_slurm_dask_cluster(
             )
             client = Client(cluster, heartbeat_interval="5s")
             client.run_on_scheduler(gc.collect)
+            client.register_plugin(CPUAccountingPlugin(interval=1.0))
             print(f"Using interface: {interface}")
 
         if verbose:
