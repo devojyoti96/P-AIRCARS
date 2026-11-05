@@ -9,6 +9,7 @@ import logging
 import shlex
 import re
 import numpy as np
+import getpass
 from dotenv import load_dotenv
 from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
@@ -433,8 +434,8 @@ def submit_slurm_master_flow(args, jobid):
     else:
         print("Please provide a work directory.")
         return 1
-
-    datadir = f"{get_datadir()}/prefect_{scheduler_name}"
+    username = getpass.getuser()
+    datadir = f"{get_datadir()}/{username}/prefect_{scheduler_name}"
     config_file = f"{datadir}/prefect.config.npy"
     config = np.load(config_file, allow_pickle=True).all()
     if os.path.exists(config_file) is False:
