@@ -313,6 +313,7 @@ def get_slurm_dask_cluster(
             f"export TEMP={dask_dir_tmp}",
             f"export DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
             "export PYTHONWARNINGS=ignore::UserWarning:contextlib",
+            "export DASK_DISTRIBUTED__WORKER__DAEMON=false",
         ]
 
         job_extra = [
@@ -522,9 +523,10 @@ def submit_slurm_master_flow(args, jobid):
             if not args.log2term:
                 return exit_code
             else:
-                print("Waiting to start the job...\n")
+                print("Waiting to start the job...")
                 while True:
                     if os.path.exists(log_file):
+                        print("P-AIRCARS job started.")
                         break
                     else:
                         print("Waiting for next one minute....")
