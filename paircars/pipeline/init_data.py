@@ -150,6 +150,8 @@ def init_paircars_data(
     unavailable_beam_files = [
         f for f in all_beam_files if not os.path.exists(f"{datadir}/{f}")
     ]
+    
+    if unavailable_beam_files or update:
         beam_record_id = "23974674"
         download_with_parfive(record_id, update=update, output_dir=datadir)
         timestr = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S")
