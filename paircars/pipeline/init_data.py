@@ -153,7 +153,7 @@ def init_paircars_data(
     
     if unavailable_beam_files or update:
         beam_record_id = "23974674"
-        download_with_parfive(record_id, update=update, output_dir=datadir)
+        download_with_parfive(beam_record_id, update=update, output_dir=datadir)
         timestr = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(f"MWA beam files are updated in: {datadir} at time: {timestr}")
 
