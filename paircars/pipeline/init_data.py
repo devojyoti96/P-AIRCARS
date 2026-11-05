@@ -63,7 +63,7 @@ def get_zenodo_file_urls(record_id):
     return [(f"https://zenodo.org/records/{record_id}/files/{f['key']}", f["key"]) for f in data.get("files", [])]
 
 
-def download_with_parfive(record_id, update=False, output_dir="zenodo_download"):
+def download_with_parfive(record_id, all_filenames, update=False, output_dir="zenodo_download"):
     print("####################################")
     print("Downloading P-AIRCARS data files ...")
     print("####################################")
@@ -145,7 +145,7 @@ def init_paircars_data(
 
     if unavailable_files or update:
         record_id = "18640418"
-        download_with_parfive(record_id, update=update, output_dir=datadir)
+        download_with_parfive(record_id, all_filenames, update=update, output_dir=datadir)
         timestr = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(f"P-AIRCARS data are updated in: {datadir} at time: {timestr}")
         
@@ -155,7 +155,7 @@ def init_paircars_data(
     
     if unavailable_beam_files or update:
         beam_record_id = "23974674"
-        download_with_parfive(beam_record_id, update=update, output_dir=datadir)
+        download_with_parfive(beam_record_id, all_beam_files, update=update, output_dir=datadir)
         timestr = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(f"MWA beam files are updated in: {datadir} at time: {timestr}")
 
