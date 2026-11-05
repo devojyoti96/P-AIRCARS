@@ -1286,7 +1286,7 @@ def plot_in_hpc_full_stokes(
     for output_image in output_image_list:
         fig.savefig(
             output_image,
-            dpi=200,
+            bbox_inches="tight",
         )
 
     if showgui:
@@ -1387,7 +1387,7 @@ def plot_in_hpc(
     pos_color = "white"
     neg_color = "cyan"
     try:
-        fig = plt.figure(figsize=(10, 8))
+        fig = plt.figure()
         ax = plt.subplot(projection=cropped_map)
         cropped_map.plot(cmap=cmap, axes=ax)
         if len(contour_levels) > 0:
@@ -1489,7 +1489,7 @@ def plot_in_hpc(
                 )
             output_image_list.append(output_image)
         for output_image in output_image_list:
-            fig.savefig(output_image,dpi=200)
+            fig.savefig(output_image)
         if showgui:
             plt.show()
         plt.close(fig)
@@ -2552,14 +2552,14 @@ def make_gif_movie(images, outfile, per_frame_dur=0.15):
             y_offset = (max_height - height) // 2
             x_offset = (max_width - width) // 2
             canvas[
-                y_offset:y_offset + height,
-                x_offset:x_offset + width,
+                y_offset : y_offset + height,
+                x_offset : x_offset + width,
             ] = frame
             padded_frames.append(canvas)
         imageio.mimsave(
             outfile,
             padded_frames,
-            duration=per_frame_dur*1000,
+            duration=per_frame_dur,
             loop=0,
         )
         return outfile
@@ -2607,15 +2607,23 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
             S_data_i,
             flags_i,
         ) = np.load(dsfile, allow_pickle=True)
-        freqs_i = np.asarray(freqs_i,dtype=float)
+        freqs_i = np.asarray(freqs_i, dtype=float)
         timestamps_i = np.asarray(timestamps_i)
-        
+
         # Select quantity
-        data_i = (np.asarray(T_data_i,dtype=float,) / 1e6 if plot_quantity == "TB" else np.asarray(S_data_i, dtype=float))
+        data_i = (
+            np.asarray(
+                T_data_i,
+                dtype=float,
+            )
+            / 1e6
+            if plot_quantity == "TB"
+            else np.asarray(S_data_i, dtype=float)
+        )
         data_i = data_i.copy()
 
         # Apply flags
-        flags_i = np.asarray(flags_i,dtype=bool)
+        flags_i = np.asarray(flags_i, dtype=bool)
         if flags_i.shape == data_i.shape:
             data_i[flags_i] = np.nan
 
@@ -2635,7 +2643,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
 
     # Global frequency axis
     freq_precision = 3
-    all_freqs = np.concatenate([np.round(d["freqs"],freq_precision) for d in datasets])
+    all_freqs = np.concatenate([np.round(d["freqs"], freq_precision) for d in datasets])
     global_freqs = np.unique(all_freqs)
     global_freqs.sort()
 
@@ -2645,10 +2653,12 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
     global_timestamps.sort()
 
     # Global data array
-    data = np.full((len(global_freqs), len(global_timestamps)), np.nan,dtype=float)
+    data = np.full((len(global_freqs), len(global_timestamps)), np.nan, dtype=float)
 
     # Lookup tables
-    freq_index = {np.round(freq, freq_precision): i for i, freq in enumerate(global_freqs)}
+    freq_index = {
+        np.round(freq, freq_precision): i for i, freq in enumerate(global_freqs)
+    }
     time_index = {timestamp: i for i, timestamp in enumerate(global_timestamps)}
 
     # Place every file into global array
@@ -2656,7 +2666,9 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
         freqs_i = d["freqs"]
         timestamps_i = d["timestamps"]
         data_i = d["data"]
-        fidx = np.array([freq_index[np.round(f,freq_precision)] for f in freqs_i], dtype=int)
+        fidx = np.array(
+            [freq_index[np.round(f, freq_precision)] for f in freqs_i], dtype=int
+        )
         tidx = np.array([time_index[t] for t in timestamps_i], dtype=int)
         for i in range(len(freqs_i)):
             fi = fidx[i]
@@ -2670,7 +2682,7 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
                 # If two files overlap, average the valid values.
                 # ------------------------------------------------
                 if np.isfinite(data[fi, ti]):
-                    data[fi, ti] = (data[fi, ti]+ value) / 2.0
+                    data[fi, ti] = (data[fi, ti] + value) / 2.0
                 else:
                     data[fi, ti] = value
 
@@ -2682,21 +2694,21 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
         if np.isfinite(df) and df > 0:
             new_freqs = []
             new_data = []
-            for i in range( len(freqs)):
+            for i in range(len(freqs)):
                 new_freqs.append(freqs[i])
                 new_data.append(data[i, :])
                 # ------------------------------------------------
                 # Check gap to next frequency
                 # ------------------------------------------------
                 if i < len(freqs) - 1:
-                    frequency_gap = freqs[i + 1]- freqs[i]
+                    frequency_gap = freqs[i + 1] - freqs[i]
                     # A gap means there is more than approximately one normal channel spacing.
                     if frequency_gap > 1.5 * df:
                         new_freqs.append(np.nan)
-                        new_data.append(np.full(len(timestamps),np.nan))
+                        new_data.append(np.full(len(timestamps), np.nan))
             freqs = np.asarray(new_freqs)
             data = np.asarray(new_data)
-            
+
     # --------------------------------------------------
     # Convert timestamps → datetime (MASTER AXIS)
     # --------------------------------------------------
@@ -2763,9 +2775,11 @@ def make_ds_plot(dsfiles, plot_file=None, plot_quantity="flux", showgui=False):
         ax_spec.set_xticklabels([])
         # Frequency ticks
         freqs_arr = np.array(freqs)
-        freqs_coarse_center = np.array([(f/1.28-f//1.28) for f in freqs_arr],dtype="float32")
+        freqs_coarse_center = np.array(
+            [(f / 1.28 - f // 1.28) for f in freqs_arr], dtype="float32"
+        )
         min_sep = np.nanmin(freqs_coarse_center)
-        idx = np.where(freqs_coarse_center==min_sep)[0]
+        idx = np.where(freqs_coarse_center == min_sep)[0]
         ax_spec.set_yticks(idx)
         ax_spec.set_yticklabels([f"{freqs_arr[i]:.1f}" for i in idx])
         # --------------------------------------------------

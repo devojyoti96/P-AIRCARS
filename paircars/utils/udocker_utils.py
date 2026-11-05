@@ -386,7 +386,7 @@ def build_breizorro_udocker_command(breizorro_cmd, image):
     -------
     list
         Complete udocker command.
-    """ 
+    """
     PATH_OPTIONS = {
         "-r",
         "--restored-image",
@@ -423,41 +423,23 @@ def build_breizorro_udocker_command(breizorro_cmd, image):
                     host_path = Path(filename).expanduser().resolve()
                     parent = host_path.parent
                     if parent not in mounts:
-                        container_path = (
-                            Path(container_root) /
-                            parent.name
-                        )
+                        container_path = Path(container_root) / parent.name
                         mounts[parent] = container_path
                     else:
                         container_path = mounts[parent]
-                    container_file = (
-                        container_path /
-                        host_path.name
-                    )
-                    container_files.append(
-                        str(container_file)
-                    )
-                rewritten_args.append(
-                    ",".join(container_files)
-                )
+                    container_file = container_path / host_path.name
+                    container_files.append(str(container_file))
+                rewritten_args.append(",".join(container_files))
             else:
                 host_path = Path(value).expanduser().resolve()
                 parent = host_path.parent
                 if parent not in mounts:
-                    container_path = (
-                        Path(container_root) /
-                        parent.name
-                    )
+                    container_path = Path(container_root) / parent.name
                     mounts[parent] = container_path
                 else:
                     container_path = mounts[parent]
-                container_file = (
-                    container_path /
-                    host_path.name
-                )
-                rewritten_args.append(
-                    str(container_file)
-                )
+                container_file = container_path / host_path.name
+                rewritten_args.append(str(container_file))
             i += 2
             continue
         # ------------------------------------------------------------
@@ -468,7 +450,7 @@ def build_breizorro_udocker_command(breizorro_cmd, image):
     # ------------------------------------------------------------
     # Construct udocker command
     # ------------------------------------------------------------
-    cmd = ["udocker","run","--nobanner"]
+    cmd = ["udocker", "run", "--nobanner"]
     for host_dir, container_dir in mounts.items():
         cmd.append(f"--volume={host_dir}:{container_dir}")
     cmd.append(image)
@@ -513,9 +495,9 @@ def run_breizorro(
                 print(
                     f"Container {container_name} is not initiated. First initiate container and then run."
                 )
-                return 1 
+                return 1
     try:
-        full_command = build_breizorro_udocker_command(breizorro_cmd,container_name)
+        full_command = build_breizorro_udocker_command(breizorro_cmd, container_name)
         if verbose:
             print(f"{breizorro_cmd}\n")
             result = subprocess.run(

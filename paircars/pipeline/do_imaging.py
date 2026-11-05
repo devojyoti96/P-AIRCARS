@@ -487,7 +487,7 @@ def perform_imaging(
                             if saveres:
                                 reslist = sorted(reslist)
                                 valid_residuals = []
-                       
+
                             for i in range(len(imagelist)):
                                 image = imagelist[i]
                                 if savemodel:
@@ -512,11 +512,11 @@ def perform_imaging(
                                 modellist = sorted(valid_models)
                             if saveres:
                                 reslist = sorted(valid_residuals)
-                            
+
                             img_logger.info(
                                 f"Total {len(imagelist)} valid images are made.\n"
                             )
-                            
+
                             img_logger.info("Renaming and making plots.\n")
                             os.makedirs(imagedir + "/images", exist_ok=True)
                             final_image_list = []

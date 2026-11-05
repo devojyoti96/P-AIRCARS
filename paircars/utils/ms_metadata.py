@@ -108,14 +108,14 @@ def get_timeranges(
         if len(all_times) == 1:
             time_ranges.append(mjdsec_to_timestamp(all_times[0], str_format=1))
             return time_ranges
-        
-    if max_time_chunk>0:
-        total_time = max(all_times)-min(all_times)
-        nchunk = max(1,int(total_time//max_time_chunk))
+
+    if max_time_chunk > 0:
+        total_time = max(all_times) - min(all_times)
+        nchunk = max(1, int(total_time // max_time_chunk))
     else:
         nchunk = 1
-    all_time_chunks = split_equal_chunks(all_times,nchunk)
-    
+    all_time_chunks = split_equal_chunks(all_times, nchunk)
+
     for all_times in all_time_chunks:
         sub_time_ranges = []
         start_time = min(all_times)
@@ -169,7 +169,9 @@ def get_timeranges(
                             f"{mjdsec_to_timestamp(start_time, str_format=1)}~{mjdsec_to_timestamp(end_time-timeres, str_format=1)}"
                         )
                     else:
-                        sub_time_ranges.append(f"{mjdsec_to_timestamp(start_time, str_format=1)}")
+                        sub_time_ranges.append(
+                            f"{mjdsec_to_timestamp(start_time, str_format=1)}"
+                        )
         time_ranges.append(sub_time_ranges)
     return time_ranges
 
