@@ -70,7 +70,9 @@ def download_with_parfive(record_id, update=False, output_dir="zenodo_download")
     urls = get_zenodo_file_urls(record_id)
     os.makedirs(output_dir, exist_ok=True)
     total_cpu = psutil.cpu_count()
-    dl = Downloader(max_conn=min(total_cpu, len(all_filenames) + 1))
+    total_connection = max(1,min(total_cpu, len(all_filenames) + 1))
+    print(f"Total parallel download: {total_connection}")
+    dl = Downloader(max_conn=total_connection)
     for file_url, filename in urls:
         if filename in all_filenames:
             if not os.path.exists(f"{output_dir}/{filename}") or update:
