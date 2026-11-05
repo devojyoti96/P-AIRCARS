@@ -14,7 +14,7 @@ from dask.distributed import Client
 from dask_jobqueue import SLURMCluster
 from pyfiglet import Figlet
 from collections import deque
-from paircars.utils.basic_utils import get_cachedir
+from paircars.utils.basic_utils import get_datadir
 from paircars.utils.proc_manage_utils import (
     get_scheduler_name,
     detect_best_interface,
@@ -434,8 +434,8 @@ def submit_slurm_master_flow(args, jobid):
         print("Please provide a work directory.")
         return 1
 
-    cachedir = f"{get_cachedir()}/prefect_{scheduler_name}"
-    config_file = f"{cachedir}/prefect.config.npy"
+    datadir = f"{get_datadir()}/prefect_{scheduler_name}"
+    config_file = f"{datadir}/prefect.config.npy"
     config = np.load(config_file, allow_pickle=True).all()
     if os.path.exists(config_file) is False:
         print(
