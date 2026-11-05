@@ -437,11 +437,6 @@ def submit_slurm_master_flow(args, jobid):
         args_list.remove("--log2term")
     cli_cmd = "run-mwa-masterflow " + " ".join(args_list) + f" --jobid {jobid}"
 
-    if hasattr(args, "log2term"):
-        log2term = args.log2term
-    else:
-        log2term = False
-
     if hasattr(args, "partition") and args.partition is not None:
         max_time, max_time_second = get_max_walltime(args.partition)
     else:
@@ -543,6 +538,13 @@ def submit_slurm_master_flow(args, jobid):
             if not log2term:
                 return exit_code
             else:
+                print("Waiting to start the job...\n")
+                while True:
+                    if os.path.exists(log_file):
+                        break
+                    else:
+                        print(f"Waiting for next one minute....")
+                        time.sleep(60)
                 print("Streaming logs to terminal...\n")
                 last_lines = deque(maxlen=500)
                 only_run_print = False
