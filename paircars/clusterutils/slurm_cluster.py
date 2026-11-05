@@ -21,6 +21,7 @@ from paircars.utils.proc_manage_utils import (
     detect_best_interface,
     get_jobid,
     get_total_nodes,
+    CPUAccountingPlugin,
 )
 
 
@@ -182,23 +183,6 @@ def get_max_walltime(partition):
         raise ValueError(f"Partition {partition} not found.")
     max_time = partitions[partition]
     return max_time, slurm_time_to_seconds(max_time)
-
-
-class CPUAccountingPlugin(WorkerPlugin):
-    def __init__(self, interval=1.0):
-        self.interval = interval
-
-    def setup(self, worker):
-        worker.cpu_accounting_monitor = WorkerCPUMonitor(interval=self.interval)
-        worker.cpu_accounting_monitor.start()
-
-    def teardown(self, worker):
-        worker.cpu_accounting_monitor.stop()
-
-
-def get_worker_cpu_time(dask_worker):
-    return dask_worker.cpu_accounting_monitor.total_cpu
-    
     
 def get_slurm_dask_cluster(
     dask_dir,
@@ -535,7 +519,7 @@ def submit_slurm_master_flow(args, jobid):
         exit_code = result.returncode
         if exit_code == 0:
             print(f"P-AIRCARS job with Job ID: {jobid} is submitted successfully.")
-            if not log2term:
+            if not args.log2term:
                 return exit_code
             else:
                 print("Waiting to start the job...\n")
@@ -543,7 +527,7 @@ def submit_slurm_master_flow(args, jobid):
                     if os.path.exists(log_file):
                         break
                     else:
-                        print(f"Waiting for next one minute....")
+                        print("Waiting for next one minute....")
                         time.sleep(60)
                 print("Streaming logs to terminal...\n")
                 last_lines = deque(maxlen=500)
