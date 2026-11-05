@@ -60,7 +60,7 @@ def get_zenodo_file_urls(record_id):
     response = requests.get(url)
     response.raise_for_status()
     data = response.json()
-    return [(f["links"]["self"], f["key"]) for f in data.get("files", [])]
+    return [(f"https://zenodo.org/records/{record_id}/files/{f['key']}", f["key"]) for f in data.get("files", [])]
 
 
 def download_with_parfive(record_id, update=False, output_dir="zenodo_download"):
