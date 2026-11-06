@@ -528,15 +528,6 @@ def submit_slurm_master_flow(args, jobid):
                     start_new_session=True,
                     bufsize=1,
                 )
-            spinner = cycle(["|", "/", "-", "\\"])
-            while not os.path.exists(log_file):
-                sys.stdout.write(
-                    f"\r{next(spinner)} Waiting for P-AIRCARS job to start..."
-                )
-                sys.stdout.flush()
-                time.sleep(0.5)
-            sys.stdout.write("\r\033[K")
-            sys.stdout.flush()
             print("Master flow started in background")
             print(f"Main log: {log_file}")
             if not args.log2term:
