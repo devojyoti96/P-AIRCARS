@@ -540,7 +540,7 @@ def submit_slurm_master_flow(args, jobid):
             sys.stdout.flush()
             print("Master flow started in background")
             print(f"Main log: {log_file}")
-            if not log2term:
+            if not args.log2term:
                 return 0
             print("Streaming logs to terminal...\n")
             last_lines = deque(maxlen=500)
