@@ -518,7 +518,6 @@ def submit_slurm_master_flow(args, jobid):
         print(f"Batch script: {script_path} is ready for submission.")
         print(f"Main logger: {log_file}")
         print("######################################################")
-        result = subprocess.run(["sbatch", script_path], stderr=subprocess.DEVNULL)
         try:
             # Always run job in background
             with open(log_file, "a", buffering=1) as log:
