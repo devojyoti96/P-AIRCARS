@@ -376,6 +376,12 @@ def cli():
         default=None,
         help="Wall time, each slurm job can execute in maximum this time",
     )
+    advanced_slurm.add_argument(
+        "--num_node",
+        type=str,
+        default=-1,
+        help="Maximum number of nodes to use (default: -1, use all nodes available in the account)",
+    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)

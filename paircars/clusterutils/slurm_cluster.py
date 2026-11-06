@@ -186,6 +186,7 @@ def get_max_walltime(partition):
     max_time = partitions[partition]
     return max_time, slurm_time_to_seconds(max_time)
     
+    
 def get_slurm_dask_cluster(
     dask_dir,
     jobid=None,
@@ -316,13 +317,16 @@ def get_slurm_dask_cluster(
             f"export DASK_TEMPORARY_DIRECTORY={dask_dir_tmp}",
             "export PYTHONWARNINGS=ignore::UserWarning:contextlib",
             "export DASK_DISTRIBUTED__WORKER__DAEMON=false",
+            "export PREFECT_LOGGING_TO_API_ENABLED=true",
+            "export PREFECT_LOGGING_LEVEL=DEBUG",
+            "export PREFECT_LOGGING_LOG_PRINTS=true",
         ]
 
         job_extra = [
             f"--cpus-per-task={ncpu}",
             f"-J paircars_{jobid}",
             f"-o {log_dir}/paircars_{jobid}-%j.out",
-            f"-e {log_dir}/paircars_{jobid}-%j.err",
+            f"-e {log_dir}/paircars_{jobid}-%j.out",
         ]
 
         if walltime is None:
@@ -503,8 +507,8 @@ def submit_slurm_master_flow(args, jobid):
         if len(prefect_env_list) > 0:
             for i in prefect_env_list:
                 script_args.append(f"{i}")
-        script_args.append("unset PYTHONPATH\n")
-        script_args.append("export PYTHONNOUSERSITE=1\n")
+        script_args.append("unset PYTHONPATH")
+        script_args.append("export PYTHONNOUSERSITE=1")
         script_args.append("export PYTHONUNBUFFERED=1\n")
         script_args.append(cli_cmd)
         script_path = os.path.join(args.workdir, f"paircars_slurm_{jobid}.sh")
